@@ -45,9 +45,5 @@ func formatHeight(height int) string {
 
 	hexNumber := hex.EncodeToString(endian)
 
-	for strings.HasSuffix(hexNumber, "0") {
-		hexNumber = hexNumber[:len(hexNumber)-1]
-	}
-
-	return hexNumber
+	return hexNumber[0:4]
 }

@@ -34,8 +34,10 @@ func main() {
 	symbol, chainParams := parseChain(lndInfo.Chains[0])
 	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
 
+	cfg.Boltz.Init(symbol)
+
 	swapNursery := &nursery.Nursery{}
-	err = swapNursery.Init(chainParams, cfg.LND, cfg.Boltz, cfg.Database)
+	err = swapNursery.Init(symbol, chainParams, cfg.LND, cfg.Boltz, cfg.Database)
 
 	if err != nil {
 		logger.Fatal("Could no start Swap nursery: " + err.Error())

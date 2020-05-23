@@ -6,9 +6,11 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/google/logger"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 )
 
 type Nursery struct {
+	symbol      string
 	chainParams *chaincfg.Params
 
 	lnd      *lnd.LND
@@ -16,13 +18,24 @@ type Nursery struct {
 	database *database.Database
 }
 
-func (nursery *Nursery) Init(chainParams *chaincfg.Params, lnd *lnd.LND, boltz *boltz.Boltz, database *database.Database) error {
+func (nursery *Nursery) Init(symbol string, chainParams *chaincfg.Params, lnd *lnd.LND, boltz *boltz.Boltz, database *database.Database) error {
+	nursery.symbol = symbol
 	nursery.chainParams = chainParams
+
 	nursery.lnd = lnd
 	nursery.boltz = boltz
 	nursery.database = database
 
 	logger.Info("Starting Swap nursery")
 
-	return nursery.recoverSwaps()
+	blockNotifier := make(chan *chainrpc.BlockEpoch)
+	err := nursery.lnd.RegisterBlockListener(blockNotifier)
+
+	if err != nil {
+		return err
+	}
+
+	err = nursery.recoverSwaps(blockNotifier)
+
+	return err
 }

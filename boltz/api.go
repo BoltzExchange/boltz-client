@@ -11,6 +11,8 @@ import (
 )
 
 type Boltz struct {
+	symbol string
+
 	URL string `long:"boltz.url" description:"URL endpoint of the Boltz API"`
 }
 
@@ -58,6 +60,29 @@ type SwapStatusResponse struct {
 	Error string `json:"error"`
 }
 
+type GetSwapTransactionRequest struct {
+	Id string `json:"id"`
+}
+
+type GetSwapTransactionResponse struct {
+	TransactionHex     string `json:"transactionHex"`
+	TimeoutBlockHeight uint32 `json:"timeoutBlockHeight"`
+	TimeoutEta         uint64 `json:"timeoutEta"`
+
+	Error string `json:"error"`
+}
+
+type BroadcastTransactionRequest struct {
+	Currency       string `json:"currency"`
+	TransactionHex string `json:"transactionHex"`
+}
+
+type BroadcastTransactionResponse struct {
+	TransactionId string `json:"transactionId"`
+
+	Error string `json:"error"`
+}
+
 type CreateSwapRequest struct {
 	Type            string `json:"type"`
 	PairId          string `json:"pairId"`
@@ -76,6 +101,10 @@ type CreateSwapResponse struct {
 	RedeemScript       string `json:"redeemScript"`
 
 	Error string `json:"error"`
+}
+
+func (boltz *Boltz) Init(symbol string) {
+	boltz.symbol = symbol
 }
 
 func (boltz *Boltz) GetPairs() (*GetPairsResponse, error) {
@@ -117,6 +146,33 @@ func (boltz *Boltz) StreamSwapStatus(id string, channel chan *sse.Event) (*sse.C
 	err := client.SubscribeChan("data", channel)
 
 	return client, err
+}
+
+func (boltz *Boltz) GetSwapTransaction(id string) (*GetSwapTransactionResponse, error) {
+	var response GetSwapTransactionResponse
+	err := boltz.sendPostRequest("/getswaptransaction", GetSwapTransactionRequest{
+		Id: id,
+	}, &response)
+
+	if response.Error != "" {
+		return nil, errors.New(response.Error)
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) BroadcastTransaction(transactionHex string) (*BroadcastTransactionResponse, error) {
+	var response BroadcastTransactionResponse
+	err := boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
+		Currency:       boltz.symbol,
+		TransactionHex: transactionHex,
+	}, &response)
+
+	if response.Error != "" {
+		return nil, errors.New(response.Error)
+	}
+
+	return &response, err
 }
 
 func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, error) {

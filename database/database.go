@@ -8,6 +8,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/lntypes"
+	"strconv"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -98,8 +99,16 @@ func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
 	return swap, err
 }
 
-func (database *Database) QueryPendingSwaps() (swaps []Swap, err error) {
-	rows, err := database.db.Query("SELECT * FROM swaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "')")
+func (database *Database) QueryPendingSwaps() ([]Swap, error) {
+	return database.querySwaps("SELECT * FROM swaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "')")
+}
+
+func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32) ([]Swap, error) {
+	return database.querySwaps("SELECT * FROM swaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "') AND timeoutBlockHeight <= " + strconv.FormatUint(uint64(currentBlockHeight), 10))
+}
+
+func (database *Database) querySwaps(query string) (swaps []Swap, err error) {
+	rows, err := database.db.Query(query)
 
 	if err != nil {
 		return nil, err
@@ -115,10 +124,6 @@ func (database *Database) QueryPendingSwaps() (swaps []Swap, err error) {
 		}
 
 		swaps = append(swaps, *swap)
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	return swaps, err

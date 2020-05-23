@@ -2,7 +2,6 @@ package boltz
 
 type SwapUpdateEvent int
 
-// TODO: add status when refund is e<xecuted locally or new database column?
 const (
 	SwapCreated SwapUpdateEvent = iota
 	SwapExpired
@@ -17,6 +16,11 @@ const (
 	TransactionClaimed
 	TransactionRefunded
 	TransactionConfirmed
+
+	// Custom events
+
+	// Client refunded transaction
+	SwapRefunded
 )
 
 var swapUpdateEventStrings = map[string]SwapUpdateEvent{
@@ -33,9 +37,12 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 	"transaction.claimed":   TransactionClaimed,
 	"transaction.refunded":  TransactionRefunded,
 	"transaction.confirmed": TransactionConfirmed,
+
+	"swap.refunded": SwapRefunded,
 }
 
 var CompletedStatus = []string{
+	SwapRefunded.String(),
 	TransactionClaimed.String(),
 }
 

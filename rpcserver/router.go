@@ -27,7 +27,7 @@ type routedBoltzServer struct {
 	database *database.Database
 }
 
-// TODO: use wrappers to handle RPC to also print errors in daemon logs
+// TODO: use wrappers to handle RPC commands to also print errors in daemon logs
 
 func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
 	lndInfo, err := server.lnd.GetInfo()
@@ -77,6 +77,8 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 	}, nil
 }
 
+// TODO: custom refund address
+// TODO: automatically sending from LND wallet
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
@@ -142,9 +144,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		return nil, err
 	}
 
-	go func() {
-		server.nursery.RegisterSwap(swap)
-	}()
+	server.nursery.RegisterSwap(swap)
 
 	logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
 

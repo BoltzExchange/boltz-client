@@ -5,13 +5,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"strconv"
-
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	"io/ioutil"
+	"strconv"
 )
 
 type LightningClient interface {
@@ -30,8 +30,10 @@ type LND struct {
 	Macaroon    string `long:"lnd.macaroon" description:"Path to a macaroon file of the LND node"`
 	Certificate string `long:"lnd.certificate" description:"Path to a certificate file of the LND node"`
 
-	ctx    context.Context
-	client lnrpc.LightningClient
+	ctx context.Context
+
+	client        lnrpc.LightningClient
+	chainNotifier chainrpc.ChainNotifierClient
 }
 
 func (lnd *LND) Connect() error {
@@ -48,6 +50,7 @@ func (lnd *LND) Connect() error {
 	}
 
 	lnd.client = lnrpc.NewLightningClient(con)
+	lnd.chainNotifier = chainrpc.NewChainNotifierClient(con)
 
 	if lnd.ctx == nil {
 		macaroonFile, err := ioutil.ReadFile(lnd.Macaroon)
@@ -78,8 +81,34 @@ func (lnd *LND) AddInvoice(value int64, memo string) (*lnrpc.AddInvoiceResponse,
 	})
 }
 
+func (lnd *LND) NewAddress() (string, error) {
+	response, err := lnd.client.NewAddress(lnd.ctx, &lnrpc.NewAddressRequest{
+		Type: lnrpc.AddressType_WITNESS_PUBKEY_HASH,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return response.Address, err
+}
+
 func (lnd *LND) LookupInvoice(preimageHash []byte) (*lnrpc.Invoice, error) {
 	return lnd.client.LookupInvoice(lnd.ctx, &lnrpc.PaymentHash{
 		RHash: preimageHash,
 	})
+}
+
+func (lnd *LND) RegisterBlockListener(channel chan *chainrpc.BlockEpoch) error {
+	client, err := lnd.chainNotifier.RegisterBlockEpochNtfn(lnd.ctx, &chainrpc.BlockEpoch{})
+
+	go func() {
+		for {
+			// TODO: reconnection logic
+			test, _ := client.Recv()
+			channel <- test
+		}
+	}()
+
+	return err
 }

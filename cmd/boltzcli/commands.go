@@ -69,6 +69,7 @@ func createSwap(ctx *cli.Context) error {
 
 func printJson(resp proto.Message) {
 	encoder := json.NewEncoder(os.Stdout)
+	// Needs to be set to false for the BIP21 string to be formatted correctly
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
 

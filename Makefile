@@ -62,7 +62,7 @@ fmt:
 	gofmt -l -s -w .
 
 lint: $(LINT_BIN)
-	@$(call print, "Linting source.")
+	@$(call print, "Linting source")
 	$(LINT)
 
 .PHONY: build
