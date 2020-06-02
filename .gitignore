@@ -17,8 +17,10 @@ boltz-cli
 # Dependency directories (remove the comment below to include it)
 vendor/
 
-# Goland
-.idea/
-
+# Config, database and log file
+boltz.toml
 boltz.db
 boltz.log
+
+# Goland
+.idea/

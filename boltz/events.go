@@ -21,6 +21,9 @@ const (
 
 	// Client refunded transaction
 	SwapRefunded
+
+	// Client noticed the Swap expired but didn't find any output to refund
+	SwapAbandoned
 )
 
 var swapUpdateEventStrings = map[string]SwapUpdateEvent{
@@ -38,11 +41,13 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 	"transaction.refunded":  TransactionRefunded,
 	"transaction.confirmed": TransactionConfirmed,
 
-	"swap.refunded": SwapRefunded,
+	"swap.refunded":  SwapRefunded,
+	"swap.abandoned": SwapAbandoned,
 }
 
 var CompletedStatus = []string{
 	SwapRefunded.String(),
+	SwapAbandoned.String(),
 	TransactionClaimed.String(),
 }
 

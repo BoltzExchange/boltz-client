@@ -130,7 +130,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		return nil, err
 	}
 
-	err = boltz.CheckSwapAddress(server.chainParams, swap.Address, swap.RedeemScript)
+	err = boltz.CheckSwapAddress(server.chainParams, swap.Address, swap.RedeemScript, true)
 
 	if err != nil {
 		return nil, err

@@ -61,7 +61,6 @@ func createSwap(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println(swap.Bip21)
 	printJson(swap)
 
 	return err

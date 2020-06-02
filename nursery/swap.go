@@ -23,6 +23,7 @@ var eventListeners = make(map[string]chan bool)
 var eventListenersLock sync.RWMutex
 
 // TODO: abstract interactions with chain (querying and broadcasting transactions) into interface to be able to switch between Boltz API and bitcoin core
+
 func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpoch) {
 	go func() {
 		for {
@@ -38,6 +39,22 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 			if len(swapsToRefund) > 0 {
 				logger.Info("Found " + strconv.Itoa(len(swapsToRefund)) + " Swaps to refund at height " + strconv.FormatUint(uint64(newBlock.Height), 10))
 
+				addressString, err := nursery.lnd.NewAddress()
+
+				if err != nil {
+					logger.Error("Could not get new address from LND: " + err.Error())
+					continue
+				}
+
+				address, err := btcutil.DecodeAddress(addressString, nursery.chainParams)
+
+				if err != nil {
+					logger.Error("Could not decode destination address from LND: " + err.Error())
+					continue
+				}
+
+				var refundOutputs []boltz.OutputDetails
+
 				for _, swapToRefund := range swapsToRefund {
 					eventListenersLock.RLock()
 					stopListening, hasListener := eventListeners[swapToRefund.Id]
@@ -51,49 +68,71 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 						eventListenersLock.Unlock()
 					}
 
-					nursery.refundSwap(swapToRefund)
+					refundOutput := nursery.refundSwap(swapToRefund)
+
+					if refundOutput != nil {
+						refundOutputs = append(refundOutputs, *refundOutput)
+					}
 				}
+
+				if len(refundOutputs) == 0 {
+					logger.Info("Did not find any outputs to refund")
+					continue
+				}
+
+				refundTransaction, err := boltz.ConstructTransaction(
+					refundOutputs,
+					address,
+				)
+
+				if err != nil {
+					logger.Error("Could not construct refund transaction: " + err.Error())
+					continue
+				}
+
+				logger.Info("Constructed refund transaction: " + refundTransaction.TxHash().String())
+				refundTransactionHex, err := boltz.SerializeTransaction(refundTransaction)
+
+				if err != nil {
+					logger.Error("Could not serialize refund transaction: " + err.Error())
+					continue
+				}
+
+				_, err = nursery.boltz.BroadcastTransaction(refundTransactionHex)
+
+				if err != nil {
+					logger.Error("Could not broadcast refund transaction: " + err.Error())
+					continue
+				}
+
+				logger.Info("Broadcast refund transaction with Boltz API")
 			}
 		}
 	}()
 }
 
-func (nursery *Nursery) refundSwap(swap database.Swap) {
-	addressString, err := nursery.lnd.NewAddress()
-
-	if err != nil {
-		logger.Error("Could not get new address from LND: " + err.Error())
-		return
-	}
-
-	address, err := btcutil.DecodeAddress(addressString, nursery.chainParams)
-
-	if err != nil {
-		logger.Error("Could not decode destination address from LND: " + err.Error())
-		return
-	}
-
-	logger.Info("Refunding Swap " + swap.Id + " to: " + addressString)
-
+func (nursery *Nursery) refundSwap(swap database.Swap) *boltz.OutputDetails {
 	swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
 
 	if err != nil {
 		logger.Error("Could not get lockup transaction from Boltz: " + err.Error())
-		return
+		nursery.handleSwapStatus(&swap, boltz.SwapAbandoned.String())
+
+		return nil
 	}
 
 	lockupTransactionRaw, err := hex.DecodeString(swapTransactionResponse.TransactionHex)
 
 	if err != nil {
 		logger.Error("Could not decode lockup transaction from Boltz: " + err.Error())
-		return
+		return nil
 	}
 
 	lockupTransaction, err := btcutil.NewTxFromBytes(lockupTransactionRaw)
 
 	if err != nil {
 		logger.Error("Could not parse lockup transaction from Boltz: " + err.Error())
-		return
+		return nil
 	}
 
 	logger.Info("Got lockup transaction of Swap " + swap.Id + " from Boltz: " + lockupTransaction.Hash().String())
@@ -101,41 +140,20 @@ func (nursery *Nursery) refundSwap(swap database.Swap) {
 
 	if err != nil {
 		logger.Error("Could not find lockup vout of Swap " + swap.Id)
-		return
+		return nil
 	}
-
-	refundTransaction, err := boltz.ConstructRefundTransaction(
-		lockupTransaction,
-		lockupVout,
-		swap.PrivateKey,
-		swap.RedeemScript,
-		address,
-		uint32(swap.TimoutBlockHeight),
-	)
-
-	if err != nil {
-		logger.Error("Could not construct refund transaction: " + err.Error())
-		return
-	}
-
-	logger.Info("Constructed refund transaction for Swap " + swap.Id + ": " + refundTransaction.TxHash().String())
-	refundTransactionHex, err := boltz.SerializeTransaction(refundTransaction)
-
-	if err != nil {
-		logger.Error("Could not serialize refund transaction: " + err.Error())
-		return
-	}
-
-	_, err = nursery.boltz.BroadcastTransaction(refundTransactionHex)
-
-	if err != nil {
-		logger.Error("Could not broadcast refund transaction: " + err.Error())
-		return
-	}
-
-	logger.Info("Broadcast refund transaction of Swap " + swap.Id + " with Boltz API")
 
 	nursery.handleSwapStatus(&swap, boltz.SwapRefunded.String())
+
+	return &boltz.OutputDetails{
+		LockupTransaction:  lockupTransaction,
+		Vout:               lockupVout,
+		OutputType:         boltz.Compatibility,
+		RedeemScript:       swap.RedeemScript,
+		PrivateKey:         swap.PrivateKey,
+		Preimage:           []byte{},
+		TimeoutBlockHeight: uint32(swap.TimoutBlockHeight),
+	}
 }
 
 func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxOut) (uint32, error) {

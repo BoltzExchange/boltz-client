@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func CheckSwapScript(redeemScript []byte, preimageHash []byte, refundKey *btcec.PrivateKey, timeoutBlockHeight int) error {
+func CheckSwapScript(redeemScript, preimageHash []byte, refundKey *btcec.PrivateKey, timeoutBlockHeight int) error {
 	disassembledScript, err := txscript.DisasmString(redeemScript)
 
 	if err != nil {
