@@ -5,6 +5,7 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"math"
 )
 
 type OutputType int
@@ -30,8 +31,20 @@ type OutputDetails struct {
 	TimeoutBlockHeight uint32
 }
 
-// TODO: actually calculate a fee
-func ConstructTransaction(outputs []OutputDetails, outputAddress btcutil.Address) (*wire.MsgTx, error) {
+func ConstructTransaction(outputs []OutputDetails, outputAddress btcutil.Address, satPerVbyte int64) (*wire.MsgTx, error) {
+	noFeeTransaction, err := constructTransaction(outputs, outputAddress, 0)
+
+	if err != nil {
+		return nil, err
+	}
+
+	witnessSize := noFeeTransaction.SerializeSize() - noFeeTransaction.SerializeSizeStripped()
+	vByte := int64(noFeeTransaction.SerializeSizeStripped()) + int64(math.Ceil(float64(witnessSize) / 4))
+
+	return constructTransaction(outputs, outputAddress, vByte * satPerVbyte)
+}
+
+func constructTransaction(outputs []OutputDetails, outputAddress btcutil.Address, fee int64) (*wire.MsgTx, error) {
 	transaction := wire.NewMsgTx(wire.TxVersion)
 
 	var inputSum int64
@@ -61,7 +74,7 @@ func ConstructTransaction(outputs []OutputDetails, outputAddress btcutil.Address
 
 	transaction.AddTxOut(&wire.TxOut{
 		PkScript: outputScript,
-		Value:    inputSum - 10000,
+		Value:    inputSum - fee,
 	})
 
 	// Construct the signature script and witnesses and sign the inputs

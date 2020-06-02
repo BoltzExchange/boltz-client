@@ -14,6 +14,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/zpay32"
 	"github.com/r3labs/sse"
+	"math"
 	"strconv"
 	"sync"
 )
@@ -80,9 +81,22 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 					continue
 				}
 
+				feeResponse, err := nursery.lnd.EstimateFee(2)
+
+				if err != nil {
+					logger.Error("Could not get LND fee estimation: " + err.Error())
+					continue
+				}
+
+				// Divide by 4 to get the fee per kilo vbyte and by 1000 to get the fee per vbyte
+				feeSatPerVbyte := int64(math.Round(float64(feeResponse.SatPerKw) / 4000))
+
+				logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for refund transaction")
+
 				refundTransaction, err := boltz.ConstructTransaction(
 					refundOutputs,
 					address,
+					feeSatPerVbyte,
 				)
 
 				if err != nil {
@@ -143,6 +157,7 @@ func (nursery *Nursery) refundSwap(swap database.Swap) *boltz.OutputDetails {
 		return nil
 	}
 
+	// TODO: do this after refund is successful
 	nursery.handleSwapStatus(&swap, boltz.SwapRefunded.String())
 
 	return &boltz.OutputDetails{

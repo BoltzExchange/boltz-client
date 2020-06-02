@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -33,6 +34,7 @@ type LND struct {
 	ctx context.Context
 
 	client        lnrpc.LightningClient
+	walletKit walletrpc.WalletKitClient
 	chainNotifier chainrpc.ChainNotifierClient
 }
 
@@ -50,6 +52,7 @@ func (lnd *LND) Connect() error {
 	}
 
 	lnd.client = lnrpc.NewLightningClient(con)
+	lnd.walletKit = walletrpc.NewWalletKitClient(con)
 	lnd.chainNotifier = chainrpc.NewChainNotifierClient(con)
 
 	if lnd.ctx == nil {
@@ -96,6 +99,12 @@ func (lnd *LND) NewAddress() (string, error) {
 func (lnd *LND) LookupInvoice(preimageHash []byte) (*lnrpc.Invoice, error) {
 	return lnd.client.LookupInvoice(lnd.ctx, &lnrpc.PaymentHash{
 		RHash: preimageHash,
+	})
+}
+
+func (lnd *LND) EstimateFee(confTarget int32) (*walletrpc.EstimateFeeResponse, error) {
+	return lnd.walletKit.EstimateFee(lnd.ctx, &walletrpc.EstimateFeeRequest{
+		ConfTarget: confTarget,
 	})
 }
 
