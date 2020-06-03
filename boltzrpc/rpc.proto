@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package boltzrpc;
+
+service Boltz {
+    rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
+
+    rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
+    rpc CreateSwap (CreateSwapRequest) returns (CreateSwapResponse);
+}
+
+message GetInfoRequest {}
+message GetInfoResponse {
+    string symbol = 1;
+    string lnd_pubkey = 2;
+    repeated string pending_swaps = 3;
+}
+
+message GetSwapInfoRequest {
+    string id = 1;
+}
+
+message GetSwapInfoResponse {
+    string id = 1;
+    string status = 2;
+    string privateKey = 3;
+    string preimage = 4;
+    string redeem_script = 5;
+    string invoice = 6;
+    string address = 7;
+    int64 expected_amount = 8;
+    uint32 timeout_block_height = 9;
+}
+
+message CreateSwapRequest {
+    int64 amount = 1;
+}
+message CreateSwapResponse {
+    string id = 1;
+    string address = 2;
+    int64 expected_amount = 3;
+    string bip21 = 4;
+}

@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+boltzd
+boltz-cli
+
 # Test binary, built with `go test -c`
 *.test
 
@@ -12,4 +15,12 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
+
+# Config, database and log file
+boltz.toml
+boltz.db
+boltz.log
+
+# Goland
+.idea/
