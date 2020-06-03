@@ -3,25 +3,16 @@ package nursery
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/zpay32"
 	"github.com/r3labs/sse"
-	"math"
 	"strconv"
-	"sync"
 )
-
-// Map between Swap ids and a channel that tells its SSE event listeners to stop
-var eventListeners = make(map[string]chan bool)
-var eventListenersLock sync.RWMutex
 
 // TODO: abstract interactions with chain (querying and broadcasting transactions) into interface to be able to switch between Boltz API and bitcoin core
 
@@ -81,15 +72,12 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 					continue
 				}
 
-				feeResponse, err := nursery.lnd.EstimateFee(2)
+				feeSatPerVbyte, err := nursery.getFeeEstimation()
 
 				if err != nil {
 					logger.Error("Could not get LND fee estimation: " + err.Error())
 					continue
 				}
-
-				// Divide by 4 to get the fee per kilo vbyte and by 1000 to get the fee per vbyte
-				feeSatPerVbyte := int64(math.Round(float64(feeResponse.SatPerKw) / 4000))
 
 				logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for refund transaction")
 
@@ -105,21 +93,12 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 				}
 
 				logger.Info("Constructed refund transaction: " + refundTransaction.TxHash().String())
-				refundTransactionHex, err := boltz.SerializeTransaction(refundTransaction)
+
+				err = nursery.broadcastTransaction(refundTransaction)
 
 				if err != nil {
-					logger.Error("Could not serialize refund transaction: " + err.Error())
-					continue
+					logger.Error("Could not finalize refund transaction: " + err.Error())
 				}
-
-				_, err = nursery.boltz.BroadcastTransaction(refundTransactionHex)
-
-				if err != nil {
-					logger.Error("Could not broadcast refund transaction: " + err.Error())
-					continue
-				}
-
-				logger.Info("Broadcast refund transaction with Boltz API")
 			}
 		}
 	}()
@@ -171,25 +150,6 @@ func (nursery *Nursery) refundSwap(swap database.Swap) *boltz.OutputDetails {
 	}
 }
 
-func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxOut) (uint32, error) {
-	for vout, output := range outputs {
-		_, outputAddresses, _, err := txscript.ExtractPkScriptAddrs(output.PkScript, nursery.chainParams)
-
-		// Just ignore outputs we can't decode
-		if err != nil {
-			continue
-		}
-
-		for _, outputAddress := range outputAddresses {
-			if outputAddress.EncodeAddress() == addressToFind {
-				return uint32(vout), nil
-			}
-		}
-	}
-
-	return 0, errors.New("could not find lockup vout")
-}
-
 func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) error {
 	logger.Info("Recovering pending Swaps")
 
@@ -211,7 +171,7 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 
 		if status.Status != swap.Status.String() {
 			logger.Info("Swap " + swap.Id + " status changed to: " + status.Status)
-			nursery.handleSwapStatus(&swap, "transaction.claimed")
+			nursery.handleSwapStatus(&swap, status.Status)
 
 			isCompleted := false
 
@@ -252,11 +212,16 @@ func (nursery *Nursery) RegisterSwap(swap database.Swap) {
 
 		// TODO: handle disconnections gracefully
 		go func() {
-			var err error
-			_, err = nursery.boltz.StreamSwapStatus(swap.Id, eventStream)
+			_, err := nursery.boltz.StreamSwapStatus(swap.Id, eventStream)
 
 			if err != nil {
 				logger.Error("Could not listen to events of Swap " + swap.Id + ": " + err.Error())
+
+				eventListenersLock.Lock()
+				delete(eventListeners, swap.Id)
+				eventListenersLock.Unlock()
+
+				stopListening <- true
 				return
 			}
 		}()
@@ -278,6 +243,7 @@ func (nursery *Nursery) RegisterSwap(swap database.Swap) {
 				} else {
 					logger.Error("Could not parse update event of Swap " + swap.Id + ": " + err.Error())
 				}
+
 				break
 
 			case <-stopListening:

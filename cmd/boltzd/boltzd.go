@@ -8,6 +8,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 )
 
+// TODO: LND and Boltz compatibility checks
 func main() {
 	cfg := boltz_lnd.LoadConfig()
 

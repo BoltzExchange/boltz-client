@@ -48,6 +48,7 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 var CompletedStatus = []string{
 	SwapRefunded.String(),
 	SwapAbandoned.String(),
+	InvoiceSettled.String(),
 	TransactionClaimed.String(),
 }
 

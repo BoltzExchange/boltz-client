@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var invalidRedeemScript = errors.New("invalid redeem script")
+
 func CheckSwapScript(redeemScript, preimageHash []byte, refundKey *btcec.PrivateKey, timeoutBlockHeight int) error {
 	disassembledScript, err := txscript.DisasmString(redeemScript)
 
@@ -33,7 +35,40 @@ func CheckSwapScript(redeemScript, preimageHash []byte, refundKey *btcec.Private
 	}
 
 	if disassembledScript != strings.Join(expectedScript, " ") {
-		return errors.New("invalid redeem script")
+		return invalidRedeemScript
+	}
+
+	return nil
+}
+
+func CheckReverseSwapScript(redeemScript, preimageHash []byte, claimKey *btcec.PrivateKey, timeoutBlockHeight int) error {
+	disassembledScript, err := txscript.DisasmString(redeemScript)
+
+	if err != nil {
+		return err
+	}
+
+	expectedScript := []string{
+		"OP_SIZE",
+		"20",
+		"OP_EQUAL",
+		"OP_IF",
+		"OP_HASH160",
+		hex.EncodeToString(input.Ripemd160H(preimageHash)),
+		"OP_EQUALVERIFY",
+		hex.EncodeToString(claimKey.PubKey().SerializeCompressed()),
+		"OP_ELSE",
+		"OP_DROP",
+		formatHeight(timeoutBlockHeight),
+		"OP_CHECKLOCKTIMEVERIFY",
+		"OP_DROP",
+		strings.Split(disassembledScript, " ")[13],
+		"OP_ENDIF",
+		"OP_CHECKSIG",
+	}
+
+	if disassembledScript != strings.Join(expectedScript, " ") {
+		return invalidRedeemScript
 	}
 
 	return nil
