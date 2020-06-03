@@ -1,7 +1,6 @@
 package boltz
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"github.com/btcsuite/btcd/btcec"
@@ -75,10 +74,6 @@ func CheckReverseSwapScript(redeemScript, preimageHash []byte, claimKey *btcec.P
 }
 
 func formatHeight(height int) string {
-	endian := make([]byte, 8)
-	binary.LittleEndian.PutUint64(endian, uint64(height))
-
-	hexNumber := hex.EncodeToString(endian)
-
-	return hexNumber[0:4]
+	test, _ := txscript.NewScriptBuilder().AddInt64(int64(height)).Script()
+	return hex.EncodeToString(test[1:])
 }

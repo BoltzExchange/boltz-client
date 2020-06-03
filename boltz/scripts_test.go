@@ -47,6 +47,6 @@ func TestCheckReverseSwapScript(t *testing.T) {
 }
 
 func TestFormatHeight(t *testing.T) {
-	assert.Equal(t, "0400", formatHeight(4))
-	assert.Equal(t, "36a7", formatHeight(632630))
+	assert.Equal(t, "68", formatHeight(104))
+	assert.Equal(t, "36a709", formatHeight(632630))
 }
