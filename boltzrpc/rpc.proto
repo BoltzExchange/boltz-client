@@ -6,7 +6,9 @@ service Boltz {
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
 
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
+
     rpc CreateSwap (CreateSwapRequest) returns (CreateSwapResponse);
+    rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
 }
 
 message GetInfoRequest {}
@@ -14,22 +16,38 @@ message GetInfoResponse {
     string symbol = 1;
     string lnd_pubkey = 2;
     repeated string pending_swaps = 3;
+    repeated string pending_reverse_swaps = 4;
 }
 
 message GetSwapInfoRequest {
     string id = 1;
 }
 
-message GetSwapInfoResponse {
+message SwapInfo {
     string id = 1;
     string status = 2;
-    string privateKey = 3;
+    string private_key = 3;
     string preimage = 4;
     string redeem_script = 5;
     string invoice = 6;
-    string address = 7;
+    string lockup_address = 7;
     int64 expected_amount = 8;
     uint32 timeout_block_height = 9;
+}
+message ReverseSwapInfo {
+    string id = 1;
+    string status = 2;
+    string private_key = 3;
+    string preimage = 4;
+    string redeem_script = 5;
+    string invoice = 6;
+    string claim_address = 7;
+    int64 onchain_amount = 8;
+    uint32 timeout_block_height = 9;
+}
+message GetSwapInfoResponse {
+    SwapInfo swap = 1;
+    ReverseSwapInfo reverse_swap = 2;
 }
 
 message CreateSwapRequest {
@@ -40,4 +58,12 @@ message CreateSwapResponse {
     string address = 2;
     int64 expected_amount = 3;
     string bip21 = 4;
+}
+
+message CreateReverseSwapRequest {
+    int64 amount = 1;
+    string address = 2;
+}
+message CreateReverseSwapResponse {
+    string id = 1;
 }

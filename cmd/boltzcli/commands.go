@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+// TODO: sanity check inputs before constructing gRPC requests
+
 var getInfoCommand = cli.Command{
 	Name:   "getinfo",
 	Usage:  "Returns basic information",
@@ -56,6 +58,26 @@ var createSwapCommand = cli.Command{
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	swap, err := client.CreateSwap(ctx.Args().First())
+
+	if err != nil {
+		return err
+	}
+
+	printJson(swap)
+
+	return err
+}
+
+var createReverseSwapCommand = cli.Command{
+	Name:      "createreverseswap",
+	Usage:     "Creates a new Reverse Swap",
+	ArgsUsage: "amount address",
+	Action:    createReverseSwap,
+}
+
+func createReverseSwap(ctx *cli.Context) error {
+	client := getClient(ctx)
+	swap, err := client.CreateReverseSwap(ctx.Args().First(), ctx.Args().Get(1))
 
 	if err != nil {
 		return err

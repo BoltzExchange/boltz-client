@@ -52,3 +52,16 @@ func (boltz *boltz) CreateSwap(amount string) (*boltzrpc.CreateSwapResponse, err
 		Amount: parsedAmount,
 	})
 }
+
+func (boltz *boltz) CreateReverseSwap(amount string, address string) (*boltzrpc.CreateReverseSwapResponse, error) {
+	parsedAmount, err := strconv.ParseInt(amount, 0, 64)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return boltz.client.CreateReverseSwap(boltz.ctx, &boltzrpc.CreateReverseSwapRequest{
+		Address: address,
+		Amount:  parsedAmount,
+	})
+}

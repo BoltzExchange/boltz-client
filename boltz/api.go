@@ -55,7 +55,11 @@ type SwapStatusRequest struct {
 }
 
 type SwapStatusResponse struct {
-	Status string `json:"status"`
+	Status      string `json:"status"`
+	Transaction struct {
+		Id  string `json:"id"`
+		Hex string `json:"hex"`
+	} `json:"transaction"`
 
 	Error string `json:"error"`
 }
@@ -93,12 +97,32 @@ type CreateSwapRequest struct {
 
 type CreateSwapResponse struct {
 	Id                 string `json:"id"`
+	Bip21              string `json:"bip21"`
+	Address            string `json:"address"`
+	RedeemScript       string `json:"redeemScript"`
 	AcceptZeroConf     bool   `json:"acceptZeroConf"`
 	ExpectedAmount     int    `json:"expectedAmount"`
 	TimeoutBlockHeight int    `json:"timeoutBlockHeight"`
-	Address            string `json:"address"`
-	Bip21              string `json:"bip21"`
+
+	Error string `json:"error"`
+}
+
+type CreateReverseSwapRequest struct {
+	Type           string `json:"type"`
+	PairId         string `json:"pairId"`
+	OrderSide      string `json:"orderSide"`
+	InvoiceAmount  int    `json:"invoiceAmount"`
+	PreimageHash   string `json:"preimageHash"`
+	ClaimPublicKey string `json:"claimPublicKey"`
+}
+
+type CreateReverseSwapResponse struct {
+	Id                 string `json:"id"`
+	Invoice            string `json:"invoice"`
+	OnchainAmount      int    `json:"onchainAmount"`
 	RedeemScript       string `json:"redeemScript"`
+	LockupAddress      string `json:"lockupAddress"`
+	TimeoutBlockHeight int    `json:"TimeoutBlockHeight"`
 
 	Error string `json:"error"`
 }
@@ -177,6 +201,17 @@ func (boltz *Boltz) BroadcastTransaction(transactionHex string) (*BroadcastTrans
 
 func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, error) {
 	var response CreateSwapResponse
+	err := boltz.sendPostRequest("/createswap", request, &response)
+
+	if response.Error != "" {
+		return nil, errors.New(response.Error)
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) CreateReverseSwap(request CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {
+	var response CreateReverseSwapResponse
 	err := boltz.sendPostRequest("/createswap", request, &response)
 
 	if response.Error != "" {

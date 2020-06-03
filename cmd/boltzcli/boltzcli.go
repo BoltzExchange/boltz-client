@@ -28,6 +28,7 @@ func main() {
 		getInfoCommand,
 		getSwapCommand,
 		createSwapCommand,
+		createReverseSwapCommand,
 	}
 
 	if err := app.Run(os.Args); err != nil {

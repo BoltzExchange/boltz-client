@@ -39,9 +39,9 @@ func ConstructTransaction(outputs []OutputDetails, outputAddress btcutil.Address
 	}
 
 	witnessSize := noFeeTransaction.SerializeSize() - noFeeTransaction.SerializeSizeStripped()
-	vByte := int64(noFeeTransaction.SerializeSizeStripped()) + int64(math.Ceil(float64(witnessSize) / 4))
+	vByte := int64(noFeeTransaction.SerializeSizeStripped()) + int64(math.Ceil(float64(witnessSize)/4))
 
-	return constructTransaction(outputs, outputAddress, vByte * satPerVbyte)
+	return constructTransaction(outputs, outputAddress, vByte*satPerVbyte)
 }
 
 func constructTransaction(outputs []OutputDetails, outputAddress btcutil.Address, fee int64) (*wire.MsgTx, error) {

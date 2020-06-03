@@ -57,6 +57,7 @@ type GetInfoResponse struct {
 	Symbol               string   `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
 	LndPubkey            string   `protobuf:"bytes,2,opt,name=lnd_pubkey,json=lndPubkey,proto3" json:"lnd_pubkey,omitempty"`
 	PendingSwaps         []string `protobuf:"bytes,3,rep,name=pending_swaps,json=pendingSwaps,proto3" json:"pending_swaps,omitempty"`
+	PendingReverseSwaps  []string `protobuf:"bytes,4,rep,name=pending_reverse_swaps,json=pendingReverseSwaps,proto3" json:"pending_reverse_swaps,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -108,6 +109,13 @@ func (m *GetInfoResponse) GetPendingSwaps() []string {
 	return nil
 }
 
+func (m *GetInfoResponse) GetPendingReverseSwaps() []string {
+	if m != nil {
+		return m.PendingReverseSwaps
+	}
+	return nil
+}
+
 type GetSwapInfoRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -147,14 +155,14 @@ func (m *GetSwapInfoRequest) GetId() string {
 	return ""
 }
 
-type GetSwapInfoResponse struct {
+type SwapInfo struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	PrivateKey           string   `protobuf:"bytes,3,opt,name=privateKey,proto3" json:"privateKey,omitempty"`
+	PrivateKey           string   `protobuf:"bytes,3,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
 	Preimage             string   `protobuf:"bytes,4,opt,name=preimage,proto3" json:"preimage,omitempty"`
 	RedeemScript         string   `protobuf:"bytes,5,opt,name=redeem_script,json=redeemScript,proto3" json:"redeem_script,omitempty"`
 	Invoice              string   `protobuf:"bytes,6,opt,name=invoice,proto3" json:"invoice,omitempty"`
-	Address              string   `protobuf:"bytes,7,opt,name=address,proto3" json:"address,omitempty"`
+	LockupAddress        string   `protobuf:"bytes,7,opt,name=lockup_address,json=lockupAddress,proto3" json:"lockup_address,omitempty"`
 	ExpectedAmount       int64    `protobuf:"varint,8,opt,name=expected_amount,json=expectedAmount,proto3" json:"expected_amount,omitempty"`
 	TimeoutBlockHeight   uint32   `protobuf:"varint,9,opt,name=timeout_block_height,json=timeoutBlockHeight,proto3" json:"timeout_block_height,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -162,11 +170,210 @@ type GetSwapInfoResponse struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
+func (m *SwapInfo) Reset()         { *m = SwapInfo{} }
+func (m *SwapInfo) String() string { return proto.CompactTextString(m) }
+func (*SwapInfo) ProtoMessage()    {}
+func (*SwapInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{3}
+}
+
+func (m *SwapInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SwapInfo.Unmarshal(m, b)
+}
+func (m *SwapInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SwapInfo.Marshal(b, m, deterministic)
+}
+func (m *SwapInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SwapInfo.Merge(m, src)
+}
+func (m *SwapInfo) XXX_Size() int {
+	return xxx_messageInfo_SwapInfo.Size(m)
+}
+func (m *SwapInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_SwapInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SwapInfo proto.InternalMessageInfo
+
+func (m *SwapInfo) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *SwapInfo) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *SwapInfo) GetPrivateKey() string {
+	if m != nil {
+		return m.PrivateKey
+	}
+	return ""
+}
+
+func (m *SwapInfo) GetPreimage() string {
+	if m != nil {
+		return m.Preimage
+	}
+	return ""
+}
+
+func (m *SwapInfo) GetRedeemScript() string {
+	if m != nil {
+		return m.RedeemScript
+	}
+	return ""
+}
+
+func (m *SwapInfo) GetInvoice() string {
+	if m != nil {
+		return m.Invoice
+	}
+	return ""
+}
+
+func (m *SwapInfo) GetLockupAddress() string {
+	if m != nil {
+		return m.LockupAddress
+	}
+	return ""
+}
+
+func (m *SwapInfo) GetExpectedAmount() int64 {
+	if m != nil {
+		return m.ExpectedAmount
+	}
+	return 0
+}
+
+func (m *SwapInfo) GetTimeoutBlockHeight() uint32 {
+	if m != nil {
+		return m.TimeoutBlockHeight
+	}
+	return 0
+}
+
+type ReverseSwapInfo struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	PrivateKey           string   `protobuf:"bytes,3,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
+	Preimage             string   `protobuf:"bytes,4,opt,name=preimage,proto3" json:"preimage,omitempty"`
+	RedeemScript         string   `protobuf:"bytes,5,opt,name=redeem_script,json=redeemScript,proto3" json:"redeem_script,omitempty"`
+	Invoice              string   `protobuf:"bytes,6,opt,name=invoice,proto3" json:"invoice,omitempty"`
+	ClaimAddress         string   `protobuf:"bytes,7,opt,name=claim_address,json=claimAddress,proto3" json:"claim_address,omitempty"`
+	OnchainAmount        int64    `protobuf:"varint,8,opt,name=onchain_amount,json=onchainAmount,proto3" json:"onchain_amount,omitempty"`
+	TimeoutBlockHeight   uint32   `protobuf:"varint,9,opt,name=timeout_block_height,json=timeoutBlockHeight,proto3" json:"timeout_block_height,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ReverseSwapInfo) Reset()         { *m = ReverseSwapInfo{} }
+func (m *ReverseSwapInfo) String() string { return proto.CompactTextString(m) }
+func (*ReverseSwapInfo) ProtoMessage()    {}
+func (*ReverseSwapInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{4}
+}
+
+func (m *ReverseSwapInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReverseSwapInfo.Unmarshal(m, b)
+}
+func (m *ReverseSwapInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReverseSwapInfo.Marshal(b, m, deterministic)
+}
+func (m *ReverseSwapInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReverseSwapInfo.Merge(m, src)
+}
+func (m *ReverseSwapInfo) XXX_Size() int {
+	return xxx_messageInfo_ReverseSwapInfo.Size(m)
+}
+func (m *ReverseSwapInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReverseSwapInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReverseSwapInfo proto.InternalMessageInfo
+
+func (m *ReverseSwapInfo) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ReverseSwapInfo) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *ReverseSwapInfo) GetPrivateKey() string {
+	if m != nil {
+		return m.PrivateKey
+	}
+	return ""
+}
+
+func (m *ReverseSwapInfo) GetPreimage() string {
+	if m != nil {
+		return m.Preimage
+	}
+	return ""
+}
+
+func (m *ReverseSwapInfo) GetRedeemScript() string {
+	if m != nil {
+		return m.RedeemScript
+	}
+	return ""
+}
+
+func (m *ReverseSwapInfo) GetInvoice() string {
+	if m != nil {
+		return m.Invoice
+	}
+	return ""
+}
+
+func (m *ReverseSwapInfo) GetClaimAddress() string {
+	if m != nil {
+		return m.ClaimAddress
+	}
+	return ""
+}
+
+func (m *ReverseSwapInfo) GetOnchainAmount() int64 {
+	if m != nil {
+		return m.OnchainAmount
+	}
+	return 0
+}
+
+func (m *ReverseSwapInfo) GetTimeoutBlockHeight() uint32 {
+	if m != nil {
+		return m.TimeoutBlockHeight
+	}
+	return 0
+}
+
+type GetSwapInfoResponse struct {
+	Swap                 *SwapInfo        `protobuf:"bytes,1,opt,name=swap,proto3" json:"swap,omitempty"`
+	ReverseSwap          *ReverseSwapInfo `protobuf:"bytes,2,opt,name=reverse_swap,json=reverseSwap,proto3" json:"reverse_swap,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
+}
+
 func (m *GetSwapInfoResponse) Reset()         { *m = GetSwapInfoResponse{} }
 func (m *GetSwapInfoResponse) String() string { return proto.CompactTextString(m) }
 func (*GetSwapInfoResponse) ProtoMessage()    {}
 func (*GetSwapInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{3}
+	return fileDescriptor_77a6da22d6a3feb1, []int{5}
 }
 
 func (m *GetSwapInfoResponse) XXX_Unmarshal(b []byte) error {
@@ -187,67 +394,18 @@ func (m *GetSwapInfoResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetSwapInfoResponse proto.InternalMessageInfo
 
-func (m *GetSwapInfoResponse) GetId() string {
+func (m *GetSwapInfoResponse) GetSwap() *SwapInfo {
 	if m != nil {
-		return m.Id
+		return m.Swap
 	}
-	return ""
+	return nil
 }
 
-func (m *GetSwapInfoResponse) GetStatus() string {
+func (m *GetSwapInfoResponse) GetReverseSwap() *ReverseSwapInfo {
 	if m != nil {
-		return m.Status
+		return m.ReverseSwap
 	}
-	return ""
-}
-
-func (m *GetSwapInfoResponse) GetPrivateKey() string {
-	if m != nil {
-		return m.PrivateKey
-	}
-	return ""
-}
-
-func (m *GetSwapInfoResponse) GetPreimage() string {
-	if m != nil {
-		return m.Preimage
-	}
-	return ""
-}
-
-func (m *GetSwapInfoResponse) GetRedeemScript() string {
-	if m != nil {
-		return m.RedeemScript
-	}
-	return ""
-}
-
-func (m *GetSwapInfoResponse) GetInvoice() string {
-	if m != nil {
-		return m.Invoice
-	}
-	return ""
-}
-
-func (m *GetSwapInfoResponse) GetAddress() string {
-	if m != nil {
-		return m.Address
-	}
-	return ""
-}
-
-func (m *GetSwapInfoResponse) GetExpectedAmount() int64 {
-	if m != nil {
-		return m.ExpectedAmount
-	}
-	return 0
-}
-
-func (m *GetSwapInfoResponse) GetTimeoutBlockHeight() uint32 {
-	if m != nil {
-		return m.TimeoutBlockHeight
-	}
-	return 0
+	return nil
 }
 
 type CreateSwapRequest struct {
@@ -261,7 +419,7 @@ func (m *CreateSwapRequest) Reset()         { *m = CreateSwapRequest{} }
 func (m *CreateSwapRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateSwapRequest) ProtoMessage()    {}
 func (*CreateSwapRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{4}
+	return fileDescriptor_77a6da22d6a3feb1, []int{6}
 }
 
 func (m *CreateSwapRequest) XXX_Unmarshal(b []byte) error {
@@ -303,7 +461,7 @@ func (m *CreateSwapResponse) Reset()         { *m = CreateSwapResponse{} }
 func (m *CreateSwapResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateSwapResponse) ProtoMessage()    {}
 func (*CreateSwapResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{5}
+	return fileDescriptor_77a6da22d6a3feb1, []int{7}
 }
 
 func (m *CreateSwapResponse) XXX_Unmarshal(b []byte) error {
@@ -352,47 +510,148 @@ func (m *CreateSwapResponse) GetBip21() string {
 	return ""
 }
 
+type CreateReverseSwapRequest struct {
+	Amount               int64    `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	Address              string   `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateReverseSwapRequest) Reset()         { *m = CreateReverseSwapRequest{} }
+func (m *CreateReverseSwapRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateReverseSwapRequest) ProtoMessage()    {}
+func (*CreateReverseSwapRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{8}
+}
+
+func (m *CreateReverseSwapRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateReverseSwapRequest.Unmarshal(m, b)
+}
+func (m *CreateReverseSwapRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateReverseSwapRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateReverseSwapRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateReverseSwapRequest.Merge(m, src)
+}
+func (m *CreateReverseSwapRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateReverseSwapRequest.Size(m)
+}
+func (m *CreateReverseSwapRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateReverseSwapRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateReverseSwapRequest proto.InternalMessageInfo
+
+func (m *CreateReverseSwapRequest) GetAmount() int64 {
+	if m != nil {
+		return m.Amount
+	}
+	return 0
+}
+
+func (m *CreateReverseSwapRequest) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
+type CreateReverseSwapResponse struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateReverseSwapResponse) Reset()         { *m = CreateReverseSwapResponse{} }
+func (m *CreateReverseSwapResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateReverseSwapResponse) ProtoMessage()    {}
+func (*CreateReverseSwapResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{9}
+}
+
+func (m *CreateReverseSwapResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateReverseSwapResponse.Unmarshal(m, b)
+}
+func (m *CreateReverseSwapResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateReverseSwapResponse.Marshal(b, m, deterministic)
+}
+func (m *CreateReverseSwapResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateReverseSwapResponse.Merge(m, src)
+}
+func (m *CreateReverseSwapResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateReverseSwapResponse.Size(m)
+}
+func (m *CreateReverseSwapResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateReverseSwapResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateReverseSwapResponse proto.InternalMessageInfo
+
+func (m *CreateReverseSwapResponse) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*GetInfoRequest)(nil), "boltzrpc.GetInfoRequest")
 	proto.RegisterType((*GetInfoResponse)(nil), "boltzrpc.GetInfoResponse")
 	proto.RegisterType((*GetSwapInfoRequest)(nil), "boltzrpc.GetSwapInfoRequest")
+	proto.RegisterType((*SwapInfo)(nil), "boltzrpc.SwapInfo")
+	proto.RegisterType((*ReverseSwapInfo)(nil), "boltzrpc.ReverseSwapInfo")
 	proto.RegisterType((*GetSwapInfoResponse)(nil), "boltzrpc.GetSwapInfoResponse")
 	proto.RegisterType((*CreateSwapRequest)(nil), "boltzrpc.CreateSwapRequest")
 	proto.RegisterType((*CreateSwapResponse)(nil), "boltzrpc.CreateSwapResponse")
+	proto.RegisterType((*CreateReverseSwapRequest)(nil), "boltzrpc.CreateReverseSwapRequest")
+	proto.RegisterType((*CreateReverseSwapResponse)(nil), "boltzrpc.CreateReverseSwapResponse")
 }
 
 func init() { proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1) }
 
 var fileDescriptor_77a6da22d6a3feb1 = []byte{
-	// 446 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0xdb, 0x6e, 0xd3, 0x40,
-	0x10, 0x86, 0xe5, 0x98, 0x1c, 0x3c, 0xb4, 0x29, 0x0c, 0x55, 0xb5, 0x84, 0x16, 0x45, 0x06, 0x89,
-	0x48, 0x48, 0x11, 0x94, 0x7b, 0x24, 0xca, 0x45, 0x38, 0xdc, 0x20, 0xf7, 0x01, 0x2c, 0xdb, 0x3b,
-	0xa4, 0xab, 0xda, 0xde, 0x65, 0x77, 0x5d, 0x08, 0x12, 0x8f, 0xc4, 0x1b, 0xf1, 0x30, 0xc8, 0x9b,
-	0x4d, 0xeb, 0x94, 0x54, 0xdc, 0xf9, 0xff, 0xbf, 0xd1, 0xce, 0x41, 0xbf, 0x21, 0xd2, 0xaa, 0x98,
-	0x2b, 0x2d, 0xad, 0xc4, 0x51, 0x2e, 0x4b, 0xfb, 0x53, 0xab, 0x22, 0x7e, 0x00, 0xe3, 0x05, 0xd9,
-	0x8f, 0xf5, 0x57, 0x99, 0xd0, 0xb7, 0x86, 0x8c, 0x8d, 0x2b, 0x38, 0xb8, 0x76, 0x8c, 0x92, 0xb5,
-	0x21, 0x3c, 0x82, 0x81, 0x59, 0x55, 0xb9, 0x2c, 0x59, 0x30, 0x0d, 0x66, 0x51, 0xe2, 0x15, 0x9e,
-	0x00, 0x94, 0x35, 0x4f, 0x55, 0x93, 0x5f, 0xd2, 0x8a, 0xf5, 0x1c, 0x8b, 0xca, 0x9a, 0x7f, 0x71,
-	0x06, 0x3e, 0x83, 0x7d, 0x45, 0x35, 0x17, 0xf5, 0x32, 0x35, 0xdf, 0x33, 0x65, 0x58, 0x38, 0x0d,
-	0x67, 0x51, 0xb2, 0xe7, 0xcd, 0xf3, 0xd6, 0x8b, 0x9f, 0x03, 0x2e, 0xc8, 0xb6, 0xdf, 0x9d, 0x21,
-	0x70, 0x0c, 0x3d, 0xc1, 0x7d, 0xb7, 0x9e, 0xe0, 0xf1, 0xef, 0x1e, 0x3c, 0xda, 0x2a, 0xf3, 0x93,
-	0xdd, 0xaa, 0x73, 0x93, 0xda, 0xcc, 0x36, 0xc6, 0x4f, 0xe3, 0x15, 0x3e, 0x05, 0x50, 0x5a, 0x5c,
-	0x65, 0x96, 0x3e, 0xd3, 0x8a, 0x85, 0x8e, 0x75, 0x1c, 0x9c, 0xc0, 0x48, 0x69, 0x12, 0x55, 0xb6,
-	0x24, 0x76, 0xcf, 0xd1, 0x6b, 0xdd, 0xae, 0xa1, 0x89, 0x13, 0x55, 0xa9, 0x29, 0xb4, 0x50, 0x96,
-	0xf5, 0x5d, 0xc1, 0xde, 0xda, 0x3c, 0x77, 0x1e, 0x32, 0x18, 0x8a, 0xfa, 0x4a, 0x8a, 0x82, 0xd8,
-	0xc0, 0xe1, 0x8d, 0x6c, 0x49, 0xc6, 0xb9, 0x26, 0x63, 0xd8, 0x70, 0x4d, 0xbc, 0xc4, 0x17, 0x70,
-	0x40, 0x3f, 0x14, 0x15, 0x96, 0x78, 0x9a, 0x55, 0xb2, 0xa9, 0x2d, 0x1b, 0x4d, 0x83, 0x59, 0x98,
-	0x8c, 0x37, 0xf6, 0x3b, 0xe7, 0xe2, 0x2b, 0x38, 0xb4, 0xa2, 0x22, 0xd9, 0xd8, 0x34, 0x2f, 0x65,
-	0x71, 0x99, 0x5e, 0x90, 0x58, 0x5e, 0x58, 0x16, 0x4d, 0x83, 0xd9, 0x7e, 0x82, 0x9e, 0x9d, 0xb5,
-	0xe8, 0x83, 0x23, 0xf1, 0x4b, 0x78, 0xf8, 0x5e, 0x53, 0x66, 0xa9, 0xbd, 0xd8, 0xe6, 0xa8, 0x47,
-	0x30, 0xf0, 0x6d, 0x02, 0xd7, 0xc6, 0xab, 0xf8, 0x17, 0x60, 0xb7, 0xf8, 0x8e, 0xd3, 0x76, 0xf6,
-	0xe8, 0xfd, 0x77, 0x8f, 0x70, 0xe7, 0x1e, 0x87, 0xd0, 0xcf, 0x85, 0x3a, 0x7d, 0xed, 0x4f, 0xbc,
-	0x16, 0xa7, 0x7f, 0x02, 0xe8, 0x9f, 0xb5, 0x79, 0xc4, 0xb7, 0x30, 0xf4, 0xd1, 0x43, 0x36, 0xdf,
-	0x44, 0x74, 0xbe, 0x9d, 0xcf, 0xc9, 0xe3, 0x1d, 0xc4, 0x8f, 0xfc, 0x09, 0xee, 0x77, 0x42, 0x82,
-	0xc7, 0x5b, 0x95, 0xb7, 0x22, 0x36, 0x39, 0xb9, 0x83, 0xfa, 0xb7, 0x16, 0x00, 0x37, 0x47, 0xc1,
-	0x27, 0x37, 0xc5, 0xff, 0xdc, 0x75, 0x72, 0xbc, 0x1b, 0xae, 0x1f, 0xca, 0x07, 0xee, 0x97, 0x7b,
-	0xf3, 0x37, 0x00, 0x00, 0xff, 0xff, 0x1e, 0xc1, 0xa6, 0x93, 0x7f, 0x03, 0x00, 0x00,
+	// 609 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x55, 0x5b, 0x6f, 0xd3, 0x4c,
+	0x10, 0x95, 0x9d, 0x36, 0x97, 0xc9, 0xa5, 0xdf, 0xb7, 0x2d, 0xd5, 0x36, 0xb4, 0x22, 0x72, 0x29,
+	0x44, 0xaa, 0x54, 0x41, 0x78, 0x45, 0x48, 0x2d, 0x0f, 0xe5, 0xf6, 0x80, 0xdc, 0x57, 0x24, 0xcb,
+	0x97, 0xa1, 0x5d, 0xd5, 0x97, 0x65, 0xbd, 0x0e, 0x04, 0xc4, 0x8f, 0xe1, 0x1f, 0x20, 0xf1, 0xc6,
+	0xaf, 0x43, 0x5e, 0xaf, 0x13, 0xc7, 0x75, 0x41, 0xe2, 0x8d, 0xb7, 0xcc, 0x39, 0x67, 0x27, 0x33,
+	0x67, 0x66, 0xd7, 0xd0, 0x13, 0xdc, 0x3f, 0xe1, 0x22, 0x91, 0x09, 0xe9, 0x7a, 0x49, 0x28, 0x3f,
+	0x0b, 0xee, 0x5b, 0xff, 0xc1, 0xe8, 0x1c, 0xe5, 0xcb, 0xf8, 0x7d, 0x62, 0xe3, 0x87, 0x0c, 0x53,
+	0x69, 0x7d, 0x33, 0x60, 0x6b, 0x09, 0xa5, 0x3c, 0x89, 0x53, 0x24, 0xbb, 0xd0, 0x4e, 0x17, 0x91,
+	0x97, 0x84, 0xd4, 0x98, 0x18, 0xd3, 0x9e, 0xad, 0x23, 0x72, 0x00, 0x10, 0xc6, 0x81, 0xc3, 0x33,
+	0xef, 0x1a, 0x17, 0xd4, 0x54, 0x5c, 0x2f, 0x8c, 0x83, 0xb7, 0x0a, 0x20, 0x87, 0x30, 0xe4, 0x18,
+	0x07, 0x2c, 0xbe, 0x74, 0xd2, 0x8f, 0x2e, 0x4f, 0x69, 0x6b, 0xd2, 0x9a, 0xf6, 0xec, 0x81, 0x06,
+	0x2f, 0x72, 0x8c, 0xcc, 0xe0, 0x4e, 0x29, 0x12, 0x38, 0x47, 0x91, 0xa2, 0x16, 0x6f, 0x28, 0xf1,
+	0xb6, 0x26, 0xed, 0x82, 0x53, 0x67, 0xac, 0xfb, 0x40, 0xce, 0x51, 0xe6, 0xbf, 0x2b, 0x95, 0x93,
+	0x11, 0x98, 0x2c, 0xd0, 0x15, 0x9a, 0x2c, 0xb0, 0xbe, 0x9b, 0xd0, 0x2d, 0x35, 0x75, 0x52, 0xb5,
+	0x24, 0x5d, 0x99, 0xa5, 0xba, 0x6c, 0x1d, 0x91, 0x7b, 0xd0, 0xe7, 0x82, 0xcd, 0x5d, 0x89, 0x4e,
+	0xde, 0x53, 0x4b, 0x91, 0xa0, 0xa1, 0xd7, 0xb8, 0x20, 0x63, 0xe8, 0x72, 0x81, 0x2c, 0x72, 0x2f,
+	0x91, 0x6e, 0x28, 0x76, 0x19, 0xe7, 0x0d, 0x0b, 0x0c, 0x10, 0x23, 0x27, 0xf5, 0x05, 0xe3, 0x92,
+	0x6e, 0x2a, 0xc1, 0xa0, 0x00, 0x2f, 0x14, 0x46, 0x28, 0x74, 0x58, 0x3c, 0x4f, 0x98, 0x8f, 0xb4,
+	0xad, 0xe8, 0x32, 0x24, 0x47, 0x30, 0x0a, 0x13, 0xff, 0x3a, 0xe3, 0x8e, 0x1b, 0x04, 0x02, 0xd3,
+	0x94, 0x76, 0x94, 0x60, 0x58, 0xa0, 0xa7, 0x05, 0x48, 0x1e, 0xc2, 0x16, 0x7e, 0xe2, 0xe8, 0x4b,
+	0x0c, 0x1c, 0x37, 0x4a, 0xb2, 0x58, 0xd2, 0xee, 0xc4, 0x98, 0xb6, 0xec, 0x51, 0x09, 0x9f, 0x2a,
+	0x94, 0x3c, 0x82, 0x1d, 0xc9, 0x22, 0x4c, 0x32, 0xe9, 0x78, 0x79, 0x0a, 0xe7, 0x0a, 0xd9, 0xe5,
+	0x95, 0xa4, 0xbd, 0x89, 0x31, 0x1d, 0xda, 0x44, 0x73, 0x67, 0x39, 0xf5, 0x42, 0x31, 0xd6, 0x0f,
+	0x13, 0xb6, 0x2a, 0x4e, 0xff, 0x33, 0xce, 0x1d, 0xc2, 0xd0, 0x0f, 0x5d, 0x16, 0xd5, 0x8c, 0x1b,
+	0x28, 0xb0, 0xf4, 0xed, 0x08, 0x46, 0x49, 0xec, 0x5f, 0xb9, 0x2c, 0x5e, 0xb7, 0x6d, 0xa8, 0xd1,
+	0xbf, 0x76, 0xed, 0x0b, 0x6c, 0xaf, 0xad, 0xa3, 0xbe, 0x35, 0x0f, 0x60, 0x23, 0xdf, 0x64, 0x65,
+	0x5d, 0x7f, 0x46, 0x4e, 0xca, 0x4b, 0x77, 0xb2, 0x54, 0x2a, 0x9e, 0x3c, 0x85, 0x41, 0x75, 0xf3,
+	0x95, 0xad, 0xfd, 0xd9, 0xde, 0x4a, 0x5f, 0x9b, 0x88, 0xdd, 0x17, 0x2b, 0xc0, 0x3a, 0x86, 0xff,
+	0x9f, 0x0b, 0x74, 0xa5, 0x8a, 0xca, 0xab, 0xb0, 0x0b, 0x6d, 0xdd, 0xa2, 0xa1, 0x5a, 0xd4, 0x91,
+	0xf5, 0x15, 0x48, 0x55, 0xac, 0x0b, 0xad, 0x4f, 0x98, 0x42, 0xa7, 0xf4, 0xb1, 0x18, 0x71, 0x19,
+	0x36, 0xad, 0x5e, 0xab, 0x71, 0xf5, 0x76, 0x60, 0xd3, 0x63, 0x7c, 0xf6, 0x58, 0x0f, 0xba, 0x08,
+	0xac, 0x37, 0x40, 0x8b, 0xbf, 0xaf, 0x74, 0xf4, 0x87, 0x92, 0x6f, 0x2f, 0xc6, 0x3a, 0x86, 0xbd,
+	0x86, 0x6c, 0xcd, 0x3d, 0xcd, 0x7e, 0x9a, 0xb0, 0x79, 0x96, 0x1b, 0x4a, 0x9e, 0x41, 0x47, 0xbf,
+	0x6f, 0x84, 0xae, 0x3c, 0x5e, 0x7f, 0x05, 0xc7, 0x7b, 0x0d, 0x8c, 0xce, 0xfc, 0x0a, 0xfa, 0x95,
+	0x69, 0x93, 0xfd, 0x35, 0x65, 0xed, 0x4d, 0x1a, 0x1f, 0xdc, 0xc2, 0xea, 0x5c, 0xe7, 0x00, 0xab,
+	0x79, 0x90, 0xbb, 0x2b, 0xf1, 0x8d, 0x91, 0x8e, 0xf7, 0x9b, 0x49, 0x9d, 0xe8, 0x5d, 0xb9, 0x05,
+	0x15, 0x2f, 0x88, 0x55, 0x3f, 0x72, 0xd3, 0xf6, 0xf1, 0xe1, 0x6f, 0x35, 0x45, 0x76, 0xaf, 0xad,
+	0x3e, 0x1b, 0x4f, 0x7e, 0x05, 0x00, 0x00, 0xff, 0xff, 0xdf, 0x0a, 0xb8, 0x7f, 0x43, 0x06, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -410,6 +669,7 @@ type BoltzClient interface {
 	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	CreateSwap(ctx context.Context, in *CreateSwapRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
+	CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error)
 }
 
 type boltzClient struct {
@@ -447,11 +707,21 @@ func (c *boltzClient) CreateSwap(ctx context.Context, in *CreateSwapRequest, opt
 	return out, nil
 }
 
+func (c *boltzClient) CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error) {
+	out := new(CreateReverseSwapResponse)
+	err := c.cc.Invoke(ctx, "/boltzrpc.Boltz/CreateReverseSwap", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BoltzServer is the server API for Boltz service.
 type BoltzServer interface {
 	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
 	CreateSwap(context.Context, *CreateSwapRequest) (*CreateSwapResponse, error)
+	CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error)
 }
 
 func RegisterBoltzServer(s *grpc.Server, srv BoltzServer) {
@@ -512,6 +782,24 @@ func _Boltz_CreateSwap_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_CreateReverseSwap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateReverseSwapRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).CreateReverseSwap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/boltzrpc.Boltz/CreateReverseSwap",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).CreateReverseSwap(ctx, req.(*CreateReverseSwapRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Boltz_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "boltzrpc.Boltz",
 	HandlerType: (*BoltzServer)(nil),
@@ -527,6 +815,10 @@ var _Boltz_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateSwap",
 			Handler:    _Boltz_CreateSwap_Handler,
+		},
+		{
+			MethodName: "CreateReverseSwap",
+			Handler:    _Boltz_CreateReverseSwap_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
