@@ -1,11 +1,15 @@
 package main
 
 import (
+	"errors"
 	"github.com/BoltzExchange/boltz-lnd"
+	"github.com/BoltzExchange/boltz-lnd/boltz"
+	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"strings"
 )
 
 // TODO: LND and Boltz compatibility checks
@@ -37,8 +41,14 @@ func main() {
 
 	cfg.Boltz.Init(symbol)
 
+	boltzPubKey, err := connectBoltzLnd(cfg.LND, cfg.Boltz, symbol)
+
+	if err != nil {
+		logger.Warning("Could not connect to to Boltz LND node: " + err.Error())
+	}
+
 	swapNursery := &nursery.Nursery{}
-	err = swapNursery.Init(symbol, chainParams, cfg.LND, cfg.Boltz, cfg.Database)
+	err = swapNursery.Init(symbol, boltzPubKey, chainParams, cfg.LND, cfg.Boltz, cfg.Database)
 
 	if err != nil {
 		logger.Fatal("Could no start Swap nursery: " + err.Error())
@@ -74,4 +84,35 @@ func parseChain(chain *lnrpc.Chain) (symbol string, params *chaincfg.Params) {
 	}
 
 	return symbol, params
+}
+
+// TODO: handle cases in which the nodes are already connected
+func connectBoltzLnd(lnd *lnd.LND, boltz *boltz.Boltz, symbol string) (string, error) {
+	nodes, err := boltz.GetNodes()
+
+	if err != nil {
+		return "", err
+	}
+
+	node, hasNode := nodes.Nodes[symbol]
+
+	if !hasNode {
+		return "", errors.New("could not find Boltz LND node for symbol: " + symbol)
+	}
+
+	if len(node.URIs) == 0 {
+		return node.NodeKey, errors.New("could not find URIs for Boltz LND node for symbol: " + symbol)
+	}
+
+	uriParts := strings.Split(node.URIs[0], "@")
+
+	if len(uriParts) != 2 {
+		return node.NodeKey, errors.New("could not parse URI of Boltz LND")
+	}
+
+	_, err = lnd.ConnectPeer(uriParts[0], uriParts[1])
+
+	logger.Info("Connected to Boltz LND node: " + node.URIs[0])
+
+	return node.NodeKey, err
 }

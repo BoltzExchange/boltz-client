@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"google.golang.org/grpc"
@@ -36,6 +37,7 @@ type LND struct {
 
 	client        lnrpc.LightningClient
 	router        routerrpc.RouterClient
+	invoices      invoicesrpc.InvoicesClient
 	walletKit     walletrpc.WalletKitClient
 	chainNotifier chainrpc.ChainNotifierClient
 }
@@ -55,6 +57,7 @@ func (lnd *LND) Connect() error {
 
 	lnd.client = lnrpc.NewLightningClient(con)
 	lnd.router = routerrpc.NewRouterClient(con)
+	lnd.invoices = invoicesrpc.NewInvoicesClient(con)
 	lnd.walletKit = walletrpc.NewWalletKitClient(con)
 	lnd.chainNotifier = chainrpc.NewChainNotifierClient(con)
 
@@ -76,20 +79,56 @@ func (lnd *LND) GetInfo() (*lnrpc.GetInfoResponse, error) {
 	return lnd.client.GetInfo(lnd.ctx, &lnrpc.GetInfoRequest{})
 }
 
+func (lnd *LND) ConnectPeer(pubKey string, host string) (*lnrpc.ConnectPeerResponse, error) {
+	return lnd.client.ConnectPeer(lnd.ctx, &lnrpc.ConnectPeerRequest{
+		Perm: true,
+		Addr: &lnrpc.LightningAddress{
+			Host:   host,
+			Pubkey: pubKey,
+		},
+	})
+}
+
 func (lnd *LND) ListChannels() (*lnrpc.ListChannelsResponse, error) {
 	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 }
 
 func (lnd *LND) AddInvoice(value int64, memo string) (*lnrpc.AddInvoiceResponse, error) {
 	return lnd.client.AddInvoice(lnd.ctx, &lnrpc.Invoice{
-		Value: value,
 		Memo:  memo,
+		Value: value,
+	})
+}
+
+func (lnd *LND) AddHoldInvoice(preimageHash []byte, value int64, memo string) (*invoicesrpc.AddHoldInvoiceResp, error) {
+	return lnd.invoices.AddHoldInvoice(lnd.ctx, &invoicesrpc.AddHoldInvoiceRequest{
+		Memo:  memo,
+		Value: value,
+		Hash:  preimageHash,
+	})
+}
+
+func (lnd *LND) SettleInvoice(preimage []byte) (*invoicesrpc.SettleInvoiceResp, error) {
+	return lnd.invoices.SettleInvoice(lnd.ctx, &invoicesrpc.SettleInvoiceMsg{
+		Preimage: preimage,
+	})
+}
+
+func (lnd *LND) CancelInvoice(preimageHash []byte) (*invoicesrpc.CancelInvoiceResp, error) {
+	return lnd.invoices.CancelInvoice(lnd.ctx ,&invoicesrpc.CancelInvoiceMsg{
+		PaymentHash: preimageHash,
 	})
 }
 
 func (lnd *LND) LookupInvoice(preimageHash []byte) (*lnrpc.Invoice, error) {
 	return lnd.client.LookupInvoice(lnd.ctx, &lnrpc.PaymentHash{
 		RHash: preimageHash,
+	})
+}
+
+func (lnd *LND) GetChannelInfo(channelId uint64) (*lnrpc.ChannelEdge, error) {
+	return lnd.client.GetChanInfo(lnd.ctx, &lnrpc.ChanInfoRequest{
+		ChanId: channelId,
 	})
 }
 
@@ -168,4 +207,26 @@ func (lnd *LND) RegisterBlockListener(channel chan *chainrpc.BlockEpoch) error {
 	}()
 
 	return err
+}
+
+func (lnd *LND) SubscribeSingleInvoice(preimageHash []byte) (chan *lnrpc.Invoice, error) {
+	channel := make(chan *lnrpc.Invoice)
+
+	client, err := lnd.invoices.SubscribeSingleInvoice(lnd.ctx, &invoicesrpc.SubscribeSingleInvoiceRequest{
+		RHash: preimageHash,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		for {
+			// TODO: reconnection logic
+			invoice, _ := client.Recv()
+			channel <- invoice
+		}
+	}()
+
+	return channel, err
 }

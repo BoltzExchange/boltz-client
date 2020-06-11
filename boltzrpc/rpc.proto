@@ -8,6 +8,8 @@ service Boltz {
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
 
     rpc CreateSwap (CreateSwapRequest) returns (CreateSwapResponse);
+    rpc CreateChannel (CreateChannelRequest) returns (CreateSwapResponse);
+
     rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
 }
 
@@ -59,6 +61,12 @@ message CreateSwapResponse {
     int64 expected_amount = 3;
     string bip21 = 4;
 }
+
+message CreateChannelRequest {
+    int64 amount = 1;
+    uint32 inbound_liquidity = 2;
+    bool private = 3;
+};
 
 message CreateReverseSwapRequest {
     int64 amount = 1;

@@ -125,7 +125,7 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
-	invoice, err := server.lnd.AddInvoice(request.Amount, "Submarine Swap to "+server.symbol)
+	invoice, err := server.lnd.AddInvoice(request.Amount, "Submarine Swap from "+server.symbol)
 
 	if err != nil {
 		return nil, err
@@ -187,9 +187,118 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		return nil, err
 	}
 
-	server.nursery.RegisterSwap(swap)
+server.nursery.RegisterSwap(&swap, nil)
 
 	logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
+
+	return &boltzrpc.CreateSwapResponse{
+		Id:             swap.Id,
+		Address:        response.Address,
+		ExpectedAmount: int64(response.ExpectedAmount),
+		Bip21:          response.Bip21,
+	}, nil
+}
+
+func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltzrpc.CreateChannelRequest) (*boltzrpc.CreateSwapResponse, error) {
+	channelCreationType := "public"
+
+	if request.Private {
+		channelCreationType = "private"
+	}
+
+	logger.Info("Creating a " + channelCreationType + " Channel Creation with " +
+		strconv.FormatUint(uint64(request.InboundLiquidity), 10) + "% inbound liquidity for " +
+		strconv.FormatInt(request.Amount, 10) + " satoshis")
+
+	preimage, preimageHash, err := newPreimage()
+
+	if err != nil {
+		return nil, err
+	}
+
+	invoice, err := server.lnd.AddHoldInvoice(preimageHash, request.Amount, "Channel Creation from "+server.symbol)
+
+	if err != nil {
+		return nil, err
+	}
+
+	privateKey, publicKey, err := newKeys()
+
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
+		Type:            "submarine",
+		PairId:          server.symbol + "/" + server.symbol,
+		OrderSide:       "buy",
+		Invoice:         invoice.PaymentRequest,
+		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
+		Channel: boltz.Channel{
+			Auto:             false,
+			Private:          request.Private,
+			InboundLiquidity: request.InboundLiquidity,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	redeemScript, err := hex.DecodeString(response.RedeemScript)
+
+	if err != nil {
+		return nil, err
+	}
+
+	swap := database.Swap{
+		Id:                response.Id,
+		Status:            boltz.InvoiceSet,
+		PrivateKey:        privateKey,
+		Preimage:          preimage,
+		RedeemScript:      redeemScript,
+		Invoice:           invoice.PaymentRequest,
+		Address:           response.Address,
+		ExpectedAmount:    response.ExpectedAmount,
+		TimoutBlockHeight: response.TimeoutBlockHeight,
+	}
+
+	channelCreation := database.ChannelCreation{
+		SwapId:           response.Id,
+		Status:           boltz.ChannelNone,
+		InboundLiquidity: int(request.InboundLiquidity),
+		Private:          request.Private,
+	}
+
+	err = boltz.CheckSwapScript(swap.RedeemScript, preimageHash, swap.PrivateKey, swap.TimoutBlockHeight)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = boltz.CheckSwapAddress(server.chainParams, swap.Address, swap.RedeemScript, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info("Verified redeem script and address of Channel Creation " + swap.Id)
+
+	err = server.database.CreateSwap(swap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = server.database.CreateChannelCreation(channelCreation)
+
+	if err != nil {
+		return nil, err
+	}
+
+	server.nursery.RegisterSwap(&swap, &channelCreation)
+
+	logger.Info("Created new Channel Creation " + swap.Id + ": " + marshalJson(swap.Serialize()) + "\n" + marshalJson(channelCreation.Serialize()))
 
 	return &boltzrpc.CreateSwapResponse{
 		Id:             swap.Id,
@@ -221,14 +330,11 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		logger.Info("Got claim address from LND: " + claimAddress)
 	}
 
-	preimage := make([]byte, 32)
-	_, err := rand.Read(preimage)
+	preimage, preimageHash, err := newPreimage()
 
 	if err != nil {
 		return nil, err
 	}
-
-	preimageHash := sha256.Sum256(preimage)
 
 	logger.Info("Generated preimage " + hex.EncodeToString(preimage))
 
@@ -243,7 +349,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		PairId:         server.symbol + "/" + server.symbol,
 		OrderSide:      "buy",
 		InvoiceAmount:  int(request.Amount),
-		PreimageHash:   hex.EncodeToString(preimageHash[:]),
+		PreimageHash:   hex.EncodeToString(preimageHash),
 		ClaimPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
 	})
 
@@ -269,7 +375,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		TimeoutBlockHeight: response.TimeoutBlockHeight,
 	}
 
-	err = boltz.CheckReverseSwapScript(reverseSwap.RedeemScript, preimageHash[:], privateKey, response.TimeoutBlockHeight)
+	err = boltz.CheckReverseSwapScript(reverseSwap.RedeemScript, preimageHash, privateKey, response.TimeoutBlockHeight)
 
 	if err != nil {
 		return nil, err
@@ -281,7 +387,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		return nil, err
 	}
 
-	if !bytes.Equal(preimageHash[:], invoice.PaymentHash[:]) {
+	if !bytes.Equal(preimageHash, invoice.PaymentHash[:]) {
 		return nil, errors.New("invalid invoice preimage hash")
 	}
 
@@ -322,6 +428,19 @@ func newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {
 	publicKey := privateKey.PubKey()
 
 	return privateKey, publicKey, err
+}
+
+func newPreimage() ([]byte, []byte, error) {
+	preimage := make([]byte, 32)
+	_, err := rand.Read(preimage)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	preimageHash := sha256.Sum256(preimage)
+
+	return preimage, preimageHash[:], nil
 }
 
 func marshalJson(data interface{}) string {

@@ -60,7 +60,7 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 						eventListenersLock.Unlock()
 					}
 
-					refundOutput := nursery.refundSwap(swapToRefund)
+					refundOutput := nursery.getRefundOutput(swapToRefund)
 
 					if refundOutput != nil {
 						refundOutputs = append(refundOutputs, *refundOutput)
@@ -104,12 +104,13 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 	}()
 }
 
-func (nursery *Nursery) refundSwap(swap database.Swap) *boltz.OutputDetails {
+// TODO: add channel creation wording
+func (nursery *Nursery) getRefundOutput(swap database.Swap) *boltz.OutputDetails {
 	swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
 
 	if err != nil {
 		logger.Error("Could not get lockup transaction from Boltz: " + err.Error())
-		nursery.handleSwapStatus(&swap, boltz.SwapAbandoned.String())
+		nursery.handleSwapStatus(&swap, "", boltz.SwapAbandoned.String())
 
 		return nil
 	}
@@ -137,7 +138,7 @@ func (nursery *Nursery) refundSwap(swap database.Swap) *boltz.OutputDetails {
 	}
 
 	// TODO: do this after refund is successful
-	nursery.handleSwapStatus(&swap, boltz.SwapRefunded.String())
+	nursery.handleSwapStatus(&swap, "", boltz.SwapRefunded.String())
 
 	return &boltz.OutputDetails{
 		LockupTransaction:  lockupTransaction,
@@ -151,7 +152,7 @@ func (nursery *Nursery) refundSwap(swap database.Swap) *boltz.OutputDetails {
 }
 
 func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) error {
-	logger.Info("Recovering pending Swaps")
+	logger.Info("Recovering pending Swaps and Channel Creations")
 
 	swaps, err := nursery.database.QueryPendingSwaps()
 
@@ -160,7 +161,12 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 	}
 
 	for _, swap := range swaps {
-		logger.Info("Recovering Swap " + swap.Id + " at state: " + swap.Status.String())
+		channelCreation, err := nursery.database.QueryChannelCreation(swap.Id)
+		isChannelCreation := err == nil
+
+		swapType := getSwapType(isChannelCreation)
+
+		logger.Info("Recovering " + swapType + " " + swap.Id + " at state: " + swap.Status.String())
 
 		// TODO: handle race condition when status is updated between the POST request and the time the streaming starts
 		status, err := nursery.boltz.SwapStatus(swap.Id)
@@ -170,8 +176,8 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 		}
 
 		if status.Status != swap.Status.String() {
-			logger.Info("Swap " + swap.Id + " status changed to: " + status.Status)
-			nursery.handleSwapStatus(&swap, status.Status)
+			logger.Info(swapType + " " + swap.Id + " status changed to: " + status.Status)
+			nursery.handleSwapStatus(&swap, swapType, status.Status)
 
 			isCompleted := false
 
@@ -183,14 +189,14 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 			}
 
 			if !isCompleted {
-				nursery.RegisterSwap(swap)
+				nursery.RegisterSwap(&swap, channelCreation)
 			}
 
 			continue
 		}
 
-		logger.Info("Swap " + swap.Id + " status did not change")
-		nursery.RegisterSwap(swap)
+		logger.Info(swapType + " " + swap.Id + " status did not change")
+		nursery.RegisterSwap(&swap, channelCreation)
 	}
 
 	nursery.startBlockListener(blockNotifier)
@@ -198,8 +204,23 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 	return nil
 }
 
-func (nursery *Nursery) RegisterSwap(swap database.Swap) {
-	logger.Info("Listening to events of Swap " + swap.Id)
+func (nursery *Nursery) RegisterSwap(swap *database.Swap, channelCreation *database.ChannelCreation) {
+	isChannelCreation := channelCreation != nil
+	swapType := getSwapType(isChannelCreation)
+
+	logger.Info("Listening to events of " + swapType + " " + swap.Id)
+
+	var stopInvoiceSubscription chan bool
+
+	if isChannelCreation {
+		var err error
+		stopInvoiceSubscription, err = nursery.subscribeChannelCreationInvoice(*swap, channelCreation)
+
+		if err != nil {
+			logger.Error("Could not subscribe to invoice events: " + err.Error())
+			return
+		}
+	}
 
 	go func() {
 		stopListening := make(chan bool)
@@ -215,7 +236,7 @@ func (nursery *Nursery) RegisterSwap(swap database.Swap) {
 			_, err := nursery.boltz.StreamSwapStatus(swap.Id, eventStream)
 
 			if err != nil {
-				logger.Error("Could not listen to events of Swap " + swap.Id + ": " + err.Error())
+				logger.Error("Could not listen to events of " + swapType + " " + swap.Id + ": " + err.Error())
 
 				eventListenersLock.Lock()
 				delete(eventListeners, swap.Id)
@@ -233,28 +254,32 @@ func (nursery *Nursery) RegisterSwap(swap database.Swap) {
 				err := json.Unmarshal(event.Data, &response)
 
 				if err == nil {
-					logger.Info("Swap " + swap.Id + " status update: " + response.Status)
-					nursery.handleSwapStatus(&swap, response.Status)
+					logger.Info(swapType + " " + swap.Id + " status update: " + response.Status)
+					nursery.handleSwapStatus(swap, swapType, response.Status)
 
 					// The event listening can stop after the Swap has succeeded
 					if swap.Status == boltz.TransactionClaimed {
 						return
 					}
 				} else {
-					logger.Error("Could not parse update event of Swap " + swap.Id + ": " + err.Error())
+					logger.Error("Could not parse update event of " + swapType + " " + swap.Id + ": " + err.Error())
 				}
 
 				break
 
 			case <-stopListening:
-				logger.Info("Stopping event listener of Swap " + swap.Id)
+				if stopInvoiceSubscription != nil {
+					stopInvoiceSubscription <- true
+				}
+
+				logger.Info("Stopping event listener of " + swapType + " " + swap.Id)
 				return
 			}
 		}
 	}()
 }
 
-func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status string) {
+func (nursery *Nursery) handleSwapStatus(swap *database.Swap, swapType string, status string) {
 	parsedStatus := boltz.ParseEvent(status)
 
 	switch parsedStatus {
@@ -275,15 +300,25 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status string) {
 		}
 
 		if invoiceInfo.State != lnrpc.Invoice_SETTLED {
-			logger.Warning("Swap " + swap.Id + " was not actually settled. Refunding at block " + strconv.Itoa(swap.TimoutBlockHeight))
+			logger.Warning(swapType + " " + swap.Id + " was not actually settled. Refunding at block " + strconv.Itoa(swap.TimoutBlockHeight))
 			return
 		}
 
-		logger.Info("Swap " + swap.Id + " succeeded")
+		logger.Info(swapType + " " + swap.Id + " succeeded")
 	}
 
 	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
 	if err != nil {
-		logger.Error("Could not update status of Swap " + swap.Id + ": " + err.Error())
+		logger.Error("Could not update status of " + swapType + " " + swap.Id + ": " + err.Error())
 	}
+}
+
+func getSwapType(isChannelCreation bool) string {
+	swapType := "Swap"
+
+	if isChannelCreation {
+		swapType = "Channel Creation"
+	}
+
+	return swapType
 }

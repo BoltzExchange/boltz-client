@@ -9,7 +9,7 @@ on:
       - v*
 
 jobs:
-  amd64:
+  build:
     name: Build binaries
 
     strategy:

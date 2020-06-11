@@ -11,9 +11,10 @@ import (
 // TODO: sanity check inputs before constructing gRPC requests
 
 var getInfoCommand = cli.Command{
-	Name:   "getinfo",
-	Usage:  "Returns basic information",
-	Action: getInfo,
+	Name:     "getinfo",
+	Category: "Info",
+	Usage:    "Returns basic information",
+	Action:   getInfo,
 }
 
 func getInfo(ctx *cli.Context) error {
@@ -30,9 +31,10 @@ func getInfo(ctx *cli.Context) error {
 }
 
 var getSwapCommand = cli.Command{
-	Name:   "swapinfo",
-	Usage:  "Gets all information about a Swap",
-	Action: swapInfo,
+	Name:     "swapinfo",
+	Category: "Info",
+	Usage:    "Gets all available information about a Swap",
+	Action:   swapInfo,
 }
 
 func swapInfo(ctx *cli.Context) error {
@@ -50,6 +52,7 @@ func swapInfo(ctx *cli.Context) error {
 
 var createSwapCommand = cli.Command{
 	Name:      "createswap",
+	Category:  "Swap",
 	Usage:     "Creates a new Swap",
 	ArgsUsage: "amount",
 	Action:    createSwap,
@@ -68,8 +71,38 @@ func createSwap(ctx *cli.Context) error {
 	return err
 }
 
+var createChannelCreationCommand = cli.Command{
+	Name:      "createchannel",
+	Category:  "Swap",
+	Usage:     "Creates a new Channel Creation",
+	ArgsUsage: "amount inbound",
+	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name:  "private",
+			Usage: "Whether the channel should be private",
+		},
+	},
+	Action: createChannelCreation,
+}
+
+func createChannelCreation(ctx *cli.Context) error {
+	client := getClient(ctx)
+
+	private := ctx.Bool("private")
+	channelCreation, err := client.CreateChannelCreation(ctx.Args().First(), ctx.Args().Get(1), private)
+
+	if err != nil {
+		return err
+	}
+
+	printJson(channelCreation)
+
+	return err
+}
+
 var createReverseSwapCommand = cli.Command{
 	Name:      "createreverseswap",
+	Category:  "Swap",
 	Usage:     "Creates a new Reverse Swap",
 	ArgsUsage: "amount address",
 	Action:    createReverseSwap,

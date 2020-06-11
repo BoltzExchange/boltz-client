@@ -10,6 +10,7 @@ This repository contains a [Boltz](https://boltz.exchange) client for [LND](http
 
 The LND node to which the daemon connects to, has to be version `v0.10.0-beta` or higher. Also, LND needs to be compiled with these build flags (binaries from the official Lightning Labs releases include them):
 
+- `invoicerpc` (hold invoices)
 - `routerrpc` (multi path payments)
 - `chainrpc` (block listener)
 - `walletrpc` (fee estimations)

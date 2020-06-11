@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/lightningnetwork/lnd/lntypes"
 	"strconv"
 	"strings"
 )
@@ -15,7 +14,7 @@ type Swap struct {
 	Id                string
 	Status            boltz.SwapUpdateEvent
 	PrivateKey        *btcec.PrivateKey
-	Preimage          *lntypes.Preimage
+	Preimage          []byte
 	RedeemScript      []byte
 	Invoice           string
 	Address           string
@@ -39,7 +38,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 	preimage := ""
 
 	if swap.Preimage != nil {
-		preimage = swap.Preimage.String()
+		preimage = hex.EncodeToString(swap.Preimage)
 	}
 
 	return SwapSerialized{
@@ -90,7 +89,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	swap.PrivateKey, _ = parsePrivateKey(privateKeyBytes)
 
 	if preimage != "" {
-		*swap.Preimage, err = lntypes.MakePreimageFromStr(preimage)
+		swap.Preimage, err = hex.DecodeString(preimage)
 
 		if err != nil {
 			return nil, err
@@ -165,7 +164,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 	preimage := ""
 
 	if swap.Preimage != nil {
-		preimage = swap.Preimage.String()
+		preimage = hex.EncodeToString(swap.Preimage)
 	}
 
 	_, err = statement.Exec(
