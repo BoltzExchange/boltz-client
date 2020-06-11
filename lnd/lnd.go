@@ -115,7 +115,7 @@ func (lnd *LND) SettleInvoice(preimage []byte) (*invoicesrpc.SettleInvoiceResp, 
 }
 
 func (lnd *LND) CancelInvoice(preimageHash []byte) (*invoicesrpc.CancelInvoiceResp, error) {
-	return lnd.invoices.CancelInvoice(lnd.ctx ,&invoicesrpc.CancelInvoiceMsg{
+	return lnd.invoices.CancelInvoice(lnd.ctx, &invoicesrpc.CancelInvoiceMsg{
 		PaymentHash: preimageHash,
 	})
 }

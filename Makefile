@@ -51,7 +51,12 @@ unit:
 build:
 	@$(call print, "Building boltz-lnd")
 	$(GOBUILD) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
-	$(GOBUILD) -o boltz-cli $(LDFLAGS) $(PKG_BOLTZ_CLI)
+	$(GOBUILD) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
+
+install:
+	@$(call print, "Installing boltz-lnd")
+	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
+	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
 #
 # Utils

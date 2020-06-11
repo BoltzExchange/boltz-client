@@ -187,7 +187,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		return nil, err
 	}
 
-server.nursery.RegisterSwap(&swap, nil)
+	server.nursery.RegisterSwap(&swap, nil)
 
 	logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
 

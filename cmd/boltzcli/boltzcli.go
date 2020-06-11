@@ -9,7 +9,7 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "boltz-cli"
+	app.Name = "boltzcli"
 	app.Usage = ""
 	app.Version = build.GetVersion()
 	app.Flags = []cli.Flag{
