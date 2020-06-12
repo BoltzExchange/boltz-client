@@ -21,7 +21,6 @@ type config struct {
 	ConfigFile string `short:"c" long:"configfile" description:"Path to configuration file"`
 	LogFile    string `short:"l" long:"logfile" description:"Path to the log file"`
 
-	// TODO: set Boltz URL based on network by default
 	Boltz    *boltz.Boltz         `group:"Boltz Options"`
 	LND      *lnd.LND             `group:"LND Options"`
 	RPC      *rpcserver.RpcServer `group:"RPC options"`
@@ -36,7 +35,7 @@ func LoadConfig() *config {
 		ConfigFile: "./boltz.toml",
 
 		Boltz: &boltz.Boltz{
-			URL: "http://127.0.0.1:9001",
+			URL: "",
 		},
 
 		LND: &lnd.LND{

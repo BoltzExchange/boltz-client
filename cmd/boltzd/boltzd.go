@@ -39,6 +39,7 @@ func main() {
 	symbol, chainParams := parseChain(lndInfo.Chains[0])
 	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
 
+	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
 	cfg.Boltz.Init(symbol)
 
 	boltzPubKey, err := connectBoltzLnd(cfg.LND, cfg.Boltz, symbol)
@@ -61,6 +62,7 @@ func main() {
 	}
 }
 
+// TODO: litecoin support
 func parseChain(chain *lnrpc.Chain) (symbol string, params *chaincfg.Params) {
 	switch chain.Chain {
 	case "bitcoin":
@@ -115,4 +117,22 @@ func connectBoltzLnd(lnd *lnd.LND, boltz *boltz.Boltz, symbol string) (string, e
 	logger.Info("Connected to Boltz LND node: " + node.URIs[0])
 
 	return node.NodeKey, err
+}
+
+func setBoltzEndpoint(boltz *boltz.Boltz, chain string) {
+	if boltz.URL != "" {
+		logger.Info("Using configured Boltz endpoint: " + boltz.URL)
+		return
+	}
+
+	switch chain {
+	case "mainnet":
+		boltz.URL = "https://boltz.exchange/api"
+	case "testnet3":
+		boltz.URL = "https://testnet.boltz.exchange/api"
+	case "regtest":
+		boltz.URL = "http://127.0.0.1:9001"
+	}
+
+	logger.Info("Using default Boltz endpoint for chain " + chain + ": " + boltz.URL)
 }
