@@ -36,6 +36,8 @@ func main() {
 		return
 	}
 
+	checkLndVersion(lndInfo)
+
 	symbol, chainParams := parseChain(lndInfo.Chains[0])
 	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
 
@@ -88,7 +90,6 @@ func parseChain(chain *lnrpc.Chain) (symbol string, params *chaincfg.Params) {
 	return symbol, params
 }
 
-// TODO: handle cases in which the nodes are already connected
 func connectBoltzLnd(lnd *lnd.LND, boltz *boltz.Boltz, symbol string) (string, error) {
 	nodes, err := boltz.GetNodes()
 
@@ -114,7 +115,12 @@ func connectBoltzLnd(lnd *lnd.LND, boltz *boltz.Boltz, symbol string) (string, e
 
 	_, err = lnd.ConnectPeer(uriParts[0], uriParts[1])
 
-	logger.Info("Connected to Boltz LND node: " + node.URIs[0])
+	if err == nil {
+		logger.Info("Connected to Boltz LND node: " + node.URIs[0])
+	} else if strings.HasPrefix(err.Error(), "rpc error: code = Unknown desc = already connected to peer") {
+		logger.Info("Already connected to Boltz LND node: " + node.URIs[0])
+		err = nil
+	}
 
 	return node.NodeKey, err
 }
