@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// TODO: LND and Boltz compatibility checks
+// TODO: Boltz compatibility checks
 func main() {
 	cfg := boltz_lnd.LoadConfig()
 
@@ -29,12 +29,7 @@ func main() {
 		logger.Fatal("Could not initialize LND client: " + err.Error())
 	}
 
-	lndInfo, err := cfg.LND.GetInfo()
-
-	if err != nil {
-		logger.Fatal("Could not connect to LND: " + err.Error())
-		return
-	}
+	lndInfo := connectToLnd(cfg.LND)
 
 	checkLndVersion(lndInfo)
 	waitForLndSynced(cfg.LND)
