@@ -14,7 +14,6 @@ import (
 	"strings"
 )
 
-// TODO: Boltz compatibility checks
 func main() {
 	cfg := boltz_lnd.LoadConfig()
 
@@ -41,6 +40,8 @@ func main() {
 
 	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
 	cfg.Boltz.Init(symbol)
+
+	checkBoltzVersion(cfg.Boltz)
 
 	boltzPubKey, err := connectBoltzLnd(cfg.LND, cfg.Boltz, symbol)
 

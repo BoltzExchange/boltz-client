@@ -17,6 +17,10 @@ type Boltz struct {
 }
 
 // Types for Boltz API
+type GetVersionResponse struct {
+	Version string `json:"version"`
+}
+
 type symbolMinerFees struct {
 	Normal  int `json:"normal"`
 	Reverse struct {
@@ -145,6 +149,13 @@ type CreateReverseSwapResponse struct {
 
 func (boltz *Boltz) Init(symbol string) {
 	boltz.symbol = symbol
+}
+
+func (boltz *Boltz) GetVersion() (*GetVersionResponse, error) {
+	var response GetVersionResponse
+	err := boltz.sendGetRequest("/version", &response)
+
+	return &response, err
 }
 
 func (boltz *Boltz) GetPairs() (*GetPairsResponse, error) {

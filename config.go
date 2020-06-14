@@ -10,6 +10,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
 	"os"
+	"runtime"
 )
 
 type helpOptions struct {
@@ -60,6 +61,7 @@ func LoadConfig() *config {
 
 	if cfg.Help.ShowVersion {
 		fmt.Println(build.GetVersion())
+		fmt.Println("Built with: " + runtime.Version())
 		os.Exit(0)
 	}
 
