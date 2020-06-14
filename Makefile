@@ -15,7 +15,7 @@ LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT)"
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 LINT_BIN := $(GO_BIN)/golangci-lint
-LINT = $(LINT_BIN) run -v
+LINT = $(LINT_BIN) run -v --timeout 5m
 
 XARGS := xargs -L 1
 
