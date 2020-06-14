@@ -9,6 +9,7 @@ import (
 )
 
 const retryInterval = 30
+
 var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
 
 func connectToLnd(lnd *lnd.LND) *lnrpc.GetInfoResponse {

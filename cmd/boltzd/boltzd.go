@@ -6,7 +6,9 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
-	"github.com/btcsuite/btcd/chaincfg"
+	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
+	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
+
 	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"strings"
@@ -60,8 +62,7 @@ func main() {
 	}
 }
 
-// TODO: litecoin support
-func parseChain(chain *lnrpc.Chain) (symbol string, params *chaincfg.Params) {
+func parseChain(chain *lnrpc.Chain) (symbol string, params *bitcoinCfg.Params) {
 	switch chain.Chain {
 	case "bitcoin":
 		symbol = "BTC"
@@ -71,16 +72,32 @@ func parseChain(chain *lnrpc.Chain) (symbol string, params *chaincfg.Params) {
 		logger.Fatal("Chain " + chain.Chain + " not supported")
 	}
 
-	switch chain.Network {
-	case "mainnet":
-		// #reckless
-		params = &chaincfg.MainNetParams
-	case "testnet":
-		params = &chaincfg.TestNet3Params
-	case "regtest":
-		params = &chaincfg.RegressionNetParams
-	default:
-		logger.Fatal("Chain " + chain.Network + " no supported")
+	switch symbol {
+	case "BTC":
+		switch chain.Network {
+		case "mainnet":
+			// #reckless
+			params = &bitcoinCfg.MainNetParams
+		case "testnet":
+			params = &bitcoinCfg.TestNet3Params
+		case "regtest":
+			params = &bitcoinCfg.RegressionNetParams
+		default:
+			logger.Fatal("Chain " + chain.Network + " no supported")
+		}
+
+	case "LTC":
+		switch chain.Network {
+		case "mainnet":
+			// #reckless
+			params = boltz_lnd.ApplyLitecoinParams(litecoinCfg.MainNetParams)
+		case "testnet":
+			params = boltz_lnd.ApplyLitecoinParams(litecoinCfg.TestNet4Params)
+		case "regtest":
+			params = boltz_lnd.ApplyLitecoinParams(litecoinCfg.RegressionNetParams)
+		default:
+			logger.Fatal("Chain " + chain.Network + " no supported")
+		}
 	}
 
 	return symbol, params
@@ -128,11 +145,11 @@ func setBoltzEndpoint(boltz *boltz.Boltz, chain string) {
 	}
 
 	switch chain {
-	case "mainnet":
+	case bitcoinCfg.MainNetParams.Name:
 		boltz.URL = "https://boltz.exchange/api"
-	case "testnet3":
+	case bitcoinCfg.TestNet3Params.Name, litecoinCfg.TestNet4Params.Name:
 		boltz.URL = "https://testnet.boltz.exchange/api"
-	case "regtest":
+	case bitcoinCfg.RegressionNetParams.Name:
 		boltz.URL = "http://127.0.0.1:9001"
 	}
 

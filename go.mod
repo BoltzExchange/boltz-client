@@ -10,6 +10,7 @@ require (
 	github.com/google/logger v1.1.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightningnetwork/lnd v0.10.1-beta
+	github.com/ltcsuite/ltcd v0.0.0-20190101042124-f37f8bf35796
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/r3labs/sse v0.0.0-20200310095403-ee05428e4d0e
 	github.com/stretchr/testify v1.4.0
