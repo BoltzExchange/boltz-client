@@ -37,6 +37,7 @@ func main() {
 	}
 
 	checkLndVersion(lndInfo)
+	waitForLndSynced(cfg.LND)
 
 	symbol, chainParams := parseChain(lndInfo.Chains[0])
 	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
