@@ -8,6 +8,7 @@ const (
 
 	InvoiceSet
 	InvoicePaid
+	InvoicePending
 	InvoiceSettled
 	InvoiceFailedToPay
 
@@ -32,6 +33,7 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 
 	"invoice.set":         InvoiceSet,
 	"invoice.paid":        InvoicePaid,
+	"invoice.pending":     InvoicePending,
 	"invoice.settled":     InvoiceSettled,
 	"invoice.failedToPay": InvoiceFailedToPay,
 
@@ -64,4 +66,32 @@ func (event SwapUpdateEvent) String() string {
 
 func ParseEvent(event string) SwapUpdateEvent {
 	return swapUpdateEventStrings[event]
+}
+
+type ChannelState int
+
+const (
+	ChannelNone ChannelState = iota
+	ChannelAccepted
+	ChannelSettled
+)
+
+var channelStateStrings = map[string]ChannelState{
+	"none":     ChannelNone,
+	"accepted": ChannelAccepted,
+	"settled":  ChannelSettled,
+}
+
+func (event ChannelState) String() string {
+	for key, value := range channelStateStrings {
+		if event == value {
+			return key
+		}
+	}
+
+	return ""
+}
+
+func ParseChannelState(event string) ChannelState {
+	return channelStateStrings[event]
 }

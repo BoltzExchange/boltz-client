@@ -17,6 +17,10 @@ type Boltz struct {
 }
 
 // Types for Boltz API
+type GetVersionResponse struct {
+	Version string `json:"version"`
+}
+
 type symbolMinerFees struct {
 	Normal  int `json:"normal"`
 	Reverse struct {
@@ -116,6 +120,22 @@ type CreateReverseSwapRequest struct {
 	ClaimPublicKey string `json:"claimPublicKey"`
 }
 
+type Channel struct {
+	Auto             bool   `json:"auto"`
+	Private          bool   `json:"private"`
+	InboundLiquidity uint32 `json:"inboundLiquidity"`
+}
+
+type CreateChannelCreationRequest struct {
+	Type            string `json:"type"`
+	PairId          string `json:"pairId"`
+	OrderSide       string `json:"orderSide"`
+	RefundPublicKey string `json:"refundPublicKey"`
+	Invoice         string `json:"invoice"`
+
+	Channel Channel `json:"channel"`
+}
+
 type CreateReverseSwapResponse struct {
 	Id                 string `json:"id"`
 	Invoice            string `json:"invoice"`
@@ -129,6 +149,13 @@ type CreateReverseSwapResponse struct {
 
 func (boltz *Boltz) Init(symbol string) {
 	boltz.symbol = symbol
+}
+
+func (boltz *Boltz) GetVersion() (*GetVersionResponse, error) {
+	var response GetVersionResponse
+	err := boltz.sendGetRequest("/version", &response)
+
+	return &response, err
 }
 
 func (boltz *Boltz) GetPairs() (*GetPairsResponse, error) {
@@ -208,6 +235,16 @@ func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, 
 	}
 
 	return &response, err
+}
+
+func (boltz *Boltz) CreateChannelCreation(request CreateChannelCreationRequest) (response *CreateSwapResponse, err error) {
+	err = boltz.sendPostRequest("/createswap", request, &response)
+
+	if response.Error != "" {
+		return nil, errors.New(response.Error)
+	}
+
+	return response, err
 }
 
 func (boltz *Boltz) CreateReverseSwap(request CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {

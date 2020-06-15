@@ -53,6 +53,26 @@ func (boltz *boltz) CreateSwap(amount string) (*boltzrpc.CreateSwapResponse, err
 	})
 }
 
+func (boltz *boltz) CreateChannelCreation(amount string, inboundLiquidity string, private bool) (*boltzrpc.CreateSwapResponse, error) {
+	parsedAmount, err := strconv.ParseInt(amount, 0, 64)
+
+	if err != nil {
+		return nil, err
+	}
+
+	parsedInbound, err := strconv.ParseUint(inboundLiquidity, 0, 64)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return boltz.client.CreateChannel(boltz.ctx, &boltzrpc.CreateChannelRequest{
+		Amount:           parsedAmount,
+		InboundLiquidity: uint32(parsedInbound),
+		Private:          private,
+	})
+}
+
 func (boltz *boltz) CreateReverseSwap(amount string, address string) (*boltzrpc.CreateReverseSwapResponse, error) {
 	parsedAmount, err := strconv.ParseInt(amount, 0, 64)
 

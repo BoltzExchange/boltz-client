@@ -16,6 +16,8 @@ import (
 
 type Nursery struct {
 	symbol      string
+	boltzPubKey string
+
 	chainParams *chaincfg.Params
 
 	lnd      *lnd.LND
@@ -27,15 +29,26 @@ type Nursery struct {
 var eventListeners = make(map[string]chan bool)
 var eventListenersLock sync.RWMutex
 
-func (nursery *Nursery) Init(symbol string, chainParams *chaincfg.Params, lnd *lnd.LND, boltz *boltz.Boltz, database *database.Database) error {
+func (nursery *Nursery) Init(
+	symbol string,
+	boltzPubKey string,
+	chainParams *chaincfg.Params,
+	lnd *lnd.LND,
+	boltz *boltz.Boltz,
+	database *database.Database,
+) error {
 	nursery.symbol = symbol
+	nursery.boltzPubKey = boltzPubKey
+
 	nursery.chainParams = chainParams
 
 	nursery.lnd = lnd
 	nursery.boltz = boltz
 	nursery.database = database
 
-	logger.Info("Starting Swap nursery")
+	logger.Info("Starting nursery")
+
+	// TODO: use channel acceptor to prevent invalid channel openings from happening
 
 	blockNotifier := make(chan *chainrpc.BlockEpoch)
 	err := nursery.lnd.RegisterBlockListener(blockNotifier)

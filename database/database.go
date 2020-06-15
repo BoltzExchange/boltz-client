@@ -36,6 +36,12 @@ func (database *Database) createTables() error {
 
 	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS reverseSwaps (id VARCHAR PRIMARY KEY, status VARCHAR, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, claimAddress VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER)")
 
+	if err != nil {
+		return err
+	}
+
+	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS channelCreations (swapId VARCHAR PRIMARY KEY, status VARCHAR, inboundLiquidity INT, private BOOLEAN)")
+
 	return err
 }
 
