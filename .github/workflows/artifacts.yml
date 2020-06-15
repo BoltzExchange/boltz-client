@@ -38,8 +38,8 @@ jobs:
           name: linux-${{ matrix.architecture }}
           path: boltzd
 
-      - name: Upload boltz-cli
+      - name: Upload boltzcli
         uses: actions/upload-artifact@v1
         with:
           name: linux-${{ matrix.architecture }}
-          path: boltz-cli
+          path: boltzcli
