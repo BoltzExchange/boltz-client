@@ -12,6 +12,7 @@ import (
 	"github.com/lightningnetwork/lnd/zpay32"
 	"github.com/r3labs/sse"
 	"strconv"
+	"strings"
 )
 
 // TODO: abstract interactions with chain (querying and broadcasting transactions) into interface to be able to switch between Boltz API and bitcoin core
@@ -110,7 +111,9 @@ func (nursery *Nursery) getRefundOutput(swap database.Swap) *boltz.OutputDetails
 
 	if err != nil {
 		logger.Error("Could not get lockup transaction from Boltz: " + err.Error())
-		nursery.handleSwapStatus(&swap, "", boltz.SwapAbandoned.String())
+		nursery.handleSwapStatus(&swap, nil, boltz.SwapStatusResponse{
+			Status: boltz.SwapAbandoned.String(),
+		})
 
 		return nil
 	}
@@ -138,7 +141,9 @@ func (nursery *Nursery) getRefundOutput(swap database.Swap) *boltz.OutputDetails
 	}
 
 	// TODO: do this after refund is successful
-	nursery.handleSwapStatus(&swap, "", boltz.SwapRefunded.String())
+	nursery.handleSwapStatus(&swap, nil, boltz.SwapStatusResponse{
+		Status: boltz.SwapRefunded.String(),
+	})
 
 	return &boltz.OutputDetails{
 		LockupTransaction:  lockupTransaction,
@@ -177,7 +182,7 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 
 		if status.Status != swap.Status.String() {
 			logger.Info(swapType + " " + swap.Id + " status changed to: " + status.Status)
-			nursery.handleSwapStatus(&swap, swapType, status.Status)
+			nursery.handleSwapStatus(&swap, channelCreation, *status)
 
 			isCompleted := false
 
@@ -255,7 +260,7 @@ func (nursery *Nursery) RegisterSwap(swap *database.Swap, channelCreation *datab
 
 				if err == nil {
 					logger.Info(swapType + " " + swap.Id + " status update: " + response.Status)
-					nursery.handleSwapStatus(swap, swapType, response.Status)
+					nursery.handleSwapStatus(swap, channelCreation, response)
 
 					// The event listening can stop after the Swap has succeeded
 					if swap.Status == boltz.TransactionClaimed {
@@ -279,8 +284,11 @@ func (nursery *Nursery) RegisterSwap(swap *database.Swap, channelCreation *datab
 	}()
 }
 
-func (nursery *Nursery) handleSwapStatus(swap *database.Swap, swapType string, status string) {
-	parsedStatus := boltz.ParseEvent(status)
+func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *database.ChannelCreation, status boltz.SwapStatusResponse) {
+	isChannelCreation := channelCreation != nil
+	swapType := getSwapType(isChannelCreation)
+
+	parsedStatus := boltz.ParseEvent(status.Status)
 
 	switch parsedStatus {
 	case boltz.TransactionClaimed:
@@ -288,14 +296,14 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, swapType string, s
 		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.chainParams)
 
 		if err != nil {
-			logger.Warning("Could not decode invoice: " + err.Error())
+			logger.Error("Could not decode invoice: " + err.Error())
 			return
 		}
 
 		invoiceInfo, err := nursery.lnd.LookupInvoice(decodedInvoice.PaymentHash[:])
 
 		if err != nil {
-			logger.Warning("Could not get invoice information from LND: " + err.Error())
+			logger.Error("Could not get invoice information from LND: " + err.Error())
 			return
 		}
 
@@ -305,12 +313,76 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, swapType string, s
 		}
 
 		logger.Info(swapType + " " + swap.Id + " succeeded")
+
+	case boltz.ChannelCreated:
+		// Verify the capacity of the channel
+		pendingChannels, err := nursery.lnd.PendingChannels()
+
+		if err != nil {
+			logger.Error("Could not get pending channels: " + err.Error())
+			return
+		}
+
+		for _, pendingChannel := range pendingChannels.PendingOpenChannels {
+			id, vout, err := parseChannelPoint(pendingChannel.Channel.ChannelPoint)
+
+			if err != nil {
+				logger.Error("Could not parse funding channel point: " + err.Error())
+				return
+			}
+
+			if pendingChannel.Channel.RemoteNodePub == nursery.boltzPubKey &&
+				id == status.Channel.FundingTransactionId &&
+				vout == status.Channel.FundingTransactionVout {
+
+				decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.chainParams)
+
+				if err != nil {
+					logger.Error("Could not decode invoice: " + err.Error())
+					return
+				}
+
+				invoiceAmount := decodedInvoice.MilliSat.ToSatoshis().ToUnit(btcutil.AmountSatoshi)
+				expectedCapacity := calculateChannelCreationCapacity(invoiceAmount, channelCreation.InboundLiquidity)
+
+				if pendingChannel.Channel.Capacity < expectedCapacity {
+					logger.Error("Channel capacity of " + swapType + " " + swap.Id + " " +
+						strconv.FormatInt(pendingChannel.Channel.Capacity, 10) +
+						" is less than than expected " + strconv.FormatInt(expectedCapacity, 10) + " satoshis")
+					return
+				}
+
+				// TODO: how to verify public / private channel?
+
+				err = nursery.database.SetChannelFunding(channelCreation, id, vout)
+
+				if err != nil {
+					logger.Error("Could not update state of " + swapType + " " + swap.Id + ": " + err.Error())
+					return
+				}
+
+				logger.Info("Channel for " + swapType + " " + swap.Id + " was opened: " + pendingChannel.Channel.ChannelPoint)
+
+				break
+			}
+		}
 	}
 
 	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
 	if err != nil {
 		logger.Error("Could not update status of " + swapType + " " + swap.Id + ": " + err.Error())
 	}
+}
+
+func parseChannelPoint(channelPoint string) (string, int, error) {
+	split := strings.Split(channelPoint, ":")
+	vout, err := strconv.Atoi(split[1])
+
+	if err != nil {
+		return "", 0, err
+	}
+
+	return split[0], vout, nil
 }
 
 func getSwapType(isChannelCreation bool) string {

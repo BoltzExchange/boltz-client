@@ -4,28 +4,35 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
+	"strconv"
 )
 
 type ChannelCreation struct {
-	SwapId           string
-	Status           boltz.ChannelState
-	InboundLiquidity int
-	Private          bool
+	SwapId                 string
+	Status                 boltz.ChannelState
+	InboundLiquidity       int
+	Private                bool
+	FundingTransactionId   string
+	FundingTransactionVout int
 }
 
 type ChannelCreationSerialized struct {
-	SwapId           string
-	Status           string
-	InboundLiquidity int
-	Private          bool
+	SwapId                 string
+	Status                 string
+	InboundLiquidity       int
+	Private                bool
+	FundingTransactionId   string
+	FundingTransactionVout int
 }
 
 func (channelCreation *ChannelCreation) Serialize() ChannelCreationSerialized {
 	return ChannelCreationSerialized{
-		SwapId:           channelCreation.SwapId,
-		Status:           channelCreation.Status.String(),
-		InboundLiquidity: channelCreation.InboundLiquidity,
-		Private:          channelCreation.Private,
+		SwapId:                 channelCreation.SwapId,
+		Status:                 channelCreation.Status.String(),
+		InboundLiquidity:       channelCreation.InboundLiquidity,
+		Private:                channelCreation.Private,
+		FundingTransactionId:   channelCreation.FundingTransactionId,
+		FundingTransactionVout: channelCreation.FundingTransactionVout,
 	}
 }
 
@@ -39,6 +46,8 @@ func parseChannelCreation(rows *sql.Rows) (*ChannelCreation, error) {
 		&status,
 		&channelCreation.InboundLiquidity,
 		&channelCreation.Private,
+		&channelCreation.FundingTransactionId,
+		&channelCreation.FundingTransactionVout,
 	)
 
 	if err != nil {
@@ -69,7 +78,7 @@ func (database *Database) QueryChannelCreation(id string) (channelCreation *Chan
 }
 
 func (database *Database) CreateChannelCreation(channelCreation ChannelCreation) error {
-	insertStatement := "INSERT INTO channelCreations (swapId, status, inboundLiquidity, private) VALUES (?, ?, ?, ?)"
+	insertStatement := "INSERT INTO channelCreations (swapId, status, inboundLiquidity, private, fundingTransactionId, fundingTransactionVout) VALUES (?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -81,6 +90,8 @@ func (database *Database) CreateChannelCreation(channelCreation ChannelCreation)
 		channelCreation.Status.String(),
 		channelCreation.InboundLiquidity,
 		channelCreation.Private,
+		channelCreation.FundingTransactionId,
+		channelCreation.FundingTransactionVout,
 	)
 
 	if err != nil {
@@ -88,6 +99,20 @@ func (database *Database) CreateChannelCreation(channelCreation ChannelCreation)
 	}
 
 	return statement.Close()
+}
+
+func (database *Database) SetChannelFunding(channelCreation *ChannelCreation, fundingTransactionId string, fundingTransactionVout int) error {
+	channelCreation.FundingTransactionId = fundingTransactionId
+	channelCreation.FundingTransactionVout = fundingTransactionVout
+
+	_, err := database.db.Exec(
+		"UPDATE channelCreations SET status = '" + boltz.ChannelAccepted.String() + "', " +
+			"fundingTransactionId = '" + fundingTransactionId + "', " +
+			"fundingTransactionVout = " + strconv.Itoa(fundingTransactionVout) + " " +
+			"WHERE swapId = '" + channelCreation.SwapId + "'",
+	)
+
+	return err
 }
 
 func (database *Database) UpdateChannelCreationStatus(channelCreation *ChannelCreation, status boltz.ChannelState) error {

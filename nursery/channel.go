@@ -2,15 +2,11 @@ package nursery
 
 import (
 	"crypto/sha256"
-	"math"
-	"strconv"
-
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/btcsuite/btcutil"
 	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
-	"github.com/lightningnetwork/lnd/zpay32"
+	"math"
 )
 
 func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, channelCreation *database.ChannelCreation) (chan bool, error) {
@@ -31,19 +27,7 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 			case invoice := <-invoiceSubscription:
 				switch invoice.State {
 				case lnrpc.Invoice_ACCEPTED:
-					if len(invoice.Htlcs) == 0 {
-						logger.Warning("There is no pending HTLC for Channel Creation " + swap.Id)
-						return
-					}
-
-					chanId := invoice.Htlcs[0].ChanId
-
-					for _, htlc := range invoice.Htlcs {
-						if htlc.ChanId != chanId {
-							logger.Warning("Not all HTLCs of Channel Creation " + swap.Id + " were sent through the same channel")
-							return
-						}
-					}
+					var expectedChannelId uint64
 
 					channels, err := nursery.lnd.ListChannels()
 
@@ -52,48 +36,30 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 						return
 					}
 
-					channelVerificationError := "could not find channel"
-
 					for _, channel := range channels.Channels {
-						if channel.ChanId != chanId {
-							continue
-						}
-
-						if channel.RemotePubkey != nursery.boltzPubKey {
-							channelVerificationError = "channel was not opened by Boltz"
-							break
-						}
-
-						decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.chainParams)
+						id, vout, err := parseChannelPoint(channel.ChannelPoint)
 
 						if err != nil {
-							channelVerificationError = "could not decode invoice"
-							break
+							logger.Error("Could not parse funding channel point: " + err.Error())
+							return
 						}
 
-						invoiceAmount := decodedInvoice.MilliSat.ToSatoshis().ToUnit(btcutil.AmountSatoshi)
-						expectedCapacity := calculateChannelCreationCapacity(invoiceAmount, channelCreation.InboundLiquidity)
-
-						if channel.Capacity < expectedCapacity {
-							channelVerificationError = "channel capacity less than than expected " + strconv.FormatInt(expectedCapacity, 10) + " satoshis"
+						if id == channelCreation.FundingTransactionId && vout == channelCreation.FundingTransactionVout {
+							expectedChannelId = channel.ChanId
 							break
 						}
-
-						if channel.Private && !channelCreation.Private {
-							channelVerificationError = "channel is not private"
-							break
-						} else if !channel.Private && channelCreation.Private {
-							channelVerificationError = "channel is not public"
-							break
-						}
-
-						channelVerificationError = ""
-						break
 					}
 
-					if channelVerificationError != "" {
-						logger.Warning("Could not verify channel of Channel Creation " + swap.Id + ": " + channelVerificationError)
+					if expectedChannelId == 0 {
+						logger.Error("Could not find Channel of Channel Creation " + swap.Id)
 						return
+					}
+
+					for _, htlc := range invoice.Htlcs {
+						if htlc.ChanId != expectedChannelId {
+							logger.Error("Not all HTLCs of Channel Creation " + swap.Id + " were sent through the correct channel")
+							return
+						}
 					}
 
 					_, err = nursery.lnd.SettleInvoice(swap.Preimage)

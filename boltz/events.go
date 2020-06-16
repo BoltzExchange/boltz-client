@@ -12,6 +12,8 @@ const (
 	InvoiceSettled
 	InvoiceFailedToPay
 
+	ChannelCreated
+
 	TransactionFailed
 	TransactionMempool
 	TransactionClaimed
@@ -36,6 +38,8 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 	"invoice.pending":     InvoicePending,
 	"invoice.settled":     InvoiceSettled,
 	"invoice.failedToPay": InvoiceFailedToPay,
+
+	"channel.created": ChannelCreated,
 
 	"transaction.failed":    TransactionFailed,
 	"transaction.mempool":   TransactionMempool,

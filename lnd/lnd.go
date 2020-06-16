@@ -89,6 +89,10 @@ func (lnd *LND) ConnectPeer(pubKey string, host string) (*lnrpc.ConnectPeerRespo
 	})
 }
 
+func (lnd *LND) PendingChannels() (*lnrpc.PendingChannelsResponse, error) {
+	return lnd.client.PendingChannels(lnd.ctx, &lnrpc.PendingChannelsRequest{})
+}
+
 func (lnd *LND) ListChannels() (*lnrpc.ListChannelsResponse, error) {
 	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 }

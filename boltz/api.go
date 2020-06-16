@@ -59,7 +59,11 @@ type SwapStatusRequest struct {
 }
 
 type SwapStatusResponse struct {
-	Status      string `json:"status"`
+	Status  string `json:"status"`
+	Channel struct {
+		FundingTransactionId   string `json:"fundingTransactionId"`
+		FundingTransactionVout int    `json:"fundingTransactionVout"`
+	} `json:"channel"`
 	Transaction struct {
 		Id  string `json:"id"`
 		Hex string `json:"hex"`

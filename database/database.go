@@ -40,7 +40,7 @@ func (database *Database) createTables() error {
 		return err
 	}
 
-	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS channelCreations (swapId VARCHAR PRIMARY KEY, status VARCHAR, inboundLiquidity INT, private BOOLEAN)")
+	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS channelCreations (swapId VARCHAR PRIMARY KEY, status VARCHAR, inboundLiquidity INT, private BOOLEAN, fundingTransactionId VARCHAR, fundingTransactionVout INT)")
 
 	return err
 }

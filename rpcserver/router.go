@@ -264,10 +264,12 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	}
 
 	channelCreation := database.ChannelCreation{
-		SwapId:           response.Id,
-		Status:           boltz.ChannelNone,
-		InboundLiquidity: int(request.InboundLiquidity),
-		Private:          request.Private,
+		SwapId:                 response.Id,
+		Status:                 boltz.ChannelNone,
+		InboundLiquidity:       int(request.InboundLiquidity),
+		Private:                request.Private,
+		FundingTransactionId:   "",
+		FundingTransactionVout: 0,
 	}
 
 	err = boltz.CheckSwapScript(swap.RedeemScript, preimageHash, swap.PrivateKey, swap.TimoutBlockHeight)
