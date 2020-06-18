@@ -416,7 +416,8 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	logger.Info("Paid invoice of Reverse Swap " + reverseSwap.Id + " with fee of " + satsFee + " satoshis")
 
 	return &boltzrpc.CreateReverseSwapResponse{
-		Id: reverseSwap.Id,
+		Id:            reverseSwap.Id,
+		LockupAddress: response.LockupAddress,
 	}, nil
 }
 
