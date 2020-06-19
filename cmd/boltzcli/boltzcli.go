@@ -27,6 +27,7 @@ func main() {
 	app.Commands = []cli.Command{
 		getInfoCommand,
 		getSwapCommand,
+
 		createSwapCommand,
 		createChannelCreationCommand,
 		createReverseSwapCommand,

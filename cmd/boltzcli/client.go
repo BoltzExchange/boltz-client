@@ -41,47 +41,23 @@ func (boltz *boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error
 	})
 }
 
-func (boltz *boltz) CreateSwap(amount string) (*boltzrpc.CreateSwapResponse, error) {
-	parsedAmount, err := strconv.ParseInt(amount, 0, 64)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (boltz *boltz) CreateSwap(amount int64) (*boltzrpc.CreateSwapResponse, error) {
 	return boltz.client.CreateSwap(boltz.ctx, &boltzrpc.CreateSwapRequest{
-		Amount: parsedAmount,
+		Amount: amount,
 	})
 }
 
-func (boltz *boltz) CreateChannelCreation(amount string, inboundLiquidity string, private bool) (*boltzrpc.CreateSwapResponse, error) {
-	parsedAmount, err := strconv.ParseInt(amount, 0, 64)
-
-	if err != nil {
-		return nil, err
-	}
-
-	parsedInbound, err := strconv.ParseUint(inboundLiquidity, 0, 64)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (boltz *boltz) CreateChannelCreation(amount int64, inboundLiquidity uint32, private bool) (*boltzrpc.CreateSwapResponse, error) {
 	return boltz.client.CreateChannel(boltz.ctx, &boltzrpc.CreateChannelRequest{
-		Amount:           parsedAmount,
-		InboundLiquidity: uint32(parsedInbound),
+		Amount:           amount,
+		InboundLiquidity: inboundLiquidity,
 		Private:          private,
 	})
 }
 
-func (boltz *boltz) CreateReverseSwap(amount string, address string) (*boltzrpc.CreateReverseSwapResponse, error) {
-	parsedAmount, err := strconv.ParseInt(amount, 0, 64)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (boltz *boltz) CreateReverseSwap(amount int64, address string) (*boltzrpc.CreateReverseSwapResponse, error) {
 	return boltz.client.CreateReverseSwap(boltz.ctx, &boltzrpc.CreateReverseSwapRequest{
 		Address: address,
-		Amount:  parsedAmount,
+		Amount:  amount,
 	})
 }

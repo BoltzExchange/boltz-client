@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const retryInterval = 30
+const retryInterval = 15
 
 var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
 

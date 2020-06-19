@@ -74,7 +74,7 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	}, nil
 }
 
-// TODO: support reverse swaps
+// TODO: support Channel Creation Swaps
 func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
 	swap, err := server.database.QuerySwap(request.Id)
 

@@ -1,14 +1,8 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/golang/protobuf/proto"
 	"github.com/urfave/cli"
-	"os"
 )
-
-// TODO: sanity check inputs before constructing gRPC requests
 
 var getInfoCommand = cli.Command{
 	Name:     "getinfo",
@@ -52,7 +46,7 @@ func swapInfo(ctx *cli.Context) error {
 
 var createSwapCommand = cli.Command{
 	Name:      "createswap",
-	Category:  "Swap",
+	Category:  "Manual",
 	Usage:     "Creates a new Swap",
 	ArgsUsage: "amount",
 	Action:    createSwap,
@@ -60,7 +54,9 @@ var createSwapCommand = cli.Command{
 
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
-	swap, err := client.CreateSwap(ctx.Args().First())
+	swap, err := client.CreateSwap(
+		parseInt64(ctx.Args().First(), "amount"),
+	)
 
 	if err != nil {
 		return err
@@ -73,7 +69,7 @@ func createSwap(ctx *cli.Context) error {
 
 var createChannelCreationCommand = cli.Command{
 	Name:      "createchannel",
-	Category:  "Swap",
+	Category:  "Manual",
 	Usage:     "Creates a new Channel Creation",
 	ArgsUsage: "amount inbound",
 	Flags: []cli.Flag{
@@ -89,7 +85,11 @@ func createChannelCreation(ctx *cli.Context) error {
 	client := getClient(ctx)
 
 	private := ctx.Bool("private")
-	channelCreation, err := client.CreateChannelCreation(ctx.Args().First(), ctx.Args().Get(1), private)
+	channelCreation, err := client.CreateChannelCreation(
+		parseInt64(ctx.Args().First(), "amount"),
+		uint32(parseInt64(ctx.Args().Get(1), "inbound liquidity")),
+		private,
+	)
 
 	if err != nil {
 		return err
@@ -102,15 +102,18 @@ func createChannelCreation(ctx *cli.Context) error {
 
 var createReverseSwapCommand = cli.Command{
 	Name:      "createreverseswap",
-	Category:  "Swap",
+	Category:  "Manual",
 	Usage:     "Creates a new Reverse Swap",
-	ArgsUsage: "amount address",
+	ArgsUsage: "amount [address]",
 	Action:    createReverseSwap,
 }
 
 func createReverseSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
-	swap, err := client.CreateReverseSwap(ctx.Args().First(), ctx.Args().Get(1))
+	swap, err := client.CreateReverseSwap(
+		parseInt64(ctx.Args().First(), "amount"),
+		ctx.Args().Get(1),
+	)
 
 	if err != nil {
 		return err
@@ -119,18 +122,4 @@ func createReverseSwap(ctx *cli.Context) error {
 	printJson(swap)
 
 	return err
-}
-
-func printJson(resp proto.Message) {
-	encoder := json.NewEncoder(os.Stdout)
-	// Needs to be set to false for the BIP21 string to be formatted correctly
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-
-	err := encoder.Encode(resp)
-
-	if err != nil {
-		fmt.Println("Could not decode response: " + err.Error())
-		return
-	}
 }
