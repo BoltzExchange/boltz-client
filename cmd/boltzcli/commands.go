@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/urfave/cli"
+	"strconv"
 )
 
 var getInfoCommand = cli.Command{
@@ -42,6 +44,34 @@ func swapInfo(ctx *cli.Context) error {
 	printJson(swapInfo)
 
 	return err
+}
+
+var depositCommand = cli.Command{
+	Name:     "deposit",
+	Category: "Auto",
+	Usage:    "Deposits into a lightning node",
+	Action:   deposit,
+}
+
+func deposit(ctx *cli.Context) error {
+	client := getClient(ctx)
+	response, err := client.Deposit()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("You will receive the deposit in a channel of your Lightning node")
+	fmt.Println("The fees for this service are:")
+	fmt.Println("  - Service fee: " + strconv.Itoa(int(response.Fees.Percentage)) + "%")
+	fmt.Println("  - Miner fee: " + strconv.Itoa(int(response.Fees.Miner)) + " satoshis")
+	fmt.Println()
+	fmt.Println(
+		"Please send between " + strconv.Itoa(int(response.Limits.Minimal)) + " and " + strconv.Itoa(int(response.Limits.Maximal)) +
+			" satoshis to " + response.Address + " until block height " + strconv.Itoa(int(response.TimeoutBlockHeight)),
+	)
+
+	return nil
 }
 
 var createSwapCommand = cli.Command{

@@ -41,6 +41,10 @@ func (boltz *boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error
 	})
 }
 
+func (boltz *boltz) Deposit() (*boltzrpc.DepositResponse, error) {
+	return boltz.client.Deposit(boltz.ctx, &boltzrpc.DepositRequest{})
+}
+
 func (boltz *boltz) CreateSwap(amount int64) (*boltzrpc.CreateSwapResponse, error) {
 	return boltz.client.CreateSwap(boltz.ctx, &boltzrpc.CreateSwapRequest{
 		Amount: amount,

@@ -13,6 +13,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
+	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
@@ -120,12 +121,114 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 	return nil, errors.New("could not find Swap or Reverse Swap with ID " + request.Id)
 }
 
+func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
+	pairsResponse, err := server.boltz.GetPairs()
+
+	if err != nil {
+		return nil, err
+	}
+
+	pairSymbol := server.symbol + "/" + server.symbol
+	pair, hasPair := pairsResponse.Pairs[pairSymbol]
+
+	if !hasPair {
+		return nil, errors.New("could not find pair with symbol " + pairSymbol)
+	}
+
+	preimage, preimageHash, err := newPreimage()
+
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
+
+	privateKey, publicKey, err := newKeys()
+
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
+		Type:            "submarine",
+		PairId:          server.symbol + "/" + server.symbol,
+		OrderSide:       "buy",
+		PreimageHash:    hex.EncodeToString(preimageHash),
+		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
+
+		Channel: boltz.Channel{
+			Auto:             true,
+			Private:          false,
+			InboundLiquidity: 25,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	redeemScript, err := hex.DecodeString(response.RedeemScript)
+
+	if err != nil {
+		return nil, err
+	}
+
+	deposit := database.Swap{
+		Id:                response.Id,
+		Status:            boltz.SwapCreated,
+		Invoice:           "",
+		Address:           response.Address,
+		Preimage:          preimage,
+		PrivateKey:        privateKey,
+		RedeemScript:      redeemScript,
+		ExpectedAmount:    0,
+		TimoutBlockHeight: response.TimeoutBlockHeight,
+	}
+
+	err = boltz.CheckSwapScript(deposit.RedeemScript, preimageHash, deposit.PrivateKey, deposit.TimoutBlockHeight)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = boltz.CheckSwapAddress(server.chainParams, deposit.Address, deposit.RedeemScript, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info("Verified redeem script and address of Swap " + deposit.Id)
+
+	err = server.database.CreateSwap(deposit)
+
+	if err != nil {
+		return nil, err
+	}
+
+	server.nursery.RegisterSwap(&deposit, nil)
+
+	logger.Info("Created new Swap " + deposit.Id + ": " + marshalJson(deposit.Serialize()))
+
+	return &boltzrpc.DepositResponse{
+		Address:            deposit.Address,
+		TimeoutBlockHeight: uint32(deposit.TimoutBlockHeight),
+		Fees: &boltzrpc.Fees{
+			Miner:      uint32(pair.Fees.MinerFees.BaseAsset.Normal),
+			Percentage: uint32(pair.Fees.Percentage),
+		},
+		Limits: &boltzrpc.Limits{
+			Minimal: int64(pair.Limits.Minimal),
+			Maximal: int64(pair.Limits.Maximal),
+		},
+	}, err
+}
+
 // TODO: custom refund address
 // TODO: automatically sending from LND wallet
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
-	invoice, err := server.lnd.AddInvoice(request.Amount, "Submarine Swap from "+server.symbol)
+	invoice, err := server.lnd.AddInvoice(request.Amount, nil, utils.GetSwapMemo(server.symbol))
 
 	if err != nil {
 		return nil, err

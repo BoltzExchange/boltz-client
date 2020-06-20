@@ -192,3 +192,10 @@ func (database *Database) UpdateSwapStatus(swap *Swap, status boltz.SwapUpdateEv
 	_, err := database.db.Exec("UPDATE swaps SET status = '" + status.String() + "' WHERE id = '" + swap.Id + "'")
 	return err
 }
+
+func (database *Database) SetSwapInvoice(swap *Swap, invoice string) error {
+	swap.Invoice = invoice
+
+	_, err := database.db.Exec("UPDATE swaps SET invoice ='" + invoice + "' WHERE id ='" + swap.Id + "'")
+	return err
+}

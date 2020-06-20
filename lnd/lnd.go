@@ -97,10 +97,11 @@ func (lnd *LND) ListChannels() (*lnrpc.ListChannelsResponse, error) {
 	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 }
 
-func (lnd *LND) AddInvoice(value int64, memo string) (*lnrpc.AddInvoiceResponse, error) {
+func (lnd *LND) AddInvoice(value int64, preimage []byte, memo string) (*lnrpc.AddInvoiceResponse, error) {
 	return lnd.client.AddInvoice(lnd.ctx, &lnrpc.Invoice{
 		Memo:  memo,
 		Value: value,
+		RPreimage: preimage,
 	})
 }
 

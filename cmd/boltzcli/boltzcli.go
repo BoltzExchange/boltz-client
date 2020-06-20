@@ -28,6 +28,8 @@ func main() {
 		getInfoCommand,
 		getSwapCommand,
 
+		depositCommand,
+
 		createSwapCommand,
 		createChannelCreationCommand,
 		createReverseSwapCommand,

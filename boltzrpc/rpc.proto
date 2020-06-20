@@ -4,12 +4,12 @@ package boltzrpc;
 
 service Boltz {
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
-
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
+
+    rpc Deposit (DepositRequest) returns (DepositResponse);
 
     rpc CreateSwap (CreateSwapRequest) returns (CreateSwapResponse);
     rpc CreateChannel (CreateChannelRequest) returns (CreateSwapResponse);
-
     rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
 }
 
@@ -50,6 +50,23 @@ message ReverseSwapInfo {
 message GetSwapInfoResponse {
     SwapInfo swap = 1;
     ReverseSwapInfo reverse_swap = 2;
+}
+
+message DepositRequest {}
+message Fees {
+    uint32 percentage = 1;
+    uint32 miner = 2;
+}
+message Limits {
+    int64 minimal = 1;
+    int64 maximal = 2;
+}
+message DepositResponse {
+    string address = 1;
+    uint32 timeout_block_height = 2;
+
+    Fees fees = 3;
+    Limits limits = 4;
 }
 
 message CreateSwapRequest {
