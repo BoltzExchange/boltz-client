@@ -121,18 +121,24 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 	return nil, errors.New("could not find Swap or Reverse Swap with ID " + request.Id)
 }
 
-func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
-	pairsResponse, err := server.boltz.GetPairs()
+func (server *routedBoltzServer) GetServiceInfo(_ context.Context, _ *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
+	fees, limits, err := server.getPairs()
 
 	if err != nil {
 		return nil, err
 	}
 
-	pairSymbol := server.symbol + "/" + server.symbol
-	pair, hasPair := pairsResponse.Pairs[pairSymbol]
+	return &boltzrpc.GetServiceInfoResponse{
+		Fees:   fees,
+		Limits: limits,
+	}, nil
+}
 
-	if !hasPair {
-		return nil, errors.New("could not find pair with symbol " + pairSymbol)
+func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
+	fees, limits, err := server.getPairs()
+
+	if err != nil {
+		return nil, err
 	}
 
 	preimage, preimageHash, err := newPreimage()
@@ -210,16 +216,10 @@ func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositR
 	logger.Info("Created new Swap " + deposit.Id + ": " + marshalJson(deposit.Serialize()))
 
 	return &boltzrpc.DepositResponse{
+		Fees:               fees,
+		Limits:             limits,
 		Address:            deposit.Address,
 		TimeoutBlockHeight: uint32(deposit.TimoutBlockHeight),
-		Fees: &boltzrpc.Fees{
-			Miner:      uint32(pair.Fees.MinerFees.BaseAsset.Normal),
-			Percentage: uint32(pair.Fees.Percentage),
-		},
-		Limits: &boltzrpc.Limits{
-			Minimal: int64(pair.Limits.Minimal),
-			Maximal: int64(pair.Limits.Maximal),
-		},
 	}, err
 }
 
@@ -471,6 +471,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	reverseSwap := database.ReverseSwap{
 		Id:                 response.Id,
 		Status:             boltz.SwapCreated,
+		AcceptZeroConf:     request.AcceptZeroConf,
 		PrivateKey:         privateKey,
 		Preimage:           preimage,
 		ClaimAddress:       claimAddress,
@@ -504,24 +505,68 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		return nil, err
 	}
 
-	server.nursery.RegisterReverseSwap(reverseSwap)
+	// TODO: error handling in case the swap fails
+	claimTransactionIdChan := server.nursery.RegisterReverseSwap(reverseSwap)
 
 	logger.Info("Created new Reverse Swap " + reverseSwap.Id + ": " + marshalJson(reverseSwap.Serialize()))
 
-	payment, err := server.lnd.PayInvoice(reverseSwap.Invoice, 3, 30)
+	payment, err := server.payInvoice(reverseSwap.Invoice, reverseSwap.Id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: test this on testnet
-	satsFee := strconv.FormatFloat(float64(payment.FeeMsat)*1000, 'f', 3, 64)
-	logger.Info("Paid invoice of Reverse Swap " + reverseSwap.Id + " with fee of " + satsFee + " satoshis")
+	claimTransactionId := ""
+
+	if reverseSwap.AcceptZeroConf {
+		claimTransactionId = <-claimTransactionIdChan
+	}
 
 	return &boltzrpc.CreateReverseSwapResponse{
-		Id:            reverseSwap.Id,
-		LockupAddress: response.LockupAddress,
+		Id:                 reverseSwap.Id,
+		RoutingFeeMilliSat: uint32(payment),
+		ClaimTransactionId: claimTransactionId,
 	}, nil
+}
+
+func (server *routedBoltzServer) payInvoice(invoice string, id string) (int64, error) {
+	payment, err := server.lnd.PayInvoice(invoice, 3, 30)
+
+	if err != nil {
+		return 0, err
+	}
+
+	logger.Info("Paid invoice of Reverse Swap " + id + " with fee of " + utils.FormatMilliSat(payment.FeeMsat) + " satoshis")
+
+	return payment.FeeMsat, nil
+}
+
+func (server *routedBoltzServer) getPairs() (*boltzrpc.Fees, *boltzrpc.Limits, error) {
+	pairsResponse, err := server.boltz.GetPairs()
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pairSymbol := server.symbol + "/" + server.symbol
+	pair, hasPair := pairsResponse.Pairs[pairSymbol]
+
+	if !hasPair {
+		return nil, nil, errors.New("could not find pair with symbol " + pairSymbol)
+	}
+
+	minerFees := pair.Fees.MinerFees.BaseAsset
+
+	return &boltzrpc.Fees{
+			Percentage: uint32(pair.Fees.Percentage),
+			Miner: &boltzrpc.MinerFees{
+				Normal:  uint32(minerFees.Normal),
+				Reverse: uint32(minerFees.Reverse.Lockup + minerFees.Reverse.Claim),
+			},
+		}, &boltzrpc.Limits{
+			Minimal: int64(pair.Limits.Minimal),
+			Maximal: int64(pair.Limits.Maximal),
+		}, nil
 }
 
 func newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {

@@ -1,12 +1,38 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"os"
 	"strconv"
+	"strings"
 )
+
+func prompt(message string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print(message + " [yes/no] ")
+
+	input, err := reader.ReadString('\n')
+
+	if err != nil {
+		fmt.Println("Could not read input: " + err.Error())
+		os.Exit(1)
+	}
+
+	switch strings.ToLower(strings.TrimSpace(input)) {
+	case "yes":
+		return true
+
+	case "no":
+		return false
+
+	default:
+		return prompt(message)
+	}
+}
 
 func printJson(resp proto.Message) {
 	encoder := json.NewEncoder(os.Stdout)

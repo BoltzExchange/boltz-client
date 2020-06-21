@@ -32,7 +32,7 @@ func (nursery *Nursery) recoverReverseSwaps() error {
 
 		if status.Status != reverseSwap.Status.String() {
 			logger.Info("Swap " + reverseSwap.Id + " status changed to: " + status.Status)
-			nursery.handleReverseSwapStatus(&reverseSwap, *status)
+			nursery.handleReverseSwapStatus(&reverseSwap, *status, nil)
 
 			isCompleted := false
 
@@ -57,8 +57,10 @@ func (nursery *Nursery) recoverReverseSwaps() error {
 	return nil
 }
 
-func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) {
+func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) chan string {
 	logger.Info("Listening to events of Reverse Swap " + reverseSwap.Id)
+
+	claimTransactionIdChan := make(chan string)
 
 	go func() {
 		stopListening := make(chan bool)
@@ -93,7 +95,7 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) {
 
 				if err == nil {
 					logger.Info("Reverse Swap " + reverseSwap.Id + " status update: " + response.Status)
-					nursery.handleReverseSwapStatus(&reverseSwap, response)
+					nursery.handleReverseSwapStatus(&reverseSwap, response, claimTransactionIdChan)
 
 					// The event listening can stop after the Reverse Swap has succeeded
 					if reverseSwap.Status == boltz.InvoiceSettled {
@@ -111,13 +113,23 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) {
 			}
 		}
 	}()
+
+	return claimTransactionIdChan
 }
 
-func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse) {
+// TODO: fail swap after "transaction.failed" event
+func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse, claimTransactionIdChan chan string) {
 	parsedStatus := boltz.ParseEvent(event.Status)
 
 	switch parsedStatus {
+	case boltz.TransactionMempool:
+		fallthrough
+
 	case boltz.TransactionConfirmed:
+		if parsedStatus == boltz.TransactionMempool && !reverseSwap.AcceptZeroConf {
+			break
+		}
+
 		lockupTransactionRaw, err := hex.DecodeString(event.Transaction.Hex)
 
 		if err != nil {
@@ -195,6 +207,10 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		if err != nil {
 			logger.Error("Could not finalize claim transaction: " + err.Error())
+		}
+
+		if claimTransactionIdChan != nil {
+			claimTransactionIdChan <- claimTransaction.TxHash().String()
 		}
 	}
 

@@ -130,7 +130,7 @@ type SwapRatesResponse struct {
 }
 
 type SetInvoiceRequest struct {
-	Id string `json:"id"`
+	Id      string `json:"id"`
 	Invoice string `json:"invoice"`
 }
 

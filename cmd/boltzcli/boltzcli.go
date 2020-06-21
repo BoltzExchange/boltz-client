@@ -29,6 +29,7 @@ func main() {
 		getSwapCommand,
 
 		depositCommand,
+		withdrawCommand,
 
 		createSwapCommand,
 		createChannelCreationCommand,

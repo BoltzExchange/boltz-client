@@ -35,6 +35,10 @@ func (boltz *boltz) GetInfo() (*boltzrpc.GetInfoResponse, error) {
 	return boltz.client.GetInfo(boltz.ctx, &boltzrpc.GetInfoRequest{})
 }
 
+func (boltz *boltz) GetServiceInfo() (*boltzrpc.GetServiceInfoResponse, error) {
+	return boltz.client.GetServiceInfo(boltz.ctx, &boltzrpc.GetServiceInfoRequest{})
+}
+
 func (boltz *boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error) {
 	return boltz.client.GetSwapInfo(boltz.ctx, &boltzrpc.GetSwapInfoRequest{
 		Id: id,
@@ -59,9 +63,10 @@ func (boltz *boltz) CreateChannelCreation(amount int64, inboundLiquidity uint32,
 	})
 }
 
-func (boltz *boltz) CreateReverseSwap(amount int64, address string) (*boltzrpc.CreateReverseSwapResponse, error) {
+func (boltz *boltz) CreateReverseSwap(amount int64, address string, acceptZeroConf bool) (*boltzrpc.CreateReverseSwapResponse, error) {
 	return boltz.client.CreateReverseSwap(boltz.ctx, &boltzrpc.CreateReverseSwapRequest{
-		Address: address,
-		Amount:  amount,
+		Address:        address,
+		Amount:         amount,
+		AcceptZeroConf: acceptZeroConf,
 	})
 }

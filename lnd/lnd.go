@@ -99,8 +99,8 @@ func (lnd *LND) ListChannels() (*lnrpc.ListChannelsResponse, error) {
 
 func (lnd *LND) AddInvoice(value int64, preimage []byte, memo string) (*lnrpc.AddInvoiceResponse, error) {
 	return lnd.client.AddInvoice(lnd.ctx, &lnrpc.Invoice{
-		Memo:  memo,
-		Value: value,
+		Memo:      memo,
+		Value:     value,
 		RPreimage: preimage,
 	})
 }

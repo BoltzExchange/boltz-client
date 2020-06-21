@@ -12,6 +12,7 @@ import (
 type ReverseSwap struct {
 	Id                 string
 	Status             boltz.SwapUpdateEvent
+	AcceptZeroConf     bool
 	PrivateKey         *btcec.PrivateKey
 	Preimage           []byte
 	RedeemScript       []byte
@@ -24,6 +25,7 @@ type ReverseSwap struct {
 type ReverseSwapSerialized struct {
 	Id                 string
 	Status             string
+	AcceptZeroConf     bool
 	PrivateKey         string
 	Preimage           string
 	RedeemScript       string
@@ -37,6 +39,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	return ReverseSwapSerialized{
 		Id:                 reverseSwap.Id,
 		Status:             reverseSwap.Status.String(),
+		AcceptZeroConf:     reverseSwap.AcceptZeroConf,
 		PrivateKey:         formatPrivateKey(reverseSwap.PrivateKey),
 		Preimage:           hex.EncodeToString(reverseSwap.Preimage),
 		RedeemScript:       hex.EncodeToString(reverseSwap.RedeemScript),
@@ -58,6 +61,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	err := rows.Scan(
 		&reverseSwap.Id,
 		&status,
+		&reverseSwap.AcceptZeroConf,
 		&privateKey,
 		&preimage,
 		&redeemScript,
@@ -139,7 +143,7 @@ func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, status, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO reverseSwaps (id, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -149,6 +153,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 	_, err = statement.Exec(
 		reverseSwap.Id,
 		reverseSwap.Status.String(),
+		reverseSwap.AcceptZeroConf,
 		formatPrivateKey(reverseSwap.PrivateKey),
 		hex.EncodeToString(reverseSwap.Preimage),
 		hex.EncodeToString(reverseSwap.RedeemScript),
