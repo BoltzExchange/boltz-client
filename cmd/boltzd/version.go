@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/google/logger"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"strconv"
 	"strings"

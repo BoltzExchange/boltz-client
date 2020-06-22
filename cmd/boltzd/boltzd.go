@@ -5,19 +5,18 @@ import (
 	"github.com/BoltzExchange/boltz-lnd"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
-	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
-
-	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
 	"strings"
 )
 
 func main() {
 	cfg := boltz_lnd.LoadConfig()
 
-	boltz_lnd.InitLogger(cfg.LogFile)
+	logger.InitLogger(cfg.LogFile, cfg.LogPrefix)
 	err := cfg.Database.Connect()
 
 	if err != nil {

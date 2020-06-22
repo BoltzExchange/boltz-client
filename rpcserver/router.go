@@ -12,12 +12,12 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
-	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/zpay32"
 	"strconv"
 )

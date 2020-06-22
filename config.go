@@ -6,6 +6,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/build"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/rpcserver"
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
@@ -20,7 +21,9 @@ type helpOptions struct {
 
 type config struct {
 	ConfigFile string `short:"c" long:"configfile" description:"Path to configuration file"`
-	LogFile    string `short:"l" long:"logfile" description:"Path to the log file"`
+
+	LogFile   string `short:"l" long:"logfile" description:"Path to the log file"`
+	LogPrefix string `long:"logprefix" description:"Prefix of all log messages"`
 
 	Boltz    *boltz.Boltz         `group:"Boltz Options"`
 	LND      *lnd.LND             `group:"LND Options"`
@@ -32,8 +35,10 @@ type config struct {
 
 func LoadConfig() *config {
 	cfg := config{
-		LogFile:    "./boltz.log",
 		ConfigFile: "./boltz.toml",
+
+		LogFile:   "./boltz.log",
+		LogPrefix: "",
 
 		Boltz: &boltz.Boltz{
 			URL: "",
@@ -96,5 +101,5 @@ func LoadConfig() *config {
 }
 
 func printCouldNotParseCli(err error) {
-	printFatal("Could not parse CLI arguments: %s", err)
+	logger.PrintFatal("Could not parse CLI arguments: %s", err)
 }

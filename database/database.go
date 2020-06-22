@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 	"encoding/hex"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/google/logger"
 	_ "github.com/mattn/go-sqlite3"
 )
 

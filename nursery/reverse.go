@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/btcsuite/btcutil"
-	"github.com/google/logger"
 	"github.com/r3labs/sse"
 	"strconv"
 )

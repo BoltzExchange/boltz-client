@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/google/logger"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"math"
 )
