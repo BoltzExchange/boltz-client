@@ -101,6 +101,7 @@ type CreateSwapRequest struct {
 	OrderSide       string `json:"orderSide"`
 	RefundPublicKey string `json:"refundPublicKey"`
 	Invoice         string `json:"invoice"`
+	PreimageHash    string `json:"preimageHash"`
 }
 
 type CreateSwapResponse struct {
@@ -112,6 +113,28 @@ type CreateSwapResponse struct {
 	ExpectedAmount     int    `json:"expectedAmount"`
 	TimeoutBlockHeight int    `json:"timeoutBlockHeight"`
 
+	Error string `json:"error"`
+}
+
+type SwapRatesRequest struct {
+	Id string `json:"id"`
+}
+
+type SwapRatesResponse struct {
+	OnchainAmount int `json:"onchainAmount"`
+	SubmarineSwap struct {
+		InvoiceAmount int `json:"invoiceAmount"`
+	} `json:"submarineSwap"`
+
+	Error string `json:"error"`
+}
+
+type SetInvoiceRequest struct {
+	Id      string `json:"id"`
+	Invoice string `json:"invoice"`
+}
+
+type SetInvoiceResponse struct {
 	Error string `json:"error"`
 }
 
@@ -136,6 +159,7 @@ type CreateChannelCreationRequest struct {
 	OrderSide       string `json:"orderSide"`
 	RefundPublicKey string `json:"refundPublicKey"`
 	Invoice         string `json:"invoice"`
+	PreimageHash    string `json:"preimageHash"`
 
 	Channel Channel `json:"channel"`
 }
@@ -233,6 +257,28 @@ func (boltz *Boltz) BroadcastTransaction(transactionHex string) (*BroadcastTrans
 func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, error) {
 	var response CreateSwapResponse
 	err := boltz.sendPostRequest("/createswap", request, &response)
+
+	if response.Error != "" {
+		return nil, errors.New(response.Error)
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) SwapRates(request SwapRatesRequest) (*SwapRatesResponse, error) {
+	var response SwapRatesResponse
+	err := boltz.sendPostRequest("/swaprates", request, &response)
+
+	if response.Error != "" {
+		return nil, errors.New(response.Error)
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) SetInvoice(request SetInvoiceRequest) (*SetInvoiceResponse, error) {
+	var response SetInvoiceResponse
+	err := boltz.sendPostRequest("/setinvoice", request, &response)
 
 	if response.Error != "" {
 		return nil, errors.New(response.Error)

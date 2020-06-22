@@ -4,12 +4,13 @@ package boltzrpc;
 
 service Boltz {
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
-
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
+    rpc GetServiceInfo (GetServiceInfoRequest) returns (GetServiceInfoResponse);
+
+    rpc Deposit (DepositRequest) returns (DepositResponse);
 
     rpc CreateSwap (CreateSwapRequest) returns (CreateSwapResponse);
     rpc CreateChannel (CreateChannelRequest) returns (CreateSwapResponse);
-
     rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
 }
 
@@ -52,6 +53,34 @@ message GetSwapInfoResponse {
     ReverseSwapInfo reverse_swap = 2;
 }
 
+message MinerFees {
+    uint32 normal = 1;
+    uint32 reverse = 2;
+}
+message Fees {
+    uint32 percentage = 1;
+    MinerFees miner = 2;
+}
+message Limits {
+    int64 minimal = 1;
+    int64 maximal = 2;
+}
+
+message GetServiceInfoRequest {}
+message GetServiceInfoResponse {
+    Fees fees = 1;
+    Limits limits = 2;
+}
+
+message DepositRequest {}
+message DepositResponse {
+    string address = 1;
+    uint32 timeout_block_height = 2;
+
+    Fees fees = 3;
+    Limits limits = 4;
+}
+
 message CreateSwapRequest {
     int64 amount = 1;
 }
@@ -71,8 +100,12 @@ message CreateChannelRequest {
 message CreateReverseSwapRequest {
     int64 amount = 1;
     string address = 2;
+    bool accept_zero_conf = 3;
 }
 message CreateReverseSwapResponse {
     string id = 1;
-    string lockup_address = 2;
+    uint32 routing_fee_milli_sat = 2;
+
+    // Only populated when 0-conf is accepted
+    string claim_transaction_id = 3;
 }

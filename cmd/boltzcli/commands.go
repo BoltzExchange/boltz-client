@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/urfave/cli"
+	"strconv"
 )
 
 var getInfoCommand = cli.Command{
@@ -40,6 +43,84 @@ func swapInfo(ctx *cli.Context) error {
 	}
 
 	printJson(swapInfo)
+
+	return err
+}
+
+var depositCommand = cli.Command{
+	Name:     "deposit",
+	Category: "Auto",
+	Usage:    "Deposits into your lightning node",
+	Action:   deposit,
+}
+
+func deposit(ctx *cli.Context) error {
+	client := getClient(ctx)
+	response, err := client.Deposit()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("You will receive the deposit in a channel of your Lightning node")
+	fmt.Println("The fees for this service are:")
+	fmt.Println("  - Service fee: " + strconv.Itoa(int(response.Fees.Percentage)) + "%")
+	fmt.Println("  - Miner fee: " + strconv.Itoa(int(response.Fees.Miner.Normal)) + " satoshis")
+	fmt.Println()
+	fmt.Println(
+		"Please send between " + strconv.Itoa(int(response.Limits.Minimal)) + " and " + strconv.Itoa(int(response.Limits.Maximal)) +
+			" satoshis to " + response.Address + " until block height " + strconv.Itoa(int(response.TimeoutBlockHeight)),
+	)
+
+	return nil
+}
+
+var withdrawCommand = cli.Command{
+	Name:     "withdraw",
+	Category: "Auto",
+	Usage:    "Withdraw from your lightning node",
+	Action:   withdraw,
+}
+
+func withdraw(ctx *cli.Context) error {
+	client := getClient(ctx)
+
+	address := ctx.Args().Get(1)
+
+	if address == "" {
+		fmt.Println("No withdraw address was specified")
+		return nil
+	}
+
+	amount := parseInt64(ctx.Args().First(), "amount")
+
+	serviceInfo, err := client.GetServiceInfo()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("You will receive the withdrawal to the specified onchain address")
+	fmt.Println("The fees for this service are:")
+	fmt.Println("  - Service fee: " + strconv.Itoa(int(serviceInfo.Fees.Percentage)) + "%")
+	fmt.Println("  - Miner fee: " + strconv.Itoa(int(serviceInfo.Fees.Miner.Reverse)) + " satoshis")
+	fmt.Println()
+
+	if !prompt("Do you want to continue?") {
+		return nil
+	}
+
+	fmt.Println("Withdrawing...")
+
+	response, err := client.CreateReverseSwap(amount, address, true)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println()
+	fmt.Println("Routing fee paid: " + utils.FormatMilliSat(int64(response.RoutingFeeMilliSat)) + " sats")
+	fmt.Println("Transaction id: " + response.ClaimTransactionId)
 
 	return err
 }
@@ -100,6 +181,7 @@ func createChannelCreation(ctx *cli.Context) error {
 	return err
 }
 
+// TODO: allow zero conf via cli argument
 var createReverseSwapCommand = cli.Command{
 	Name:      "createreverseswap",
 	Category:  "Manual",
@@ -113,6 +195,7 @@ func createReverseSwap(ctx *cli.Context) error {
 	swap, err := client.CreateReverseSwap(
 		parseInt64(ctx.Args().First(), "amount"),
 		ctx.Args().Get(1),
+		false,
 	)
 
 	if err != nil {

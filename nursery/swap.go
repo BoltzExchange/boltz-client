@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
+	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcutil"
 	"github.com/google/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -291,28 +292,51 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 	parsedStatus := boltz.ParseEvent(status.Status)
 
 	switch parsedStatus {
-	case boltz.TransactionClaimed:
-		// Verify that the invoice was actually paid
-		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.chainParams)
+	case boltz.TransactionMempool:
+		fallthrough
+
+	case boltz.TransactionConfirmed:
+		// Set the invoice of Swaps that were created with only a preimage hash
+		if swap.Invoice != "" {
+			break
+		}
+
+		swapRates, err := nursery.boltz.SwapRates(boltz.SwapRatesRequest{
+			Id: swap.Id,
+		})
 
 		if err != nil {
-			logger.Error("Could not decode invoice: " + err.Error())
+			logger.Error("Could not query Swap rates of Swap " + swap.Id + ": " + err.Error())
 			return
 		}
 
-		invoiceInfo, err := nursery.lnd.LookupInvoice(decodedInvoice.PaymentHash[:])
+		logger.Info("Found output for Swap " + swap.Id + " of " + strconv.Itoa(swapRates.OnchainAmount) + " satoshis")
+
+		invoice, err := nursery.lnd.AddInvoice(int64(swapRates.SubmarineSwap.InvoiceAmount), swap.Preimage, utils.GetSwapMemo(nursery.symbol))
 
 		if err != nil {
-			logger.Error("Could not get invoice information from LND: " + err.Error())
+			logger.Error("Could not get new invoice for Swap " + swap.Id + ": " + err.Error())
 			return
 		}
 
-		if invoiceInfo.State != lnrpc.Invoice_SETTLED {
-			logger.Warning(swapType + " " + swap.Id + " was not actually settled. Refunding at block " + strconv.Itoa(swap.TimoutBlockHeight))
+		logger.Info("Generated new invoice for Swap " + swap.Id + " for " + strconv.Itoa(swapRates.SubmarineSwap.InvoiceAmount) + " satoshis")
+
+		_, err = nursery.boltz.SetInvoice(boltz.SetInvoiceRequest{
+			Id:      swap.Id,
+			Invoice: invoice.PaymentRequest,
+		})
+
+		if err != nil {
+			logger.Error("Could not set invoice of Swap: " + err.Error())
 			return
 		}
 
-		logger.Info(swapType + " " + swap.Id + " succeeded")
+		err = nursery.database.SetSwapInvoice(swap, invoice.PaymentRequest)
+
+		if err != nil {
+			logger.Error("Could not set invoice of Swap in database: " + err.Error())
+			return
+		}
 
 	case boltz.ChannelCreated:
 		// Verify the capacity of the channel
@@ -366,6 +390,29 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 				break
 			}
 		}
+
+	case boltz.TransactionClaimed:
+		// Verify that the invoice was actually paid
+		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.chainParams)
+
+		if err != nil {
+			logger.Error("Could not decode invoice: " + err.Error())
+			return
+		}
+
+		invoiceInfo, err := nursery.lnd.LookupInvoice(decodedInvoice.PaymentHash[:])
+
+		if err != nil {
+			logger.Error("Could not get invoice information from LND: " + err.Error())
+			return
+		}
+
+		if invoiceInfo.State != lnrpc.Invoice_SETTLED {
+			logger.Warning(swapType + " " + swap.Id + " was not actually settled. Refunding at block " + strconv.Itoa(swap.TimoutBlockHeight))
+			return
+		}
+
+		logger.Info(swapType + " " + swap.Id + " succeeded")
 	}
 
 	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
