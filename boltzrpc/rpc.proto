@@ -18,8 +18,10 @@ message GetInfoRequest {}
 message GetInfoResponse {
     string symbol = 1;
     string lnd_pubkey = 2;
-    repeated string pending_swaps = 3;
-    repeated string pending_reverse_swaps = 4;
+    uint32 block_height = 3;
+
+    repeated string pending_swaps = 4;
+    repeated string pending_reverse_swaps = 5;
 }
 
 message GetSwapInfoRequest {

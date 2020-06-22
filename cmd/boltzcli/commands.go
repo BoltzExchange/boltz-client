@@ -62,14 +62,33 @@ func deposit(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("You will receive the deposit in a channel of your Lightning node")
+	info, err := client.GetInfo()
+
+	if err != nil {
+		return err
+	}
+
+	var blockTime float64 = 0
+
+	switch info.Symbol {
+	case "BTC":
+		blockTime = utils.BitcoinBlockTime
+
+	case "LTC":
+		blockTime = utils.LitecoinBlockTime
+	}
+
+	timeoutHours := utils.BlocksToHours(response.TimeoutBlockHeight-info.BlockHeight, blockTime)
+
+	fmt.Println("You will receive your deposit in a lightning channel. If you do not have a channel with sufficient capacity yet, Boltz will open a channel.")
 	fmt.Println("The fees for this service are:")
 	fmt.Println("  - Service fee: " + strconv.Itoa(int(response.Fees.Percentage)) + "%")
 	fmt.Println("  - Miner fee: " + strconv.Itoa(int(response.Fees.Miner.Normal)) + " satoshis")
 	fmt.Println()
 	fmt.Println(
-		"Please send between " + strconv.Itoa(int(response.Limits.Minimal)) + " and " + strconv.Itoa(int(response.Limits.Maximal)) +
-			" satoshis to " + response.Address + " until block height " + strconv.Itoa(int(response.TimeoutBlockHeight)),
+		"Please deposit between " + strconv.Itoa(int(response.Limits.Minimal)) + " and " + strconv.Itoa(int(response.Limits.Maximal)) +
+			" satoshis into " + response.Address + " in the next ~" + timeoutHours + " hours " +
+			"(block height " + strconv.Itoa(int(response.TimeoutBlockHeight)) + ")",
 	)
 
 	return nil

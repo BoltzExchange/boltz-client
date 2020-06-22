@@ -70,6 +70,7 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	return &boltzrpc.GetInfoResponse{
 		Symbol:              server.symbol,
 		LndPubkey:           lndInfo.IdentityPubkey,
+		BlockHeight:         lndInfo.BlockHeight,
 		PendingSwaps:        pendingSwapIds,
 		PendingReverseSwaps: pendingReverseSwapIds,
 	}, nil
