@@ -178,7 +178,8 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 		status, err := nursery.boltz.SwapStatus(swap.Id)
 
 		if err != nil {
-			return err
+			logger.Warning("Boltz could not find Swap " + swap.Id + ": " + err.Error())
+			continue
 		}
 
 		if status.Status != swap.Status.String() {

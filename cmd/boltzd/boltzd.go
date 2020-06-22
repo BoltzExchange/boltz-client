@@ -33,10 +33,11 @@ func main() {
 	lndInfo := connectToLnd(cfg.LND)
 
 	checkLndVersion(lndInfo)
-	waitForLndSynced(cfg.LND)
 
 	symbol, chainParams := parseChain(lndInfo.Chains[0])
 	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
+
+	waitForLndSynced(cfg.LND)
 
 	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
 	cfg.Boltz.Init(symbol)
@@ -53,7 +54,7 @@ func main() {
 	err = swapNursery.Init(symbol, boltzPubKey, chainParams, cfg.LND, cfg.Boltz, cfg.Database)
 
 	if err != nil {
-		logger.Fatal("Could no start Swap nursery: " + err.Error())
+		logger.Fatal("Could not start Swap nursery: " + err.Error())
 	}
 
 	err = cfg.RPC.Start(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)

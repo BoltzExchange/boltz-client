@@ -6,7 +6,7 @@ This repository contains a [Boltz](https://boltz.exchange) client for [LND](http
 
 ## `boltzd`
 
-`boltzd` is a daemon that should run alongside of your LND node. It connects to your LND node, and the Boltz API to create and exeucte Swaps. 
+`boltzd` is a daemon that should run alongside of your LND node. It connects to your LND node, and the Boltz API to create and execute Swaps.
 
 The LND node to which the daemon connects to, has to be version `v0.10.0-beta` or higher. Also, LND needs to be compiled with these build flags (binaries from the official Lightning Labs releases include them):
 

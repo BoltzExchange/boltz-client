@@ -27,7 +27,8 @@ func (nursery *Nursery) recoverReverseSwaps() error {
 		status, err := nursery.boltz.SwapStatus(reverseSwap.Id)
 
 		if err != nil {
-			return err
+			logger.Warning("Boltz could not find Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+			continue
 		}
 
 		if status.Status != reverseSwap.Status.String() {
