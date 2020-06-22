@@ -340,6 +340,10 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		}
 
 	case boltz.ChannelCreated:
+		if channelCreation == nil {
+			break
+		}
+
 		// Verify the capacity of the channel
 		pendingChannels, err := nursery.lnd.PendingChannels()
 
