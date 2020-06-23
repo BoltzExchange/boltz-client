@@ -36,6 +36,11 @@ $(LINT_BIN):
 	@$(call print, "Fetching linter")
 	go get $(LINT_PKG)
 
+
+patch-btcutil:
+	@$(call print, "Patching btcutil")
+	patch -u vendor/github.com/btcsuite/btcutil/address.go -i btcutil.patch --forward || true
+
 #
 # Tests
 #
@@ -48,12 +53,12 @@ unit:
 # Building
 #
 
-build:
+build: patch-btcutil
 	@$(call print, "Building boltz-lnd")
 	$(GOBUILD) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-install:
+install: patch-btcutil
 	@$(call print, "Installing boltz-lnd")
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)

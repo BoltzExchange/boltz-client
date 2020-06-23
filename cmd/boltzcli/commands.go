@@ -98,6 +98,7 @@ var withdrawCommand = cli.Command{
 	Name:     "withdraw",
 	Category: "Auto",
 	Usage:    "Withdraw from your lightning node",
+	ArgsUsage: "amount address",
 	Action:   withdraw,
 }
 
@@ -106,12 +107,12 @@ func withdraw(ctx *cli.Context) error {
 
 	address := ctx.Args().Get(1)
 
+	amount := parseInt64(ctx.Args().First(), "amount")
+
 	if address == "" {
 		fmt.Println("No withdraw address was specified")
 		return nil
 	}
-
-	amount := parseInt64(ctx.Args().First(), "amount")
 
 	serviceInfo, err := client.GetServiceInfo()
 
