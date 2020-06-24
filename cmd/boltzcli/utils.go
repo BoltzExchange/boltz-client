@@ -58,3 +58,7 @@ func parseInt64(value string, name string) int64 {
 
 	return parsed
 }
+
+func formatPercentageFee(percentageFee float32) string {
+	return strconv.FormatFloat(float64(percentageFee), 'f', 1, 32)
+}

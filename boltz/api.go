@@ -38,7 +38,7 @@ type GetPairsResponse struct {
 			Minimal int `json:"minimal"`
 		} `json:"limits"`
 		Fees struct {
-			Percentage int `json:"percentage"`
+			Percentage float32 `json:"percentage"`
 			MinerFees  struct {
 				BaseAsset  symbolMinerFees `json:"baseAsset"`
 				QuoteAsset symbolMinerFees `json:"quoteAsset"`

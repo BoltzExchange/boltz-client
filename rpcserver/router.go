@@ -559,7 +559,7 @@ func (server *routedBoltzServer) getPairs() (*boltzrpc.Fees, *boltzrpc.Limits, e
 	minerFees := pair.Fees.MinerFees.BaseAsset
 
 	return &boltzrpc.Fees{
-			Percentage: uint32(pair.Fees.Percentage),
+			Percentage: pair.Fees.Percentage,
 			Miner: &boltzrpc.MinerFees{
 				Normal:  uint32(minerFees.Normal),
 				Reverse: uint32(minerFees.Reverse.Lockup + minerFees.Reverse.Claim),

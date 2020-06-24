@@ -82,7 +82,7 @@ func deposit(ctx *cli.Context) error {
 
 	fmt.Println("You will receive your deposit in a lightning channel. If you do not have a channel with sufficient capacity yet, Boltz will open a channel.")
 	fmt.Println("The fees for this service are:")
-	fmt.Println("  - Service fee: " + strconv.Itoa(int(response.Fees.Percentage)) + "%")
+	fmt.Println("  - Service fee: " + formatPercentageFee(response.Fees.Percentage) + "%")
 	fmt.Println("  - Miner fee: " + strconv.Itoa(int(response.Fees.Miner.Normal)) + " satoshis")
 	fmt.Println()
 	fmt.Println(
@@ -95,11 +95,11 @@ func deposit(ctx *cli.Context) error {
 }
 
 var withdrawCommand = cli.Command{
-	Name:     "withdraw",
-	Category: "Auto",
-	Usage:    "Withdraw from your lightning node",
+	Name:      "withdraw",
+	Category:  "Auto",
+	Usage:     "Withdraw from your lightning node",
 	ArgsUsage: "amount address",
-	Action:   withdraw,
+	Action:    withdraw,
 }
 
 func withdraw(ctx *cli.Context) error {
@@ -122,7 +122,7 @@ func withdraw(ctx *cli.Context) error {
 
 	fmt.Println("You will receive the withdrawal to the specified onchain address")
 	fmt.Println("The fees for this service are:")
-	fmt.Println("  - Service fee: " + strconv.Itoa(int(serviceInfo.Fees.Percentage)) + "%")
+	fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
 	fmt.Println("  - Miner fee: " + strconv.Itoa(int(serviceInfo.Fees.Miner.Reverse)) + " satoshis")
 	fmt.Println()
 

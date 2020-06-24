@@ -60,7 +60,7 @@ message MinerFees {
     uint32 reverse = 2;
 }
 message Fees {
-    uint32 percentage = 1;
+    float percentage = 1;
     MinerFees miner = 2;
 }
 message Limits {
