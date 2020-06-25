@@ -97,19 +97,21 @@ func (lnd *LND) ListChannels() (*lnrpc.ListChannelsResponse, error) {
 	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 }
 
-func (lnd *LND) AddInvoice(value int64, preimage []byte, memo string) (*lnrpc.AddInvoiceResponse, error) {
+func (lnd *LND) AddInvoice(value int64, preimage []byte, expiry int64, memo string) (*lnrpc.AddInvoiceResponse, error) {
 	return lnd.client.AddInvoice(lnd.ctx, &lnrpc.Invoice{
 		Memo:      memo,
 		Value:     value,
+		Expiry:    expiry,
 		RPreimage: preimage,
 	})
 }
 
-func (lnd *LND) AddHoldInvoice(preimageHash []byte, value int64, memo string) (*invoicesrpc.AddHoldInvoiceResp, error) {
+func (lnd *LND) AddHoldInvoice(preimageHash []byte, value int64, expiry int64, memo string) (*invoicesrpc.AddHoldInvoiceResp, error) {
 	return lnd.invoices.AddHoldInvoice(lnd.ctx, &invoicesrpc.AddHoldInvoiceRequest{
-		Memo:  memo,
-		Value: value,
-		Hash:  preimageHash,
+		Memo:   memo,
+		Value:  value,
+		Expiry: expiry,
+		Hash:   preimageHash,
 	})
 }
 

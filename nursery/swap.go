@@ -313,7 +313,19 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 
 		logger.Info("Found output for Swap " + swap.Id + " of " + strconv.Itoa(swapRates.OnchainAmount) + " satoshis")
 
-		invoice, err := nursery.lnd.AddInvoice(int64(swapRates.SubmarineSwap.InvoiceAmount), swap.Preimage, utils.GetSwapMemo(nursery.symbol))
+		lndInfo, err := nursery.lnd.GetInfo()
+
+		if err != nil {
+			logger.Error("Could not get LND info: " + err.Error())
+			return
+		}
+
+		invoice, err := nursery.lnd.AddInvoice(
+			int64(swapRates.SubmarineSwap.InvoiceAmount),
+			swap.Preimage,
+			utils.CalculateInvoiceExpiry(uint32(swap.TimoutBlockHeight)-lndInfo.BlockHeight, utils.GetBlockTime(nursery.symbol)),
+			utils.GetSwapMemo(nursery.symbol),
+		)
 
 		if err != nil {
 			logger.Error("Could not get new invoice for Swap " + swap.Id + ": " + err.Error())

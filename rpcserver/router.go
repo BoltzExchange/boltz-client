@@ -237,7 +237,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
-	invoice, err := server.lnd.AddInvoice(request.Amount, nil, utils.GetSwapMemo(server.symbol))
+	invoice, err := server.lnd.AddInvoice(request.Amount, nil, 0, utils.GetSwapMemo(server.symbol))
 
 	if err != nil {
 		return nil, handleError(err)
@@ -328,7 +328,13 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 		return nil, handleError(err)
 	}
 
-	invoice, err := server.lnd.AddHoldInvoice(preimageHash, request.Amount, "Channel Creation from "+server.symbol)
+	invoice, err := server.lnd.AddHoldInvoice(
+		preimageHash,
+		request.Amount,
+		// TODO: query timeout block delta from API
+		utils.CalculateInvoiceExpiry(144, utils.GetBlockTime(server.symbol)),
+		"Channel Creation from "+server.symbol,
+	)
 
 	if err != nil {
 		return nil, handleError(err)

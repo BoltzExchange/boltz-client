@@ -75,17 +75,7 @@ func deposit(ctx *cli.Context) error {
 		return err
 	}
 
-	var blockTime float64 = 0
-
-	switch info.Symbol {
-	case "BTC":
-		blockTime = utils.BitcoinBlockTime
-
-	case "LTC":
-		blockTime = utils.LitecoinBlockTime
-	}
-
-	timeoutHours := utils.BlocksToHours(response.TimeoutBlockHeight-info.BlockHeight, blockTime)
+	timeoutHours := utils.BlocksToHours(response.TimeoutBlockHeight-info.BlockHeight, utils.GetBlockTime(info.Symbol))
 
 	fmt.Println("You will receive your deposit in a lightning channel. If you do not have a channel with sufficient capacity yet, Boltz will open a channel.")
 	fmt.Println("The fees for this service are:")
