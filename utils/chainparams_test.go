@@ -1,4 +1,4 @@
-package boltz_lnd
+package utils
 
 import (
 	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"

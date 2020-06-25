@@ -74,7 +74,9 @@ message GetServiceInfoResponse {
     Limits limits = 2;
 }
 
-message DepositRequest {}
+message DepositRequest {
+    uint32 inbound_liquidity = 1;
+}
 message DepositResponse {
     string address = 1;
     uint32 timeout_block_height = 2;

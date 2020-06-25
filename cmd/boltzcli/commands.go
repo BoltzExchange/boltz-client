@@ -52,11 +52,18 @@ var depositCommand = cli.Command{
 	Category: "Auto",
 	Usage:    "Deposits into your lightning node",
 	Action:   deposit,
+	Flags: []cli.Flag{
+		cli.UintFlag{
+			Name:  "inbound",
+			Value: 25,
+			Usage: "Amount of inbound liquidity in percent in case a channel gets created for the Swap",
+		},
+	},
 }
 
 func deposit(ctx *cli.Context) error {
 	client := getClient(ctx)
-	response, err := client.Deposit()
+	response, err := client.Deposit(ctx.Uint("inbound"))
 
 	if err != nil {
 		return err

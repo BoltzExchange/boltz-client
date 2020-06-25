@@ -34,19 +34,27 @@ type routedBoltzServer struct {
 	database *database.Database
 }
 
+func handleError(err error) error {
+	if err != nil {
+		logger.Warning("RPC request failed: " + err.Error())
+	}
+
+	return err
+}
+
 // TODO: use wrappers to handle RPC commands to also print errors in daemon logs
 
 func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
 	lndInfo, err := server.lnd.GetInfo()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	pendingSwaps, err := server.database.QueryPendingSwaps()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	var pendingSwapIds []string
@@ -58,7 +66,7 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	pendingReverseSwaps, err := server.database.QueryPendingReverseSwaps()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	var pendingReverseSwapIds []string
@@ -119,14 +127,14 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 		}, nil
 	}
 
-	return nil, errors.New("could not find Swap or Reverse Swap with ID " + request.Id)
+	return nil, handleError(errors.New("could not find Swap or Reverse Swap with ID " + request.Id))
 }
 
 func (server *routedBoltzServer) GetServiceInfo(_ context.Context, _ *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
 	fees, limits, err := server.getPairs()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	return &boltzrpc.GetServiceInfoResponse{
@@ -135,17 +143,17 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, _ *boltzrpc.G
 	}, nil
 }
 
-func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
+func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
 	fees, limits, err := server.getPairs()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	preimage, preimageHash, err := newPreimage()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
@@ -153,7 +161,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositR
 	privateKey, publicKey, err := newKeys()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
@@ -166,18 +174,18 @@ func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositR
 		Channel: boltz.Channel{
 			Auto:             true,
 			Private:          false,
-			InboundLiquidity: 25,
+			InboundLiquidity: request.InboundLiquidity,
 		},
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	redeemScript, err := hex.DecodeString(response.RedeemScript)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	deposit := database.Swap{
@@ -195,13 +203,13 @@ func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositR
 	err = boltz.CheckSwapScript(deposit.RedeemScript, preimageHash, deposit.PrivateKey, deposit.TimoutBlockHeight)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	err = boltz.CheckSwapAddress(server.chainParams, deposit.Address, deposit.RedeemScript, true)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	logger.Info("Verified redeem script and address of Swap " + deposit.Id)
@@ -209,7 +217,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositR
 	err = server.database.CreateSwap(deposit)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	server.nursery.RegisterSwap(&deposit, nil)
@@ -221,7 +229,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, _ *boltzrpc.DepositR
 		Limits:             limits,
 		Address:            deposit.Address,
 		TimeoutBlockHeight: uint32(deposit.TimoutBlockHeight),
-	}, err
+	}, nil
 }
 
 // TODO: custom refund address
@@ -232,13 +240,13 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 	invoice, err := server.lnd.AddInvoice(request.Amount, nil, utils.GetSwapMemo(server.symbol))
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	privateKey, publicKey, err := newKeys()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	response, err := server.boltz.CreateSwap(boltz.CreateSwapRequest{
@@ -250,13 +258,13 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	redeemScript, err := hex.DecodeString(response.RedeemScript)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	swap := database.Swap{
@@ -274,13 +282,13 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 	err = boltz.CheckSwapScript(swap.RedeemScript, invoice.RHash, swap.PrivateKey, swap.TimoutBlockHeight)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	err = boltz.CheckSwapAddress(server.chainParams, swap.Address, swap.RedeemScript, true)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	logger.Info("Verified redeem script and address of Swap " + swap.Id)
@@ -288,7 +296,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 	err = server.database.CreateSwap(swap)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	server.nursery.RegisterSwap(&swap, nil)
@@ -317,19 +325,19 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	preimage, preimageHash, err := newPreimage()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	invoice, err := server.lnd.AddHoldInvoice(preimageHash, request.Amount, "Channel Creation from "+server.symbol)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	privateKey, publicKey, err := newKeys()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
@@ -346,13 +354,13 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	redeemScript, err := hex.DecodeString(response.RedeemScript)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	swap := database.Swap{
@@ -379,13 +387,13 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	err = boltz.CheckSwapScript(swap.RedeemScript, preimageHash, swap.PrivateKey, swap.TimoutBlockHeight)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	err = boltz.CheckSwapAddress(server.chainParams, swap.Address, swap.RedeemScript, true)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	logger.Info("Verified redeem script and address of Channel Creation " + swap.Id)
@@ -393,13 +401,13 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	err = server.database.CreateSwap(swap)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	err = server.database.CreateChannelCreation(channelCreation)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	server.nursery.RegisterSwap(&swap, &channelCreation)
@@ -423,14 +431,14 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		_, err := btcutil.DecodeAddress(claimAddress, server.chainParams)
 
 		if err != nil {
-			return nil, err
+			return nil, handleError(err)
 		}
 	} else {
 		var err error
 		claimAddress, err = server.lnd.NewAddress()
 
 		if err != nil {
-			return nil, err
+			return nil, handleError(err)
 		}
 
 		logger.Info("Got claim address from LND: " + claimAddress)
@@ -439,7 +447,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	preimage, preimageHash, err := newPreimage()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	logger.Info("Generated preimage " + hex.EncodeToString(preimage))
@@ -447,7 +455,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	privateKey, publicKey, err := newKeys()
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	response, err := server.boltz.CreateReverseSwap(boltz.CreateReverseSwapRequest{
@@ -460,13 +468,13 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	redeemScript, err := hex.DecodeString(response.RedeemScript)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	reverseSwap := database.ReverseSwap{
@@ -485,17 +493,17 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	err = boltz.CheckReverseSwapScript(reverseSwap.RedeemScript, preimageHash, privateKey, response.TimeoutBlockHeight)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	invoice, err := zpay32.Decode(reverseSwap.Invoice, server.chainParams)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	if !bytes.Equal(preimageHash, invoice.PaymentHash[:]) {
-		return nil, errors.New("invalid invoice preimage hash")
+		return nil, handleError(errors.New("invalid invoice preimage hash"))
 	}
 
 	logger.Info("Verified redeem script and invoice of Reverse Swap " + reverseSwap.Id)
@@ -503,7 +511,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	err = server.database.CreateReverseSwap(reverseSwap)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	// TODO: error handling in case the swap fails
@@ -514,7 +522,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	payment, err := server.payInvoice(reverseSwap.Invoice, reverseSwap.Id)
 
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	claimTransactionId := ""

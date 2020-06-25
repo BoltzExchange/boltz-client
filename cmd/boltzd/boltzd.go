@@ -7,6 +7,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
+	"github.com/BoltzExchange/boltz-lnd/utils"
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
@@ -91,11 +92,11 @@ func parseChain(chain *lnrpc.Chain) (symbol string, params *bitcoinCfg.Params) {
 		switch chain.Network {
 		case "mainnet":
 			// #reckless
-			params = boltz_lnd.ApplyLitecoinParams(litecoinCfg.MainNetParams)
+			params = utils.ApplyLitecoinParams(litecoinCfg.MainNetParams)
 		case "testnet":
-			params = boltz_lnd.ApplyLitecoinParams(litecoinCfg.TestNet4Params)
+			params = utils.ApplyLitecoinParams(litecoinCfg.TestNet4Params)
 		case "regtest":
-			params = boltz_lnd.ApplyLitecoinParams(litecoinCfg.RegressionNetParams)
+			params = utils.ApplyLitecoinParams(litecoinCfg.RegressionNetParams)
 		default:
 			logger.Fatal("Chain " + chain.Network + " no supported")
 		}

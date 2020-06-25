@@ -1,4 +1,4 @@
-package boltz_lnd
+package utils
 
 import (
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
