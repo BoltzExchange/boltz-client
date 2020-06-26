@@ -203,7 +203,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 func (database *Database) UpdateSwapStatus(swap *Swap, status boltz.SwapUpdateEvent) error {
 	swap.Status = status
 
-	_, err := database.db.Exec("UPDATE swaps SET status = '" + status.String() + "' WHERE id = '" + swap.Id + "'")
+	_, err := database.db.Exec("UPDATE swaps SET status = ? WHERE id = ?", status.String(), swap.Id)
 	return err
 }
 
@@ -214,14 +214,14 @@ func (database *Database) SetSwapInvoice(swap *Swap, invoice string) error {
 	return err
 }
 
-func (database *Database) SetLockupTransactionId(swap *Swap, lockupTransactionId string) error {
+func (database *Database) SetSwapLockupTransactionId(swap *Swap, lockupTransactionId string) error {
 	swap.LockupTransactionId = lockupTransactionId
 
 	_, err := database.db.Exec("UPDATE swaps SET lockupTransactionId = ? WHERE id = ?", lockupTransactionId, swap.Id)
 	return err
 }
 
-func (database *Database) SetRefundTransactionId(swap *Swap, refundTransactionId string) error {
+func (database *Database) SetSwapRefundTransactionId(swap *Swap, refundTransactionId string) error {
 	swap.RefundTransactionId = refundTransactionId
 
 	_, err := database.db.Exec("UPDATE swaps SET status = ?, refundTransactionId = ? WHERE id = ?", boltz.SwapRefunded.String(), refundTransactionId, swap.Id)

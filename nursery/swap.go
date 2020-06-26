@@ -105,7 +105,7 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 				}
 
 				for _, refundedSwap := range refundedSwaps {
-					err = nursery.database.SetRefundTransactionId(&refundedSwap, refundTransactionId)
+					err = nursery.database.SetSwapRefundTransactionId(&refundedSwap, refundTransactionId)
 
 					if err != nil {
 						logger.Error("Could not set refund transaction id in database: " + err.Error())
@@ -144,7 +144,7 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetail
 
 	logger.Info("Got lockup transaction of Swap " + swap.Id + " from Boltz: " + lockupTransaction.Hash().String())
 
-	err = nursery.database.SetLockupTransactionId(swap, lockupTransaction.Hash().String())
+	err = nursery.database.SetSwapLockupTransactionId(swap, lockupTransaction.Hash().String())
 
 	if err != nil {
 		logger.Error("Could not set lockup transaction id in database: " + err.Error())

@@ -40,14 +40,16 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 	serializedReverseSwap := reverseSwap.Serialize()
 
 	return &boltzrpc.ReverseSwapInfo{
-		Id:                 serializedReverseSwap.Id,
-		Status:             serializedReverseSwap.Status,
-		PrivateKey:         serializedReverseSwap.PrivateKey,
-		Preimage:           serializedReverseSwap.Preimage,
-		RedeemScript:       serializedReverseSwap.RedeemScript,
-		Invoice:            serializedReverseSwap.Invoice,
-		ClaimAddress:       serializedReverseSwap.ClaimAddress,
-		OnchainAmount:      int64(serializedReverseSwap.OnchainAmount),
-		TimeoutBlockHeight: uint32(serializedReverseSwap.TimeoutBlockHeight),
+		Id:                  serializedReverseSwap.Id,
+		Status:              serializedReverseSwap.Status,
+		PrivateKey:          serializedReverseSwap.PrivateKey,
+		Preimage:            serializedReverseSwap.Preimage,
+		RedeemScript:        serializedReverseSwap.RedeemScript,
+		Invoice:             serializedReverseSwap.Invoice,
+		ClaimAddress:        serializedReverseSwap.ClaimAddress,
+		OnchainAmount:       int64(serializedReverseSwap.OnchainAmount),
+		TimeoutBlockHeight:  uint32(serializedReverseSwap.TimeoutBlockHeight),
+		LockupTransactionId: serializedReverseSwap.LockupTransactionId,
+		ClaimTransactionId:  serializedReverseSwap.ClaimTransactionId,
 	}
 }
