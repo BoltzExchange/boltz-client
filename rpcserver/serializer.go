@@ -9,15 +9,17 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	serializedSwap := swap.Serialize()
 
 	return &boltzrpc.SwapInfo{
-		Id:                 serializedSwap.Id,
-		Status:             serializedSwap.Status,
-		PrivateKey:         serializedSwap.PrivateKey,
-		Preimage:           serializedSwap.Preimage,
-		RedeemScript:       serializedSwap.RedeemScript,
-		Invoice:            serializedSwap.Invoice,
-		LockupAddress:      serializedSwap.Address,
-		ExpectedAmount:     int64(serializedSwap.ExpectedAmount),
-		TimeoutBlockHeight: uint32(serializedSwap.TimeoutBlockHeight),
+		Id:                  serializedSwap.Id,
+		Status:              serializedSwap.Status,
+		PrivateKey:          serializedSwap.PrivateKey,
+		Preimage:            serializedSwap.Preimage,
+		RedeemScript:        serializedSwap.RedeemScript,
+		Invoice:             serializedSwap.Invoice,
+		LockupAddress:       serializedSwap.Address,
+		ExpectedAmount:      int64(serializedSwap.ExpectedAmount),
+		TimeoutBlockHeight:  uint32(serializedSwap.TimeoutBlockHeight),
+		LockupTransactionId: serializedSwap.LockupTransactionId,
+		RefundTransactionId: serializedSwap.RefundTransactionId,
 	}
 }
 

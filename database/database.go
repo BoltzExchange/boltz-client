@@ -40,7 +40,7 @@ func (database *Database) createTables() error {
 		return err
 	}
 
-	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, status VARCHAR , privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER)")
+	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, status VARCHAR , privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, refundTransactionId VARCHAR)")
 
 	if err != nil {
 		return err

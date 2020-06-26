@@ -26,6 +26,8 @@ message SwapInfo {
     string lockup_address = 7;
     int64 expected_amount = 8;
     uint32 timeout_block_height = 9;
+    string lockup_transaction_id = 10;
+    string refund_transaction_id = 11;
 }
 message ChannelCreationInfo {
     string swap_id = 1;
