@@ -42,8 +42,6 @@ func handleError(err error) error {
 	return err
 }
 
-// TODO: use wrappers to handle RPC commands to also print errors in daemon logs
-
 func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
 	lndInfo, err := server.lnd.GetInfo()
 
@@ -84,12 +82,28 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	}, nil
 }
 
-// TODO: support Channel Creation Swaps
 func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
 	swap, err := server.database.QuerySwap(request.Id)
 
 	if err == nil {
 		serializedSwap := swap.Serialize()
+
+		var grpcChannelCreation *boltzrpc.ChannelCreationInfo
+
+		channelCreation, err := server.database.QueryChannelCreation(swap.Id)
+
+		if err == nil {
+			serializedChannelCreation := channelCreation.Serialize()
+
+			grpcChannelCreation = &boltzrpc.ChannelCreationInfo{
+				SwapId:                 serializedChannelCreation.SwapId,
+				Status:                 serializedChannelCreation.Status,
+				InboundLiquidity:       uint32(serializedChannelCreation.InboundLiquidity),
+				Private:                serializedChannelCreation.Private,
+				FundingTransactionId:   serializedChannelCreation.FundingTransactionId,
+				FundingTransactionVout: uint32(serializedChannelCreation.FundingTransactionVout),
+			}
+		}
 
 		return &boltzrpc.GetSwapInfoResponse{
 			Swap: &boltzrpc.SwapInfo{
@@ -103,6 +117,7 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 				ExpectedAmount:     int64(serializedSwap.ExpectedAmount),
 				TimeoutBlockHeight: uint32(serializedSwap.TimeoutBlockHeight),
 			},
+			ChannelCreation: grpcChannelCreation,
 		}, nil
 	}
 

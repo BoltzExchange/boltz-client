@@ -39,6 +39,14 @@ message SwapInfo {
     int64 expected_amount = 8;
     uint32 timeout_block_height = 9;
 }
+message ChannelCreationInfo {
+    string swap_id = 1;
+    string status = 2;
+    uint32 inbound_liquidity = 3;
+    bool private = 4;
+    string funding_transaction_id = 5;
+    uint32 funding_transaction_vout = 6;
+}
 message ReverseSwapInfo {
     string id = 1;
     string status = 2;
@@ -52,7 +60,9 @@ message ReverseSwapInfo {
 }
 message GetSwapInfoResponse {
     SwapInfo swap = 1;
-    ReverseSwapInfo reverse_swap = 2;
+    ChannelCreationInfo channel_creation = 2;
+
+    ReverseSwapInfo reverse_swap = 3;
 }
 
 message MinerFees {
