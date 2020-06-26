@@ -24,11 +24,23 @@ func (database *Database) Connect() error {
 
 	database.db = db
 
-	return database.createTables()
+	err = database.createTables()
+
+	if err != nil {
+		return err
+	}
+
+	return database.migrate()
 }
 
 func (database *Database) createTables() error {
-	_, err := database.db.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, status VARCHAR , privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER)")
+	_, err := database.db.Exec("CREATE TABLE IF NOT EXISTS version (version INT)")
+
+	if err != nil {
+		return err
+	}
+
+	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, status VARCHAR , privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER)")
 
 	if err != nil {
 		return err
