@@ -26,6 +26,8 @@ func main() {
 	}
 	app.Commands = []cli.Command{
 		getInfoCommand,
+
+		listSwapsCommand,
 		getSwapCommand,
 
 		depositCommand,

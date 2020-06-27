@@ -138,6 +138,10 @@ func (database *Database) queryReverseSwaps(query string) (swaps []ReverseSwap, 
 	return swaps, err
 }
 
+func (database *Database) QueryReverseSwaps() ([]ReverseSwap, error) {
+	return database.queryReverseSwaps("SELECT * FROM reverseSwaps")
+}
+
 func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
 	return database.queryReverseSwaps("SELECT * FROM reverseSwaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "')")
 }

@@ -145,6 +145,10 @@ func (database *Database) querySwaps(query string) (swaps []Swap, err error) {
 	return swaps, err
 }
 
+func (database *Database) QuerySwaps() ([]Swap, error) {
+	return database.querySwaps("SELECT * FROM swaps")
+}
+
 func (database *Database) QueryPendingSwaps() ([]Swap, error) {
 	return database.querySwaps("SELECT * FROM swaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "')")
 }
