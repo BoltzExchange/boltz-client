@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/r3labs/sse"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -220,11 +219,8 @@ func (boltz *Boltz) SwapStatus(id string) (*SwapStatusResponse, error) {
 	return &response, err
 }
 
-func (boltz *Boltz) StreamSwapStatus(id string, channel chan *sse.Event) (*sse.Client, error) {
-	client := sse.NewClient(boltz.URL + "/streamswapstatus?id=" + id)
-	err := client.SubscribeChan("data", channel)
-
-	return client, err
+func (boltz *Boltz) StreamSwapStatus(id string, events chan *SwapStatusResponse, stopListening chan bool) error {
+	return streamSwapStatus(boltz.URL+"/streamswapstatus?id="+id, events, stopListening)
 }
 
 func (boltz *Boltz) GetSwapTransaction(id string) (*GetSwapTransactionResponse, error) {

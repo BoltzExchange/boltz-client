@@ -2,7 +2,6 @@ package nursery
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
@@ -11,7 +10,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/zpay32"
-	"github.com/r3labs/sse"
 	"strconv"
 	"strings"
 )
@@ -231,55 +229,49 @@ func (nursery *Nursery) RegisterSwap(swap *database.Swap, channelCreation *datab
 
 	go func() {
 		stopListening := make(chan bool)
+		stopHandler := make(chan bool)
 
 		eventListenersLock.Lock()
 		eventListeners[swap.Id] = stopListening
 		eventListenersLock.Unlock()
 
-		eventStream := make(chan *sse.Event)
+		eventStream := make(chan *boltz.SwapStatusResponse)
 
 		// TODO: handle disconnections gracefully
 		go func() {
-			_, err := nursery.boltz.StreamSwapStatus(swap.Id, eventStream)
+			err := nursery.boltz.StreamSwapStatus(swap.Id, eventStream, stopListening)
 
-			if err != nil {
+			if err == nil {
+				logger.Info("Stopping event listener of " + swapType + " " + swap.Id)
+			} else {
 				logger.Error("Could not listen to events of " + swapType + " " + swap.Id + ": " + err.Error())
-
-				eventListenersLock.Lock()
-				delete(eventListeners, swap.Id)
-				eventListenersLock.Unlock()
-
-				stopListening <- true
-				return
 			}
+
+			eventListenersLock.Lock()
+			delete(eventListeners, swap.Id)
+			eventListenersLock.Unlock()
+
+			stopHandler <- true
 		}()
 
 		for {
 			select {
 			case event := <-eventStream:
-				var response boltz.SwapStatusResponse
-				err := json.Unmarshal(event.Data, &response)
+				logger.Info(swapType + " " + swap.Id + " status update: " + event.Status)
+				nursery.handleSwapStatus(swap, channelCreation, *event)
 
-				if err == nil {
-					logger.Info(swapType + " " + swap.Id + " status update: " + response.Status)
-					nursery.handleSwapStatus(swap, channelCreation, response)
-
-					// The event listening can stop after the Swap has succeeded
-					if swap.Status == boltz.TransactionClaimed {
-						return
-					}
-				} else {
-					logger.Error("Could not parse update event of " + swapType + " " + swap.Id + ": " + err.Error())
+				// The event listening can stop after the Swap has succeeded
+				if swap.Status == boltz.TransactionClaimed {
+					stopListening <- true
 				}
 
 				break
 
-			case <-stopListening:
+			case <-stopHandler:
 				if stopInvoiceSubscription != nil {
 					stopInvoiceSubscription <- true
 				}
 
-				logger.Info("Stopping event listener of " + swapType + " " + swap.Id)
 				return
 			}
 		}

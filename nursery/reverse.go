@@ -2,12 +2,10 @@ package nursery
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/btcsuite/btcutil"
-	"github.com/r3labs/sse"
 	"strconv"
 )
 
@@ -65,51 +63,45 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) ch
 
 	go func() {
 		stopListening := make(chan bool)
+		stopHandler := make(chan bool)
 
 		eventListenersLock.Lock()
 		eventListeners[reverseSwap.Id] = stopListening
 		eventListenersLock.Unlock()
 
-		eventStream := make(chan *sse.Event)
+		eventStream := make(chan *boltz.SwapStatusResponse)
 
 		// TODO: handle disconnections gracefully
 		go func() {
-			_, err := nursery.boltz.StreamSwapStatus(reverseSwap.Id, eventStream)
+			err := nursery.boltz.StreamSwapStatus(reverseSwap.Id, eventStream, stopListening)
 
-			if err != nil {
+			if err == nil {
+				logger.Info("Stopping event listener of Reverse Swap: " + reverseSwap.Id)
+			} else {
 				logger.Error("Could not listen to events of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
-
-				eventListenersLock.Lock()
-				delete(eventListeners, reverseSwap.Id)
-				eventListenersLock.Unlock()
-
-				stopListening <- true
-				return
 			}
+
+			eventListenersLock.Lock()
+			delete(eventListeners, reverseSwap.Id)
+			eventListenersLock.Unlock()
+
+			stopHandler <- true
 		}()
 
 		for {
 			select {
 			case event := <-eventStream:
-				var response boltz.SwapStatusResponse
-				err := json.Unmarshal(event.Data, &response)
+				logger.Info("Reverse Swap " + reverseSwap.Id + " status update: " + event.Status)
+				nursery.handleReverseSwapStatus(&reverseSwap, *event, claimTransactionIdChan)
 
-				if err == nil {
-					logger.Info("Reverse Swap " + reverseSwap.Id + " status update: " + response.Status)
-					nursery.handleReverseSwapStatus(&reverseSwap, response, claimTransactionIdChan)
-
-					// The event listening can stop after the Reverse Swap has succeeded
-					if reverseSwap.Status == boltz.InvoiceSettled {
-						return
-					}
-				} else {
-					logger.Error("Could not parse update event of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+				// The event listening can stop after the Reverse Swap has succeeded
+				if reverseSwap.Status == boltz.InvoiceSettled {
+					stopListening <- true
 				}
 
 				break
 
-			case <-stopListening:
-				logger.Info("Stopping event listener of Reverse Swap: " + reverseSwap.Id)
+			case <-stopHandler:
 				return
 			}
 		}
