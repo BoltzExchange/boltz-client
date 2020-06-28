@@ -39,6 +39,10 @@ func (boltz *boltz) GetServiceInfo() (*boltzrpc.GetServiceInfoResponse, error) {
 	return boltz.client.GetServiceInfo(boltz.ctx, &boltzrpc.GetServiceInfoRequest{})
 }
 
+func (boltz *boltz) ListSwaps() (*boltzrpc.ListSwapsResponse, error) {
+	return boltz.client.ListSwaps(boltz.ctx, &boltzrpc.ListSwapsRequest{})
+}
+
 func (boltz *boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error) {
 	return boltz.client.GetSwapInfo(boltz.ctx, &boltzrpc.GetSwapInfoRequest{
 		Id: id,

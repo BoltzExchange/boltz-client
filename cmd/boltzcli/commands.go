@@ -24,7 +24,27 @@ func getInfo(ctx *cli.Context) error {
 
 	printJson(info)
 
-	return err
+	return nil
+}
+
+var listSwapsCommand = cli.Command{
+	Name:     "listswaps",
+	Category: "Info",
+	Usage:    "Lists all Swaps, Channel Creations and Reverse Swaps",
+	Action:   listSwaps,
+}
+
+func listSwaps(ctx *cli.Context) error {
+	client := getClient(ctx)
+	list, err := client.ListSwaps()
+
+	if err != nil {
+		return err
+	}
+
+	printJson(list)
+
+	return nil
 }
 
 var getSwapCommand = cli.Command{
@@ -44,7 +64,7 @@ func swapInfo(ctx *cli.Context) error {
 
 	printJson(swapInfo)
 
-	return err
+	return nil
 }
 
 var depositCommand = cli.Command{
@@ -139,7 +159,7 @@ func withdraw(ctx *cli.Context) error {
 	fmt.Println("Routing fee paid: " + utils.FormatMilliSat(int64(response.RoutingFeeMilliSat)) + " sats")
 	fmt.Println("Transaction id: " + response.ClaimTransactionId)
 
-	return err
+	return nil
 }
 
 var createSwapCommand = cli.Command{
@@ -162,7 +182,7 @@ func createSwap(ctx *cli.Context) error {
 
 	printJson(swap)
 
-	return err
+	return nil
 }
 
 var createChannelCreationCommand = cli.Command{
@@ -195,7 +215,7 @@ func createChannelCreation(ctx *cli.Context) error {
 
 	printJson(channelCreation)
 
-	return err
+	return nil
 }
 
 // TODO: allow zero conf via cli argument
@@ -221,5 +241,5 @@ func createReverseSwap(ctx *cli.Context) error {
 
 	printJson(swap)
 
-	return err
+	return nil
 }

@@ -22,147 +22,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type GetInfoRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetInfoRequest) Reset()         { *m = GetInfoRequest{} }
-func (m *GetInfoRequest) String() string { return proto.CompactTextString(m) }
-func (*GetInfoRequest) ProtoMessage()    {}
-func (*GetInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{0}
-}
-
-func (m *GetInfoRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetInfoRequest.Unmarshal(m, b)
-}
-func (m *GetInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetInfoRequest.Marshal(b, m, deterministic)
-}
-func (m *GetInfoRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetInfoRequest.Merge(m, src)
-}
-func (m *GetInfoRequest) XXX_Size() int {
-	return xxx_messageInfo_GetInfoRequest.Size(m)
-}
-func (m *GetInfoRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetInfoRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetInfoRequest proto.InternalMessageInfo
-
-type GetInfoResponse struct {
-	Symbol               string   `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	LndPubkey            string   `protobuf:"bytes,2,opt,name=lnd_pubkey,json=lndPubkey,proto3" json:"lnd_pubkey,omitempty"`
-	BlockHeight          uint32   `protobuf:"varint,3,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
-	PendingSwaps         []string `protobuf:"bytes,4,rep,name=pending_swaps,json=pendingSwaps,proto3" json:"pending_swaps,omitempty"`
-	PendingReverseSwaps  []string `protobuf:"bytes,5,rep,name=pending_reverse_swaps,json=pendingReverseSwaps,proto3" json:"pending_reverse_swaps,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetInfoResponse) Reset()         { *m = GetInfoResponse{} }
-func (m *GetInfoResponse) String() string { return proto.CompactTextString(m) }
-func (*GetInfoResponse) ProtoMessage()    {}
-func (*GetInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{1}
-}
-
-func (m *GetInfoResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetInfoResponse.Unmarshal(m, b)
-}
-func (m *GetInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetInfoResponse.Marshal(b, m, deterministic)
-}
-func (m *GetInfoResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetInfoResponse.Merge(m, src)
-}
-func (m *GetInfoResponse) XXX_Size() int {
-	return xxx_messageInfo_GetInfoResponse.Size(m)
-}
-func (m *GetInfoResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetInfoResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetInfoResponse proto.InternalMessageInfo
-
-func (m *GetInfoResponse) GetSymbol() string {
-	if m != nil {
-		return m.Symbol
-	}
-	return ""
-}
-
-func (m *GetInfoResponse) GetLndPubkey() string {
-	if m != nil {
-		return m.LndPubkey
-	}
-	return ""
-}
-
-func (m *GetInfoResponse) GetBlockHeight() uint32 {
-	if m != nil {
-		return m.BlockHeight
-	}
-	return 0
-}
-
-func (m *GetInfoResponse) GetPendingSwaps() []string {
-	if m != nil {
-		return m.PendingSwaps
-	}
-	return nil
-}
-
-func (m *GetInfoResponse) GetPendingReverseSwaps() []string {
-	if m != nil {
-		return m.PendingReverseSwaps
-	}
-	return nil
-}
-
-type GetSwapInfoRequest struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetSwapInfoRequest) Reset()         { *m = GetSwapInfoRequest{} }
-func (m *GetSwapInfoRequest) String() string { return proto.CompactTextString(m) }
-func (*GetSwapInfoRequest) ProtoMessage()    {}
-func (*GetSwapInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{2}
-}
-
-func (m *GetSwapInfoRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetSwapInfoRequest.Unmarshal(m, b)
-}
-func (m *GetSwapInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetSwapInfoRequest.Marshal(b, m, deterministic)
-}
-func (m *GetSwapInfoRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetSwapInfoRequest.Merge(m, src)
-}
-func (m *GetSwapInfoRequest) XXX_Size() int {
-	return xxx_messageInfo_GetSwapInfoRequest.Size(m)
-}
-func (m *GetSwapInfoRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetSwapInfoRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetSwapInfoRequest proto.InternalMessageInfo
-
-func (m *GetSwapInfoRequest) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
 type SwapInfo struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
@@ -182,7 +41,7 @@ func (m *SwapInfo) Reset()         { *m = SwapInfo{} }
 func (m *SwapInfo) String() string { return proto.CompactTextString(m) }
 func (*SwapInfo) ProtoMessage()    {}
 func (*SwapInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{3}
+	return fileDescriptor_77a6da22d6a3feb1, []int{0}
 }
 
 func (m *SwapInfo) XXX_Unmarshal(b []byte) error {
@@ -282,7 +141,7 @@ func (m *ChannelCreationInfo) Reset()         { *m = ChannelCreationInfo{} }
 func (m *ChannelCreationInfo) String() string { return proto.CompactTextString(m) }
 func (*ChannelCreationInfo) ProtoMessage()    {}
 func (*ChannelCreationInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{4}
+	return fileDescriptor_77a6da22d6a3feb1, []int{1}
 }
 
 func (m *ChannelCreationInfo) XXX_Unmarshal(b []byte) error {
@@ -345,6 +204,53 @@ func (m *ChannelCreationInfo) GetFundingTransactionVout() uint32 {
 	return 0
 }
 
+type CombinedChannelSwapInfo struct {
+	Swap                 *SwapInfo            `protobuf:"bytes,1,opt,name=swap,proto3" json:"swap,omitempty"`
+	ChannelCreation      *ChannelCreationInfo `protobuf:"bytes,2,opt,name=channel_creation,json=channelCreation,proto3" json:"channel_creation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *CombinedChannelSwapInfo) Reset()         { *m = CombinedChannelSwapInfo{} }
+func (m *CombinedChannelSwapInfo) String() string { return proto.CompactTextString(m) }
+func (*CombinedChannelSwapInfo) ProtoMessage()    {}
+func (*CombinedChannelSwapInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{2}
+}
+
+func (m *CombinedChannelSwapInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CombinedChannelSwapInfo.Unmarshal(m, b)
+}
+func (m *CombinedChannelSwapInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CombinedChannelSwapInfo.Marshal(b, m, deterministic)
+}
+func (m *CombinedChannelSwapInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CombinedChannelSwapInfo.Merge(m, src)
+}
+func (m *CombinedChannelSwapInfo) XXX_Size() int {
+	return xxx_messageInfo_CombinedChannelSwapInfo.Size(m)
+}
+func (m *CombinedChannelSwapInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_CombinedChannelSwapInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CombinedChannelSwapInfo proto.InternalMessageInfo
+
+func (m *CombinedChannelSwapInfo) GetSwap() *SwapInfo {
+	if m != nil {
+		return m.Swap
+	}
+	return nil
+}
+
+func (m *CombinedChannelSwapInfo) GetChannelCreation() *ChannelCreationInfo {
+	if m != nil {
+		return m.ChannelCreation
+	}
+	return nil
+}
+
 type ReverseSwapInfo struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
@@ -364,7 +270,7 @@ func (m *ReverseSwapInfo) Reset()         { *m = ReverseSwapInfo{} }
 func (m *ReverseSwapInfo) String() string { return proto.CompactTextString(m) }
 func (*ReverseSwapInfo) ProtoMessage()    {}
 func (*ReverseSwapInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{5}
+	return fileDescriptor_77a6da22d6a3feb1, []int{3}
 }
 
 func (m *ReverseSwapInfo) XXX_Unmarshal(b []byte) error {
@@ -448,57 +354,104 @@ func (m *ReverseSwapInfo) GetTimeoutBlockHeight() uint32 {
 	return 0
 }
 
-type GetSwapInfoResponse struct {
-	Swap                 *SwapInfo            `protobuf:"bytes,1,opt,name=swap,proto3" json:"swap,omitempty"`
-	ChannelCreation      *ChannelCreationInfo `protobuf:"bytes,2,opt,name=channel_creation,json=channelCreation,proto3" json:"channel_creation,omitempty"`
-	ReverseSwap          *ReverseSwapInfo     `protobuf:"bytes,3,opt,name=reverse_swap,json=reverseSwap,proto3" json:"reverse_swap,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
+type GetInfoRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetSwapInfoResponse) Reset()         { *m = GetSwapInfoResponse{} }
-func (m *GetSwapInfoResponse) String() string { return proto.CompactTextString(m) }
-func (*GetSwapInfoResponse) ProtoMessage()    {}
-func (*GetSwapInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{6}
+func (m *GetInfoRequest) Reset()         { *m = GetInfoRequest{} }
+func (m *GetInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*GetInfoRequest) ProtoMessage()    {}
+func (*GetInfoRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{4}
 }
 
-func (m *GetSwapInfoResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetSwapInfoResponse.Unmarshal(m, b)
+func (m *GetInfoRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetInfoRequest.Unmarshal(m, b)
 }
-func (m *GetSwapInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetSwapInfoResponse.Marshal(b, m, deterministic)
+func (m *GetInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetInfoRequest.Marshal(b, m, deterministic)
 }
-func (m *GetSwapInfoResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetSwapInfoResponse.Merge(m, src)
+func (m *GetInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetInfoRequest.Merge(m, src)
 }
-func (m *GetSwapInfoResponse) XXX_Size() int {
-	return xxx_messageInfo_GetSwapInfoResponse.Size(m)
+func (m *GetInfoRequest) XXX_Size() int {
+	return xxx_messageInfo_GetInfoRequest.Size(m)
 }
-func (m *GetSwapInfoResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetSwapInfoResponse.DiscardUnknown(m)
+func (m *GetInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetInfoRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetSwapInfoResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetInfoRequest proto.InternalMessageInfo
 
-func (m *GetSwapInfoResponse) GetSwap() *SwapInfo {
+type GetInfoResponse struct {
+	Symbol               string   `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	LndPubkey            string   `protobuf:"bytes,2,opt,name=lnd_pubkey,json=lndPubkey,proto3" json:"lnd_pubkey,omitempty"`
+	BlockHeight          uint32   `protobuf:"varint,3,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
+	PendingSwaps         []string `protobuf:"bytes,4,rep,name=pending_swaps,json=pendingSwaps,proto3" json:"pending_swaps,omitempty"`
+	PendingReverseSwaps  []string `protobuf:"bytes,5,rep,name=pending_reverse_swaps,json=pendingReverseSwaps,proto3" json:"pending_reverse_swaps,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetInfoResponse) Reset()         { *m = GetInfoResponse{} }
+func (m *GetInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*GetInfoResponse) ProtoMessage()    {}
+func (*GetInfoResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{5}
+}
+
+func (m *GetInfoResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetInfoResponse.Unmarshal(m, b)
+}
+func (m *GetInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetInfoResponse.Marshal(b, m, deterministic)
+}
+func (m *GetInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetInfoResponse.Merge(m, src)
+}
+func (m *GetInfoResponse) XXX_Size() int {
+	return xxx_messageInfo_GetInfoResponse.Size(m)
+}
+func (m *GetInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetInfoResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetInfoResponse proto.InternalMessageInfo
+
+func (m *GetInfoResponse) GetSymbol() string {
 	if m != nil {
-		return m.Swap
+		return m.Symbol
+	}
+	return ""
+}
+
+func (m *GetInfoResponse) GetLndPubkey() string {
+	if m != nil {
+		return m.LndPubkey
+	}
+	return ""
+}
+
+func (m *GetInfoResponse) GetBlockHeight() uint32 {
+	if m != nil {
+		return m.BlockHeight
+	}
+	return 0
+}
+
+func (m *GetInfoResponse) GetPendingSwaps() []string {
+	if m != nil {
+		return m.PendingSwaps
 	}
 	return nil
 }
 
-func (m *GetSwapInfoResponse) GetChannelCreation() *ChannelCreationInfo {
+func (m *GetInfoResponse) GetPendingReverseSwaps() []string {
 	if m != nil {
-		return m.ChannelCreation
-	}
-	return nil
-}
-
-func (m *GetSwapInfoResponse) GetReverseSwap() *ReverseSwapInfo {
-	if m != nil {
-		return m.ReverseSwap
+		return m.PendingReverseSwaps
 	}
 	return nil
 }
@@ -515,7 +468,7 @@ func (m *MinerFees) Reset()         { *m = MinerFees{} }
 func (m *MinerFees) String() string { return proto.CompactTextString(m) }
 func (*MinerFees) ProtoMessage()    {}
 func (*MinerFees) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{7}
+	return fileDescriptor_77a6da22d6a3feb1, []int{6}
 }
 
 func (m *MinerFees) XXX_Unmarshal(b []byte) error {
@@ -562,7 +515,7 @@ func (m *Fees) Reset()         { *m = Fees{} }
 func (m *Fees) String() string { return proto.CompactTextString(m) }
 func (*Fees) ProtoMessage()    {}
 func (*Fees) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{8}
+	return fileDescriptor_77a6da22d6a3feb1, []int{7}
 }
 
 func (m *Fees) XXX_Unmarshal(b []byte) error {
@@ -609,7 +562,7 @@ func (m *Limits) Reset()         { *m = Limits{} }
 func (m *Limits) String() string { return proto.CompactTextString(m) }
 func (*Limits) ProtoMessage()    {}
 func (*Limits) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{9}
+	return fileDescriptor_77a6da22d6a3feb1, []int{8}
 }
 
 func (m *Limits) XXX_Unmarshal(b []byte) error {
@@ -654,7 +607,7 @@ func (m *GetServiceInfoRequest) Reset()         { *m = GetServiceInfoRequest{} }
 func (m *GetServiceInfoRequest) String() string { return proto.CompactTextString(m) }
 func (*GetServiceInfoRequest) ProtoMessage()    {}
 func (*GetServiceInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{10}
+	return fileDescriptor_77a6da22d6a3feb1, []int{9}
 }
 
 func (m *GetServiceInfoRequest) XXX_Unmarshal(b []byte) error {
@@ -687,7 +640,7 @@ func (m *GetServiceInfoResponse) Reset()         { *m = GetServiceInfoResponse{}
 func (m *GetServiceInfoResponse) String() string { return proto.CompactTextString(m) }
 func (*GetServiceInfoResponse) ProtoMessage()    {}
 func (*GetServiceInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{11}
+	return fileDescriptor_77a6da22d6a3feb1, []int{10}
 }
 
 func (m *GetServiceInfoResponse) XXX_Unmarshal(b []byte) error {
@@ -722,6 +675,186 @@ func (m *GetServiceInfoResponse) GetLimits() *Limits {
 	return nil
 }
 
+type ListSwapsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListSwapsRequest) Reset()         { *m = ListSwapsRequest{} }
+func (m *ListSwapsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListSwapsRequest) ProtoMessage()    {}
+func (*ListSwapsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{11}
+}
+
+func (m *ListSwapsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListSwapsRequest.Unmarshal(m, b)
+}
+func (m *ListSwapsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListSwapsRequest.Marshal(b, m, deterministic)
+}
+func (m *ListSwapsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSwapsRequest.Merge(m, src)
+}
+func (m *ListSwapsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListSwapsRequest.Size(m)
+}
+func (m *ListSwapsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSwapsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListSwapsRequest proto.InternalMessageInfo
+
+type ListSwapsResponse struct {
+	Swaps                []*SwapInfo                `protobuf:"bytes,1,rep,name=swaps,proto3" json:"swaps,omitempty"`
+	ChannelCreations     []*CombinedChannelSwapInfo `protobuf:"bytes,2,rep,name=channel_creations,json=channelCreations,proto3" json:"channel_creations,omitempty"`
+	ReverseSwaps         []*ReverseSwapInfo         `protobuf:"bytes,3,rep,name=reverse_swaps,json=reverseSwaps,proto3" json:"reverse_swaps,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *ListSwapsResponse) Reset()         { *m = ListSwapsResponse{} }
+func (m *ListSwapsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListSwapsResponse) ProtoMessage()    {}
+func (*ListSwapsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{12}
+}
+
+func (m *ListSwapsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListSwapsResponse.Unmarshal(m, b)
+}
+func (m *ListSwapsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListSwapsResponse.Marshal(b, m, deterministic)
+}
+func (m *ListSwapsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSwapsResponse.Merge(m, src)
+}
+func (m *ListSwapsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListSwapsResponse.Size(m)
+}
+func (m *ListSwapsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSwapsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListSwapsResponse proto.InternalMessageInfo
+
+func (m *ListSwapsResponse) GetSwaps() []*SwapInfo {
+	if m != nil {
+		return m.Swaps
+	}
+	return nil
+}
+
+func (m *ListSwapsResponse) GetChannelCreations() []*CombinedChannelSwapInfo {
+	if m != nil {
+		return m.ChannelCreations
+	}
+	return nil
+}
+
+func (m *ListSwapsResponse) GetReverseSwaps() []*ReverseSwapInfo {
+	if m != nil {
+		return m.ReverseSwaps
+	}
+	return nil
+}
+
+type GetSwapInfoRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetSwapInfoRequest) Reset()         { *m = GetSwapInfoRequest{} }
+func (m *GetSwapInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*GetSwapInfoRequest) ProtoMessage()    {}
+func (*GetSwapInfoRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{13}
+}
+
+func (m *GetSwapInfoRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetSwapInfoRequest.Unmarshal(m, b)
+}
+func (m *GetSwapInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetSwapInfoRequest.Marshal(b, m, deterministic)
+}
+func (m *GetSwapInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetSwapInfoRequest.Merge(m, src)
+}
+func (m *GetSwapInfoRequest) XXX_Size() int {
+	return xxx_messageInfo_GetSwapInfoRequest.Size(m)
+}
+func (m *GetSwapInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetSwapInfoRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetSwapInfoRequest proto.InternalMessageInfo
+
+func (m *GetSwapInfoRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+type GetSwapInfoResponse struct {
+	Swap                 *SwapInfo            `protobuf:"bytes,1,opt,name=swap,proto3" json:"swap,omitempty"`
+	ChannelCreation      *ChannelCreationInfo `protobuf:"bytes,2,opt,name=channel_creation,json=channelCreation,proto3" json:"channel_creation,omitempty"`
+	ReverseSwap          *ReverseSwapInfo     `protobuf:"bytes,3,opt,name=reverse_swap,json=reverseSwap,proto3" json:"reverse_swap,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *GetSwapInfoResponse) Reset()         { *m = GetSwapInfoResponse{} }
+func (m *GetSwapInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*GetSwapInfoResponse) ProtoMessage()    {}
+func (*GetSwapInfoResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{14}
+}
+
+func (m *GetSwapInfoResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetSwapInfoResponse.Unmarshal(m, b)
+}
+func (m *GetSwapInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetSwapInfoResponse.Marshal(b, m, deterministic)
+}
+func (m *GetSwapInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetSwapInfoResponse.Merge(m, src)
+}
+func (m *GetSwapInfoResponse) XXX_Size() int {
+	return xxx_messageInfo_GetSwapInfoResponse.Size(m)
+}
+func (m *GetSwapInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetSwapInfoResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetSwapInfoResponse proto.InternalMessageInfo
+
+func (m *GetSwapInfoResponse) GetSwap() *SwapInfo {
+	if m != nil {
+		return m.Swap
+	}
+	return nil
+}
+
+func (m *GetSwapInfoResponse) GetChannelCreation() *ChannelCreationInfo {
+	if m != nil {
+		return m.ChannelCreation
+	}
+	return nil
+}
+
+func (m *GetSwapInfoResponse) GetReverseSwap() *ReverseSwapInfo {
+	if m != nil {
+		return m.ReverseSwap
+	}
+	return nil
+}
+
 type DepositRequest struct {
 	InboundLiquidity     uint32   `protobuf:"varint,1,opt,name=inbound_liquidity,json=inboundLiquidity,proto3" json:"inbound_liquidity,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -733,7 +866,7 @@ func (m *DepositRequest) Reset()         { *m = DepositRequest{} }
 func (m *DepositRequest) String() string { return proto.CompactTextString(m) }
 func (*DepositRequest) ProtoMessage()    {}
 func (*DepositRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{12}
+	return fileDescriptor_77a6da22d6a3feb1, []int{15}
 }
 
 func (m *DepositRequest) XXX_Unmarshal(b []byte) error {
@@ -775,7 +908,7 @@ func (m *DepositResponse) Reset()         { *m = DepositResponse{} }
 func (m *DepositResponse) String() string { return proto.CompactTextString(m) }
 func (*DepositResponse) ProtoMessage()    {}
 func (*DepositResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{13}
+	return fileDescriptor_77a6da22d6a3feb1, []int{16}
 }
 
 func (m *DepositResponse) XXX_Unmarshal(b []byte) error {
@@ -835,7 +968,7 @@ func (m *CreateSwapRequest) Reset()         { *m = CreateSwapRequest{} }
 func (m *CreateSwapRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateSwapRequest) ProtoMessage()    {}
 func (*CreateSwapRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{14}
+	return fileDescriptor_77a6da22d6a3feb1, []int{17}
 }
 
 func (m *CreateSwapRequest) XXX_Unmarshal(b []byte) error {
@@ -877,7 +1010,7 @@ func (m *CreateSwapResponse) Reset()         { *m = CreateSwapResponse{} }
 func (m *CreateSwapResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateSwapResponse) ProtoMessage()    {}
 func (*CreateSwapResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{15}
+	return fileDescriptor_77a6da22d6a3feb1, []int{18}
 }
 
 func (m *CreateSwapResponse) XXX_Unmarshal(b []byte) error {
@@ -939,7 +1072,7 @@ func (m *CreateChannelRequest) Reset()         { *m = CreateChannelRequest{} }
 func (m *CreateChannelRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateChannelRequest) ProtoMessage()    {}
 func (*CreateChannelRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{16}
+	return fileDescriptor_77a6da22d6a3feb1, []int{19}
 }
 
 func (m *CreateChannelRequest) XXX_Unmarshal(b []byte) error {
@@ -994,7 +1127,7 @@ func (m *CreateReverseSwapRequest) Reset()         { *m = CreateReverseSwapReque
 func (m *CreateReverseSwapRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateReverseSwapRequest) ProtoMessage()    {}
 func (*CreateReverseSwapRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{17}
+	return fileDescriptor_77a6da22d6a3feb1, []int{20}
 }
 
 func (m *CreateReverseSwapRequest) XXX_Unmarshal(b []byte) error {
@@ -1050,7 +1183,7 @@ func (m *CreateReverseSwapResponse) Reset()         { *m = CreateReverseSwapResp
 func (m *CreateReverseSwapResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateReverseSwapResponse) ProtoMessage()    {}
 func (*CreateReverseSwapResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{18}
+	return fileDescriptor_77a6da22d6a3feb1, []int{21}
 }
 
 func (m *CreateReverseSwapResponse) XXX_Unmarshal(b []byte) error {
@@ -1093,18 +1226,21 @@ func (m *CreateReverseSwapResponse) GetClaimTransactionId() string {
 }
 
 func init() {
-	proto.RegisterType((*GetInfoRequest)(nil), "boltzrpc.GetInfoRequest")
-	proto.RegisterType((*GetInfoResponse)(nil), "boltzrpc.GetInfoResponse")
-	proto.RegisterType((*GetSwapInfoRequest)(nil), "boltzrpc.GetSwapInfoRequest")
 	proto.RegisterType((*SwapInfo)(nil), "boltzrpc.SwapInfo")
 	proto.RegisterType((*ChannelCreationInfo)(nil), "boltzrpc.ChannelCreationInfo")
+	proto.RegisterType((*CombinedChannelSwapInfo)(nil), "boltzrpc.CombinedChannelSwapInfo")
 	proto.RegisterType((*ReverseSwapInfo)(nil), "boltzrpc.ReverseSwapInfo")
-	proto.RegisterType((*GetSwapInfoResponse)(nil), "boltzrpc.GetSwapInfoResponse")
+	proto.RegisterType((*GetInfoRequest)(nil), "boltzrpc.GetInfoRequest")
+	proto.RegisterType((*GetInfoResponse)(nil), "boltzrpc.GetInfoResponse")
 	proto.RegisterType((*MinerFees)(nil), "boltzrpc.MinerFees")
 	proto.RegisterType((*Fees)(nil), "boltzrpc.Fees")
 	proto.RegisterType((*Limits)(nil), "boltzrpc.Limits")
 	proto.RegisterType((*GetServiceInfoRequest)(nil), "boltzrpc.GetServiceInfoRequest")
 	proto.RegisterType((*GetServiceInfoResponse)(nil), "boltzrpc.GetServiceInfoResponse")
+	proto.RegisterType((*ListSwapsRequest)(nil), "boltzrpc.ListSwapsRequest")
+	proto.RegisterType((*ListSwapsResponse)(nil), "boltzrpc.ListSwapsResponse")
+	proto.RegisterType((*GetSwapInfoRequest)(nil), "boltzrpc.GetSwapInfoRequest")
+	proto.RegisterType((*GetSwapInfoResponse)(nil), "boltzrpc.GetSwapInfoResponse")
 	proto.RegisterType((*DepositRequest)(nil), "boltzrpc.DepositRequest")
 	proto.RegisterType((*DepositResponse)(nil), "boltzrpc.DepositResponse")
 	proto.RegisterType((*CreateSwapRequest)(nil), "boltzrpc.CreateSwapRequest")
@@ -1117,75 +1253,82 @@ func init() {
 func init() { proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1) }
 
 var fileDescriptor_77a6da22d6a3feb1 = []byte{
-	// 1083 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x56, 0xdd, 0x6e, 0xdc, 0x44,
-	0x14, 0xd6, 0xfe, 0x64, 0x37, 0x7b, 0x36, 0xbb, 0x49, 0x27, 0x69, 0xea, 0x2c, 0x4d, 0x1b, 0x1c,
-	0x0a, 0x8b, 0x2a, 0x45, 0x74, 0xe1, 0x82, 0x8b, 0xb6, 0x52, 0x1b, 0xd4, 0x34, 0xd0, 0x48, 0xe0,
-	0x20, 0x2e, 0x10, 0x92, 0xe5, 0xb5, 0xcf, 0x26, 0xa3, 0xda, 0x33, 0xae, 0x3d, 0x5e, 0x9a, 0x4a,
-	0xbc, 0x03, 0x4f, 0xc0, 0x0b, 0x70, 0x83, 0xc4, 0x2b, 0xc0, 0x63, 0x21, 0xa1, 0xf9, 0xf1, 0xae,
-	0xed, 0x78, 0x09, 0xe2, 0x8e, 0x3b, 0x9f, 0xf3, 0x9d, 0x33, 0x73, 0x7e, 0xbe, 0x73, 0xc6, 0xd0,
-	0x4b, 0x62, 0xff, 0x28, 0x4e, 0xb8, 0xe0, 0x64, 0x7d, 0xca, 0x43, 0xf1, 0x2e, 0x89, 0x7d, 0x7b,
-	0x0b, 0x86, 0x27, 0x28, 0x4e, 0xd9, 0x8c, 0x3b, 0xf8, 0x26, 0xc3, 0x54, 0xd8, 0x7f, 0x34, 0x60,
-	0x73, 0xa1, 0x4a, 0x63, 0xce, 0x52, 0x24, 0xbb, 0xd0, 0x49, 0xaf, 0xa2, 0x29, 0x0f, 0xad, 0xc6,
-	0x41, 0x63, 0xdc, 0x73, 0x8c, 0x44, 0xf6, 0x01, 0x42, 0x16, 0xb8, 0x71, 0x36, 0x7d, 0x8d, 0x57,
-	0x56, 0x53, 0x61, 0xbd, 0x90, 0x05, 0x5f, 0x2b, 0x05, 0x79, 0x1f, 0x36, 0xa6, 0x21, 0xf7, 0x5f,
-	0xbb, 0x97, 0x48, 0x2f, 0x2e, 0x85, 0xd5, 0x3a, 0x68, 0x8c, 0x07, 0x4e, 0x5f, 0xe9, 0x5e, 0x2a,
-	0x15, 0x39, 0x84, 0x41, 0x8c, 0x2c, 0xa0, 0xec, 0xc2, 0x4d, 0x7f, 0xf4, 0xe2, 0xd4, 0x6a, 0x1f,
-	0xb4, 0xc6, 0x3d, 0x67, 0xc3, 0x28, 0xcf, 0xa5, 0x8e, 0x4c, 0xe0, 0x76, 0x6e, 0x94, 0xe0, 0x1c,
-	0x93, 0x14, 0x8d, 0xf1, 0x9a, 0x32, 0xde, 0x36, 0xa0, 0xa3, 0x31, 0xe5, 0x63, 0x7f, 0x00, 0xe4,
-	0x04, 0x85, 0xfc, 0x2e, 0x24, 0x47, 0x86, 0xd0, 0xa4, 0x81, 0x49, 0xa2, 0x49, 0x03, 0xfb, 0xb7,
-	0x26, 0xac, 0xe7, 0x36, 0x55, 0x50, 0x65, 0x2d, 0x3c, 0x91, 0xa5, 0x26, 0x33, 0x23, 0x91, 0xfb,
-	0xd0, 0x8f, 0x13, 0x3a, 0xf7, 0x04, 0xba, 0x32, 0xed, 0x96, 0x02, 0xc1, 0xa8, 0xbe, 0xc2, 0x2b,
-	0x32, 0x82, 0xf5, 0x38, 0x41, 0x1a, 0x79, 0x17, 0x68, 0xb5, 0x15, 0xba, 0x90, 0x65, 0xc2, 0x09,
-	0x06, 0x88, 0x91, 0x9b, 0xfa, 0x09, 0x8d, 0x85, 0xb5, 0xa6, 0x0c, 0x36, 0xb4, 0xf2, 0x5c, 0xe9,
-	0x88, 0x05, 0x5d, 0xca, 0xe6, 0x9c, 0xfa, 0x68, 0x75, 0x14, 0x9c, 0x8b, 0xe4, 0x01, 0x0c, 0x65,
-	0xf5, 0xb2, 0xd8, 0xf5, 0x82, 0x20, 0xc1, 0x34, 0xb5, 0xba, 0xca, 0x60, 0xa0, 0xb5, 0xcf, 0xb4,
-	0x92, 0x7c, 0x04, 0x9b, 0xf8, 0x36, 0x46, 0x5f, 0x60, 0xe0, 0x7a, 0x11, 0xcf, 0x98, 0xb0, 0xd6,
-	0x0f, 0x1a, 0xe3, 0x96, 0x33, 0xcc, 0xd5, 0xcf, 0x94, 0x96, 0x7c, 0x02, 0x3b, 0x82, 0x46, 0xc8,
-	0x33, 0xe1, 0x96, 0x5a, 0xd5, 0x53, 0xad, 0x22, 0x06, 0x7b, 0xbe, 0xec, 0x98, 0xfd, 0x57, 0x03,
-	0xb6, 0x8f, 0x2f, 0x3d, 0xc6, 0x30, 0x3c, 0x4e, 0xd0, 0x13, 0x94, 0x33, 0x55, 0xbd, 0x3b, 0xd0,
-	0x95, 0x4d, 0x71, 0x17, 0x25, 0xec, 0x48, 0xf1, 0x74, 0x75, 0x19, 0x1f, 0xc2, 0x2d, 0xca, 0xa6,
-	0x3c, 0x63, 0x81, 0x1b, 0xd2, 0x37, 0x19, 0x0d, 0xa8, 0xb8, 0x32, 0x14, 0xd9, 0x32, 0xc0, 0xab,
-	0x5c, 0x2f, 0x2b, 0x62, 0x0a, 0xac, 0x2a, 0xba, 0xee, 0xe4, 0x22, 0xf9, 0x0c, 0x76, 0x67, 0x99,
-	0x26, 0x87, 0x48, 0x3c, 0x96, 0x7a, 0xbe, 0x0c, 0x49, 0x86, 0xa1, 0x2b, 0xbb, 0x63, 0xd0, 0x6f,
-	0x97, 0xe0, 0x69, 0x40, 0x3e, 0x07, 0xab, 0xce, 0x6b, 0xce, 0x33, 0xa1, 0x4a, 0x3e, 0x70, 0x76,
-	0xaf, 0xfb, 0x7d, 0xc7, 0x33, 0x61, 0xff, 0xde, 0x84, 0xcd, 0x02, 0xd3, 0xfe, 0x37, 0xcc, 0x39,
-	0x84, 0x81, 0x1f, 0x7a, 0x34, 0xaa, 0x10, 0x67, 0x43, 0x29, 0x73, 0xde, 0x3c, 0x80, 0x21, 0x67,
-	0xfe, 0xa5, 0x47, 0x59, 0x99, 0x36, 0x03, 0xa3, 0xfd, 0xcf, 0xac, 0xf9, 0xb3, 0x01, 0xdb, 0xa5,
-	0x79, 0x34, 0x9b, 0xe5, 0x43, 0x68, 0x4b, 0x9a, 0xa8, 0xda, 0xf5, 0x27, 0xe4, 0x28, 0x5f, 0x4c,
-	0x47, 0x0b, 0x4b, 0x85, 0x93, 0x97, 0xb0, 0xe5, 0x6b, 0xd2, 0xb9, 0xbe, 0x61, 0x9d, 0xaa, 0x6d,
-	0x7f, 0xb2, 0xbf, 0xf4, 0xa9, 0xa1, 0xa5, 0xb3, 0xe9, 0x97, 0x95, 0xe4, 0x31, 0x6c, 0x14, 0x97,
-	0x88, 0x6a, 0x42, 0x7f, 0xb2, 0xb7, 0x3c, 0xa5, 0xd2, 0x5c, 0xa7, 0x9f, 0x2c, 0x15, 0xf6, 0x13,
-	0xe8, 0x9d, 0x51, 0x86, 0xc9, 0x0b, 0xc4, 0x54, 0xb6, 0x99, 0xf1, 0x24, 0xf2, 0xf4, 0x5a, 0x1c,
-	0x38, 0x46, 0x92, 0x4d, 0x30, 0x3e, 0x2a, 0xc6, 0x81, 0x93, 0x8b, 0xf6, 0x37, 0xd0, 0x56, 0x9e,
-	0xf7, 0x00, 0x62, 0x4c, 0x7c, 0x64, 0x42, 0x76, 0x5a, 0x7a, 0x37, 0x9d, 0x82, 0x86, 0x7c, 0x0c,
-	0x6b, 0x91, 0xbc, 0xc6, 0xe4, 0xb8, 0xbd, 0x8c, 0x6e, 0x71, 0xbb, 0xa3, 0x2d, 0xec, 0xc7, 0xd0,
-	0x79, 0x45, 0x23, 0x2a, 0x52, 0x79, 0x6d, 0x44, 0x19, 0xcd, 0xe3, 0x69, 0x39, 0xb9, 0xa8, 0x10,
-	0xef, 0xad, 0x42, 0x9a, 0x06, 0xd1, 0xa2, 0x7d, 0x07, 0x6e, 0xcb, 0xb6, 0x60, 0x32, 0xa7, 0x3e,
-	0x16, 0x9f, 0x81, 0x19, 0xec, 0x56, 0x01, 0xd3, 0x32, 0x1b, 0xda, 0x33, 0xc4, 0xd4, 0xb4, 0x6c,
-	0xb8, 0x0c, 0x4d, 0x45, 0xa5, 0x30, 0x32, 0x86, 0x4e, 0xa8, 0x82, 0x32, 0x09, 0x6c, 0x2d, 0xad,
-	0x74, 0xb0, 0x8e, 0xc1, 0xed, 0x27, 0x30, 0xfc, 0x02, 0x63, 0x9e, 0x52, 0x91, 0xef, 0xe8, 0xda,
-	0xbd, 0xd0, 0xa8, 0xdf, 0x0b, 0xf6, 0xaf, 0x0d, 0xd8, 0x5c, 0xf8, 0x9b, 0x00, 0x2d, 0xe8, 0xe6,
-	0x1c, 0xd7, 0x23, 0x99, 0x8b, 0x2b, 0x79, 0xdb, 0x5c, 0xc5, 0xdb, 0x45, 0xb2, 0xad, 0x7f, 0x95,
-	0x6c, 0xfb, 0x86, 0x64, 0x1f, 0xc2, 0x2d, 0xc5, 0x43, 0xc5, 0xa5, 0x3c, 0xdf, 0x5d, 0xe8, 0x98,
-	0x59, 0xd3, 0x5d, 0x33, 0x92, 0xfd, 0x13, 0x90, 0xa2, 0xb1, 0x49, 0xae, 0xba, 0x6a, 0x0a, 0xc9,
-	0x36, 0xcb, 0xc9, 0xd6, 0xbc, 0x01, 0xad, 0xda, 0x37, 0x60, 0x07, 0xd6, 0xa6, 0x34, 0x9e, 0x3c,
-	0x32, 0x1b, 0x47, 0x0b, 0x76, 0x06, 0x3b, 0xfa, 0x7a, 0x33, 0x55, 0x37, 0x84, 0x5b, 0xdf, 0xb6,
-	0xe6, 0xcd, 0xeb, 0xbc, 0x55, 0x5a, 0xe7, 0xf6, 0x1c, 0x2c, 0x7d, 0x6d, 0x61, 0x0c, 0x6f, 0xba,
-	0x7a, 0x75, 0x0d, 0xc6, 0xb0, 0xe5, 0xf9, 0x3e, 0xc6, 0xc2, 0x7d, 0x87, 0x09, 0x77, 0x7d, 0xce,
-	0x66, 0xe6, 0xc2, 0xa1, 0xd6, 0x7f, 0x8f, 0x09, 0x3f, 0xe6, 0x6c, 0x66, 0xff, 0xdc, 0x80, 0xbd,
-	0x9a, 0x8b, 0x57, 0x54, 0xfd, 0x11, 0xdc, 0x4e, 0x78, 0x26, 0xe4, 0xf3, 0x31, 0x43, 0x74, 0x23,
-	0x1a, 0x86, 0xd4, 0x4d, 0xbd, 0x05, 0x93, 0x0c, 0xf8, 0x02, 0xf1, 0x4c, 0x42, 0xe7, 0x9e, 0xda,
-	0x99, 0x7a, 0xff, 0x56, 0x5e, 0x29, 0xfd, 0x08, 0x10, 0x85, 0x95, 0xde, 0xa8, 0xc9, 0x2f, 0x6d,
-	0x58, 0x7b, 0x2e, 0x99, 0x44, 0x9e, 0x42, 0xd7, 0xfc, 0x92, 0x11, 0x6b, 0x49, 0xae, 0xf2, 0x8f,
-	0xdb, 0x68, 0xaf, 0x06, 0x31, 0xe1, 0x7f, 0x09, 0xfd, 0xc2, 0xf2, 0x25, 0x77, 0x4b, 0x96, 0x95,
-	0x7f, 0xa4, 0xd1, 0xfe, 0x0a, 0xd4, 0x9c, 0x75, 0xae, 0xfe, 0x18, 0x0b, 0x8b, 0x81, 0xdc, 0x2f,
-	0x3b, 0x5c, 0xdb, 0x25, 0xa3, 0x83, 0xd5, 0x06, 0xe6, 0xd0, 0xa7, 0xd0, 0x35, 0x53, 0x5c, 0x4c,
-	0xb0, 0xbc, 0x18, 0x8a, 0x09, 0x56, 0x47, 0xfe, 0x04, 0x60, 0x39, 0x2b, 0xe4, 0xbd, 0xc2, 0x93,
-	0x50, 0x1d, 0xb7, 0xd1, 0xdd, 0x7a, 0xd0, 0x1c, 0x74, 0x06, 0x83, 0x12, 0xeb, 0xc9, 0xbd, 0xaa,
-	0x79, 0x79, 0x1c, 0x6e, 0x38, 0xee, 0x87, 0x7c, 0xe0, 0x0b, 0xa4, 0x22, 0x76, 0xd5, 0xe5, 0x3a,
-	0xd5, 0x47, 0x87, 0xff, 0x68, 0xa3, 0x4f, 0x9f, 0x76, 0xd4, 0xdf, 0xfc, 0xa7, 0x7f, 0x07, 0x00,
-	0x00, 0xff, 0xff, 0x95, 0x55, 0xc6, 0x4b, 0xda, 0x0b, 0x00, 0x00,
+	// 1187 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x57, 0xdd, 0x6e, 0xdc, 0x44,
+	0x14, 0x96, 0xf7, 0x37, 0x7b, 0x36, 0xbb, 0xd9, 0x4c, 0xd2, 0xc4, 0x59, 0x9a, 0x76, 0xeb, 0x50,
+	0x58, 0x54, 0x29, 0xa2, 0x81, 0x0b, 0x2e, 0xda, 0x48, 0x6d, 0xaa, 0xa6, 0x81, 0x04, 0x81, 0x83,
+	0xb8, 0x40, 0x48, 0x96, 0xd7, 0x9e, 0x4d, 0x46, 0xb5, 0x67, 0x5c, 0x7b, 0xbc, 0x6d, 0x2a, 0xf1,
+	0x04, 0xdc, 0xf0, 0x1e, 0xdc, 0x20, 0xf1, 0x0a, 0x70, 0xc9, 0x5b, 0xf0, 0x1a, 0x48, 0x68, 0x7e,
+	0xbc, 0x6b, 0x3b, 0xde, 0x06, 0x71, 0x81, 0xc4, 0xe5, 0x39, 0xdf, 0x99, 0x99, 0x73, 0xbe, 0xf9,
+	0xce, 0x19, 0x1b, 0x3a, 0x71, 0xe4, 0xed, 0x47, 0x31, 0xe3, 0x0c, 0xad, 0x4c, 0x58, 0xc0, 0xdf,
+	0xc6, 0x91, 0x67, 0xfd, 0x52, 0x83, 0x95, 0xf3, 0xd7, 0x6e, 0x74, 0x42, 0xa7, 0x0c, 0xf5, 0xa1,
+	0x46, 0x7c, 0xd3, 0x18, 0x19, 0xe3, 0x8e, 0x5d, 0x23, 0x3e, 0xda, 0x82, 0x56, 0xc2, 0x5d, 0x9e,
+	0x26, 0x66, 0x4d, 0xfa, 0xb4, 0x85, 0xee, 0x42, 0x37, 0x8a, 0xc9, 0xcc, 0xe5, 0xd8, 0x79, 0x89,
+	0xaf, 0xcc, 0xba, 0x04, 0x41, 0xbb, 0xbe, 0xc0, 0x57, 0x68, 0x08, 0x2b, 0x51, 0x8c, 0x49, 0xe8,
+	0x5e, 0x60, 0xb3, 0x21, 0xd1, 0xb9, 0x8d, 0xf6, 0xa0, 0x17, 0x63, 0x1f, 0xe3, 0xd0, 0x49, 0xbc,
+	0x98, 0x44, 0xdc, 0x6c, 0xca, 0x80, 0x55, 0xe5, 0x3c, 0x97, 0x3e, 0x64, 0x42, 0x9b, 0xd0, 0x19,
+	0x23, 0x1e, 0x36, 0x5b, 0x12, 0xce, 0x4c, 0x74, 0x1f, 0xfa, 0x01, 0xf3, 0x5e, 0xa6, 0x91, 0xe3,
+	0xfa, 0x7e, 0x8c, 0x93, 0xc4, 0x6c, 0xcb, 0x80, 0x9e, 0xf2, 0x3e, 0x51, 0x4e, 0xf4, 0x21, 0xac,
+	0xe1, 0x37, 0x11, 0xf6, 0x38, 0xf6, 0x1d, 0x37, 0x64, 0x29, 0xe5, 0xe6, 0xca, 0xc8, 0x18, 0xd7,
+	0xed, 0x7e, 0xe6, 0x7e, 0x22, 0xbd, 0xe8, 0x63, 0xd8, 0xe4, 0x24, 0xc4, 0x2c, 0xe5, 0xce, 0x44,
+	0x6c, 0xe1, 0x5c, 0x62, 0x72, 0x71, 0xc9, 0xcd, 0xce, 0xc8, 0x18, 0xf7, 0x6c, 0xa4, 0xb1, 0xa7,
+	0x02, 0x7a, 0x21, 0x11, 0xeb, 0x2f, 0x03, 0x36, 0x8e, 0x2e, 0x5d, 0x4a, 0x71, 0x70, 0x14, 0x63,
+	0x97, 0x13, 0x46, 0x25, 0x7b, 0xdb, 0xd0, 0x4e, 0x5e, 0xbb, 0x91, 0x33, 0xa7, 0xb0, 0x25, 0xcc,
+	0x93, 0xe5, 0x34, 0x3e, 0x80, 0x75, 0x42, 0x27, 0x2c, 0xa5, 0xbe, 0x13, 0x90, 0x57, 0x29, 0xf1,
+	0x09, 0x57, 0x64, 0xf6, 0xec, 0x81, 0x06, 0x4e, 0x33, 0xbf, 0x60, 0x44, 0x13, 0x2c, 0x19, 0x5d,
+	0xb1, 0x33, 0x13, 0x7d, 0x0a, 0x5b, 0xd3, 0x94, 0xfa, 0x84, 0x5e, 0x38, 0x3c, 0x76, 0x69, 0xe2,
+	0x7a, 0x22, 0x25, 0x91, 0x86, 0x62, 0x76, 0x53, 0xa3, 0xdf, 0x2c, 0xc0, 0x13, 0x1f, 0x7d, 0x06,
+	0x66, 0xd5, 0xaa, 0x19, 0x4b, 0xb9, 0xa4, 0xbc, 0x67, 0x6f, 0x5d, 0x5f, 0xf7, 0x2d, 0x4b, 0xb9,
+	0xf5, 0xa3, 0x01, 0xdb, 0x47, 0x2c, 0x9c, 0x10, 0x8a, 0x7d, 0xcd, 0xc3, 0x5c, 0x41, 0x1f, 0x40,
+	0x43, 0x14, 0x2d, 0x09, 0xe8, 0x1e, 0xa0, 0xfd, 0x4c, 0x67, 0xfb, 0x59, 0x84, 0x2d, 0x71, 0xf4,
+	0x02, 0x06, 0x9e, 0x5a, 0xea, 0x78, 0x9a, 0x43, 0x49, 0x4e, 0xf7, 0x60, 0x77, 0xb1, 0xa6, 0x82,
+	0x64, 0x7b, 0xcd, 0x2b, 0x3a, 0xad, 0x5f, 0x6b, 0xb0, 0x66, 0xe3, 0x19, 0x8e, 0x13, 0xfc, 0xbf,
+	0xd2, 0xf1, 0x1e, 0xf4, 0xbc, 0xc0, 0x25, 0x61, 0x49, 0xc6, 0xab, 0xd2, 0x99, 0xa9, 0xf8, 0x3e,
+	0xf4, 0x19, 0xf5, 0x2e, 0x5d, 0x42, 0x8b, 0x22, 0xee, 0x69, 0xef, 0xbf, 0xd6, 0xf0, 0x00, 0xfa,
+	0xc7, 0x98, 0x4b, 0x46, 0xf1, 0xab, 0x14, 0x27, 0xdc, 0xfa, 0xcd, 0x80, 0xb5, 0xb9, 0x2b, 0x89,
+	0x18, 0x4d, 0xb0, 0xe4, 0xed, 0x2a, 0x9c, 0xb0, 0x60, 0x2e, 0x68, 0x69, 0xa1, 0x5d, 0x80, 0x80,
+	0xfa, 0x4e, 0x94, 0x4e, 0x04, 0x6d, 0x8a, 0xd3, 0x4e, 0x40, 0xfd, 0xaf, 0xa4, 0x03, 0xdd, 0x83,
+	0xd5, 0x42, 0x1a, 0x4a, 0xd2, 0xdd, 0xc9, 0xe2, 0x7c, 0x51, 0x7d, 0x84, 0x95, 0xfa, 0x84, 0x1e,
+	0x12, 0xb3, 0x31, 0xaa, 0x8b, 0xea, 0xb5, 0x53, 0xdc, 0x64, 0x82, 0x0e, 0xe0, 0x56, 0x16, 0x14,
+	0xab, 0x1b, 0xd6, 0xc1, 0x4d, 0x19, 0xbc, 0xa1, 0xc1, 0xdc, 0xed, 0x27, 0xd6, 0x63, 0xe8, 0x9c,
+	0x11, 0x8a, 0xe3, 0xe7, 0x18, 0x27, 0x22, 0x7f, 0xca, 0xe2, 0xd0, 0x55, 0xf9, 0xf7, 0x6c, 0x6d,
+	0x89, 0x5b, 0xd1, 0x1b, 0xca, 0xe4, 0x7b, 0x76, 0x66, 0x5a, 0x5f, 0x43, 0x43, 0xae, 0xbc, 0x03,
+	0x10, 0xe1, 0xd8, 0xc3, 0x94, 0x8b, 0xab, 0x17, 0xab, 0x6b, 0x76, 0xce, 0x83, 0x3e, 0x82, 0x66,
+	0x28, 0x8e, 0xd1, 0xa2, 0xdd, 0x58, 0x88, 0x76, 0x7e, 0xba, 0xad, 0x22, 0xac, 0x47, 0xd0, 0x3a,
+	0x25, 0x21, 0xe1, 0x89, 0x38, 0x36, 0x24, 0x94, 0x64, 0xf9, 0xd4, 0xed, 0xcc, 0x94, 0x88, 0xfb,
+	0x46, 0x22, 0x35, 0x8d, 0x28, 0xd3, 0xda, 0x86, 0x5b, 0xc7, 0x98, 0x9f, 0xe3, 0x78, 0x46, 0x3c,
+	0x9c, 0xbf, 0xaf, 0x29, 0x6c, 0x95, 0x01, 0x7d, 0x6b, 0x16, 0x34, 0xa6, 0x18, 0x27, 0xba, 0x07,
+	0xfb, 0x8b, 0xd4, 0x64, 0x56, 0x12, 0x43, 0x63, 0x68, 0x05, 0x32, 0x29, 0x5d, 0xc0, 0x60, 0x11,
+	0xa5, 0x92, 0xb5, 0x35, 0x6e, 0x21, 0x18, 0x9c, 0x92, 0x84, 0x4b, 0x76, 0xb3, 0xb3, 0xff, 0x30,
+	0x60, 0x3d, 0xe7, 0xd4, 0xe7, 0x8e, 0xa1, 0xa9, 0xae, 0xc7, 0x18, 0xd5, 0x97, 0x34, 0xbf, 0x0a,
+	0x40, 0x5f, 0xc2, 0x7a, 0xb9, 0xfb, 0x45, 0x22, 0x62, 0xd5, 0xbd, 0x5c, 0xfb, 0x57, 0xcf, 0x18,
+	0x7b, 0x50, 0x1a, 0x01, 0x09, 0x3a, 0x14, 0xad, 0x98, 0x17, 0x48, 0x5d, 0xee, 0xb5, 0xb3, 0xd8,
+	0xab, 0x34, 0x21, 0x44, 0x97, 0xe6, 0x44, 0xf3, 0x3e, 0x20, 0xc1, 0x65, 0x06, 0xaa, 0x2a, 0xcb,
+	0x53, 0xc4, 0xfa, 0xdd, 0x80, 0x8d, 0x42, 0x98, 0xae, 0xfb, 0x3f, 0x9f, 0x79, 0xe8, 0x11, 0xac,
+	0xe6, 0xeb, 0x95, 0x0d, 0xf6, 0xce, 0x72, 0xbb, 0xb9, 0x72, 0xad, 0xc7, 0xd0, 0x7f, 0x86, 0x23,
+	0x96, 0x10, 0x9e, 0x55, 0x5a, 0xf9, 0x10, 0x19, 0xd5, 0x0f, 0x91, 0xf5, 0xb3, 0x01, 0x6b, 0xf3,
+	0xf5, 0x9a, 0x02, 0x13, 0xda, 0xd9, 0x18, 0x53, 0x7c, 0x65, 0xe6, 0xd2, 0xd1, 0x54, 0x5b, 0x36,
+	0x9a, 0xe6, 0xf2, 0xad, 0xff, 0x23, 0xf9, 0x36, 0x6e, 0x90, 0xef, 0x03, 0x58, 0x97, 0xb4, 0xc9,
+	0xd2, 0xb3, 0x7a, 0xb7, 0xa0, 0xa5, 0xc7, 0xa9, 0xea, 0x43, 0x6d, 0x59, 0x3f, 0x00, 0xca, 0x07,
+	0xeb, 0xe2, 0xca, 0xaf, 0x49, 0xae, 0xd8, 0x5a, 0xb1, 0xd8, 0x8a, 0x8f, 0x8e, 0x7a, 0xe5, 0x47,
+	0xc7, 0x26, 0x34, 0x27, 0x24, 0x3a, 0x78, 0xa8, 0x1f, 0x15, 0x65, 0x58, 0x29, 0x6c, 0xaa, 0xe3,
+	0xb5, 0x08, 0x6e, 0x48, 0xb7, 0xfa, 0xda, 0x6a, 0x37, 0x7f, 0x3f, 0xd4, 0x0b, 0xdf, 0x0f, 0xd6,
+	0x0c, 0x4c, 0x75, 0x6c, 0x4e, 0x35, 0x37, 0x1d, 0xbd, 0x9c, 0x83, 0x31, 0x0c, 0x5c, 0xcf, 0xc3,
+	0x11, 0x77, 0xde, 0xe2, 0x98, 0x39, 0x1e, 0xa3, 0x53, 0x7d, 0x60, 0x5f, 0xf9, 0xbf, 0xc3, 0x31,
+	0x3b, 0x62, 0x74, 0x6a, 0xfd, 0x64, 0xc0, 0x4e, 0xc5, 0xc1, 0x4b, 0x58, 0x7f, 0x08, 0xb7, 0x62,
+	0x96, 0x72, 0xf1, 0x18, 0x4c, 0x31, 0x76, 0x42, 0x12, 0x04, 0xc4, 0x49, 0xdc, 0xb9, 0x92, 0x34,
+	0xf8, 0x1c, 0xe3, 0x33, 0x01, 0x9d, 0xbb, 0xf2, 0x59, 0x54, 0x4f, 0x6c, 0xe9, 0xb3, 0x48, 0xbd,
+	0xf3, 0x48, 0x62, 0x85, 0x8f, 0xa2, 0x83, 0x3f, 0x1b, 0xd0, 0x7c, 0x2a, 0x94, 0x84, 0x0e, 0xa1,
+	0xad, 0x5f, 0x43, 0x64, 0x2e, 0xc4, 0x55, 0x7c, 0x33, 0x87, 0x3b, 0x15, 0x88, 0x4e, 0xff, 0x5c,
+	0x3e, 0xb0, 0xb9, 0xf1, 0x8c, 0xee, 0x16, 0x82, 0xaf, 0x4f, 0xf4, 0xe1, 0x68, 0x79, 0x80, 0xde,
+	0xf4, 0x19, 0x74, 0xe6, 0x63, 0x17, 0x0d, 0xf3, 0x9a, 0x2f, 0x0e, 0xe8, 0xe1, 0x7b, 0x95, 0x98,
+	0xde, 0xe5, 0x73, 0xe8, 0xe6, 0xc6, 0x18, 0xba, 0x5d, 0x3c, 0xb6, 0x38, 0x04, 0x87, 0xbb, 0x4b,
+	0x50, 0xbd, 0xd7, 0x21, 0xb4, 0xf5, 0x2c, 0xc8, 0xd3, 0x54, 0x1c, 0x2f, 0x79, 0x9a, 0xca, 0x83,
+	0xe3, 0x18, 0x60, 0xd1, 0x71, 0x28, 0x97, 0xf6, 0xb5, 0xa6, 0x1d, 0xde, 0xae, 0x06, 0xf5, 0x46,
+	0x67, 0xd0, 0x2b, 0xf4, 0x0e, 0xba, 0x53, 0x0e, 0x2f, 0x36, 0xd5, 0x0d, 0xdb, 0x7d, 0x9f, 0x8d,
+	0x8d, 0x9c, 0x34, 0x91, 0x55, 0x5e, 0x72, 0xbd, 0x61, 0x86, 0x7b, 0xef, 0x8c, 0x51, 0xbb, 0x4f,
+	0x5a, 0xf2, 0x2f, 0xec, 0x93, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0xeb, 0x02, 0x41, 0xec, 0x92,
+	0x0d, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1201,8 +1344,9 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BoltzClient interface {
 	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
-	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	GetServiceInfo(ctx context.Context, in *GetServiceInfoRequest, opts ...grpc.CallOption) (*GetServiceInfoResponse, error)
+	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
+	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
 	CreateSwap(ctx context.Context, in *CreateSwapRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
 	CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
@@ -1226,18 +1370,27 @@ func (c *boltzClient) GetInfo(ctx context.Context, in *GetInfoRequest, opts ...g
 	return out, nil
 }
 
-func (c *boltzClient) GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error) {
-	out := new(GetSwapInfoResponse)
-	err := c.cc.Invoke(ctx, "/boltzrpc.Boltz/GetSwapInfo", in, out, opts...)
+func (c *boltzClient) GetServiceInfo(ctx context.Context, in *GetServiceInfoRequest, opts ...grpc.CallOption) (*GetServiceInfoResponse, error) {
+	out := new(GetServiceInfoResponse)
+	err := c.cc.Invoke(ctx, "/boltzrpc.Boltz/GetServiceInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *boltzClient) GetServiceInfo(ctx context.Context, in *GetServiceInfoRequest, opts ...grpc.CallOption) (*GetServiceInfoResponse, error) {
-	out := new(GetServiceInfoResponse)
-	err := c.cc.Invoke(ctx, "/boltzrpc.Boltz/GetServiceInfo", in, out, opts...)
+func (c *boltzClient) ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error) {
+	out := new(ListSwapsResponse)
+	err := c.cc.Invoke(ctx, "/boltzrpc.Boltz/ListSwaps", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error) {
+	out := new(GetSwapInfoResponse)
+	err := c.cc.Invoke(ctx, "/boltzrpc.Boltz/GetSwapInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1283,8 +1436,9 @@ func (c *boltzClient) CreateReverseSwap(ctx context.Context, in *CreateReverseSw
 // BoltzServer is the server API for Boltz service.
 type BoltzServer interface {
 	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
-	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
 	GetServiceInfo(context.Context, *GetServiceInfoRequest) (*GetServiceInfoResponse, error)
+	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
+	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
 	Deposit(context.Context, *DepositRequest) (*DepositResponse, error)
 	CreateSwap(context.Context, *CreateSwapRequest) (*CreateSwapResponse, error)
 	CreateChannel(context.Context, *CreateChannelRequest) (*CreateSwapResponse, error)
@@ -1313,24 +1467,6 @@ func _Boltz_GetInfo_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Boltz_GetSwapInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSwapInfoRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BoltzServer).GetSwapInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/boltzrpc.Boltz/GetSwapInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetSwapInfo(ctx, req.(*GetSwapInfoRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Boltz_GetServiceInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetServiceInfoRequest)
 	if err := dec(in); err != nil {
@@ -1345,6 +1481,42 @@ func _Boltz_GetServiceInfo_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).GetServiceInfo(ctx, req.(*GetServiceInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_ListSwaps_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSwapsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).ListSwaps(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/boltzrpc.Boltz/ListSwaps",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).ListSwaps(ctx, req.(*ListSwapsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetSwapInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSwapInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetSwapInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/boltzrpc.Boltz/GetSwapInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetSwapInfo(ctx, req.(*GetSwapInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1430,12 +1602,16 @@ var _Boltz_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Boltz_GetInfo_Handler,
 		},
 		{
-			MethodName: "GetSwapInfo",
-			Handler:    _Boltz_GetSwapInfo_Handler,
-		},
-		{
 			MethodName: "GetServiceInfo",
 			Handler:    _Boltz_GetServiceInfo_Handler,
+		},
+		{
+			MethodName: "ListSwaps",
+			Handler:    _Boltz_ListSwaps_Handler,
+		},
+		{
+			MethodName: "GetSwapInfo",
+			Handler:    _Boltz_GetSwapInfo_Handler,
 		},
 		{
 			MethodName: "Deposit",

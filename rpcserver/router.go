@@ -82,69 +82,6 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	}, nil
 }
 
-func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
-	swap, err := server.database.QuerySwap(request.Id)
-
-	if err == nil {
-		serializedSwap := swap.Serialize()
-
-		var grpcChannelCreation *boltzrpc.ChannelCreationInfo
-
-		channelCreation, err := server.database.QueryChannelCreation(swap.Id)
-
-		if err == nil {
-			serializedChannelCreation := channelCreation.Serialize()
-
-			grpcChannelCreation = &boltzrpc.ChannelCreationInfo{
-				SwapId:                 serializedChannelCreation.SwapId,
-				Status:                 serializedChannelCreation.Status,
-				InboundLiquidity:       uint32(serializedChannelCreation.InboundLiquidity),
-				Private:                serializedChannelCreation.Private,
-				FundingTransactionId:   serializedChannelCreation.FundingTransactionId,
-				FundingTransactionVout: uint32(serializedChannelCreation.FundingTransactionVout),
-			}
-		}
-
-		return &boltzrpc.GetSwapInfoResponse{
-			Swap: &boltzrpc.SwapInfo{
-				Id:                 serializedSwap.Id,
-				Status:             serializedSwap.Status,
-				PrivateKey:         serializedSwap.PrivateKey,
-				Preimage:           serializedSwap.Preimage,
-				RedeemScript:       serializedSwap.RedeemScript,
-				Invoice:            serializedSwap.Invoice,
-				LockupAddress:      serializedSwap.Address,
-				ExpectedAmount:     int64(serializedSwap.ExpectedAmount),
-				TimeoutBlockHeight: uint32(serializedSwap.TimeoutBlockHeight),
-			},
-			ChannelCreation: grpcChannelCreation,
-		}, nil
-	}
-
-	// Try to find a Reverse Swap with that ID
-	reverseSwap, err := server.database.QueryReverseSwap(request.Id)
-
-	if err == nil {
-		serializedReverseSwap := reverseSwap.Serialize()
-
-		return &boltzrpc.GetSwapInfoResponse{
-			ReverseSwap: &boltzrpc.ReverseSwapInfo{
-				Id:                 serializedReverseSwap.Id,
-				Status:             serializedReverseSwap.Status,
-				PrivateKey:         serializedReverseSwap.PrivateKey,
-				Preimage:           serializedReverseSwap.Preimage,
-				RedeemScript:       serializedReverseSwap.RedeemScript,
-				Invoice:            serializedReverseSwap.Invoice,
-				ClaimAddress:       serializedReverseSwap.ClaimAddress,
-				OnchainAmount:      int64(serializedReverseSwap.OnchainAmount),
-				TimeoutBlockHeight: uint32(serializedReverseSwap.TimeoutBlockHeight),
-			},
-		}, nil
-	}
-
-	return nil, handleError(errors.New("could not find Swap or Reverse Swap with ID " + request.Id))
-}
-
 func (server *routedBoltzServer) GetServiceInfo(_ context.Context, _ *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
 	fees, limits, err := server.getPairs()
 
@@ -156,6 +93,73 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, _ *boltzrpc.G
 		Fees:   fees,
 		Limits: limits,
 	}, nil
+}
+
+func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
+	response := &boltzrpc.ListSwapsResponse{}
+
+	swaps, err := server.database.QuerySwaps()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, swap := range swaps {
+		// Check for a Channel Creation
+		channelCreation, err := server.database.QueryChannelCreation(swap.Id)
+
+		if err == nil {
+			response.ChannelCreations = append(response.ChannelCreations, &boltzrpc.CombinedChannelSwapInfo{
+				Swap:            serializeSwap(&swap),
+				ChannelCreation: serializeChannelCreation(channelCreation),
+			})
+		} else {
+			response.Swaps = append(response.Swaps, serializeSwap(&swap))
+		}
+	}
+
+	// Reverse Swaps
+	reverseSwaps, err := server.database.QueryReverseSwaps()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, reverseSwap := range reverseSwaps {
+		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(&reverseSwap))
+	}
+
+	return response, nil
+}
+
+func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
+	swap, err := server.database.QuerySwap(request.Id)
+
+	if err == nil {
+		var grpcChannelCreation *boltzrpc.ChannelCreationInfo
+
+		channelCreation, err := server.database.QueryChannelCreation(swap.Id)
+
+		if err == nil {
+			grpcChannelCreation = serializeChannelCreation(channelCreation)
+		}
+
+		return &boltzrpc.GetSwapInfoResponse{
+			Swap:            serializeSwap(swap),
+			ChannelCreation: grpcChannelCreation,
+		}, nil
+	}
+
+	// Try to find a Reverse Swap with that ID
+	reverseSwap, err := server.database.QueryReverseSwap(request.Id)
+
+	if err == nil {
+		return &boltzrpc.GetSwapInfoResponse{
+			ReverseSwap: serializeReverseSwap(reverseSwap),
+		}, nil
+	}
+
+	return nil, handleError(errors.New("could not find Swap or Reverse Swap with ID " + request.Id))
 }
 
 func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
