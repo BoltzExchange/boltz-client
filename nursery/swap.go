@@ -45,6 +45,7 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 					continue
 				}
 
+				var refundedSwaps []database.Swap
 				var refundOutputs []boltz.OutputDetails
 
 				for _, swapToRefund := range swapsToRefund {
@@ -60,9 +61,10 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 						eventListenersLock.Unlock()
 					}
 
-					refundOutput := nursery.getRefundOutput(swapToRefund)
+					refundOutput := nursery.getRefundOutput(&swapToRefund)
 
 					if refundOutput != nil {
+						refundedSwaps = append(refundedSwaps, swapToRefund)
 						refundOutputs = append(refundOutputs, *refundOutput)
 					}
 				}
@@ -92,25 +94,34 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 					continue
 				}
 
-				logger.Info("Constructed refund transaction: " + refundTransaction.TxHash().String())
+				refundTransactionId := refundTransaction.TxHash().String()
+				logger.Info("Constructed refund transaction: " + refundTransactionId)
 
 				err = nursery.broadcastTransaction(refundTransaction)
 
 				if err != nil {
 					logger.Error("Could not finalize refund transaction: " + err.Error())
+					continue
+				}
+
+				for _, refundedSwap := range refundedSwaps {
+					err = nursery.database.SetSwapRefundTransactionId(&refundedSwap, refundTransactionId)
+
+					if err != nil {
+						logger.Error("Could not set refund transaction id in database: " + err.Error())
+					}
 				}
 			}
 		}
 	}()
 }
 
-// TODO: add channel creation wording
-func (nursery *Nursery) getRefundOutput(swap database.Swap) *boltz.OutputDetails {
+func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetails {
 	swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
 
 	if err != nil {
 		logger.Error("Could not get lockup transaction from Boltz: " + err.Error())
-		nursery.handleSwapStatus(&swap, nil, boltz.SwapStatusResponse{
+		nursery.handleSwapStatus(swap, nil, boltz.SwapStatusResponse{
 			Status: boltz.SwapAbandoned.String(),
 		})
 
@@ -132,17 +143,20 @@ func (nursery *Nursery) getRefundOutput(swap database.Swap) *boltz.OutputDetails
 	}
 
 	logger.Info("Got lockup transaction of Swap " + swap.Id + " from Boltz: " + lockupTransaction.Hash().String())
+
+	err = nursery.database.SetSwapLockupTransactionId(swap, lockupTransaction.Hash().String())
+
+	if err != nil {
+		logger.Error("Could not set lockup transaction id in database: " + err.Error())
+		return nil
+	}
+
 	lockupVout, err := nursery.findLockupVout(swap.Address, lockupTransaction.MsgTx().TxOut)
 
 	if err != nil {
 		logger.Error("Could not find lockup vout of Swap " + swap.Id)
 		return nil
 	}
-
-	// TODO: do this after refund is successful
-	nursery.handleSwapStatus(&swap, nil, boltz.SwapStatusResponse{
-		Status: boltz.SwapRefunded.String(),
-	})
 
 	return &boltz.OutputDetails{
 		LockupTransaction:  lockupTransaction,

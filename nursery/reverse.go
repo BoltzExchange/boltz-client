@@ -137,6 +137,13 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			return
 		}
 
+		err = nursery.database.SetReverseSwapLockupTransactionId(reverseSwap, lockupTransaction.Hash().String())
+
+		if err != nil {
+			logger.Error("Could not set lockup transaction id in database: " + err.Error())
+			return
+		}
+
 		lockupAddress, err := boltz.WitnessScriptHashAddress(nursery.chainParams, reverseSwap.RedeemScript)
 
 		if err != nil {
@@ -194,16 +201,25 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			return
 		}
 
-		logger.Info("Constructed claim transaction: " + claimTransaction.TxHash().String())
+		claimTransactionId := claimTransaction.TxHash().String()
+		logger.Info("Constructed claim transaction: " + claimTransactionId)
 
 		err = nursery.broadcastTransaction(claimTransaction)
 
 		if err != nil {
 			logger.Error("Could not finalize claim transaction: " + err.Error())
+			return
+		}
+
+		err = nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, claimTransactionId)
+
+		if err != nil {
+			logger.Error("Could not set claim transaction id in database: " + err.Error())
+			return
 		}
 
 		if claimTransactionIdChan != nil {
-			claimTransactionIdChan <- claimTransaction.TxHash().String()
+			claimTransactionIdChan <- claimTransactionId
 		}
 	}
 

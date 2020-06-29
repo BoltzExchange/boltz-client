@@ -9,15 +9,17 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	serializedSwap := swap.Serialize()
 
 	return &boltzrpc.SwapInfo{
-		Id:                 serializedSwap.Id,
-		Status:             serializedSwap.Status,
-		PrivateKey:         serializedSwap.PrivateKey,
-		Preimage:           serializedSwap.Preimage,
-		RedeemScript:       serializedSwap.RedeemScript,
-		Invoice:            serializedSwap.Invoice,
-		LockupAddress:      serializedSwap.Address,
-		ExpectedAmount:     int64(serializedSwap.ExpectedAmount),
-		TimeoutBlockHeight: uint32(serializedSwap.TimeoutBlockHeight),
+		Id:                  serializedSwap.Id,
+		Status:              serializedSwap.Status,
+		PrivateKey:          serializedSwap.PrivateKey,
+		Preimage:            serializedSwap.Preimage,
+		RedeemScript:        serializedSwap.RedeemScript,
+		Invoice:             serializedSwap.Invoice,
+		LockupAddress:       serializedSwap.Address,
+		ExpectedAmount:      int64(serializedSwap.ExpectedAmount),
+		TimeoutBlockHeight:  uint32(serializedSwap.TimeoutBlockHeight),
+		LockupTransactionId: serializedSwap.LockupTransactionId,
+		RefundTransactionId: serializedSwap.RefundTransactionId,
 	}
 }
 
@@ -38,14 +40,16 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 	serializedReverseSwap := reverseSwap.Serialize()
 
 	return &boltzrpc.ReverseSwapInfo{
-		Id:                 serializedReverseSwap.Id,
-		Status:             serializedReverseSwap.Status,
-		PrivateKey:         serializedReverseSwap.PrivateKey,
-		Preimage:           serializedReverseSwap.Preimage,
-		RedeemScript:       serializedReverseSwap.RedeemScript,
-		Invoice:            serializedReverseSwap.Invoice,
-		ClaimAddress:       serializedReverseSwap.ClaimAddress,
-		OnchainAmount:      int64(serializedReverseSwap.OnchainAmount),
-		TimeoutBlockHeight: uint32(serializedReverseSwap.TimeoutBlockHeight),
+		Id:                  serializedReverseSwap.Id,
+		Status:              serializedReverseSwap.Status,
+		PrivateKey:          serializedReverseSwap.PrivateKey,
+		Preimage:            serializedReverseSwap.Preimage,
+		RedeemScript:        serializedReverseSwap.RedeemScript,
+		Invoice:             serializedReverseSwap.Invoice,
+		ClaimAddress:        serializedReverseSwap.ClaimAddress,
+		OnchainAmount:       int64(serializedReverseSwap.OnchainAmount),
+		TimeoutBlockHeight:  uint32(serializedReverseSwap.TimeoutBlockHeight),
+		LockupTransactionId: serializedReverseSwap.LockupTransactionId,
+		ClaimTransactionId:  serializedReverseSwap.ClaimTransactionId,
 	}
 }

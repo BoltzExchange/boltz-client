@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"strconv"
 )
 
 type ChannelCreation struct {
@@ -102,14 +101,16 @@ func (database *Database) CreateChannelCreation(channelCreation ChannelCreation)
 }
 
 func (database *Database) SetChannelFunding(channelCreation *ChannelCreation, fundingTransactionId string, fundingTransactionVout int) error {
+	channelCreation.Status = boltz.ChannelAccepted
 	channelCreation.FundingTransactionId = fundingTransactionId
 	channelCreation.FundingTransactionVout = fundingTransactionVout
 
 	_, err := database.db.Exec(
-		"UPDATE channelCreations SET status = '" + boltz.ChannelAccepted.String() + "', " +
-			"fundingTransactionId = '" + fundingTransactionId + "', " +
-			"fundingTransactionVout = " + strconv.Itoa(fundingTransactionVout) + " " +
-			"WHERE swapId = '" + channelCreation.SwapId + "'",
+		"UPDATE channelCreations SET status = ?, fundingTransactionId = ?, fundingTransactionVout = ? WHERE swapId = ?",
+		boltz.ChannelAccepted.String(),
+		fundingTransactionId,
+		fundingTransactionVout,
+		channelCreation.SwapId,
 	)
 
 	return err
