@@ -19,6 +19,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/zpay32"
+	"math"
 	"strconv"
 )
 
@@ -95,7 +96,7 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, _ *boltzrpc.G
 	}, nil
 }
 
-func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
+func (server *routedBoltzServer) ListSwaps(_ context.Context, _ *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
 	response := &boltzrpc.ListSwapsResponse{}
 
 	swaps, err := server.database.QuerySwaps()
@@ -168,6 +169,9 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 	if err != nil {
 		return nil, handleError(err)
 	}
+
+	limits.Minimal = calculateDepositLimit(limits.Minimal, fees, true)
+	limits.Maximal = calculateDepositLimit(limits.Maximal, fees, false)
 
 	preimage, preimageHash, err := newPreimage()
 
@@ -601,6 +605,20 @@ func (server *routedBoltzServer) getPairs() (*boltzrpc.Fees, *boltzrpc.Limits, e
 			Minimal: int64(pair.Limits.Minimal),
 			Maximal: int64(pair.Limits.Maximal),
 		}, nil
+}
+
+func calculateDepositLimit(limit int64, fees *boltzrpc.Fees, isMin bool) int64 {
+	effectiveRate := 1 + float64(fees.Percentage)/100
+	limitFloat := float64(limit) * effectiveRate
+
+	if isMin {
+		// Add two more sats as safety buffer
+		limitFloat = math.Ceil(limitFloat) + 2
+	} else {
+		limitFloat = math.Floor(limitFloat)
+	}
+
+	return int64(limitFloat) + int64(fees.Miner.Normal)
 }
 
 func newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {
