@@ -155,7 +155,7 @@ func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO reverseSwaps (id, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -173,6 +173,8 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		reverseSwap.ClaimAddress,
 		reverseSwap.OnchainAmount,
 		reverseSwap.TimeoutBlockHeight,
+		reverseSwap.LockupTransactionId,
+		reverseSwap.ClaimTransactionId,
 	)
 
 	if err != nil {

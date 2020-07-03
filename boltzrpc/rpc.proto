@@ -136,8 +136,9 @@ message CreateReverseSwapRequest {
 }
 message CreateReverseSwapResponse {
     string id = 1;
-    uint32 routing_fee_milli_sat = 2;
+    string lockup_address = 2;
+    uint32 routing_fee_milli_sat = 3;
 
     // Only populated when 0-conf is accepted
-    string claim_transaction_id = 3;
+    string claim_transaction_id = 4;
 }

@@ -212,15 +212,17 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 	}
 
 	deposit := database.Swap{
-		Id:                response.Id,
-		Status:            boltz.SwapCreated,
-		Invoice:           "",
-		Address:           response.Address,
-		Preimage:          preimage,
-		PrivateKey:        privateKey,
-		RedeemScript:      redeemScript,
-		ExpectedAmount:    0,
-		TimoutBlockHeight: response.TimeoutBlockHeight,
+		Id:                  response.Id,
+		Status:              boltz.SwapCreated,
+		Invoice:             "",
+		Address:             response.Address,
+		Preimage:            preimage,
+		PrivateKey:          privateKey,
+		RedeemScript:        redeemScript,
+		ExpectedAmount:      0,
+		TimoutBlockHeight:   response.TimeoutBlockHeight,
+		LockupTransactionId: "",
+		RefundTransactionId: "",
 	}
 
 	err = boltz.CheckSwapScript(deposit.RedeemScript, preimageHash, deposit.PrivateKey, deposit.TimoutBlockHeight)
@@ -291,15 +293,17 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 	}
 
 	swap := database.Swap{
-		Id:                response.Id,
-		Status:            boltz.InvoiceSet,
-		PrivateKey:        privateKey,
-		Preimage:          nil,
-		RedeemScript:      redeemScript,
-		Invoice:           invoice.PaymentRequest,
-		Address:           response.Address,
-		ExpectedAmount:    response.ExpectedAmount,
-		TimoutBlockHeight: response.TimeoutBlockHeight,
+		Id:                  response.Id,
+		Status:              boltz.InvoiceSet,
+		PrivateKey:          privateKey,
+		Preimage:            nil,
+		RedeemScript:        redeemScript,
+		Invoice:             invoice.PaymentRequest,
+		Address:             response.Address,
+		ExpectedAmount:      response.ExpectedAmount,
+		TimoutBlockHeight:   response.TimeoutBlockHeight,
+		LockupTransactionId: "",
+		RefundTransactionId: "",
 	}
 
 	err = boltz.CheckSwapScript(swap.RedeemScript, invoice.RHash, swap.PrivateKey, swap.TimoutBlockHeight)
@@ -393,15 +397,17 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	}
 
 	swap := database.Swap{
-		Id:                response.Id,
-		Status:            boltz.InvoiceSet,
-		PrivateKey:        privateKey,
-		Preimage:          preimage,
-		RedeemScript:      redeemScript,
-		Invoice:           invoice.PaymentRequest,
-		Address:           response.Address,
-		ExpectedAmount:    response.ExpectedAmount,
-		TimoutBlockHeight: response.TimeoutBlockHeight,
+		Id:                  response.Id,
+		Status:              boltz.InvoiceSet,
+		PrivateKey:          privateKey,
+		Preimage:            preimage,
+		RedeemScript:        redeemScript,
+		Invoice:             invoice.PaymentRequest,
+		Address:             response.Address,
+		ExpectedAmount:      response.ExpectedAmount,
+		TimoutBlockHeight:   response.TimeoutBlockHeight,
+		LockupTransactionId: "",
+		RefundTransactionId: "",
 	}
 
 	channelCreation := database.ChannelCreation{
@@ -507,16 +513,18 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	}
 
 	reverseSwap := database.ReverseSwap{
-		Id:                 response.Id,
-		Status:             boltz.SwapCreated,
-		AcceptZeroConf:     request.AcceptZeroConf,
-		PrivateKey:         privateKey,
-		Preimage:           preimage,
-		ClaimAddress:       claimAddress,
-		RedeemScript:       redeemScript,
-		Invoice:            response.Invoice,
-		OnchainAmount:      response.OnchainAmount,
-		TimeoutBlockHeight: response.TimeoutBlockHeight,
+		Id:                  response.Id,
+		Status:              boltz.SwapCreated,
+		AcceptZeroConf:      request.AcceptZeroConf,
+		PrivateKey:          privateKey,
+		Preimage:            preimage,
+		RedeemScript:        redeemScript,
+		Invoice:             response.Invoice,
+		ClaimAddress:        claimAddress,
+		OnchainAmount:       response.OnchainAmount,
+		TimeoutBlockHeight:  response.TimeoutBlockHeight,
+		LockupTransactionId: "",
+		ClaimTransactionId:  "",
 	}
 
 	err = boltz.CheckReverseSwapScript(reverseSwap.RedeemScript, preimageHash, privateKey, response.TimeoutBlockHeight)
@@ -544,7 +552,13 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	}
 
 	// TODO: error handling in case the swap fails
-	claimTransactionIdChan := server.nursery.RegisterReverseSwap(reverseSwap)
+	var claimTransactionIdChan chan string
+
+	if request.AcceptZeroConf {
+		claimTransactionIdChan = make(chan string)
+	}
+
+	server.nursery.RegisterReverseSwap(reverseSwap, claimTransactionIdChan)
 
 	logger.Info("Created new Reverse Swap " + reverseSwap.Id + ": " + marshalJson(reverseSwap.Serialize()))
 
@@ -556,12 +570,13 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 
 	claimTransactionId := ""
 
-	if reverseSwap.AcceptZeroConf {
+	if claimTransactionIdChan != nil {
 		claimTransactionId = <-claimTransactionIdChan
 	}
 
 	return &boltzrpc.CreateReverseSwapResponse{
 		Id:                 reverseSwap.Id,
+		LockupAddress:      response.LockupAddress,
 		RoutingFeeMilliSat: uint32(payment),
 		ClaimTransactionId: claimTransactionId,
 	}, nil

@@ -112,7 +112,7 @@ func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx) error {
 		return errors.New("could not broadcast transaction: " + err.Error())
 	}
 
-	logger.Info("Broadcast refund transaction with Boltz API")
+	logger.Info("Broadcast transaction with Boltz API")
 
 	return nil
 }

@@ -43,23 +43,21 @@ func (nursery *Nursery) recoverReverseSwaps() error {
 			}
 
 			if !isCompleted {
-				nursery.RegisterReverseSwap(reverseSwap)
+				nursery.RegisterReverseSwap(reverseSwap, nil)
 			}
 
 			continue
 		}
 
 		logger.Info("Reverse Swap " + reverseSwap.Id + " status did not change")
-		nursery.RegisterReverseSwap(reverseSwap)
+		nursery.RegisterReverseSwap(reverseSwap, nil)
 	}
 
 	return nil
 }
 
-func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) chan string {
+func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap, claimTransactionIdChan chan string) chan string {
 	logger.Info("Listening to events of Reverse Swap " + reverseSwap.Id)
-
-	claimTransactionIdChan := make(chan string)
 
 	go func() {
 		stopListening := make(chan bool)
