@@ -251,22 +251,7 @@ func (nursery *Nursery) RegisterSwap(swap *database.Swap, channelCreation *datab
 
 		eventStream := make(chan *boltz.SwapStatusResponse)
 
-		// TODO: handle disconnections gracefully
-		go func() {
-			err := nursery.boltz.StreamSwapStatus(swap.Id, eventStream, stopListening)
-
-			if err == nil {
-				logger.Info("Stopping event listener of " + swapType + " " + swap.Id)
-			} else {
-				logger.Error("Could not listen to events of " + swapType + " " + swap.Id + ": " + err.Error())
-			}
-
-			eventListenersLock.Lock()
-			delete(eventListeners, swap.Id)
-			eventListenersLock.Unlock()
-
-			stopHandler <- true
-		}()
+		nursery.streamSwapStatus(swap.Id, swapType, eventStream, stopListening, stopHandler)
 
 		for {
 			select {
@@ -298,15 +283,19 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 
 	parsedStatus := boltz.ParseEvent(status.Status)
 
+	if parsedStatus == swap.Status {
+		logger.Info("Status of " + swapType + " " + swap.Id + " is " + parsedStatus.String() + " already")
+		return
+	}
+
 	switch parsedStatus {
 	case boltz.TransactionMempool:
 		fallthrough
 
 	case boltz.TransactionConfirmed:
-		// Connect to the Boltz LND node in case the Swap could open a channel
-		if channelCreation != nil {
-			_, _ = utils.ConnectBoltzLnd(nursery.lnd, nursery.boltz, nursery.symbol)
-		}
+		// Connect to the LND node of Boltz to allow for channels to be opened and to gossip our channels
+		// to increase the chances that the provided invoice can be paid
+		_, _ = utils.ConnectBoltzLnd(nursery.lnd, nursery.boltz, nursery.symbol)
 
 		// Set the invoice of Swaps that were created with only a preimage hash
 		if swap.Invoice != "" {
@@ -363,7 +352,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		}
 
 	case boltz.ChannelCreated:
-		if channelCreation == nil {
+		if !isChannelCreation {
 			break
 		}
 

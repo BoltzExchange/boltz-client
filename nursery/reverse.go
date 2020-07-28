@@ -69,22 +69,7 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap, cl
 
 		eventStream := make(chan *boltz.SwapStatusResponse)
 
-		// TODO: handle disconnections gracefully
-		go func() {
-			err := nursery.boltz.StreamSwapStatus(reverseSwap.Id, eventStream, stopListening)
-
-			if err == nil {
-				logger.Info("Stopping event listener of Reverse Swap: " + reverseSwap.Id)
-			} else {
-				logger.Error("Could not listen to events of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
-			}
-
-			eventListenersLock.Lock()
-			delete(eventListeners, reverseSwap.Id)
-			eventListenersLock.Unlock()
-
-			stopHandler <- true
-		}()
+		nursery.streamSwapStatus(reverseSwap.Id, "Reverse Swap", eventStream, stopListening, stopHandler)
 
 		for {
 			select {
@@ -111,6 +96,11 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap, cl
 // TODO: fail swap after "transaction.failed" event
 func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse, claimTransactionIdChan chan string) {
 	parsedStatus := boltz.ParseEvent(event.Status)
+
+	if parsedStatus == reverseSwap.Status {
+		logger.Info("Status of Reverse Swap " + reverseSwap.Id + " is " + parsedStatus.String() + " already")
+		return
+	}
 
 	switch parsedStatus {
 	case boltz.TransactionMempool:
