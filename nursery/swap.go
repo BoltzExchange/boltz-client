@@ -303,6 +303,11 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		fallthrough
 
 	case boltz.TransactionConfirmed:
+		// Connect to the Boltz LND node in case the Swap could open a channel
+		if channelCreation != nil {
+			_, _ = utils.ConnectBoltzLnd(nursery.lnd, nursery.boltz, nursery.symbol)
+		}
+
 		// Set the invoice of Swaps that were created with only a preimage hash
 		if swap.Invoice != "" {
 			break
