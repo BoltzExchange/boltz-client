@@ -11,7 +11,9 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"math"
+	"strconv"
 	"sync"
+	"time"
 )
 
 type Nursery struct {
@@ -24,6 +26,8 @@ type Nursery struct {
 	boltz    *boltz.Boltz
 	database *database.Database
 }
+
+const retryInterval = 15
 
 // Map between Swap ids and a channel that tells its SSE event listeners to stop
 var eventListeners = make(map[string]chan bool)
@@ -51,13 +55,9 @@ func (nursery *Nursery) Init(
 	// TODO: use channel acceptor to prevent invalid channel openings from happening
 
 	blockNotifier := make(chan *chainrpc.BlockEpoch)
-	err := nursery.lnd.RegisterBlockListener(blockNotifier)
+	go nursery.registerBlockListener(blockNotifier)
 
-	if err != nil {
-		return err
-	}
-
-	err = nursery.recoverSwaps(blockNotifier)
+	err := nursery.recoverSwaps(blockNotifier)
 
 	if err != nil {
 		return err
@@ -66,6 +66,20 @@ func (nursery *Nursery) Init(
 	err = nursery.recoverReverseSwaps()
 
 	return err
+}
+
+func (nursery *Nursery) registerBlockListener(blockNotifier chan *chainrpc.BlockEpoch) {
+	logger.Info("Connecting to LND block epoch stream")
+	err := nursery.lnd.RegisterBlockListener(blockNotifier)
+
+	if err != nil {
+		logger.Error("Lost connection to LND block epoch stream: " + err.Error())
+		logger.Info("Retrying LND connection in " + strconv.Itoa(retryInterval) + " seconds")
+
+		time.Sleep(retryInterval * time.Second)
+
+		nursery.registerBlockListener(blockNotifier)
+	}
 }
 
 func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxOut) (uint32, error) {
