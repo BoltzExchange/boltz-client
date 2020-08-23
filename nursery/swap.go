@@ -232,13 +232,7 @@ func (nursery *Nursery) RegisterSwap(swap *database.Swap, channelCreation *datab
 	var stopInvoiceSubscription chan bool
 
 	if isChannelCreation {
-		var err error
-		stopInvoiceSubscription, err = nursery.subscribeChannelCreationInvoice(*swap, channelCreation)
-
-		if err != nil {
-			logger.Error("Could not subscribe to invoice events: " + err.Error())
-			return
-		}
+		stopInvoiceSubscription = nursery.subscribeChannelCreationInvoice(*swap, channelCreation)
 	}
 
 	go func() {

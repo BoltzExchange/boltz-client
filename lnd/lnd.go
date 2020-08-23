@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
@@ -162,7 +163,6 @@ func (lnd *LND) PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32
 			return event, nil
 
 		case lnrpc.Payment_IN_FLIGHT:
-			// TODO: check how this behaves on testnet
 			// Return once all the HTLCs are in flight
 			var htlcSum int64
 
@@ -205,35 +205,48 @@ func (lnd *LND) RegisterBlockListener(channel chan *chainrpc.BlockEpoch) error {
 		return err
 	}
 
+	logger.Info("Connected to LND block epoch stream")
+
+	errChannel := make(chan error)
+
 	go func() {
 		for {
-			// TODO: reconnection logic
-			block, _ := client.Recv()
+			block, err := client.Recv()
+
+			if err != nil {
+				errChannel <- err
+				return
+			}
+
 			channel <- block
 		}
 	}()
 
-	return err
+	return <-errChannel
 }
 
-func (lnd *LND) SubscribeSingleInvoice(preimageHash []byte) (chan *lnrpc.Invoice, error) {
-	channel := make(chan *lnrpc.Invoice)
-
+func (lnd *LND) SubscribeSingleInvoice(preimageHash []byte, channel chan *lnrpc.Invoice, errChannel chan error) {
 	client, err := lnd.invoices.SubscribeSingleInvoice(lnd.ctx, &invoicesrpc.SubscribeSingleInvoiceRequest{
 		RHash: preimageHash,
 	})
 
 	if err != nil {
-		return nil, err
+		errChannel <- err
+		return
 	}
+
+	logger.Info("Connected to LND invoice event stream: " + hex.EncodeToString(preimageHash))
 
 	go func() {
 		for {
-			// TODO: reconnection logic
-			invoice, _ := client.Recv()
+			invoice, err := client.Recv()
+
+			if err != nil {
+				errChannel <- err
+				return
+			}
+
 			channel <- invoice
 		}
 	}()
-
-	return channel, err
 }

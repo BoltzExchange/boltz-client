@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-const retryInterval = time.Second * 15
-
 func (nursery *Nursery) streamSwapStatus(
 	id string,
 	swapType string,
@@ -25,7 +23,7 @@ func (nursery *Nursery) streamSwapStatus(
 			logger.Error("Could not listen to events of " + swapType + " " + id + ": " + err.Error())
 			logRetry(id, swapType)
 
-			ticker := time.NewTicker(retryInterval)
+			ticker := time.NewTicker(retryInterval * time.Second)
 
 			for {
 				select {
@@ -68,5 +66,5 @@ func (nursery *Nursery) streamSwapStatus(
 
 func logRetry(id string, swapType string) {
 	logger.Info("Retrying to listen to events of " + swapType + " " + id + " in " +
-		strconv.FormatFloat(retryInterval.Seconds(), 'f', 0, 64) + " seconds")
+		strconv.Itoa(retryInterval) + " seconds")
 }
