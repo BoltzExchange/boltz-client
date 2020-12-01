@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest]
-        go-version: [1.14.x]
+        go-version: [1.15.x]
         architecture: [amd64, arm, arm64]
 
     runs-on: ${{ matrix.platform }}

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const minLndVersion = "0.10.0"
+const minLndVersion = "0.11.0"
 const minBoltzVersion = "2.3.0"
 
 func checkLndVersion(lndInfo *lnrpc.GetInfoResponse) {
