@@ -9,7 +9,7 @@ require (
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/google/logger v1.1.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kr/text v0.2.0 // indirect
@@ -21,14 +21,14 @@ require (
 	github.com/miekg/dns v1.0.14 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/onsi/ginkgo v1.13.0 // indirect
-	github.com/r3labs/sse v0.0.0-20200828202401-10175c338a0a
+	github.com/r3labs/sse v0.0.0-20201126193848-34e640891548
 	github.com/stretchr/testify v1.6.1
-	github.com/urfave/cli v1.22.4
+	github.com/urfave/cli v1.22.5
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208 // indirect
 	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
 	golang.org/x/text v0.3.3 // indirect
-	google.golang.org/grpc v1.32.0
+	google.golang.org/grpc v1.33.2
 	google.golang.org/grpc/examples v0.0.0-20200902210233-8630cac324bf // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/resty.v1 v1.12.0 // indirect
