@@ -17,6 +17,10 @@ LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 LINT_BIN := $(GO_BIN)/golangci-lint
 LINT = $(LINT_BIN) run -v --timeout 5m
 
+CHANGELOG_PKG := github.com/git-chglog/git-chglog/cmd/git-chglog
+CHANGELOG_BIN := $(GO_BIN)/git-chglog
+CHANGELOG = $(CHANGELOG_BIN) --output CHANGELOG.md
+
 XARGS := xargs -L 1
 
 GREEN := "\\033[0;32m"
@@ -34,8 +38,11 @@ default: build
 
 $(LINT_BIN):
 	@$(call print, "Fetching linter")
-	go get $(LINT_PKG)
+	go get -u $(LINT_PKG)
 
+$(CHANGELOG_BIN):
+	@$(call print, "Fetching git-chglog")
+	go get -u $(CHANGELOG_PKG)
 
 patch-btcutil:
 	@$(call print, "Patching btcutil")
@@ -74,5 +81,9 @@ fmt:
 lint: $(LINT_BIN)
 	@$(call print, "Linting source")
 	$(LINT)
+
+changelog:
+	@$(call print, "Updating changelog")
+	$(CHANGELOG)
 
 .PHONY: build
