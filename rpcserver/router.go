@@ -250,10 +250,11 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 	logger.Info("Created new Swap " + deposit.Id + ": " + marshalJson(deposit.Serialize()))
 
 	return &boltzrpc.DepositResponse{
-		Fees:               fees,
-		Limits:             limits,
+		Id:                 response.Id,
 		Address:            deposit.Address,
 		TimeoutBlockHeight: uint32(deposit.TimoutBlockHeight),
+		Fees:               fees,
+		Limits:             limits,
 	}, nil
 }
 

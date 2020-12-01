@@ -106,11 +106,12 @@ message DepositRequest {
     uint32 inbound_liquidity = 1;
 }
 message DepositResponse {
-    string address = 1;
-    uint32 timeout_block_height = 2;
+    string id = 1;
+    string address = 2;
+    uint32 timeout_block_height = 3;
 
-    Fees fees = 3;
-    Limits limits = 4;
+    Fees fees = 4;
+    Limits limits = 5;
 }
 
 message CreateSwapRequest {
