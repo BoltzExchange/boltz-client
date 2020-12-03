@@ -8,9 +8,13 @@ import (
 	"os"
 )
 
-func loadCertificate(tlsCertPath string, tlsKeyPath string) (*tls.Config, error) {
+func loadCertificate(
+	tlsCertPath string,
+	tlsKeyPath string,
+	tlsDisableAutofill bool,
+) (*tls.Config, error) {
 	if !utils.FileExists(tlsCertPath) || !utils.FileExists(tlsKeyPath) {
-		logger.Info("Could not find TLS certificate or key")
+		logger.Warning("Could not find TLS certificate or key")
 		logger.Info("Generating new TLS certificate and key")
 
 		err := cert.GenCertPair(
@@ -19,7 +23,7 @@ func loadCertificate(tlsCertPath string, tlsKeyPath string) (*tls.Config, error)
 			tlsKeyPath,
 			[]string{},
 			[]string{},
-			false,
+			tlsDisableAutofill,
 			cert.DefaultAutogenValidity,
 		)
 
@@ -36,8 +40,8 @@ func loadCertificate(tlsCertPath string, tlsKeyPath string) (*tls.Config, error)
 		return nil, err
 	}
 
-	if isOutdated, _ := cert.IsOutdated(x590cert, []string{}, []string{}, false); isOutdated {
-		logger.Info("TLS certificate is expired. Removing files and generating new one")
+	if isOutdated, _ := cert.IsOutdated(x590cert, []string{}, []string{}, tlsDisableAutofill); isOutdated {
+		logger.Warning("TLS certificate is expired. Removing files and generating new one")
 
 		err := os.Remove(tlsCertPath)
 
@@ -51,7 +55,7 @@ func loadCertificate(tlsCertPath string, tlsKeyPath string) (*tls.Config, error)
 			return nil, err
 		}
 
-		return loadCertificate(tlsCertPath, tlsKeyPath)
+		return loadCertificate(tlsCertPath, tlsKeyPath, tlsDisableAutofill)
 	}
 
 	return cert.TLSConfFromCert(certData), nil

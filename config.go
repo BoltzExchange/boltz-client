@@ -52,10 +52,14 @@ func LoadConfig() *config {
 		},
 
 		RPC: &rpcserver.RpcServer{
-			Host:        "127.0.0.1",
-			Port:        9002,
+			Host: "127.0.0.1",
+			Port: 9002,
+
 			TlsCertPath: "./tls.cert",
 			TlsKeyPath:  "./tls.key",
+
+			NoMacaroons:       false,
+			AdminMacaroonPath: "./admin.macaroon",
 		},
 
 		Database: &database.Database{

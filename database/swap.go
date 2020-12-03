@@ -106,6 +106,10 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 
 	swap.RedeemScript, err = hex.DecodeString(redeemScript)
 
+	if err != nil {
+		return nil, err
+	}
+
 	return &swap, err
 }
 

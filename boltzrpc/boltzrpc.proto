@@ -58,6 +58,7 @@ message ReverseSwapInfo {
 
 message GetInfoRequest {}
 message GetInfoResponse {
+    // TODO: add network
     string symbol = 1;
     string lnd_pubkey = 2;
     uint32 block_height = 3;

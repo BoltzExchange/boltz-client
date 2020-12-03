@@ -11,7 +11,7 @@ GOINSTALL := GO111MODULE=on go install -v
 GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/'
 
 COMMIT := $(shell git log --pretty=format:'%h' -n 1)
-LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT)"
+LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -w -s"
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 LINT_BIN := $(GO_BIN)/golangci-lint

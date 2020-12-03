@@ -26,7 +26,16 @@ func main() {
 		cli.StringFlag{
 			Name:  "tlscert",
 			Value: "./tls.cert",
-			Usage: "gRPC TLS certificate of Boltz",
+			Usage: "Path to the gRPC TLS certificate of Boltz",
+		},
+		cli.BoolFlag{
+			Name:  "no-macaroons",
+			Usage: "Disables Macaroon authentication",
+		},
+		cli.StringFlag{
+			Name:  "macaroon",
+			Value: "./admin.macaroon",
+			Usage: "Path to a gRPC Macaroon of Boltz",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -51,9 +60,13 @@ func main() {
 
 func getClient(ctx *cli.Context) boltz {
 	boltz := boltz{
-		Host:        ctx.GlobalString("host"),
-		Port:        ctx.GlobalInt("port"),
+		Host: ctx.GlobalString("host"),
+		Port: ctx.GlobalInt("port"),
+
 		TlsCertPath: ctx.GlobalString("tlscert"),
+
+		NoMacaroons:  ctx.GlobalBool("no-macaroons"),
+		MacaroonPath: ctx.GlobalString("macaroon"),
 	}
 
 	err := boltz.Connect()

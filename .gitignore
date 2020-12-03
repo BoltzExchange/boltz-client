@@ -17,12 +17,13 @@ boltzcli
 # Dependency directories (remove the comment below to include it)
 vendor/
 
-# Config, database, log and certificate files
+# Config, database, log, certificate and macaroon files
 boltz.toml
 boltz.db
 boltz.log
 tls.key
 tls.cert
+*.macaroon
 
 # Goland
 .idea/
