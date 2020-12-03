@@ -57,7 +57,7 @@ func main() {
 	err = cfg.RPC.Start(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
 
 	if err != nil {
-		logger.Fatal("Could not start RPC server: " + err.Error())
+		logger.Fatal("Could not start gRPC server: " + err.Error())
 	}
 }
 

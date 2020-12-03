@@ -14,6 +14,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lightningnetwork/lnd v0.11.0-beta
+	github.com/lightningnetwork/lnd/cert v1.0.3
 	github.com/ltcsuite/ltcd v0.20.1-beta
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible

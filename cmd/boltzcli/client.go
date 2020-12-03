@@ -2,21 +2,31 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"strconv"
 )
 
 type boltz struct {
-	Host string `long:"boltz.host" description:"gRPC host of Boltz"`
-	Port int    `long:"boltz.port" description:"gRPC port of Boltz"`
+	Host        string
+	Port        int
+	TlsCertPath string
 
 	ctx    context.Context
 	client boltzrpc.BoltzClient
 }
 
 func (boltz *boltz) Connect() error {
-	con, err := grpc.Dial(boltz.Host+":"+strconv.Itoa(boltz.Port), grpc.WithInsecure())
+	creds, err := credentials.NewClientTLSFromFile(boltz.TlsCertPath, "")
+
+	if err != nil {
+		return errors.New(fmt.Sprint("could not read Boltz certificate: ", err))
+	}
+
+	con, err := grpc.Dial(boltz.Host+":"+strconv.Itoa(boltz.Port), grpc.WithTransportCredentials(creds))
 
 	if err != nil {
 		return err

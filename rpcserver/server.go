@@ -9,6 +9,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/btcsuite/btcd/chaincfg"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"net"
 	"strconv"
 )
@@ -16,21 +17,37 @@ import (
 type RpcServer struct {
 	Host string `long:"rpc.host" description:"gRPC host to which Boltz should listen"`
 	Port int    `long:"rpc.port" short:"p" description:"gRPC port to which Boltz should listen"`
+
+	TlsCertPath string `long:"rpc.tlscert" description:"Path to the TLS certificate of boltz-lnd"`
+	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-lnd"`
 }
 
-// TODO: support TLS
-func (server *RpcServer) Start(symbol string, chainParams *chaincfg.Params, lnd *lnd.LND, boltz *boltz.Boltz, nursery *nursery.Nursery, database *database.Database) error {
+func (server *RpcServer) Start(
+	symbol string,
+	chainParams *chaincfg.Params,
+	lnd *lnd.LND,
+	boltz *boltz.Boltz,
+	nursery *nursery.Nursery,
+	database *database.Database,
+) error {
 	rpcUrl := server.Host + ":" + strconv.Itoa(server.Port)
+
+	certData, err := loadCertificate(server.TlsCertPath, server.TlsKeyPath)
+
+	if err != nil {
+		return err
+	}
 
 	logger.Info("Starting RPC server on: " + rpcUrl)
 
+	serverCreds := credentials.NewTLS(certData)
 	listener, err := net.Listen("tcp", rpcUrl)
 
 	if err != nil {
 		return err
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.Creds(serverCreds))
 	boltzrpc.RegisterBoltzServer(grpcServer, &routedBoltzServer{
 		symbol:      symbol,
 		chainParams: chainParams,
