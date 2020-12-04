@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package boltzrpc;
+option go_package = "github.com/BoltzExchange/boltz-lnd/boltzrpc";
 
 service Boltz {
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);

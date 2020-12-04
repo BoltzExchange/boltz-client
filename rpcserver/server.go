@@ -1,6 +1,7 @@
 package rpcserver
 
 import (
+	"context"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
@@ -11,16 +12,22 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcd/chaincfg"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"strconv"
 )
 
 type RpcServer struct {
 	Host string `long:"rpc.host" description:"gRPC host to which Boltz should listen"`
 	Port int    `long:"rpc.port" short:"p" description:"gRPC port to which Boltz should listen"`
+
+	RestHost     string `long:"rpc.rest.host" description:"REST host to which Boltz should listen"`
+	RestPort     int    `long:"rpc.rest.port" description:"REST port to which Boltz should listen"`
+	RestDisabled bool   `long:"rpc.rest.disable" description:"Disables the REST API proxy"`
 
 	TlsCertPath string `long:"rpc.tlscert" description:"Path to the TLS certificate of boltz-lnd"`
 	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-lnd"`
@@ -36,68 +43,111 @@ func (server *RpcServer) Start(
 	boltz *boltz.Boltz,
 	nursery *nursery.Nursery,
 	database *database.Database,
-) error {
-	rpcUrl := server.Host + ":" + strconv.Itoa(server.Port)
+) chan error {
+	errChannel := make(chan error)
 
-	certData, err := loadCertificate(server.TlsCertPath, server.TlsKeyPath, true)
-
-	if err != nil {
-		return err
-	}
-
-	var macaroonService *macaroons.Service
-
-	if !server.NoMacaroons {
-		macaroonService, err = server.generateMacaroons(database)
+	go func() {
+		certData, err := loadCertificate(server.TlsCertPath, server.TlsKeyPath, true)
 
 		if err != nil {
-			return err
+			errChannel <- err
+			return
 		}
-	} else {
-		logger.Warning("Disabled Macaroon authentication")
-	}
 
-	serverCreds := grpc.Creds(credentials.NewTLS(certData))
+		var macaroonService *macaroons.Service
 
-	var serverOpts []grpc.ServerOption
+		if !server.NoMacaroons {
+			macaroonService, err = server.generateMacaroons(database)
 
-	serverOpts = append(serverOpts, serverCreds)
+			if err != nil {
+				errChannel <- err
+				return
+			}
+		} else {
+			logger.Warning("Disabled Macaroon authentication")
+		}
 
-	var unaryInterceptors []grpc.UnaryServerInterceptor
-	var streamInterceptors []grpc.StreamServerInterceptor
+		serverCreds := grpc.Creds(credentials.NewTLS(certData))
 
-	if macaroonService != nil {
-		unaryInterceptors = append(unaryInterceptors, macaroonService.UnaryServerInterceptor())
-		streamInterceptors = append(streamInterceptors, macaroonService.StreamServerInterceptor())
-	}
+		var serverOpts []grpc.ServerOption
 
-	if len(unaryInterceptors) != 0 || len(streamInterceptors) != 0 {
-		chainedUnary := grpcMiddleware.WithUnaryServerChain(unaryInterceptors...)
-		chainedStream := grpcMiddleware.WithStreamServerChain(streamInterceptors...)
+		serverOpts = append(serverOpts, serverCreds)
 
-		serverOpts = append(serverOpts, chainedUnary, chainedStream)
-	}
+		var unaryInterceptors []grpc.UnaryServerInterceptor
+		var streamInterceptors []grpc.StreamServerInterceptor
 
-	grpcServer := grpc.NewServer(serverOpts...)
-	boltzrpc.RegisterBoltzServer(grpcServer, &routedBoltzServer{
-		symbol:      symbol,
-		chainParams: chainParams,
+		if macaroonService != nil {
+			unaryInterceptors = append(unaryInterceptors, macaroonService.UnaryServerInterceptor())
+			streamInterceptors = append(streamInterceptors, macaroonService.StreamServerInterceptor())
+		}
 
-		lnd:      lnd,
-		boltz:    boltz,
-		nursery:  nursery,
-		database: database,
-	})
+		if len(unaryInterceptors) != 0 || len(streamInterceptors) != 0 {
+			chainedUnary := grpcMiddleware.WithUnaryServerChain(unaryInterceptors...)
+			chainedStream := grpcMiddleware.WithStreamServerChain(streamInterceptors...)
 
-	logger.Info("Starting RPC server on: " + rpcUrl)
+			serverOpts = append(serverOpts, chainedUnary, chainedStream)
+		}
 
-	listener, err := net.Listen("tcp", rpcUrl)
+		grpcServer := grpc.NewServer(serverOpts...)
+		boltzrpc.RegisterBoltzServer(grpcServer, &routedBoltzServer{
+			symbol:      symbol,
+			chainParams: chainParams,
 
-	if err != nil {
-		return err
-	}
+			lnd:      lnd,
+			boltz:    boltz,
+			nursery:  nursery,
+			database: database,
+		})
 
-	return grpcServer.Serve(listener)
+		rpcUrl := server.Host + ":" + strconv.Itoa(server.Port)
+
+		// Because the RPC and REST servers are blocking, they are started Go routines
+
+		go func() {
+			logger.Info("Starting RPC server on: " + rpcUrl)
+
+			listener, err := net.Listen("tcp", rpcUrl)
+
+			if err != nil {
+				errChannel <- err
+				return
+			}
+
+			errChannel <- grpcServer.Serve(listener)
+		}()
+
+		if !server.RestDisabled {
+			go func() {
+				restUrl := server.RestHost + ":" + strconv.Itoa(server.RestPort)
+				logger.Info("Starting REST server on: " + restUrl)
+
+				restCreds, err := getRestDialOptions(server.TlsCertPath)
+
+				if err != nil {
+					errChannel <- err
+					return
+				}
+
+				mux := runtime.NewServeMux()
+
+				err = boltzrpc.RegisterBoltzHandlerFromEndpoint(
+					context.Background(),
+					mux,
+					rpcUrl,
+					restCreds,
+				)
+
+				if err != nil {
+					errChannel <- err
+					return
+				}
+
+				errChannel <- http.ListenAndServeTLS(restUrl, server.TlsCertPath, server.TlsKeyPath, mux)
+			}()
+		}
+	}()
+
+	return errChannel
 }
 
 // TODO: create readonly macaroon
@@ -130,4 +180,16 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	}
 
 	return &macaroonService, ioutil.WriteFile(server.AdminMacaroonPath, adminMacaroonByte, 0600)
+}
+
+func getRestDialOptions(tlsCertPath string) ([]grpc.DialOption, error) {
+	restCreds, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
+
+	if err != nil {
+		return nil, err
+	}
+
+	return []grpc.DialOption{
+		grpc.WithTransportCredentials(restCreds),
+	}, nil
 }

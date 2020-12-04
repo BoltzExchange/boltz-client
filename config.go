@@ -55,6 +55,10 @@ func LoadConfig() *config {
 			Host: "127.0.0.1",
 			Port: 9002,
 
+			RestHost:     "127.0.0.1",
+			RestPort:     9003,
+			RestDisabled: false,
+
 			TlsCertPath: "./tls.cert",
 			TlsKeyPath:  "./tls.key",
 
