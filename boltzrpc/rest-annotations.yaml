@@ -1,0 +1,32 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    - selector: boltzrpc.Boltz.GetInfo
+      get: "/v1/info"
+
+    - selector: boltzrpc.Boltz.GetServiceInfo
+      get: "/v1/serviceinfo"
+
+    - selector: boltzrpc.Boltz.ListSwaps
+      get: "/v1/listswaps"
+
+    - selector: boltzrpc.Boltz.GetSwapInfo
+      get: "/v1/swap/{id}"
+
+    - selector: boltzrpc.Boltz.Deposit
+      post: "/v1/deposit"
+      body: "*"
+
+    - selector: boltzrpc.Boltz.CreateSwap
+      post: "/v1/createswap"
+      body: "*"
+
+    - selector: boltzrpc.Boltz.CreateChannel
+      post: "/v1/createchannel"
+      body: "*"
+
+    - selector: boltzrpc.Boltz.CreateReverseSwap
+      post: "/v1/createreverseswap"
+      body: "*"

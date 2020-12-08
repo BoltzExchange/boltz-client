@@ -19,7 +19,7 @@ LINT = $(LINT_BIN) run -v --timeout 5m
 
 CHANGELOG_PKG := github.com/git-chglog/git-chglog/cmd/git-chglog
 CHANGELOG_BIN := $(GO_BIN)/git-chglog
-CHANGELOG = $(CHANGELOG_BIN) --output CHANGELOG.md
+CHANGELOG := $(CHANGELOG_BIN) --output CHANGELOG.md
 
 XARGS := xargs -L 1
 
@@ -47,6 +47,10 @@ $(CHANGELOG_BIN):
 patch-btcutil:
 	@$(call print, "Patching btcutil")
 	patch -u vendor/github.com/btcsuite/btcutil/address.go -i btcutil.patch --forward || true
+
+proto:
+	@$(call print, "Generating protosbufs")
+	eval cd boltzrpc && ./gen_protos.sh && cd ..
 
 #
 # Tests

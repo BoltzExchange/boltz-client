@@ -1013,6 +1013,7 @@ type DepositRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// 25 by default
 	InboundLiquidity uint32 `protobuf:"varint,1,opt,name=inbound_liquidity,json=inboundLiquidity,proto3" json:"inbound_liquidity,omitempty"`
 }
 
@@ -1257,7 +1258,8 @@ type CreateChannelRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Amount           int64  `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	Amount int64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	// 25 by default
 	InboundLiquidity uint32 `protobuf:"varint,2,opt,name=inbound_liquidity,json=inboundLiquidity,proto3" json:"inbound_liquidity,omitempty"`
 	Private          bool   `protobuf:"varint,3,opt,name=private,proto3" json:"private,omitempty"`
 }
@@ -1320,7 +1322,8 @@ type CreateReverseSwapRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Amount         int64  `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	Amount int64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	// If no value is set, the daemon will query a new P2WKH address from LND
 	Address        string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 	AcceptZeroConf bool   `protobuf:"varint,3,opt,name=accept_zero_conf,json=acceptZeroConf,proto3" json:"accept_zero_conf,omitempty"`
 }

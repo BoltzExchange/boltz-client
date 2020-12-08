@@ -105,6 +105,7 @@ message GetSwapInfoResponse {
 }
 
 message DepositRequest {
+    // 25 by default
     uint32 inbound_liquidity = 1;
 }
 message DepositResponse {
@@ -128,12 +129,14 @@ message CreateSwapResponse {
 
 message CreateChannelRequest {
     int64 amount = 1;
+    // 25 by default
     uint32 inbound_liquidity = 2;
     bool private = 3;
 };
 
 message CreateReverseSwapRequest {
     int64 amount = 1;
+    // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
     bool accept_zero_conf = 3;
 }
