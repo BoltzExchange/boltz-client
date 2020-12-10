@@ -59,13 +59,13 @@ message ReverseSwapInfo {
 
 message GetInfoRequest {}
 message GetInfoResponse {
-    // TODO: add network
     string symbol = 1;
-    string lnd_pubkey = 2;
-    uint32 block_height = 3;
+    string network = 2;
+    string lnd_pubkey = 3;
+    uint32 block_height = 4;
 
-    repeated string pending_swaps = 4;
-    repeated string pending_reverse_swaps = 5;
+    repeated string pending_swaps = 5;
+    repeated string pending_reverse_swaps = 6;
 }
 
 message MinerFees {

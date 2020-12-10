@@ -76,6 +76,7 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 
 	return &boltzrpc.GetInfoResponse{
 		Symbol:              server.symbol,
+		Network:             server.chainParams.Name,
 		LndPubkey:           lndInfo.IdentityPubkey,
 		BlockHeight:         lndInfo.BlockHeight,
 		PendingSwaps:        pendingSwapIds,
