@@ -2,21 +2,38 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
+	"errors"
+	"fmt"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+	"io/ioutil"
 	"strconv"
 )
 
 type boltz struct {
-	Host string `long:"boltz.host" description:"gRPC host of Boltz"`
-	Port int    `long:"boltz.port" description:"gRPC port of Boltz"`
+	Host string
+	Port int
+
+	TlsCertPath string
+
+	NoMacaroons  bool
+	MacaroonPath string
 
 	ctx    context.Context
 	client boltzrpc.BoltzClient
 }
 
 func (boltz *boltz) Connect() error {
-	con, err := grpc.Dial(boltz.Host+":"+strconv.Itoa(boltz.Port), grpc.WithInsecure())
+	creds, err := credentials.NewClientTLSFromFile(boltz.TlsCertPath, "")
+
+	if err != nil {
+		return errors.New(fmt.Sprint("could not read Boltz certificate: ", err))
+	}
+
+	con, err := grpc.Dial(boltz.Host+":"+strconv.Itoa(boltz.Port), grpc.WithTransportCredentials(creds))
 
 	if err != nil {
 		return err
@@ -26,6 +43,17 @@ func (boltz *boltz) Connect() error {
 
 	if boltz.ctx == nil {
 		boltz.ctx = context.Background()
+
+		if !boltz.NoMacaroons {
+			macaroonFile, err := ioutil.ReadFile(boltz.MacaroonPath)
+
+			if err != nil {
+				return errors.New(fmt.Sprint("could not read Boltz macaroon: ", err))
+			}
+
+			macaroon := metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
+			boltz.ctx = metadata.NewOutgoingContext(boltz.ctx, macaroon)
+		}
 	}
 
 	return nil

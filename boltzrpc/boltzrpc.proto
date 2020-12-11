@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package boltzrpc;
+option go_package = "github.com/BoltzExchange/boltz-lnd/boltzrpc";
 
 service Boltz {
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
@@ -59,11 +60,12 @@ message ReverseSwapInfo {
 message GetInfoRequest {}
 message GetInfoResponse {
     string symbol = 1;
-    string lnd_pubkey = 2;
-    uint32 block_height = 3;
+    string network = 2;
+    string lnd_pubkey = 3;
+    uint32 block_height = 4;
 
-    repeated string pending_swaps = 4;
-    repeated string pending_reverse_swaps = 5;
+    repeated string pending_swaps = 5;
+    repeated string pending_reverse_swaps = 6;
 }
 
 message MinerFees {
@@ -103,6 +105,7 @@ message GetSwapInfoResponse {
 }
 
 message DepositRequest {
+    // 25 by default
     uint32 inbound_liquidity = 1;
 }
 message DepositResponse {
@@ -126,12 +129,14 @@ message CreateSwapResponse {
 
 message CreateChannelRequest {
     int64 amount = 1;
+    // 25 by default
     uint32 inbound_liquidity = 2;
     bool private = 3;
 };
 
 message CreateReverseSwapRequest {
     int64 amount = 1;
+    // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
     bool accept_zero_conf = 3;
 }

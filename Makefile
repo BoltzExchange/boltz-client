@@ -11,7 +11,7 @@ GOINSTALL := GO111MODULE=on go install -v
 GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/'
 
 COMMIT := $(shell git log --pretty=format:'%h' -n 1)
-LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT)"
+LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -w -s"
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 LINT_BIN := $(GO_BIN)/golangci-lint
@@ -19,7 +19,7 @@ LINT = $(LINT_BIN) run -v --timeout 5m
 
 CHANGELOG_PKG := github.com/git-chglog/git-chglog/cmd/git-chglog
 CHANGELOG_BIN := $(GO_BIN)/git-chglog
-CHANGELOG = $(CHANGELOG_BIN) --output CHANGELOG.md
+CHANGELOG := $(CHANGELOG_BIN) --output CHANGELOG.md
 
 XARGS := xargs -L 1
 
@@ -47,6 +47,10 @@ $(CHANGELOG_BIN):
 patch-btcutil:
 	@$(call print, "Patching btcutil")
 	patch -u vendor/github.com/btcsuite/btcutil/address.go -i btcutil.patch --forward || true
+
+proto:
+	@$(call print, "Generating protosbufs")
+	eval cd boltzrpc && ./gen_protos.sh && cd ..
 
 #
 # Tests

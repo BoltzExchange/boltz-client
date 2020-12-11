@@ -76,6 +76,7 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 
 	return &boltzrpc.GetInfoResponse{
 		Symbol:              server.symbol,
+		Network:             server.chainParams.Name,
 		LndPubkey:           lndInfo.IdentityPubkey,
 		BlockHeight:         lndInfo.BlockHeight,
 		PendingSwaps:        pendingSwapIds,
@@ -197,7 +198,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 		Channel: boltz.Channel{
 			Auto:             true,
 			Private:          false,
-			InboundLiquidity: request.InboundLiquidity,
+			InboundLiquidity: getDefaultInboundLiquidity(request.InboundLiquidity),
 		},
 	})
 
@@ -374,6 +375,8 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 		return nil, handleError(err)
 	}
 
+	inboundLiquidity := getDefaultInboundLiquidity(request.InboundLiquidity)
+
 	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
 		Type:            "submarine",
 		PairId:          server.symbol + "/" + server.symbol,
@@ -383,7 +386,7 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 		Channel: boltz.Channel{
 			Auto:             false,
 			Private:          request.Private,
-			InboundLiquidity: request.InboundLiquidity,
+			InboundLiquidity: inboundLiquidity,
 		},
 	})
 
@@ -414,7 +417,7 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	channelCreation := database.ChannelCreation{
 		SwapId:                 response.Id,
 		Status:                 boltz.ChannelNone,
-		InboundLiquidity:       int(request.InboundLiquidity),
+		InboundLiquidity:       int(inboundLiquidity),
 		Private:                request.Private,
 		FundingTransactionId:   "",
 		FundingTransactionVout: 0,
@@ -621,6 +624,14 @@ func (server *routedBoltzServer) getPairs() (*boltzrpc.Fees, *boltzrpc.Limits, e
 			Minimal: int64(pair.Limits.Minimal),
 			Maximal: int64(pair.Limits.Maximal),
 		}, nil
+}
+
+func getDefaultInboundLiquidity(inboundLiquidity uint32) uint32 {
+	if inboundLiquidity == 0 {
+		return 25
+	}
+
+	return inboundLiquidity
 }
 
 func calculateDepositLimit(limit int64, fees *boltzrpc.Fees, isMin bool) int64 {

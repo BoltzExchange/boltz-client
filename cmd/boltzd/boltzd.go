@@ -11,6 +11,8 @@ import (
 	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
 )
 
+// TODO: close dangling channels
+
 func main() {
 	cfg := boltz_lnd.LoadConfig()
 
@@ -54,10 +56,12 @@ func main() {
 		logger.Fatal("Could not start Swap nursery: " + err.Error())
 	}
 
-	err = cfg.RPC.Start(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
+	errChannel := cfg.RPC.Start(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
+
+	err = <-errChannel
 
 	if err != nil {
-		logger.Fatal("Could not start RPC server: " + err.Error())
+		logger.Fatal("Could not start gRPC server: " + err.Error())
 	}
 }
 

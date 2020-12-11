@@ -3,33 +3,25 @@ module github.com/BoltzExchange/boltz-lnd
 go 1.14
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.1.1 // indirect
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Masterminds/semver/v3 v3.1.0 // indirect
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/golang/protobuf v1.4.3
 	github.com/google/logger v1.1.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.0.1
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/kr/text v0.2.0 // indirect
-	github.com/lightningnetwork/lnd v0.11.0-beta
+	github.com/lightningnetwork/lnd v0.11.1-beta
+	github.com/lightningnetwork/lnd/cert v1.0.3
 	github.com/ltcsuite/ltcd v0.20.1-beta
-	github.com/mattn/go-colorable v0.1.7 // indirect
-	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
-	github.com/miekg/dns v1.0.14 // indirect
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/onsi/ginkgo v1.13.0 // indirect
+	github.com/mattn/go-sqlite3 v1.14.5
 	github.com/r3labs/sse v0.0.0-20201126193848-34e640891548
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli v1.22.5
-	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
-	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208 // indirect
-	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
-	golang.org/x/text v0.3.3 // indirect
-	google.golang.org/grpc v1.33.2
-	google.golang.org/grpc/examples v0.0.0-20200902210233-8630cac324bf // indirect
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/resty.v1 v1.12.0 // indirect
+	google.golang.org/grpc v1.34.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.0.1 // indirect
+	google.golang.org/grpc/examples v0.0.0-20201203175230-2efef8fd1214 // indirect
+	google.golang.org/protobuf v1.25.0
+	gopkg.in/macaroon-bakery.v2 v2.2.0
+	gopkg.in/macaroon.v2 v2.1.0
 )

@@ -19,7 +19,7 @@ func InitLogger(logPath string, logPrefix string) {
 		PrintFatal("Could not open log file: %s", err)
 	}
 
-	logger.Init("channel-bot", true, false, file)
+	logger.Init("boltz-lnd", true, false, file)
 	logger.SetFlags(log.LstdFlags)
 
 	Info("Initialized logger")
