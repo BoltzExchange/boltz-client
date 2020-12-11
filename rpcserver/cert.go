@@ -41,7 +41,7 @@ func loadCertificate(
 	}
 
 	if isOutdated, _ := cert.IsOutdated(x590cert, []string{}, []string{}, tlsDisableAutofill); isOutdated {
-		logger.Warning("TLS certificate is expired. Removing files and generating new one")
+		logger.Warning("TLS certificate is outdated. Removing files and generating new one")
 
 		err := os.Remove(tlsCertPath)
 

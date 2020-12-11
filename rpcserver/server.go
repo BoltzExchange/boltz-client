@@ -47,7 +47,7 @@ func (server *RpcServer) Start(
 	errChannel := make(chan error)
 
 	go func() {
-		certData, err := loadCertificate(server.TlsCertPath, server.TlsKeyPath, true)
+		certData, err := loadCertificate(server.TlsCertPath, server.TlsKeyPath, false)
 
 		if err != nil {
 			errChannel <- err
@@ -130,10 +130,16 @@ func (server *RpcServer) Start(
 
 				mux := runtime.NewServeMux()
 
+				sanitizedRpcUrl := rpcUrl
+
+				if server.Host == "0.0.0.0" {
+					sanitizedRpcUrl = "127.0.0.1:" + strconv.Itoa(server.Port)
+				}
+
 				err = boltzrpc.RegisterBoltzHandlerFromEndpoint(
 					context.Background(),
 					mux,
-					rpcUrl,
+					sanitizedRpcUrl,
 					restCreds,
 				)
 
