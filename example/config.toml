@@ -7,3 +7,5 @@ certificate = ""
 [RPC]
 host = "127.0.0.1"
 port = 9002
+restHost = "127.0.0.1"
+restPort = 9003
