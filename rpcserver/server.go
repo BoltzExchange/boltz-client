@@ -130,10 +130,12 @@ func (server *RpcServer) Start(
 
 				mux := runtime.NewServeMux()
 
-				sanitizedRpcUrl := rpcUrl
+				var sanitizedRpcUrl string
 
 				if server.Host == "0.0.0.0" {
 					sanitizedRpcUrl = "127.0.0.1:" + strconv.Itoa(server.Port)
+				} else {
+					sanitizedRpcUrl = rpcUrl
 				}
 
 				err = boltzrpc.RegisterBoltzHandlerFromEndpoint(

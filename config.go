@@ -6,7 +6,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/build"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
-	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/rpcserver"
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
@@ -86,11 +85,11 @@ func LoadConfig() *config {
 	}
 
 	if err != nil {
-		printCouldNotParseCli(err)
+		printCouldNotParse(err)
 	}
 
 	if err != nil {
-		printCouldNotParseCli(err)
+		printCouldNotParse(err)
 	}
 
 	if cfg.ConfigFile != "" {
@@ -104,12 +103,13 @@ func LoadConfig() *config {
 	_, err = flags.Parse(&cfg)
 
 	if err != nil {
-		printCouldNotParseCli(err)
+		printCouldNotParse(err)
 	}
 
 	return &cfg
 }
 
-func printCouldNotParseCli(err error) {
-	logger.PrintFatal("Could not parse CLI arguments: %s", err)
+func printCouldNotParse(err error) {
+	fmt.Println("Could not parse arguments: " + err.Error())
+	os.Exit(1)
 }

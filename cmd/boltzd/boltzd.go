@@ -17,7 +17,16 @@ func main() {
 	cfg := boltz_lnd.LoadConfig()
 
 	logger.InitLogger(cfg.LogFile, cfg.LogPrefix)
-	err := cfg.Database.Connect()
+
+	formattedCfg, err := utils.FormatJson(cfg)
+
+	if err != nil {
+		logger.Fatal("Could not format config: " + err.Error())
+	}
+
+	logger.Info("Parsed config and CLI arguments: " + formattedCfg)
+
+	err = cfg.Database.Connect()
 
 	if err != nil {
 		logger.Fatal("Could not connect to database: " + err.Error())

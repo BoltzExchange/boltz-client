@@ -1,11 +1,10 @@
-//nolint
 package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/proto"
+	"github.com/BoltzExchange/boltz-lnd/utils"
+	"google.golang.org/protobuf/proto"
 	"os"
 	"strconv"
 	"strings"
@@ -36,17 +35,14 @@ func prompt(message string) bool {
 }
 
 func printJson(resp proto.Message) {
-	encoder := json.NewEncoder(os.Stdout)
-	// Needs to be set to false for the BIP21 string to be formatted correctly
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-
-	err := encoder.Encode(resp)
+	formattedJson, err := utils.FormatJson(resp)
 
 	if err != nil {
 		fmt.Println("Could not decode response: " + err.Error())
 		return
 	}
+
+	fmt.Print(formattedJson)
 }
 
 func parseInt64(value string, name string) int64 {
