@@ -1,4 +1,18 @@
 
+<a name="v1.2.0"></a>
+## [v1.2.0] - 2020-12-14
+### Feat
+- print parsed config on startup ([#29](https://github.com/BoltzExchange/boltz-lnd/issues/29))
+- add network to GetInfo response
+- custom paths for REST proxy
+- add REST proxy for gRPC server
+- add macaroon authentication for gRPC server
+- add TLS support for gRPC server
+
+### Fix
+- resolve TLS issues of REST proxy
+
+
 <a name="v1.1.2"></a>
 ## [v1.1.2] - 2020-12-01
 ### Fix
@@ -60,6 +74,7 @@
 - improve Channel Creation enforcement
 
 
+[v1.2.0]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.2...v1.2.0
 [v1.1.2]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.0.0...v1.1.0
