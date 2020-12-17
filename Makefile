@@ -5,9 +5,9 @@ PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-lnd/cmd/boltzcli
 
 GO_BIN := ${GOPATH}/bin
 
-GOTEST := GO111MODULE=on go test -v
-GOBUILD := GO111MODULE=on go build -v
-GOINSTALL := GO111MODULE=on go install -v
+GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v
+GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
+GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
 GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/'
 
 COMMIT := $(shell git log --pretty=format:'%h' -n 1)
@@ -74,6 +74,10 @@ install: patch-btcutil
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
+binaries:
+	@$(call print, "Compiling binaries")
+	eval ./binaries.sh linux-amd64 linux-arm64 linux-arm windows-amd64
+
 #
 # Utils
 #
@@ -90,4 +94,4 @@ changelog:
 	@$(call print, "Updating changelog")
 	$(CHANGELOG)
 
-.PHONY: build
+.PHONY: build binaries
