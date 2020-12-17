@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+      # TODO: remove after initial testing
+      - windows-darwin-artifacts
 
     tags:
       - v*
@@ -14,9 +16,8 @@ jobs:
 
     strategy:
       matrix:
-        platform: [ubuntu-latest]
-        go-version: [1.15.x]
-        architecture: [amd64, arm, arm64]
+        platform: [ ubuntu-latest ]
+        go-version: [ 1.15.x ]
 
     runs-on: ${{ matrix.platform }}
 
@@ -26,6 +27,9 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - name: Install C cross compilers
+        run: sudo apt-get update && sudo apt-get -y install gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi gcc-mingw-w64
+
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
@@ -33,16 +37,28 @@ jobs:
         run: go mod vendor
 
       - name: Build
-        run: GOARCH=${{ matrix.architecture }} make build
+        run: make binaries
 
-      - name: Upload boltzd
-        uses: actions/upload-artifact@v1
+      - name: Upload Linux AMD64 artifact
+        uses: actions/upload-artifact@v2
         with:
-          name: linux-${{ matrix.architecture }}
-          path: boltzd
+          name: boltz-lnd-linux-amd64.zip
+          path: binaries/linux-amd64/
 
-      - name: Upload boltzcli
-        uses: actions/upload-artifact@v1
+      - name: Upload Linux ARM64 artifact
+        uses: actions/upload-artifact@v2
         with:
-          name: linux-${{ matrix.architecture }}
-          path: boltzcli
+          name: boltz-lnd-linux-arm64.zip
+          path: binaries/linux-arm64/
+
+      - name: Upload Linux ARM artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: boltz-lnd-linux-arm.zip
+          path: binaries/linux-arm/
+
+      - name: Upload Windows AMD64 artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: boltz-lnd-windows-amd64.zip
+          path: binaries/windows-amd64/
