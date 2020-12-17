@@ -9,13 +9,11 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/macaroons"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
-	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcd/chaincfg"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"strconv"
@@ -33,7 +31,8 @@ type RpcServer struct {
 	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-lnd"`
 
 	NoMacaroons       bool   `long:"rpc.no-macaroons" description:"Disables Macaroon authentication"`
-	AdminMacaroonPath string `long:"rpc.adminmacaroonpath" description:"Path to the Admin Macaroon"`
+	AdminMacaroonPath string `long:"rpc.adminmacaroonpath" description:"Path to the admin Macaroon"`
+	ReadonlyMacaroonPath string `long:"rpc.readonlymacaroonpath" description:"Path to the readonly macaroon"`
 }
 
 func (server *RpcServer) Start(
@@ -156,38 +155,6 @@ func (server *RpcServer) Start(
 	}()
 
 	return errChannel
-}
-
-// TODO: create readonly macaroon
-func (server *RpcServer) generateMacaroons(database *database.Database) (*macaroons.Service, error) {
-	logger.Info("Enabling Macaroon authentication")
-
-	macaroonService := macaroons.Service{
-		Database: database,
-	}
-
-	macaroonService.Init()
-
-	if utils.FileExists(server.AdminMacaroonPath) {
-		return &macaroonService, nil
-	}
-
-	logger.Warning("Could not find Macaroons")
-	logger.Info("Generating new Macaroons")
-
-	adminMacaroon, err := macaroonService.NewMacaroon(macaroons.AdminPermissions()...)
-
-	if err != nil {
-		return nil, err
-	}
-
-	adminMacaroonByte, err := adminMacaroon.M().MarshalBinary()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &macaroonService, ioutil.WriteFile(server.AdminMacaroonPath, adminMacaroonByte, 0600)
 }
 
 func getRestDialOptions(tlsCertPath string) ([]grpc.DialOption, error) {

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/urfave/cli"
+	"io/ioutil"
 	"strconv"
 )
 
@@ -241,5 +244,25 @@ func createReverseSwap(ctx *cli.Context) error {
 
 	printJson(swap)
 
+	return nil
+}
+
+var formatMacaroonCommand = cli.Command{
+	Name: "formatmacaroon",
+	Category: "Debug",
+	Usage: "Formats the specified macaroon in hex",
+	Action: formatMacaroon,
+}
+
+func formatMacaroon(ctx *cli.Context) error {
+	macaroonPath := ctx.GlobalString("macaroon")
+
+	macaroonBytes, err := ioutil.ReadFile(macaroonPath)
+
+	if err != nil {
+		return errors.New("could not read macaroon file \"" + macaroonPath + "\": " + err.Error())
+	}
+
+	fmt.Println(hex.EncodeToString(macaroonBytes))
 	return nil
 }
