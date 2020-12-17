@@ -40,16 +40,17 @@ func main() {
 	}
 	app.Commands = []cli.Command{
 		getInfoCommand,
-
-		listSwapsCommand,
 		getSwapCommand,
+		listSwapsCommand,
 
 		depositCommand,
 		withdrawCommand,
 
 		createSwapCommand,
-		createChannelCreationCommand,
 		createReverseSwapCommand,
+		createChannelCreationCommand,
+
+		formatMacaroonCommand,
 	}
 
 	if err := app.Run(os.Args); err != nil {
