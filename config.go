@@ -63,6 +63,7 @@ func LoadConfig() *config {
 
 			NoMacaroons:       false,
 			AdminMacaroonPath: "./admin.macaroon",
+			ReadonlyMacaroonPath: "./readonly.macaroon",
 		},
 
 		Database: &database.Database{
