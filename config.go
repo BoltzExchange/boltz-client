@@ -61,8 +61,8 @@ func LoadConfig() *config {
 			TlsCertPath: "./tls.cert",
 			TlsKeyPath:  "./tls.key",
 
-			NoMacaroons:       false,
-			AdminMacaroonPath: "./admin.macaroon",
+			NoMacaroons:          false,
+			AdminMacaroonPath:    "./admin.macaroon",
 			ReadonlyMacaroonPath: "./readonly.macaroon",
 		},
 
