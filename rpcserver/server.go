@@ -30,8 +30,8 @@ type RpcServer struct {
 	TlsCertPath string `long:"rpc.tlscert" description:"Path to the TLS certificate of boltz-lnd"`
 	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-lnd"`
 
-	NoMacaroons       bool   `long:"rpc.no-macaroons" description:"Disables Macaroon authentication"`
-	AdminMacaroonPath string `long:"rpc.adminmacaroonpath" description:"Path to the admin Macaroon"`
+	NoMacaroons          bool   `long:"rpc.no-macaroons" description:"Disables Macaroon authentication"`
+	AdminMacaroonPath    string `long:"rpc.adminmacaroonpath" description:"Path to the admin Macaroon"`
 	ReadonlyMacaroonPath string `long:"rpc.readonlymacaroonpath" description:"Path to the readonly macaroon"`
 }
 

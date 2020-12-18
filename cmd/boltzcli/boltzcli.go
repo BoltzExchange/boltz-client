@@ -3,11 +3,20 @@ package main
 import (
 	"fmt"
 	"github.com/BoltzExchange/boltz-lnd/build"
+	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/urfave/cli"
 	"os"
+	"path"
 )
 
 func main() {
+	defaultDataDir, err := utils.GetDefaultDataDir()
+
+	if err != nil {
+		fmt.Println("Could not get home directory: " + err.Error())
+		os.Exit(1)
+	}
+
 	app := cli.NewApp()
 	app.Name = "boltzcli"
 	app.Usage = ""
@@ -24,8 +33,13 @@ func main() {
 			Usage: "gRPC port of Boltz",
 		},
 		cli.StringFlag{
+			Name:  "datadir",
+			Value: defaultDataDir,
+			Usage: "Data directory of boltz-lnd",
+		},
+		cli.StringFlag{
 			Name:  "tlscert",
-			Value: "./tls.cert",
+			Value: "",
 			Usage: "Path to the gRPC TLS certificate of Boltz",
 		},
 		cli.BoolFlag{
@@ -34,7 +48,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "macaroon",
-			Value: "./admin.macaroon",
+			Value: "",
 			Usage: "Path to a gRPC Macaroon of Boltz",
 		},
 	}
@@ -60,14 +74,23 @@ func main() {
 }
 
 func getClient(ctx *cli.Context) boltz {
+	dataDir := ctx.GlobalString("datadir")
+	macaroonDir := path.Join(dataDir, "macaroons")
+
+	tlsCert := ctx.GlobalString("tlscert")
+	macaroon := ctx.GlobalString("macaroon")
+
+	tlsCert = utils.ExpandDefaultPath(dataDir, tlsCert, "tls.cert")
+	macaroon = utils.ExpandDefaultPath(macaroonDir, macaroon, "admin.macaroon")
+
 	boltz := boltz{
 		Host: ctx.GlobalString("host"),
 		Port: ctx.GlobalInt("port"),
 
-		TlsCertPath: ctx.GlobalString("tlscert"),
+		TlsCertPath: tlsCert,
 
 		NoMacaroons:  ctx.GlobalBool("no-macaroons"),
-		MacaroonPath: ctx.GlobalString("macaroon"),
+		MacaroonPath: macaroon,
 	}
 
 	err := boltz.Connect()

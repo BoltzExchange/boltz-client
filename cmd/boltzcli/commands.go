@@ -7,6 +7,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/urfave/cli"
 	"io/ioutil"
+	"path"
 	"strconv"
 )
 
@@ -98,16 +99,17 @@ func deposit(ctx *cli.Context) error {
 		return err
 	}
 
+	smallestUnitName := utils.GetSmallestUnitName(info.Symbol) + "s"
 	timeoutHours := utils.BlocksToHours(response.TimeoutBlockHeight-info.BlockHeight, utils.GetBlockTime(info.Symbol))
 
 	fmt.Println("You will receive your deposit in a lightning channel. If you do not have a channel with sufficient capacity yet, Boltz will open a channel.")
 	fmt.Println("The fees for this service are:")
 	fmt.Println("  - Service fee: " + formatPercentageFee(response.Fees.Percentage) + "%")
-	fmt.Println("  - Miner fee: " + strconv.Itoa(int(response.Fees.Miner.Normal)) + " satoshis")
+	fmt.Println("  - Miner fee: " + strconv.Itoa(int(response.Fees.Miner.Normal)) + " " + smallestUnitName)
 	fmt.Println()
 	fmt.Println(
 		"Please deposit between " + strconv.Itoa(int(response.Limits.Minimal)) + " and " + strconv.Itoa(int(response.Limits.Maximal)) +
-			" satoshis into " + response.Address + " in the next ~" + timeoutHours + " hours " +
+			" " + smallestUnitName + " into " + response.Address + " in the next ~" + timeoutHours + " hours " +
 			"(block height " + strconv.Itoa(int(response.TimeoutBlockHeight)) + ")",
 	)
 
@@ -134,16 +136,24 @@ func withdraw(ctx *cli.Context) error {
 		return nil
 	}
 
+	info, err := client.GetInfo()
+
+	if err != nil {
+		return err
+	}
+
 	serviceInfo, err := client.GetServiceInfo()
 
 	if err != nil {
 		return err
 	}
 
+	smallestUnitName := utils.GetSmallestUnitName(info.Symbol) + "s"
+
 	fmt.Println("You will receive the withdrawal to the specified onchain address")
 	fmt.Println("The fees for this service are:")
 	fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
-	fmt.Println("  - Miner fee: " + strconv.Itoa(int(serviceInfo.Fees.Miner.Reverse)) + " satoshis")
+	fmt.Println("  - Miner fee: " + strconv.Itoa(int(serviceInfo.Fees.Miner.Reverse)) + " " + smallestUnitName)
 	fmt.Println()
 
 	if !prompt("Do you want to continue?") {
@@ -159,7 +169,7 @@ func withdraw(ctx *cli.Context) error {
 	}
 
 	fmt.Println()
-	fmt.Println("Routing fee paid: " + utils.FormatMilliSat(int64(response.RoutingFeeMilliSat)) + " sats")
+	fmt.Println("Routing fee paid: " + utils.FormatMilliSat(int64(response.RoutingFeeMilliSat)) + " " + smallestUnitName)
 	fmt.Println("Transaction id: " + response.ClaimTransactionId)
 
 	return nil
@@ -248,14 +258,17 @@ func createReverseSwap(ctx *cli.Context) error {
 }
 
 var formatMacaroonCommand = cli.Command{
-	Name: "formatmacaroon",
+	Name:     "formatmacaroon",
 	Category: "Debug",
-	Usage: "Formats the specified macaroon in hex",
-	Action: formatMacaroon,
+	Usage:    "Formats the specified macaroon in hex",
+	Action:   formatMacaroon,
 }
 
 func formatMacaroon(ctx *cli.Context) error {
+	macaroonDir := path.Join(ctx.GlobalString("datadir"), "macaroons")
 	macaroonPath := ctx.GlobalString("macaroon")
+
+	macaroonPath = utils.ExpandDefaultPath(macaroonDir, macaroonPath, "admin.macaroon")
 
 	macaroonBytes, err := ioutil.ReadFile(macaroonPath)
 
