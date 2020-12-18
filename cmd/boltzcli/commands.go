@@ -7,6 +7,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/urfave/cli"
 	"io/ioutil"
+	"path"
 	"strconv"
 )
 
@@ -147,10 +148,12 @@ func withdraw(ctx *cli.Context) error {
 		return err
 	}
 
+	smallestUnitName := utils.GetSmallestUnitName(info.Symbol) + "s"
+
 	fmt.Println("You will receive the withdrawal to the specified onchain address")
 	fmt.Println("The fees for this service are:")
 	fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
-	fmt.Println("  - Miner fee: " + strconv.Itoa(int(serviceInfo.Fees.Miner.Reverse)) + " " + utils.GetSmallestUnitName(info.Symbol) + "s")
+	fmt.Println("  - Miner fee: " + strconv.Itoa(int(serviceInfo.Fees.Miner.Reverse)) + " " + smallestUnitName)
 	fmt.Println()
 
 	if !prompt("Do you want to continue?") {
@@ -166,7 +169,7 @@ func withdraw(ctx *cli.Context) error {
 	}
 
 	fmt.Println()
-	fmt.Println("Routing fee paid: " + utils.FormatMilliSat(int64(response.RoutingFeeMilliSat)) + " sats")
+	fmt.Println("Routing fee paid: " + utils.FormatMilliSat(int64(response.RoutingFeeMilliSat)) + " " + smallestUnitName)
 	fmt.Println("Transaction id: " + response.ClaimTransactionId)
 
 	return nil
@@ -262,7 +265,10 @@ var formatMacaroonCommand = cli.Command{
 }
 
 func formatMacaroon(ctx *cli.Context) error {
+	macaroonDir := path.Join(ctx.GlobalString("datadir"), "macaroons")
 	macaroonPath := ctx.GlobalString("macaroon")
+
+	macaroonPath = utils.ExpandDefaultPath(macaroonDir, macaroonPath, "admin.macaroon")
 
 	macaroonBytes, err := ioutil.ReadFile(macaroonPath)
 

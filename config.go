@@ -7,9 +7,11 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/rpcserver"
+	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
 	"os"
+	"path"
 	"runtime"
 )
 
@@ -19,6 +21,8 @@ type helpOptions struct {
 }
 
 type config struct {
+	DataDir string `short:"d" long:"datadir" description:"Data directory of boltz-lnd"`
+
 	ConfigFile string `short:"c" long:"configfile" description:"Path to configuration file"`
 
 	LogFile   string `short:"l" long:"logfile" description:"Path to the log file"`
@@ -33,10 +37,19 @@ type config struct {
 }
 
 func LoadConfig() *config {
-	cfg := config{
-		ConfigFile: "./boltz.toml",
+	defaultDataDir, err := utils.GetDefaultDataDir()
 
-		LogFile:   "./boltz.log",
+	if err != nil {
+		fmt.Println("Could not get home directory: " + err.Error())
+		os.Exit(1)
+	}
+
+	cfg := config{
+		DataDir: defaultDataDir,
+
+		ConfigFile: "",
+
+		LogFile:   "",
 		LogPrefix: "",
 
 		Boltz: &boltz.Boltz{
@@ -58,21 +71,21 @@ func LoadConfig() *config {
 			RestPort:     9003,
 			RestDisabled: false,
 
-			TlsCertPath: "./tls.cert",
-			TlsKeyPath:  "./tls.key",
+			TlsCertPath: "",
+			TlsKeyPath:  "",
 
 			NoMacaroons:          false,
-			AdminMacaroonPath:    "./admin.macaroon",
-			ReadonlyMacaroonPath: "./readonly.macaroon",
+			AdminMacaroonPath:    "",
+			ReadonlyMacaroonPath: "",
 		},
 
 		Database: &database.Database{
-			Path: "./boltz.db",
+			Path: "",
 		},
 	}
 
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
-	_, err := parser.Parse()
+	_, err = parser.Parse()
 
 	if cfg.Help.ShowVersion {
 		fmt.Println(build.GetVersion())
@@ -89,9 +102,7 @@ func LoadConfig() *config {
 		printCouldNotParse(err)
 	}
 
-	if err != nil {
-		printCouldNotParse(err)
-	}
+	cfg.ConfigFile = utils.ExpandDefaultPath(cfg.DataDir, cfg.ConfigFile, "boltz.toml")
 
 	if cfg.ConfigFile != "" {
 		_, err := toml.DecodeFile(cfg.ConfigFile, &cfg)
@@ -107,7 +118,34 @@ func LoadConfig() *config {
 		printCouldNotParse(err)
 	}
 
+	fmt.Println("Using data dir: " + cfg.DataDir)
+
+	cfg.LogFile = utils.ExpandDefaultPath(cfg.DataDir, cfg.LogFile, "boltz.log")
+	cfg.Database.Path = utils.ExpandDefaultPath(cfg.DataDir, cfg.Database.Path, "boltz.db")
+
+	cfg.RPC.TlsKeyPath = utils.ExpandDefaultPath(cfg.DataDir, cfg.RPC.TlsKeyPath, "tls.key")
+	cfg.RPC.TlsCertPath = utils.ExpandDefaultPath(cfg.DataDir, cfg.RPC.TlsCertPath, "tls.cert")
+
+	macaroonDir := path.Join(defaultDataDir, "macaroons")
+
+	cfg.RPC.AdminMacaroonPath = utils.ExpandDefaultPath(macaroonDir, cfg.RPC.AdminMacaroonPath, "admin.macaroon")
+	cfg.RPC.ReadonlyMacaroonPath = utils.ExpandDefaultPath(macaroonDir, cfg.RPC.ReadonlyMacaroonPath, "readonly.macaroon")
+
+	createDirIfNotExists(cfg.DataDir)
+	createDirIfNotExists(macaroonDir)
+
 	return &cfg
+}
+
+func createDirIfNotExists(dir string) {
+	if !utils.FileExists(dir) {
+		err := os.Mkdir(dir, 0700)
+
+		if err != nil {
+			fmt.Println("Could not create directory: " + err.Error())
+			os.Exit(1)
+		}
+	}
 }
 
 func printCouldNotParse(err error) {
