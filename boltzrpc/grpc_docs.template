@@ -1,0 +1,69 @@
+# gRPC Documentation
+
+{{range .Files}}
+{{$file_name := .Name}}
+
+This page was automatically generated based on the protobuf file `{{.Name}}`.
+
+{{range .Services}}
+## {{.FullName}}
+{{.Description}}
+
+### Methods
+{{range .Methods -}}
+#### {{.Name}}
+
+{{nobr .Description}}
+
+| Request | Response |
+| ------- | -------- |
+| [`{{.RequestLongType}}`](#{{.RequestFullType}}){{if .RequestStreaming}} stream{{end}} | [`{{.ResponseLongType}}`](#{{.ResponseFullType}}){{if .ResponseStreaming}} stream{{end}} |
+
+{{end}}
+{{end}}
+
+### Messages
+{{range .Messages}}
+#### <div id="{{.FullName}}">{{.LongName}}</div>
+{{.Description}}
+
+{{if .HasFields}}
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+{{range .Fields -}}
+| `{{.Name}}` | [`{{.LongType}}`](#{{.FullType}}) | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+{{end}}
+{{end}}
+
+{{if .HasExtensions}}
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+{{range .Extensions -}}
+| {{.Name}} | {{.LongType}} | {{.ContainingLongType}} | {{.Number}} | {{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+{{end}}
+{{end}}
+{{end}}
+
+### Enums
+
+{{range .Enums}}
+<a name="{{.FullName}}"></a>
+
+#### {{.LongName}}
+{{.Description}}
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+{{range .Values -}}
+  | {{.Name}} | {{.Number}} | {{nobr .Description}} |
+{{end}}
+{{end}}
+{{end}}
+
+## Scalar Value Types
+
+| .proto Type | Notes | C++ | Java | Python | Go | C# | PHP | Ruby |
+| ----------- | ----- | --- | ---- | ------ | -- | -- | --- | ---- |
+{{range .Scalars -}}
+| <div id="{{.ProtoType}}" />`{{.ProtoType}}` | {{.Notes}} | `{{.CppType}}` | `{{.JavaType}}` | `{{.PythonType}}` | `{{.GoType}}` | `{{.CSharp}}` | `{{.PhpType}}` | `{{.RubyType}}` |
+{{end}}

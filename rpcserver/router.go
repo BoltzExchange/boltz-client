@@ -91,6 +91,9 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, _ *boltzrpc.G
 		return nil, handleError(err)
 	}
 
+	limits.Minimal = calculateDepositLimit(limits.Minimal, fees, true)
+	limits.Maximal = calculateDepositLimit(limits.Maximal, fees, false)
+
 	return &boltzrpc.GetServiceInfoResponse{
 		Fees:   fees,
 		Limits: limits,
@@ -165,15 +168,6 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 }
 
 func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
-	fees, limits, err := server.getPairs()
-
-	if err != nil {
-		return nil, handleError(err)
-	}
-
-	limits.Minimal = calculateDepositLimit(limits.Minimal, fees, true)
-	limits.Maximal = calculateDepositLimit(limits.Maximal, fees, false)
-
 	preimage, preimageHash, err := newPreimage()
 
 	if err != nil {
@@ -254,8 +248,6 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 		Id:                 response.Id,
 		Address:            deposit.Address,
 		TimeoutBlockHeight: uint32(deposit.TimoutBlockHeight),
-		Fees:               fees,
-		Limits:             limits,
 	}, nil
 }
 

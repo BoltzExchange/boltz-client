@@ -4,16 +4,50 @@ package boltzrpc;
 option go_package = "github.com/BoltzExchange/boltz-lnd/boltzrpc";
 
 service Boltz {
+    /*
+    Gets general information about the daemon like the chain of the LND node it is connected to
+    and the IDs of pending swaps.
+     */
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
+
+    /*
+    Fetches the latest limits and fees from the Boltz backend API it is connected to.
+    */
     rpc GetServiceInfo (GetServiceInfoRequest) returns (GetServiceInfoResponse);
 
+    /*
+    Returns a list of all swaps, reverse swaps and channel creations in the database.
+    */
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
+
+    /*
+    Gets all available information about a swap from the database.
+    */
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
 
+    /*
+    This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address.
+    The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address
+    before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which
+    will try to pay it and if that is not possible, create a new channel to make the swap succeed.
+    */
     rpc Deposit (DepositRequest) returns (DepositResponse);
 
+    /*
+    Creates a new swap from onchain to lightning.
+    */
     rpc CreateSwap (CreateSwapRequest) returns (CreateSwapResponse);
+
+    /*
+    Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
+    is coming trough a new channel channel opened by Boltz.
+    */
     rpc CreateChannel (CreateChannelRequest) returns (CreateSwapResponse);
+
+    /*
+    Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
+    will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
+    */
     rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
 }
 
@@ -28,9 +62,19 @@ message SwapInfo {
     int64 expected_amount = 8;
     uint32 timeout_block_height = 9;
     string lockup_transaction_id = 10;
+
+    /*
+    If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the
+    `lockup_address` back to the LND wallet and save the refund transaction id to the database.
+    */
     string refund_transaction_id = 11;
 }
+
+/*
+Channel creations are an optional extension to a submarine swap in the data types of boltz-lnd.
+*/
 message ChannelCreationInfo {
+    // ID of the swap to which this channel channel belongs
     string swap_id = 1;
     string status = 2;
     uint32 inbound_liquidity = 3;
@@ -105,16 +149,16 @@ message GetSwapInfoResponse {
 }
 
 message DepositRequest {
-    // 25 by default
+    /*
+    Percentage of inbound liquidity the channel that is opened in case the invoice cannot be paid should have.
+    25 by default.
+    */
     uint32 inbound_liquidity = 1;
 }
 message DepositResponse {
     string id = 1;
     string address = 2;
     uint32 timeout_block_height = 3;
-
-    Fees fees = 4;
-    Limits limits = 5;
 }
 
 message CreateSwapRequest {
@@ -129,7 +173,11 @@ message CreateSwapResponse {
 
 message CreateChannelRequest {
     int64 amount = 1;
-    // 25 by default
+
+    /*
+    Percentage of inbound liquidity the channel that is opened should have.
+    25 by default.
+    */
     uint32 inbound_liquidity = 2;
     bool private = 3;
 };
