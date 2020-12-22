@@ -4,4 +4,4 @@ theme: readthedocs
 nav:
   - Home: index.md
   - gRPC: grpc.md
-  - Config: config.md
+  - Configuration: configuration.md

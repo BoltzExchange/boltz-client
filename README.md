@@ -2,36 +2,15 @@
 
 This repository contains a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse ones (from Lightning to onchain coins).
 
-**TODO: channel creations**
+The full documentation can be found [here](https://lnd.docs.boltz.exchange/) or in the `docs` folder
 
-## `boltzd`
+## Building
 
-`boltzd` is a daemon that should run alongside of your LND node. It connects to your LND node, and the Boltz API to create and execute Swaps.
+`boltz-lnd` has C dependencies which means a C compiler has to be installed to compile the daemon successfully.
 
-The LND node to which the daemon connects to, has to be version `v0.10.0-beta` or higher. Also, LND needs to be compiled with these build flags (binaries from the official Lightning Labs releases include them):
+The build process requires patches for dependencies, and some build flags, therefore the `Makefile` in the repository root should be used. 
 
-- `invoicerpc` (hold invoices)
-- `routerrpc` (multi path payments)
-- `chainrpc` (block listener)
-- `walletrpc` (fee estimations)
-
-The daemon can be configured with CLI parameters, or a config file. A sample config file can be found below.
-
-```toml
-[Boltz]
-url = "<URL to the Boltz API>"
-
-[LND]
-# Host of the LND gRPC interface
-host = "127.0.0.1"
-# Port of the LND gRPC interface
-port = 10009
-# Path to the admin macaroon of LND
-macaroon = ""
-# Path to the gRPC certificate of LND
-certificate = ""
 ```
-
-## `boltz-cli`
-
-`boltz-cli` is a cli tool to interact with the gRPC interface `boltzd` exposes. 
+go mod vendor
+make build
+```

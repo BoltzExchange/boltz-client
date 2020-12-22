@@ -5,6 +5,8 @@
 
 This page was automatically generated based on the protobuf file `boltzrpc.proto`.
 
+Paths for the REST proxy of the gRPC interface can be found (here)[https://github.com/BoltzExchange/boltz-lnd/blob/master/boltzrpc/rest-annotations.yaml].
+
 
 ## boltzrpc.Boltz
 

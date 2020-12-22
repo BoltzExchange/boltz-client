@@ -1,4 +1,4 @@
-# Config
+# Configuration
 
 `boltz-lnd` can be configured via CLI arguments, and a TOML config file. By default, the config file is called `boltz.toml` and located in the default data directory of `boltz-lnd` (`/home/<user>/.boltz-lnd` on Linux).
 
