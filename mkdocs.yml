@@ -1,4 +1,7 @@
 site_name: boltz-lnd documentation
 theme: readthedocs
 
-
+nav:
+  - Home: index.md
+  - gRPC: grpc.md
+  - Config: config.md
