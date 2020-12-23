@@ -40,25 +40,25 @@ jobs:
       - name: Upload Linux AMD64 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: boltz-lnd-linux-amd64.zip
+          name: boltz-lnd-linux-amd64
           path: binaries/linux-amd64/
 
       - name: Upload Linux ARM64 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: boltz-lnd-linux-arm64.zip
+          name: boltz-lnd-linux-arm64
           path: binaries/linux-arm64/
 
       - name: Upload Linux ARM artifact
         uses: actions/upload-artifact@v2
         with:
-          name: boltz-lnd-linux-arm.zip
+          name: boltz-lnd-linux-arm
           path: binaries/linux-arm/
 
       - name: Upload Windows AMD64 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: boltz-lnd-windows-amd64.zip
+          name: boltz-lnd-windows-amd64
           path: binaries/windows-amd64/
 
   darwin:
@@ -89,7 +89,7 @@ jobs:
       - name: Upload Darwin AMD64 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: boltz-lnd-darwin-amd64.zip
+          name: boltz-lnd-darwin-amd64
           path: |
             boltzd
             boltzcli
