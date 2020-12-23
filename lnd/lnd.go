@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
@@ -33,6 +34,8 @@ type LND struct {
 	Port        int    `long:"lnd.port" description:"gRPC port of the LND node"`
 	Macaroon    string `long:"lnd.macaroon" description:"Path to a macaroon file of the LND node"`
 	Certificate string `long:"lnd.certificate" description:"Path to a certificate file of the LND node"`
+
+	ChainParams *chaincfg.Params
 
 	ctx context.Context
 
@@ -141,10 +144,17 @@ func (lnd *LND) GetChannelInfo(channelId uint64) (*lnrpc.ChannelEdge, error) {
 }
 
 func (lnd *LND) PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32) (*lnrpc.Payment, error) {
+	feeLimit, err := lnd.getFeeLimit(invoice)
+
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := lnd.router.SendPaymentV2(lnd.ctx, &routerrpc.SendPaymentRequest{
 		MaxParts:       maxParts,
 		PaymentRequest: invoice,
 		TimeoutSeconds: timeoutSeconds,
+		FeeLimitSat:    feeLimit,
 	})
 
 	if err != nil {

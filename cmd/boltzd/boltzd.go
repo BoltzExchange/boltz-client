@@ -45,6 +45,8 @@ func main() {
 	symbol, chainParams := parseChain(lndInfo.Chains[0])
 	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
 
+	cfg.LND.ChainParams = chainParams
+
 	waitForLndSynced(cfg.LND)
 
 	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
