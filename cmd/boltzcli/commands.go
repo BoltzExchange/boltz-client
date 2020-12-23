@@ -99,16 +99,22 @@ func deposit(ctx *cli.Context) error {
 		return err
 	}
 
+	serviceInfo, err := client.GetServiceInfo()
+
+	if err != nil {
+		return err
+	}
+
 	smallestUnitName := utils.GetSmallestUnitName(info.Symbol) + "s"
 	timeoutHours := utils.BlocksToHours(response.TimeoutBlockHeight-info.BlockHeight, utils.GetBlockTime(info.Symbol))
 
 	fmt.Println("You will receive your deposit in a lightning channel. If you do not have a channel with sufficient capacity yet, Boltz will open a channel.")
 	fmt.Println("The fees for this service are:")
-	fmt.Println("  - Service fee: " + formatPercentageFee(response.Fees.Percentage) + "%")
-	fmt.Println("  - Miner fee: " + strconv.Itoa(int(response.Fees.Miner.Normal)) + " " + smallestUnitName)
+	fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
+	fmt.Println("  - Miner fee: " + strconv.Itoa(int(serviceInfo.Fees.Miner.Normal)) + " " + smallestUnitName)
 	fmt.Println()
 	fmt.Println(
-		"Please deposit between " + strconv.Itoa(int(response.Limits.Minimal)) + " and " + strconv.Itoa(int(response.Limits.Maximal)) +
+		"Please deposit between " + strconv.Itoa(int(serviceInfo.Limits.Minimal)) + " and " + strconv.Itoa(int(serviceInfo.Limits.Maximal)) +
 			" " + smallestUnitName + " into " + response.Address + " in the next ~" + timeoutHours + " hours " +
 			"(block height " + strconv.Itoa(int(response.TimeoutBlockHeight)) + ")",
 	)

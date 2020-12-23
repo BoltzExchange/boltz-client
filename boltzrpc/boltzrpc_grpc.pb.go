@@ -17,13 +17,35 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BoltzClient interface {
+	//
+	//Gets general information about the daemon like the chain of the LND node it is connected to
+	//and the IDs of pending swaps.
 	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
+	//
+	//Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetServiceInfo(ctx context.Context, in *GetServiceInfoRequest, opts ...grpc.CallOption) (*GetServiceInfoResponse, error)
+	//
+	//Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
+	//
+	//Gets all available information about a swap from the database.
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
+	//
+	//This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address.
+	//The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address
+	//before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which
+	//will try to pay it and if that is not possible, create a new channel to make the swap succeed.
 	Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
+	//
+	//Creates a new swap from onchain to lightning.
 	CreateSwap(ctx context.Context, in *CreateSwapRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
+	//
+	//Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
+	//is coming trough a new channel channel opened by Boltz.
 	CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
+	//
+	//Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
+	//will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error)
 }
 
@@ -111,13 +133,35 @@ func (c *boltzClient) CreateReverseSwap(ctx context.Context, in *CreateReverseSw
 // All implementations must embed UnimplementedBoltzServer
 // for forward compatibility
 type BoltzServer interface {
+	//
+	//Gets general information about the daemon like the chain of the LND node it is connected to
+	//and the IDs of pending swaps.
 	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
+	//
+	//Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetServiceInfo(context.Context, *GetServiceInfoRequest) (*GetServiceInfoResponse, error)
+	//
+	//Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
+	//
+	//Gets all available information about a swap from the database.
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
+	//
+	//This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address.
+	//The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address
+	//before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which
+	//will try to pay it and if that is not possible, create a new channel to make the swap succeed.
 	Deposit(context.Context, *DepositRequest) (*DepositResponse, error)
+	//
+	//Creates a new swap from onchain to lightning.
 	CreateSwap(context.Context, *CreateSwapRequest) (*CreateSwapResponse, error)
+	//
+	//Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
+	//is coming trough a new channel channel opened by Boltz.
 	CreateChannel(context.Context, *CreateChannelRequest) (*CreateSwapResponse, error)
+	//
+	//Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
+	//will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error)
 	mustEmbedUnimplementedBoltzServer()
 }
