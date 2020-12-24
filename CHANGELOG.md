@@ -1,4 +1,10 @@
 
+<a name="v1.2.2"></a>
+## [v1.2.2] - 2020-12-24
+### Fix
+- macaroon directory path
+
+
 <a name="v1.2.1"></a>
 ## [v1.2.1] - 2020-12-24
 ### Feat
@@ -88,6 +94,7 @@
 - improve Channel Creation enforcement
 
 
+[v1.2.2]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.1...v1.2.2
 [v1.2.1]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.2...v1.2.0
 [v1.1.2]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.1...v1.1.2
