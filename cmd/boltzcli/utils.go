@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/BoltzExchange/boltz-lnd/utils"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"os"
 	"strconv"
@@ -35,14 +35,12 @@ func prompt(message string) bool {
 }
 
 func printJson(resp proto.Message) {
-	formattedJson, err := utils.FormatJson(resp)
-
-	if err != nil {
-		fmt.Println("Could not decode response: " + err.Error())
-		return
+	jsonMarshaler := &protojson.MarshalOptions{
+		Indent:          "  ",
+		EmitUnpopulated: true,
 	}
 
-	fmt.Print(formattedJson)
+	fmt.Println(jsonMarshaler.Format(resp))
 }
 
 func parseInt64(value string, name string) int64 {

@@ -17,9 +17,12 @@ func parseMacaroon(rows *sql.Rows) (*Macaroon, error) {
 	var id string
 	var rootKey string
 
-	err := rows.Scan(
-		&id,
-		&rootKey,
+	err := scanRow(
+		rows,
+		map[string]interface{}{
+			"id":      &id,
+			"rootKey": &rootKey,
+		},
 	)
 
 	if err != nil {

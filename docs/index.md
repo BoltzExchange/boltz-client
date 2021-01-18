@@ -1,6 +1,6 @@
 # boltz-lnd v1.2.2 documentation
 
-`boltz-lnd` is a client [Boltz](https://boltz.exchange) for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse Submarine Swaps (from Lightning to onchain coins).
+`boltz-lnd` is a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse Submarine Swaps (from Lightning to onchain coins).
 
 ## `boltzd`
 

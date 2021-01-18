@@ -344,7 +344,9 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
-| `status` | [`string`](#string) |  |  |
+| `state` | [`SwapState`](#boltzrpc.SwapState) |  |  |
+| `error` | [`string`](#string) |  |  |
+| `status` | [`string`](#string) |  | Latest status message of the Boltz backend |
 | `private_key` | [`string`](#string) |  |  |
 | `preimage` | [`string`](#string) |  |  |
 | `redeem_script` | [`string`](#string) |  |  |
@@ -366,7 +368,9 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
-| `status` | [`string`](#string) |  |  |
+| `state` | [`SwapState`](#boltzrpc.SwapState) |  |  |
+| `error` | [`string`](#string) |  |  |
+| `status` | [`string`](#string) |  | Latest status message of the Boltz backend |
 | `private_key` | [`string`](#string) |  |  |
 | `preimage` | [`string`](#string) |  |  |
 | `redeem_script` | [`string`](#string) |  |  |
@@ -383,6 +387,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 ### Enums
+
+
+<a name="boltzrpc.SwapState"></a>
+
+#### SwapState
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PENDING | 0 |  |
+| SUCCESSFUL | 1 |  |
+| ERROR | 2 | Unknown client error. Check the error field of the message for more information |
+| SERVER_ERROR | 3 | Unknown server error. Check the status field of the message for more information |
+| REFUNDED | 4 | Client refunded locked coins after the HTLC timed out |
+| ABANDONED | 5 | Client noticed that the HTLC timed out but didn't find any outputs to refund |
 
 
 

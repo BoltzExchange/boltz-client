@@ -208,12 +208,14 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 
 	deposit := database.Swap{
 		Id:                  response.Id,
+		State:               boltzrpc.SwapState_PENDING,
+		Error:               "",
 		Status:              boltz.SwapCreated,
+		PrivateKey:          privateKey,
+		Preimage:            preimage,
+		RedeemScript:        redeemScript,
 		Invoice:             "",
 		Address:             response.Address,
-		Preimage:            preimage,
-		PrivateKey:          privateKey,
-		RedeemScript:        redeemScript,
 		ExpectedAmount:      0,
 		TimoutBlockHeight:   response.TimeoutBlockHeight,
 		LockupTransactionId: "",
@@ -252,7 +254,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 }
 
 // TODO: custom refund address
-// TODO: automatically sending from LND wallet
+// TODO: automatic sending from LND wallet
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
@@ -288,6 +290,8 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 
 	swap := database.Swap{
 		Id:                  response.Id,
+		State:               boltzrpc.SwapState_PENDING,
+		Error:               "",
 		Status:              boltz.InvoiceSet,
 		PrivateKey:          privateKey,
 		Preimage:            nil,
@@ -394,6 +398,8 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 
 	swap := database.Swap{
 		Id:                  response.Id,
+		State:               boltzrpc.SwapState_PENDING,
+		Error:               "",
 		Status:              boltz.InvoiceSet,
 		PrivateKey:          privateKey,
 		Preimage:            preimage,
@@ -561,6 +567,12 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	payment, err := server.payInvoice(reverseSwap.Invoice, reverseSwap.Id)
 
 	if err != nil {
+		dbErr := server.database.UpdateReverseSwapState(&reverseSwap, boltzrpc.SwapState_ERROR, err.Error())
+
+		if dbErr != nil {
+			return nil, handleError(dbErr)
+		}
+
 		return nil, handleError(err)
 	}
 

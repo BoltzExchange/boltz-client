@@ -40,13 +40,16 @@ func parseChannelCreation(rows *sql.Rows) (*ChannelCreation, error) {
 
 	var status string
 
-	err := rows.Scan(
-		&channelCreation.SwapId,
-		&status,
-		&channelCreation.InboundLiquidity,
-		&channelCreation.Private,
-		&channelCreation.FundingTransactionId,
-		&channelCreation.FundingTransactionVout,
+	err := scanRow(
+		rows,
+		map[string]interface{}{
+			"swapId":                 &channelCreation.SwapId,
+			"status":                 &status,
+			"inboundLiquidity":       &channelCreation.InboundLiquidity,
+			"private":                &channelCreation.Private,
+			"fundingTransactionId":   &channelCreation.FundingTransactionId,
+			"fundingTransactionVout": &channelCreation.FundingTransactionVout,
+		},
 	)
 
 	if err != nil {
