@@ -3,6 +3,7 @@ package nursery
 import (
 	"encoding/hex"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
+	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/utils"
@@ -121,9 +122,11 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetail
 
 	if err != nil {
 		logger.Error("Could not get lockup transaction from Boltz: " + err.Error())
-		nursery.handleSwapStatus(swap, nil, boltz.SwapStatusResponse{
-			Status: boltz.SwapAbandoned.String(),
-		})
+		err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_ABANDONED, "")
+
+		if err != nil {
+			logger.Error("Could not update state of Swap " + swap.Id + ": " + err.Error())
+		}
 
 		return nil
 	}
@@ -198,16 +201,7 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 			logger.Info(swapType + " " + swap.Id + " status changed to: " + status.Status)
 			nursery.handleSwapStatus(&swap, channelCreation, *status)
 
-			isCompleted := false
-
-			for _, completedStatus := range boltz.CompletedStatus {
-				if swap.Status.String() == completedStatus {
-					isCompleted = true
-					break
-				}
-			}
-
-			if !isCompleted {
+			if swap.State == boltzrpc.SwapState_PENDING {
 				nursery.RegisterSwap(&swap, channelCreation)
 			}
 
@@ -427,8 +421,21 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 	}
 
 	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
+
 	if err != nil {
 		logger.Error("Could not update status of " + swapType + " " + swap.Id + ": " + err.Error())
+	}
+
+	if parsedStatus.IsCompletedStatus() {
+		err = nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, "")
+	} else if parsedStatus.IsFailedStatus() {
+		if swap.State == boltzrpc.SwapState_PENDING {
+			err = nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, "")
+		}
+	}
+
+	if err != nil {
+		logger.Error("Could not update state of " + swapType + " " + swap.Id + ": " + err.Error())
 	}
 }
 

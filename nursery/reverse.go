@@ -3,6 +3,7 @@ package nursery
 import (
 	"encoding/hex"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
+	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/btcsuite/btcutil"
@@ -33,16 +34,7 @@ func (nursery *Nursery) recoverReverseSwaps() error {
 			logger.Info("Swap " + reverseSwap.Id + " status changed to: " + status.Status)
 			nursery.handleReverseSwapStatus(&reverseSwap, *status, nil)
 
-			isCompleted := false
-
-			for _, completedStatus := range boltz.CompletedStatus {
-				if reverseSwap.Status.String() == completedStatus {
-					isCompleted = true
-					break
-				}
-			}
-
-			if !isCompleted {
+			if reverseSwap.State == boltzrpc.SwapState_PENDING {
 				nursery.RegisterReverseSwap(reverseSwap, nil)
 			}
 
@@ -212,7 +204,20 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	}
 
 	err := nursery.database.UpdateReverseSwapStatus(reverseSwap, parsedStatus)
+
 	if err != nil {
-		logger.Error("Could not update status of Swap " + reverseSwap.Id + ": " + err.Error())
+		logger.Error("Could not update status of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+	}
+
+	if parsedStatus.IsCompletedStatus() {
+		err = nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SUCCESSFUL, "")
+	} else if parsedStatus.IsFailedStatus() {
+		if reverseSwap.State == boltzrpc.SwapState_PENDING {
+			err = nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SERVER_ERROR, "")
+		}
+	}
+
+	if err != nil {
+		logger.Error("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
 	}
 }

@@ -19,14 +19,6 @@ const (
 	TransactionClaimed
 	TransactionRefunded
 	TransactionConfirmed
-
-	// Custom events
-
-	// Client refunded transaction
-	SwapRefunded
-
-	// Client noticed the Swap expired but didn't find any output to refund
-	SwapAbandoned
 )
 
 var swapUpdateEventStrings = map[string]SwapUpdateEvent{
@@ -46,16 +38,18 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 	"transaction.claimed":   TransactionClaimed,
 	"transaction.refunded":  TransactionRefunded,
 	"transaction.confirmed": TransactionConfirmed,
-
-	"swap.refunded":  SwapRefunded,
-	"swap.abandoned": SwapAbandoned,
 }
 
 var CompletedStatus = []string{
-	SwapRefunded.String(),
-	SwapAbandoned.String(),
 	InvoiceSettled.String(),
 	TransactionClaimed.String(),
+}
+
+var FailedStatus = []string{
+	SwapExpired.String(),
+	InvoiceFailedToPay.String(),
+	TransactionFailed.String(),
+	TransactionRefunded.String(),
 }
 
 func (event SwapUpdateEvent) String() string {
@@ -70,6 +64,30 @@ func (event SwapUpdateEvent) String() string {
 
 func ParseEvent(event string) SwapUpdateEvent {
 	return swapUpdateEventStrings[event]
+}
+
+func (event SwapUpdateEvent) IsCompletedStatus() bool {
+	eventString := event.String()
+
+	for _, value := range CompletedStatus {
+		if value == eventString {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (event SwapUpdateEvent) IsFailedStatus() bool {
+	eventString := event.String()
+
+	for _, value := range FailedStatus {
+		if value == eventString {
+			return true
+		}
+	}
+
+	return false
 }
 
 type ChannelState int

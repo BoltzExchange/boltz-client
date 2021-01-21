@@ -19,6 +19,7 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	service.Init()
 
 	if utils.FileExists(server.AdminMacaroonPath) && utils.FileExists(server.ReadonlyMacaroonPath) {
+		// TODO: check if the macaroons on the disk are still up to date
 		return &service, nil
 	}
 

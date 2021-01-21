@@ -5,13 +5,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
+	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/btcsuite/btcd/btcec"
 	"strconv"
-	"strings"
 )
 
 type Swap struct {
 	Id                  string
+	State               boltzrpc.SwapState
+	Error               string
 	Status              boltz.SwapUpdateEvent
 	PrivateKey          *btcec.PrivateKey
 	Preimage            []byte
@@ -26,6 +28,8 @@ type Swap struct {
 
 type SwapSerialized struct {
 	Id                  string
+	State               string
+	Error               string
 	Status              string
 	PrivateKey          string
 	Preimage            string
@@ -47,6 +51,8 @@ func (swap *Swap) Serialize() SwapSerialized {
 
 	return SwapSerialized{
 		Id:                  swap.Id,
+		State:               boltzrpc.SwapState_name[int32(swap.State)],
+		Error:               swap.Error,
 		Status:              swap.Status.String(),
 		PrivateKey:          formatPrivateKey(swap.PrivateKey),
 		Preimage:            preimage,
@@ -68,18 +74,23 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	var preimage string
 	var redeemScript string
 
-	err := rows.Scan(
-		&swap.Id,
-		&status,
-		&privateKey,
-		&preimage,
-		&redeemScript,
-		&swap.Invoice,
-		&swap.Address,
-		&swap.ExpectedAmount,
-		&swap.TimoutBlockHeight,
-		&swap.LockupTransactionId,
-		&swap.RefundTransactionId,
+	err := scanRow(
+		rows,
+		map[string]interface{}{
+			"id":                  &swap.Id,
+			"state":               &swap.State,
+			"error":               &swap.Error,
+			"status":              &status,
+			"privateKey":          &privateKey,
+			"preimage":            &privateKey,
+			"redeemScript":        &redeemScript,
+			"invoice":             &swap.Invoice,
+			"address":             &swap.Address,
+			"expectedAmount":      &swap.ExpectedAmount,
+			"timeoutBlockheight":  &swap.TimoutBlockHeight,
+			"lockupTransactionId": &swap.LockupTransactionId,
+			"refundTransactionId": &swap.RefundTransactionId,
+		},
 	)
 
 	if err != nil {
@@ -162,15 +173,15 @@ func (database *Database) QuerySwaps() ([]Swap, error) {
 }
 
 func (database *Database) QueryPendingSwaps() ([]Swap, error) {
-	return database.querySwaps("SELECT * FROM swaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "')")
+	return database.querySwaps("SELECT * FROM swaps WHERE state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "'")
 }
 
 func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32) ([]Swap, error) {
-	return database.querySwaps("SELECT * FROM swaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "') AND timeoutBlockHeight <= " + strconv.FormatUint(uint64(currentBlockHeight), 10))
+	return database.querySwaps("SELECT * FROM swaps WHERE state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "' AND timeoutBlockHeight <= " + strconv.FormatUint(uint64(currentBlockHeight), 10))
 }
 
 func (database *Database) CreateSwap(swap Swap) error {
-	insertStatement := "INSERT INTO swaps (id, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO swaps (id, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -185,6 +196,8 @@ func (database *Database) CreateSwap(swap Swap) error {
 
 	_, err = statement.Exec(
 		swap.Id,
+		swap.State,
+		swap.Error,
 		swap.Status.String(),
 		formatPrivateKey(swap.PrivateKey),
 		preimage,
@@ -202,6 +215,14 @@ func (database *Database) CreateSwap(swap Swap) error {
 	}
 
 	return statement.Close()
+}
+
+func (database *Database) UpdateSwapState(swap *Swap, state boltzrpc.SwapState, error string) error {
+	swap.State = state
+	swap.Error = error
+
+	_, err := database.db.Exec("UPDATE swaps SET state = ?, error = ? WHERE id = ?", state, error, swap.Id)
+	return err
 }
 
 func (database *Database) UpdateSwapStatus(swap *Swap, status boltz.SwapUpdateEvent) error {
@@ -226,8 +247,9 @@ func (database *Database) SetSwapLockupTransactionId(swap *Swap, lockupTransacti
 }
 
 func (database *Database) SetSwapRefundTransactionId(swap *Swap, refundTransactionId string) error {
+	swap.State = boltzrpc.SwapState_REFUNDED
 	swap.RefundTransactionId = refundTransactionId
 
-	_, err := database.db.Exec("UPDATE swaps SET status = ?, refundTransactionId = ? WHERE id = ?", boltz.SwapRefunded.String(), refundTransactionId, swap.Id)
+	_, err := database.db.Exec("UPDATE swaps SET state = ?, refundTransactionId = ? WHERE id = ?", swap.State, refundTransactionId, swap.Id)
 	return err
 }

@@ -5,12 +5,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
+	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/btcsuite/btcd/btcec"
-	"strings"
+	"strconv"
 )
 
 type ReverseSwap struct {
 	Id                  string
+	State               boltzrpc.SwapState
+	Error               string
 	Status              boltz.SwapUpdateEvent
 	AcceptZeroConf      bool
 	PrivateKey          *btcec.PrivateKey
@@ -26,6 +29,8 @@ type ReverseSwap struct {
 
 type ReverseSwapSerialized struct {
 	Id                  string
+	State               string
+	Error               string
 	Status              string
 	AcceptZeroConf      bool
 	PrivateKey          string
@@ -42,6 +47,8 @@ type ReverseSwapSerialized struct {
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	return ReverseSwapSerialized{
 		Id:                  reverseSwap.Id,
+		State:               boltzrpc.SwapState_name[int32(reverseSwap.State)],
+		Error:               reverseSwap.Error,
 		Status:              reverseSwap.Status.String(),
 		AcceptZeroConf:      reverseSwap.AcceptZeroConf,
 		PrivateKey:          formatPrivateKey(reverseSwap.PrivateKey),
@@ -64,19 +71,24 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var preimage string
 	var redeemScript string
 
-	err := rows.Scan(
-		&reverseSwap.Id,
-		&status,
-		&reverseSwap.AcceptZeroConf,
-		&privateKey,
-		&preimage,
-		&redeemScript,
-		&reverseSwap.Invoice,
-		&reverseSwap.ClaimAddress,
-		&reverseSwap.OnchainAmount,
-		&reverseSwap.TimeoutBlockHeight,
-		&reverseSwap.LockupTransactionId,
-		&reverseSwap.ClaimTransactionId,
+	err := scanRow(
+		rows,
+		map[string]interface{}{
+			"id":                  &reverseSwap.Id,
+			"state":               &reverseSwap.State,
+			"error":               &reverseSwap.Error,
+			"status":              &status,
+			"acceptZeroConf":      &reverseSwap.AcceptZeroConf,
+			"privateKey":          &privateKey,
+			"preimage":            &preimage,
+			"redeemScript":        &redeemScript,
+			"invoice":             &reverseSwap.Invoice,
+			"claimAddress":        &reverseSwap.ClaimAddress,
+			"expectedAmount":      &reverseSwap.OnchainAmount,
+			"timeoutBlockheight":  &reverseSwap.TimeoutBlockHeight,
+			"lockupTransactionId": &reverseSwap.LockupTransactionId,
+			"claimTransactionId":  &reverseSwap.ClaimAddress,
+		},
 	)
 
 	if err != nil {
@@ -103,6 +115,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 }
 
 func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap, err error) {
+	// TODO: avoid "SELECT *" to be compatible with migrations (or work with columns in parse functions?)
 	rows, err := database.db.Query("SELECT * FROM reverseSwaps WHERE id = ?", id)
 
 	if err != nil {
@@ -151,11 +164,11 @@ func (database *Database) QueryReverseSwaps() ([]ReverseSwap, error) {
 }
 
 func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
-	return database.queryReverseSwaps("SELECT * FROM reverseSwaps WHERE status NOT IN ('" + strings.Join(boltz.CompletedStatus, "','") + "')")
+	return database.queryReverseSwaps("SELECT * FROM reverseSwaps WHERE state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "'")
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO reverseSwaps (id, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -164,6 +177,8 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 
 	_, err = statement.Exec(
 		reverseSwap.Id,
+		reverseSwap.State,
+		reverseSwap.Error,
 		reverseSwap.Status.String(),
 		reverseSwap.AcceptZeroConf,
 		formatPrivateKey(reverseSwap.PrivateKey),
@@ -182,6 +197,14 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 	}
 
 	return statement.Close()
+}
+
+func (database *Database) UpdateReverseSwapState(reverseSwap *ReverseSwap, state boltzrpc.SwapState, error string) error {
+	reverseSwap.State = state
+	reverseSwap.Error = error
+
+	_, err := database.db.Exec("UPDATE reverseSwaps SET state = ?, error = ? WHERE id = ?", state, error, reverseSwap.Id)
+	return err
 }
 
 func (database *Database) UpdateReverseSwapStatus(reverseSwap *ReverseSwap, status boltz.SwapUpdateEvent) error {
