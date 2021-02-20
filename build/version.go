@@ -2,7 +2,7 @@ package build
 
 var Commit string
 
-const version = "1.2.2"
+const version = "1.2.3"
 
 func GetVersion() string {
 	basicVersion := "v" + version
