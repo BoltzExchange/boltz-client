@@ -1,6 +1,6 @@
 # Configuration
 
-`boltz-lnd` can be configured via CLI arguments, and a TOML config file. By default, the config file is called `boltz.toml` and located in the default data directory of `boltz-lnd` (`/home/<user>/.boltz-lnd` on Linux).
+`boltz-lnd` can be configured via CLI arguments, and a TOML config file. By default, the config file is called `boltz.toml` and located in the data directory of `boltz-lnd` (`/home/<user>/.boltz-lnd` by default on Linux).
 
 ## Example
 
@@ -13,7 +13,7 @@ logfile = ""
 logprefix = "[BTC] "
 
 [BOLTZ]
-# By default the daemon automatically connects to the official Boltz instance for the network the LND is on
+# By default the daemon automatically connects to the official Boltz instance for the network LND is on
 # This value is used to override that
 url = "https://testnet.boltz.exchange/api"
 
