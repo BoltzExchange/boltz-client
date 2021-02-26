@@ -82,7 +82,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 			"error":               &swap.Error,
 			"status":              &status,
 			"privateKey":          &privateKey,
-			"preimage":            &privateKey,
+			"preimage":            &preimage,
 			"redeemScript":        &redeemScript,
 			"invoice":             &swap.Invoice,
 			"address":             &swap.Address,
@@ -177,7 +177,7 @@ func (database *Database) QueryPendingSwaps() ([]Swap, error) {
 }
 
 func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32) ([]Swap, error) {
-	return database.querySwaps("SELECT * FROM swaps WHERE state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "' AND timeoutBlockHeight <= " + strconv.FormatUint(uint64(currentBlockHeight), 10))
+	return database.querySwaps("SELECT * FROM swaps WHERE (state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "' OR state = '"+ strconv.Itoa(int(boltzrpc.SwapState_SERVER_ERROR)) + "') AND timeoutBlockHeight <= " + strconv.FormatUint(uint64(currentBlockHeight), 10))
 }
 
 func (database *Database) CreateSwap(swap Swap) error {
