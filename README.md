@@ -1,4 +1,4 @@
-# Boltz LND
+# Boltz LND - Fix for rcp error
 
 This repository contains a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse ones (from Lightning to onchain coins).
 
