@@ -23,8 +23,8 @@ type GetVersionResponse struct {
 type symbolMinerFees struct {
 	Normal  int `json:"normal"`
 	Reverse struct {
-		Lockup int `json:"lockup"`
-		Claim  int `json:"claim"`
+		Lockup int64 `json:"lockup"`
+		Claim  int64 `json:"claim"`
 	} `json:"reverse"`
 }
 
