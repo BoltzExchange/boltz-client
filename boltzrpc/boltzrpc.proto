@@ -148,8 +148,8 @@ message Fees {
     MinerFees miner = 2;
 }
 message Limits {
-    int64 minimal = 1;
-    int64 maximal = 2;
+    uint32 minimal = 1;
+    uint32 maximal = 2;
 }
 
 message GetServiceInfoRequest {}
