@@ -33,8 +33,8 @@ type GetPairsResponse struct {
 	Pairs    map[string]struct {
 		Rate   float32 `json:"rate"`
 		Limits struct {
-			Maximal int `json:"maximal"`
-			Minimal int `json:"minimal"`
+			Maximal int64 `json:"maximal"`
+			Minimal int64 `json:"minimal"`
 		} `json:"limits"`
 		Fees struct {
 			Percentage float32 `json:"percentage"`
