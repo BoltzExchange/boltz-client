@@ -81,7 +81,7 @@ message SwapInfo {
     string redeem_script = 7;
     string invoice = 8;
     string lockup_address = 9;
-    int64 expected_amount = 10;
+    int expected_amount = 10;
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
 
@@ -122,7 +122,7 @@ message ReverseSwapInfo {
     string redeem_script = 7;
     string invoice = 8;
     string claim_address = 9;
-    int64 onchain_amount = 10;
+    int onchain_amount = 10;
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
@@ -148,8 +148,8 @@ message Fees {
     MinerFees miner = 2;
 }
 message Limits {
-    int64 minimal = 1;
-    int64 maximal = 2;
+    int minimal = 1;
+    int maximal = 2;
 }
 
 message GetServiceInfoRequest {}
@@ -189,17 +189,17 @@ message DepositResponse {
 }
 
 message CreateSwapRequest {
-    int64 amount = 1;
+    int amount = 1;
 }
 message CreateSwapResponse {
     string id = 1;
     string address = 2;
-    int64 expected_amount = 3;
+    int expected_amount = 3;
     string bip21 = 4;
 }
 
 message CreateChannelRequest {
-    int64 amount = 1;
+    int amount = 1;
 
     /*
     Percentage of inbound liquidity the channel that is opened should have.
@@ -210,7 +210,7 @@ message CreateChannelRequest {
 };
 
 message CreateReverseSwapRequest {
-    int64 amount = 1;
+    int amount = 1;
     // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
     bool accept_zero_conf = 3;
