@@ -258,7 +258,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
-	invoice, err := server.lnd.AddInvoice(request.Amount, nil, 0, utils.GetSwapMemo(server.symbol))
+	invoice, err := server.lnd.AddInvoice(int64(request.Amount), nil, 0, utils.GetSwapMemo(server.symbol))
 
 	if err != nil {
 		return nil, handleError(err)
@@ -355,7 +355,7 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 
 	invoice, err := server.lnd.AddHoldInvoice(
 		preimageHash,
-		request.Amount,
+		int64(request.Amount),
 		// TODO: query timeout block delta from API
 		utils.CalculateInvoiceExpiry(144, utils.GetBlockTime(server.symbol)),
 		"Channel Creation from "+server.symbol,
@@ -415,7 +415,7 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 	channelCreation := database.ChannelCreation{
 		SwapId:                 response.Id,
 		Status:                 boltz.ChannelNone,
-		InboundLiquidity:       int(inboundLiquidity),
+		InboundLiquidity:       inboundLiquidity,
 		Private:                request.Private,
 		FundingTransactionId:   "",
 		FundingTransactionVout: 0,
@@ -499,7 +499,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		Type:           "reverseSubmarine",
 		PairId:         server.symbol + "/" + server.symbol,
 		OrderSide:      "buy",
-		InvoiceAmount:  int(request.Amount),
+		InvoiceAmount:  uint64(request.Amount),
 		PreimageHash:   hex.EncodeToString(preimageHash),
 		ClaimPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
 	})

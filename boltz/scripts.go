@@ -11,7 +11,7 @@ import (
 
 var invalidRedeemScript = errors.New("invalid redeem script")
 
-func CheckSwapScript(redeemScript, preimageHash []byte, refundKey *btcec.PrivateKey, timeoutBlockHeight int) error {
+func CheckSwapScript(redeemScript, preimageHash []byte, refundKey *btcec.PrivateKey, timeoutBlockHeight uint32) error {
 	disassembledScript, err := txscript.DisasmString(redeemScript)
 
 	if err != nil {
@@ -40,7 +40,7 @@ func CheckSwapScript(redeemScript, preimageHash []byte, refundKey *btcec.Private
 	return nil
 }
 
-func CheckReverseSwapScript(redeemScript, preimageHash []byte, claimKey *btcec.PrivateKey, timeoutBlockHeight int) error {
+func CheckReverseSwapScript(redeemScript, preimageHash []byte, claimKey *btcec.PrivateKey, timeoutBlockHeight uint32) error {
 	disassembledScript, err := txscript.DisasmString(redeemScript)
 
 	if err != nil {
@@ -73,7 +73,7 @@ func CheckReverseSwapScript(redeemScript, preimageHash []byte, claimKey *btcec.P
 	return nil
 }
 
-func formatHeight(height int) string {
+func formatHeight(height uint32) string {
 	test, _ := txscript.NewScriptBuilder().AddInt64(int64(height)).Script()
 	return hex.EncodeToString(test[1:])
 }
