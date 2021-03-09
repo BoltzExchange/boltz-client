@@ -20,8 +20,8 @@ type Swap struct {
 	RedeemScript        []byte
 	Invoice             string
 	Address             string
-	ExpectedAmount      int
-	TimoutBlockHeight   int
+	ExpectedAmount      uint64
+	TimoutBlockHeight   uint32
 	LockupTransactionId string
 	RefundTransactionId string
 }
@@ -36,8 +36,8 @@ type SwapSerialized struct {
 	RedeemScript        string
 	Invoice             string
 	Address             string
-	ExpectedAmount      int
-	TimeoutBlockHeight  int
+	ExpectedAmount      uint64
+	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	RefundTransactionId string
 }
@@ -177,7 +177,7 @@ func (database *Database) QueryPendingSwaps() ([]Swap, error) {
 }
 
 func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32) ([]Swap, error) {
-	return database.querySwaps("SELECT * FROM swaps WHERE (state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "' OR state = '"+ strconv.Itoa(int(boltzrpc.SwapState_SERVER_ERROR)) + "') AND timeoutBlockHeight <= " + strconv.FormatUint(uint64(currentBlockHeight), 10))
+	return database.querySwaps("SELECT * FROM swaps WHERE (state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "' OR state = '" + strconv.Itoa(int(boltzrpc.SwapState_SERVER_ERROR)) + "') AND timeoutBlockHeight <= " + strconv.FormatUint(uint64(currentBlockHeight), 10))
 }
 
 func (database *Database) CreateSwap(swap Swap) error {

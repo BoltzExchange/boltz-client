@@ -299,7 +299,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 			return
 		}
 
-		logger.Info("Found output for Swap " + swap.Id + " of " + strconv.Itoa(swapRates.OnchainAmount) + " satoshis")
+		logger.Info("Found output for Swap " + swap.Id + " of " + strconv.FormatUint(swapRates.OnchainAmount, 10) + " satoshis")
 
 		lndInfo, err := nursery.lnd.GetInfo()
 
@@ -320,7 +320,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 			return
 		}
 
-		logger.Info("Generated new invoice for Swap " + swap.Id + " for " + strconv.Itoa(swapRates.SubmarineSwap.InvoiceAmount) + " satoshis")
+		logger.Info("Generated new invoice for Swap " + swap.Id + " for " + strconv.FormatUint(swapRates.SubmarineSwap.InvoiceAmount, 10) + " satoshis")
 
 		_, err = nursery.boltz.SetInvoice(boltz.SetInvoiceRequest{
 			Id:      swap.Id,
@@ -413,7 +413,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		}
 
 		if invoiceInfo.State != lnrpc.Invoice_SETTLED {
-			logger.Warning(swapType + " " + swap.Id + " was not actually settled. Refunding at block " + strconv.Itoa(swap.TimoutBlockHeight))
+			logger.Warning(swapType + " " + swap.Id + " was not actually settled. Refunding at block " + strconv.FormatUint(uint64(swap.TimoutBlockHeight), 10))
 			return
 		}
 
@@ -439,7 +439,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 	}
 }
 
-func parseChannelPoint(channelPoint string) (string, int, error) {
+func parseChannelPoint(channelPoint string) (string, uint32, error) {
 	split := strings.Split(channelPoint, ":")
 	vout, err := strconv.Atoi(split[1])
 
@@ -447,7 +447,7 @@ func parseChannelPoint(channelPoint string) (string, int, error) {
 		return "", 0, err
 	}
 
-	return split[0], vout, nil
+	return split[0], uint32(vout), nil
 }
 
 func getSwapType(isChannelCreation bool) string {

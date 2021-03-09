@@ -21,8 +21,8 @@ type ReverseSwap struct {
 	RedeemScript        []byte
 	Invoice             string
 	ClaimAddress        string
-	OnchainAmount       int
-	TimeoutBlockHeight  int
+	OnchainAmount       uint64
+	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
 }
@@ -38,8 +38,8 @@ type ReverseSwapSerialized struct {
 	RedeemScript        string
 	Invoice             string
 	ClaimAddress        string
-	OnchainAmount       int
-	TimeoutBlockHeight  int
+	OnchainAmount       uint64
+	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
 }

@@ -107,7 +107,7 @@ func (nursery *Nursery) updateChannelCreationStatus(channelCreation *database.Ch
 	}
 }
 
-func calculateChannelCreationCapacity(invoiceAmount float64, inboundLiquidity int) int64 {
+func calculateChannelCreationCapacity(invoiceAmount float64, inboundLiquidity uint32) int64 {
 	capacity := invoiceAmount / (1 - (float64(inboundLiquidity) / 100))
 	return int64(math.Floor(capacity))
 }

@@ -19,7 +19,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 		Invoice:             serializedSwap.Invoice,
 		LockupAddress:       serializedSwap.Address,
 		ExpectedAmount:      int64(serializedSwap.ExpectedAmount),
-		TimeoutBlockHeight:  uint32(serializedSwap.TimeoutBlockHeight),
+		TimeoutBlockHeight:  serializedSwap.TimeoutBlockHeight,
 		LockupTransactionId: serializedSwap.LockupTransactionId,
 		RefundTransactionId: serializedSwap.RefundTransactionId,
 	}
@@ -31,10 +31,10 @@ func serializeChannelCreation(channelCreation *database.ChannelCreation) *boltzr
 	return &boltzrpc.ChannelCreationInfo{
 		SwapId:                 serializedChannelCreation.SwapId,
 		Status:                 serializedChannelCreation.Status,
-		InboundLiquidity:       uint32(serializedChannelCreation.InboundLiquidity),
+		InboundLiquidity:       serializedChannelCreation.InboundLiquidity,
 		Private:                serializedChannelCreation.Private,
 		FundingTransactionId:   serializedChannelCreation.FundingTransactionId,
-		FundingTransactionVout: uint32(serializedChannelCreation.FundingTransactionVout),
+		FundingTransactionVout: serializedChannelCreation.FundingTransactionVout,
 	}
 }
 
@@ -52,7 +52,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		Invoice:             serializedReverseSwap.Invoice,
 		ClaimAddress:        serializedReverseSwap.ClaimAddress,
 		OnchainAmount:       int64(serializedReverseSwap.OnchainAmount),
-		TimeoutBlockHeight:  uint32(serializedReverseSwap.TimeoutBlockHeight),
+		TimeoutBlockHeight:  serializedReverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: serializedReverseSwap.LockupTransactionId,
 		ClaimTransactionId:  serializedReverseSwap.ClaimTransactionId,
 	}

@@ -21,10 +21,10 @@ type GetVersionResponse struct {
 }
 
 type symbolMinerFees struct {
-	Normal  int `json:"normal"`
+	Normal  uint64 `json:"normal"`
 	Reverse struct {
-		Lockup int `json:"lockup"`
-		Claim  int `json:"claim"`
+		Lockup uint64 `json:"lockup"`
+		Claim  uint64 `json:"claim"`
 	} `json:"reverse"`
 }
 
@@ -33,8 +33,8 @@ type GetPairsResponse struct {
 	Pairs    map[string]struct {
 		Rate   float32 `json:"rate"`
 		Limits struct {
-			Maximal int `json:"maximal"`
-			Minimal int `json:"minimal"`
+			Maximal uint64 `json:"maximal"`
+			Minimal uint64 `json:"minimal"`
 		} `json:"limits"`
 		Fees struct {
 			Percentage float32 `json:"percentage"`
@@ -61,7 +61,7 @@ type SwapStatusResponse struct {
 	Status  string `json:"status"`
 	Channel struct {
 		FundingTransactionId   string `json:"fundingTransactionId"`
-		FundingTransactionVout int    `json:"fundingTransactionVout"`
+		FundingTransactionVout uint32 `json:"fundingTransactionVout"`
 	} `json:"channel"`
 	Transaction struct {
 		Id  string `json:"id"`
@@ -109,8 +109,8 @@ type CreateSwapResponse struct {
 	Address            string `json:"address"`
 	RedeemScript       string `json:"redeemScript"`
 	AcceptZeroConf     bool   `json:"acceptZeroConf"`
-	ExpectedAmount     int    `json:"expectedAmount"`
-	TimeoutBlockHeight int    `json:"timeoutBlockHeight"`
+	ExpectedAmount     uint64 `json:"expectedAmount"`
+	TimeoutBlockHeight uint32 `json:"timeoutBlockHeight"`
 
 	Error string `json:"error"`
 }
@@ -120,9 +120,9 @@ type SwapRatesRequest struct {
 }
 
 type SwapRatesResponse struct {
-	OnchainAmount int `json:"onchainAmount"`
+	OnchainAmount uint64 `json:"onchainAmount"`
 	SubmarineSwap struct {
-		InvoiceAmount int `json:"invoiceAmount"`
+		InvoiceAmount uint64 `json:"invoiceAmount"`
 	} `json:"submarineSwap"`
 
 	Error string `json:"error"`
@@ -141,7 +141,7 @@ type CreateReverseSwapRequest struct {
 	Type           string `json:"type"`
 	PairId         string `json:"pairId"`
 	OrderSide      string `json:"orderSide"`
-	InvoiceAmount  int    `json:"invoiceAmount"`
+	InvoiceAmount  uint64 `json:"invoiceAmount"`
 	PreimageHash   string `json:"preimageHash"`
 	ClaimPublicKey string `json:"claimPublicKey"`
 }
@@ -166,10 +166,10 @@ type CreateChannelCreationRequest struct {
 type CreateReverseSwapResponse struct {
 	Id                 string `json:"id"`
 	Invoice            string `json:"invoice"`
-	OnchainAmount      int    `json:"onchainAmount"`
+	OnchainAmount      uint64 `json:"onchainAmount"`
 	RedeemScript       string `json:"redeemScript"`
 	LockupAddress      string `json:"lockupAddress"`
-	TimeoutBlockHeight int    `json:"TimeoutBlockHeight"`
+	TimeoutBlockHeight uint32 `json:"TimeoutBlockHeight"`
 
 	Error string `json:"error"`
 }
@@ -192,8 +192,8 @@ func (boltz *Boltz) GetPairs() (*GetPairsResponse, error) {
 	return &response, err
 }
 
-func (boltz *Boltz) GetFeeEstimation() (*map[string]int, error) {
-	var response map[string]int
+func (boltz *Boltz) GetFeeEstimation() (*map[string]uint64, error) {
+	var response map[string]uint64
 	err := boltz.sendGetRequest("/getfeeestimation", &response)
 
 	return &response, err

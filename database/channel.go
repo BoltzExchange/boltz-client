@@ -9,19 +9,19 @@ import (
 type ChannelCreation struct {
 	SwapId                 string
 	Status                 boltz.ChannelState
-	InboundLiquidity       int
+	InboundLiquidity       uint32
 	Private                bool
 	FundingTransactionId   string
-	FundingTransactionVout int
+	FundingTransactionVout uint32
 }
 
 type ChannelCreationSerialized struct {
 	SwapId                 string
 	Status                 string
-	InboundLiquidity       int
+	InboundLiquidity       uint32
 	Private                bool
 	FundingTransactionId   string
-	FundingTransactionVout int
+	FundingTransactionVout uint32
 }
 
 func (channelCreation *ChannelCreation) Serialize() ChannelCreationSerialized {
@@ -103,7 +103,7 @@ func (database *Database) CreateChannelCreation(channelCreation ChannelCreation)
 	return statement.Close()
 }
 
-func (database *Database) SetChannelFunding(channelCreation *ChannelCreation, fundingTransactionId string, fundingTransactionVout int) error {
+func (database *Database) SetChannelFunding(channelCreation *ChannelCreation, fundingTransactionId string, fundingTransactionVout uint32) error {
 	channelCreation.Status = boltz.ChannelAccepted
 	channelCreation.FundingTransactionId = fundingTransactionId
 	channelCreation.FundingTransactionVout = fundingTransactionVout

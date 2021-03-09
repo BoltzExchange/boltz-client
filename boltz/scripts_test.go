@@ -15,7 +15,7 @@ func TestCheckSwapScript(t *testing.T) {
 	key, _ := hex.DecodeString("88c4ac1e6d099ea63eda4a0ae4863420dbca9aa1bce536aa63d46db28c7b780e")
 	refundKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), key)
 
-	timeoutBlockHeight := 248
+	var timeoutBlockHeight uint32 = 248
 
 	assert.Nil(t, CheckSwapScript(redeemScript, preimageHash, refundKey, timeoutBlockHeight))
 
@@ -34,7 +34,7 @@ func TestCheckReverseSwapScript(t *testing.T) {
 	key, _ := hex.DecodeString("dddc90e33843662631fb8c3833c4743ffd8f00a94715735633bf178e62eb291c")
 	claimKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), key)
 
-	timeoutBlockHeight := 248
+	var timeoutBlockHeight uint32 = 248
 
 	assert.Nil(t, CheckReverseSwapScript(redeemScript, preimageHash, claimKey, timeoutBlockHeight))
 
