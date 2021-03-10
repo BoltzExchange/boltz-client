@@ -1,4 +1,10 @@
 
+<a name="v1.2.5"></a>
+## [v1.2.5] - 2021-03-10
+### Fix
+- replace int data type ([#41](https://github.com/BoltzExchange/boltz-lnd/issues/41))
+
+
 <a name="v1.2.4"></a>
 ## [v1.2.4] - 2021-03-01
 ### Fix
@@ -106,6 +112,7 @@
 - improve Channel Creation enforcement
 
 
+[v1.2.5]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.4...v1.2.5
 [v1.2.4]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.3...v1.2.4
 [v1.2.3]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.2...v1.2.3
 [v1.2.2]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.1...v1.2.2
