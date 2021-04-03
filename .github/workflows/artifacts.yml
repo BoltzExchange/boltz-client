@@ -26,7 +26,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
 
       - name: Install C cross compilers
-        run: sudo apt-get update && sudo apt-get -y install gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi gcc-mingw-w64
+        run: sudo apt-get update && sudo apt-get -y install gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi gcc-mingw-w64 gcc-mingw-w64-i686
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -60,6 +60,12 @@ jobs:
         with:
           name: boltz-lnd-windows-amd64
           path: binaries/windows-amd64/
+
+      - name: Upload Windows 386 artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: boltz-lnd-windows-386
+          path: binaries/windows-386/
 
   darwin:
     name: Build binaries for Darwin

@@ -76,7 +76,7 @@ install: patch-btcutil
 
 binaries:
 	@$(call print, "Compiling binaries")
-	eval ./binaries.sh linux-amd64 linux-arm64 linux-arm windows-amd64
+	eval ./binaries.sh linux-amd64 linux-arm64 linux-arm windows-amd64 windows-386
 
 #
 # Utils

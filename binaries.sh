@@ -28,6 +28,10 @@ function cc_version() {
           "amd64")
             echo "x86_64-w64-mingw32-gcc"
             ;;
+
+          "386")
+            echo "i686-w64-mingw32-gcc"
+            ;;
         esac
   esac
 }
