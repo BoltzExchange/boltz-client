@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/btcsuite/btcd/btcec"
-	"strconv"
 )
 
 type ReverseSwap struct {
@@ -87,7 +88,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"expectedAmount":      &reverseSwap.OnchainAmount,
 			"timeoutBlockheight":  &reverseSwap.TimeoutBlockHeight,
 			"lockupTransactionId": &reverseSwap.LockupTransactionId,
-			"claimTransactionId":  &reverseSwap.ClaimAddress,
+			"claimTransactionId":  &reverseSwap.ClaimTransactionId,
 		},
 	)
 
