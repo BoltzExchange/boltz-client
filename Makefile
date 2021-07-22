@@ -94,4 +94,8 @@ changelog:
 	@$(call print, "Updating changelog")
 	$(CHANGELOG)
 
+docker:
+	@$(call print, "Building docker image")
+	docker build -t boltz/boltz-lnd:$(version) .
+
 .PHONY: build binaries

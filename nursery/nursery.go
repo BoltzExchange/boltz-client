@@ -2,6 +2,11 @@ package nursery
 
 import (
 	"errors"
+	"math"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
@@ -10,10 +15,6 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
-	"math"
-	"strconv"
-	"sync"
-	"time"
 )
 
 type Nursery struct {
@@ -110,7 +111,7 @@ func (nursery *Nursery) getFeeEstimation() (int64, error) {
 	}
 
 	// Divide by 4 to get the fee per kilo vbyte and by 1000 to get the fee per vbyte
-	return int64(math.Round(float64(feeResponse.SatPerKw) / 4000)), nil
+	return maxInt64(int64(math.Round(float64(feeResponse.SatPerKw)/4000)), 2), nil
 }
 
 func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx) error {
@@ -129,4 +130,12 @@ func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx) error {
 	logger.Info("Broadcast transaction with Boltz API")
 
 	return nil
+}
+
+func maxInt64(a int64, b int64) int64 {
+	if a > b {
+		return a
+	}
+
+	return b
 }
