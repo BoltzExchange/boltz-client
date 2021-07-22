@@ -1,4 +1,14 @@
 
+<a name="v1.2.6"></a>
+## [v1.2.6] - 2021-07-22
+### Feat
+- add Dockerfile ([#47](https://github.com/BoltzExchange/boltz-lnd/issues/47))
+
+### Fix
+- set fee floor to 2 sat/vByte
+- claimTransactionId typo ([#45](https://github.com/BoltzExchange/boltz-lnd/issues/45))
+
+
 <a name="v1.2.5"></a>
 ## [v1.2.5] - 2021-03-10
 ### Fix
@@ -112,6 +122,7 @@
 - improve Channel Creation enforcement
 
 
+[v1.2.6]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.5...v1.2.6
 [v1.2.5]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.4...v1.2.5
 [v1.2.4]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.3...v1.2.4
 [v1.2.3]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.2...v1.2.3
