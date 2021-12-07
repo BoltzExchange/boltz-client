@@ -6,8 +6,8 @@ RUN apk add --no-cache --update alpine-sdk \
     make \
     gcc
 
-# Checkout project.
-RUN git clone https://github.com/BoltzExchange/boltz-lnd /go/src/github.com/BoltzExchange/boltz-lnd
+# Shallow clone project.
+RUN git clone --depth=1 https://github.com/BoltzExchange/boltz-lnd /go/src/github.com/BoltzExchange/boltz-lnd
 
 # Build the binaries.
 RUN cd /go/src/github.com/BoltzExchange/boltz-lnd \
