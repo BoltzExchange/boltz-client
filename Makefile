@@ -96,6 +96,6 @@ changelog:
 
 docker:
 	@$(call print, "Building docker image")
-	docker buildx build --platform linux/amd64 --platform linux/arm64 --platform linux/arm/v7 -t boltz/boltz-lnd:$(version) -t boltz/boltz-lnd:latest .
+	docker buildx build --push --platform linux/amd64 --platform linux/arm64 --platform linux/arm/v7 -t boltz/boltz-lnd:$(version) -t boltz/boltz-lnd:latest .
 
 .PHONY: build binaries
