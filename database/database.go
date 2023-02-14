@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -66,7 +66,7 @@ func (database *Database) createTables() error {
 }
 
 func parsePrivateKey(privateKeyBytes []byte) (*btcec.PrivateKey, *btcec.PublicKey) {
-	return btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	return btcec.PrivKeyFromBytes(privateKeyBytes)
 }
 
 func formatPrivateKey(key *btcec.PrivateKey) string {

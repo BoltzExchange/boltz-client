@@ -8,7 +8,7 @@ import (
 
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 type ReverseSwap struct {
