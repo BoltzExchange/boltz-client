@@ -13,14 +13,14 @@ func TestCheckSwapScript(t *testing.T) {
 	preimageHash, _ := hex.DecodeString("26cb777d4fa07a4fe47aa25bed4db29dfe32edfaac3f708299decc6d1199109c")
 
 	key, _ := hex.DecodeString("88c4ac1e6d099ea63eda4a0ae4863420dbca9aa1bce536aa63d46db28c7b780e")
-	refundKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), key)
+	refundKey, _ := btcec.PrivKeyFromBytes(key)
 
 	var timeoutBlockHeight uint32 = 248
 
 	assert.Nil(t, CheckSwapScript(redeemScript, preimageHash, refundKey, timeoutBlockHeight))
 
 	err := errors.New("invalid redeem script")
-	newKey, _ := btcec.NewPrivateKey(btcec.S256())
+	newKey, _ := btcec.NewPrivateKey()
 
 	assert.Equal(t, err, CheckSwapScript(redeemScript, []byte{}, refundKey, timeoutBlockHeight))
 	assert.Equal(t, err, CheckSwapScript(redeemScript, preimageHash, newKey, timeoutBlockHeight))
@@ -32,14 +32,14 @@ func TestCheckReverseSwapScript(t *testing.T) {
 	preimageHash, _ := hex.DecodeString("fa9ef1d253d34e9e44da97b00c6ec6a95058f646de35ddb7649fc3313ac6fc61")
 
 	key, _ := hex.DecodeString("dddc90e33843662631fb8c3833c4743ffd8f00a94715735633bf178e62eb291c")
-	claimKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), key)
+	claimKey, _ := btcec.PrivKeyFromBytes(key)
 
 	var timeoutBlockHeight uint32 = 248
 
 	assert.Nil(t, CheckReverseSwapScript(redeemScript, preimageHash, claimKey, timeoutBlockHeight))
 
 	err := errors.New("invalid redeem script")
-	newKey, _ := btcec.NewPrivateKey(btcec.S256())
+	newKey, _ := btcec.NewPrivateKey()
 
 	assert.Equal(t, err, CheckReverseSwapScript(redeemScript, []byte{}, claimKey, timeoutBlockHeight))
 	assert.Equal(t, err, CheckReverseSwapScript(redeemScript, preimageHash, newKey, timeoutBlockHeight))
