@@ -1,11 +1,12 @@
 package rpcserver
 
 import (
-	"github.com/google/logger"
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
+
+	"github.com/google/logger"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 func TestLoadCertificate(t *testing.T) {
-	logger.Init("test", false, false, ioutil.Discard)
+	logger.Init("test", false, false, io.Discard)
 
 	cleanup(t)
 

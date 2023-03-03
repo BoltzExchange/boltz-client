@@ -1,12 +1,13 @@
 package rpcserver
 
 import (
+	"os"
+
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/macaroons"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"gopkg.in/macaroon-bakery.v2/bakery"
-	"io/ioutil"
 )
 
 func (server *RpcServer) generateMacaroons(database *database.Database) (*macaroons.Service, error) {
@@ -54,5 +55,5 @@ func writeMacaroon(service macaroons.Service, permissions []bakery.Op, path stri
 		return err
 	}
 
-	return ioutil.WriteFile(path, macaroonBytes, 0600)
+	return os.WriteFile(path, macaroonBytes, 0600)
 }

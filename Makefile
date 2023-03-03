@@ -14,6 +14,8 @@ COMMIT := $(shell git log --pretty=format:'%h' -n 1)
 LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -w -s"
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
+LINT_VERSION := v1.50.1
+
 LINT_BIN := $(GO_BIN)/golangci-lint
 LINT = $(LINT_BIN) run -v --timeout 5m
 
@@ -38,7 +40,7 @@ default: build
 
 $(LINT_BIN):
 	@$(call print, "Fetching linter")
-	go get -u $(LINT_PKG)
+	go install $(LINT_PKG)@$(LINT_VERSION)
 
 $(CHANGELOG_BIN):
 	@$(call print, "Fetching git-chglog")

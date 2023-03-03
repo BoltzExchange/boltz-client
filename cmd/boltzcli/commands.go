@@ -4,11 +4,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	"github.com/urfave/cli"
-	"io/ioutil"
+	"os"
 	"path"
 	"strconv"
+
+	"github.com/BoltzExchange/boltz-lnd/utils"
+	"github.com/urfave/cli"
 )
 
 var getInfoCommand = cli.Command{
@@ -276,7 +277,7 @@ func formatMacaroon(ctx *cli.Context) error {
 
 	macaroonPath = utils.ExpandDefaultPath(macaroonDir, macaroonPath, "admin.macaroon")
 
-	macaroonBytes, err := ioutil.ReadFile(macaroonPath)
+	macaroonBytes, err := os.ReadFile(macaroonPath)
 
 	if err != nil {
 		return errors.New("could not read macaroon file \"" + macaroonPath + "\": " + err.Error())

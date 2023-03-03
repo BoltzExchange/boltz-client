@@ -5,12 +5,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	"io/ioutil"
-	"strconv"
 )
 
 type boltz struct {
@@ -45,7 +46,7 @@ func (boltz *boltz) Connect() error {
 		boltz.ctx = context.Background()
 
 		if !boltz.NoMacaroons {
-			macaroonFile, err := ioutil.ReadFile(boltz.MacaroonPath)
+			macaroonFile, err := os.ReadFile(boltz.MacaroonPath)
 
 			if err != nil {
 				return errors.New(fmt.Sprint("could not read Boltz macaroon: ", err))

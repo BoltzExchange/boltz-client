@@ -5,6 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -15,8 +18,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	"io/ioutil"
-	"strconv"
 )
 
 type LightningClient interface {
@@ -66,7 +67,7 @@ func (lnd *LND) Connect() error {
 	lnd.chainNotifier = chainrpc.NewChainNotifierClient(con)
 
 	if lnd.ctx == nil {
-		macaroonFile, err := ioutil.ReadFile(lnd.Macaroon)
+		macaroonFile, err := os.ReadFile(lnd.Macaroon)
 
 		if err != nil {
 			return errors.New(fmt.Sprint("could not read LND macaroon: ", err))

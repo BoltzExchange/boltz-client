@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -331,7 +330,7 @@ func (boltz *Boltz) sendPostRequest(endpoint string, requestBody interface{}, re
 }
 
 func unmarshalJson(body io.ReadCloser, response interface{}) error {
-	rawBody, err := ioutil.ReadAll(body)
+	rawBody, err := io.ReadAll(body)
 
 	if err != nil {
 		return err
