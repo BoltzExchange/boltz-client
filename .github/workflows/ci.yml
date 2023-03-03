@@ -32,10 +32,6 @@ jobs:
         run: make unit
 
       - name: Lint
-        env:
-          GOPATH: /home/runner/work/
-        run: |
-          export PATH=${PATH}:`go env GOPATH`/bin
-          go get github.com/golangci/golangci-lint/cmd/golangci-lint
-          go mod vendor
-          make lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: 'latest'
