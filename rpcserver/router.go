@@ -15,9 +15,9 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/utils"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/zpay32"
 	"math"
 	"strconv"
@@ -653,7 +653,7 @@ func calculateDepositLimit(limit int64, fees *boltzrpc.Fees, isMin bool) int64 {
 }
 
 func newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {
-	privateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privateKey, err := btcec.NewPrivateKey()
 
 	if err != nil {
 		return nil, nil, err

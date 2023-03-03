@@ -6,7 +6,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"strconv"
 )
 

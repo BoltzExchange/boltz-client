@@ -46,7 +46,7 @@ $(CHANGELOG_BIN):
 
 patch-btcutil:
 	@$(call print, "Patching btcutil")
-	patch -u vendor/github.com/btcsuite/btcutil/address.go -i btcutil.patch --forward || true
+	patch -u vendor/github.com/btcsuite/btcd/btcutil/address.go -i btcutil.patch --forward || true
 
 proto:
 	@$(call print, "Generating protosbufs")

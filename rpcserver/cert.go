@@ -6,6 +6,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/lightningnetwork/lnd/cert"
 	"os"
+	"time"
 )
 
 func loadCertificate(
@@ -17,16 +18,21 @@ func loadCertificate(
 		logger.Warning("Could not find TLS certificate or key")
 		logger.Info("Generating new TLS certificate and key")
 
-		err := cert.GenCertPair(
+		defaultAutogenValidity := 14 * 30 * 24 * time.Hour
+
+		certBytes, keyBytes, err := cert.GenCertPair(
 			"boltz",
-			tlsCertPath,
-			tlsKeyPath,
 			[]string{},
 			[]string{},
 			tlsDisableAutofill,
-			cert.DefaultAutogenValidity,
+			defaultAutogenValidity,
 		)
 
+		if err != nil {
+			return nil, err
+		}
+
+		err = cert.WriteCertPair(tlsCertPath, tlsKeyPath, certBytes, keyBytes)
 		if err != nil {
 			return nil, err
 		}

@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         platform: [ ubuntu-latest ]
-        go-version: [ 1.16.x ]
+        go-version: [ 1.19.x ]
 
     runs-on: ${{ matrix.platform }}
 
@@ -73,7 +73,7 @@ jobs:
     strategy:
       matrix:
         platform: [ macos-latest ]
-        go-version: [ 1.16.x ]
+        go-version: [ 1.19.x ]
 
     runs-on: ${{ matrix.platform }}
 

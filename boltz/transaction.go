@@ -1,10 +1,10 @@
 package boltz
 
 import (
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"math"
 )
 
@@ -123,7 +123,8 @@ func constructTransaction(outputs []OutputDetails, outputAddress btcutil.Address
 
 		// Add the signed witness in case the output is not a legacy one
 		if output.OutputType != Legacy {
-			signatureHash := txscript.NewTxSigHashes(transaction)
+			prevoutFetcher := txscript.NewCannedPrevOutputFetcher(output.LockupTransaction.MsgTx().TxOut[output.Vout].PkScript, output.LockupTransaction.MsgTx().TxOut[output.Vout].Value)
+			signatureHash := txscript.NewTxSigHashes(transaction, prevoutFetcher)
 			signature, err := txscript.RawTxInWitnessSignature(
 				transaction,
 				signatureHash,
