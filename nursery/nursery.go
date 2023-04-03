@@ -102,7 +102,6 @@ func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxO
 	return 0, errors.New("could not find lockup vout")
 }
 
-// TODO: test behaviour on testnet / mainnet
 func (nursery *Nursery) getFeeEstimation() (int64, error) {
 	feeResponse, err := nursery.lnd.EstimateFee(2)
 
@@ -110,8 +109,7 @@ func (nursery *Nursery) getFeeEstimation() (int64, error) {
 		return 0, err
 	}
 
-	// Divide by 4 to get the fee per kilo vbyte and by 1000 to get the fee per vbyte
-	return maxInt64(int64(math.Round(float64(feeResponse.SatPerKw)/4000)), 2), nil
+	return maxInt64(int64(math.Round(float64(feeResponse.SatPerKw)/1000)), 2), nil
 }
 
 func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx) error {

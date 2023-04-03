@@ -3,8 +3,8 @@ package boltz
 import (
 	"crypto/sha256"
 	"errors"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 )
 
 func CheckSwapAddress(chainParams *chaincfg.Params, address string, redeemScript []byte, isNested bool) error {

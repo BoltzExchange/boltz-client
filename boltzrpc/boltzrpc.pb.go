@@ -229,8 +229,7 @@ func (x *SwapInfo) GetRefundTransactionId() string {
 	return ""
 }
 
-//
-//Channel creations are an optional extension to a submarine swap in the data types of boltz-lnd.
+// Channel creations are an optional extension to a submarine swap in the data types of boltz-lnd.
 type ChannelCreationInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -1,4 +1,4 @@
-FROM golang:1.17.5-alpine3.14 as builder
+FROM golang:1.20.2-alpine3.17 as builder
 
 # Install dependencies.
 RUN apk add --no-cache --update \
@@ -16,7 +16,7 @@ RUN cd /go/src/github.com/BoltzExchange/boltz-lnd \
     && make build
 
 # Start a new, final image.
-FROM alpine:3.15 as final
+FROM alpine:3.17 as final
 
 # Root volume for data persistence.
 VOLUME /root/.boltz-lnd
