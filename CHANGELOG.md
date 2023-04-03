@@ -1,4 +1,16 @@
 
+<a name="v1.2.7"></a>
+## [v1.2.7] - 2023-04-03
+### Feat
+- allow disabling mempool.space integration
+- use mempool.space API for fee estimations
+
+### Fix
+- LND fee estimation
+- linting errors
+- Docker build on armv7
+
+
 <a name="v1.2.6"></a>
 ## [v1.2.6] - 2021-07-22
 ### Feat
@@ -122,6 +134,7 @@
 - improve Channel Creation enforcement
 
 
+[v1.2.7]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.6...v1.2.7
 [v1.2.6]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.5...v1.2.6
 [v1.2.5]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.4...v1.2.5
 [v1.2.4]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.3...v1.2.4
