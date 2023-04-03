@@ -24,7 +24,7 @@ type client struct {
 
 func initClient(endpoint string) *client {
 	endpointStripped := strings.TrimSuffix(endpoint, "/")
-	logger.Info("Mempool.space API for fee estimations: " + endpointStripped)
+	logger.Info("mempool.space API for fee estimations: " + endpointStripped)
 
 	return &client{
 		api: endpointStripped,

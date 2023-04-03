@@ -11,25 +11,35 @@ type lndFee interface {
 }
 
 type Mempool struct {
-	lnd lndFee
 	mc  *client
+	lnd lndFee
 }
 
 func Init(lnd lndFee, mcEndpoint string) *Mempool {
+	var mc *client
+
+	if mcEndpoint != "" {
+		mc = initClient(mcEndpoint)
+	} else {
+		logger.Info("Disabled mempool.space integration")
+	}
+
 	return &Mempool{
+		mc:  mc,
 		lnd: lnd,
-		mc:  initClient(mcEndpoint),
 	}
 }
 
 func (m *Mempool) GetFeeEstimation() (int64, error) {
-	feeRecommendation, err := m.mc.getFeeRecommendation()
-	if err == nil {
-		return maxInt64(feeRecommendation.HalfHourFee, 2), nil
-	}
+	if m.mc != nil {
+		feeRecommendation, err := m.mc.getFeeRecommendation()
+		if err == nil {
+			return maxInt64(feeRecommendation.HalfHourFee, 2), nil
+		}
 
-	logger.Warning("Mempool fee estimation failed: " + err.Error())
-	logger.Info("Falling back to LND fee estimation")
+		logger.Warning("Mempool fee estimation failed: " + err.Error())
+		logger.Info("Falling back to LND fee estimation")
+	}
 
 	return m.getLndFeeEstimation()
 }

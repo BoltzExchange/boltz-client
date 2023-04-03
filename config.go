@@ -33,7 +33,7 @@ type Config struct {
 	RPC      *rpcserver.RpcServer `group:"RPC options"`
 	Database *database.Database   `group:"Database options"`
 
-	MempoolApi string `long:"mempool" description:"mempool.space API to use for fee estimations"`
+	MempoolApi string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 
 	Help *helpOptions `group:"Help Options"`
 }
