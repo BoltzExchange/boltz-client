@@ -4,6 +4,7 @@ import (
 	"github.com/BoltzExchange/boltz-lnd"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/BoltzExchange/boltz-lnd/mempool"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
@@ -61,7 +62,15 @@ func main() {
 	}
 
 	swapNursery := &nursery.Nursery{}
-	err = swapNursery.Init(symbol, boltzPubKey, chainParams, cfg.LND, cfg.Boltz, cfg.Database)
+	err = swapNursery.Init(
+		symbol,
+		boltzPubKey,
+		chainParams,
+		cfg.LND,
+		cfg.Boltz,
+		mempool.Init(cfg.LND, cfg.MempoolApi),
+		cfg.Database,
+	)
 
 	if err != nil {
 		logger.Fatal("Could not start Swap nursery: " + err.Error())

@@ -152,7 +152,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			return
 		}
 
-		feeSatPerVbyte, err := nursery.getFeeEstimation()
+		feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
 
 		if err != nil {
 			logger.Error("Could not get LND fee estimation: " + err.Error())

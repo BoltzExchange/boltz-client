@@ -2,7 +2,7 @@ package nursery
 
 import (
 	"errors"
-	"math"
+	"github.com/BoltzExchange/boltz-lnd/mempool"
 	"strconv"
 	"sync"
 	"time"
@@ -25,6 +25,7 @@ type Nursery struct {
 
 	lnd      *lnd.LND
 	boltz    *boltz.Boltz
+	mempool  *mempool.Mempool
 	database *database.Database
 }
 
@@ -40,6 +41,7 @@ func (nursery *Nursery) Init(
 	chainParams *chaincfg.Params,
 	lnd *lnd.LND,
 	boltz *boltz.Boltz,
+	memp *mempool.Mempool,
 	database *database.Database,
 ) error {
 	nursery.symbol = symbol
@@ -49,6 +51,7 @@ func (nursery *Nursery) Init(
 
 	nursery.lnd = lnd
 	nursery.boltz = boltz
+	nursery.mempool = memp
 	nursery.database = database
 
 	logger.Info("Starting nursery")
@@ -102,16 +105,6 @@ func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxO
 	return 0, errors.New("could not find lockup vout")
 }
 
-func (nursery *Nursery) getFeeEstimation() (int64, error) {
-	feeResponse, err := nursery.lnd.EstimateFee(2)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return maxInt64(int64(math.Round(float64(feeResponse.SatPerKw)/1000)), 2), nil
-}
-
 func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx) error {
 	transactionHex, err := boltz.SerializeTransaction(transaction)
 
@@ -128,12 +121,4 @@ func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx) error {
 	logger.Info("Broadcast transaction with Boltz API")
 
 	return nil
-}
-
-func maxInt64(a int64, b int64) int64 {
-	if a > b {
-		return a
-	}
-
-	return b
 }
