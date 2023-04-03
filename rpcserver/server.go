@@ -10,7 +10,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/macaroons"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/btcsuite/btcd/chaincfg"
-	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -81,8 +80,8 @@ func (server *RpcServer) Start(
 		}
 
 		if len(unaryInterceptors) != 0 || len(streamInterceptors) != 0 {
-			chainedUnary := grpcMiddleware.WithUnaryServerChain(unaryInterceptors...)
-			chainedStream := grpcMiddleware.WithStreamServerChain(streamInterceptors...)
+			chainedUnary := grpc.ChainUnaryInterceptor(unaryInterceptors...)
+			chainedStream := grpc.ChainStreamInterceptor(streamInterceptors...)
 
 			serverOpts = append(serverOpts, chainedUnary, chainedStream)
 		}

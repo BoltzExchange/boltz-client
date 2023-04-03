@@ -20,7 +20,7 @@ type helpOptions struct {
 	ShowVersion bool `short:"v" long:"version" description:"Display version and exit"`
 }
 
-type config struct {
+type Config struct {
 	DataDir string `short:"d" long:"datadir" description:"Data directory of boltz-lnd"`
 
 	ConfigFile string `short:"c" long:"configfile" description:"Path to configuration file"`
@@ -33,10 +33,12 @@ type config struct {
 	RPC      *rpcserver.RpcServer `group:"RPC options"`
 	Database *database.Database   `group:"Database options"`
 
+	MempoolApi string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
+
 	Help *helpOptions `group:"Help Options"`
 }
 
-func LoadConfig() *config {
+func LoadConfig() *Config {
 	defaultDataDir, err := utils.GetDefaultDataDir()
 
 	if err != nil {
@@ -44,7 +46,7 @@ func LoadConfig() *config {
 		os.Exit(1)
 	}
 
-	cfg := config{
+	cfg := Config{
 		DataDir: defaultDataDir,
 
 		ConfigFile: "",
@@ -82,6 +84,8 @@ func LoadConfig() *config {
 		Database: &database.Database{
 			Path: "",
 		},
+
+		MempoolApi: "https://mempool.space/api",
 	}
 
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)

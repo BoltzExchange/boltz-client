@@ -8,7 +8,10 @@ import (
 	"github.com/google/logger"
 )
 
-var prefix string
+var (
+	prefix      string
+	initialized bool
+)
 
 func InitLogger(logPath string, logPrefix string) {
 	prefix = logPrefix
@@ -22,22 +25,40 @@ func InitLogger(logPath string, logPrefix string) {
 	logger.Init("boltz-lnd", true, false, file)
 	logger.SetFlags(log.LstdFlags)
 
+	initialized = true
+
 	Info("Initialized logger")
 }
 
 func Fatal(message string) {
+	if !initialized {
+		return
+	}
+
 	logger.Fatal(prefix + message)
 }
 
 func Error(message string) {
+	if !initialized {
+		return
+	}
+
 	logger.Error(prefix + message)
 }
 
 func Warning(message string) {
+	if !initialized {
+		return
+	}
+
 	logger.Warning(prefix + message)
 }
 
 func Info(message string) {
+	if !initialized {
+		return
+	}
+
 	logger.Info(prefix + message)
 }
 

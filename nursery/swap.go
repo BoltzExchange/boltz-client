@@ -75,7 +75,7 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 					continue
 				}
 
-				feeSatPerVbyte, err := nursery.getFeeEstimation()
+				feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
 
 				if err != nil {
 					logger.Error("Could not get LND fee estimation: " + err.Error())
@@ -168,7 +168,7 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetail
 		RedeemScript:       swap.RedeemScript,
 		PrivateKey:         swap.PrivateKey,
 		Preimage:           []byte{},
-		TimeoutBlockHeight: uint32(swap.TimoutBlockHeight),
+		TimeoutBlockHeight: swap.TimoutBlockHeight,
 	}
 }
 
@@ -311,7 +311,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		invoice, err := nursery.lnd.AddInvoice(
 			int64(swapRates.SubmarineSwap.InvoiceAmount),
 			swap.Preimage,
-			utils.CalculateInvoiceExpiry(uint32(swap.TimoutBlockHeight)-lndInfo.BlockHeight, utils.GetBlockTime(nursery.symbol)),
+			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-lndInfo.BlockHeight, utils.GetBlockTime(nursery.symbol)),
 			utils.GetSwapMemo(nursery.symbol),
 		)
 
