@@ -54,6 +54,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		OnchainAmount:       int64(serializedReverseSwap.OnchainAmount),
 		TimeoutBlockHeight:  serializedReverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: serializedReverseSwap.LockupTransactionId,
+		ClaimFeePerVbyte:    reverseSwap.ClaimFeePerVbyte,
 		ClaimTransactionId:  serializedReverseSwap.ClaimTransactionId,
 	}
 }

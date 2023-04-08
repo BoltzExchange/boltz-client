@@ -126,6 +126,7 @@ message ReverseSwapInfo {
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
+    uint32 claim_fee_per_vbyte = 14;
 }
 
 message GetInfoRequest {}
@@ -211,9 +212,14 @@ message CreateChannelRequest {
 
 message CreateReverseSwapRequest {
     int64 amount = 1;
+
     // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
+
     bool accept_zero_conf = 3;
+
+    // sat/vByte fee for the claim transaction; if not set, a reasonable fee will be queried from mempool.space or LND
+    uint32 sat_per_vbyte_fee = 4;
 }
 message CreateReverseSwapResponse {
     string id = 1;

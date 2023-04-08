@@ -38,12 +38,28 @@ func Fatal(message string) {
 	logger.Fatal(prefix + message)
 }
 
+func Fatalf(message string, args ...any) {
+	if !initialized {
+		return
+	}
+
+	logger.Fatalf(prefix+message, args...)
+}
+
 func Error(message string) {
 	if !initialized {
 		return
 	}
 
 	logger.Error(prefix + message)
+}
+
+func Errorf(message string, args ...any) {
+	if !initialized {
+		return
+	}
+
+	logger.Errorf(prefix+message, args...)
 }
 
 func Warning(message string) {
@@ -54,12 +70,28 @@ func Warning(message string) {
 	logger.Warning(prefix + message)
 }
 
+func Warningf(message string, args ...any) {
+	if !initialized {
+		return
+	}
+
+	logger.Warningf(prefix+message, args...)
+}
+
 func Info(message string) {
 	if !initialized {
 		return
 	}
 
 	logger.Info(prefix + message)
+}
+
+func Infof(message string, args ...any) {
+	if !initialized {
+		return
+	}
+
+	logger.Infof(prefix+message, args...)
 }
 
 func PrintFatal(format string, a ...interface{}) {

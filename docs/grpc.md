@@ -134,6 +134,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`int64`](#int64) |  |  |
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new P2WKH address from LND |
 | `accept_zero_conf` | [`bool`](#bool) |  |  |
+| `sat_per_vbyte_fee` | [`uint32`](#uint32) |  | sat/vByte fee for the claim transaction; if not set, a reasonable fee will be queried from mempool.space or LND |
 
 
 
@@ -356,6 +357,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `claim_transaction_id` | [`string`](#string) |  |  |
+| `claim_fee_per_vbyte` | [`uint32`](#uint32) |  |  |
 
 
 
