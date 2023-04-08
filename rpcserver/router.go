@@ -355,7 +355,7 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 
 	invoice, err := server.lnd.AddHoldInvoice(
 		preimageHash,
-		int64(request.Amount),
+		request.Amount,
 		// TODO: query timeout block delta from API
 		utils.CalculateInvoiceExpiry(144, utils.GetBlockTime(server.symbol)),
 		"Channel Creation from "+server.symbol,
@@ -526,6 +526,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		OnchainAmount:       response.OnchainAmount,
 		TimeoutBlockHeight:  response.TimeoutBlockHeight,
 		LockupTransactionId: "",
+		ClaimFeePerVbyte:    request.SatPerVbyteFee,
 		ClaimTransactionId:  "",
 	}
 

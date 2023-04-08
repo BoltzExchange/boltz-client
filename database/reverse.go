@@ -25,6 +25,7 @@ type ReverseSwap struct {
 	OnchainAmount       uint64
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
+	ClaimFeePerVbyte    uint32
 	ClaimTransactionId  string
 }
 
@@ -42,6 +43,7 @@ type ReverseSwapSerialized struct {
 	OnchainAmount       uint64
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
+	ClaimFeePerVbyte    uint32
 	ClaimTransactionId  string
 }
 
@@ -60,6 +62,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		OnchainAmount:       reverseSwap.OnchainAmount,
 		TimeoutBlockHeight:  reverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: reverseSwap.LockupTransactionId,
+		ClaimFeePerVbyte:    reverseSwap.ClaimFeePerVbyte,
 		ClaimTransactionId:  reverseSwap.ClaimTransactionId,
 	}
 }
@@ -88,6 +91,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"expectedAmount":      &reverseSwap.OnchainAmount,
 			"timeoutBlockheight":  &reverseSwap.TimeoutBlockHeight,
 			"lockupTransactionId": &reverseSwap.LockupTransactionId,
+			"claimFeePerVbyte":    &reverseSwap.ClaimFeePerVbyte,
 			"claimTransactionId":  &reverseSwap.ClaimTransactionId,
 		},
 	)
@@ -169,7 +173,24 @@ func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := `
+INSERT INTO reverseSwaps (
+	id,
+	state,
+	error,
+	status,
+	acceptZeroConf,
+	privateKey,
+	preimage,
+	redeemScript,
+	invoice,
+	claimAddress,
+	expectedAmount,
+	timeoutBlockheight,
+	lockupTransactionId,
+	claimFeePerVbyte,
+	claimTransactionId
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -190,6 +211,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		reverseSwap.OnchainAmount,
 		reverseSwap.TimeoutBlockHeight,
 		reverseSwap.LockupTransactionId,
+		reverseSwap.ClaimFeePerVbyte,
 		reverseSwap.ClaimTransactionId,
 	)
 
@@ -222,9 +244,15 @@ func (database *Database) SetReverseSwapLockupTransactionId(reverseSwap *Reverse
 	return err
 }
 
-func (database *Database) SetReverseSwapClaimTransactionId(reverseSwap *ReverseSwap, claimTransactionId string) error {
+func (database *Database) SetReverseSwapClaimTransactionId(reverseSwap *ReverseSwap, claimTransactionId string, satPerVbyte int64) error {
 	reverseSwap.ClaimTransactionId = claimTransactionId
+	reverseSwap.ClaimFeePerVbyte = uint32(satPerVbyte)
 
-	_, err := database.db.Exec("UPDATE reverseSwaps SET claimTransactionId = ? WHERE id = ?", claimTransactionId, reverseSwap.Id)
+	_, err := database.db.Exec(
+		"UPDATE reverseSwaps SET claimTransactionId = ?, claimFeePerVbyte = ? WHERE id = ?",
+		reverseSwap.ClaimTransactionId,
+		reverseSwap.ClaimFeePerVbyte,
+		reverseSwap.Id,
+	)
 	return err
 }

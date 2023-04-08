@@ -10,6 +10,62 @@ import (
 
 // TODO: prepare insert statements only once
 
+const (
+	createTables = `
+CREATE TABLE IF NOT EXISTS version (
+    version INT
+);
+
+CREATE TABLE IF NOT EXISTS macaroons (
+    id VARCHAR PRIMARY KEY,
+    rootKey VARCHAR
+);
+
+CREATE TABLE IF NOT EXISTS swaps (
+    id VARCHAR PRIMARY KEY,
+    state INT,
+    error VARCHAR,
+    status VARCHAR,
+    privateKey VARCHAR,
+    preimage VARCHAR,
+    redeemScript VARCHAR,
+    invoice VARCHAR,
+    address VARCHAR,
+    expectedAmount INT,
+    timeoutBlockheight INTEGER,
+    lockupTransactionId VARCHAR,
+    refundTransactionId VARCHAR
+);
+
+CREATE TABLE IF NOT EXISTS reverseSwaps (
+    id VARCHAR PRIMARY KEY,
+    state INT,
+    error VARCHAR,
+    status VARCHAR,
+    acceptZeroConf BOOLEAN,
+    privateKey VARCHAR,
+    preimage VARCHAR,
+    redeemScript VARCHAR,
+    invoice VARCHAR,
+    claimAddress VARCHAR,
+    expectedAmount INT,
+    timeoutBlockheight INTEGER,
+    lockupTransactionId VARCHAR,
+    claimFeePerVbyte INTEGER,
+    claimTransactionId VARCHAR
+);
+
+CREATE TABLE IF NOT EXISTS channelCreations (
+    swapId VARCHAR PRIMARY KEY,
+    status VARCHAR,
+    inboundLiquidity INT,
+    private BOOLEAN,
+    fundingTransactionId VARCHAR,
+    fundingTransactionVout INT
+);
+`
+)
+
 type Database struct {
 	Path string `long:"database.path" description:"Path to the database file"`
 
@@ -36,32 +92,7 @@ func (database *Database) Connect() error {
 }
 
 func (database *Database) createTables() error {
-	_, err := database.db.Exec("CREATE TABLE IF NOT EXISTS version (version INT)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS macaroons (id VARCHAR PRIMARY KEY, rootKey VARCHAR)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, state INT, error VARCHAR, status VARCHAR, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, refundTransactionId VARCHAR)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS reverseSwaps (id VARCHAR PRIMARY KEY, state INT, error VARCHAR, status VARCHAR, acceptZeroConf BOOLEAN, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, claimAddress VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, claimTransactionId VARCHAR)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS channelCreations (swapId VARCHAR PRIMARY KEY, status VARCHAR, inboundLiquidity INT, private BOOLEAN, fundingTransactionId VARCHAR, fundingTransactionVout INT)")
-
+	_, err := database.db.Exec(createTables)
 	return err
 }
 

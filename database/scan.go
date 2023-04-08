@@ -7,7 +7,6 @@ import (
 // TODO: optimize (query columns only once per query (improves speed by like a microsecond per row so low priority))
 func scanRow(row *sql.Rows, rowValues map[string]interface{}) error {
 	columns, err := row.Columns()
-
 	if err != nil {
 		return err
 	}
@@ -18,7 +17,5 @@ func scanRow(row *sql.Rows, rowValues map[string]interface{}) error {
 		values = append(values, rowValues[column])
 	}
 
-	err = row.Scan(values...)
-
-	return err
+	return row.Scan(values...)
 }

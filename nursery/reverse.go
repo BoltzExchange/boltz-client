@@ -152,11 +152,13 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			return
 		}
 
-		feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
-
-		if err != nil {
-			logger.Error("Could not get LND fee estimation: " + err.Error())
-			return
+		feeSatPerVbyte := int64(reverseSwap.ClaimFeePerVbyte)
+		if feeSatPerVbyte == 0 {
+			feeSatPerVbyte, err = nursery.mempool.GetFeeEstimation()
+			if err != nil {
+				logger.Error("Could not get fee estimation: " + err.Error())
+				return
+			}
 		}
 
 		logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for claim transaction")
@@ -191,7 +193,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			return
 		}
 
-		err = nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, claimTransactionId)
+		err = nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, claimTransactionId, feeSatPerVbyte)
 
 		if err != nil {
 			logger.Error("Could not set claim transaction id in database: " + err.Error())
