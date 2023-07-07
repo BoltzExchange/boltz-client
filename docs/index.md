@@ -14,10 +14,10 @@
 
 The LND node to which the daemon connects has to be version `v0.10.0-beta` or higher. Also, LND needs to be compiled with these build flags (official binaries from Lightning Labs releases include them):
 
-- `invoicerpc` (hold invoices)
-- `routerrpc` (multi path payments)
-- `chainrpc` (block listener)
-- `walletrpc` (fee estimations)
+* `invoicerpc` (hold invoices)
+* `routerrpc` (multi path payments)
+* `chainrpc` (block listener)
+* `walletrpc` (fee estimations)
 
 Binaries for the latest release of `boltz-lnd` can be found on the [releases page](https://github.com/BoltzExchange/boltz-lnd/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided in the [README](https://github.com/BoltzExchange/boltz-lnd#building).
 
@@ -25,7 +25,7 @@ Binaries for the latest release of `boltz-lnd` can be found on the [releases pag
 
 `boltzd` requires a connection to a LND node. In most cases the CLI flags `--lnd.certificate <path to the tls.cert of LND>` and `--lnd.macaroon <path to the admin.macaroon of LND>` should be enough. To view all CLI flags use `--help`.
 
-`boltzd` can also be configured via a TOML file. The full documentation for the configuration file can be found [here](configuration.md).
+`boltzd` can also be configured via a TOML file. The full documentation for the configuration file can be found [here](./).
 
 ### Macaroons
 
