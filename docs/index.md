@@ -1,14 +1,14 @@
-# boltz-lnd v1.2.3 documentation
+# Boltz-LND Documentation
 
-`boltz-lnd` is a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse Submarine Swaps (from Lightning to onchain coins).
+`boltz-lnd` is a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (Bitcoin -> Lightning) and Reverse Submarine Swaps (Lightning -> Bitcoin).
 
 ## `boltzd`
 
-`boltzd` is a daemon that should run alongside of your LND node. It connects to your LND node, and the Boltz API to create and execute Swaps.
+`boltzd` is the daemon that should run alongside your LND node. It connects to your LND node and hooks it up with [Boltz's API](https://docs.boltz.exchange) to create and execute swaps.
 
 ## `boltzcli`
 
-`boltzcli` is a CLI tool to interact with the gRPC interface `boltzd` exposes.
+`boltzcli` is the CLI tool to interact with the gRPC interface that `boltzd` exposes.
 
 ## Setup
 
@@ -19,7 +19,7 @@ The LND node to which the daemon connects has to be version `v0.10.0-beta` or hi
 * `chainrpc` (block listener)
 * `walletrpc` (fee estimations)
 
-Binaries for the latest release of `boltz-lnd` can be found on the [releases page](https://github.com/BoltzExchange/boltz-lnd/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided in the [README](https://github.com/BoltzExchange/boltz-lnd#building).
+Binaries of `boltz-lnd` can be found [here](https://github.com/BoltzExchange/boltz-lnd/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided in the [README](https://github.com/BoltzExchange/boltz-lnd#building).
 
 ### Configuration
 

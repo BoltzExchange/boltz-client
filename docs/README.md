@@ -1,25 +1,25 @@
 # Configuration
 
-`boltz-lnd` can be configured via CLI arguments, and a TOML config file. By default, the config file is called `boltz.toml` and located in the data directory of `boltz-lnd` (`/home/<user>/.boltz-lnd` by default on Linux).
+`boltz-lnd` can be configured via a TOML config file or CLI arguments. By default, the config file is called `boltz.toml` and located in the data directory of `boltz-lnd` (`/home/<user>/.boltz-lnd` by default on Linux).
 
 ## Example
 
 ```toml
-# Path the the log file
+# Path to the log file
 logfile = ""
 
 # Prefix for all log messages.
-# Useful in cases two boltz-lnd instances (one for BTC and LTC) are running in a single Docker container  
+# Useful in cases where multiple boltz-lnd instances are running in a single Docker container
 logprefix = "[BTC] "
 
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz instance for the network LND is on
 # This value is used to override that
-url = "https://testnet.boltz.exchange/api"
+url = "https://api.boltz.exchange"
 
 [DATABASE]
 # Path to the SQLite database file 
-path = "/home/michael/test.db"
+path = "/home/me/test.db"
 
 [LND]
 # Host of the gRPC interface of LND
@@ -63,6 +63,6 @@ noMacaroons = false
 # Path to the admin macaroon for the gRPC and REST interface
 adminMacaroonPath = ""
 
-# Path to the read only macaroon for the gRPC and REST interface
+# Path to the read-only macaroon for the gRPC and REST interface
 readOnlyMacaroonPath = ""
 ```
