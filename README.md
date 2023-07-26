@@ -1,6 +1,6 @@
 # Boltz LND
 
-This repository contains `boltz-lnd` a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (Bitcoin -> Lightning) and Reverse Submarine Swaps (Lightning -> Bitcoin).
+This repository contains `boltz-lnd`, a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (Bitcoin -> Lightning) and Reverse Submarine Swaps (Lightning -> Bitcoin).
 
 The full documentation can be found [here](https://docs.boltz.exchange/boltz-lnd) or in the [`docs`](./docs) folder of this repo.
 
