@@ -25,7 +25,7 @@ Binaries of `boltz-lnd` can be found [here](https://github.com/BoltzExchange/bol
 
 `boltzd` requires a connection to a LND node. In most cases the CLI flags `--lnd.certificate <path to the tls.cert of LND>` and `--lnd.macaroon <path to the admin.macaroon of LND>` should be enough. To view all CLI flags use `--help`.
 
-`boltzd` can also be configured via a TOML file. The full documentation for the configuration file can be found [here](<README (1).md>).
+`boltzd` can also be configured via a TOML file. The full documentation for the configuration file can be found in the [configuration](configuration.md) section.
 
 ### Macaroons
 
