@@ -1,6 +1,6 @@
 # Table of contents
 
-* [👋 Introduction](README.md)
+* [👋 Introduction](index.md)
 * [🎛 Configuration](configuration.md)
 * [🤖 gRPC API](grpc.md)
 * [🤖 REST API](https://github.com/BoltzExchange/boltz-lnd/blob/master/boltzrpc/rest-annotations.yaml)
