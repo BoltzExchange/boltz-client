@@ -24,7 +24,7 @@ The LND node to which the daemon connects has to be version `v0.10.0-beta` or hi
 * `chainrpc` (block listener)
 * `walletrpc` (fee estimations)
 
-Binaries of `boltz-lnd` can be found [here](https://github.com/BoltzExchange/boltz-lnd/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided in the repositories [README](https://github.com/BoltzExchange/boltz-lnd#building).
+Binaries of `boltz-lnd` can be found [here](https://github.com/BoltzExchange/boltz-lnd/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided [here](https://github.com/BoltzExchange/boltz-lnd#building).
 
 ### Configuration
 
