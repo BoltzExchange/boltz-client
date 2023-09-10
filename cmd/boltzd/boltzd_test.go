@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"os/exec"
 	"strings"
@@ -24,8 +23,6 @@ import (
 func setup(t *testing.T) (*boltzrpc.Boltz, func()) {
 
 	cfg := boltz_lnd.LoadConfig()
-	cfg.RPC.Port = 19002
-	cfg.RPC.RestPort = 19003
 	cfg.RPC.NoTls = true
 	cfg.RPC.NoMacaroons = true
 
@@ -46,19 +43,19 @@ func setup(t *testing.T) (*boltzrpc.Boltz, func()) {
 	)
 
 	if err != nil {
-		log.Printf("error connecting to server: %v", err)
+		logger.Fatal("error connecting to server: " + err.Error())
 	}
 
 	go func() {
 		if err := server.Serve(lis); err != nil {
-			log.Printf("error serving server: %v", err)
+			logger.Error("error connecting serving server: " + err.Error())
 		}
 	}()
 
 	close := func() {
 		err := lis.Close()
 		if err != nil {
-			log.Printf("error closing listener: %v", err)
+			logger.Error("error closing listener: " + err.Error())
 		}
 		server.Stop()
 	}
