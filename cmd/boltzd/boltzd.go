@@ -27,7 +27,12 @@ func main() {
 
 	logger.Info("Parsed config and CLI arguments: " + formattedCfg)
 
-	err = cfg.Database.Connect()
+	Start(cfg)
+}
+
+func Start(cfg *boltz_lnd.Config) {
+
+	err := cfg.Database.Connect()
 
 	if err != nil {
 		logger.Fatal("Could not connect to database: " + err.Error())
