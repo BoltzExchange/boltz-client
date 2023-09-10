@@ -1,6 +1,10 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"log"
+	"net"
 	"os/exec"
 	"strings"
 	"testing"
@@ -12,33 +16,59 @@ import (
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
 )
 
-func setup(t *testing.T) *boltzrpc.Boltz {
+func setup(t *testing.T) (*boltzrpc.Boltz, func()) {
 
 	cfg := boltz_lnd.LoadConfig()
 	cfg.RPC.Port = 19002
 	cfg.RPC.RestPort = 19003
+	cfg.RPC.NoTls = true
+	cfg.RPC.NoMacaroons = true
 
 	logger.InitLogger(cfg.LogFile, cfg.LogPrefix)
 
-	go Start(cfg)
+	Init(cfg)
 
-	time.Sleep(100 * time.Millisecond)
+	server := cfg.RPC.Grpc
 
-	client := boltzrpc.Boltz{
-		Host:         cfg.RPC.Host,
-		Port:         cfg.RPC.Port,
-		TlsCertPath:  cfg.RPC.TlsCertPath,
-		NoMacaroons:  false,
-		MacaroonPath: cfg.RPC.AdminMacaroonPath,
+	lis := bufconn.Listen(1024 * 1024)
+
+	conn, err := grpc.DialContext(
+		context.Background(), "",
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+			return lis.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	if err != nil {
+		log.Printf("error connecting to server: %v", err)
 	}
 
-	err := client.Connect()
+	go func() {
+		if err := server.Serve(lis); err != nil {
+			log.Printf("error serving server: %v", err)
+		}
+	}()
 
-	require.Nil(t, err)
+	close := func() {
+		err := lis.Close()
+		if err != nil {
+			log.Printf("error closing listener: %v", err)
+		}
+		server.Stop()
+	}
 
-	return &client
+	client := boltzrpc.Boltz{
+		Client: boltzrpc.NewBoltzClient(conn),
+		Ctx:    context.Background(),
+	}
+
+	return &client, close
 }
 
 func getBtcRpc() *rpcclient.Client {
@@ -61,15 +91,19 @@ func getBtcRpc() *rpcclient.Client {
 }
 
 func TestGetInfo(t *testing.T) {
-	client := setup(t)
+	client, close := setup(t)
+	defer close()
+
 	info, err := client.GetInfo()
 
+	fmt.Println(err)
 	require.Nil(t, err)
 	assert.Equal(t, "regtest", info.Network)
 }
 
 func TestDeposit(t *testing.T) {
-	client := setup(t)
+	client, close := setup(t)
+	defer close()
 
 	swap, err := client.Deposit(25)
 	require.Nil(t, err)
@@ -89,7 +123,8 @@ func TestDeposit(t *testing.T) {
 }
 
 func TestReverseSwap(t *testing.T) {
-	client := setup(t)
+	client, close := setup(t)
+	defer close()
 
 	swap, err := client.CreateReverseSwap(250000, "", false)
 	require.Nil(t, err)
@@ -110,7 +145,8 @@ func TestReverseSwap(t *testing.T) {
 }
 
 func TestReverseSwapZeroConf(t *testing.T) {
-	client := setup(t)
+	client, close := setup(t)
+	defer close()
 
 	swap, err := client.CreateReverseSwap(250000, "", true)
 	require.Nil(t, err)
