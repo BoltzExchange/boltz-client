@@ -1,4 +1,4 @@
-# 🤖 gRPC API
+# gRPC Documentation
 
 This page was automatically generated based on the protobuf file `boltzrpc.proto`.
 
