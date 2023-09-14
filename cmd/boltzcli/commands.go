@@ -83,12 +83,18 @@ var depositCommand = cli.Command{
 			Value: 25,
 			Usage: "Amount of inbound liquidity in percent in case a channel gets created for the Swap",
 		},
+		cli.StringFlag{
+			Name:     "pair",
+			Value:    "BTC/BTC",
+			Usage:    "Pair ID to create a swap for",
+			Required: false,
+		},
 	},
 }
 
 func deposit(ctx *cli.Context) error {
 	client := getClient(ctx)
-	response, err := client.Deposit(ctx.Uint("inbound"))
+	response, err := client.Deposit(ctx.Uint("inbound"), ctx.String("pair"))
 
 	if err != nil {
 		return err
@@ -169,7 +175,7 @@ func withdraw(ctx *cli.Context) error {
 
 	fmt.Println("Withdrawing...")
 
-	response, err := client.CreateReverseSwap(amount, address, true)
+	response, err := client.CreateReverseSwap(amount, address, true, ctx.String("pair"))
 
 	if err != nil {
 		return err
@@ -188,12 +194,20 @@ var createSwapCommand = cli.Command{
 	Usage:     "Creates a new Swap",
 	ArgsUsage: "amount",
 	Action:    createSwap,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "pair",
+			Value: "BTC/BTC",
+			Usage: "Pair ID to create a swap for",
+		},
+	},
 }
 
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	swap, err := client.CreateSwap(
 		parseInt64(ctx.Args().First(), "amount"),
+		ctx.String("pair"),
 	)
 
 	if err != nil {
@@ -245,6 +259,13 @@ var createReverseSwapCommand = cli.Command{
 	Usage:     "Creates a new Reverse Swap",
 	ArgsUsage: "amount [address]",
 	Action:    createReverseSwap,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "pair",
+			Value: "BTC/BTC",
+			Usage: "Pair ID to create a swap for",
+		},
+	},
 }
 
 func createReverseSwap(ctx *cli.Context) error {
@@ -253,6 +274,7 @@ func createReverseSwap(ctx *cli.Context) error {
 		parseInt64(ctx.Args().First(), "amount"),
 		ctx.Args().Get(1),
 		false,
+		ctx.String("pair"),
 	)
 
 	if err != nil {

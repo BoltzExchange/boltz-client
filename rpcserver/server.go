@@ -92,10 +92,11 @@ func (server *RpcServer) Init(
 		symbol:      symbol,
 		chainParams: chainParams,
 
-		lnd:      lnd,
-		boltz:    boltz,
-		nursery:  nursery,
-		database: database,
+		lnd:       lnd,
+		lightning: lnd,
+		boltz:     boltz,
+		nursery:   nursery,
+		database:  database,
 	})
 
 	return nil

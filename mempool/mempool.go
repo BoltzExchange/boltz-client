@@ -1,9 +1,10 @@
 package mempool
 
 import (
+	"math"
+
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
-	"math"
 )
 
 type lndFee interface {
@@ -13,6 +14,11 @@ type lndFee interface {
 type Mempool struct {
 	mc  *client
 	lnd lndFee
+}
+
+type BlockEpoch struct {
+	Hash   []byte
+	Height uint32
 }
 
 func Init(lnd lndFee, mcEndpoint string) *Mempool {

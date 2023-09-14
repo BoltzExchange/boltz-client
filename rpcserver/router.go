@@ -8,9 +8,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"math"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
+	"github.com/BoltzExchange/boltz-lnd/lightning"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
@@ -19,8 +23,6 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/zpay32"
-	"math"
-	"strconv"
 )
 
 type routedBoltzServer struct {
@@ -29,10 +31,11 @@ type routedBoltzServer struct {
 	symbol      string
 	chainParams *chaincfg.Params
 
-	lnd      *lnd.LND
-	boltz    *boltz.Boltz
-	nursery  *nursery.Nursery
-	database *database.Database
+	lightning lightning.LightningNode
+	lnd       *lnd.LND
+	boltz     *boltz.Boltz
+	nursery   *nursery.Nursery
+	database  *database.Database
 }
 
 func handleError(err error) error {
@@ -44,7 +47,7 @@ func handleError(err error) error {
 }
 
 func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
-	lndInfo, err := server.lnd.GetInfo()
+	lightningInfo, err := server.lightning.GetInfo()
 
 	if err != nil {
 		return nil, handleError(err)
@@ -77,8 +80,8 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	return &boltzrpc.GetInfoResponse{
 		Symbol:              server.symbol,
 		Network:             server.chainParams.Name,
-		LndPubkey:           lndInfo.IdentityPubkey,
-		BlockHeight:         lndInfo.BlockHeight,
+		LndPubkey:           lightningInfo.Pubkey,
+		BlockHeight:         lightningInfo.BlockHeight,
 		PendingSwaps:        pendingSwapIds,
 		PendingReverseSwaps: pendingReverseSwapIds,
 	}, nil
@@ -208,6 +211,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 
 	deposit := database.Swap{
 		Id:                  response.Id,
+		PairId:              request.PairId,
 		State:               boltzrpc.SwapState_PENDING,
 		Error:               "",
 		Status:              boltz.SwapCreated,
@@ -258,7 +262,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
-	invoice, err := server.lnd.AddInvoice(int64(request.Amount), nil, 0, utils.GetSwapMemo(server.symbol))
+	invoice, err := server.lightning.CreateInvoice(int64(request.Amount), nil, 0, utils.GetSwapMemo(server.symbol))
 
 	if err != nil {
 		return nil, handleError(err)
@@ -272,7 +276,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 
 	response, err := server.boltz.CreateSwap(boltz.CreateSwapRequest{
 		Type:            "submarine",
-		PairId:          server.symbol + "/" + server.symbol,
+		PairId:          request.PairId,
 		OrderSide:       "buy",
 		Invoice:         invoice.PaymentRequest,
 		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
@@ -304,7 +308,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		RefundTransactionId: "",
 	}
 
-	err = boltz.CheckSwapScript(swap.RedeemScript, invoice.RHash, swap.PrivateKey, swap.TimoutBlockHeight)
+	err = boltz.CheckSwapScript(swap.RedeemScript, invoice.PaymentHash, swap.PrivateKey, swap.TimoutBlockHeight)
 
 	if err != nil {
 		return nil, handleError(err)
@@ -472,7 +476,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		}
 	} else {
 		var err error
-		claimAddress, err = server.lnd.NewAddress()
+		claimAddress, err = server.lightning.NewAddress()
 
 		if err != nil {
 			return nil, handleError(err)
@@ -497,7 +501,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 
 	response, err := server.boltz.CreateReverseSwap(boltz.CreateReverseSwapRequest{
 		Type:           "reverseSubmarine",
-		PairId:         server.symbol + "/" + server.symbol,
+		PairId:         request.PairId,
 		OrderSide:      "buy",
 		InvoiceAmount:  uint64(request.Amount),
 		PreimageHash:   hex.EncodeToString(preimageHash),
@@ -516,6 +520,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 
 	reverseSwap := database.ReverseSwap{
 		Id:                  response.Id,
+		PairId:              request.PairId,
 		Status:              boltz.SwapCreated,
 		AcceptZeroConf:      request.AcceptZeroConf,
 		PrivateKey:          privateKey,
@@ -590,14 +595,20 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	}, nil
 }
 
-func (server *routedBoltzServer) payInvoice(invoice string, id string) (int64, error) {
-	payment, err := server.lnd.PayInvoice(invoice, 3, 30)
+func (server *routedBoltzServer) payInvoice(invoice string, id string) (uint, error) {
+	feeLimit, err := lightning.GetFeeLimit(invoice, server.chainParams)
 
 	if err != nil {
 		return 0, err
 	}
 
-	logger.Info("Paid invoice of Reverse Swap " + id + " with fee of " + utils.FormatMilliSat(payment.FeeMsat) + " satoshis")
+	payment, err := server.lightning.PayInvoice(invoice, feeLimit, 30)
+
+	if err != nil {
+		return 0, err
+	}
+
+	logger.Info("Paid invoice of Reverse Swap " + id + " with fee of " + utils.FormatMilliSat(int64(payment.FeeMsat)) + " satoshis")
 
 	return payment.FeeMsat, nil
 }

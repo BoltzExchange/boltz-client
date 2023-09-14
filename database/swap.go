@@ -4,14 +4,16 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"strconv"
 )
 
 type Swap struct {
 	Id                  string
+	PairId              string
 	State               boltzrpc.SwapState
 	Error               string
 	Status              boltz.SwapUpdateEvent
@@ -28,6 +30,7 @@ type Swap struct {
 
 type SwapSerialized struct {
 	Id                  string
+	PairId              string
 	State               string
 	Error               string
 	Status              string
@@ -51,6 +54,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 
 	return SwapSerialized{
 		Id:                  swap.Id,
+		PairId:              swap.PairId,
 		State:               boltzrpc.SwapState_name[int32(swap.State)],
 		Error:               swap.Error,
 		Status:              swap.Status.String(),
@@ -78,6 +82,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 		rows,
 		map[string]interface{}{
 			"id":                  &swap.Id,
+			"pairId":              &swap.PairId,
 			"state":               &swap.State,
 			"error":               &swap.Error,
 			"status":              &status,
@@ -181,7 +186,7 @@ func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32) ([]Swa
 }
 
 func (database *Database) CreateSwap(swap Swap) error {
-	insertStatement := "INSERT INTO swaps (id, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO swaps (id, pairId, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -196,6 +201,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 
 	_, err = statement.Exec(
 		swap.Id,
+		swap.PairId,
 		swap.State,
 		swap.Error,
 		swap.Status.String(),

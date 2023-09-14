@@ -78,7 +78,7 @@ func TestDeposit(t *testing.T) {
 	client, close := setup(t)
 	defer close()
 
-	swap, err := client.Deposit(25)
+	swap, err := client.Deposit(25, "BTC/BTC")
 	assert.NoError(t, err)
 
 	info, err := client.GetSwapInfo(swap.Id)
@@ -99,7 +99,7 @@ func TestReverseSwap(t *testing.T) {
 	client, close := setup(t)
 	defer close()
 
-	swap, err := client.CreateReverseSwap(250000, "", false)
+	swap, err := client.CreateReverseSwap(250000, "", false, "BTC/BTC")
 	assert.NoError(t, err)
 
 	time.Sleep(500 * time.Millisecond)
@@ -120,7 +120,7 @@ func TestReverseSwapZeroConf(t *testing.T) {
 	client, close := setup(t)
 	defer close()
 
-	swap, err := client.CreateReverseSwap(250000, "", true)
+	swap, err := client.CreateReverseSwap(250000, "", true, "BTC/BTC")
 	assert.NoError(t, err)
 
 	time.Sleep(100 * time.Millisecond)

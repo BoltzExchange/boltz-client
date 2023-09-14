@@ -3,10 +3,11 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/logger"
-	"strconv"
 )
 
 type swapStatus struct {
@@ -14,7 +15,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 2
+const latestSchemaVersion = 3
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -184,6 +185,29 @@ func (database *Database) performMigration(fromVersion int) error {
 
 		logger.Info("Update to database version 2 completed")
 		return database.postMigration(fromVersion)
+
+	case 2:
+		logger.Info("Updating database from version 2 to 3")
+
+		_, err := database.db.Exec("ALTER TABLE swaps ADD COLUMN pairId VARCHAR")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.db.Exec("UPDATE swaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN pairId VARCHAR")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.db.Exec("UPDATE reverseSwaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
+		if err != nil {
+			return err
+		}
 
 	case latestSchemaVersion:
 		logger.Info("Database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))

@@ -10,6 +10,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 
 	return &boltzrpc.SwapInfo{
 		Id:                  serializedSwap.Id,
+		PairId:              serializedSwap.PairId,
 		State:               swap.State,
 		Error:               serializedSwap.Error,
 		Status:              serializedSwap.Status,
@@ -43,6 +44,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 
 	return &boltzrpc.ReverseSwapInfo{
 		Id:                  serializedReverseSwap.Id,
+		PairId:              serializedReverseSwap.PairId,
 		State:               reverseSwap.State,
 		Error:               serializedReverseSwap.Error,
 		Status:              serializedReverseSwap.Status,

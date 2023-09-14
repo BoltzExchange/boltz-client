@@ -1,9 +1,10 @@
 package mempool
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const mempoolEndpoint = "https://mempool.space/api"
@@ -24,4 +25,17 @@ func TestGetFeeRecommendation(t *testing.T) {
 	assert.NotEqual(t, 0, fees.HourFee)
 	assert.NotEqual(t, 0, fees.EconomyFee)
 	assert.NotEqual(t, 0, fees.MinimumFee)
+}
+
+func TestBlockStream(t *testing.T) {
+
+	mc := initClient(mempoolEndpoint)
+
+	blocks, err := mc.startBlockStream()
+	require.Nil(t, err)
+
+	block := <-blocks
+
+	assert.NotEqual(t, 0, block.Height)
+
 }

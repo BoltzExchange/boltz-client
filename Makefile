@@ -7,6 +7,7 @@ GO_BIN := ${GOPATH}/bin
 
 GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v
 GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
+GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
 GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/'
 
@@ -70,6 +71,14 @@ build: patch-btcutil
 	@$(call print, "Building boltz-lnd")
 	$(GOBUILD) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
+
+daemon:
+	@$(call print, "running boltzd")
+	$(GORUN) $(LDFLAGS) $(PKG_BOLTZD)
+
+cli:
+	@$(call print, "running boltzcli")
+	$(GORUN) $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
 install: patch-btcutil
 	@$(call print, "Installing boltz-lnd")

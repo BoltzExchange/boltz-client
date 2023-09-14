@@ -2,6 +2,9 @@ package nursery
 
 import (
 	"encoding/hex"
+	"strconv"
+	"strings"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
@@ -11,8 +14,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/zpay32"
-	"strconv"
-	"strings"
 )
 
 // TODO: abstract interactions with chain (querying and broadcasting transactions) into interface to be able to switch between Boltz API and bitcoin core
@@ -32,7 +33,7 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 			if len(swapsToRefund) > 0 {
 				logger.Info("Found " + strconv.Itoa(len(swapsToRefund)) + " Swaps to refund at height " + strconv.FormatUint(uint64(newBlock.Height), 10))
 
-				addressString, err := nursery.lnd.NewAddress()
+				addressString, err := nursery.lightning.NewAddress()
 
 				if err != nil {
 					logger.Error("Could not get new address from LND: " + err.Error())
@@ -301,17 +302,17 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 
 		logger.Info("Found output for Swap " + swap.Id + " of " + strconv.FormatUint(swapRates.OnchainAmount, 10) + " satoshis")
 
-		lndInfo, err := nursery.lnd.GetInfo()
+		info, err := nursery.lightning.GetInfo()
 
 		if err != nil {
 			logger.Error("Could not get LND info: " + err.Error())
 			return
 		}
 
-		invoice, err := nursery.lnd.AddInvoice(
+		invoice, err := nursery.lightning.CreateInvoice(
 			int64(swapRates.SubmarineSwap.InvoiceAmount),
 			swap.Preimage,
-			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-lndInfo.BlockHeight, utils.GetBlockTime(nursery.symbol)),
+			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-info.BlockHeight, utils.GetBlockTime(nursery.symbol)),
 			utils.GetSwapMemo(nursery.symbol),
 		)
 

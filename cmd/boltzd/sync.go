@@ -1,48 +1,48 @@
 package main
 
 import (
-	"github.com/BoltzExchange/boltz-lnd/lnd"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/lightningnetwork/lnd/lnrpc"
 	"strconv"
 	"time"
+
+	"github.com/BoltzExchange/boltz-lnd/lightning"
+	"github.com/BoltzExchange/boltz-lnd/logger"
 )
 
 const retryInterval = 15
 
 var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
 
-func connectToLnd(lnd *lnd.LND) *lnrpc.GetInfoResponse {
-	lndInfo, err := lnd.GetInfo()
+func connectLightning(lightning lightning.LightningNode) *lightning.LightningInfo {
+	info, err := lightning.GetInfo()
 
 	if err != nil {
-		logger.Warning("Could not connect to LND: " + err.Error())
+		logger.Warning("Could not connect to lightning node: " + err.Error())
 		logger.Info(retryMessage)
 		time.Sleep(retryInterval * time.Second)
 
-		_ = lnd.Connect()
-		return connectToLnd(lnd)
+		_ = lightning.Connect()
+		return connectLightning(lightning)
 	} else {
-		return lndInfo
+		return info
 	}
 }
 
-func waitForLndSynced(lnd *lnd.LND) {
-	info, err := lnd.GetInfo()
+func waitForLightningSynced(lightning lightning.LightningNode) {
+	info, err := lightning.GetInfo()
 
 	if err == nil {
-		if !info.SyncedToChain {
+		if !info.Synced {
 			logger.Warning("LND node not synced yet")
 			logger.Info(retryMessage)
 			time.Sleep(retryInterval * time.Second)
 
-			waitForLndSynced(lnd)
+			waitForLightningSynced(lightning)
 		}
 	} else {
 		logger.Error("Could not get LND info: " + err.Error())
 		logger.Info(retryMessage)
 		time.Sleep(retryInterval * time.Second)
 
-		waitForLndSynced(lnd)
+		waitForLightningSynced(lightning)
 	}
 }

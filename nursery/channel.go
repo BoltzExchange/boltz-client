@@ -2,13 +2,15 @@ package nursery
 
 import (
 	"crypto/sha256"
+	"fmt"
+	"math"
+	"strconv"
+	"time"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/lightningnetwork/lnd/lnrpc"
-	"math"
-	"strconv"
-	"time"
 )
 
 func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, channelCreation *database.ChannelCreation) chan bool {
@@ -27,7 +29,7 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 			case invoice := <-invoiceChannel:
 				switch invoice.State {
 				case lnrpc.Invoice_ACCEPTED:
-					var expectedChannelId uint64
+					var expectedChannelId string
 
 					channels, err := nursery.lnd.ListChannels()
 
@@ -36,27 +38,20 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 						return
 					}
 
-					for _, channel := range channels.Channels {
-						id, vout, err := parseChannelPoint(channel.ChannelPoint)
-
-						if err != nil {
-							logger.Error("Could not parse funding channel point: " + err.Error())
-							return
-						}
-
-						if id == channelCreation.FundingTransactionId && vout == channelCreation.FundingTransactionVout {
-							expectedChannelId = channel.ChanId
+					for _, channel := range channels {
+						if channel.Point.FundingTxid == channelCreation.FundingTransactionId && channel.Point.OutputIndex == channelCreation.FundingTransactionVout {
+							expectedChannelId = channel.Id
 							break
 						}
 					}
 
-					if expectedChannelId == 0 {
+					if expectedChannelId == "" {
 						logger.Error("Could not find Channel of Channel Creation " + swap.Id)
 						return
 					}
 
 					for _, htlc := range invoice.Htlcs {
-						if htlc.ChanId != expectedChannelId {
+						if string(htlc.ChanId) != expectedChannelId {
 							logger.Error("Not all HTLCs of Channel Creation " + swap.Id + " were sent through the correct channel")
 							return
 						}
@@ -92,6 +87,26 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 	}()
 
 	return stopListening
+}
+
+func (nursery *Nursery) channelWatcher() {
+
+	for {
+
+		channels, err := nursery.lightning.ListChannels()
+
+		if err != nil {
+			logger.Warning("Could not query channels")
+		}
+
+		for _, channel := range channels {
+			fmt.Println(channel)
+		}
+
+		time.Sleep(10 * time.Second)
+
+	}
+
 }
 
 func (nursery *Nursery) subscribeSingleInvoice(swapId string, preimageHash []byte, invoiceChannel chan *lnrpc.Invoice, errorChannel chan error) {

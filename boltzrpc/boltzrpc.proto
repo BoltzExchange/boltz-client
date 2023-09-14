@@ -70,26 +70,27 @@ enum SwapState {
 
 message SwapInfo {
     string id = 1;
+    string pairId = 2;
 
-    SwapState state = 2;
-    string error = 3;
+    SwapState state = 3;
+    string error = 4;
 
     // Latest status message of the Boltz backend
-    string status = 4;
-    string private_key = 5;
-    string preimage = 6;
-    string redeem_script = 7;
-    string invoice = 8;
-    string lockup_address = 9;
-    int64 expected_amount = 10;
-    uint32 timeout_block_height = 11;
-    string lockup_transaction_id = 12;
+    string status = 5;
+    string private_key = 6;
+    string preimage = 7;
+    string redeem_script = 8;
+    string invoice = 9;
+    string lockup_address = 10;
+    int64 expected_amount = 11;
+    uint32 timeout_block_height = 12;
+    string lockup_transaction_id = 13;
 
     /*
     If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the
     `lockup_address` back to the LND wallet and save the refund transaction id to the database.
     */
-    string refund_transaction_id = 13;
+    string refund_transaction_id = 14;
 }
 
 /*
@@ -126,6 +127,7 @@ message ReverseSwapInfo {
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
+    string pairId = 14;
 }
 
 message GetInfoRequest {}
@@ -181,6 +183,7 @@ message DepositRequest {
     25 by default.
     */
     uint32 inbound_liquidity = 1;
+    string pairId = 2;
 }
 message DepositResponse {
     string id = 1;
@@ -190,6 +193,7 @@ message DepositResponse {
 
 message CreateSwapRequest {
     int64 amount = 1;
+    string pairId = 2;
 }
 message CreateSwapResponse {
     string id = 1;
@@ -214,6 +218,7 @@ message CreateReverseSwapRequest {
     // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
     bool accept_zero_conf = 3;
+    string pairId = 4;
 }
 message CreateReverseSwapResponse {
     string id = 1;

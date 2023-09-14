@@ -2,10 +2,12 @@ package nursery
 
 import (
 	"errors"
-	"github.com/BoltzExchange/boltz-lnd/mempool"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/BoltzExchange/boltz-lnd/lightning"
+	"github.com/BoltzExchange/boltz-lnd/mempool"
 
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/database"
@@ -22,6 +24,8 @@ type Nursery struct {
 	boltzPubKey string
 
 	chainParams *chaincfg.Params
+
+	lightning lightning.LightningNode
 
 	lnd      *lnd.LND
 	boltz    *boltz.Boltz
@@ -50,6 +54,7 @@ func (nursery *Nursery) Init(
 	nursery.chainParams = chainParams
 
 	nursery.lnd = lnd
+	nursery.lightning = lnd
 	nursery.boltz = boltz
 	nursery.mempool = memp
 	nursery.database = database

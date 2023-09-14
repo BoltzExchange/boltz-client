@@ -485,7 +485,7 @@ func RegisterBoltzHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 // RegisterBoltzHandlerFromEndpoint is same as RegisterBoltzHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterBoltzHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.Dial(endpoint, opts...)
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
 	}

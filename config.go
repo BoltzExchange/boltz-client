@@ -8,7 +8,9 @@ import (
 
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/build"
+	"github.com/BoltzExchange/boltz-lnd/cln"
 	"github.com/BoltzExchange/boltz-lnd/database"
+	"github.com/BoltzExchange/boltz-lnd/lightning"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/rpcserver"
 	"github.com/BoltzExchange/boltz-lnd/utils"
@@ -29,8 +31,12 @@ type Config struct {
 	LogFile   string `short:"l" long:"logfile" description:"Path to the log file"`
 	LogPrefix string `long:"logprefix" description:"Prefix of all log messages"`
 
-	Boltz    *boltz.Boltz         `group:"Boltz Options"`
-	LND      *lnd.LND             `group:"LND Options"`
+	Boltz *boltz.Boltz `group:"Boltz Options"`
+	LND   *lnd.LND     `group:"LND Options"`
+	Cln   *cln.Cln     `group:"Cln Options"`
+
+	Lightning lightning.LightningNode
+
 	RPC      *rpcserver.RpcServer `group:"RPC options"`
 	Database *database.Database   `group:"Database options"`
 
@@ -64,6 +70,15 @@ func LoadConfig() *Config {
 			Port:        10009,
 			Macaroon:    "",
 			Certificate: "",
+		},
+
+		Cln: &cln.Cln{
+			Host: "",
+			Port: 10009,
+
+			RootCert:   "",
+			PrivateKey: "",
+			CertChain:  "",
 		},
 
 		RPC: &rpcserver.RpcServer{
@@ -132,6 +147,8 @@ func LoadConfig() *Config {
 
 	createDirIfNotExists(cfg.DataDir)
 	createDirIfNotExists(macaroonDir)
+
+	cfg.Lightning = cfg.LND
 
 	return &cfg
 }

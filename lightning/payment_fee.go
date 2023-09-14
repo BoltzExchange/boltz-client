@@ -1,9 +1,11 @@
-package lnd
+package lightning
 
 import (
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/lightningnetwork/lnd/zpay32"
 	"math"
+
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/lightningnetwork/lnd/zpay32"
 )
 
 const (
@@ -12,8 +14,8 @@ const (
 )
 
 // getFeeLimit calculates the fee limit of a payment in sat
-func (lnd *LND) getFeeLimit(invoice string) (int64, error) {
-	decodedInvoice, err := zpay32.Decode(invoice, lnd.ChainParams)
+func GetFeeLimit(invoice string, chainParams *chaincfg.Params) (uint, error) {
+	decodedInvoice, err := zpay32.Decode(invoice, chainParams)
 
 	if err != nil {
 		return 0, err
@@ -25,5 +27,5 @@ func (lnd *LND) getFeeLimit(invoice string) (int64, error) {
 		minPaymentFee,
 	)
 
-	return int64(feeLimit), nil
+	return uint(feeLimit), nil
 }

@@ -77,15 +77,17 @@ func (boltz *Boltz) GetSwapInfo(id string) (*GetSwapInfoResponse, error) {
 	})
 }
 
-func (boltz *Boltz) Deposit(inboundLiquidity uint) (*DepositResponse, error) {
+func (boltz *Boltz) Deposit(inboundLiquidity uint, pairId string) (*DepositResponse, error) {
 	return boltz.Client.Deposit(boltz.Ctx, &DepositRequest{
 		InboundLiquidity: uint32(inboundLiquidity),
+		PairId:           pairId,
 	})
 }
 
-func (boltz *Boltz) CreateSwap(amount int64) (*CreateSwapResponse, error) {
+func (boltz *Boltz) CreateSwap(amount int64, pairId string) (*CreateSwapResponse, error) {
 	return boltz.Client.CreateSwap(boltz.Ctx, &CreateSwapRequest{
 		Amount: amount,
+		PairId: pairId,
 	})
 }
 
@@ -97,10 +99,11 @@ func (boltz *Boltz) CreateChannelCreation(amount int64, inboundLiquidity uint32,
 	})
 }
 
-func (boltz *Boltz) CreateReverseSwap(amount int64, address string, acceptZeroConf bool) (*CreateReverseSwapResponse, error) {
+func (boltz *Boltz) CreateReverseSwap(amount int64, address string, acceptZeroConf bool, pairId string) (*CreateReverseSwapResponse, error) {
 	return boltz.Client.CreateReverseSwap(boltz.Ctx, &CreateReverseSwapRequest{
 		Address:        address,
 		Amount:         amount,
 		AcceptZeroConf: acceptZeroConf,
+		PairId:         pairId,
 	})
 }

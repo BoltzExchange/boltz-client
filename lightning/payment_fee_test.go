@@ -1,9 +1,10 @@
-package lnd
+package lightning
 
 import (
+	"testing"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestGetFeeLimit(t *testing.T) {
@@ -12,24 +13,22 @@ func TestGetFeeLimit(t *testing.T) {
 
 	smallInvoice := "lnbcrt10n1p07xy0spp585tu2049ghzs6se80zryvskkrtp94cec87qf90xp068unsy0j0tsdqqcqzpgsp5k4dx8025w6wtkpz4tm2py675n5e0ajlhgchw6edgs8lpf9m435ks9qy9qsquycyql7ucqmdgzk75uctw87jq6cpszexadp9clekk7cna27vjz7nx4pwy86nvw28eppkwlk8kavcy2rx02kl23g6yemfqff80den62cphujfge"
 
-	lnd := LND{
-		ChainParams: &chaincfg.RegressionNetParams,
-	}
+	cfg := &chaincfg.RegressionNetParams
 
 	// Should use the payment fee ratio for big invoices
-	bigPaymentFeeLimit, err := lnd.getFeeLimit(bigInvoice)
+	bigPaymentFeeLimit, err := GetFeeLimit(bigInvoice, cfg)
 
 	assert.Nil(t, err)
 	assert.Equal(t, int64(float64(bigInvoiceAmt)*maxPaymentFeeRatio), bigPaymentFeeLimit)
 
 	// Should use minimal payment fee for small invoices
-	smallPaymentFeeLimit, err := lnd.getFeeLimit(smallInvoice)
+	smallPaymentFeeLimit, err := GetFeeLimit(smallInvoice, cfg)
 
 	assert.Nil(t, err)
 	assert.Equal(t, int64(minPaymentFee), smallPaymentFeeLimit)
 
 	// Should return fee limit 0 for invalid invoices
-	zeroFeeLimit, err := lnd.getFeeLimit("")
+	zeroFeeLimit, err := GetFeeLimit("", cfg)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), zeroFeeLimit)
