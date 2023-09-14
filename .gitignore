@@ -7,6 +7,8 @@
 
 boltzd
 boltzcli
+!cmd/boltzd
+!cmd/boltzcli
 binaries/
 
 # Test binary, built with `go test -c`

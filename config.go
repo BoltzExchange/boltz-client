@@ -2,6 +2,10 @@ package boltz_lnd
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"runtime"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/build"
 	"github.com/BoltzExchange/boltz-lnd/database"
@@ -10,9 +14,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
-	"os"
-	"path"
-	"runtime"
 )
 
 type helpOptions struct {
@@ -114,12 +115,6 @@ func LoadConfig() *Config {
 		if err != nil {
 			fmt.Printf("Could not read config file: " + err.Error() + "\n")
 		}
-	}
-
-	_, err = flags.Parse(&cfg)
-
-	if err != nil {
-		printCouldNotParse(err)
 	}
 
 	fmt.Println("Using data dir: " + cfg.DataDir)
