@@ -6,8 +6,8 @@ import (
 )
 
 func TestGetBlockTime(t *testing.T) {
-	assert.Equal(t, float64(10), GetBlockTime("BTC"))
-	assert.Equal(t, 2.5, GetBlockTime("LTC"))
+	assert.Equal(t, float64(10), GetBlockTime("BTC/BTC"))
+	assert.Equal(t, float64(1), GetBlockTime("L-BTC/BTC"))
 
 	// Should return 0 when the symbol cannot be found
 	assert.Equal(t, float64(0), GetBlockTime(""))
