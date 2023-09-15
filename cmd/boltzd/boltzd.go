@@ -8,7 +8,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
-	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
 )
 
 // TODO: close dangling channels
@@ -128,7 +127,7 @@ func setBoltzEndpoint(boltz *boltz.Boltz, chain string) {
 	switch chain {
 	case bitcoinCfg.MainNetParams.Name:
 		boltz.URL = "https://boltz.exchange/api"
-	case bitcoinCfg.TestNet3Params.Name, litecoinCfg.TestNet4Params.Name:
+	case bitcoinCfg.TestNet3Params.Name:
 		boltz.URL = "https://testnet.boltz.exchange/api"
 	case bitcoinCfg.RegressionNetParams.Name:
 		boltz.URL = "http://127.0.0.1:9001"
