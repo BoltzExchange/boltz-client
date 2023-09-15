@@ -2,12 +2,14 @@ package nursery
 
 import (
 	"encoding/hex"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcd/btcutil"
-	"strconv"
 )
 
 func (nursery *Nursery) recoverReverseSwaps() error {
@@ -184,7 +186,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		claimTransactionId := claimTransaction.TxHash().String()
 		logger.Info("Constructed claim transaction: " + claimTransactionId)
 
-		err = nursery.broadcastTransaction(claimTransaction)
+		err = nursery.broadcastTransaction(claimTransaction, utils.CurrencyFromPair(reverseSwap.PairId))
 
 		if err != nil {
 			logger.Error("Could not finalize claim transaction: " + err.Error())

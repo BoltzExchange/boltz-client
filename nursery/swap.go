@@ -99,7 +99,8 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 				refundTransactionId := refundTransaction.TxHash().String()
 				logger.Info("Constructed refund transaction: " + refundTransactionId)
 
-				err = nursery.broadcastTransaction(refundTransaction)
+				// TODO: right pair?
+				err = nursery.broadcastTransaction(refundTransaction, "BTC")
 
 				if err != nil {
 					logger.Error("Could not finalize refund transaction: " + err.Error())
@@ -284,7 +285,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 	case boltz.TransactionConfirmed:
 		// Connect to the LND node of Boltz to allow for channels to be opened and to gossip our channels
 		// to increase the chances that the provided invoice can be paid
-		_, _ = utils.ConnectBoltzLnd(nursery.lnd, nursery.boltz, nursery.symbol)
+		_, _ = utils.ConnectBoltzLnd(nursery.lnd, nursery.boltz)
 
 		// Set the invoice of Swaps that were created with only a preimage hash
 		if swap.Invoice != "" {
@@ -312,8 +313,8 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		invoice, err := nursery.lightning.CreateInvoice(
 			int64(swapRates.SubmarineSwap.InvoiceAmount),
 			swap.Preimage,
-			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-info.BlockHeight, utils.GetBlockTime(nursery.symbol)),
-			utils.GetSwapMemo(nursery.symbol),
+			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-info.BlockHeight, utils.GetBlockTime(swap.PairId)),
+			utils.GetSwapMemo(swap.PairId),
 		)
 
 		if err != nil {

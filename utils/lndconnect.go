@@ -8,13 +8,14 @@ import (
 	"strings"
 )
 
-func ConnectBoltzLnd(lnd *lnd.LND, boltz *boltz.Boltz, symbol string) (string, error) {
+func ConnectBoltzLnd(lnd *lnd.LND, boltz *boltz.Boltz) (string, error) {
 	nodes, err := boltz.GetNodes()
 
 	if err != nil {
 		return "", err
 	}
 
+	symbol := "BTC"
 	node, hasNode := nodes.Nodes[symbol]
 
 	if !hasNode {

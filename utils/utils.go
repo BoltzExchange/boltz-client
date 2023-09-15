@@ -3,7 +3,12 @@ package utils
 import (
 	"os"
 	"strconv"
+	"strings"
 )
+
+func CurrencyFromPair(pair string) string {
+	return strings.Split(pair, "/")[0]
+}
 
 // TODO: test this on real network
 func FormatMilliSat(milliSat int64) string {
