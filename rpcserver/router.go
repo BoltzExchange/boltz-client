@@ -28,7 +28,6 @@ import (
 type routedBoltzServer struct {
 	boltzrpc.BoltzServer
 
-	symbol      string
 	chainParams *chaincfg.Params
 
 	lightning lightning.LightningNode
@@ -78,7 +77,8 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	}
 
 	return &boltzrpc.GetInfoResponse{
-		Symbol:              server.symbol,
+		// TODO: provide info for liquid aswell
+		Symbol:              "BTC",
 		Network:             server.chainParams.Name,
 		LndPubkey:           lightningInfo.Pubkey,
 		BlockHeight:         lightningInfo.BlockHeight,
@@ -187,7 +187,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 
 	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
 		Type:            "submarine",
-		PairId:          server.symbol + "/" + server.symbol,
+		PairId:          request.PairId,
 		OrderSide:       "buy",
 		PreimageHash:    hex.EncodeToString(preimageHash),
 		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
@@ -262,7 +262,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
-	invoice, err := server.lightning.CreateInvoice(int64(request.Amount), nil, 0, utils.GetSwapMemo(server.symbol))
+	invoice, err := server.lightning.CreateInvoice(int64(request.Amount), nil, 0, utils.GetSwapMemo(request.PairId))
 
 	if err != nil {
 		return nil, handleError(err)
@@ -357,12 +357,15 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 		return nil, handleError(err)
 	}
 
+	// TODO: get pairId id from request
+	pairId := "BTC/BTC"
+
 	invoice, err := server.lnd.AddHoldInvoice(
 		preimageHash,
 		int64(request.Amount),
 		// TODO: query timeout block delta from API
-		utils.CalculateInvoiceExpiry(144, utils.GetBlockTime(server.symbol)),
-		"Channel Creation from "+server.symbol,
+		utils.CalculateInvoiceExpiry(144, utils.GetBlockTime(pairId)),
+		"Channel Creation from "+pairId,
 	)
 
 	if err != nil {
@@ -379,7 +382,7 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 
 	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
 		Type:            "submarine",
-		PairId:          server.symbol + "/" + server.symbol,
+		PairId:          pairId,
 		OrderSide:       "buy",
 		Invoice:         invoice.PaymentRequest,
 		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
@@ -620,7 +623,8 @@ func (server *routedBoltzServer) getPairs() (*boltzrpc.Fees, *boltzrpc.Limits, e
 		return nil, nil, err
 	}
 
-	pairSymbol := server.symbol + "/" + server.symbol
+	// TODO: return all pairs
+	pairSymbol := "BTC/BTC"
 	pair, hasPair := pairsResponse.Pairs[pairSymbol]
 
 	if !hasPair {

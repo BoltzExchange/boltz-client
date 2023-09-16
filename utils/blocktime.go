@@ -6,17 +6,16 @@ import (
 
 // Block times in minutes
 const BitcoinBlockTime = float64(10)
-const LitecoinBlockTime = float64(2.5)
+const LiquidBlockTime = float64(1)
 
-func GetBlockTime(symbol string) float64 {
+func GetBlockTime(pairId string) float64 {
 	var blockTime float64
 
-	switch symbol {
-	case "BTC":
+	switch pairId {
+	case "BTC/BTC":
 		blockTime = BitcoinBlockTime
-
-	case "LTC":
-		blockTime = LitecoinBlockTime
+	case "L-BTC/BTC":
+		blockTime = LiquidBlockTime
 	}
 
 	return blockTime

@@ -47,10 +47,6 @@ $(CHANGELOG_BIN):
 	@$(call print, "Fetching git-chglog")
 	go get -u $(CHANGELOG_PKG)
 
-patch-btcutil:
-	@$(call print, "Patching btcutil")
-	patch -u vendor/github.com/btcsuite/btcd/btcutil/address.go -i btcutil.patch --forward || true
-
 proto:
 	@$(call print, "Generating protosbufs")
 	eval cd boltzrpc && ./gen_protos.sh && cd ..
@@ -67,7 +63,7 @@ unit:
 # Building
 #
 
-build: patch-btcutil
+build: 
 	@$(call print, "Building boltz-lnd")
 	$(GOBUILD) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
@@ -80,7 +76,7 @@ cli:
 	@$(call print, "running boltzcli")
 	$(GORUN) $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-install: patch-btcutil
+install: 
 	@$(call print, "Installing boltz-lnd")
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)

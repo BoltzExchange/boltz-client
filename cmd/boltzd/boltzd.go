@@ -8,7 +8,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
-	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
 )
 
 // TODO: close dangling channels
@@ -52,7 +51,6 @@ func Init(cfg *boltz_lnd.Config) {
 	logger.Info("Connected to lightning node: " + info.Pubkey + " (" + info.Version + ")")
 
 	chainParams := parseChain(info.Network)
-	symbol := "BTC"
 	logger.Info("Parsed chain: " + chainParams.Name)
 
 	cfg.LND.ChainParams = chainParams
@@ -60,11 +58,10 @@ func Init(cfg *boltz_lnd.Config) {
 	waitForLightningSynced(cfg.Lightning)
 
 	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
-	cfg.Boltz.Init(symbol)
 
 	checkBoltzVersion(cfg.Boltz)
 
-	boltzPubKey, err := utils.ConnectBoltzLnd(cfg.LND, cfg.Boltz, symbol)
+	boltzPubKey, err := utils.ConnectBoltzLnd(cfg.LND, cfg.Boltz)
 
 	if err != nil {
 		logger.Warning("Could not connect to to Boltz LND node: " + err.Error())
@@ -72,7 +69,6 @@ func Init(cfg *boltz_lnd.Config) {
 
 	swapNursery := &nursery.Nursery{}
 	err = swapNursery.Init(
-		symbol,
 		boltzPubKey,
 		chainParams,
 		cfg.LND,
@@ -85,7 +81,7 @@ func Init(cfg *boltz_lnd.Config) {
 		logger.Fatal("Could not start Swap nursery: " + err.Error())
 	}
 
-	err = cfg.RPC.Init(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
+	err = cfg.RPC.Init(chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
 
 	if err != nil {
 		logger.Fatal("Could not initialize Server" + err.Error())
@@ -128,7 +124,7 @@ func setBoltzEndpoint(boltz *boltz.Boltz, chain string) {
 	switch chain {
 	case bitcoinCfg.MainNetParams.Name:
 		boltz.URL = "https://boltz.exchange/api"
-	case bitcoinCfg.TestNet3Params.Name, litecoinCfg.TestNet4Params.Name:
+	case bitcoinCfg.TestNet3Params.Name:
 		boltz.URL = "https://testnet.boltz.exchange/api"
 	case bitcoinCfg.RegressionNetParams.Name:
 		boltz.URL = "http://127.0.0.1:9001"

@@ -9,8 +9,6 @@ import (
 )
 
 type Boltz struct {
-	symbol string
-
 	URL string `long:"boltz.url" description:"URL endpoint of the Boltz API"`
 }
 
@@ -173,10 +171,6 @@ type CreateReverseSwapResponse struct {
 	Error string `json:"error"`
 }
 
-func (boltz *Boltz) Init(symbol string) {
-	boltz.symbol = symbol
-}
-
 func (boltz *Boltz) GetVersion() (*GetVersionResponse, error) {
 	var response GetVersionResponse
 	err := boltz.sendGetRequest("/version", &response)
@@ -235,10 +229,10 @@ func (boltz *Boltz) GetSwapTransaction(id string) (*GetSwapTransactionResponse, 
 	return &response, err
 }
 
-func (boltz *Boltz) BroadcastTransaction(transactionHex string) (*BroadcastTransactionResponse, error) {
+func (boltz *Boltz) BroadcastTransaction(transactionHex string, currency string) (*BroadcastTransactionResponse, error) {
 	var response BroadcastTransactionResponse
 	err := boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
-		Currency:       boltz.symbol,
+		Currency:       currency,
 		TransactionHex: transactionHex,
 	}, &response)
 

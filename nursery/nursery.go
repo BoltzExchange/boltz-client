@@ -40,7 +40,6 @@ var eventListeners = make(map[string]chan bool)
 var eventListenersLock sync.RWMutex
 
 func (nursery *Nursery) Init(
-	symbol string,
 	boltzPubKey string,
 	chainParams *chaincfg.Params,
 	lnd *lnd.LND,
@@ -48,7 +47,6 @@ func (nursery *Nursery) Init(
 	memp *mempool.Mempool,
 	database *database.Database,
 ) error {
-	nursery.symbol = symbol
 	nursery.boltzPubKey = boltzPubKey
 
 	nursery.chainParams = chainParams
@@ -110,14 +108,14 @@ func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxO
 	return 0, errors.New("could not find lockup vout")
 }
 
-func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx) error {
+func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx, currency string) error {
 	transactionHex, err := boltz.SerializeTransaction(transaction)
 
 	if err != nil {
 		return errors.New("could not serialize transaction: " + err.Error())
 	}
 
-	_, err = nursery.boltz.BroadcastTransaction(transactionHex)
+	_, err = nursery.boltz.BroadcastTransaction(transactionHex, currency)
 
 	if err != nil {
 		return errors.New("could not broadcast transaction: " + err.Error())

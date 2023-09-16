@@ -39,7 +39,6 @@ type RpcServer struct {
 }
 
 func (server *RpcServer) Init(
-	symbol string,
 	chainParams *chaincfg.Params,
 	lnd *lnd.LND,
 	boltz *boltz.Boltz,
@@ -89,7 +88,6 @@ func (server *RpcServer) Init(
 
 	server.Grpc = grpc.NewServer(serverOpts...)
 	boltzrpc.RegisterBoltzServer(server.Grpc, &routedBoltzServer{
-		symbol:      symbol,
 		chainParams: chainParams,
 
 		lnd:       lnd,
