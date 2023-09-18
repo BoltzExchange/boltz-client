@@ -14,7 +14,7 @@ logprefix = "[BTC] "
 
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network LND is on
-# This value is used to ovewrite that
+# This value is used to overwrite that
 url = "https://api.boltz.exchange"
 
 [DATABASE]
