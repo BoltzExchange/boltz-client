@@ -9,12 +9,12 @@
 logfile = ""
 
 # Prefix for all log messages.
-# Useful in cases where multiple boltz-lnd instances are running in a single Docker container
+# Useful in cases where multiple boltz-lnd instances are running in a Docker container
 logprefix = "[BTC] "
 
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network LND is on
-# This value is used to override that
+# This value is used to ovewrite that
 url = "https://api.boltz.exchange"
 
 [DATABASE]
