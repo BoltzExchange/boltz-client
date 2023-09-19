@@ -1,5 +1,5 @@
 ---
-cover: .gitbook/assets/Screenshot from 2023-09-19 18-09-36.png
+cover: .gitbook/assets/lnd_header
 coverY: 0
 ---
 
