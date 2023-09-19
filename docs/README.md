@@ -1,5 +1,5 @@
 ---
-cover: .gitbook/assets/lnd_header
+cover: .gitbook/assets/boltz-lnd_header.png
 coverY: 0
 ---
 
