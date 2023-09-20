@@ -1,14 +1,14 @@
-# Boltzd
+# Boltz Client
 
 Boltz Client for CLN & LND
 
-The daemon that professional routing node runners connect to their CLN & LND nodes for fully unattended channel rebalancing. The idea is to fully automate Liquid Swaps up to the point where node runners end up with mainchain bitcoin again. Beating competition with the significantly lower network fees on Liquid and privacy gain.
+The client that professional routing node runners connect to their CLN & LND nodes for fully unattended channel rebalancing. The idea is to fully automate Liquid Swaps up to the point where node runners end up with mainchain bitcoin again. Beating competition with the significantly lower network fees on Liquid and privacy gain.
 
 Liquid first, CLN first.
 
 Feature List/Brain Dump:
 
-- [ ] Daemon, CLI, gRPC
+- [ ] Daemon (boltzd), CLI (boltz-cli), gRPC
 - [ ] Configurable via CLI or conf file
 - [ ] Prio: first manual liquid swaps on CLN, then semi-automated liquid swaps based on channel balance threshold, focus on reverse swaps to obtain inbound
 - [ ] Needs a liquid wallet, need to decide if we want a setup process (external mnemonic backup). Libraries/SDKs: [libwally-core](https://github.com/ElementsProject/libwally-core), [gdk](https://github.com/Blockstream/gdk)
