@@ -13,13 +13,11 @@ Feature List/Brain Dump:
 - [ ] Prio: first manual liquid swaps on CLN, then semi-automated liquid swaps based on channel balance threshold, focus on reverse swaps to obtain inbound
 - [ ] Needs a liquid wallet, need to decide if we want a setup process (external mnemonic backup). Libraries/SDKs: [libwally-core](https://github.com/ElementsProject/libwally-core), [gdk](https://github.com/Blockstream/gdk), [sideswap](https://github.com/sideswap-io/sideswapclient/tree/master/rust/sideswap_headless)
 - [ ] Depends on [chain-to-chain swaps](https://github.com/BoltzExchange/boltz-backend/issues/63) to be available to move from Liquid back to mainchain
-- [ ] Lower Prio: Support manual mainchain swaps, all of [boltz-lnd](https://github.com/BoltzExchange/boltz-lnd)
-- [ ] Consider building on and extending [boltz-lnd](https://github.com/BoltzExchange/boltz-lnd), we don't want to maintain two things. We will have to maintain boltz-lnd anyways since it runs on 1000+ umbrels
+- [ ] Built on, extending [boltz-lnd](https://github.com/BoltzExchange/boltz-lnd). Keep boltz-lnd gRPC calls as-is, we don't want to maintain two things. Then we can drop-in replace boltz-client for boltz-lnd on 1000+ umbrels
 - [ ] Language: go is an obvious choice especially if [boltz-lnd](https://github.com/BoltzExchange/boltz-lnd) is base and also it compiles to binary, ts or python other options but always come with "setting up environment" trade-off
 
-This repository contains a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse ones (from Lightning to onchain coins).
 
-The full documentation can be found [here](https://lnd.docs.boltz.exchange/) or in the `docs` folder
+The full documentation can be found [here](https://docs.boltz.exchange/) or in the [docs](docs) folder
 
 ## Building
 
