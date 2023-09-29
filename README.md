@@ -21,7 +21,7 @@ The full documentation can be found [here](https://docs.boltz.exchange/) or in t
 
 ## Building
 
-To build Go version 1.14 or higher is required. `boltz-lnd` also has C dependencies which means a C compiler has to be installed to compile the daemon successfully.
+To build Go version 1.14 or higher is required. `boltz-client` also has C dependencies which means a C compiler has to be installed to compile the daemon successfully.
 
 The build process requires patches for dependencies, and some build flags, therefore the `Makefile` in the repository root should be used.
 
