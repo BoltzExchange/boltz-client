@@ -1,16 +1,26 @@
 package nursery
 
 import (
-	"encoding/hex"
+	"fmt"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/lightningnetwork/lnd/zpay32"
 	"strconv"
 
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
-	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	"github.com/btcsuite/btcd/btcutil"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/go-errors/errors"
 )
+
+func sendReverseSwapUpdate(reverseSwap database.ReverseSwap) {
+	sendUpdate(reverseSwap.Id, SwapUpdate{
+		ReverseSwap: &reverseSwap,
+		IsFinal:     reverseSwap.State != boltzrpc.SwapState_PENDING,
+	})
+}
 
 func (nursery *Nursery) recoverReverseSwaps() error {
 	logger.Info("Recovering pending Reverse Swaps")
@@ -28,67 +38,70 @@ func (nursery *Nursery) recoverReverseSwaps() error {
 		status, err := nursery.boltz.SwapStatus(reverseSwap.Id)
 
 		if err != nil {
-			logger.Warning("Boltz could not find Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+			logger.Warn("Boltz could not find Reverse Swap " + reverseSwap.Id + ": " + err.Error())
 			continue
 		}
 
 		if status.Status != reverseSwap.Status.String() {
 			logger.Info("Swap " + reverseSwap.Id + " status changed to: " + status.Status)
-			nursery.handleReverseSwapStatus(&reverseSwap, *status, nil)
+			nursery.handleReverseSwapStatus(&reverseSwap, *status)
 
 			if reverseSwap.State == boltzrpc.SwapState_PENDING {
-				nursery.RegisterReverseSwap(reverseSwap, nil)
+				nursery.RegisterReverseSwap(reverseSwap)
 			}
 
 			continue
 		}
 
 		logger.Info("Reverse Swap " + reverseSwap.Id + " status did not change")
-		nursery.RegisterReverseSwap(reverseSwap, nil)
+		nursery.RegisterReverseSwap(reverseSwap)
 	}
 
 	return nil
 }
 
-func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap, claimTransactionIdChan chan string) chan string {
+func (nursery *Nursery) PayReverseSwap(reverseSwap *database.ReverseSwap) error {
+	feeLimit, err := lightning.GetFeeLimit(reverseSwap.Invoice, nursery.network.Btc)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		payment, err := nursery.lightning.PayInvoice(reverseSwap.Invoice, feeLimit, 30, reverseSwap.ChanId)
+		if err != nil {
+			if dbErr := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+				logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
+			}
+			logger.Error("Could not pay invoice: " + err.Error())
+			sendReverseSwapUpdate(*reverseSwap)
+		} else {
+			logger.Info("Paid invoice of Reverse Swap " + reverseSwap.Id + " with fee of " + utils.FormatMilliSat(int64(payment.FeeMsat)) + " satoshis")
+		}
+	}()
+	return nil
+}
+
+func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) {
 	logger.Info("Listening to events of Reverse Swap " + reverseSwap.Id)
 
 	go func() {
-		stopListening := make(chan bool)
-		stopHandler := make(chan bool)
-
-		eventListenersLock.Lock()
-		eventListeners[reverseSwap.Id] = stopListening
-		eventListenersLock.Unlock()
-
 		eventStream := make(chan *boltz.SwapStatusResponse)
 
-		nursery.streamSwapStatus(reverseSwap.Id, "Reverse Swap", eventStream, stopListening, stopHandler)
+		sendReverseSwapUpdate(reverseSwap)
 
-		for {
-			select {
-			case event := <-eventStream:
-				logger.Info("Reverse Swap " + reverseSwap.Id + " status update: " + event.Status)
-				nursery.handleReverseSwapStatus(&reverseSwap, *event, claimTransactionIdChan)
+		listener, remove := newListener(reverseSwap.Id)
+		defer remove()
+		nursery.streamSwapStatus(reverseSwap.Id, "Reverse Swap", eventStream, listener.stop)
 
-				// The event listening can stop after the Reverse Swap has succeeded
-				if reverseSwap.Status == boltz.InvoiceSettled {
-					stopListening <- true
-				}
-
-				break
-
-			case <-stopHandler:
-				return
-			}
+		for event := range eventStream {
+			logger.Info("Reverse Swap " + reverseSwap.Id + " status update: " + event.Status)
+			nursery.handleReverseSwapStatus(&reverseSwap, *event)
 		}
 	}()
-
-	return claimTransactionIdChan
 }
 
 // TODO: fail swap after "transaction.failed" event
-func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse, claimTransactionIdChan chan string) {
+func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse) {
 	parsedStatus := boltz.ParseEvent(event.Status)
 
 	if parsedStatus == reverseSwap.Status {
@@ -96,130 +109,158 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		return
 	}
 
+	handleError := func(err string) {
+		if dbErr := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_ERROR, err); dbErr != nil {
+			logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
+		}
+		logger.Error(err)
+		sendReverseSwapUpdate(*reverseSwap)
+	}
+
 	switch parsedStatus {
 	case boltz.TransactionMempool:
 		fallthrough
 
 	case boltz.TransactionConfirmed:
+		err := nursery.database.SetReverseSwapLockupTransactionId(reverseSwap, event.Transaction.Id)
+
+		if err != nil {
+			handleError("Could not set lockup transaction id in database: " + err.Error())
+			return
+		}
+
 		if parsedStatus == boltz.TransactionMempool && !reverseSwap.AcceptZeroConf {
 			break
 		}
 
-		lockupTransactionRaw, err := hex.DecodeString(event.Transaction.Hex)
+		feeSatPerVbyte, err := nursery.getFeeEstimation(reverseSwap.PairId)
 
 		if err != nil {
-			logger.Error("Could not decode lockup transaction: " + err.Error())
+			handleError("Could not get LND fee estimation: " + err.Error())
 			return
 		}
 
-		lockupTransaction, err := btcutil.NewTxFromBytes(lockupTransactionRaw)
+		logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for claim transaction", feeSatPerVbyte))
+
+		claimTransaction, claimFee, err := createClaimTransaction(nursery.network, reverseSwap, event.Transaction.Hex, feeSatPerVbyte)
 
 		if err != nil {
-			logger.Error("Could not parse lockup transaction: " + err.Error())
+			handleError("Could not construct claim transaction: " + err.Error())
 			return
 		}
 
-		err = nursery.database.SetReverseSwapLockupTransactionId(reverseSwap, lockupTransaction.Hash().String())
-
-		if err != nil {
-			logger.Error("Could not set lockup transaction id in database: " + err.Error())
-			return
-		}
-
-		lockupAddress, err := boltz.WitnessScriptHashAddress(nursery.chainParams, reverseSwap.RedeemScript)
-
-		if err != nil {
-			logger.Error("Could not derive lockup address: " + err.Error())
-			return
-		}
-
-		lockupVout, err := nursery.findLockupVout(lockupAddress, lockupTransaction.MsgTx().TxOut)
-
-		if err != nil {
-			logger.Error("Could not find lockup vout of Reverse Swap " + reverseSwap.Id)
-			return
-		}
-
-		if lockupTransaction.MsgTx().TxOut[lockupVout].Value < int64(reverseSwap.OnchainAmount) {
-			logger.Warning("Boltz locked up less onchain coins than expected. Abandoning Reverse Swap")
-			return
-		}
-
-		logger.Info("Constructing claim transaction for Reverse Swap " + reverseSwap.Id + " with output: " + lockupTransaction.Hash().String() + ":" + strconv.Itoa(int(lockupVout)))
-
-		claimAddress, err := btcutil.DecodeAddress(reverseSwap.ClaimAddress, nursery.chainParams)
-
-		if err != nil {
-			logger.Error("Could not decode claim address of Reverse Swap: " + err.Error())
-			return
-		}
-
-		feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
-
-		if err != nil {
-			logger.Error("Could not get LND fee estimation: " + err.Error())
-			return
-		}
-
-		logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for claim transaction")
-
-		claimTransaction, err := boltz.ConstructTransaction(
-			[]boltz.OutputDetails{
-				{
-					LockupTransaction: lockupTransaction,
-					Vout:              lockupVout,
-					OutputType:        boltz.SegWit,
-					RedeemScript:      reverseSwap.RedeemScript,
-					PrivateKey:        reverseSwap.PrivateKey,
-					Preimage:          reverseSwap.Preimage,
-				},
-			},
-			claimAddress,
-			feeSatPerVbyte,
-		)
-
-		if err != nil {
-			logger.Error("Could not construct claim transaction: " + err.Error())
-			return
-		}
-
-		claimTransactionId := claimTransaction.TxHash().String()
-		logger.Info("Constructed claim transaction: " + claimTransactionId)
+		claimTransactionId := claimTransaction.Hash()
 
 		err = nursery.broadcastTransaction(claimTransaction, utils.CurrencyFromPair(reverseSwap.PairId))
 
 		if err != nil {
-			logger.Error("Could not finalize claim transaction: " + err.Error())
+			handleError("Could not finalize claim transaction: " + err.Error())
 			return
 		}
 
-		err = nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, claimTransactionId)
+		err = nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, claimTransactionId, claimFee)
 
 		if err != nil {
-			logger.Error("Could not set claim transaction id in database: " + err.Error())
+			handleError("Could not set claim transaction id in database: " + err.Error())
 			return
-		}
-
-		if claimTransactionIdChan != nil {
-			claimTransactionIdChan <- claimTransactionId
 		}
 	}
 
-	err := nursery.database.UpdateReverseSwapStatus(reverseSwap, parsedStatus)
-
-	if err != nil {
-		logger.Error("Could not update status of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+	if err := nursery.database.UpdateReverseSwapStatus(reverseSwap, parsedStatus); err != nil {
+		handleError("Could not update status of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+		return
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		err = nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SUCCESSFUL, "")
+		decodedInvoice, err := zpay32.Decode(reverseSwap.Invoice, nursery.network.Btc)
+		if err != nil {
+			handleError("Could not decode invoice: " + err.Error())
+			return
+		}
+
+		paymentHash := *decodedInvoice.PaymentHash
+		status, err := nursery.lightning.PaymentStatus(paymentHash[:])
+		if err != nil {
+			handleError("Could not get payment status: " + err.Error())
+		} else if status.State == lightning.PaymentSucceeded {
+			if err := nursery.database.SetReverseSwapRoutingFee(reverseSwap, status.FeeMsat); err != nil {
+				handleError("Could not set reverse swap routing fee in database: " + err.Error())
+				return
+			}
+		} else {
+			logger.Warn("Reverse Swap " + reverseSwap.Id + " has state completed but payment didnt succeed")
+		}
+
+		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
+		serviceFee := uint64(reverseSwap.ServiceFeePercent.Calculate(float64(invoiceAmount)))
+		boltzOnchainFee := invoiceAmount - reverseSwap.OnchainAmount - serviceFee
+
+		logger.Infof("Reverse Swap service fee: %dsat; boltz onchain fee: %dsat", serviceFee, boltzOnchainFee)
+
+		if err := nursery.database.SetReverseSwapServiceFee(reverseSwap, serviceFee, boltzOnchainFee); err != nil {
+			handleError("Could not set reverse swap service fee in database: " + err.Error())
+			return
+		}
+		if err := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
+			handleError("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+			return
+		}
 	} else if parsedStatus.IsFailedStatus() {
 		if reverseSwap.State == boltzrpc.SwapState_PENDING {
-			err = nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SERVER_ERROR, "")
+			if err := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
+				handleError("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+				return
+			}
 		}
 	}
 
+	sendReverseSwapUpdate(*reverseSwap)
+}
+
+func createClaimTransaction(network *boltz.Network, reverseSwap *database.ReverseSwap, lockupTxHex string, feeSatPerVbyte float64) (boltz.Transaction, uint64, error) {
+	lockupTx, err := boltz.NewTxFromHex(lockupTxHex, reverseSwap.BlindingKey)
+
 	if err != nil {
-		logger.Error("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
+		return nil, 0, errors.New("Could not decode lockup transaction: " + err.Error())
 	}
+
+	var blindingKey *btcec.PublicKey
+	if reverseSwap.BlindingKey != nil {
+		blindingKey = reverseSwap.BlindingKey.PubKey()
+	}
+	lockupAddress, err := boltz.WitnessScriptHashAddress(network, reverseSwap.RedeemScript, blindingKey)
+
+	logger.Info("Derived lockup address: " + lockupAddress)
+
+	if err != nil {
+		return nil, 0, errors.New("Could not derive lockup address: " + err.Error())
+	}
+
+	lockupVout, lockupValue, err := lockupTx.FindVout(network, lockupAddress)
+	if err != nil {
+		return nil, 0, errors.New("Could not find lockup vout of Reverse Swap " + reverseSwap.Id)
+	}
+
+	if lockupValue < reverseSwap.OnchainAmount {
+		logger.Warn("Boltz locked up less onchain coins than expected. Abandoning Reverse Swap")
+	}
+
+	logger.Info("Constructing claim transaction for Reverse Swap " + reverseSwap.Id + " with output: " + lockupTx.Hash() + ":" + strconv.Itoa(int(lockupVout)))
+
+	return boltz.ConstructTransaction(
+		reverseSwap.PairId,
+		network,
+		[]boltz.OutputDetails{
+			{
+				LockupTransaction: lockupTx,
+				Vout:              lockupVout,
+				OutputType:        boltz.SegWit,
+				RedeemScript:      reverseSwap.RedeemScript,
+				PrivateKey:        reverseSwap.PrivateKey,
+				Preimage:          reverseSwap.Preimage,
+			},
+		},
+		reverseSwap.ClaimAddress,
+		feeSatPerVbyte,
+	)
 }

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
-	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/logger"
 )
 
 type swapStatus struct {
@@ -193,6 +193,42 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN chanId INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN blindingKey VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN isAuto BOOLEAN")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN serviceFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN serviceFeePercent REAL")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN onchainFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN createdAt INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN autoSend BOOLEAN")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN refundAddress VARCHAR")
+		if err != nil {
+			return err
+		}
 
 		_, err = database.db.Exec("UPDATE swaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
 		if err != nil {
@@ -203,8 +239,45 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanId INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN blindingKey VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN isAuto BOOLEAN")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN routingFeeMsat INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFeePercent REAL")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN onchainFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN createdAt INT")
+		if err != nil {
+			return err
+		}
 
 		_, err = database.db.Exec("UPDATE reverseSwaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.db.Exec("CREATE TABLE IF NOT EXISTS autobudget (startDate INT PRIMARY KEY, endDate INT)")
 		if err != nil {
 			return err
 		}

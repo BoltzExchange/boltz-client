@@ -30,3 +30,8 @@ func createNestedP2shScript(redeemScript []byte) []byte {
 
 	return addressScript
 }
+
+func createP2wshScript(redeemScript []byte) ([]byte, error) {
+	hash := sha256.Sum256(redeemScript)
+	return txscript.NewScriptBuilder().AddOp(txscript.OP_0).AddData(hash[:]).Script()
+}

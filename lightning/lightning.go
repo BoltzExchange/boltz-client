@@ -1,5 +1,9 @@
 package lightning
 
+import (
+	"github.com/BoltzExchange/boltz-client/onchain"
+)
+
 type PaymentState string
 type LightningNodeType string
 
@@ -14,12 +18,9 @@ const (
 
 type PaymentStatus struct {
 	State         PaymentState
-	FailureReason *string
-
-	Hash     string
-	Preimage string
-
-	FeeMsat uint64
+	FailureReason string
+	Preimage      string
+	FeeMsat       uint64
 }
 
 type PaymentUpdate struct {
@@ -36,17 +37,24 @@ type LightningInfo struct {
 }
 
 type ChannelPoint struct {
-	FundingTxid string
+	FundingTxId string
 	OutputIndex uint32
 }
 
 type LightningChannel struct {
-	LocalMsat  uint
-	RemoteMsat uint
-	Capacity   uint
-	Id         string
-	PeerId     string
-	Point      ChannelPoint
+	LocalSat  uint64
+	RemoteSat uint64
+	Capacity  uint64
+	Id        ChanId
+	PeerId    string
+	Point     ChannelPoint
+}
+
+func (channel *LightningChannel) GetId() ChanId {
+	if channel == nil {
+		return ChanId(0)
+	}
+	return channel.Id
 }
 
 type AddInvoiceResponse struct {
@@ -59,19 +67,26 @@ type PayInvoiceResponse struct {
 }
 
 type LightningNode interface {
+	onchain.BlockListener
+	onchain.Wallet
+
 	Connect() error
 	//Name() string
 	//NodeType() LightningNodeType
-	//PaymentStatus(preimageHash string) (*PaymentStatus, error)
+	PaymentStatus(paymentHash []byte) (*PaymentStatus, error)
 
 	//SendPayment(invoice string, feeLimit uint64, timeout int32) (<-chan *PaymentUpdate, error)
 	//PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32) (int64, error)
-	PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint) (*PayInvoiceResponse, error)
+	PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, channelid ChanId) (*PayInvoiceResponse, error)
 	CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*AddInvoiceResponse, error)
 
 	NewAddress() (string, error)
 
 	GetInfo() (*LightningInfo, error)
-	ListChannels() ([]LightningChannel, error)
+
+	CheckInvoicePaid(paymentHash []byte) (bool, error)
+	ListChannels() ([]*LightningChannel, error)
 	//GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error)
+
+	ConnectPeer(uri string) error
 }

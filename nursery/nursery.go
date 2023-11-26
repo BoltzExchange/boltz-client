@@ -6,111 +6,178 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BoltzExchange/boltz-lnd/lightning"
-	"github.com/BoltzExchange/boltz-lnd/mempool"
+	"github.com/BoltzExchange/boltz-client/utils"
 
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/BoltzExchange/boltz-lnd/lnd"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/onchain"
+
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/logger"
 )
 
 type Nursery struct {
-	symbol      string
-	boltzPubKey string
-
-	chainParams *chaincfg.Params
+	network *boltz.Network
 
 	lightning lightning.LightningNode
 
-	lnd      *lnd.LND
+	onchain  *onchain.Onchain
 	boltz    *boltz.Boltz
-	mempool  *mempool.Mempool
 	database *database.Database
 }
 
 const retryInterval = 15
 
+type SwapUpdate struct {
+	Swap        *database.Swap
+	ReverseSwap *database.ReverseSwap
+	IsFinal     bool
+}
+
+type swapListener struct {
+	stop      chan bool
+	updates   chan<- SwapUpdate
+	forwarder *utils.ChannelForwarder[SwapUpdate]
+}
+
+func (listener *swapListener) close() {
+	select {
+	case listener.stop <- true:
+		logger.Debug("Sent stop signal to listener")
+	default:
+		logger.Debug("Listener already stopped")
+	}
+}
+
 // Map between Swap ids and a channel that tells its SSE event listeners to stop
-var eventListeners = make(map[string]chan bool)
+var eventListeners = make(map[string]swapListener)
 var eventListenersLock sync.RWMutex
+var eventListenersGroup sync.WaitGroup
+
+func newListener(id string) (swapListener, func()) {
+	eventListenersLock.Lock()
+	defer eventListenersLock.Unlock()
+	updates := make(chan SwapUpdate)
+	listener := swapListener{
+		stop:      make(chan bool),
+		updates:   updates,
+		forwarder: utils.ForwardChannel(updates, 0, true),
+	}
+	eventListeners[id] = listener
+	logger.Debug("Creating listener for swap " + id)
+	eventListenersGroup.Add(1)
+	return listener, func() {
+		eventListenersLock.Lock()
+		defer eventListenersLock.Unlock()
+		close(listener.stop)
+		close(listener.updates)
+		delete(eventListeners, id)
+		eventListenersGroup.Done()
+	}
+}
+
+func getSwapListener(id string) *swapListener {
+	eventListenersLock.RLock()
+	defer eventListenersLock.RUnlock()
+	listener, ok := eventListeners[id]
+	if ok {
+		return &listener
+	}
+	return nil
+}
+
+func sendUpdate(id string, update SwapUpdate) {
+	if listener := getSwapListener(id); listener != nil {
+		listener.updates <- update
+		logger.Debugf("Sent update for swap %s", id)
+
+		if update.IsFinal {
+			listener.close()
+		}
+	}
+}
+
+func (nursery *Nursery) SwapUpdates(id string) (<-chan SwapUpdate, func()) {
+	listener := getSwapListener(id)
+	if listener != nil {
+		updates := listener.forwarder.Get()
+		return updates, func() {
+			if listener := getSwapListener(id); listener != nil {
+				listener.forwarder.Remove(updates)
+			}
+		}
+	}
+	return nil, nil
+}
 
 func (nursery *Nursery) Init(
-	boltzPubKey string,
-	chainParams *chaincfg.Params,
-	lnd *lnd.LND,
-	boltz *boltz.Boltz,
-	memp *mempool.Mempool,
+	network *boltz.Network,
+	lightning lightning.LightningNode,
+	chain *onchain.Onchain,
+	boltzClient *boltz.Boltz,
 	database *database.Database,
 ) error {
-	nursery.boltzPubKey = boltzPubKey
+	nursery.network = network
 
-	nursery.chainParams = chainParams
-
-	nursery.lnd = lnd
-	nursery.lightning = lnd
-	nursery.boltz = boltz
-	nursery.mempool = memp
+	nursery.lightning = lightning
+	nursery.boltz = boltzClient
 	nursery.database = database
+	nursery.onchain = chain
 
 	logger.Info("Starting nursery")
 
-	// TODO: use channel acceptor to prevent invalid channel openings from happening
-
-	blockNotifier := make(chan *chainrpc.BlockEpoch)
-	go nursery.registerBlockListener(blockNotifier)
-
-	err := nursery.recoverSwaps(blockNotifier)
-
-	if err != nil {
+	if err := nursery.recoverSwaps(); err != nil {
 		return err
 	}
 
-	err = nursery.recoverReverseSwaps()
+	if err := nursery.startBlockListener(boltz.PairBtc); err != nil {
+		return err
+	}
+
+	if err := nursery.startBlockListener(boltz.PairLiquid); err != nil {
+		return err
+	}
+
+	err := nursery.recoverReverseSwaps()
 
 	return err
 }
 
-func (nursery *Nursery) registerBlockListener(blockNotifier chan *chainrpc.BlockEpoch) {
-	logger.Info("Connecting to LND block epoch stream")
-	err := nursery.lnd.RegisterBlockListener(blockNotifier)
-
-	if err != nil {
-		logger.Error("Lost connection to LND block epoch stream: " + err.Error())
-		logger.Info("Retrying LND connection in " + strconv.Itoa(retryInterval) + " seconds")
-
-		time.Sleep(retryInterval * time.Second)
-
-		nursery.registerBlockListener(blockNotifier)
+func (nursery *Nursery) Stop() {
+	for _, listener := range eventListeners {
+		listener.close()
 	}
+	eventListenersGroup.Wait()
 }
 
-func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxOut) (uint32, error) {
-	for vout, output := range outputs {
-		_, outputAddresses, _, err := txscript.ExtractPkScriptAddrs(output.PkScript, nursery.chainParams)
+func (nursery *Nursery) registerBlockListener(pair boltz.Pair, blockNotifier chan *onchain.BlockEpoch) error {
+	logger.Info("Connecting to block epoch stream")
+	go func() {
+		for {
+			listener := nursery.onchain.GetBlockListener(pair)
+			if listener == nil {
+				logger.Errorf("no block listener for %s", pair)
+				time.Sleep(retryInterval * time.Second)
+			} else {
+				err := listener.RegisterBlockListener(blockNotifier)
+				if err != nil {
+					logger.Errorf("Lost connection to %s block epoch stream: %s", utils.CurrencyFromPair(pair), err.Error())
+					logger.Infof("Retrying connection in " + strconv.Itoa(retryInterval) + " seconds")
 
-		// Just ignore outputs we can't decode
-		if err != nil {
-			continue
-		}
-
-		for _, outputAddress := range outputAddresses {
-			if outputAddress.EncodeAddress() == addressToFind {
-				return uint32(vout), nil
+					time.Sleep(retryInterval * time.Second)
+				}
 			}
 		}
-	}
-
-	return 0, errors.New("could not find lockup vout")
+	}()
+	return nil
 }
 
-func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx, currency string) error {
-	transactionHex, err := boltz.SerializeTransaction(transaction)
+func (nursery *Nursery) getFeeEstimation(pair boltz.Pair) (float64, error) {
+	return nursery.onchain.EstimateFee(pair, 2)
+}
 
+func (nursery *Nursery) broadcastTransaction(transaction boltz.Transaction, currency string) error {
+	transactionHex, err := transaction.Serialize()
 	if err != nil {
 		return errors.New("could not serialize transaction: " + err.Error())
 	}

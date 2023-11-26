@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package autoswaprpc;
+option go_package = "github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc";
+
+import "google/protobuf/empty.proto";
+import "boltzrpc.proto";
+
+service AutoSwap {
+  /*
+  Returns a list of swaps which are currently recommended by the autoswapper. Also works when the autoswapper is not running. 
+  */
+  rpc GetSwapRecommendations (GetSwapRecommendationsRequest) returns (GetSwapRecommendationsResponse);
+
+  /*
+  Returns the current budget of the autoswapper and some relevant stats.
+   */
+  rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
+
+  /*
+  Resets the configuration to default values.
+   */
+  rpc ResetConfig(google.protobuf.Empty) returns (Config);
+
+  /*
+  Allows setting a specific value in the configuration. The autoswapper will reload the configuration after this call.
+  */
+  rpc SetConfigValue(SetConfigValueRequest) returns (Config);
+
+  /*
+  Returns the currently used configurationencoded as json.
+  If a key is specfied, only the value of that key will be returned.
+  */
+  rpc GetConfig(GetConfigRequest) returns (Config);
+
+  /*
+  Reloads the configuration from disk.
+  */
+  rpc ReloadConfig(google.protobuf.Empty) returns (Config);
+}
+
+
+message GetSwapRecommendationsRequest {
+  // Do not return any dismissed recommendations
+  optional bool no_dismissed = 1;
+}
+
+message SwapRecommendation {
+  string type = 1;
+  uint64 amount = 2;
+  boltzrpc.LightningChannel channel = 3;
+  uint64 fee_estimate = 4;
+  repeated string dismissed_reasons = 5;
+}
+
+
+message Budget {
+  uint64 total = 1;
+  int64 remaining = 2;
+  int64 start_date = 3;
+  int64 end_date = 4;
+}
+
+message GetSwapRecommendationsResponse {
+  repeated SwapRecommendation swaps = 1;
+}
+
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  bool running = 1;
+  string strategy = 2;
+  string error = 3;
+  optional boltzrpc.SwapStats stats = 4;
+  optional Budget budget = 5;
+}
+
+message SetConfigValueRequest {
+  string key = 1;
+  string value = 2;
+}
+
+message GetConfigRequest {
+  optional string key = 1;
+}
+
+message Config {
+  string json = 1;
+}

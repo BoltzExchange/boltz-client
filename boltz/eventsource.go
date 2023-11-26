@@ -9,7 +9,7 @@ import (
 
 var responseDelimiter = []byte{':', ' '}
 
-func streamSwapStatus(url string, events chan *SwapStatusResponse, stopListening chan bool) error {
+func streamSwapStatus(url string, events chan *SwapStatusResponse, stopListening <-chan bool) error {
 	handleError := make(chan error)
 
 	client := &http.Client{}

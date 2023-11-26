@@ -5,7 +5,7 @@
 
 This page was automatically generated based on the protobuf file `boltzrpc.proto`.
 
-Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-lnd/blob/master/boltzrpc/rest-annotations.yaml).
+Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml).
 
 
 ## boltzrpc.Boltz
@@ -28,6 +28,14 @@ Fetches the latest limits and fees from the Boltz backend API it is connected to
 | ------- | -------- |
 | [`GetServiceInfoRequest`](#boltzrpc.GetServiceInfoRequest) | [`GetServiceInfoResponse`](#boltzrpc.GetServiceInfoResponse) |
 
+#### GetFeeEstimation
+
+Fetches the latest limits and fees from the Boltz backend API it is connected to.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetFeeEstimationRequest`](#boltzrpc.GetFeeEstimationRequest) | [`GetFeeEstimationResponse`](#boltzrpc.GetFeeEstimationResponse) |
+
 #### ListSwaps
 
 Returns a list of all swaps, reverse swaps and channel creations in the database.
@@ -43,6 +51,14 @@ Gets all available information about a swap from the database.
 | Request | Response |
 | ------- | -------- |
 | [`GetSwapInfoRequest`](#boltzrpc.GetSwapInfoRequest) | [`GetSwapInfoResponse`](#boltzrpc.GetSwapInfoResponse) |
+
+#### GetSwapInfoStream
+
+Returns the entire history of the swap if is still pending and streams updates in real time.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetSwapInfoRequest`](#boltzrpc.GetSwapInfoRequest) | [`GetSwapInfoResponse`](#boltzrpc.GetSwapInfoResponse) stream |
 
 #### Deposit
 
@@ -76,13 +92,106 @@ Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is s
 | ------- | -------- |
 | [`CreateReverseSwapRequest`](#boltzrpc.CreateReverseSwapRequest) | [`CreateReverseSwapResponse`](#boltzrpc.CreateReverseSwapResponse) |
 
+#### CreateLiquidWallet
+
+Creates a new liquid wallet and returns the mnemonic.
+
+| Request | Response |
+| ------- | -------- |
+| [`CreateLiquidWalletRequest`](#boltzrpc.CreateLiquidWalletRequest) | [`LiquidWalletMnemonic`](#boltzrpc.LiquidWalletMnemonic) |
+
+#### ImportLiquidWallet
+
+Imports a liquid wallet from a mnemonic.
+
+| Request | Response |
+| ------- | -------- |
+| [`ImportLiquidWalletRequest`](#boltzrpc.ImportLiquidWalletRequest) | [`ImportLiquidWalletResponse`](#boltzrpc.ImportLiquidWalletResponse) |
+
+#### SetLiquidSubaccount
+
+Sets the subaccount of the liquid wallet which will be used by the daemon.
+
+| Request | Response |
+| ------- | -------- |
+| [`SetLiquidSubaccountRequest`](#boltzrpc.SetLiquidSubaccountRequest) | [`LiquidWalletInfo`](#boltzrpc.LiquidWalletInfo) |
+
+#### GetLiquidSubaccounts
+
+Returns a list of all subaccounts of the liquid wallet.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetLiquidSubaccountsRequest`](#boltzrpc.GetLiquidSubaccountsRequest) | [`GetLiquidSubaccountsResponse`](#boltzrpc.GetLiquidSubaccountsResponse) |
+
+#### GetLiquidWalletInfo
+
+Returns the current balance and subaccount of the liquid wallet.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetLiquidWalletInfoRequest`](#boltzrpc.GetLiquidWalletInfoRequest) | [`LiquidWalletInfo`](#boltzrpc.LiquidWalletInfo) |
+
+#### GetLiquidWalletMnemonic
+
+Returns the mnemonic of the liquid wallet.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetLiquidWalletMnemonicRequest`](#boltzrpc.GetLiquidWalletMnemonicRequest) | [`LiquidWalletMnemonic`](#boltzrpc.LiquidWalletMnemonic) |
+
+#### RemoveLiquidWallet
+
+Removes the liquid wallet from the daemon.
+
+| Request | Response |
+| ------- | -------- |
+| [`RemoveLiquidWalletRequest`](#boltzrpc.RemoveLiquidWalletRequest) | [`RemoveLiquidWalletResponse`](#boltzrpc.RemoveLiquidWalletResponse) |
+
+#### Stop
+
+Stops the server.
+
+| Request | Response |
+| ------- | -------- |
+| [`.google.protobuf.Empty`](#google.protobuf.Empty) | [`.google.protobuf.Empty`](#google.protobuf.Empty) |
+
 
 
 
 ### Messages
 
+#### <div id="boltzrpc.Balance">Balance</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `total` | [`uint64`](#uint64) |  |  |
+| `confirmed` | [`uint64`](#uint64) |  |  |
+| `unconfirmed` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.Budget">Budget</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `total` | [`uint64`](#uint64) |  |  |
+| `remaining` | [`int64`](#int64) |  |  |
+| `start_date` | [`int64`](#int64) |  |  |
+| `end_date` | [`int64`](#int64) |  |  |
+
+
+
+
+
 #### <div id="boltzrpc.ChannelCreationInfo">ChannelCreationInfo</div>
-Channel creations are an optional extension to a submarine swap in the data types of boltz-lnd.
+Channel creations are an optional extension to a submarine swap in the data types of boltz-client.
 
 
 | Field | Type | Label | Description |
@@ -93,6 +202,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `private` | [`bool`](#bool) |  |  |
 | `funding_transaction_id` | [`string`](#string) |  |  |
 | `funding_transaction_vout` | [`uint32`](#uint32) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.ChannelId">ChannelId</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `cln` | [`string`](#string) |  |  |
+| `lnd` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -125,6 +247,13 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### <div id="boltzrpc.CreateLiquidWalletRequest">CreateLiquidWalletRequest</div>
+
+
+
+
+
+
 #### <div id="boltzrpc.CreateReverseSwapRequest">CreateReverseSwapRequest</div>
 
 
@@ -134,6 +263,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`int64`](#int64) |  |  |
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new P2WKH address from LND |
 | `accept_zero_conf` | [`bool`](#bool) |  |  |
+| `pair_id` | [`string`](#string) |  |  |
+| `chan_id` | [`string`](#string) | optional |  |
 
 
 
@@ -147,8 +278,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `lockup_address` | [`string`](#string) |  |  |
-| `routing_fee_milli_sat` | [`uint32`](#uint32) |  |  |
-| `claim_transaction_id` | [`string`](#string) |  | Only populated when 0-conf is accepted |
+| `routing_fee_milli_sat` | [`uint32`](#uint32) |  | **Deprecated.**  |
+| `claim_transaction_id` | [`string`](#string) |  | **Deprecated.** Only populated when 0-conf is accepted |
 
 
 
@@ -161,6 +292,10 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `amount` | [`int64`](#int64) |  |  |
+| `pair_id` | [`string`](#string) |  |  |
+| `chan_id` | [`string`](#string) | optional |  |
+| `auto_send` | [`bool`](#bool) |  |  |
+| `refund_address` | [`string`](#string) |  |  |
 
 
 
@@ -176,6 +311,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `address` | [`string`](#string) |  |  |
 | `expected_amount` | [`int64`](#int64) |  |  |
 | `bip21` | [`string`](#string) |  |  |
+| `tx_id` | [`string`](#string) |  |  |
+| `timeout_block_height` | [`uint32`](#uint32) |  |  |
 
 
 
@@ -188,6 +325,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `inbound_liquidity` | [`uint32`](#uint32) |  | Percentage of inbound liquidity the channel that is opened in case the invoice cannot be paid should have. 25 by default. |
+| `pairId` | [`string`](#string) |  |  |
 
 
 
@@ -220,6 +358,33 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### <div id="boltzrpc.GetFeeEstimationRequest">GetFeeEstimationRequest</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `amount` | [`uint64`](#uint64) |  |  |
+| `swap_type` | [`string`](#string) |  |  |
+| `pair_id` | [`string`](#string) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.GetFeeEstimationResponse">GetFeeEstimationResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fees` | [`Fees`](#boltzrpc.Fees) |  |  |
+| `limits` | [`Limits`](#boltzrpc.Limits) |  |  |
+
+
+
+
+
 #### <div id="boltzrpc.GetInfoRequest">GetInfoRequest</div>
 
 
@@ -233,10 +398,12 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `symbol` | [`string`](#string) |  |  |
+| `symbol` | [`string`](#string) |  | **Deprecated.**  |
+| `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
+| `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
 | `network` | [`string`](#string) |  |  |
-| `lnd_pubkey` | [`string`](#string) |  |  |
-| `block_height` | [`uint32`](#uint32) |  |  |
+| `node_pubkey` | [`string`](#string) |  |  |
+| `block_heights` | [`GetInfoResponse.BlockHeightsEntry`](#boltzrpc.GetInfoResponse.BlockHeightsEntry) | repeated |  |
 | `pending_swaps` | [`string`](#string) | repeated |  |
 | `pending_reverse_swaps` | [`string`](#string) | repeated |  |
 
@@ -244,8 +411,59 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### <div id="boltzrpc.GetInfoResponse.BlockHeightsEntry">GetInfoResponse.BlockHeightsEntry</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [`string`](#string) |  |  |
+| `value` | [`uint32`](#uint32) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.GetLiquidSubaccountsRequest">GetLiquidSubaccountsRequest</div>
+
+
+
+
+
+
+#### <div id="boltzrpc.GetLiquidSubaccountsResponse">GetLiquidSubaccountsResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `subaccounts` | [`LiquidSubaccount`](#boltzrpc.LiquidSubaccount) | repeated |  |
+
+
+
+
+
+#### <div id="boltzrpc.GetLiquidWalletInfoRequest">GetLiquidWalletInfoRequest</div>
+
+
+
+
+
+
+#### <div id="boltzrpc.GetLiquidWalletMnemonicRequest">GetLiquidWalletMnemonicRequest</div>
+
+
+
+
+
+
 #### <div id="boltzrpc.GetServiceInfoRequest">GetServiceInfoRequest</div>
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pair_id` | [`string`](#string) |  |  |
 
 
 
@@ -290,6 +508,60 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### <div id="boltzrpc.GetSwapRecommendationsRequest">GetSwapRecommendationsRequest</div>
+
+
+
+
+
+
+#### <div id="boltzrpc.GetSwapRecommendationsResponse">GetSwapRecommendationsResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `swaps` | [`SwapRecommendation`](#boltzrpc.SwapRecommendation) | repeated |  |
+
+
+
+
+
+#### <div id="boltzrpc.ImportLiquidWalletRequest">ImportLiquidWalletRequest</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mnemonic` | [`string`](#string) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.ImportLiquidWalletResponse">ImportLiquidWalletResponse</div>
+
+
+
+
+
+
+#### <div id="boltzrpc.LightningChannel">LightningChannel</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`ChannelId`](#boltzrpc.ChannelId) |  |  |
+| `capacity` | [`uint64`](#uint64) |  |  |
+| `local_sat` | [`uint64`](#uint64) |  |  |
+| `remote_sat` | [`uint64`](#uint64) |  |  |
+| `peer_id` | [`string`](#string) |  |  |
+
+
+
+
+
 #### <div id="boltzrpc.Limits">Limits</div>
 
 
@@ -298,6 +570,44 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `minimal` | [`int64`](#int64) |  |  |
 | `maximal` | [`int64`](#int64) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.LiquidSubaccount">LiquidSubaccount</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `balance` | [`Balance`](#boltzrpc.Balance) |  |  |
+| `pointer` | [`uint64`](#uint64) |  |  |
+| `type` | [`string`](#string) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.LiquidWalletInfo">LiquidWalletInfo</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `subaccount` | [`LiquidSubaccount`](#boltzrpc.LiquidSubaccount) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.LiquidWalletMnemonic">LiquidWalletMnemonic</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mnemonic` | [`string`](#string) |  |  |
 
 
 
@@ -337,6 +647,20 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### <div id="boltzrpc.RemoveLiquidWalletRequest">RemoveLiquidWalletRequest</div>
+
+
+
+
+
+
+#### <div id="boltzrpc.RemoveLiquidWalletResponse">RemoveLiquidWalletResponse</div>
+
+
+
+
+
+
 #### <div id="boltzrpc.ReverseSwapInfo">ReverseSwapInfo</div>
 
 
@@ -356,6 +680,25 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `claim_transaction_id` | [`string`](#string) |  |  |
+| `pair_id` | [`string`](#string) |  |  |
+| `chan_id` | [`ChannelId`](#boltzrpc.ChannelId) | optional |  |
+| `blinding_key` | [`string`](#string) | optional |  |
+| `created_at` | [`int64`](#int64) |  |  |
+| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `onchain_fee` | [`uint64`](#uint64) | optional |  |
+| `routing_fee_msat` | [`uint64`](#uint64) | optional |  |
+
+
+
+
+
+#### <div id="boltzrpc.SetLiquidSubaccountRequest">SetLiquidSubaccountRequest</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `subaccount` | [`uint64`](#uint64) | optional | The subaccount to use. If not set, a new one will be created. |
 
 
 
@@ -368,6 +711,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
+| `pair_id` | [`string`](#string) |  |  |
 | `state` | [`SwapState`](#boltzrpc.SwapState) |  |  |
 | `error` | [`string`](#string) |  |  |
 | `status` | [`string`](#string) |  | Latest status message of the Boltz backend |
@@ -379,7 +723,46 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `expected_amount` | [`int64`](#int64) |  |  |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) |  |  |
-| `refund_transaction_id` | [`string`](#string) |  | If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the `lockup_address` back to the LND wallet and save the refund transaction id to the database. |
+| `refund_transaction_id` | [`string`](#string) |  | If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the `lockup_address` back to the configured wallet or the address specified in the `refund_address` field. |
+| `refund_address` | [`string`](#string) | optional |  |
+| `chan_id` | [`ChannelId`](#boltzrpc.ChannelId) | optional |  |
+| `blinding_key` | [`string`](#string) | optional |  |
+| `created_at` | [`int64`](#int64) |  |  |
+| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `onchain_fee` | [`uint64`](#uint64) | optional |  |
+| `auto_send` | [`bool`](#bool) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.SwapRecommendation">SwapRecommendation</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [`string`](#string) |  |  |
+| `amount` | [`uint64`](#uint64) |  |  |
+| `channel` | [`LightningChannel`](#boltzrpc.LightningChannel) |  |  |
+| `fee_estimate` | [`uint64`](#uint64) |  |  |
+| `dismissed_reasons` | [`string`](#string) | repeated |  |
+
+
+
+
+
+#### <div id="boltzrpc.SwapStats">SwapStats</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `total_fees` | [`uint64`](#uint64) |  |  |
+| `total_amount` | [`uint64`](#uint64) |  |  |
+| `avg_fees` | [`uint64`](#uint64) |  |  |
+| `avg_amount` | [`uint64`](#uint64) |  |  |
+| `count` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -402,6 +785,190 @@ Channel creations are an optional extension to a submarine swap in the data type
 | SERVER_ERROR | 3 | Unknown server error. Check the status field of the message for more information |
 | REFUNDED | 4 | Client refunded locked coins after the HTLC timed out |
 | ABANDONED | 5 | Client noticed that the HTLC timed out but didn't find any outputs to refund |
+
+
+
+
+
+This page was automatically generated based on the protobuf file `autoswaprpc/autoswap.proto`.
+
+Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml).
+
+
+## autoswaprpc.AutoSwap
+
+
+### Methods
+#### GetSwapRecommendations
+
+Returns a list of swaps which are currently recommended by the autoswapper. Also works when the autoswapper is not running.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetSwapRecommendationsRequest`](#autoswaprpc.GetSwapRecommendationsRequest) | [`GetSwapRecommendationsResponse`](#autoswaprpc.GetSwapRecommendationsResponse) |
+
+#### GetStatus
+
+Returns the current budget of the autoswapper and some relevant stats.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetStatusRequest`](#autoswaprpc.GetStatusRequest) | [`GetStatusResponse`](#autoswaprpc.GetStatusResponse) |
+
+#### ResetConfig
+
+Resets the configuration to default values.
+
+| Request | Response |
+| ------- | -------- |
+| [`.google.protobuf.Empty`](#google.protobuf.Empty) | [`Config`](#autoswaprpc.Config) |
+
+#### SetConfigValue
+
+Allows setting a specific value in the configuration. The autoswapper will reload the configuration after this call.
+
+| Request | Response |
+| ------- | -------- |
+| [`SetConfigValueRequest`](#autoswaprpc.SetConfigValueRequest) | [`Config`](#autoswaprpc.Config) |
+
+#### GetConfig
+
+Returns the currently used configurationencoded as json. If a key is specfied, only the value of that key will be returned.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetConfigRequest`](#autoswaprpc.GetConfigRequest) | [`Config`](#autoswaprpc.Config) |
+
+#### ReloadConfig
+
+Reloads the configuration from disk.
+
+| Request | Response |
+| ------- | -------- |
+| [`.google.protobuf.Empty`](#google.protobuf.Empty) | [`Config`](#autoswaprpc.Config) |
+
+
+
+
+### Messages
+
+#### <div id="autoswaprpc.Budget">Budget</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `total` | [`uint64`](#uint64) |  |  |
+| `remaining` | [`int64`](#int64) |  |  |
+| `start_date` | [`int64`](#int64) |  |  |
+| `end_date` | [`int64`](#int64) |  |  |
+
+
+
+
+
+#### <div id="autoswaprpc.Config">Config</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `json` | [`string`](#string) |  |  |
+
+
+
+
+
+#### <div id="autoswaprpc.GetConfigRequest">GetConfigRequest</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [`string`](#string) | optional |  |
+
+
+
+
+
+#### <div id="autoswaprpc.GetStatusRequest">GetStatusRequest</div>
+
+
+
+
+
+
+#### <div id="autoswaprpc.GetStatusResponse">GetStatusResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `running` | [`bool`](#bool) |  |  |
+| `strategy` | [`string`](#string) |  |  |
+| `error` | [`string`](#string) |  |  |
+| `stats` | [`boltzrpc.SwapStats`](#boltzrpc.SwapStats) | optional |  |
+| `budget` | [`Budget`](#autoswaprpc.Budget) | optional |  |
+
+
+
+
+
+#### <div id="autoswaprpc.GetSwapRecommendationsRequest">GetSwapRecommendationsRequest</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `no_dismissed` | [`bool`](#bool) | optional | Do not return any dismissed recommendations |
+
+
+
+
+
+#### <div id="autoswaprpc.GetSwapRecommendationsResponse">GetSwapRecommendationsResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `swaps` | [`SwapRecommendation`](#autoswaprpc.SwapRecommendation) | repeated |  |
+
+
+
+
+
+#### <div id="autoswaprpc.SetConfigValueRequest">SetConfigValueRequest</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [`string`](#string) |  |  |
+| `value` | [`string`](#string) |  |  |
+
+
+
+
+
+#### <div id="autoswaprpc.SwapRecommendation">SwapRecommendation</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [`string`](#string) |  |  |
+| `amount` | [`uint64`](#uint64) |  |  |
+| `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.LightningChannel) |  |  |
+| `fee_estimate` | [`uint64`](#uint64) |  |  |
+| `dismissed_reasons` | [`string`](#string) | repeated |  |
+
+
+
+
+
+
+### Enums
 
 
 

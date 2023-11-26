@@ -7,12 +7,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/logger"
 	"os"
 	"strconv"
-	"strings"
+	"time"
 
-	"github.com/BoltzExchange/boltz-lnd/cln/protos"
-	"github.com/BoltzExchange/boltz-lnd/lightning"
+	"github.com/BoltzExchange/boltz-client/cln/protos"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -31,8 +33,6 @@ const (
 	serviceName = lightning.NodeTypeCln
 
 	paymentFailure = "payment failed"
-
-	msatFactor = 1000
 )
 
 var (
@@ -44,6 +44,10 @@ var (
 		protos.ListpaysPays_FAILED:   lightning.PaymentFailed,
 	}
 )
+
+func (c *Cln) Ready() bool {
+	return c.Client != nil
+}
 
 func (c *Cln) Connect() error {
 	caFile, err := os.ReadFile(c.RootCert)
@@ -97,25 +101,38 @@ func (c *Cln) GetInfo() (*lightning.LightningInfo, error) {
 	}, nil
 }
 
-func (c *Cln) ListChannels() ([]lightning.LightningChannel, error) {
-	channels, err := c.Client.ListFunds(context.Background(), &protos.ListfundsRequest{})
+func (c *Cln) GetBlockHeight() (uint32, error) {
+	info, err := c.GetInfo()
+	if err != nil {
+		return 0, err
+	}
+	return info.BlockHeight, nil
+}
+
+func (c *Cln) ListChannels() ([]*lightning.LightningChannel, error) {
+	funds, err := c.Client.ListFunds(context.Background(), &protos.ListfundsRequest{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]lightning.LightningChannel, len(channels.Channels))
+	var results []*lightning.LightningChannel
 
-	for _, channel := range channels.Channels {
+	for _, channel := range funds.Channels {
+		chanId, err := lightning.NewChanIdFromString(*channel.ShortChannelId)
+		if err != nil {
+			logger.Warnf("Could not parse cln channel id %s: %v", *channel.ShortChannelId, err)
+			continue
+		}
 
-		results = append(results, lightning.LightningChannel{
-			LocalMsat:  uint(channel.OurAmountMsat.Msat),
-			RemoteMsat: uint(channel.AmountMsat.Msat - channel.OurAmountMsat.Msat),
-			Capacity:   uint(channel.AmountMsat.Msat),
-			Id:         *channel.ShortChannelId,
-			PeerId:     hex.EncodeToString(channel.PeerId),
+		results = append(results, &lightning.LightningChannel{
+			LocalSat:  channel.OurAmountMsat.Msat / 1000,
+			RemoteSat: (channel.AmountMsat.Msat - channel.OurAmountMsat.Msat) / 1000,
+			Capacity:  channel.AmountMsat.Msat / 1000,
+			Id:        chanId,
+			PeerId:    hex.EncodeToString(channel.PeerId),
 			Point: lightning.ChannelPoint{
-				FundingTxid: hex.EncodeToString(channel.FundingTxid),
+				FundingTxId: hex.EncodeToString(channel.FundingTxid),
 				OutputIndex: channel.FundingOutput,
 			},
 		})
@@ -134,20 +151,24 @@ func (c *Cln) SanityCheck() (string, error) {
 }
 
 func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
-	parsed_expiry := uint64(expiry)
-	invoice, err := c.Client.Invoice(context.Background(), &protos.InvoiceRequest{
+	request := &protos.InvoiceRequest{
 		// wtf is this
 		AmountMsat: &protos.AmountOrAny{
 			Value: &protos.AmountOrAny_Amount{
 				Amount: &protos.Amount{
-					Msat: uint64(value),
+					Msat: uint64(value) * 1000,
 				},
 			},
 		},
 		Preimage:    preimage,
-		Expiry:      &parsed_expiry,
 		Description: memo,
-	})
+		Label:       fmt.Sprint(time.Now().UTC().UnixMilli()),
+	}
+	if expiry != 0 {
+		expiryDate := uint64(time.Now().Unix()) + uint64(expiry)
+		request.Expiry = &expiryDate
+	}
+	invoice, err := c.Client.Invoice(context.Background(), request)
 
 	if err != nil {
 		return nil, err
@@ -159,14 +180,31 @@ func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo str
 	}, nil
 }
 
-func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint) (*lightning.PayInvoiceResponse, error) {
-	delay := uint32(timeoutSeconds)
+func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanId lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
+	retry := uint32(timeoutSeconds)
+
+	var exclude []string
+
+	if chanId != 0 {
+		channels, err := c.ListChannels()
+		if err != nil {
+			return nil, err
+		}
+		for _, channel := range channels {
+			if channel.Id != chanId {
+				exclude = append(exclude, channel.Id.ToCln()+"/0")
+				exclude = append(exclude, channel.Id.ToCln()+"/1")
+			}
+		}
+	}
+
 	res, err := c.Client.Pay(context.Background(), &protos.PayRequest{
 		Bolt11:   invoice,
-		Maxdelay: &delay,
+		RetryFor: &retry,
 		Maxfee: &protos.Amount{
 			Msat: uint64(feeLimit),
 		},
+		Exclude: exclude,
 	})
 
 	if err != nil {
@@ -176,6 +214,13 @@ func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint) (*l
 	return &lightning.PayInvoiceResponse{
 		FeeMsat: uint(res.AmountSentMsat.Msat - res.AmountMsat.Msat),
 	}, nil
+}
+
+func (c *Cln) ConnectPeer(uri string) error {
+	_, err := c.Client.ConnectPeer(context.Background(), &protos.ConnectRequest{
+		Id: uri,
+	})
+	return err
 }
 
 func (c *Cln) NewAddress() (string, error) {
@@ -188,14 +233,29 @@ func (c *Cln) NewAddress() (string, error) {
 	return *res.Bech32, nil
 }
 
-func (c *Cln) PaymentStatus(preimageHash string) (*lightning.PaymentStatus, error) {
-	hash, err := hex.DecodeString(preimageHash)
+func (c *Cln) CheckInvoicePaid(paymentHash []byte) (bool, error) {
+	res, err := c.Client.ListInvoices(context.Background(), &protos.ListinvoicesRequest{
+		PaymentHash: paymentHash,
+	})
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
+	if len(res.Invoices) == 0 {
+		return false, nil
+	}
+
+	for _, invoice := range res.Invoices {
+		if invoice.Status == *protos.ListinvoicesInvoices_PAID.Enum() {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (c *Cln) PaymentStatus(paymentHash []byte) (*lightning.PaymentStatus, error) {
 	res, err := c.Client.ListPays(context.Background(), &protos.ListpaysRequest{
-		PaymentHash: hash,
+		PaymentHash: paymentHash,
 	})
 	if err != nil {
 		return nil, err
@@ -208,19 +268,89 @@ func (c *Cln) PaymentStatus(preimageHash string) (*lightning.PaymentStatus, erro
 	status := res.Pays[len(res.Pays)-1]
 
 	// ListPays doesn't give a proper reason
-	var failureReason *string
+	var failureReason string
 	if status.Status == protos.ListpaysPays_FAILED {
-		reasonStr := paymentFailure
-		failureReason = &reasonStr
+		failureReason = paymentFailure
 	}
 
 	return &lightning.PaymentStatus{
 		State:         paymentStatusFromGrpc[status.Status],
 		FailureReason: failureReason,
-		Hash:          encodeOptionalBytes(status.PaymentHash),
 		Preimage:      encodeOptionalBytes(status.Preimage),
 		FeeMsat:       parseFeeMsat(status.AmountMsat, status.AmountSentMsat),
 	}, nil
+}
+
+func (c *Cln) RegisterBlockListener(channel chan *onchain.BlockEpoch) error {
+	info, err := c.GetInfo()
+	if err != nil {
+		return err
+	}
+	blockheight := info.BlockHeight
+	var interval time.Duration
+	if info.Network != "regtest" {
+		interval = 1 * time.Minute
+	} else {
+		interval = 1 * time.Second
+	}
+	ticker := time.NewTicker(interval)
+
+	for range ticker.C {
+		// FIXME: wait for new block with rpc: see https://github.com/ElementsProject/lightning/issues/6735
+		info, err := c.GetInfo()
+		if err != nil {
+			return err
+		}
+
+		if info.BlockHeight > blockheight {
+			blockheight = info.BlockHeight
+			channel <- &onchain.BlockEpoch{
+				Height: blockheight,
+			}
+		}
+	}
+
+	return err
+}
+
+func (c *Cln) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
+	response, err := c.Client.Withdraw(context.Background(), &protos.WithdrawRequest{
+		Destination: address,
+		Satoshi: &protos.AmountOrAll{
+			Value: &protos.AmountOrAll_Amount{
+				Amount: &protos.Amount{
+					Msat: amount * 1000,
+				},
+			},
+		},
+		Feerate: &protos.Feerate{
+			Style: &protos.Feerate_Perkb{
+				// TODO: check this is correct
+				Perkb: uint32(satPerVbyte * 1000),
+			},
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(response.GetTxid()), nil
+
+}
+
+func (c *Cln) EstimateFee(confTarget int32) (float64, error) {
+	response, err := c.Client.Feerates(context.Background(), &protos.FeeratesRequest{})
+	if err != nil {
+		return 0, err
+	}
+
+	for _, estimate := range response.Perkb.Estimates {
+		if *estimate.Blockcount >= uint32(confTarget) {
+			return float64(*estimate.Feerate) / 1000, nil
+		}
+	}
+	return 0, errors.New("could not find fee estimate")
 }
 
 func encodeOptionalBytes(data []byte) string {
@@ -237,13 +367,4 @@ func parseFeeMsat(amountMsat *protos.Amount, amountSentMsat *protos.Amount) uint
 	}
 
 	return amountSentMsat.Msat - amountMsat.Msat
-}
-
-func parseClnError(err error) string {
-	spl := strings.Split(err.Error(), "\"")
-	if len(spl) != 3 {
-		return err.Error()
-	}
-
-	return spl[1]
 }

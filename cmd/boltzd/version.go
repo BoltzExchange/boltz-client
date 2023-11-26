@@ -4,12 +4,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/lightning"
-	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/logger"
 )
 
 const minLndVersion = "0.15.0"
+const minClnVersion = "0.23.0"
 const minBoltzVersion = "2.3.0"
 
 func checkVersion(name string, version string, minVersion string) {
@@ -26,8 +27,13 @@ func checkVersion(name string, version string, minVersion string) {
 	}
 }
 
-func checkLightningVersion(info *lightning.LightningInfo) {
-	//checkVersion("LND", info.Version, minLndVersion)
+func checkLndVersion(info *lightning.LightningInfo) {
+	checkVersion("LND", info.Version, minLndVersion)
+}
+
+func checkClnVersion(info *lightning.LightningInfo) {
+	version, _ := strings.CutPrefix(info.Version, "v")
+	checkVersion("CLN", version, minClnVersion)
 }
 
 func checkBoltzVersion(boltz *boltz.Boltz) {

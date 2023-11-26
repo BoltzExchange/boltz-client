@@ -8,6 +8,7 @@ package boltzrpc
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,14 +20,24 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Boltz_GetInfo_FullMethodName           = "/boltzrpc.Boltz/GetInfo"
-	Boltz_GetServiceInfo_FullMethodName    = "/boltzrpc.Boltz/GetServiceInfo"
-	Boltz_ListSwaps_FullMethodName         = "/boltzrpc.Boltz/ListSwaps"
-	Boltz_GetSwapInfo_FullMethodName       = "/boltzrpc.Boltz/GetSwapInfo"
-	Boltz_Deposit_FullMethodName           = "/boltzrpc.Boltz/Deposit"
-	Boltz_CreateSwap_FullMethodName        = "/boltzrpc.Boltz/CreateSwap"
-	Boltz_CreateChannel_FullMethodName     = "/boltzrpc.Boltz/CreateChannel"
-	Boltz_CreateReverseSwap_FullMethodName = "/boltzrpc.Boltz/CreateReverseSwap"
+	Boltz_GetInfo_FullMethodName                 = "/boltzrpc.Boltz/GetInfo"
+	Boltz_GetServiceInfo_FullMethodName          = "/boltzrpc.Boltz/GetServiceInfo"
+	Boltz_GetFeeEstimation_FullMethodName        = "/boltzrpc.Boltz/GetFeeEstimation"
+	Boltz_ListSwaps_FullMethodName               = "/boltzrpc.Boltz/ListSwaps"
+	Boltz_GetSwapInfo_FullMethodName             = "/boltzrpc.Boltz/GetSwapInfo"
+	Boltz_GetSwapInfoStream_FullMethodName       = "/boltzrpc.Boltz/GetSwapInfoStream"
+	Boltz_Deposit_FullMethodName                 = "/boltzrpc.Boltz/Deposit"
+	Boltz_CreateSwap_FullMethodName              = "/boltzrpc.Boltz/CreateSwap"
+	Boltz_CreateChannel_FullMethodName           = "/boltzrpc.Boltz/CreateChannel"
+	Boltz_CreateReverseSwap_FullMethodName       = "/boltzrpc.Boltz/CreateReverseSwap"
+	Boltz_CreateLiquidWallet_FullMethodName      = "/boltzrpc.Boltz/CreateLiquidWallet"
+	Boltz_ImportLiquidWallet_FullMethodName      = "/boltzrpc.Boltz/ImportLiquidWallet"
+	Boltz_SetLiquidSubaccount_FullMethodName     = "/boltzrpc.Boltz/SetLiquidSubaccount"
+	Boltz_GetLiquidSubaccounts_FullMethodName    = "/boltzrpc.Boltz/GetLiquidSubaccounts"
+	Boltz_GetLiquidWalletInfo_FullMethodName     = "/boltzrpc.Boltz/GetLiquidWalletInfo"
+	Boltz_GetLiquidWalletMnemonic_FullMethodName = "/boltzrpc.Boltz/GetLiquidWalletMnemonic"
+	Boltz_RemoveLiquidWallet_FullMethodName      = "/boltzrpc.Boltz/RemoveLiquidWallet"
+	Boltz_Stop_FullMethodName                    = "/boltzrpc.Boltz/Stop"
 )
 
 // BoltzClient is the client API for Boltz service.
@@ -38,10 +49,16 @@ type BoltzClient interface {
 	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
 	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetServiceInfo(ctx context.Context, in *GetServiceInfoRequest, opts ...grpc.CallOption) (*GetServiceInfoResponse, error)
+	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
+	GetFeeEstimation(ctx context.Context, in *GetFeeEstimationRequest, opts ...grpc.CallOption) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
+	// Returns the entire history of the swap if is still pending and streams updates in real time.
+	GetSwapInfoStream(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (Boltz_GetSwapInfoStreamClient, error)
+	// Deprecated: Do not use.
+	//
 	// This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address.
 	// The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address
 	// before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which
@@ -49,12 +66,30 @@ type BoltzClient interface {
 	Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
 	// Creates a new swap from onchain to lightning.
 	CreateSwap(ctx context.Context, in *CreateSwapRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
+	// Deprecated: Do not use.
+	//
 	// Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
 	// is coming trough a new channel channel opened by Boltz.
 	CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error)
+	// Creates a new liquid wallet and returns the mnemonic.
+	CreateLiquidWallet(ctx context.Context, in *CreateLiquidWalletRequest, opts ...grpc.CallOption) (*LiquidWalletMnemonic, error)
+	// Imports a liquid wallet from a mnemonic.
+	ImportLiquidWallet(ctx context.Context, in *ImportLiquidWalletRequest, opts ...grpc.CallOption) (*ImportLiquidWalletResponse, error)
+	// Sets the subaccount of the liquid wallet which will be used by the daemon.
+	SetLiquidSubaccount(ctx context.Context, in *SetLiquidSubaccountRequest, opts ...grpc.CallOption) (*LiquidWalletInfo, error)
+	// Returns a list of all subaccounts of the liquid wallet.
+	GetLiquidSubaccounts(ctx context.Context, in *GetLiquidSubaccountsRequest, opts ...grpc.CallOption) (*GetLiquidSubaccountsResponse, error)
+	// Returns the current balance and subaccount of the liquid wallet.
+	GetLiquidWalletInfo(ctx context.Context, in *GetLiquidWalletInfoRequest, opts ...grpc.CallOption) (*LiquidWalletInfo, error)
+	// Returns the mnemonic of the liquid wallet.
+	GetLiquidWalletMnemonic(ctx context.Context, in *GetLiquidWalletMnemonicRequest, opts ...grpc.CallOption) (*LiquidWalletMnemonic, error)
+	// Removes the liquid wallet from the daemon.
+	RemoveLiquidWallet(ctx context.Context, in *RemoveLiquidWalletRequest, opts ...grpc.CallOption) (*RemoveLiquidWalletResponse, error)
+	// Stops the server.
+	Stop(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type boltzClient struct {
@@ -83,6 +118,15 @@ func (c *boltzClient) GetServiceInfo(ctx context.Context, in *GetServiceInfoRequ
 	return out, nil
 }
 
+func (c *boltzClient) GetFeeEstimation(ctx context.Context, in *GetFeeEstimationRequest, opts ...grpc.CallOption) (*GetFeeEstimationResponse, error) {
+	out := new(GetFeeEstimationResponse)
+	err := c.cc.Invoke(ctx, Boltz_GetFeeEstimation_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *boltzClient) ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error) {
 	out := new(ListSwapsResponse)
 	err := c.cc.Invoke(ctx, Boltz_ListSwaps_FullMethodName, in, out, opts...)
@@ -101,6 +145,39 @@ func (c *boltzClient) GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, o
 	return out, nil
 }
 
+func (c *boltzClient) GetSwapInfoStream(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (Boltz_GetSwapInfoStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Boltz_ServiceDesc.Streams[0], Boltz_GetSwapInfoStream_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &boltzGetSwapInfoStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Boltz_GetSwapInfoStreamClient interface {
+	Recv() (*GetSwapInfoResponse, error)
+	grpc.ClientStream
+}
+
+type boltzGetSwapInfoStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *boltzGetSwapInfoStreamClient) Recv() (*GetSwapInfoResponse, error) {
+	m := new(GetSwapInfoResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// Deprecated: Do not use.
 func (c *boltzClient) Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error) {
 	out := new(DepositResponse)
 	err := c.cc.Invoke(ctx, Boltz_Deposit_FullMethodName, in, out, opts...)
@@ -119,6 +196,7 @@ func (c *boltzClient) CreateSwap(ctx context.Context, in *CreateSwapRequest, opt
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *boltzClient) CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error) {
 	out := new(CreateSwapResponse)
 	err := c.cc.Invoke(ctx, Boltz_CreateChannel_FullMethodName, in, out, opts...)
@@ -137,6 +215,78 @@ func (c *boltzClient) CreateReverseSwap(ctx context.Context, in *CreateReverseSw
 	return out, nil
 }
 
+func (c *boltzClient) CreateLiquidWallet(ctx context.Context, in *CreateLiquidWalletRequest, opts ...grpc.CallOption) (*LiquidWalletMnemonic, error) {
+	out := new(LiquidWalletMnemonic)
+	err := c.cc.Invoke(ctx, Boltz_CreateLiquidWallet_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) ImportLiquidWallet(ctx context.Context, in *ImportLiquidWalletRequest, opts ...grpc.CallOption) (*ImportLiquidWalletResponse, error) {
+	out := new(ImportLiquidWalletResponse)
+	err := c.cc.Invoke(ctx, Boltz_ImportLiquidWallet_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) SetLiquidSubaccount(ctx context.Context, in *SetLiquidSubaccountRequest, opts ...grpc.CallOption) (*LiquidWalletInfo, error) {
+	out := new(LiquidWalletInfo)
+	err := c.cc.Invoke(ctx, Boltz_SetLiquidSubaccount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetLiquidSubaccounts(ctx context.Context, in *GetLiquidSubaccountsRequest, opts ...grpc.CallOption) (*GetLiquidSubaccountsResponse, error) {
+	out := new(GetLiquidSubaccountsResponse)
+	err := c.cc.Invoke(ctx, Boltz_GetLiquidSubaccounts_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetLiquidWalletInfo(ctx context.Context, in *GetLiquidWalletInfoRequest, opts ...grpc.CallOption) (*LiquidWalletInfo, error) {
+	out := new(LiquidWalletInfo)
+	err := c.cc.Invoke(ctx, Boltz_GetLiquidWalletInfo_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetLiquidWalletMnemonic(ctx context.Context, in *GetLiquidWalletMnemonicRequest, opts ...grpc.CallOption) (*LiquidWalletMnemonic, error) {
+	out := new(LiquidWalletMnemonic)
+	err := c.cc.Invoke(ctx, Boltz_GetLiquidWalletMnemonic_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) RemoveLiquidWallet(ctx context.Context, in *RemoveLiquidWalletRequest, opts ...grpc.CallOption) (*RemoveLiquidWalletResponse, error) {
+	out := new(RemoveLiquidWalletResponse)
+	err := c.cc.Invoke(ctx, Boltz_RemoveLiquidWallet_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) Stop(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, Boltz_Stop_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BoltzServer is the server API for Boltz service.
 // All implementations must embed UnimplementedBoltzServer
 // for forward compatibility
@@ -146,10 +296,16 @@ type BoltzServer interface {
 	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
 	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetServiceInfo(context.Context, *GetServiceInfoRequest) (*GetServiceInfoResponse, error)
+	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
+	GetFeeEstimation(context.Context, *GetFeeEstimationRequest) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
+	// Returns the entire history of the swap if is still pending and streams updates in real time.
+	GetSwapInfoStream(*GetSwapInfoRequest, Boltz_GetSwapInfoStreamServer) error
+	// Deprecated: Do not use.
+	//
 	// This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address.
 	// The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address
 	// before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which
@@ -157,12 +313,30 @@ type BoltzServer interface {
 	Deposit(context.Context, *DepositRequest) (*DepositResponse, error)
 	// Creates a new swap from onchain to lightning.
 	CreateSwap(context.Context, *CreateSwapRequest) (*CreateSwapResponse, error)
+	// Deprecated: Do not use.
+	//
 	// Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
 	// is coming trough a new channel channel opened by Boltz.
 	CreateChannel(context.Context, *CreateChannelRequest) (*CreateSwapResponse, error)
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error)
+	// Creates a new liquid wallet and returns the mnemonic.
+	CreateLiquidWallet(context.Context, *CreateLiquidWalletRequest) (*LiquidWalletMnemonic, error)
+	// Imports a liquid wallet from a mnemonic.
+	ImportLiquidWallet(context.Context, *ImportLiquidWalletRequest) (*ImportLiquidWalletResponse, error)
+	// Sets the subaccount of the liquid wallet which will be used by the daemon.
+	SetLiquidSubaccount(context.Context, *SetLiquidSubaccountRequest) (*LiquidWalletInfo, error)
+	// Returns a list of all subaccounts of the liquid wallet.
+	GetLiquidSubaccounts(context.Context, *GetLiquidSubaccountsRequest) (*GetLiquidSubaccountsResponse, error)
+	// Returns the current balance and subaccount of the liquid wallet.
+	GetLiquidWalletInfo(context.Context, *GetLiquidWalletInfoRequest) (*LiquidWalletInfo, error)
+	// Returns the mnemonic of the liquid wallet.
+	GetLiquidWalletMnemonic(context.Context, *GetLiquidWalletMnemonicRequest) (*LiquidWalletMnemonic, error)
+	// Removes the liquid wallet from the daemon.
+	RemoveLiquidWallet(context.Context, *RemoveLiquidWalletRequest) (*RemoveLiquidWalletResponse, error)
+	// Stops the server.
+	Stop(context.Context, *empty.Empty) (*empty.Empty, error)
 	mustEmbedUnimplementedBoltzServer()
 }
 
@@ -176,11 +350,17 @@ func (UnimplementedBoltzServer) GetInfo(context.Context, *GetInfoRequest) (*GetI
 func (UnimplementedBoltzServer) GetServiceInfo(context.Context, *GetServiceInfoRequest) (*GetServiceInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServiceInfo not implemented")
 }
+func (UnimplementedBoltzServer) GetFeeEstimation(context.Context, *GetFeeEstimationRequest) (*GetFeeEstimationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeeEstimation not implemented")
+}
 func (UnimplementedBoltzServer) ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSwaps not implemented")
 }
 func (UnimplementedBoltzServer) GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSwapInfo not implemented")
+}
+func (UnimplementedBoltzServer) GetSwapInfoStream(*GetSwapInfoRequest, Boltz_GetSwapInfoStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetSwapInfoStream not implemented")
 }
 func (UnimplementedBoltzServer) Deposit(context.Context, *DepositRequest) (*DepositResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Deposit not implemented")
@@ -193,6 +373,30 @@ func (UnimplementedBoltzServer) CreateChannel(context.Context, *CreateChannelReq
 }
 func (UnimplementedBoltzServer) CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateReverseSwap not implemented")
+}
+func (UnimplementedBoltzServer) CreateLiquidWallet(context.Context, *CreateLiquidWalletRequest) (*LiquidWalletMnemonic, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateLiquidWallet not implemented")
+}
+func (UnimplementedBoltzServer) ImportLiquidWallet(context.Context, *ImportLiquidWalletRequest) (*ImportLiquidWalletResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportLiquidWallet not implemented")
+}
+func (UnimplementedBoltzServer) SetLiquidSubaccount(context.Context, *SetLiquidSubaccountRequest) (*LiquidWalletInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetLiquidSubaccount not implemented")
+}
+func (UnimplementedBoltzServer) GetLiquidSubaccounts(context.Context, *GetLiquidSubaccountsRequest) (*GetLiquidSubaccountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLiquidSubaccounts not implemented")
+}
+func (UnimplementedBoltzServer) GetLiquidWalletInfo(context.Context, *GetLiquidWalletInfoRequest) (*LiquidWalletInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLiquidWalletInfo not implemented")
+}
+func (UnimplementedBoltzServer) GetLiquidWalletMnemonic(context.Context, *GetLiquidWalletMnemonicRequest) (*LiquidWalletMnemonic, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLiquidWalletMnemonic not implemented")
+}
+func (UnimplementedBoltzServer) RemoveLiquidWallet(context.Context, *RemoveLiquidWalletRequest) (*RemoveLiquidWalletResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveLiquidWallet not implemented")
+}
+func (UnimplementedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 func (UnimplementedBoltzServer) mustEmbedUnimplementedBoltzServer() {}
 
@@ -243,6 +447,24 @@ func _Boltz_GetServiceInfo_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_GetFeeEstimation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeeEstimationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetFeeEstimation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetFeeEstimation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetFeeEstimation(ctx, req.(*GetFeeEstimationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Boltz_ListSwaps_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListSwapsRequest)
 	if err := dec(in); err != nil {
@@ -277,6 +499,27 @@ func _Boltz_GetSwapInfo_Handler(srv interface{}, ctx context.Context, dec func(i
 		return srv.(BoltzServer).GetSwapInfo(ctx, req.(*GetSwapInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetSwapInfoStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetSwapInfoRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BoltzServer).GetSwapInfoStream(m, &boltzGetSwapInfoStreamServer{stream})
+}
+
+type Boltz_GetSwapInfoStreamServer interface {
+	Send(*GetSwapInfoResponse) error
+	grpc.ServerStream
+}
+
+type boltzGetSwapInfoStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *boltzGetSwapInfoStreamServer) Send(m *GetSwapInfoResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _Boltz_Deposit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -351,6 +594,150 @@ func _Boltz_CreateReverseSwap_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_CreateLiquidWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLiquidWalletRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).CreateLiquidWallet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_CreateLiquidWallet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).CreateLiquidWallet(ctx, req.(*CreateLiquidWalletRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_ImportLiquidWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportLiquidWalletRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).ImportLiquidWallet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_ImportLiquidWallet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).ImportLiquidWallet(ctx, req.(*ImportLiquidWalletRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_SetLiquidSubaccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetLiquidSubaccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).SetLiquidSubaccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_SetLiquidSubaccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).SetLiquidSubaccount(ctx, req.(*SetLiquidSubaccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetLiquidSubaccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLiquidSubaccountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetLiquidSubaccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetLiquidSubaccounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetLiquidSubaccounts(ctx, req.(*GetLiquidSubaccountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetLiquidWalletInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLiquidWalletInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetLiquidWalletInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetLiquidWalletInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetLiquidWalletInfo(ctx, req.(*GetLiquidWalletInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetLiquidWalletMnemonic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLiquidWalletMnemonicRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetLiquidWalletMnemonic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetLiquidWalletMnemonic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetLiquidWalletMnemonic(ctx, req.(*GetLiquidWalletMnemonicRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_RemoveLiquidWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveLiquidWalletRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).RemoveLiquidWallet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_RemoveLiquidWallet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).RemoveLiquidWallet(ctx, req.(*RemoveLiquidWalletRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).Stop(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_Stop_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).Stop(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Boltz_ServiceDesc is the grpc.ServiceDesc for Boltz service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -365,6 +752,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetServiceInfo",
 			Handler:    _Boltz_GetServiceInfo_Handler,
+		},
+		{
+			MethodName: "GetFeeEstimation",
+			Handler:    _Boltz_GetFeeEstimation_Handler,
 		},
 		{
 			MethodName: "ListSwaps",
@@ -390,7 +781,45 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "CreateReverseSwap",
 			Handler:    _Boltz_CreateReverseSwap_Handler,
 		},
+		{
+			MethodName: "CreateLiquidWallet",
+			Handler:    _Boltz_CreateLiquidWallet_Handler,
+		},
+		{
+			MethodName: "ImportLiquidWallet",
+			Handler:    _Boltz_ImportLiquidWallet_Handler,
+		},
+		{
+			MethodName: "SetLiquidSubaccount",
+			Handler:    _Boltz_SetLiquidSubaccount_Handler,
+		},
+		{
+			MethodName: "GetLiquidSubaccounts",
+			Handler:    _Boltz_GetLiquidSubaccounts_Handler,
+		},
+		{
+			MethodName: "GetLiquidWalletInfo",
+			Handler:    _Boltz_GetLiquidWalletInfo_Handler,
+		},
+		{
+			MethodName: "GetLiquidWalletMnemonic",
+			Handler:    _Boltz_GetLiquidWalletMnemonic_Handler,
+		},
+		{
+			MethodName: "RemoveLiquidWallet",
+			Handler:    _Boltz_RemoveLiquidWallet_Handler,
+		},
+		{
+			MethodName: "Stop",
+			Handler:    _Boltz_Stop_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetSwapInfoStream",
+			Handler:       _Boltz_GetSwapInfoStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "boltzrpc.proto",
 }

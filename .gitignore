@@ -3,6 +3,7 @@
 *.exe~
 *.dll
 *.so
+*.a
 *.dylib
 
 boltzd
@@ -22,6 +23,8 @@ vendor/
 
 # Config, database, log, certificate and macaroon files
 boltz.toml
+!cmd/boltzd/test/boltz.toml
+cmd/boltzd/test/autoswap.toml
 boltz.db
 boltz.log
 tls.key
@@ -30,3 +33,5 @@ tls.cert
 
 # Goland
 .idea/
+
+liquid-wallet

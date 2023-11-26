@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/BoltzExchange/boltz-lnd/lightning"
-	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/logger"
 )
 
 const retryInterval = 15
@@ -13,14 +13,19 @@ const retryInterval = 15
 var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
 
 func connectLightning(lightning lightning.LightningNode) *lightning.LightningInfo {
+	err := lightning.Connect()
+
+	if err != nil {
+		logger.Fatal("Could not connect to lightning node: " + err.Error())
+	}
+
 	info, err := lightning.GetInfo()
 
 	if err != nil {
-		logger.Warning("Could not connect to lightning node: " + err.Error())
+		logger.Warn("Could not connect to lightning node: " + err.Error())
 		logger.Info(retryMessage)
 		time.Sleep(retryInterval * time.Second)
 
-		_ = lightning.Connect()
 		return connectLightning(lightning)
 	} else {
 		return info
@@ -32,7 +37,7 @@ func waitForLightningSynced(lightning lightning.LightningNode) {
 
 	if err == nil {
 		if !info.Synced {
-			logger.Warning("LND node not synced yet")
+			logger.Warn("LND node not synced yet")
 			logger.Info(retryMessage)
 			time.Sleep(retryInterval * time.Second)
 

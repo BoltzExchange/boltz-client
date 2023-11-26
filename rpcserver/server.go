@@ -5,15 +5,19 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
-	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/BoltzExchange/boltz-lnd/lnd"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/BoltzExchange/boltz-lnd/macaroons"
-	"github.com/BoltzExchange/boltz-lnd/nursery"
-	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/BoltzExchange/boltz-client/autoswap"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/macaroons"
+	"github.com/BoltzExchange/boltz-client/nursery"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -27,8 +31,8 @@ type RpcServer struct {
 	RestPort     int    `long:"rpc.rest.port" description:"REST port to which Boltz should listen"`
 	RestDisabled bool   `long:"rpc.rest.disable" description:"Disables the REST API proxy"`
 
-	TlsCertPath string `long:"rpc.tlscert" description:"Path to the TLS certificate of boltz-lnd"`
-	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-lnd"`
+	TlsCertPath string `long:"rpc.tlscert" description:"Path to the TLS certificate of boltz-client"`
+	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-client"`
 	NoTls       bool   `long:"rpc.no-tls" description:"Disables TLS"`
 
 	NoMacaroons          bool   `long:"rpc.no-macaroons" description:"Disables Macaroon authentication"`
@@ -36,15 +40,30 @@ type RpcServer struct {
 	ReadonlyMacaroonPath string `long:"rpc.readonlymacaroonpath" description:"Path to the readonly macaroon"`
 
 	Grpc *grpc.Server
+
+	Stop chan bool `json:"-"`
 }
 
 func (server *RpcServer) Init(
-	chainParams *chaincfg.Params,
-	lnd *lnd.LND,
+	network *boltz.Network,
+	lightning lightning.LightningNode,
 	boltz *boltz.Boltz,
-	nursery *nursery.Nursery,
 	database *database.Database,
+	onchain *onchain.Onchain,
+	autoSwapConfigPath string,
 ) error {
+	nursery := &nursery.Nursery{}
+	err := nursery.Init(
+		network,
+		lightning,
+		onchain,
+		boltz,
+		database,
+	)
+
+	if err != nil {
+		logger.Fatal("Could not start Swap nursery: " + err.Error())
+	}
 
 	var serverOpts []grpc.ServerOption
 
@@ -59,7 +78,6 @@ func (server *RpcServer) Init(
 		serverOpts = append(serverOpts, serverCreds)
 	}
 	var macaroonService *macaroons.Service
-	var err error
 
 	if !server.NoMacaroons {
 		macaroonService, err = server.generateMacaroons(database)
@@ -68,7 +86,7 @@ func (server *RpcServer) Init(
 			return err
 		}
 	} else {
-		logger.Warning("Disabled Macaroon authentication")
+		logger.Warn("Disabled Macaroon authentication")
 	}
 
 	var unaryInterceptors []grpc.UnaryServerInterceptor
@@ -87,21 +105,50 @@ func (server *RpcServer) Init(
 	}
 
 	server.Grpc = grpc.NewServer(serverOpts...)
-	boltzrpc.RegisterBoltzServer(server.Grpc, &routedBoltzServer{
-		chainParams: chainParams,
+	server.Stop = make(chan bool)
+	routedServer := &routedBoltzServer{
+		network: network,
 
-		lnd:       lnd,
-		lightning: lnd,
+		lightning: lightning,
 		boltz:     boltz,
 		nursery:   nursery,
 		database:  database,
-	})
+		onchain:   onchain,
+
+		stop: server.Stop,
+	}
+	boltzrpc.RegisterBoltzServer(server.Grpc, routedServer)
+
+	swapper := &autoswap.AutoSwapper{
+		ExecuteSwap: func(request *boltzrpc.CreateSwapRequest) error {
+			_, err := routedServer.createSwap(true, request)
+			return err
+		},
+		ExecuteReverseSwap: func(request *boltzrpc.CreateReverseSwapRequest) error {
+			_, err := routedServer.createReverseSwap(true, request)
+			return err
+		},
+		ListChannels:   routedServer.lightning.ListChannels,
+		GetServiceInfo: routedServer.getPairs,
+	}
+	swapper.Init(database, onchain, autoSwapConfigPath)
+	if err := swapper.LoadConfig(); err != nil {
+		logger.Warnf("Could not load autoswap config: %v", err)
+	}
+
+	routedAutoSwapServer := &routedAutoSwapServer{
+		swapper:  swapper,
+		database: database,
+	}
+	autoswaprpc.RegisterAutoSwapServer(server.Grpc, routedAutoSwapServer)
+
+	routedServer.swapper = swapper
 
 	return nil
 }
 
 func (server *RpcServer) Start() chan error {
-	errChannel := make(chan error)
+	errChannel := make(chan error, 2)
 
 	rpcUrl := server.Host + ":"
 	if server.Port != 0 {
@@ -110,6 +157,9 @@ func (server *RpcServer) Start() chan error {
 
 	// Because the RPC and REST servers are blocking, they are started Go routines
 
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
 	go func() {
 		logger.Info("Starting RPC server on: " + rpcUrl)
 
@@ -120,10 +170,16 @@ func (server *RpcServer) Start() chan error {
 			return
 		}
 
-		errChannel <- server.Grpc.Serve(listener)
+		if err := server.Grpc.Serve(listener); err != nil {
+			errChannel <- err
+		}
+		wg.Done()
 	}()
 
+	var httpServer *http.Server
+
 	if !server.RestDisabled {
+		wg.Add(1)
 		go func() {
 			restUrl := server.RestHost + ":" + strconv.Itoa(server.RestPort)
 			logger.Info("Starting REST server on: " + restUrl)
@@ -157,9 +213,31 @@ func (server *RpcServer) Start() chan error {
 				return
 			}
 
-			errChannel <- http.ListenAndServeTLS(restUrl, server.TlsCertPath, server.TlsKeyPath, mux)
+			httpServer = &http.Server{Addr: restUrl, Handler: mux}
+
+			if err := httpServer.ListenAndServeTLS(server.TlsCertPath, server.TlsKeyPath); err != nil {
+				if err.Error() != "http: Server closed" {
+					errChannel <- err
+				}
+			}
+			wg.Done()
 		}()
 	}
+
+	go func() {
+		<-server.Stop
+		logger.Info("Shutting down")
+		if httpServer != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := httpServer.Shutdown(ctx); err != nil {
+				errChannel <- err
+			}
+		}
+		server.Grpc.GracefulStop()
+		wg.Wait()
+		close(errChannel)
+	}()
 
 	return errChannel
 }

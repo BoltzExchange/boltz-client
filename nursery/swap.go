@@ -1,29 +1,43 @@
 package nursery
 
 import (
-	"encoding/hex"
+	"errors"
+	"fmt"
 	"strconv"
-	"strings"
 
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
-	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/lightningnetwork/lnd/lnrpc"
-	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/lightningnetwork/lnd/zpay32"
 )
 
+func sendSwapUpdate(swap database.Swap) {
+	isFinal := swap.State == boltzrpc.SwapState_SUCCESSFUL || swap.State == boltzrpc.SwapState_REFUNDED
+	if swap.LockupTransactionId == "" && swap.State != boltzrpc.SwapState_PENDING {
+		isFinal = false
+	}
+
+	sendUpdate(swap.Id, SwapUpdate{
+		Swap:    &swap,
+		IsFinal: isFinal,
+	})
+}
+
 // TODO: abstract interactions with chain (querying and broadcasting transactions) into interface to be able to switch between Boltz API and bitcoin core
 
-func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpoch) {
-	go func() {
-		for {
-			newBlock := <-blockNotifier
+func (nursery *Nursery) startBlockListener(pair boltz.Pair) error {
+	blockNotifier := make(chan *onchain.BlockEpoch)
+	err := nursery.registerBlockListener(pair, blockNotifier)
+	if err != nil {
+		return err
+	}
 
-			swapsToRefund, err := nursery.database.QueryRefundableSwaps(newBlock.Height)
+	go func() {
+		for newBlock := range blockNotifier {
+			swapsToRefund, err := nursery.database.QueryRefundableSwaps(newBlock.Height, pair)
 
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
@@ -33,41 +47,42 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 			if len(swapsToRefund) > 0 {
 				logger.Info("Found " + strconv.Itoa(len(swapsToRefund)) + " Swaps to refund at height " + strconv.FormatUint(uint64(newBlock.Height), 10))
 
-				addressString, err := nursery.lightning.NewAddress()
-
 				if err != nil {
-					logger.Error("Could not get new address from LND: " + err.Error())
-					continue
-				}
-
-				address, err := btcutil.DecodeAddress(addressString, nursery.chainParams)
-
-				if err != nil {
-					logger.Error("Could not decode destination address from LND: " + err.Error())
+					logger.Error("Could not get new address: " + err.Error())
 					continue
 				}
 
 				var refundedSwaps []database.Swap
 				var refundOutputs []boltz.OutputDetails
+				var refundAddress string
 
 				for _, swapToRefund := range swapsToRefund {
-					eventListenersLock.RLock()
-					stopListening, hasListener := eventListeners[swapToRefund.Id]
-					eventListenersLock.RUnlock()
-
-					if hasListener {
-						stopListening <- true
-
-						eventListenersLock.Lock()
-						delete(eventListeners, swapToRefund.Id)
-						eventListenersLock.Unlock()
-					}
-
 					refundOutput := nursery.getRefundOutput(&swapToRefund)
 
 					if refundOutput != nil {
+						if swapToRefund.RefundAddress != "" {
+							// we process all swaps that have an explicit refund address isolated
+							refundedSwaps = []database.Swap{swapToRefund}
+							refundOutputs = []boltz.OutputDetails{*refundOutput}
+							refundAddress = swapToRefund.RefundAddress
+							break
+						}
 						refundedSwaps = append(refundedSwaps, swapToRefund)
 						refundOutputs = append(refundOutputs, *refundOutput)
+					}
+				}
+
+				if refundAddress == "" {
+					wallet, err := nursery.onchain.GetWallet(pair)
+					if err != nil {
+						message := "%d Swaps can not be refunded because they got no refund address and no wallet for pair %s is available! Set up a wallet to refund"
+						logger.Warnf(message, len(refundedSwaps), pair)
+						continue
+					}
+					refundAddress, err = wallet.NewAddress()
+					if err != nil {
+						logger.Warnf("%d Swaps can not be refunded because they got no refund address and wallet failed to generate address: %v", len(refundedSwaps), err)
+						continue
 					}
 				}
 
@@ -76,18 +91,22 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 					continue
 				}
 
-				feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
+				// TODO: make sure that all refund swaps are from the same pair
+				pair := refundedSwaps[0].PairId
+				feeSatPerVbyte, err := nursery.getFeeEstimation(pair)
 
 				if err != nil {
-					logger.Error("Could not get LND fee estimation: " + err.Error())
+					logger.Error("Could not get fee estimation: " + err.Error())
 					continue
 				}
 
-				logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for refund transaction")
+				logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
 
-				refundTransaction, err := boltz.ConstructTransaction(
+				refundTransaction, totalRefundFee, err := boltz.ConstructTransaction(
+					pair,
+					nursery.network,
 					refundOutputs,
-					address,
+					refundAddress,
 					feeSatPerVbyte,
 				)
 
@@ -96,27 +115,37 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 					continue
 				}
 
-				refundTransactionId := refundTransaction.TxHash().String()
-				logger.Info("Constructed refund transaction: " + refundTransactionId)
+				refundTransactionId := refundTransaction.Hash()
+				logger.Infof("Constructed refund transaction for %d swaps: %s", len(refundOutputs), refundTransactionId)
 
 				// TODO: right pair?
-				err = nursery.broadcastTransaction(refundTransaction, "BTC")
+				err = nursery.broadcastTransaction(refundTransaction, utils.CurrencyFromPair(pair))
 
 				if err != nil {
 					logger.Error("Could not finalize refund transaction: " + err.Error())
 					continue
 				}
 
-				for _, refundedSwap := range refundedSwaps {
-					err = nursery.database.SetSwapRefundTransactionId(&refundedSwap, refundTransactionId)
+				count := uint64(len(refundedSwaps))
+				refundFee := totalRefundFee / count
+				for i, refundedSwap := range refundedSwaps {
+					// distribute the remainder of the fee to the last swap
+					if i == int(count)-1 {
+						refundFee += totalRefundFee % count
+					}
+					err = nursery.database.SetSwapRefundTransactionId(&refundedSwap, refundTransactionId, refundFee)
 
 					if err != nil {
 						logger.Error("Could not set refund transaction id in database: " + err.Error())
 					}
+
+					sendSwapUpdate(refundedSwap)
 				}
 			}
 		}
 	}()
+
+	return nil
 }
 
 func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetails {
@@ -133,30 +162,16 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetail
 		return nil
 	}
 
-	lockupTransactionRaw, err := hex.DecodeString(swapTransactionResponse.TransactionHex)
-
-	if err != nil {
-		logger.Error("Could not decode lockup transaction from Boltz: " + err.Error())
-		return nil
-	}
-
-	lockupTransaction, err := btcutil.NewTxFromBytes(lockupTransactionRaw)
+	lockupTransaction, err := boltz.NewTxFromHex(swapTransactionResponse.TransactionHex, swap.BlindingKey)
 
 	if err != nil {
 		logger.Error("Could not parse lockup transaction from Boltz: " + err.Error())
 		return nil
 	}
 
-	logger.Info("Got lockup transaction of Swap " + swap.Id + " from Boltz: " + lockupTransaction.Hash().String())
+	logger.Info("Got lockup transaction of Swap " + swap.Id + " from Boltz: " + lockupTransaction.Hash())
 
-	err = nursery.database.SetSwapLockupTransactionId(swap, lockupTransaction.Hash().String())
-
-	if err != nil {
-		logger.Error("Could not set lockup transaction id in database: " + err.Error())
-		return nil
-	}
-
-	lockupVout, err := nursery.findLockupVout(swap.Address, lockupTransaction.MsgTx().TxOut)
+	lockupVout, _, err := lockupTransaction.FindVout(nursery.network, swap.Address)
 
 	if err != nil {
 		logger.Error("Could not find lockup vout of Swap " + swap.Id)
@@ -174,8 +189,8 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetail
 	}
 }
 
-func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) error {
-	logger.Info("Recovering pending Swaps and Channel Creations")
+func (nursery *Nursery) recoverSwaps() error {
+	logger.Info("Recovering pending Swaps")
 
 	swaps, err := nursery.database.QueryPendingSwaps()
 
@@ -184,98 +199,102 @@ func (nursery *Nursery) recoverSwaps(blockNotifier chan *chainrpc.BlockEpoch) er
 	}
 
 	for _, swap := range swaps {
-		channelCreation, err := nursery.database.QueryChannelCreation(swap.Id)
-		isChannelCreation := err == nil
-
-		swapType := getSwapType(isChannelCreation)
-
-		logger.Info("Recovering " + swapType + " " + swap.Id + " at state: " + swap.Status.String())
+		logger.Info("Recovering Swap" + " " + swap.Id + " at state: " + swap.Status.String())
 
 		// TODO: handle race condition when status is updated between the POST request and the time the streaming starts
 		status, err := nursery.boltz.SwapStatus(swap.Id)
 
 		if err != nil {
-			logger.Warning("Boltz could not find Swap " + swap.Id + ": " + err.Error())
+			logger.Warn("Boltz could not find Swap " + swap.Id + ": " + err.Error())
 			continue
 		}
 
 		if status.Status != swap.Status.String() {
-			logger.Info(swapType + " " + swap.Id + " status changed to: " + status.Status)
-			nursery.handleSwapStatus(&swap, channelCreation, *status)
+			logger.Info("Swap " + swap.Id + " status changed to: " + status.Status)
+			nursery.handleSwapStatus(&swap, *status)
 
 			if swap.State == boltzrpc.SwapState_PENDING {
-				nursery.RegisterSwap(&swap, channelCreation)
+				nursery.RegisterSwap(swap)
 			}
 
 			continue
 		}
 
-		logger.Info(swapType + " " + swap.Id + " status did not change")
-		nursery.RegisterSwap(&swap, channelCreation)
+		logger.Info("Swap " + swap.Id + " status did not change")
+		nursery.RegisterSwap(swap)
 	}
-
-	nursery.startBlockListener(blockNotifier)
-
 	return nil
 }
 
-func (nursery *Nursery) RegisterSwap(swap *database.Swap, channelCreation *database.ChannelCreation) {
-	isChannelCreation := channelCreation != nil
-	swapType := getSwapType(isChannelCreation)
-
-	logger.Info("Listening to events of " + swapType + " " + swap.Id)
-
-	var stopInvoiceSubscription chan bool
-
-	if isChannelCreation {
-		stopInvoiceSubscription = nursery.subscribeChannelCreationInvoice(*swap, channelCreation)
-	}
+func (nursery *Nursery) RegisterSwap(swap database.Swap) {
+	logger.Info("Listening to events of Swap " + swap.Id)
 
 	go func() {
-		stopListening := make(chan bool)
-		stopHandler := make(chan bool)
+		listener, remove := newListener(swap.Id)
+		defer remove()
 
-		eventListenersLock.Lock()
-		eventListeners[swap.Id] = stopListening
-		eventListenersLock.Unlock()
+		sendSwapUpdate(swap)
 
 		eventStream := make(chan *boltz.SwapStatusResponse)
+		nursery.streamSwapStatus(swap.Id, "Swap", eventStream, listener.stop)
 
-		nursery.streamSwapStatus(swap.Id, swapType, eventStream, stopListening, stopHandler)
-
-		for {
-			select {
-			case event := <-eventStream:
-				logger.Info(swapType + " " + swap.Id + " status update: " + event.Status)
-				nursery.handleSwapStatus(swap, channelCreation, *event)
-
-				// The event listening can stop after the Swap has succeeded
-				if swap.Status == boltz.TransactionClaimed {
-					stopListening <- true
-				}
-
-				break
-
-			case <-stopHandler:
-				if stopInvoiceSubscription != nil {
-					stopInvoiceSubscription <- true
-				}
-
-				return
-			}
+		for event := range eventStream {
+			logger.Info("Swap " + swap.Id + " status update: " + event.Status)
+			nursery.handleSwapStatus(&swap, *event)
 		}
 	}()
 }
 
-func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *database.ChannelCreation, status boltz.SwapStatusResponse) {
-	isChannelCreation := channelCreation != nil
-	swapType := getSwapType(isChannelCreation)
-
+func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapStatusResponse) {
 	parsedStatus := boltz.ParseEvent(status.Status)
 
 	if parsedStatus == swap.Status {
-		logger.Info("Status of " + swapType + " " + swap.Id + " is " + parsedStatus.String() + " already")
+		logger.Info("Status of Swap " + swap.Id + " is " + parsedStatus.String() + " already")
 		return
+	}
+
+	handleError := func(err string) {
+		if dbErr := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_ERROR, err); dbErr != nil {
+			logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
+		}
+		logger.Error(err)
+		sendSwapUpdate(*swap)
+	}
+
+	if parsedStatus != boltz.InvoiceSet && swap.LockupTransactionId == "" {
+		swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
+		if err != nil {
+			var boltzErr boltz.Error
+			if !errors.As(err, &boltzErr) {
+				handleError("Could not get lockup tx from boltz: " + err.Error())
+				return
+			}
+		} else {
+			lockupTransaction, err := boltz.NewTxFromHex(swapTransactionResponse.TransactionHex, swap.BlindingKey)
+			if err != nil {
+				handleError("Could not decode lockup transaction: " + err.Error())
+				return
+			}
+
+			logger.Info("Got lockup transaction of Swap " + swap.Id + " from Boltz: " + lockupTransaction.Hash())
+
+			if err := nursery.database.SetSwapLockupTransactionId(swap, lockupTransaction.Hash()); err != nil {
+				handleError("Could not set lockup transaction in database: " + err.Error())
+				return
+			}
+
+			if swap.AutoSend {
+				fee, err := nursery.onchain.GetTransactionFee(swap.PairId, swap.LockupTransactionId)
+				if err != nil {
+					handleError("could not get lockup transaction fee: " + err.Error())
+					return
+				}
+				if err := nursery.database.SetSwapOnchainFee(swap, fee); err != nil {
+					handleError("could not set lockup transaction fee in database: " + err.Error())
+					return
+				}
+			}
+		}
 	}
 
 	switch parsedStatus {
@@ -285,7 +304,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 	case boltz.TransactionConfirmed:
 		// Connect to the LND node of Boltz to allow for channels to be opened and to gossip our channels
 		// to increase the chances that the provided invoice can be paid
-		_, _ = utils.ConnectBoltzLnd(nursery.lnd, nursery.boltz)
+		_, _ = utils.ConnectBoltz(nursery.lightning, nursery.boltz)
 
 		// Set the invoice of Swaps that were created with only a preimage hash
 		if swap.Invoice != "" {
@@ -295,30 +314,34 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		swapRates, err := nursery.boltz.SwapRates(boltz.SwapRatesRequest{
 			Id: swap.Id,
 		})
-
 		if err != nil {
-			logger.Error("Could not query Swap rates of Swap " + swap.Id + ": " + err.Error())
+			handleError("Could not query Swap rates of Swap " + swap.Id + ": " + err.Error())
 			return
 		}
 
 		logger.Info("Found output for Swap " + swap.Id + " of " + strconv.FormatUint(swapRates.OnchainAmount, 10) + " satoshis")
 
-		info, err := nursery.lightning.GetInfo()
+		if err := nursery.database.SetSwapExpectedAmount(swap, swapRates.OnchainAmount); err != nil {
+			logger.Error("Could not set expected amount in database: " + err.Error())
+			return
+		}
+
+		blockHeight, err := nursery.onchain.GetBlockHeight(swap.PairId)
 
 		if err != nil {
-			logger.Error("Could not get LND info: " + err.Error())
+			handleError("Could not get block height: " + err.Error())
 			return
 		}
 
 		invoice, err := nursery.lightning.CreateInvoice(
 			int64(swapRates.SubmarineSwap.InvoiceAmount),
 			swap.Preimage,
-			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-info.BlockHeight, utils.GetBlockTime(swap.PairId)),
-			utils.GetSwapMemo(swap.PairId),
+			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-blockHeight, utils.GetBlockTime(swap.PairId)),
+			utils.GetSwapMemo(utils.CurrencyFromPair(swap.PairId)),
 		)
 
 		if err != nil {
-			logger.Error("Could not get new invoice for Swap " + swap.Id + ": " + err.Error())
+			handleError("Could not get new invoice for Swap " + swap.Id + ": " + err.Error())
 			return
 		}
 
@@ -330,134 +353,77 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 		})
 
 		if err != nil {
-			logger.Error("Could not set invoice of Swap: " + err.Error())
+			handleError("Could not set invoice of Swap: " + err.Error())
 			return
 		}
 
 		err = nursery.database.SetSwapInvoice(swap, invoice.PaymentRequest)
 
 		if err != nil {
-			logger.Error("Could not set invoice of Swap in database: " + err.Error())
+			handleError("Could not set invoice of Swap in database: " + err.Error())
 			return
-		}
-
-	case boltz.ChannelCreated:
-		if !isChannelCreation {
-			break
-		}
-
-		// Verify the capacity of the channel
-		pendingChannels, err := nursery.lnd.PendingChannels()
-
-		if err != nil {
-			logger.Error("Could not get pending channels: " + err.Error())
-			return
-		}
-
-		for _, pendingChannel := range pendingChannels.PendingOpenChannels {
-			id, vout, err := parseChannelPoint(pendingChannel.Channel.ChannelPoint)
-
-			if err != nil {
-				logger.Error("Could not parse funding channel point: " + err.Error())
-				return
-			}
-
-			if pendingChannel.Channel.RemoteNodePub == nursery.boltzPubKey &&
-				id == status.Channel.FundingTransactionId &&
-				vout == status.Channel.FundingTransactionVout {
-
-				decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.chainParams)
-
-				if err != nil {
-					logger.Error("Could not decode invoice: " + err.Error())
-					return
-				}
-
-				invoiceAmount := decodedInvoice.MilliSat.ToSatoshis().ToUnit(btcutil.AmountSatoshi)
-				expectedCapacity := calculateChannelCreationCapacity(invoiceAmount, channelCreation.InboundLiquidity)
-
-				if pendingChannel.Channel.Capacity < expectedCapacity {
-					logger.Error("Channel capacity of " + swapType + " " + swap.Id + " " +
-						strconv.FormatInt(pendingChannel.Channel.Capacity, 10) +
-						" is less than than expected " + strconv.FormatInt(expectedCapacity, 10) + " satoshis")
-					return
-				}
-
-				// TODO: how to verify public / private channel?
-
-				err = nursery.database.SetChannelFunding(channelCreation, id, vout)
-
-				if err != nil {
-					logger.Error("Could not update state of " + swapType + " " + swap.Id + ": " + err.Error())
-					return
-				}
-
-				logger.Info("Channel for " + swapType + " " + swap.Id + " was opened: " + pendingChannel.Channel.ChannelPoint)
-
-				break
-			}
 		}
 
 	case boltz.TransactionClaimed:
 		// Verify that the invoice was actually paid
-		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.chainParams)
+		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
 
 		if err != nil {
-			logger.Error("Could not decode invoice: " + err.Error())
+			handleError("Could not decode invoice: " + err.Error())
 			return
 		}
 
-		invoiceInfo, err := nursery.lnd.LookupInvoice(decodedInvoice.PaymentHash[:])
+		paid, err := nursery.lightning.CheckInvoicePaid(decodedInvoice.PaymentHash[:])
 
 		if err != nil {
-			logger.Error("Could not get invoice information from LND: " + err.Error())
+			handleError("Could not get invoice information from LND: " + err.Error())
 			return
 		}
 
-		if invoiceInfo.State != lnrpc.Invoice_SETTLED {
-			logger.Warning(swapType + " " + swap.Id + " was not actually settled. Refunding at block " + strconv.FormatUint(uint64(swap.TimoutBlockHeight), 10))
+		if !paid {
+			logger.Warn("Swap " + swap.Id + " was not actually settled. Refunding at block " + strconv.FormatUint(uint64(swap.TimoutBlockHeight), 10))
 			return
 		}
 
-		logger.Info(swapType + " " + swap.Id + " succeeded")
+		logger.Info("Swap " + swap.Id + " succeeded")
 	}
 
 	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
 
 	if err != nil {
-		logger.Error("Could not update status of " + swapType + " " + swap.Id + ": " + err.Error())
+		handleError("Could not update status of Swap " + swap.Id + ": " + err.Error())
+		return
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		err = nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, "")
+		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+		if err != nil {
+			handleError("Could not decode invoice: " + err.Error())
+			return
+		}
+		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
+		serviceFee := uint64(swap.ServiceFeePercent.Calculate(float64(swap.ExpectedAmount)))
+		boltzOnchainFee := swap.ExpectedAmount - invoiceAmount - serviceFee
+
+		logger.Infof("Swap service fee: %dsat onchain fee: %dsat", serviceFee, boltzOnchainFee)
+
+		if err := nursery.database.SetSwapServiceFee(swap, serviceFee, boltzOnchainFee); err != nil {
+			handleError("Could not set swap service fee in database: " + err.Error())
+			return
+		}
+
+		if err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
+			handleError("Could not update state of Swap " + swap.Id + ": " + err.Error())
+			return
+		}
 	} else if parsedStatus.IsFailedStatus() {
 		if swap.State == boltzrpc.SwapState_PENDING {
-			err = nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, "")
+			if err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
+				handleError("Could not update state of Swap " + swap.Id + ": " + err.Error())
+				return
+			}
 		}
 	}
 
-	if err != nil {
-		logger.Error("Could not update state of " + swapType + " " + swap.Id + ": " + err.Error())
-	}
-}
-
-func parseChannelPoint(channelPoint string) (string, uint32, error) {
-	split := strings.Split(channelPoint, ":")
-	vout, err := strconv.Atoi(split[1])
-
-	if err != nil {
-		return "", 0, err
-	}
-
-	return split[0], uint32(vout), nil
-}
-
-func getSwapType(isChannelCreation bool) string {
-	swapType := "Swap"
-
-	if isChannelCreation {
-		swapType = "Channel Creation"
-	}
-
-	return swapType
+	sendSwapUpdate(*swap)
 }

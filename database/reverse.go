@@ -4,18 +4,23 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"strconv"
+	"time"
 
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 type ReverseSwap struct {
 	Id                  string
-	PairId              string
+	PairId              boltz.Pair
+	ChanId              lightning.ChanId
 	State               boltzrpc.SwapState
 	Error               string
+	CreatedAt           time.Time
 	Status              boltz.SwapUpdateEvent
 	AcceptZeroConf      bool
 	PrivateKey          *btcec.PrivateKey
@@ -27,11 +32,18 @@ type ReverseSwap struct {
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
+	BlindingKey         *btcec.PrivateKey
+	IsAuto              bool
+	RoutingFeeMsat      *uint64
+	ServiceFee          *uint64
+	ServiceFeePercent   utils.Percentage
+	OnchainFee          *uint64
 }
 
 type ReverseSwapSerialized struct {
 	Id                  string
 	PairId              string
+	ChanId              uint64
 	State               string
 	Error               string
 	Status              string
@@ -45,12 +57,19 @@ type ReverseSwapSerialized struct {
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
+	BlindingKey         string
+	IsAuto              bool
+	RoutingFeeMsat      *uint64
+	ServiceFee          *uint64
+	ServiceFeePercent   utils.Percentage
+	OnchainFee          *uint64
 }
 
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	return ReverseSwapSerialized{
 		Id:                  reverseSwap.Id,
-		PairId:              reverseSwap.PairId,
+		PairId:              string(reverseSwap.PairId),
+		ChanId:              uint64(reverseSwap.ChanId),
 		State:               boltzrpc.SwapState_name[int32(reverseSwap.State)],
 		Error:               reverseSwap.Error,
 		Status:              reverseSwap.Status.String(),
@@ -64,6 +83,12 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		TimeoutBlockHeight:  reverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: reverseSwap.LockupTransactionId,
 		ClaimTransactionId:  reverseSwap.ClaimTransactionId,
+		BlindingKey:         formatPrivateKey(reverseSwap.BlindingKey),
+		IsAuto:              reverseSwap.IsAuto,
+		RoutingFeeMsat:      reverseSwap.RoutingFeeMsat,
+		ServiceFee:          reverseSwap.ServiceFee,
+		ServiceFeePercent:   reverseSwap.ServiceFeePercent,
+		OnchainFee:          reverseSwap.OnchainFee,
 	}
 }
 
@@ -74,12 +99,16 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var privateKey string
 	var preimage string
 	var redeemScript string
+	var pairId string
+	var blindingKey sql.NullString
+	var createdAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
 
 	err := scanRow(
 		rows,
 		map[string]interface{}{
 			"id":                  &reverseSwap.Id,
-			"pairId":              &reverseSwap.PairId,
+			"pairId":              &pairId,
+			"chanId":              &reverseSwap.ChanId,
 			"state":               &reverseSwap.State,
 			"error":               &reverseSwap.Error,
 			"status":              &status,
@@ -93,6 +122,13 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"timeoutBlockheight":  &reverseSwap.TimeoutBlockHeight,
 			"lockupTransactionId": &reverseSwap.LockupTransactionId,
 			"claimTransactionId":  &reverseSwap.ClaimTransactionId,
+			"blindingKey":         &blindingKey,
+			"isAuto":              &reverseSwap.IsAuto,
+			"routingFeeMsat":      &routingFeeMsat,
+			"serviceFee":          &serviceFee,
+			"serviceFeePercent":   &reverseSwap.ServiceFeePercent,
+			"onchainFee":          &onchainFee,
+			"createdAt":           &createdAt,
 		},
 	)
 
@@ -100,14 +136,18 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 		return nil, err
 	}
 
+	reverseSwap.ServiceFee = parseNullInt(serviceFee)
+	reverseSwap.OnchainFee = parseNullInt(onchainFee)
+	reverseSwap.RoutingFeeMsat = parseNullInt(routingFeeMsat)
+
 	reverseSwap.Status = boltz.ParseEvent(status)
-	privateKeyBytes, err := hex.DecodeString(privateKey)
+
+	reverseSwap.PrivateKey, err = ParsePrivateKey(privateKey)
 
 	if err != nil {
 		return nil, err
 	}
 
-	reverseSwap.PrivateKey, _ = parsePrivateKey(privateKeyBytes)
 	reverseSwap.Preimage, err = hex.DecodeString(preimage)
 
 	if err != nil {
@@ -115,6 +155,26 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	}
 
 	reverseSwap.RedeemScript, err = hex.DecodeString(redeemScript)
+	if err != nil {
+		return nil, err
+	}
+
+	reverseSwap.PairId, err = boltz.ParsePair(pairId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if blindingKey.Valid {
+		reverseSwap.BlindingKey, err = ParsePrivateKey(blindingKey.String)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if createdAt.Valid {
+		reverseSwap.CreatedAt = ParseTime(createdAt.Int64)
+	}
 
 	return &reverseSwap, err
 }
@@ -142,8 +202,8 @@ func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap,
 	return reverseSwap, err
 }
 
-func (database *Database) queryReverseSwaps(query string) (swaps []ReverseSwap, err error) {
-	rows, err := database.db.Query(query)
+func (database *Database) queryReverseSwaps(query string, values ...any) (swaps []ReverseSwap, err error) {
+	rows, err := database.db.Query(query, values...)
 
 	if err != nil {
 		return nil, err
@@ -172,8 +232,13 @@ func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
 	return database.queryReverseSwaps("SELECT * FROM reverseSwaps WHERE state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "'")
 }
 
+func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]ReverseSwap, error) {
+	query := "SELECT * FROM reverseSwaps WHERE state = ? AND createdAt >= ?"
+	return database.queryReverseSwaps(query, strconv.Itoa(int(boltzrpc.SwapState_ERROR)), since.Unix())
+}
+
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, pairId, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO reverseSwaps (id, pairId, chanId, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee, serviceFeePercent, onchainFee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -183,6 +248,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 	_, err = statement.Exec(
 		reverseSwap.Id,
 		reverseSwap.PairId,
+		reverseSwap.ChanId,
 		reverseSwap.State,
 		reverseSwap.Error,
 		reverseSwap.Status.String(),
@@ -196,6 +262,13 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		reverseSwap.TimeoutBlockHeight,
 		reverseSwap.LockupTransactionId,
 		reverseSwap.ClaimTransactionId,
+		formatPrivateKey(reverseSwap.BlindingKey),
+		reverseSwap.IsAuto,
+		FormatTime(reverseSwap.CreatedAt),
+		reverseSwap.RoutingFeeMsat,
+		reverseSwap.ServiceFee,
+		reverseSwap.ServiceFeePercent,
+		reverseSwap.OnchainFee,
 	)
 
 	if err != nil {
@@ -227,9 +300,25 @@ func (database *Database) SetReverseSwapLockupTransactionId(reverseSwap *Reverse
 	return err
 }
 
-func (database *Database) SetReverseSwapClaimTransactionId(reverseSwap *ReverseSwap, claimTransactionId string) error {
+func (database *Database) SetReverseSwapClaimTransactionId(reverseSwap *ReverseSwap, claimTransactionId string, fee uint64) error {
 	reverseSwap.ClaimTransactionId = claimTransactionId
+	reverseSwap.OnchainFee = &fee
 
-	_, err := database.db.Exec("UPDATE reverseSwaps SET claimTransactionId = ? WHERE id = ?", claimTransactionId, reverseSwap.Id)
+	_, err := database.db.Exec("UPDATE reverseSwaps SET claimTransactionId = ?, onchainFee = ? WHERE id = ?", claimTransactionId, fee, reverseSwap.Id)
+	return err
+}
+
+func (database *Database) SetReverseSwapRoutingFee(reverseSwap *ReverseSwap, feeMsat uint64) error {
+	reverseSwap.RoutingFeeMsat = &feeMsat
+
+	_, err := database.db.Exec("UPDATE reverseSwaps SET routingFeeMsat = ? WHERE id = ?", feeMsat, reverseSwap.Id)
+	return err
+}
+
+func (database *Database) SetReverseSwapServiceFee(reverseSwap *ReverseSwap, serviceFee uint64, onchainFee uint64) error {
+	reverseSwap.ServiceFee = &serviceFee
+	reverseSwap.OnchainFee = addToOptional(reverseSwap.OnchainFee, onchainFee)
+
+	_, err := database.db.Exec("UPDATE reverseSwaps SET serviceFee = ?, onchainFee = ? WHERE id = ?", serviceFee, reverseSwap.OnchainFee, reverseSwap.Id)
 	return err
 }

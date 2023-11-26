@@ -1,21 +1,33 @@
 package main
 
 import (
-	boltz_lnd "github.com/BoltzExchange/boltz-lnd"
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/BoltzExchange/boltz-lnd/mempool"
-	"github.com/BoltzExchange/boltz-lnd/nursery"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
+	"fmt"
+	"os"
+	"path"
+	"strings"
+
+	boltzClient "github.com/BoltzExchange/boltz-client"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/mempool"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/onchain/liquid"
+	"github.com/BoltzExchange/boltz-client/utils"
 )
 
 // TODO: close dangling channels
 
 func main() {
-	cfg := boltz_lnd.LoadConfig()
+	defaultDataDir, err := utils.GetDefaultDataDir()
 
-	logger.InitLogger(cfg.LogFile, cfg.LogPrefix)
+	if err != nil {
+		fmt.Println("Could not get home directory: " + err.Error())
+		os.Exit(1)
+	}
+
+	cfg := boltzClient.LoadConfig(defaultDataDir)
+
+	logger.Init(cfg.LogFile, cfg.LogLevel)
 
 	formattedCfg, err := utils.FormatJson(cfg)
 
@@ -29,7 +41,7 @@ func main() {
 	Start(cfg)
 }
 
-func Init(cfg *boltz_lnd.Config) {
+func Init(cfg *boltzClient.Config) {
 
 	err := cfg.Database.Connect()
 
@@ -37,58 +49,103 @@ func Init(cfg *boltz_lnd.Config) {
 		logger.Fatal("Could not connect to database: " + err.Error())
 	}
 
-	err = cfg.Lightning.Connect()
-	err = cfg.LND.Connect()
+	setLightningNode(cfg)
 
-	if err != nil {
+	if err = cfg.Lightning.Connect(); err != nil {
 		logger.Fatal("Could not initialize lightning client: " + err.Error())
 	}
 
 	info := connectLightning(cfg.Lightning)
 
-	checkLightningVersion(info)
+	if cfg.Lightning == cfg.Cln {
+		checkClnVersion(info)
+	} else if cfg.Lightning == cfg.LND {
+		checkLndVersion(info)
+	}
 
-	logger.Info("Connected to lightning node: " + info.Pubkey + " (" + info.Version + ")")
+	logger.Info(fmt.Sprintf("Connected to lightning node %v (%v): %v", cfg.Node, info.Version, info.Pubkey))
 
-	chainParams := parseChain(info.Network)
-	logger.Info("Parsed chain: " + chainParams.Name)
+	network, err := boltz.ParseChain(info.Network)
 
-	cfg.LND.ChainParams = chainParams
+	if err != nil {
+		logger.Fatal("Could not parse chain: " + err.Error())
+	}
+
+	logger.Info("Parsed chain: " + network.Name)
+
+	cfg.LND.ChainParams = network.Btc
 
 	waitForLightningSynced(cfg.Lightning)
 
-	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
+	setBoltzEndpoint(cfg.Boltz, network)
 
 	checkBoltzVersion(cfg.Boltz)
 
-	boltzPubKey, err := utils.ConnectBoltzLnd(cfg.LND, cfg.Boltz)
+	_, err = utils.ConnectBoltz(cfg.Lightning, cfg.Boltz)
 
 	if err != nil {
-		logger.Warning("Could not connect to to Boltz LND node: " + err.Error())
+		logger.Warn("Could not connect to to Boltz LND node: " + err.Error())
 	}
 
-	swapNursery := &nursery.Nursery{}
-	err = swapNursery.Init(
-		boltzPubKey,
-		chainParams,
-		cfg.LND,
-		cfg.Boltz,
-		mempool.Init(cfg.LND, cfg.MempoolApi),
-		cfg.Database,
-	)
-
-	if err != nil {
-		logger.Fatal("Could not start Swap nursery: " + err.Error())
+	onchain := &onchain.Onchain{
+		Btc: &onchain.Currency{
+			Listener: cfg.Lightning,
+			Wallet:   cfg.Lightning,
+		},
+		Liquid:  &onchain.Currency{},
+		Network: network,
 	}
 
-	err = cfg.RPC.Init(chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
+	if network == boltz.MainNet {
+		cfg.MempoolApi = "https://mempool.space/api"
+		cfg.MempoolLiquidApi = "https://liquid.network/api"
+	} else if network == boltz.TestNet {
+		cfg.MempoolApi = "https://mempool.space/testnet/api"
+		cfg.MempoolLiquidApi = "https://liquid.network/liquidtestnet/api"
+	}
+
+	if cfg.MempoolApi != "" {
+		logger.Info("mempool.space API: " + cfg.MempoolApi)
+		mempoolBtc := mempool.InitClient(cfg.MempoolApi)
+		onchain.Btc.Fees = mempoolBtc
+		// TODO: boltz as alternative
+		onchain.Btc.Tx = mempoolBtc
+	}
+
+	if cfg.MempoolLiquidApi != "" {
+		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
+		mempoolLiquid := mempool.InitClient(cfg.MempoolLiquidApi)
+		onchain.Liquid.Fees = mempoolLiquid
+		onchain.Liquid.Listener = mempoolLiquid
+		onchain.Liquid.Tx = mempoolLiquid
+	}
+
+	if cfg.LiquidWallet == nil {
+		liquidWallet, err := liquid.InitWallet(cfg.DataDir, network, false)
+		if err != nil {
+			logger.Error("Could not init Liquid wallet: " + err.Error())
+		} else if liquidWallet.Exists() {
+			if err := liquidWallet.Login(); err != nil {
+				logger.Error("Could not log into liquid wallet: " + err.Error())
+			} else {
+				logger.Info("Successfully logged into liquid wallet")
+			}
+		}
+		onchain.Liquid.Wallet = liquidWallet
+	} else {
+		onchain.Liquid.Wallet = cfg.LiquidWallet
+	}
+
+	autoSwapConfPath := path.Join(cfg.DataDir, "autoswap.toml")
+
+	err = cfg.RPC.Init(network, cfg.Lightning, cfg.Boltz, cfg.Database, onchain, autoSwapConfPath)
 
 	if err != nil {
-		logger.Fatal("Could not initialize Server" + err.Error())
+		logger.Fatalf("Could not initialize Server: %v", err)
 	}
 }
 
-func Start(cfg *boltz_lnd.Config) {
+func Start(cfg *boltzClient.Config) {
 	errChannel := cfg.RPC.Start()
 
 	err := <-errChannel
@@ -98,37 +155,39 @@ func Start(cfg *boltz_lnd.Config) {
 	}
 }
 
-func parseChain(network string) (params *bitcoinCfg.Params) {
+func setLightningNode(cfg *boltzClient.Config) {
+	isClnConfigured := cfg.Cln.RootCert != ""
+	isLndConfigured := cfg.LND.Macaroon != ""
 
-	switch network {
-	case "mainnet":
-		// #reckless
-		params = &bitcoinCfg.MainNetParams
-	case "testnet":
-		params = &bitcoinCfg.TestNet3Params
-	case "regtest":
-		params = &bitcoinCfg.RegressionNetParams
-	default:
-		logger.Fatal("Network " + network + " no supported")
+	if strings.EqualFold(cfg.Node, "CLN") {
+		cfg.Lightning = cfg.Cln
+	} else if strings.EqualFold(cfg.Node, "LND") {
+		cfg.Lightning = cfg.LND
+	} else if isClnConfigured && isLndConfigured {
+		logger.Fatal("Both CLN and LND are configured. Set --node to specify which node to use.")
+	} else if isClnConfigured {
+		cfg.Lightning = cfg.Cln
+	} else if isLndConfigured {
+		cfg.Lightning = cfg.LND
+	} else {
+		logger.Fatal("No lightning node configured. Set either CLN or LND.")
 	}
-
-	return params
 }
 
-func setBoltzEndpoint(boltz *boltz.Boltz, chain string) {
-	if boltz.URL != "" {
-		logger.Info("Using configured Boltz endpoint: " + boltz.URL)
+func setBoltzEndpoint(boltzCfg *boltz.Boltz, network *boltz.Network) {
+	if boltzCfg.URL != "" {
+		logger.Info("Using configured Boltz endpoint: " + boltzCfg.URL)
 		return
 	}
 
-	switch chain {
-	case bitcoinCfg.MainNetParams.Name:
-		boltz.URL = "https://boltz.exchange/api"
-	case bitcoinCfg.TestNet3Params.Name:
-		boltz.URL = "https://testnet.boltz.exchange/api"
-	case bitcoinCfg.RegressionNetParams.Name:
-		boltz.URL = "http://127.0.0.1:9001"
+	switch network {
+	case boltz.MainNet:
+		boltzCfg.URL = "https://api.boltz.exchange"
+	case boltz.TestNet:
+		boltzCfg.URL = "https://testnet.boltz.exchange/api"
+	case boltz.Regtest:
+		boltzCfg.URL = "http://127.0.0.1:9001"
 	}
 
-	logger.Info("Using default Boltz endpoint for chain " + chain + ": " + boltz.URL)
+	logger.Info("Using default Boltz endpoint for network " + network.Name + ": " + boltzCfg.URL)
 }

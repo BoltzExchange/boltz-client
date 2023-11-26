@@ -19,17 +19,17 @@ func TestGetFeeLimit(t *testing.T) {
 	bigPaymentFeeLimit, err := GetFeeLimit(bigInvoice, cfg)
 
 	assert.Nil(t, err)
-	assert.Equal(t, int64(float64(bigInvoiceAmt)*maxPaymentFeeRatio), bigPaymentFeeLimit)
+	assert.Equal(t, uint(float64(bigInvoiceAmt)*maxPaymentFeeRatio), bigPaymentFeeLimit)
 
 	// Should use minimal payment fee for small invoices
 	smallPaymentFeeLimit, err := GetFeeLimit(smallInvoice, cfg)
 
 	assert.Nil(t, err)
-	assert.Equal(t, int64(minPaymentFee), smallPaymentFeeLimit)
+	assert.Equal(t, uint(minPaymentFee), smallPaymentFeeLimit)
 
 	// Should return fee limit 0 for invalid invoices
 	zeroFeeLimit, err := GetFeeLimit("", cfg)
 
 	assert.NotNil(t, err)
-	assert.Equal(t, int64(0), zeroFeeLimit)
+	assert.Equal(t, uint(0), zeroFeeLimit)
 }

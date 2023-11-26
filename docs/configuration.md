@@ -1,6 +1,6 @@
 # Configuration
 
-`boltz-lnd` can be configured via CLI arguments, and a TOML config file. By default, the config file is called `boltz.toml` and located in the data directory of `boltz-lnd` (`/home/<user>/.boltz-lnd` by default on Linux).
+`boltz-client` can be configured via CLI arguments or a TOML config file. When CLI arguments are used, these are overwriting any conflicting configuration in the TOML. The config file `boltz.toml` is expected to be located in the data directory of `boltz-client` (`/home/<user>/.boltz-client` by default on Linux).
 
 ## Example
 
@@ -9,7 +9,7 @@
 logfile = ""
 
 # Prefix for all log messages.
-# Useful in cases two boltz-lnd instances (one for BTC and LTC) are running in a single Docker container  
+# Useful in cases two boltz-client instances (one for BTC and LTC) are running in a single Docker container
 logprefix = "[BTC] "
 
 [BOLTZ]
@@ -18,7 +18,7 @@ logprefix = "[BTC] "
 url = "https://testnet.boltz.exchange/api"
 
 [DATABASE]
-# Path to the SQLite database file 
+# Path to the SQLite database file
 path = "/home/michael/test.db"
 
 [LND]
@@ -29,7 +29,7 @@ host = "127.0.0.1"
 port = 10009
 
 # Path to a macaroon file of LND
-# The daemon needs to have permission to read various endpoints, generate addresses and pay invoices 
+# The daemon needs to have permission to read various endpoints, generate addresses and pay invoices
 macaroon = ""
 
 # Path to the TLS certificate of LND
@@ -39,7 +39,7 @@ certificate = ""
 # Host of the gRPC interface
 host = "127.0.0.1"
 
-# Port of the gRPC interface 
+# Port of the gRPC interface
 port = 9002
 
 # Whether the REST proxy for the gRPC interface should be disabled

@@ -3,10 +3,11 @@ package boltz
 import (
 	"encoding/hex"
 	"errors"
+	"strings"
+
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/lightningnetwork/lnd/input"
-	"strings"
 )
 
 var invalidRedeemScript = errors.New("invalid redeem script")

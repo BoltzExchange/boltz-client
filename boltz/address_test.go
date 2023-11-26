@@ -13,22 +13,30 @@ var redeemScript, _ = hex.DecodeString("a9146a24b142de20b50871a247c1c66a6e41ee19
 
 func TestCheckSwapAddress(t *testing.T) {
 	// P2SH nested P2WSH address
-	err := CheckSwapAddress(chainParams, "3F8UixJcrfxCaGpRryyRuKotBFXRFeW7ej", redeemScript, true)
+	err := CheckSwapAddress(PairBtc, MainNet, "3F8UixJcrfxCaGpRryyRuKotBFXRFeW7ej", redeemScript, true, nil)
 	assert.Nil(t, err)
 
-	err = CheckSwapAddress(chainParams, "", redeemScript, true)
+	err = CheckSwapAddress(PairBtc, MainNet, "", redeemScript, true, nil)
 	assert.Equal(t, errors.New("invalid address"), err)
 
 	// P2WSH address
-	err = CheckSwapAddress(chainParams, "bc1q73lzkly9le40qxym5wh5wyp0davanw3u9m0u28wafay4ay7z34cscztt48", redeemScript, false)
+	err = CheckSwapAddress(PairBtc, MainNet, "bc1q73lzkly9le40qxym5wh5wyp0davanw3u9m0u28wafay4ay7z34cscztt48", redeemScript, false, nil)
 	assert.Nil(t, err)
 
-	err = CheckSwapAddress(chainParams, "", redeemScript, false)
+	err = CheckSwapAddress(PairBtc, MainNet, "", redeemScript, false, nil)
 	assert.Equal(t, errors.New("invalid address"), err)
 }
 
-func TestWitnessScriptHashAddress(t *testing.T) {
-	address, err := WitnessScriptHashAddress(chainParams, redeemScript)
+func TestValidateAddress(t *testing.T) {
+	err := ValidateAddress(MainNet, "3F8UixJcrfxCaGpRryyRuKotBFXRFeW7ej", PairBtc)
+	assert.NoError(t, err)
+
+	err = ValidateAddress(MainNet, "02f1a8c87607f415c8f22c00593002775941dea48869ce23096af27b0cfdcc0b69", PairBtc)
+	assert.Error(t, err)
+}
+
+func TestBtcWitnessScriptHashAddress(t *testing.T) {
+	address, err := BtcWitnessScriptHashAddress(chainParams, redeemScript)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "bc1q73lzkly9le40qxym5wh5wyp0davanw3u9m0u28wafay4ay7z34cscztt48", address)

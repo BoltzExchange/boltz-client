@@ -1,6 +1,6 @@
-# boltz-lnd v1.2.3 documentation
+# boltz-client v1.2.3 documentation
 
-`boltz-lnd` is a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse Submarine Swaps (from Lightning to onchain coins).
+`boltz-client` is a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (from onchain to Lightning coins) and Reverse Submarine Swaps (from Lightning to onchain coins).
 
 ## `boltzd`
 
@@ -19,7 +19,7 @@ The LND node to which the daemon connects has to be version `v0.10.0-beta` or hi
 - `chainrpc` (block listener)
 - `walletrpc` (fee estimations)
 
-Binaries for the latest release of `boltz-lnd` can be found on the [releases page](https://github.com/BoltzExchange/boltz-lnd/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided in the [README](https://github.com/BoltzExchange/boltz-lnd#building).
+Binaries for the latest release of `boltz-client` can be found on the [releases page](https://github.com/BoltzExchange/boltz-client/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided in the [README](https://github.com/BoltzExchange/boltz-client#building).
 
 ### Configuration
 
@@ -29,4 +29,4 @@ Binaries for the latest release of `boltz-lnd` can be found on the [releases pag
 
 ### Macaroons
 
-The macaroons for the gRPC server of `boltzd` can be found in the `macaroons` folder inside the data directory of the daemon. By default, that data directory is `~/.boltz-lnd` on Linux.
+The macaroons for the gRPC server of `boltzd` can be found in the `macaroons` folder inside the data directory of the daemon. By default, that data directory is `~/.boltz-client` on Linux.

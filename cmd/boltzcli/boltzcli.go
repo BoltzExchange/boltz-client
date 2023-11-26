@@ -5,10 +5,10 @@ import (
 	"os"
 	"path"
 
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
-	"github.com/BoltzExchange/boltz-lnd/build"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	"github.com/urfave/cli"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
+	"github.com/BoltzExchange/boltz-client/build"
+	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
@@ -21,52 +21,56 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "boltzcli"
-	app.Usage = ""
+	app.Usage = "A command line interface for boltzd"
 	app.Version = build.GetVersion()
+	app.EnableBashCompletion = true
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "host",
 			Value: "127.0.0.1",
 			Usage: "gRPC host of Boltz",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "port",
 			Value: 9002,
 			Usage: "gRPC port of Boltz",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "datadir",
 			Value: defaultDataDir,
-			Usage: "Data directory of boltz-lnd",
+			Usage: "Data directory of boltz-client",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "tlscert",
 			Value: "",
 			Usage: "Path to the gRPC TLS certificate of Boltz",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "no-macaroons",
 			Usage: "Disables Macaroon authentication",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "macaroon",
 			Value: "",
 			Usage: "Path to a gRPC Macaroon of Boltz",
 		},
 	}
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		getInfoCommand,
 		getSwapCommand,
+		swapInfoStreamCommand,
 		listSwapsCommand,
-
-		depositCommand,
-		withdrawCommand,
 
 		createSwapCommand,
 		createReverseSwapCommand,
-		createChannelCreationCommand,
+
+		autoSwapCommands,
+
+		liquidWalletCommands,
 
 		formatMacaroonCommand,
+		shellCompletionsCommand,
+		stopCommand,
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -75,27 +79,25 @@ func main() {
 	}
 }
 
-func getClient(ctx *cli.Context) boltzrpc.Boltz {
-	dataDir := ctx.GlobalString("datadir")
+func getConnection(ctx *cli.Context) client.Connection {
+	dataDir := ctx.String("datadir")
 	macaroonDir := path.Join(dataDir, "macaroons")
 
-	tlsCert := ctx.GlobalString("tlscert")
-	macaroon := ctx.GlobalString("macaroon")
+	tlsCert := ctx.String("tlscert")
+	macaroon := ctx.String("macaroon")
 
 	tlsCert = utils.ExpandDefaultPath(dataDir, tlsCert, "tls.cert")
 	macaroon = utils.ExpandDefaultPath(macaroonDir, macaroon, "admin.macaroon")
 
-	boltz := boltzrpc.Boltz{
-		Host: ctx.GlobalString("host"),
-		Port: ctx.GlobalInt("port"),
+	boltz := client.Connection{
+		Host: ctx.String("host"),
+		Port: ctx.Int("port"),
 
 		TlsCertPath: tlsCert,
 
-		NoMacaroons:  ctx.GlobalBool("no-macaroons"),
+		NoMacaroons:  ctx.Bool("no-macaroons"),
 		MacaroonPath: macaroon,
 	}
-
-	fmt.Println(boltz)
 
 	err := boltz.Connect()
 
@@ -105,4 +107,14 @@ func getClient(ctx *cli.Context) boltzrpc.Boltz {
 	}
 
 	return boltz
+}
+
+func getClient(ctx *cli.Context) client.Boltz {
+	conn := getConnection(ctx)
+	return client.NewBoltzClient(conn)
+}
+
+func getAutoSwapClient(ctx *cli.Context) client.AutoSwap {
+	conn := getConnection(ctx)
+	return client.NewAutoSwapClient(conn)
 }

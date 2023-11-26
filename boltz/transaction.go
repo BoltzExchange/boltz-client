@@ -1,11 +1,8 @@
 package boltz
 
 import (
+	"fmt"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
-	"math"
 )
 
 type OutputType int
@@ -16,8 +13,15 @@ const (
 	Legacy
 )
 
+type Transaction interface {
+	Hash() string
+	Serialize() (string, error)
+	VSize() uint64
+	FindVout(network *Network, address string) (uint32, uint64, error)
+}
+
 type OutputDetails struct {
-	LockupTransaction *btcutil.Tx
+	LockupTransaction Transaction
 	Vout              uint32
 	OutputType        OutputType
 
@@ -31,117 +35,34 @@ type OutputDetails struct {
 	TimeoutBlockHeight uint32
 }
 
-func ConstructTransaction(outputs []OutputDetails, outputAddress btcutil.Address, satPerVbyte int64) (*wire.MsgTx, error) {
-	noFeeTransaction, err := constructTransaction(outputs, outputAddress, 0)
-
-	if err != nil {
-		return nil, err
+func NewTxFromHex(hexString string, ourOutputBlindingKey *btcec.PrivateKey) (Transaction, error) {
+	if ourOutputBlindingKey != nil {
+		liquidTx, err := NewLiquidTxFromHex(hexString, ourOutputBlindingKey)
+		if err == nil {
+			return liquidTx, nil
+		}
 	}
 
-	witnessSize := noFeeTransaction.SerializeSize() - noFeeTransaction.SerializeSizeStripped()
-	vByte := int64(noFeeTransaction.SerializeSizeStripped()) + int64(math.Ceil(float64(witnessSize)/4))
-
-	return constructTransaction(outputs, outputAddress, vByte*satPerVbyte)
+	return NewBtcTxFromHex(hexString)
 }
 
-func constructTransaction(outputs []OutputDetails, outputAddress btcutil.Address, fee int64) (*wire.MsgTx, error) {
-	transaction := wire.NewMsgTx(wire.TxVersion)
-
-	var inputSum int64
-
-	for _, output := range outputs {
-		// Set the highest timeout block height as locktime
-		if output.TimeoutBlockHeight > transaction.LockTime {
-			transaction.LockTime = output.TimeoutBlockHeight
-		}
-
-		// Calculate the sum of all inputs
-		inputSum += output.LockupTransaction.MsgTx().TxOut[output.Vout].Value
-
-		// Add the input to the transaction
-		input := wire.NewTxIn(wire.NewOutPoint(output.LockupTransaction.Hash(), output.Vout), nil, nil)
-		input.Sequence = 0
-
-		transaction.AddTxIn(input)
+func ConstructTransaction(pair Pair, network *Network, outputs []OutputDetails, outputAddress string, satPerVbyte float64) (Transaction, uint64, error) {
+	var construct func(*Network, []OutputDetails, string, uint64) (Transaction, error)
+	if pair == PairLiquid {
+		construct = constructLiquidTransaction
+	} else if pair == PairBtc {
+		construct = constructBtcTransaction
+	} else {
+		return nil, 0, fmt.Errorf("invalid pair: %v", pair)
 	}
 
-	// Add the output
-	outputScript, err := txscript.PayToAddrScript(outputAddress)
+	noFeeTransaction, err := construct(network, outputs, outputAddress, 0)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	transaction.AddTxOut(&wire.TxOut{
-		PkScript: outputScript,
-		Value:    inputSum - fee,
-	})
-
-	// Construct the signature script and witnesses and sign the inputs
-	for i, output := range outputs {
-		switch output.OutputType {
-		case Legacy:
-			// Set the signed signature script for legacy output
-			signature, err := txscript.RawTxInSignature(
-				transaction,
-				i,
-				output.RedeemScript,
-				txscript.SigHashAll,
-				output.PrivateKey,
-			)
-
-			if err != nil {
-				return nil, err
-			}
-
-			signatureScriptBuilder := txscript.NewScriptBuilder()
-			signatureScriptBuilder.AddData(signature)
-			signatureScriptBuilder.AddData(output.Preimage)
-			signatureScriptBuilder.AddData(output.RedeemScript)
-
-			signatureScript, err := signatureScriptBuilder.Script()
-
-			if err != nil {
-				return nil, err
-			}
-
-			transaction.TxIn[i].SignatureScript = signatureScript
-
-		case Compatibility:
-			// Set the signature script for compatibility outputs
-			signatureScriptBuilder := txscript.NewScriptBuilder()
-			signatureScriptBuilder.AddData(createNestedP2shScript(output.RedeemScript))
-
-			signatureScript, err := signatureScriptBuilder.Script()
-
-			if err != nil {
-				return nil, err
-			}
-
-			transaction.TxIn[i].SignatureScript = signatureScript
-		}
-
-		// Add the signed witness in case the output is not a legacy one
-		if output.OutputType != Legacy {
-			prevoutFetcher := txscript.NewCannedPrevOutputFetcher(output.LockupTransaction.MsgTx().TxOut[output.Vout].PkScript, output.LockupTransaction.MsgTx().TxOut[output.Vout].Value)
-			signatureHash := txscript.NewTxSigHashes(transaction, prevoutFetcher)
-			signature, err := txscript.RawTxInWitnessSignature(
-				transaction,
-				signatureHash,
-				i,
-				output.LockupTransaction.MsgTx().TxOut[output.Vout].Value,
-				output.RedeemScript,
-				txscript.SigHashAll,
-				output.PrivateKey,
-			)
-
-			if err != nil {
-				return nil, err
-			}
-
-			transaction.TxIn[i].Witness = wire.TxWitness{signature, output.Preimage, output.RedeemScript}
-		}
-	}
-
-	return transaction, nil
+	fee := uint64(float64(noFeeTransaction.VSize()) * satPerVbyte)
+	transaction, err := construct(network, outputs, outputAddress, fee)
+	return transaction, fee, err
 }

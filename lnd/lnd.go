@@ -5,12 +5,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/BoltzExchange/boltz-lnd/lightning"
-	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
@@ -32,6 +35,15 @@ type LightningClient interface {
 	ForceCloseChannel(channelPoint string) (lnrpc.Lightning_CloseChannelClient, error)
 }
 
+var (
+	paymentStatusFromGrpc = map[lnrpc.Payment_PaymentStatus]lightning.PaymentState{
+		lnrpc.Payment_IN_FLIGHT: lightning.PaymentPending,
+		lnrpc.Payment_SUCCEEDED: lightning.PaymentSucceeded,
+		lnrpc.Payment_FAILED:    lightning.PaymentFailed,
+		lnrpc.Payment_UNKNOWN:   lightning.PaymentFailed,
+	}
+)
+
 type LND struct {
 	Host        string `long:"lnd.host" description:"gRPC host of the LND node"`
 	Port        int    `long:"lnd.port" description:"gRPC port of the LND node"`
@@ -49,12 +61,16 @@ type LND struct {
 	chainNotifier chainrpc.ChainNotifierClient
 }
 
-const retryInterval = 15
-
-var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
+func (lnd *LND) Ready() bool {
+	return lnd.client != nil
+}
 
 func (lnd *LND) Connect() error {
-	creds, err := credentials.NewClientTLSFromFile(lnd.Certificate, "")
+	cert, err := filepath.EvalSymlinks(lnd.Certificate)
+	if err != nil {
+		return errors.New(fmt.Sprint("could not eval symlinks: ", err))
+	}
+	creds, err := credentials.NewClientTLSFromFile(cert, "")
 
 	if err != nil {
 		return errors.New(fmt.Sprint("could not read LND certificate: ", err))
@@ -104,14 +120,28 @@ func (lnd *LND) GetInfo() (*lightning.LightningInfo, error) {
 	}, nil
 }
 
-func (lnd *LND) ConnectPeer(pubKey string, host string) (*lnrpc.ConnectPeerResponse, error) {
-	return lnd.client.ConnectPeer(lnd.ctx, &lnrpc.ConnectPeerRequest{
+func (lnd *LND) GetBlockHeight() (uint32, error) {
+	info, err := lnd.getInfo()
+	if err != nil {
+		return 0, err
+	}
+	return info.BlockHeight, nil
+}
+
+func (lnd *LND) ConnectPeer(uri string) error {
+	uriParts := strings.Split(uri, "@")
+
+	if len(uriParts) != 2 {
+		return errors.New("could not parse URI")
+	}
+	_, err := lnd.client.ConnectPeer(lnd.ctx, &lnrpc.ConnectPeerRequest{
 		Perm: true,
 		Addr: &lnrpc.LightningAddress{
-			Host:   host,
-			Pubkey: pubKey,
+			Host:   uriParts[0],
+			Pubkey: uriParts[1],
 		},
 	})
+	return err
 }
 
 func (lnd *LND) PendingChannels() (*lnrpc.PendingChannelsResponse, error) {
@@ -127,34 +157,33 @@ func parseChannelPoint(channelPoint string) (*lightning.ChannelPoint, error) {
 	}
 
 	return &lightning.ChannelPoint{
-		FundingTxid: split[0],
+		FundingTxId: split[0],
 		OutputIndex: uint32(vout),
 	}, nil
 }
 
-func (lnd *LND) ListChannels() ([]lightning.LightningChannel, error) {
+func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 	channels, err := lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	var results []lightning.LightningChannel
+	var results []*lightning.LightningChannel
 
 	for _, channel := range channels.Channels {
-
 		point, err := parseChannelPoint(channel.ChannelPoint)
 
 		if err != nil {
-			logger.Warning("Could not parse channel point: " + err.Error())
+			logger.Warn("Could not parse channel point: " + err.Error())
 		}
-		results = append(results, lightning.LightningChannel{
-			LocalMsat:  uint(channel.LocalBalance),
-			RemoteMsat: uint(channel.RemoteBalance),
-			Capacity:   uint(channel.Capacity),
-			Id:         string(channel.ChanId),
-			PeerId:     channel.RemotePubkey,
-			Point:      *point,
+		results = append(results, &lightning.LightningChannel{
+			LocalSat:  uint64(channel.LocalBalance),
+			RemoteSat: uint64(channel.RemoteBalance),
+			Capacity:  uint64(channel.Capacity),
+			Id:        lightning.ChanId(channel.ChanId),
+			PeerId:    channel.RemotePubkey,
+			Point:     *point,
 		})
 	}
 
@@ -175,6 +204,36 @@ func (lnd *LND) CreateInvoice(value int64, preimage []byte, expiry int64, memo s
 		PaymentRequest: invoice.PaymentRequest,
 		PaymentHash:    invoice.RHash,
 	}, nil
+}
+
+func (lnd *LND) CheckInvoicePaid(paymentHash []byte) (bool, error) {
+	invoice, err := lnd.client.LookupInvoice(lnd.ctx, &lnrpc.PaymentHash{
+		RHash: paymentHash,
+	})
+	if err != nil {
+		return false, err
+	}
+	return invoice.State == lnrpc.Invoice_SETTLED, nil
+}
+
+func (lnd *LND) CheckPaymentFee(paymentHash []byte) (uint64, error) {
+	client, err := lnd.router.TrackPaymentV2(lnd.ctx, &routerrpc.TrackPaymentRequest{
+		PaymentHash:       paymentHash,
+		NoInflightUpdates: true,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	payment, err := client.Recv()
+
+	if err != nil {
+		return 0, err
+	}
+	if payment.Status == lnrpc.Payment_SUCCEEDED {
+		return uint64(payment.FeeMsat), nil
+	}
+	return 0, nil
 }
 
 func (lnd *LND) AddHoldInvoice(preimageHash []byte, value int64, expiry int64, memo string) (*invoicesrpc.AddHoldInvoiceResp, error) {
@@ -204,54 +263,76 @@ func (lnd *LND) LookupInvoice(preimageHash []byte) (*lnrpc.Invoice, error) {
 	})
 }
 
-func (lnd *LND) GetChannelInfo(channelId uint64) (*lnrpc.ChannelEdge, error) {
+func (lnd *LND) GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error) {
 	return lnd.client.GetChanInfo(lnd.ctx, &lnrpc.ChanInfoRequest{
-		ChanId: channelId,
+		ChanId: chanId,
 	})
 }
 
-func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint) (*lightning.PayInvoiceResponse, error) {
-	client, err := lnd.router.SendPaymentV2(lnd.ctx, &routerrpc.SendPaymentRequest{
-		PaymentRequest: invoice,
-		TimeoutSeconds: int32(timeoutSeconds),
-		FeeLimitSat:    int64(feeLimit),
-	})
+func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanId lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 
+	/*
+		var outgoungIds []uint64
+
+		if chanId != "" {
+			id, err := strconv.ParseInt(chanId, 10, 64)
+			outgoungIds = append(outgoungIds, uint64(id))
+
+			if err != nil {
+				return nil, err
+			}
+		}
+	*/
+
+	client, err := lnd.router.SendPaymentV2(lnd.ctx, &routerrpc.SendPaymentRequest{
+		PaymentRequest:    invoice,
+		TimeoutSeconds:    int32(timeoutSeconds),
+		FeeLimitSat:       int64(feeLimit),
+		NoInflightUpdates: true,
+		// TODO: this is not working right now
+		//OutgoingChanIds: outgoungIds,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	for {
-		event, err := client.Recv()
-
-		if err != nil {
-			return nil, err
-		}
-
-		switch event.Status {
-		case lnrpc.Payment_SUCCEEDED:
-			return &lightning.PayInvoiceResponse{
-				FeeMsat: uint(event.FeeMsat),
-			}, nil
-
-		case lnrpc.Payment_IN_FLIGHT:
-			// Return once all the HTLCs are in flight
-			var htlcSum int64
-
-			for _, htlc := range event.Htlcs {
-				htlcSum += htlc.Route.TotalAmtMsat - htlc.Route.TotalFeesMsat
-			}
-
-			if event.ValueMsat == htlcSum {
-				return &lightning.PayInvoiceResponse{
-					FeeMsat: uint(event.FeeMsat),
-				}, nil
-			}
-
-		case lnrpc.Payment_FAILED:
-			return nil, errors.New(event.FailureReason.String())
-		}
+	event, err := client.Recv()
+	if err != nil {
+		return nil, err
 	}
+
+	switch event.Status {
+	case lnrpc.Payment_SUCCEEDED:
+		return &lightning.PayInvoiceResponse{
+			FeeMsat: uint(event.FeeMsat),
+		}, nil
+	case lnrpc.Payment_FAILED:
+		return nil, errors.New(event.FailureReason.String())
+	default:
+		return nil, errors.New("unknown payment status")
+	}
+}
+
+func (lnd *LND) PaymentStatus(paymentHash []byte) (*lightning.PaymentStatus, error) {
+	client, err := lnd.router.TrackPaymentV2(lnd.ctx, &routerrpc.TrackPaymentRequest{
+		PaymentHash:       paymentHash,
+		NoInflightUpdates: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := client.Recv()
+	if err != nil {
+		return nil, err
+	}
+
+	return &lightning.PaymentStatus{
+		FeeMsat:       uint64(event.FeeMsat),
+		FailureReason: event.FailureReason.String(),
+		Preimage:      event.PaymentPreimage,
+		State:         paymentStatusFromGrpc[event.Status],
+	}, nil
 }
 
 func (lnd *LND) NewAddress() (string, error) {
@@ -266,13 +347,17 @@ func (lnd *LND) NewAddress() (string, error) {
 	return response.Address, err
 }
 
-func (lnd *LND) EstimateFee(confTarget int32) (*walletrpc.EstimateFeeResponse, error) {
-	return lnd.walletKit.EstimateFee(lnd.ctx, &walletrpc.EstimateFeeRequest{
+func (lnd *LND) EstimateFee(confTarget int32) (float64, error) {
+	response, err := lnd.walletKit.EstimateFee(lnd.ctx, &walletrpc.EstimateFeeRequest{
 		ConfTarget: confTarget,
 	})
+	if err != nil {
+		return 0, err
+	}
+	return math.Max(math.Round(float64(response.SatPerKw)/1000), 2), nil
 }
 
-func (lnd *LND) RegisterBlockListener(channel chan *chainrpc.BlockEpoch) error {
+func (lnd *LND) RegisterBlockListener(channel chan *onchain.BlockEpoch) error {
 	client, err := lnd.chainNotifier.RegisterBlockEpochNtfn(lnd.ctx, &chainrpc.BlockEpoch{})
 
 	if err != nil {
@@ -292,11 +377,27 @@ func (lnd *LND) RegisterBlockListener(channel chan *chainrpc.BlockEpoch) error {
 				return
 			}
 
-			channel <- block
+			channel <- &onchain.BlockEpoch{
+				Height: block.Height,
+			}
 		}
 	}()
 
 	return <-errChannel
+}
+
+func (lnd *LND) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
+	response, err := lnd.client.SendCoins(lnd.ctx, &lnrpc.SendCoinsRequest{
+		Addr:        address,
+		Amount:      int64(amount),
+		SatPerVbyte: uint64(satPerVbyte),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return response.Txid, nil
 }
 
 func (lnd *LND) SubscribeSingleInvoice(preimageHash []byte, channel chan *lnrpc.Invoice, errChannel chan error) {

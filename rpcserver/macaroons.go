@@ -3,10 +3,10 @@ package rpcserver
 import (
 	"os"
 
-	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/BoltzExchange/boltz-lnd/macaroons"
-	"github.com/BoltzExchange/boltz-lnd/utils"
+	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/macaroons"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
@@ -20,11 +20,32 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	service.Init()
 
 	if utils.FileExists(server.AdminMacaroonPath) && utils.FileExists(server.ReadonlyMacaroonPath) {
-		// TODO: check if the macaroons on the disk are still up to date
-		return &service, nil
-	}
+		adminMac, err := os.ReadFile(server.AdminMacaroonPath)
+		if err != nil {
+			return nil, err
+		}
 
-	logger.Warning("Could not find Macaroons")
+		readMac, err := os.ReadFile(server.ReadonlyMacaroonPath)
+		if err != nil {
+			return nil, err
+		}
+
+		valid := true
+		if err := service.ValidateMacaroon(adminMac, macaroons.AdminPermissions()); err != nil {
+			valid = false
+		}
+
+		if err := service.ValidateMacaroon(readMac, macaroons.ReadPermissions); err != nil {
+			valid = false
+		}
+
+		if valid {
+			return &service, nil
+		}
+		logger.Warn("Macaroons are outdated")
+	} else {
+		logger.Warn("Could not find Macaroons")
+	}
 	logger.Info("Generating new Macaroons")
 
 	err := writeMacaroon(service, macaroons.AdminPermissions(), server.AdminMacaroonPath)
