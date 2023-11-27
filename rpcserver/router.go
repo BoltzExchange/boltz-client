@@ -584,11 +584,7 @@ func (server *routedBoltzServer) CreateLiquidWallet(_ context.Context, request *
 
 	mnemonic, err := wallet.Register()
 	if err != nil {
-		return nil, handleError(errors.New("could not login: " + err.Error()))
-	}
-
-	if err := wallet.SetSubaccount(nil); err != nil {
-		return nil, handleError(errors.New("could not create subaccount: " + err.Error()))
+		return nil, handleError(errors.New("could not create wallet: " + err.Error()))
 	}
 
 	server.onWalletChange()
@@ -601,7 +597,11 @@ func (server *routedBoltzServer) GetLiquidWalletInfo(_ context.Context, request 
 	if err != nil {
 		return nil, handleError(err)
 	}
-	subaccount, err := wallet.GetSubaccount(wallet.CurrentSubaccount())
+	current, err := wallet.CurrentSubaccount()
+	if err != nil {
+		return nil, handleError(err)
+	}
+	subaccount, err := wallet.GetSubaccount(current)
 	if err != nil {
 		return nil, handleError(err)
 	}

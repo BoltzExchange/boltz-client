@@ -653,15 +653,22 @@ func printSubaccount(info *boltzrpc.LiquidSubaccount) {
 	fmt.Printf("Balance: %s (%s unconfirmed)\n", utils.Satoshis(balance.Total), utils.Satoshis(balance.Unconfirmed))
 }
 
-func importWallet(ctx *cli.Context) error {
-	client := getClient(ctx)
+func deleteExistingWallet(client client.Boltz) (bool, error) {
 	if _, err := client.GetLiquidWalletInfo(); err == nil {
-		if !prompt("Theres an existing liquid wallet, make sure to have a backup of the mnemonic. Do you want to continue?") {
-			return nil
+		if !prompt("There is an existing liquid wallet, make sure to have a backup of the mnemonic. Do you want to continue?") {
+			return false, nil
 		}
 		if _, err := client.RemoveLiquidWallet(); err != nil {
-			return errors.New("could not delete existing wallet: " + err.Error())
+			return false, errors.New("could not delete existing wallet: " + err.Error())
 		}
+	}
+	return true, nil
+}
+
+func importWallet(ctx *cli.Context) error {
+	client := getClient(ctx)
+	if ok, err := deleteExistingWallet(client); !ok {
+		return err
 	}
 
 	mnemonic := ""
@@ -687,6 +694,8 @@ func selectSubaccountAction(ctx *cli.Context) error {
 }
 
 func selectSubaccount(client client.Boltz) error {
+	info, _ := client.GetLiquidWalletInfo()
+
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " Fetching subaccounts..."
 	s.Start()
@@ -702,7 +711,7 @@ func selectSubaccount(client client.Boltz) error {
 		options = append(options, fmt.Sprint(subaccount.Pointer))
 	}
 
-	accoutnPrompt := &survey.Select{
+	accountPrompt := &survey.Select{
 		Message: "Which subaccount should be used?",
 		Options: options,
 		Description: func(_ string, index int) string {
@@ -713,10 +722,13 @@ func selectSubaccount(client client.Boltz) error {
 			return fmt.Sprintf("%s (%s)", utils.Satoshis(subaccount.Balance.Total), liquidAccountType(subaccount.Type))
 		},
 	}
+	if info != nil {
+		accountPrompt.Default = fmt.Sprint(info.Subaccount.Pointer)
+	}
 
 	var subaccountRaw string
 
-	if err := survey.AskOne(accoutnPrompt, &subaccountRaw); err != nil {
+	if err := survey.AskOne(accountPrompt, &subaccountRaw); err != nil {
 		return err
 	}
 	var subaccount *uint64
@@ -729,7 +741,7 @@ func selectSubaccount(client client.Boltz) error {
 		subaccount = &parsed
 	}
 
-	info, err := client.SetLiquidSubaccount(subaccount)
+	info, err = client.SetLiquidSubaccount(subaccount)
 	if err != nil {
 		return err
 	}
@@ -752,13 +764,8 @@ func removeWallet(ctx *cli.Context) error {
 
 func createWallet(ctx *cli.Context) error {
 	client := getClient(ctx)
-	if _, err := client.GetLiquidWalletInfo(); err == nil {
-		if !prompt("Theres an existing liquid wallet, make sure to have a backup of the mnemonic. Do you want to continue?") {
-			return nil
-		}
-		if _, err := client.RemoveLiquidWallet(); err != nil {
-			return errors.New("could not delete existing wallet: " + err.Error())
-		}
+	if ok, err := deleteExistingWallet(client); !ok {
+		return err
 	}
 
 	mnemonic, err := client.CreateLiquidWallet()

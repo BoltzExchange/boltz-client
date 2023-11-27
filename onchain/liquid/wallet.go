@@ -28,13 +28,15 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
+var ErrSubAccountNotSet = errors.New("subaccount not set")
+
 type AuthHandler = *C.struct_GA_auth_handler
 type Json = *C.GA_json
 type Session = *C.struct_GA_session
 
 type backup struct {
-	Mnemonic   string `json:"mnemonic"`
-	Subaccount uint64 `json:"subaccount"`
+	Mnemonic   string  `json:"mnemonic"`
+	Subaccount *uint64 `json:"subaccount"`
 }
 
 type Subaccount struct {
@@ -47,7 +49,7 @@ type Subaccount struct {
 type Wallet struct {
 	Network            *boltz.Network
 	walletDir          string
-	subaccount         uint64
+	subaccount         *uint64
 	session            Session
 	connected          bool
 	blockHeight        uint32
@@ -238,7 +240,15 @@ func (wallet *Wallet) Register() (string, error) {
 		return "", err
 	}
 
-	return mnemonic, wallet.ImportMnemonic(mnemonic)
+	if err := wallet.ImportMnemonic(mnemonic); err != nil {
+		return "", err
+	}
+
+	if err := wallet.SetSubaccount(nil); err != nil {
+		return "", err
+	}
+
+	return mnemonic, nil
 }
 
 func (wallet *Wallet) ImportMnemonic(mnemonic string) error {
@@ -331,7 +341,8 @@ func (wallet *Wallet) SetSubaccount(subaccount *uint64) error {
 	if err != nil {
 		return errors.New("could not read current backup: " + err.Error())
 	}
-	backup.Subaccount = *subaccount
+	backup.Subaccount = subaccount
+	logger.Debugf("Setting subaccount to %v", *subaccount)
 	return wallet.backup(backup)
 }
 
@@ -353,8 +364,11 @@ func (wallet *Wallet) GetSubaccount(pointer uint64) (*Subaccount, error) {
 	return &result, nil
 }
 
-func (wallet *Wallet) CurrentSubaccount() uint64 {
-	return wallet.subaccount
+func (wallet *Wallet) CurrentSubaccount() (uint64, error) {
+	if wallet.subaccount == nil {
+		return 0, ErrSubAccountNotSet
+	}
+	return *wallet.subaccount, nil
 }
 
 func (wallet *Wallet) getBackup() (backup backup, err error) {
@@ -438,8 +452,11 @@ func (wallet *Wallet) Remove() error {
 }
 
 func (wallet *Wallet) NewAddress() (string, error) {
+	if wallet.subaccount == nil {
+		return "", ErrSubAccountNotSet
+	}
 	params, free := toJson(map[string]any{
-		"subaccount": wallet.subaccount,
+		"subaccount": *wallet.subaccount,
 	})
 	defer free()
 	var handler AuthHandler
@@ -498,12 +515,18 @@ func (wallet *Wallet) GetSubaccountBalance(subaccount uint64) (balance Balance, 
 }
 
 func (wallet *Wallet) GetBalance() (Balance, error) {
-	return wallet.GetSubaccountBalance(wallet.subaccount)
+	if wallet.subaccount == nil {
+		return Balance{}, ErrSubAccountNotSet
+	}
+	return wallet.GetSubaccountBalance(*wallet.subaccount)
 }
 
 func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
+	if wallet.subaccount == nil {
+		return "", ErrSubAccountNotSet
+	}
 	params, free := toJson(map[string]any{
-		"subaccount": wallet.subaccount,
+		"subaccount": *wallet.subaccount,
 		"num_confs":  0,
 	})
 	defer free()
@@ -598,7 +621,7 @@ func (wallet *Wallet) RegisterBlockListener(channel chan *onchain.BlockEpoch) er
 }
 
 func (wallet *Wallet) Ready() bool {
-	return wallet.Exists()
+	return wallet.connected && wallet.subaccount != nil
 }
 
 func (wallet *Wallet) mnemonicBackupFile() string {

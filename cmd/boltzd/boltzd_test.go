@@ -165,6 +165,28 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) nextFunc {
 	}
 }
 
+func withoutWallet(t *testing.T, client client.Boltz, run func()) {
+	mnemonic, err := client.GetLiquidWalletMnemonic()
+	require.NoError(t, err)
+
+	info, err := client.GetLiquidWalletInfo()
+	require.NoError(t, err)
+
+	_, err = client.RemoveLiquidWallet()
+	require.NoError(t, err)
+
+	run()
+
+	_, err = client.ImportLiquidWallet(mnemonic.Mnemonic)
+	require.NoError(t, err)
+
+	_, err = client.GetLiquidSubaccounts()
+	require.NoError(t, err)
+
+	_, err = client.SetLiquidSubaccount(&info.Subaccount.Pointer)
+	require.NoError(t, err)
+}
+
 func TestMain(m *testing.M) {
 	var err error
 	liquidWallet, err = liquid.InitWallet("./data", boltz.Regtest, false)
@@ -218,18 +240,12 @@ func TestDeposit(t *testing.T) {
 			}
 
 			t.Run("RefundAddressRequired", func(t *testing.T) {
-				mnemonic, err := client.GetLiquidWalletMnemonic()
-				require.NoError(t, err)
-				_, err = client.RemoveLiquidWallet()
-				require.NoError(t, err)
-
-				_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-					PairId: string(boltz.PairLiquid),
+				withoutWallet(t, client, func() {
+					_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+						PairId: string(boltz.PairLiquid),
+					})
+					assert.Error(t, err)
 				})
-				assert.Error(t, err)
-
-				_, err = client.ImportLiquidWallet(mnemonic.Mnemonic)
-				require.NoError(t, err)
 			})
 
 			for _, tc := range tests {
@@ -512,16 +528,10 @@ func TestAutoSwap(t *testing.T) {
 		status := running(true)
 		require.Empty(t, status.Error)
 
-		mnemonic, err := client.GetLiquidWalletMnemonic()
-		require.NoError(t, err)
-		_, err = client.RemoveLiquidWallet()
-		require.NoError(t, err)
-
-		status = running(false)
-		require.NotZero(t, status.Error)
-
-		_, err = client.ImportLiquidWallet(mnemonic.Mnemonic)
-		require.NoError(t, err)
+		withoutWallet(t, client, func() {
+			status = running(false)
+			require.NotZero(t, status.Error)
+		})
 
 		status = running(true)
 		require.Empty(t, status.Error)
@@ -725,6 +735,12 @@ func TestLiquidWallet(t *testing.T) {
 	require.Error(t, err)
 
 	_, err = client.ImportLiquidWallet(mnemonic.Mnemonic)
+	require.NoError(t, err)
+
+	_, err = client.GetLiquidWalletInfo()
+	require.Error(t, err)
+
+	_, err = client.SetLiquidSubaccount(nil)
 	require.NoError(t, err)
 
 	_, err = client.GetLiquidWalletInfo()
