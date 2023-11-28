@@ -127,11 +127,23 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *bolt
 	}, nil
 }
 
-func (server *routedBoltzServer) ListSwaps(_ context.Context, _ *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
+func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
 	response := &boltzrpc.ListSwapsResponse{}
 
-	swaps, err := server.database.QuerySwaps()
+	args := database.SwapQuery{
+		IsAuto: request.IsAuto,
+		State:  request.State,
+	}
 
+	if request.PairId != nil {
+		parsed, err := boltz.ParsePair(*request.PairId)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		args.Pair = &parsed
+	}
+
+	swaps, err := server.database.QuerySwaps(args)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +153,7 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, _ *boltzrpc.ListSw
 	}
 
 	// Reverse Swaps
-	reverseSwaps, err := server.database.QueryReverseSwaps()
+	reverseSwaps, err := server.database.QueryReverseSwaps(args)
 
 	if err != nil {
 		return nil, err

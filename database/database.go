@@ -3,7 +3,10 @@ package database
 import (
 	"database/sql"
 	"encoding/hex"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"golang.org/x/exp/constraints"
+	"strings"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/logger"
@@ -17,6 +20,37 @@ type Database struct {
 	Path string `long:"database.path" description:"Path to the database file"`
 
 	db *sql.DB
+}
+
+type SwapQuery struct {
+	Pair   *boltz.Pair
+	State  *boltzrpc.SwapState
+	IsAuto *bool
+	Since  time.Time
+}
+
+func (query *SwapQuery) ToWhereClause() (where string, values []any) {
+	var conditions []string
+	if query.Pair != nil {
+		conditions = append(conditions, "pairId = ?")
+		values = append(values, *query.Pair)
+	}
+	if query.State != nil {
+		conditions = append(conditions, "state = ?")
+		values = append(values, *query.State)
+	}
+	if query.IsAuto != nil {
+		conditions = append(conditions, "isAuto = ?")
+		values = append(values, *query.IsAuto)
+	}
+	if !query.Since.IsZero() {
+		conditions = append(conditions, "createdAt >= ?")
+		values = append(values, query.Since.Unix())
+	}
+	if len(conditions) > 0 {
+		where = " WHERE " + strings.Join(conditions, " AND ")
+	}
+	return
 }
 
 func (database *Database) Connect() error {

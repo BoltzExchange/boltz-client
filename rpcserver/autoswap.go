@@ -65,7 +65,8 @@ func (server *routedAutoSwapServer) GetStatus(_ context.Context, request *autosw
 				Remaining: budget.Amount,
 			}
 
-			stats, err := server.database.QueryStats(budget.StartDate, true)
+			auto := true
+			stats, err := server.database.QueryStats(database.SwapQuery{Since: budget.StartDate, IsAuto: &auto})
 			if err != nil {
 				return nil, err
 			}

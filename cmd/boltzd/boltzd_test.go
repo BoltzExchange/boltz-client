@@ -628,11 +628,12 @@ func TestAutoSwap(t *testing.T) {
 					require.NoError(t, err)
 
 					time.Sleep(200 * time.Millisecond)
-					swaps, err := client.ListSwaps()
+					isAuto := true
+					swaps, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{IsAuto: &isAuto})
 					require.NoError(t, err)
 
 					require.NotEmpty(t, swaps.ReverseSwaps)
-					next := swapStream(t, client, swaps.ReverseSwaps[len(swaps.ReverseSwaps)-1].Id)
+					next := swapStream(t, client, swaps.ReverseSwaps[0].Id)
 					next(boltzrpc.SwapState_SUCCESSFUL)
 
 					stats, err := autoSwap.GetStatus()

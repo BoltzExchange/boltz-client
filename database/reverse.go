@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/utils"
-	"strconv"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -224,17 +223,19 @@ func (database *Database) queryReverseSwaps(query string, values ...any) (swaps 
 	return swaps, err
 }
 
-func (database *Database) QueryReverseSwaps() ([]ReverseSwap, error) {
-	return database.queryReverseSwaps("SELECT * FROM reverseSwaps")
+func (database *Database) QueryReverseSwaps(args SwapQuery) ([]ReverseSwap, error) {
+	where, values := args.ToWhereClause()
+	return database.queryReverseSwaps("SELECT * FROM reverseSwaps"+where, values...)
 }
 
 func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
-	return database.queryReverseSwaps("SELECT * FROM reverseSwaps WHERE state = '" + strconv.Itoa(int(boltzrpc.SwapState_PENDING)) + "'")
+	state := boltzrpc.SwapState_PENDING
+	return database.QueryReverseSwaps(SwapQuery{State: &state})
 }
 
 func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]ReverseSwap, error) {
-	query := "SELECT * FROM reverseSwaps WHERE state = ? AND createdAt >= ?"
-	return database.queryReverseSwaps(query, strconv.Itoa(int(boltzrpc.SwapState_ERROR)), since.Unix())
+	state := boltzrpc.SwapState_ERROR
+	return database.QueryReverseSwaps(SwapQuery{State: &state, Since: since})
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {

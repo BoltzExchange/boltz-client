@@ -237,7 +237,11 @@ func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, err
 		}
 	}
 
-	stats, err := swapper.database.QueryStats(budgetPeriod.StartDate, true)
+	isAuto := true
+	stats, err := swapper.database.QueryStats(database.SwapQuery{
+		Since:  budgetPeriod.StartDate,
+		IsAuto: &isAuto,
+	})
 	if err != nil {
 		return nil, errors.New("Could not get past fees: " + err.Error())
 	}

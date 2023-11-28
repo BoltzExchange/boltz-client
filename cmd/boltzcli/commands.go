@@ -64,17 +64,61 @@ var pairFlag = &cli.StringFlag{
 	Usage: "Pair id to create a swap for",
 }
 
+var pairFilterFlag = &cli.StringFlag{
+	Name:  "pair",
+	Usage: "Filter swaps by pair",
+}
+var pendingFilterFlag = &cli.BoolFlag{
+	Name:  "pending",
+	Usage: "Shorthand for --state pending",
+}
+var stateFilterFlag = &cli.StringFlag{
+	Name:  "state",
+	Usage: "Filter swaps by state",
+}
+
 var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
 	Category: "Info",
 	Usage:    "Lists all swaps and reverse swaps",
-	Action:   listSwaps,
-	Flags:    []cli.Flag{jsonFlag},
+	Action: func(ctx *cli.Context) error {
+		isAuto := ctx.Bool("auto")
+		return listSwaps(ctx, &isAuto)
+	},
+	Flags: []cli.Flag{
+		jsonFlag,
+		pairFilterFlag,
+		pendingFilterFlag,
+		stateFilterFlag,
+		&cli.BoolFlag{
+			Name:  "auto",
+			Usage: "Only show swaps by autoswapper",
+		},
+	},
 }
 
-func listSwaps(ctx *cli.Context) error {
+func listSwaps(ctx *cli.Context, isAuto *bool) error {
 	client := getClient(ctx)
-	list, err := client.ListSwaps()
+	request := &boltzrpc.ListSwapsRequest{
+		IsAuto: isAuto,
+	}
+	if pair := ctx.String("pair"); pair != "" {
+		request.PairId = &pair
+	}
+	if ctx.Bool("pending") {
+		state := boltzrpc.SwapState_PENDING
+		request.State = &state
+	} else if state := ctx.String("state"); state != "" {
+		stateValue, ok := boltzrpc.SwapState_value[strings.ToUpper(state)]
+		if !ok {
+			return errors.New("invalid state")
+		}
+		state := boltzrpc.SwapState(stateValue)
+		if ok {
+			request.State = &state
+		}
+	}
+	list, err := client.ListSwaps(request)
 
 	if err != nil {
 		return err
@@ -85,31 +129,43 @@ func listSwaps(ctx *cli.Context) error {
 	} else {
 		headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 		columnFmt := color.New(color.FgYellow).SprintfFunc()
-		tbl := table.New("ID", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At", "Pair")
-		tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
-		for _, swap := range list.Swaps {
-			tbl.AddRow(swap.Id, swap.State, swap.Status, swap.ExpectedAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt), swap.PairId)
+		if len(list.Swaps) == 0 && len(list.ReverseSwaps) == 0 {
+			fmt.Println("No swaps found")
+			return nil
 		}
 
-		if _, err := yellowBold.Println("Swaps"); err != nil {
-			return err
+		if len(list.Swaps) > 0 {
+
+			tbl := table.New("ID", "Pair", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+
+			for _, swap := range list.Swaps {
+				tbl.AddRow(swap.Id, swap.PairId, swap.State, swap.Status, swap.ExpectedAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
+			}
+
+			if _, err := yellowBold.Println("Swaps"); err != nil {
+				return err
+			}
+
+			tbl.Print()
+			fmt.Println()
 		}
 
-		tbl.Print()
+		if len(list.ReverseSwaps) > 0 {
 
-		tbl = table.New("ID", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At", "Pair")
-		tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+			tbl := table.New("ID", "Pair", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
-		for _, swap := range list.ReverseSwaps {
-			tbl.AddRow(swap.Id, swap.State, swap.Status, swap.OnchainAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt), swap.PairId)
+			for _, swap := range list.ReverseSwaps {
+				tbl.AddRow(swap.Id, swap.PairId, swap.State, swap.Status, swap.OnchainAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
+			}
+
+			if _, err := yellowBold.Println("Reverse Swaps"); err != nil {
+				return err
+			}
+			tbl.Print()
 		}
-
-		fmt.Println()
-		if _, err := yellowBold.Println("Reverse Swaps"); err != nil {
-			return err
-		}
-		tbl.Print()
 	}
 
 	return nil
@@ -257,6 +313,15 @@ var autoSwapCommands = &cli.Command{
 					Usage: "Do not show dismissed recommendations",
 				},
 			},
+		},
+		{
+			Name:  "listswaps",
+			Usage: "List swaps created by autoswap",
+			Action: func(ctx *cli.Context) error {
+				isAuto := true
+				return listSwaps(ctx, &isAuto)
+			},
+			Flags: []cli.Flag{jsonFlag, pairFilterFlag, stateFilterFlag, pendingFilterFlag},
 		},
 		{
 			Name:        "config",

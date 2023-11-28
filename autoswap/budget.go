@@ -35,7 +35,11 @@ func (cfg *Config) GetCurrentBudget() (*Budget, error) {
 		}
 	}
 
-	stats, err := cfg.database.QueryStats(budgetPeriod.StartDate, true)
+	isAuto := true
+	stats, err := cfg.database.QueryStats(database.SwapQuery{
+		Since:  budgetPeriod.StartDate,
+		IsAuto: &isAuto,
+	})
 	if err != nil {
 		return nil, errors.New("Could not get past fees: " + err.Error())
 	}

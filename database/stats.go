@@ -1,12 +1,11 @@
 package database
 
 import (
-	"time"
-
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 )
 
-func (database *Database) QueryStats(since time.Time, isAuto bool) (*boltzrpc.SwapStats, error) {
+func (database *Database) QueryStats(args SwapQuery) (*boltzrpc.SwapStats, error) {
+	where, values := args.ToWhereClause()
 	query := `
 		SELECT COALESCE(SUM(serviceFee + onchainFee), 0), COALESCE(SUM(expectedAmount), 0), COUNT(*)
 		FROM (SELECT serviceFee, onchainFee, expectedAmount, isAuto, createdAt
@@ -14,11 +13,9 @@ func (database *Database) QueryStats(since time.Time, isAuto bool) (*boltzrpc.Sw
 			  UNION ALL
 			  SELECT serviceFee, onchainFee + (routingFeeMsat / 1000), expectedAmount, isAuto, createdAt
 			  FROM reverseSwaps) stats
-		WHERE createdAt >= ? AND isAuto = ?`
+		` + where
 
-	ts := since.Unix()
-
-	rows := database.db.QueryRow(query, ts, isAuto)
+	rows := database.db.QueryRow(query, values...)
 
 	stats := boltzrpc.SwapStats{}
 

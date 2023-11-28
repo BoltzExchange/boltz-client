@@ -231,17 +231,19 @@ func (database *Database) querySwaps(query string, args ...any) (swaps []Swap, e
 	return swaps, err
 }
 
-func (database *Database) QuerySwaps() ([]Swap, error) {
-	return database.querySwaps("SELECT * FROM swaps")
+func (database *Database) QuerySwaps(args SwapQuery) ([]Swap, error) {
+	where, values := args.ToWhereClause()
+	return database.querySwaps("SELECT * FROM swaps"+where, values...)
 }
 
 func (database *Database) QueryPendingSwaps() ([]Swap, error) {
-	return database.querySwaps("SELECT * FROM swaps WHERE state = ?", boltzrpc.SwapState_PENDING)
+	state := boltzrpc.SwapState_PENDING
+	return database.QuerySwaps(SwapQuery{State: &state})
 }
 
 func (database *Database) QueryFailedSwaps(since time.Time) ([]Swap, error) {
-	query := "SELECT * FROM swaps WHERE state = ? AND createdAt >= ?"
-	return database.querySwaps(query, strconv.Itoa(int(boltzrpc.SwapState_ERROR)), since.Unix())
+	state := boltzrpc.SwapState_ERROR
+	return database.QuerySwaps(SwapQuery{State: &state, Since: since})
 }
 
 func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, pair boltz.Pair) ([]Swap, error) {
