@@ -30,7 +30,7 @@ require (
 	github.com/vulpemventures/go-elements v0.4.6
 	golang.org/x/crypto v0.17.0
 	golang.org/x/exp v0.0.0-20221111094246-ab4555d3164f
-	google.golang.org/grpc v1.58.0
+	google.golang.org/grpc v1.58.3
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/macaroon-bakery.v2 v2.3.0
