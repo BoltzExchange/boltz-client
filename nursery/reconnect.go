@@ -1,8 +1,8 @@
 package nursery
 
 import (
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/logger"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/logger"
 	"strconv"
 	"time"
 )
@@ -11,16 +11,16 @@ func (nursery *Nursery) streamSwapStatus(
 	id string,
 	swapType string,
 	eventStream chan *boltz.SwapStatusResponse,
-	stopListening chan bool,
-	stopHandler chan bool,
+	stopListening <-chan bool,
 ) {
 	go func() {
 		err := nursery.boltz.StreamSwapStatus(id, eventStream, stopListening)
+		defer close(eventStream)
 
 		if err == nil {
-			logger.Info("Stopping event listener of " + swapType + " " + id)
+			logger.Info("Stopping event listener of Swap" + " " + id)
 		} else {
-			logger.Error("Could not listen to events of " + swapType + " " + id + ": " + err.Error())
+			logger.Error("Could not listen to events of Swap " + id + ": " + err.Error())
 			logRetry(id, swapType)
 
 			ticker := time.NewTicker(retryInterval * time.Second)
@@ -38,7 +38,7 @@ func (nursery *Nursery) streamSwapStatus(
 						logger.Info("Reconnected to event stream of " + swapType + "" + id)
 
 						eventStream <- latestStatus
-						nursery.streamSwapStatus(id, swapType, eventStream, stopListening, stopHandler)
+						nursery.streamSwapStatus(id, swapType, eventStream, stopListening)
 
 						return
 					}
@@ -55,12 +55,6 @@ func (nursery *Nursery) streamSwapStatus(
 				}
 			}
 		}
-
-		eventListenersLock.Lock()
-		delete(eventListeners, id)
-		eventListenersLock.Unlock()
-
-		stopHandler <- true
 	}()
 }
 

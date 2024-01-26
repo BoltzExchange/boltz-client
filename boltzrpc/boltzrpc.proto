@@ -1,7 +1,8 @@
 syntax = "proto3";
 
 package boltzrpc;
-option go_package = "github.com/BoltzExchange/boltz-lnd/boltzrpc";
+option go_package = "github.com/BoltzExchange/boltz-client/boltzrpc";
+import "google/protobuf/empty.proto";
 
 service Boltz {
     /*
@@ -16,6 +17,11 @@ service Boltz {
     rpc GetServiceInfo (GetServiceInfoRequest) returns (GetServiceInfoResponse);
 
     /*
+    Fetches the latest limits and fees from the Boltz backend API it is connected to.
+    */
+    rpc GetFeeEstimation (GetFeeEstimationRequest) returns (GetFeeEstimationResponse);
+
+    /*
     Returns a list of all swaps, reverse swaps and channel creations in the database.
     */
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
@@ -26,12 +32,17 @@ service Boltz {
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
 
     /*
+    Returns the entire history of the swap if is still pending and streams updates in real time.
+    */
+    rpc GetSwapInfoStream (GetSwapInfoRequest) returns (stream GetSwapInfoResponse);
+
+    /*
     This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address.
     The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address
     before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which
     will try to pay it and if that is not possible, create a new channel to make the swap succeed.
     */
-    rpc Deposit (DepositRequest) returns (DepositResponse);
+    rpc Deposit (DepositRequest) returns (DepositResponse) { option deprecated = true; }
 
     /*
     Creates a new swap from onchain to lightning.
@@ -42,13 +53,73 @@ service Boltz {
     Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
     is coming trough a new channel channel opened by Boltz.
     */
-    rpc CreateChannel (CreateChannelRequest) returns (CreateSwapResponse);
+    rpc CreateChannel (CreateChannelRequest) returns (CreateSwapResponse) { option deprecated = true; };
 
     /*
     Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
     will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
     */
     rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
+
+    /*
+    Creates a new liquid wallet and returns the mnemonic.
+     */
+    rpc CreateWallet (CreateWalletRequest) returns (WalletCredentials);
+
+    /*
+    Imports a liquid wallet from a mnemonic.
+     */
+    rpc ImportWallet (ImportWalletRequest) returns (Wallet);
+
+    /*
+    Sets the subaccount of the liquid wallet which will be used by the daemon.
+     */
+    rpc SetSubaccount (SetSubaccountRequest) returns (Subaccount);
+
+    /*
+    Returns a list of all subaccounts of the liquid wallet.
+     */
+    rpc GetSubaccounts (WalletInfo) returns (GetSubaccountsResponse);
+
+    /*
+    Returns the current balance and subaccount of the liquid wallet.
+     */
+    rpc GetWallets (GetWalletsRequest) returns (Wallets);
+
+    /*
+    Returns the current balance and subaccount of the liquid wallet.
+     */
+    rpc GetWallet (GetWalletRequest) returns (Wallet);
+
+    /*
+    Returns the mnemonic of the liquid wallet.
+     */
+    rpc GetWalletCredentials (GetWalletCredentialsRequest) returns (WalletCredentials);
+
+    /*
+    Removes the liquid wallet from the daemon.
+     */
+    rpc RemoveWallet (RemoveWalletRequest) returns (RemoveWalletResponse);
+
+    /*
+    Stops the server.
+     */
+    rpc Stop(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+    /*
+    Unlocks the server.
+     */
+    rpc Unlock(UnlockRequest) returns (google.protobuf.Empty); 
+
+    /*
+    Check if the password is correct.
+     */
+    rpc VerifyWalletPassword(VerifyWalletPasswordRequest) returns (VerifyWalletPasswordResponse); 
+    
+    /*
+    Changes the password for wallet encryption.
+     */
+    rpc ChangeWalletPassword(ChangeWalletPasswordRequest) returns (google.protobuf.Empty); 
 }
 
 enum SwapState {
@@ -70,32 +141,42 @@ enum SwapState {
 
 message SwapInfo {
     string id = 1;
+    string pair_id = 2;
 
-    SwapState state = 2;
-    string error = 3;
+    SwapState state = 3;
+    string error = 4;
 
     // Latest status message of the Boltz backend
-    string status = 4;
-    string private_key = 5;
-    string preimage = 6;
-    string redeem_script = 7;
-    string invoice = 8;
-    string lockup_address = 9;
-    int64 expected_amount = 10;
-    uint32 timeout_block_height = 11;
-    string lockup_transaction_id = 12;
+    string status = 5;
+    string private_key = 6;
+    string preimage = 7;
+    string redeem_script = 8;
+    string invoice = 9;
+    string lockup_address = 10;
+    int64 expected_amount = 11;
+    uint32 timeout_block_height = 12;
+    string lockup_transaction_id = 13;
 
     /*
     If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the
-    `lockup_address` back to the LND wallet and save the refund transaction id to the database.
+    `lockup_address` back to the configured wallet or the address specified in the `refund_address` field.
     */
-    string refund_transaction_id = 13;
+    string refund_transaction_id = 14;
+    optional string refund_address = 20;
+
+    optional ChannelId chan_id = 15;
+    optional string blinding_key = 16;
+    int64 created_at = 17;
+    optional uint64 service_fee = 18;
+    optional uint64 onchain_fee = 19;
+    bool auto_send = 21;
 }
 
 /*
-Channel creations are an optional extension to a submarine swap in the data types of boltz-lnd.
+Channel creations are an optional extension to a submarine swap in the data types of boltz-client.
 */
 message ChannelCreationInfo {
+    option deprecated = true;
     // ID of the swap to which this channel channel belongs
     string swap_id = 1;
     string status = 2;
@@ -105,6 +186,7 @@ message ChannelCreationInfo {
     uint32 funding_transaction_vout = 6;
 }
 message CombinedChannelSwapInfo {
+    option deprecated = true;
     SwapInfo swap = 1;
     ChannelCreationInfo channel_creation = 2;
 }
@@ -126,17 +208,29 @@ message ReverseSwapInfo {
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
+    string pair_id = 14;
+    optional ChannelId chan_id = 15;
+    optional string blinding_key = 16;
+    int64 created_at = 17;
+    optional uint64 service_fee = 18;
+    optional uint64 onchain_fee = 19;
+    optional uint64 routing_fee_msat = 20;
 }
 
 message GetInfoRequest {}
 message GetInfoResponse {
-    string symbol = 1;
+    string version = 9;
+    string node = 10;
     string network = 2;
-    string lnd_pubkey = 3;
-    uint32 block_height = 4;
+    string node_pubkey = 7;
+    string auto_swap_status = 11;
+    map<string, uint32> block_heights = 8;
 
-    repeated string pending_swaps = 5;
-    repeated string pending_reverse_swaps = 6;
+    string symbol = 1 [deprecated = true];
+    string lnd_pubkey = 3 [deprecated = true];
+    uint32 block_height = 4 [deprecated = true];
+    repeated string pending_swaps = 5 [deprecated = true];
+    repeated string pending_reverse_swaps = 6 [deprecated = true];
 }
 
 message MinerFees {
@@ -152,13 +246,30 @@ message Limits {
     int64 maximal = 2;
 }
 
-message GetServiceInfoRequest {}
+message GetServiceInfoRequest {
+    string pair_id = 1;
+}
 message GetServiceInfoResponse {
     Fees fees = 1;
     Limits limits = 2;
 }
 
-message ListSwapsRequest {}
+
+message GetFeeEstimationRequest {
+    uint64 amount = 1;
+    string swap_type = 2;
+    string pair_id = 3;
+}
+message GetFeeEstimationResponse {
+    Fees fees = 1;
+    Limits limits = 2;
+}
+
+message ListSwapsRequest {
+    optional string pair_id = 1;
+    optional bool is_auto = 2;
+    optional SwapState state = 3;
+}
 message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
     repeated CombinedChannelSwapInfo channel_creations = 2;
@@ -181,6 +292,7 @@ message DepositRequest {
     25 by default.
     */
     uint32 inbound_liquidity = 1;
+    string pairId = 2;
 }
 message DepositResponse {
     string id = 1;
@@ -190,12 +302,19 @@ message DepositResponse {
 
 message CreateSwapRequest {
     int64 amount = 1;
+    string pair_id = 2;
+    optional string chan_id = 3;
+    bool auto_send = 4;
+    string refund_address = 5;
+    optional string wallet = 6;
 }
 message CreateSwapResponse {
     string id = 1;
     string address = 2;
     int64 expected_amount = 3;
     string bip21 = 4;
+    string tx_id = 5;
+    uint32 timeout_block_height = 6;
 }
 
 message CreateChannelRequest {
@@ -214,12 +333,166 @@ message CreateReverseSwapRequest {
     // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
     bool accept_zero_conf = 3;
+    string pair_id = 4;
+    optional string chan_id = 5;
+    optional string wallet = 6;
 }
 message CreateReverseSwapResponse {
     string id = 1;
     string lockup_address = 2;
-    uint32 routing_fee_milli_sat = 3;
+    uint32 routing_fee_milli_sat = 3 [deprecated = true];
 
     // Only populated when 0-conf is accepted
-    string claim_transaction_id = 4;
+    string claim_transaction_id = 4 [deprecated = true];
+}
+
+message ChannelId {
+    string cln = 1;
+    uint64 lnd = 2;
+}
+
+message LightningChannel {
+    ChannelId id = 1;
+    uint64 capacity = 2;
+    uint64 local_sat = 3;
+    uint64 remote_sat = 4;
+    string peer_id = 5;
+}
+
+message SwapRecommendation {
+    string type = 1;
+    uint64 amount = 2;
+    LightningChannel channel = 3;
+    uint64 fee_estimate = 4;
+    repeated string dismissed_reasons = 5;
+}
+
+message GetSwapRecommendationsRequest {}
+
+message GetSwapRecommendationsResponse {
+    repeated SwapRecommendation swaps = 1;
+}
+
+message SwapStats {
+    uint64 total_fees = 1;
+    uint64 total_amount = 2;
+    uint64 avg_fees = 3;
+    uint64 avg_amount = 4;
+    uint64 count = 5;
+}
+
+message Budget {
+    uint64 total = 1;
+    int64 remaining = 2;
+    int64 start_date = 3;
+    int64 end_date = 4;
+}
+
+message WalletCredentials {
+    // only one of these is allowed to be present
+    optional string mnemonic = 1;
+    optional string xpub = 2;
+    optional string core_descriptor = 3;
+
+    // only used in combination with mnemonic
+    optional uint64 subaccount = 4;
+}
+
+message WalletInfo {
+    string name = 1;
+    string currency = 2;
+}
+
+message ImportWalletRequest {
+    WalletCredentials credentials = 1;
+    WalletInfo info = 2;
+    optional string password = 3;
+}
+
+message CreateWalletRequest {
+    WalletInfo info = 1;
+    optional string password = 2;
+}
+
+message SetSubaccountRequest {
+    string name = 1;
+    // The subaccount to use. If not set, a new one will be created.
+    optional uint64 subaccount = 2;
+}
+
+message GetSubaccountsRequest {}
+
+message GetSubaccountsResponse {
+    optional uint64 current = 1;
+    repeated Subaccount subaccounts = 2;
+}
+
+message ImportWalletResponse {}
+
+message GetWalletsRequest {
+    optional string currency = 1;
+    optional bool include_readonly = 2;
+}
+
+message GetWalletRequest {
+    string name = 1;
+}
+
+message GetWalletCredentialsRequest {
+    string name = 1;
+    optional string password = 2;
+}
+
+message RemoveWalletRequest {
+    string name = 1;
+}
+
+
+message Wallet {
+    string name = 1;
+    string currency = 2;
+    bool readonly = 3;
+    Balance balance = 4;
+}
+
+message Wallets {
+    repeated Wallet wallets = 1;
+}
+
+message Balance {
+    uint64 total = 1;
+    uint64 confirmed = 2;
+    uint64 unconfirmed = 3;
+}
+
+message Account {
+    string name = 1;
+    string type = 2;
+    uint64 pointer = 3;
+    Balance balance = 4;
+}
+
+message Subaccount {
+    Balance balance = 1;
+    uint64 pointer = 2;
+    string type = 3;
+}
+
+message RemoveWalletResponse {}
+
+message UnlockRequest {
+    string password = 1;
+}
+
+message VerifyWalletPasswordRequest {
+    string password = 1;
+}
+
+message VerifyWalletPasswordResponse {
+    bool correct = 1;
+}
+
+message ChangeWalletPasswordRequest {
+    string old = 1;
+    string new = 2;
 }

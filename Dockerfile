@@ -1,31 +1,37 @@
-FROM golang:1.20.2-alpine3.17 as builder
+FROM golang:1.21-alpine as go
+FROM michael1011/gdk-ubuntu-builder:0.68.2 as builder
 
-# Install dependencies.
-RUN apk add --no-cache --update \
-    alpine-sdk \
-    git \
-    make \
-    gcc
+ARG GDK_ARGS
+RUN git clone https://github.com/Blockstream/gdk --depth 1 --branch release_0.68.2
+RUN export PATH="/root/.cargo/bin:$PATH" && cd gdk && ./tools/build.sh --gcc --buildtype release --no-deps-rebuild --external-deps-dir /prebuild/gcc ${GDK_ARGS}
 
-# Shallow clone project.
-RUN git clone --depth=1 https://github.com/BoltzExchange/boltz-lnd /go/src/github.com/BoltzExchange/boltz-lnd
+COPY --from=go /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:$PATH"
+
+WORKDIR /boltz-client
+
+COPY . ./
+RUN cp /root/gdk/gdk/build-gcc/libgreenaddress_full.a /boltz-client/onchain/wallet/lib/
 
 # Build the binaries.
-RUN cd /go/src/github.com/BoltzExchange/boltz-lnd \
-    && go mod vendor \
-    && make build
+RUN make deps static
+
+FROM scratch AS binaries
+
+COPY --from=builder /boltz-client/boltzd /
+COPY --from=builder /boltz-client/boltzcli /
 
 # Start a new, final image.
-FROM alpine:3.17 as final
+FROM ubuntu:jammy as final
 
 # Root volume for data persistence.
-VOLUME /root/.boltz-lnd
+VOLUME /root/.boltz
 
 # Copy binaries.
-COPY --from=builder /go/src/github.com/BoltzExchange/boltz-lnd/boltzd /bin/
-COPY --from=builder /go/src/github.com/BoltzExchange/boltz-lnd/boltzcli /bin/
+COPY --from=builder /boltz-client/boltzd /bin/
+COPY --from=builder /boltz-client/boltzcli /bin/
 
 # gRPC and REST ports
 EXPOSE 9002 9003
 
-ENTRYPOINT ["boltzd"]
+CMD ["boltzd"]

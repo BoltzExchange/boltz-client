@@ -2,8 +2,8 @@ package rpcserver
 
 import (
 	"crypto/tls"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/BoltzExchange/boltz-lnd/utils"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/lightningnetwork/lnd/cert"
 	"os"
 	"time"
@@ -15,7 +15,7 @@ func loadCertificate(
 	tlsDisableAutofill bool,
 ) (*tls.Config, error) {
 	if !utils.FileExists(tlsCertPath) || !utils.FileExists(tlsKeyPath) {
-		logger.Warning("Could not find TLS certificate or key")
+		logger.Warn("Could not find TLS certificate or key")
 		logger.Info("Generating new TLS certificate and key")
 
 		defaultAutogenValidity := 14 * 30 * 24 * time.Hour
@@ -47,7 +47,7 @@ func loadCertificate(
 	}
 
 	if isOutdated, _ := cert.IsOutdated(x590cert, []string{}, []string{}, tlsDisableAutofill); isOutdated {
-		logger.Warning("TLS certificate is outdated. Removing files and generating new one")
+		logger.Warn("TLS certificate is outdated. Removing files and generating new one")
 
 		err := os.Remove(tlsCertPath)
 

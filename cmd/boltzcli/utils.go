@@ -1,37 +1,33 @@
 package main
 
 import (
-	"bufio"
+	"errors"
 	"fmt"
+	"os"
+	"regexp"
+	"strconv"
+	"time"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/constraints"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func prompt(message string) bool {
-	reader := bufio.NewReader(os.Stdin)
+	confirm := &survey.Confirm{
+		Message: message,
+	}
 
-	fmt.Print(message + " [yes/no] ")
-
-	input, err := reader.ReadString('\n')
+	var answer bool
+	err := survey.AskOne(confirm, &answer)
 
 	if err != nil {
 		fmt.Println("Could not read input: " + err.Error())
 		os.Exit(1)
 	}
-
-	switch strings.ToLower(strings.TrimSpace(input)) {
-	case "yes":
-		return true
-
-	case "no":
-		return false
-
-	default:
-		return prompt(message)
-	}
+	return answer
 }
 
 func printJson(resp proto.Message) {
@@ -41,6 +37,27 @@ func printJson(resp proto.Message) {
 	}
 
 	fmt.Println(jsonMarshaler.Format(resp))
+}
+
+func liquidAccountType(accountType string) string {
+	switch accountType {
+	case "p2sh-p2wpkh":
+		return "Legacy SegWit"
+	case "p2wpkh":
+		return "SegWit"
+	}
+	return accountType
+}
+
+func parseDate(timestamp int64) string {
+	return time.Unix(timestamp, 0).Format(time.RFC3339)
+}
+
+func optionalInt[V constraints.Integer](value *V) string {
+	if value == nil {
+		return ""
+	}
+	return strconv.Itoa(int(*value))
 }
 
 func parseInt64(value string, name string) int64 {
@@ -56,4 +73,27 @@ func parseInt64(value string, name string) int64 {
 
 func formatPercentageFee(percentageFee float32) string {
 	return strconv.FormatFloat(float64(percentageFee), 'f', 1, 32)
+}
+
+func getPair(ctx *cli.Context) string {
+	if ctx.Bool("liquid") {
+		return "L-BTC/BTC"
+	}
+	return ctx.String("pair")
+}
+
+func requireNArgs(n int, action cli.ActionFunc) cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		if ctx.NArg() < n {
+			return cli.ShowSubcommandHelp(ctx)
+		}
+		return action(ctx)
+	}
+}
+
+func checkName(name string) error {
+	if matched, err := regexp.MatchString("[^a-zA-Z\\d]", name); matched || err != nil {
+		return errors.New("wallet name must only contain alphabetic characters and numbers")
+	}
+	return nil
 }

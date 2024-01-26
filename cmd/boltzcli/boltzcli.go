@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/BoltzExchange/boltz-lnd/build"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	"github.com/urfave/cli"
 	"os"
 	"path"
+	"strings"
+
+	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
+	"github.com/BoltzExchange/boltz-client/build"
+	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -19,52 +24,80 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "boltzcli"
-	app.Usage = ""
+	app.Usage = "A command line interface for boltzd"
 	app.Version = build.GetVersion()
+	app.EnableBashCompletion = true
+	app.ExitErrHandler = func(context *cli.Context, err error) {
+		if err == nil {
+			return
+		}
+		s, ok := status.FromError(err)
+		if ok {
+			msg := s.Message()
+			if strings.Contains(msg, "connection refused") {
+				conn := getConnection(context)
+				fmt.Printf("could not connect to boltzd. make sure it is running at %s:%d and try again\n", conn.Host, conn.Port)
+			} else if strings.Contains(msg, "autoswap not configured") {
+				fmt.Println(msg)
+				fmt.Println("run autoswap setup to reset or initialize autoswap")
+			} else {
+				fmt.Println(msg)
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
+		os.Exit(1)
+	}
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "host",
 			Value: "127.0.0.1",
 			Usage: "gRPC host of Boltz",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "port",
 			Value: 9002,
 			Usage: "gRPC port of Boltz",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "datadir",
 			Value: defaultDataDir,
-			Usage: "Data directory of boltz-lnd",
+			Usage: "Data directory of boltz-client",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "tlscert",
 			Value: "",
 			Usage: "Path to the gRPC TLS certificate of Boltz",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "no-macaroons",
 			Usage: "Disables Macaroon authentication",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "macaroon",
 			Value: "",
 			Usage: "Path to a gRPC Macaroon of Boltz",
 		},
 	}
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		getInfoCommand,
 		getSwapCommand,
+		swapInfoStreamCommand,
 		listSwapsCommand,
-
-		depositCommand,
-		withdrawCommand,
 
 		createSwapCommand,
 		createReverseSwapCommand,
-		createChannelCreationCommand,
+
+		autoSwapCommands,
+
+		walletCommands,
 
 		formatMacaroonCommand,
+		shellCompletionsCommand,
+		stopCommand,
+		unlockCommand,
+		changePasswordCommand,
+		verifyPasswordCommand,
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -73,23 +106,31 @@ func main() {
 	}
 }
 
-func getClient(ctx *cli.Context) boltz {
-	dataDir := ctx.GlobalString("datadir")
+type Key string
+
+const ConnectionKey Key = "connection"
+
+func getConnection(ctx *cli.Context) client.Connection {
+	if ctx.Context.Value(ConnectionKey) != nil {
+		return ctx.Context.Value(ConnectionKey).(client.Connection)
+	}
+
+	dataDir := ctx.String("datadir")
 	macaroonDir := path.Join(dataDir, "macaroons")
 
-	tlsCert := ctx.GlobalString("tlscert")
-	macaroon := ctx.GlobalString("macaroon")
+	tlsCert := ctx.String("tlscert")
+	macaroon := ctx.String("macaroon")
 
 	tlsCert = utils.ExpandDefaultPath(dataDir, tlsCert, "tls.cert")
 	macaroon = utils.ExpandDefaultPath(macaroonDir, macaroon, "admin.macaroon")
 
-	boltz := boltz{
-		Host: ctx.GlobalString("host"),
-		Port: ctx.GlobalInt("port"),
+	boltz := client.Connection{
+		Host: ctx.String("host"),
+		Port: ctx.Int("port"),
 
 		TlsCertPath: tlsCert,
 
-		NoMacaroons:  ctx.GlobalBool("no-macaroons"),
+		NoMacaroons:  ctx.Bool("no-macaroons"),
 		MacaroonPath: macaroon,
 	}
 
@@ -100,5 +141,17 @@ func getClient(ctx *cli.Context) boltz {
 		os.Exit(1)
 	}
 
+	ctx.Context = context.WithValue(ctx.Context, ConnectionKey, boltz)
+
 	return boltz
+}
+
+func getClient(ctx *cli.Context) client.Boltz {
+	conn := getConnection(ctx)
+	return client.NewBoltzClient(conn)
+}
+
+func getAutoSwapClient(ctx *cli.Context) client.AutoSwap {
+	conn := getConnection(ctx)
+	return client.NewAutoSwapClient(conn)
 }

@@ -6,13 +6,34 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type Boltz struct {
-	symbol string
-
 	URL string `long:"boltz.url" description:"URL endpoint of the Boltz API"`
 }
+
+type SwapType string
+
+const (
+	NormalSwap  SwapType = "submarine"
+	ReverseSwap SwapType = "reverseSubmarine"
+)
+
+func ParseSwapType(swapType string) (SwapType, error) {
+	switch strings.ToLower(swapType) {
+	case string(NormalSwap), "normal":
+		return NormalSwap, nil
+	case string(ReverseSwap), "reverse":
+		return ReverseSwap, nil
+	case "":
+		return "", nil
+	default:
+		return "", errors.New("invalid swap type")
+	}
+}
+
+type Error error
 
 // Types for Boltz API
 type GetVersionResponse struct {
@@ -57,11 +78,7 @@ type SwapStatusRequest struct {
 }
 
 type SwapStatusResponse struct {
-	Status  string `json:"status"`
-	Channel struct {
-		FundingTransactionId   string `json:"fundingTransactionId"`
-		FundingTransactionVout uint32 `json:"fundingTransactionVout"`
-	} `json:"channel"`
+	Status      string `json:"status"`
 	Transaction struct {
 		Id  string `json:"id"`
 		Hex string `json:"hex"`
@@ -82,6 +99,19 @@ type GetSwapTransactionResponse struct {
 	Error string `json:"error"`
 }
 
+type GetTransactionRequest struct {
+	Currency      string `json:"currency"`
+	TransactionId string `json:"transactionId"`
+
+	Error string `json:"error"`
+}
+
+type GetTransactionResponse struct {
+	TransactionHex string `json:"transactionHex"`
+
+	Error string `json:"error"`
+}
+
 type BroadcastTransactionRequest struct {
 	Currency       string `json:"currency"`
 	TransactionHex string `json:"transactionHex"`
@@ -94,12 +124,12 @@ type BroadcastTransactionResponse struct {
 }
 
 type CreateSwapRequest struct {
-	Type            string `json:"type"`
-	PairId          string `json:"pairId"`
-	OrderSide       string `json:"orderSide"`
-	RefundPublicKey string `json:"refundPublicKey"`
-	Invoice         string `json:"invoice"`
-	PreimageHash    string `json:"preimageHash"`
+	Type            SwapType `json:"type"`
+	PairId          string   `json:"pairId"`
+	OrderSide       string   `json:"orderSide"`
+	RefundPublicKey string   `json:"refundPublicKey"`
+	Invoice         string   `json:"invoice"`
+	PreimageHash    string   `json:"preimageHash"`
 }
 
 type CreateSwapResponse struct {
@@ -110,6 +140,7 @@ type CreateSwapResponse struct {
 	AcceptZeroConf     bool   `json:"acceptZeroConf"`
 	ExpectedAmount     uint64 `json:"expectedAmount"`
 	TimeoutBlockHeight uint32 `json:"timeoutBlockHeight"`
+	BlindingKey        string `json:"blindingKey"`
 
 	Error string `json:"error"`
 }
@@ -137,29 +168,12 @@ type SetInvoiceResponse struct {
 }
 
 type CreateReverseSwapRequest struct {
-	Type           string `json:"type"`
-	PairId         string `json:"pairId"`
-	OrderSide      string `json:"orderSide"`
-	InvoiceAmount  uint64 `json:"invoiceAmount"`
-	PreimageHash   string `json:"preimageHash"`
-	ClaimPublicKey string `json:"claimPublicKey"`
-}
-
-type Channel struct {
-	Auto             bool   `json:"auto"`
-	Private          bool   `json:"private"`
-	InboundLiquidity uint32 `json:"inboundLiquidity"`
-}
-
-type CreateChannelCreationRequest struct {
-	Type            string `json:"type"`
-	PairId          string `json:"pairId"`
-	OrderSide       string `json:"orderSide"`
-	RefundPublicKey string `json:"refundPublicKey"`
-	Invoice         string `json:"invoice"`
-	PreimageHash    string `json:"preimageHash"`
-
-	Channel Channel `json:"channel"`
+	Type           SwapType `json:"type"`
+	PairId         string   `json:"pairId"`
+	OrderSide      string   `json:"orderSide"`
+	InvoiceAmount  uint64   `json:"invoiceAmount"`
+	PreimageHash   string   `json:"preimageHash"`
+	ClaimPublicKey string   `json:"claimPublicKey"`
 }
 
 type CreateReverseSwapResponse struct {
@@ -169,12 +183,9 @@ type CreateReverseSwapResponse struct {
 	RedeemScript       string `json:"redeemScript"`
 	LockupAddress      string `json:"lockupAddress"`
 	TimeoutBlockHeight uint32 `json:"TimeoutBlockHeight"`
+	BlindingKey        string `json:"blindingKey"`
 
 	Error string `json:"error"`
-}
-
-func (boltz *Boltz) Init(symbol string) {
-	boltz.symbol = symbol
 }
 
 func (boltz *Boltz) GetVersion() (*GetVersionResponse, error) {
@@ -212,13 +223,13 @@ func (boltz *Boltz) SwapStatus(id string) (*SwapStatusResponse, error) {
 	}, &response)
 
 	if response.Error != "" {
-		return nil, errors.New(response.Error)
+		return nil, Error(errors.New(response.Error))
 	}
 
 	return &response, err
 }
 
-func (boltz *Boltz) StreamSwapStatus(id string, events chan *SwapStatusResponse, stopListening chan bool) error {
+func (boltz *Boltz) StreamSwapStatus(id string, events chan *SwapStatusResponse, stopListening <-chan bool) error {
 	return streamSwapStatus(boltz.URL+"/streamswapstatus?id="+id, events, stopListening)
 }
 
@@ -229,21 +240,35 @@ func (boltz *Boltz) GetSwapTransaction(id string) (*GetSwapTransactionResponse, 
 	}, &response)
 
 	if response.Error != "" {
-		return nil, errors.New(response.Error)
+		return nil, Error(errors.New(response.Error))
 	}
 
 	return &response, err
 }
 
-func (boltz *Boltz) BroadcastTransaction(transactionHex string) (*BroadcastTransactionResponse, error) {
+func (boltz *Boltz) GetTransaction(transactionId string, currency Currency) (string, error) {
+	var response GetTransactionResponse
+	err := boltz.sendPostRequest("/gettransaction", GetTransactionRequest{
+		TransactionId: transactionId,
+		Currency:      string(currency),
+	}, &response)
+
+	if response.Error != "" {
+		return "", Error(errors.New(response.Error))
+	}
+
+	return response.TransactionHex, err
+}
+
+func (boltz *Boltz) BroadcastTransaction(transactionHex string, currency Currency) (*BroadcastTransactionResponse, error) {
 	var response BroadcastTransactionResponse
 	err := boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
-		Currency:       boltz.symbol,
+		Currency:       string(currency),
 		TransactionHex: transactionHex,
 	}, &response)
 
 	if response.Error != "" {
-		return nil, errors.New(response.Error)
+		return nil, Error(errors.New(response.Error))
 	}
 
 	return &response, err
@@ -254,7 +279,7 @@ func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, 
 	err := boltz.sendPostRequest("/createswap", request, &response)
 
 	if response.Error != "" {
-		return nil, errors.New(response.Error)
+		return nil, Error(errors.New(response.Error))
 	}
 
 	return &response, err
@@ -265,7 +290,7 @@ func (boltz *Boltz) SwapRates(request SwapRatesRequest) (*SwapRatesResponse, err
 	err := boltz.sendPostRequest("/swaprates", request, &response)
 
 	if response.Error != "" {
-		return nil, errors.New(response.Error)
+		return nil, Error(errors.New(response.Error))
 	}
 
 	return &response, err
@@ -276,20 +301,10 @@ func (boltz *Boltz) SetInvoice(request SetInvoiceRequest) (*SetInvoiceResponse, 
 	err := boltz.sendPostRequest("/setinvoice", request, &response)
 
 	if response.Error != "" {
-		return nil, errors.New(response.Error)
+		return nil, Error(errors.New(response.Error))
 	}
 
 	return &response, err
-}
-
-func (boltz *Boltz) CreateChannelCreation(request CreateChannelCreationRequest) (response *CreateSwapResponse, err error) {
-	err = boltz.sendPostRequest("/createswap", request, &response)
-
-	if response.Error != "" {
-		return nil, errors.New(response.Error)
-	}
-
-	return response, err
 }
 
 func (boltz *Boltz) CreateReverseSwap(request CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {
@@ -297,7 +312,7 @@ func (boltz *Boltz) CreateReverseSwap(request CreateReverseSwapRequest) (*Create
 	err := boltz.sendPostRequest("/createswap", request, &response)
 
 	if response.Error != "" {
-		return nil, errors.New(response.Error)
+		return nil, Error(errors.New(response.Error))
 	}
 
 	return &response, err

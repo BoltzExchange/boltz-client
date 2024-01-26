@@ -1,23 +1,34 @@
 package main
 
 import (
-	"github.com/BoltzExchange/boltz-lnd"
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/logger"
-	"github.com/BoltzExchange/boltz-lnd/mempool"
-	"github.com/BoltzExchange/boltz-lnd/nursery"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
-	"github.com/lightningnetwork/lnd/lnrpc"
-	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
+	"fmt"
+	"os"
+	"path"
+	"strings"
+
+	boltzClient "github.com/BoltzExchange/boltz-client"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/electrum"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/mempool"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"github.com/BoltzExchange/boltz-client/utils"
 )
 
 // TODO: close dangling channels
 
 func main() {
-	cfg := boltz_lnd.LoadConfig()
+	defaultDataDir, err := utils.GetDefaultDataDir()
 
-	logger.InitLogger(cfg.LogFile, cfg.LogPrefix)
+	if err != nil {
+		fmt.Println("Could not get home directory: " + err.Error())
+		os.Exit(1)
+	}
+
+	cfg := boltzClient.LoadConfig(defaultDataDir)
+
+	logger.Init(cfg.LogFile, cfg.LogLevel)
 
 	formattedCfg, err := utils.FormatJson(cfg)
 
@@ -27,119 +38,177 @@ func main() {
 
 	logger.Info("Parsed config and CLI arguments: " + formattedCfg)
 
-	err = cfg.Database.Connect()
+	Init(cfg)
+	Start(cfg)
+}
+
+func Init(cfg *boltzClient.Config) {
+
+	err := cfg.Database.Connect()
 
 	if err != nil {
 		logger.Fatal("Could not connect to database: " + err.Error())
 	}
 
-	err = cfg.LND.Connect()
+	setLightningNode(cfg)
 
-	if err != nil {
-		logger.Fatal("Could not initialize LND client: " + err.Error())
+	if err = cfg.Lightning.Connect(); err != nil {
+		logger.Fatal("Could not initialize lightning client: " + err.Error())
 	}
 
-	lndInfo := connectToLnd(cfg.LND)
+	info := connectLightning(cfg.Lightning)
 
-	checkLndVersion(lndInfo)
+	if cfg.Lightning == cfg.Cln {
+		checkClnVersion(info)
+	} else if cfg.Lightning == cfg.LND {
+		checkLndVersion(info)
+	}
 
-	symbol, chainParams := parseChain(lndInfo.Chains[0])
-	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
+	logger.Info(fmt.Sprintf("Connected to lightning node %v (%v): %v", cfg.Node, info.Version, info.Pubkey))
 
-	cfg.LND.ChainParams = chainParams
+	network, err := boltz.ParseChain(info.Network)
 
-	waitForLndSynced(cfg.LND)
+	if err != nil {
+		logger.Fatal("Could not parse chain: " + err.Error())
+	}
 
-	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
-	cfg.Boltz.Init(symbol)
+	logger.Info("Parsed chain: " + network.Name)
+
+	cfg.LND.ChainParams = network.Btc
+
+	waitForLightningSynced(cfg.Lightning)
+
+	setBoltzEndpoint(cfg.Boltz, network)
 
 	checkBoltzVersion(cfg.Boltz)
 
-	boltzPubKey, err := utils.ConnectBoltzLnd(cfg.LND, cfg.Boltz, symbol)
+	_, err = utils.ConnectBoltz(cfg.Lightning, cfg.Boltz)
 
 	if err != nil {
-		logger.Warning("Could not connect to to Boltz LND node: " + err.Error())
+		logger.Warn("Could not connect to to Boltz LND node: " + err.Error())
 	}
 
-	swapNursery := &nursery.Nursery{}
-	err = swapNursery.Init(
-		symbol,
-		boltzPubKey,
-		chainParams,
-		cfg.LND,
-		cfg.Boltz,
-		mempool.Init(cfg.LND, cfg.MempoolApi),
-		cfg.Database,
-	)
+	onchain, err := initOnchain(cfg, network)
+	if err != nil {
+		logger.Fatalf("could not init onchain: %v", err)
+	}
+
+	autoSwapConfPath := path.Join(cfg.DataDir, "autoswap.toml")
+
+	err = cfg.RPC.Init(network, cfg.Lightning, cfg.Boltz, cfg.Database, onchain, autoSwapConfPath)
 
 	if err != nil {
-		logger.Fatal("Could not start Swap nursery: " + err.Error())
+		logger.Fatalf("Could not initialize Server: %v", err)
 	}
+}
 
-	errChannel := cfg.RPC.Start(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
+func Start(cfg *boltzClient.Config) {
+	errChannel := cfg.RPC.Start()
 
-	err = <-errChannel
+	err := <-errChannel
 
 	if err != nil {
 		logger.Fatal("Could not start gRPC server: " + err.Error())
 	}
 }
 
-func parseChain(chain *lnrpc.Chain) (symbol string, params *bitcoinCfg.Params) {
-	switch chain.Chain {
-	case "bitcoin":
-		symbol = "BTC"
-	case "litecoin":
-		symbol = "LTC"
-	default:
-		logger.Fatal("Chain " + chain.Chain + " not supported")
+func setLightningNode(cfg *boltzClient.Config) {
+	isClnConfigured := cfg.Cln.RootCert != ""
+	isLndConfigured := cfg.LND.Macaroon != ""
+
+	if strings.EqualFold(cfg.Node, "CLN") {
+		cfg.Lightning = cfg.Cln
+	} else if strings.EqualFold(cfg.Node, "LND") {
+		cfg.Lightning = cfg.LND
+	} else if isClnConfigured && isLndConfigured {
+		logger.Fatal("Both CLN and LND are configured. Set --node to specify which node to use.")
+	} else if isClnConfigured {
+		cfg.Lightning = cfg.Cln
+	} else if isLndConfigured {
+		cfg.Lightning = cfg.LND
+	} else {
+		logger.Fatal("No lightning node configured. Set either CLN or LND.")
 	}
-
-	switch symbol {
-	case "BTC":
-		switch chain.Network {
-		case "mainnet":
-			// #reckless
-			params = &bitcoinCfg.MainNetParams
-		case "testnet":
-			params = &bitcoinCfg.TestNet3Params
-		case "regtest":
-			params = &bitcoinCfg.RegressionNetParams
-		default:
-			logger.Fatal("Chain " + chain.Network + " no supported")
-		}
-
-	case "LTC":
-		switch chain.Network {
-		case "mainnet":
-			// #reckless
-			params = utils.ApplyLitecoinParams(litecoinCfg.MainNetParams)
-		case "testnet":
-			params = utils.ApplyLitecoinParams(litecoinCfg.TestNet4Params)
-		case "regtest":
-			params = utils.ApplyLitecoinParams(litecoinCfg.RegressionNetParams)
-		default:
-			logger.Fatal("Chain " + chain.Network + " no supported")
-		}
-	}
-
-	return symbol, params
 }
 
-func setBoltzEndpoint(boltz *boltz.Boltz, chain string) {
-	if boltz.URL != "" {
-		logger.Info("Using configured Boltz endpoint: " + boltz.URL)
+func setBoltzEndpoint(boltzCfg *boltz.Boltz, network *boltz.Network) {
+	if boltzCfg.URL != "" {
+		logger.Info("Using configured Boltz endpoint: " + boltzCfg.URL)
 		return
 	}
 
-	switch chain {
-	case bitcoinCfg.MainNetParams.Name:
-		boltz.URL = "https://boltz.exchange/api"
-	case bitcoinCfg.TestNet3Params.Name, litecoinCfg.TestNet4Params.Name:
-		boltz.URL = "https://testnet.boltz.exchange/api"
-	case bitcoinCfg.RegressionNetParams.Name:
-		boltz.URL = "http://127.0.0.1:9001"
+	switch network {
+	case boltz.MainNet:
+		boltzCfg.URL = "https://api.boltz.exchange"
+	case boltz.TestNet:
+		boltzCfg.URL = "https://testnet.boltz.exchange/api"
+	case boltz.Regtest:
+		boltzCfg.URL = "http://127.0.0.1:9001"
 	}
 
-	logger.Info("Using default Boltz endpoint for chain " + chain + ": " + boltz.URL)
+	logger.Info("Using default Boltz endpoint for network " + network.Name + ": " + boltzCfg.URL)
+}
+
+func initOnchain(cfg *boltzClient.Config, network *boltz.Network) (*onchain.Onchain, error) {
+	onchain := &onchain.Onchain{
+		Btc: &onchain.Currency{
+			Listener: cfg.Lightning,
+			Tx:       onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc),
+		},
+		Liquid: &onchain.Currency{
+			Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid),
+		},
+		Network: network,
+		Wallets: []onchain.Wallet{cfg.Lightning},
+	}
+
+	if !wallet.Initialized() {
+		err := wallet.Init(wallet.Config{
+			DataDir: cfg.DataDir,
+			Network: network,
+			Debug:   false,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("could not init wallet: %v", err)
+		}
+	}
+
+	if cfg.ElectrumUrl != "" {
+		logger.Info("Using configured Electrum RPC: " + cfg.ElectrumUrl)
+		client, err := electrum.NewClient(cfg.ElectrumUrl, cfg.ElectrumSSL)
+		if err != nil {
+			return nil, fmt.Errorf("could not connect to electrum: %v", err)
+		}
+		onchain.Btc.Fees = client
+	}
+	if cfg.ElectrumLiquidUrl != "" {
+		logger.Info("Using configured Electrum Liquid RPC: " + cfg.ElectrumLiquidUrl)
+		client, err := electrum.NewClient(cfg.ElectrumLiquidUrl, cfg.ElectrumLiquiLiquidSSL)
+		if err != nil {
+			return nil, fmt.Errorf("could not connect to electrum: %v", err)
+		}
+		onchain.Liquid.Fees = client
+		onchain.Liquid.Listener = client
+	}
+	if network == boltz.MainNet {
+		cfg.MempoolApi = "https://mempool.space/api"
+		cfg.MempoolLiquidApi = "https://liquid.network/api"
+	} else if network == boltz.TestNet {
+		cfg.MempoolApi = "https://mempool.space/testnet/api"
+		cfg.MempoolLiquidApi = "https://liquid.network/liquidtestnet/api"
+	}
+
+	if cfg.MempoolApi != "" {
+		logger.Info("mempool.space API: " + cfg.MempoolApi)
+		mempoolBtc := mempool.InitClient(cfg.MempoolApi)
+		onchain.Btc.Fees = mempoolBtc
+	}
+
+	if cfg.MempoolLiquidApi != "" {
+		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
+		mempoolLiquid := mempool.InitClient(cfg.MempoolLiquidApi)
+		onchain.Liquid.Fees = mempoolLiquid
+		onchain.Liquid.Listener = mempoolLiquid
+	}
+	return onchain, nil
 }

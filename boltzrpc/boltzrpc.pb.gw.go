@@ -49,9 +49,20 @@ func local_request_Boltz_GetInfo_0(ctx context.Context, marshaler runtime.Marsha
 
 }
 
+var (
+	filter_Boltz_GetServiceInfo_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
 func request_Boltz_GetServiceInfo_0(ctx context.Context, marshaler runtime.Marshaler, client BoltzClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetServiceInfoRequest
 	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Boltz_GetServiceInfo_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 
 	msg, err := client.GetServiceInfo(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -62,14 +73,32 @@ func local_request_Boltz_GetServiceInfo_0(ctx context.Context, marshaler runtime
 	var protoReq GetServiceInfoRequest
 	var metadata runtime.ServerMetadata
 
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Boltz_GetServiceInfo_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
 	msg, err := server.GetServiceInfo(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
+var (
+	filter_Boltz_ListSwaps_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
 func request_Boltz_ListSwaps_0(ctx context.Context, marshaler runtime.Marshaler, client BoltzClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListSwapsRequest
 	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Boltz_ListSwaps_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 
 	msg, err := client.ListSwaps(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -79,6 +108,13 @@ func request_Boltz_ListSwaps_0(ctx context.Context, marshaler runtime.Marshaler,
 func local_request_Boltz_ListSwaps_0(ctx context.Context, marshaler runtime.Marshaler, server BoltzServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListSwapsRequest
 	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Boltz_ListSwaps_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 
 	msg, err := server.ListSwaps(ctx, &protoReq)
 	return msg, metadata, err
@@ -485,7 +521,7 @@ func RegisterBoltzHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 // RegisterBoltzHandlerFromEndpoint is same as RegisterBoltzHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterBoltzHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.Dial(endpoint, opts...)
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
 	}

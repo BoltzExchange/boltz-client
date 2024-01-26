@@ -12,6 +12,14 @@ var (
 			Entity: "swap",
 			Action: "read",
 		},
+		{
+			Entity: "liquid",
+			Action: "read",
+		},
+		{
+			Entity: "autoswap",
+			Action: "read",
+		},
 	}
 
 	WritePermissions = []bakery.Op{
@@ -21,6 +29,14 @@ var (
 		},
 		{
 			Entity: "swap",
+			Action: "write",
+		},
+		{
+			Entity: "liquid",
+			Action: "write",
+		},
+		{
+			Entity: "autoswap",
 			Action: "write",
 		},
 	}
@@ -42,6 +58,10 @@ var (
 			Entity: "swap",
 			Action: "read",
 		}},
+		"/boltzrpc.Boltz/GetSwapInfoStream": {{
+			Entity: "swap",
+			Action: "read",
+		}},
 		"/boltzrpc.Boltz/Deposit": {{
 			Entity: "swap",
 			Action: "write",
@@ -56,6 +76,82 @@ var (
 		}},
 		"/boltzrpc.Boltz/CreateReverseSwap": {{
 			Entity: "swap",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/CreateWallet": {{
+			Entity: "liquid",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/ImportWallet": {{
+			Entity: "liquid",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/SetSubaccount": {{
+			Entity: "liquid",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/GetSubaccounts": {{
+			Entity: "liquid",
+			Action: "read",
+		}},
+		"/boltzrpc.Boltz/RemoveWallet": {{
+			Entity: "liquid",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/GetWalletCredentials": {{
+			Entity: "liquid",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/GetWallets": {{
+			Entity: "liquid",
+			Action: "read",
+		}},
+		"/boltzrpc.Boltz/GetWallet": {{
+			Entity: "liquid",
+			Action: "read",
+		}},
+		"/boltzrpc.Boltz/Stop": {{
+			Entity: "info",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/Unlock": {{
+			Entity: "info",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/ChangeWalletPassword": {{
+			Entity: "info",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/VerifyWalletPassword": {{
+			Entity: "info",
+			Action: "read",
+		}},
+		"/autoswaprpc.AutoSwap/GetSwapRecommendations": {{
+			Entity: "autoswap",
+			Action: "read",
+		}},
+		"/autoswaprpc.AutoSwap/GetStatus": {{
+			Entity: "autoswap",
+			Action: "read",
+		}},
+		"/autoswaprpc.AutoSwap/GetConfig": {{
+			Entity: "autoswap",
+			Action: "read",
+		}},
+		"/autoswaprpc.AutoSwap/ResetConfig": {{
+			Entity: "autoswap",
+			Action: "write",
+		}},
+		"/autoswaprpc.AutoSwap/ReloadConfig": {{
+			Entity: "autoswap",
+			Action: "write",
+		}},
+		"/autoswaprpc.AutoSwap/SetConfig": {{
+			Entity: "autoswap",
+			Action: "write",
+		}},
+		"/autoswaprpc.AutoSwap/SetConfigValue": {{
+			Entity: "autoswap",
 			Action: "write",
 		}},
 	}

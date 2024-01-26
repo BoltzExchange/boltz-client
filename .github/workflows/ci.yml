@@ -1,6 +1,10 @@
 name: CI
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build:
@@ -8,30 +12,39 @@ jobs:
 
     strategy:
       matrix:
-        platform: [ ubuntu-latest ]
-        go-version: [ 1.20.x ]
+        platform: [ubuntu-latest]
+        go-version: [1.21.x]
 
     runs-on: ${{ matrix.platform }}
 
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
       - name: Install Go
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
-
-      - name: Fetch dependencies
-        run: go mod vendor
-
       - name: Build
         run: make build
 
-      - name: Test
+      - name: Setup Regtest
+        run: |
+          git clone https://github.com/BoltzExchange/legend-regtest-enviroment.git ~/regtest -b remove-mempool
+          sudo chmod -R 777 ~/regtest
+          cd ~/regtest
+          chmod +x ./regtest
+          ./regtest
+          sudo chmod -R a+rwx .
+
+      - name: Unit Tests
         run: make unit
+
+      - name: Integration Tests
+        run: make integration
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: 'latest'
+          version: "latest"

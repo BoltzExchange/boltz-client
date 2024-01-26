@@ -1,0 +1,23 @@
+# A sample systemd service file for boltz-client
+
+[Unit]
+Description=Boltz-Client
+
+# Optionally require lightningd.service or lnd.service to be running first
+Requires=lightningd.service
+After=lightningd.service
+
+[Service]
+ExecStart=/home/bitcoin/boltz-client/boltzd
+ExecStop=/home/bitcoin/boltz-client/boltzcli stop
+
+# Replace these with the user:group that will run boltz-client
+User=bitcoin
+Group=bitcoin
+
+# Try restarting boltz-client if it stops due to a failure
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

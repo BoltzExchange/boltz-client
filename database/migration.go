@@ -3,10 +3,11 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
-	"github.com/BoltzExchange/boltz-lnd/logger"
 	"strconv"
+
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/logger"
 )
 
 type swapStatus struct {
@@ -14,7 +15,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 2
+const latestSchemaVersion = 3
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -25,7 +26,7 @@ func (database *Database) migrate() error {
 			logger.Info("No database schema version found")
 			logger.Info("Inserting latest database schema version: " + strconv.Itoa(latestSchemaVersion))
 
-			_, err = database.db.Exec("INSERT INTO version (version) VALUES (?)", latestSchemaVersion)
+			_, err = database.Exec("INSERT INTO version (version) VALUES (?)", latestSchemaVersion)
 
 			return err
 		} else {
@@ -43,19 +44,19 @@ func (database *Database) performMigration(fromVersion int) error {
 
 		logger.Info("Migrating table \"swaps\"")
 
-		_, err := database.db.Exec("ALTER TABLE swaps ADD COLUMN state INT")
+		_, err := database.Exec("ALTER TABLE swaps ADD COLUMN state INT")
 
 		if err != nil {
 			return err
 		}
 
-		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN error VARCHAR")
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN error VARCHAR")
 
 		if err != nil {
 			return err
 		}
 
-		swapRows, err := database.db.Query("SELECT id, status FROM swaps")
+		swapRows, err := database.Query("SELECT id, status FROM swaps")
 
 		if err != nil {
 			return err
@@ -116,19 +117,19 @@ func (database *Database) performMigration(fromVersion int) error {
 
 		logger.Info("Migrating table \"reverseSwaps\"")
 
-		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN state INT")
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN state INT")
 
 		if err != nil {
 			return err
 		}
 
-		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN error VARCHAR")
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN error VARCHAR")
 
 		if err != nil {
 			return err
 		}
 
-		reverseSwapRows, err := database.db.Query("SELECT id, status FROM reverseSwaps")
+		reverseSwapRows, err := database.Query("SELECT id, status FROM reverseSwaps")
 
 		if err != nil {
 			return err
@@ -177,13 +178,119 @@ func (database *Database) performMigration(fromVersion int) error {
 			}
 		}
 
-		_, err = database.db.Exec("UPDATE version SET version = 2 WHERE version = 1")
+		_, err = database.Exec("UPDATE version SET version = 2 WHERE version = 1")
 		if err != nil {
 			return err
 		}
 
 		logger.Info("Update to database version 2 completed")
 		return database.postMigration(fromVersion)
+
+	case 2:
+		logger.Info("Updating database from version 2 to 3")
+
+		_, err := database.Exec("ALTER TABLE swaps ADD COLUMN pairId VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN chanId INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN blindingKey VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN isAuto BOOLEAN")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN serviceFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN serviceFeePercent REAL")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN onchainFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN createdAt INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN autoSend BOOLEAN")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN refundAddress VARCHAR")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.Exec("UPDATE swaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN pairId VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanId INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN blindingKey VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN isAuto BOOLEAN")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN routingFeeMsat INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFeePercent REAL")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN onchainFee INT")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN createdAt INT")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.Exec("UPDATE reverseSwaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.Exec("CREATE TABLE IF NOT EXISTS autobudget (startDate INT PRIMARY KEY, endDate INT)")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.Exec("CREATE TABLE IF NOT EXISTS wallets (name VARCHAR PRIMARY KEY, currency VARCHAR, xpub VARCHAR, coreDescriptor VARCHAR, mnemonic VARCHAR, subaccount INT, salt VARCHAR)")
+		if err != nil {
+			return err
+		}
+
+		_, err = database.Exec("DROP TABLE channelCreations")
+		if err != nil {
+			return err
+		}
 
 	case latestSchemaVersion:
 		logger.Info("Database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
@@ -205,7 +312,7 @@ func (database *Database) postMigration(fromVersion int) error {
 }
 
 func (database *Database) queryVersion() (int, error) {
-	row := database.db.QueryRow("SELECT version FROM version")
+	row := database.QueryRow("SELECT version FROM version")
 
 	var version int
 

@@ -2,17 +2,21 @@ package boltz_lnd
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-lnd/boltz"
-	"github.com/BoltzExchange/boltz-lnd/build"
-	"github.com/BoltzExchange/boltz-lnd/database"
-	"github.com/BoltzExchange/boltz-lnd/lnd"
-	"github.com/BoltzExchange/boltz-lnd/rpcserver"
-	"github.com/BoltzExchange/boltz-lnd/utils"
-	"github.com/BurntSushi/toml"
-	"github.com/jessevdk/go-flags"
 	"os"
 	"path"
 	"runtime"
+
+	"github.com/BurntSushi/toml"
+	"github.com/jessevdk/go-flags"
+
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/build"
+	"github.com/BoltzExchange/boltz-client/cln"
+	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/lnd"
+	"github.com/BoltzExchange/boltz-client/rpcserver"
+	"github.com/BoltzExchange/boltz-client/utils"
 )
 
 type helpOptions struct {
@@ -21,38 +25,43 @@ type helpOptions struct {
 }
 
 type Config struct {
-	DataDir string `short:"d" long:"datadir" description:"Data directory of boltz-lnd"`
+	DataDir string `short:"d" long:"datadir" description:"Data directory of boltz-client"`
 
 	ConfigFile string `short:"c" long:"configfile" description:"Path to configuration file"`
 
-	LogFile   string `short:"l" long:"logfile" description:"Path to the log file"`
-	LogPrefix string `long:"logprefix" description:"Prefix of all log messages"`
+	LogFile  string `short:"l" long:"logfile" description:"Path to the log file"`
+	LogLevel string `long:"loglevel" description:"Log level (fatal, error, warn, info, debug, silly)"`
 
-	Boltz    *boltz.Boltz         `group:"Boltz Options"`
-	LND      *lnd.LND             `group:"LND Options"`
+	Boltz *boltz.Boltz `group:"Boltz Options"`
+	LND   *lnd.LND     `group:"LND Options"`
+	Cln   *cln.Cln     `group:"Cln Options"`
+
+	Node string `long:"node" description:"Lightning node to use (cln or lnd)"`
+
+	Lightning lightning.LightningNode
+
 	RPC      *rpcserver.RpcServer `group:"RPC options"`
 	Database *database.Database   `group:"Database options"`
 
-	MempoolApi string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
+	MempoolApi       string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
+	MempoolLiquidApi string `long:"mempool-liquid" description:"mempool.space liquid API to use for fee estimations; set to empty string to disable"`
+
+	ElectrumUrl            string `long:"electrum" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
+	ElectrumSSL            bool   `long:"electrum-ssl" description:"whether the electrum server uses ssl"`
+	ElectrumLiquidUrl      string `long:"electrum-liquid" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
+	ElectrumLiquiLiquidSSL bool   `long:"electrum-liquid-ssl" description:"whether the electrum server uses ssl"`
 
 	Help *helpOptions `group:"Help Options"`
 }
 
-func LoadConfig() *Config {
-	defaultDataDir, err := utils.GetDefaultDataDir()
-
-	if err != nil {
-		fmt.Println("Could not get home directory: " + err.Error())
-		os.Exit(1)
-	}
-
+func LoadConfig(dataDir string) *Config {
 	cfg := Config{
-		DataDir: defaultDataDir,
+		DataDir: dataDir,
 
 		ConfigFile: "",
 
-		LogFile:   "",
-		LogPrefix: "",
+		LogFile:  "",
+		LogLevel: "info",
 
 		Boltz: &boltz.Boltz{
 			URL: "",
@@ -63,6 +72,15 @@ func LoadConfig() *Config {
 			Port:        10009,
 			Macaroon:    "",
 			Certificate: "",
+		},
+
+		Cln: &cln.Cln{
+			Host: "",
+			Port: 10009,
+
+			RootCert:   "",
+			PrivateKey: "",
+			CertChain:  "",
 		},
 
 		RPC: &rpcserver.RpcServer{
@@ -84,12 +102,10 @@ func LoadConfig() *Config {
 		Database: &database.Database{
 			Path: "",
 		},
-
-		MempoolApi: "https://mempool.space/api",
 	}
 
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
-	_, err = parser.Parse()
+	_, err := parser.Parse()
 
 	if cfg.Help.ShowVersion {
 		fmt.Println(build.GetVersion())
@@ -116,13 +132,15 @@ func LoadConfig() *Config {
 		}
 	}
 
-	_, err = flags.Parse(&cfg)
-
-	if err != nil {
-		printCouldNotParse(err)
-	}
-
 	fmt.Println("Using data dir: " + cfg.DataDir)
+
+	cfg.LND.Macaroon = utils.ExpandHomeDir(cfg.LND.Macaroon)
+	cfg.LND.Certificate = utils.ExpandHomeDir(cfg.LND.Certificate)
+
+	cfg.Cln.DataDir = utils.ExpandHomeDir(cfg.Cln.DataDir)
+	cfg.Cln.RootCert = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.RootCert, "ca.pem")
+	cfg.Cln.PrivateKey = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.PrivateKey, "client-key.pem")
+	cfg.Cln.CertChain = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.CertChain, "client.pem")
 
 	cfg.LogFile = utils.ExpandDefaultPath(cfg.DataDir, cfg.LogFile, "boltz.log")
 	cfg.Database.Path = utils.ExpandDefaultPath(cfg.DataDir, cfg.Database.Path, "boltz.db")

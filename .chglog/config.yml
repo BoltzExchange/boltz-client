@@ -2,7 +2,7 @@ style: github
 template: CHANGELOG.tpl.md
 info:
   title: CHANGELOG
-  repository_url: https://github.com/BoltzExchange/boltz-lnd
+  repository_url: https://github.com/BoltzExchange/boltz-client
 options:
   commits:
     filters:

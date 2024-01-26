@@ -45,7 +45,7 @@ func parseMacaroon(rows *sql.Rows) (*Macaroon, error) {
 }
 
 func (database *Database) QueryMacaroon(id []byte) (macaroon *Macaroon, err error) {
-	rows, err := database.db.Query("SELECT * FROM macaroons WHERE id = '" + hex.EncodeToString(id) + "'")
+	rows, err := database.Query("SELECT * FROM macaroons WHERE id = '" + hex.EncodeToString(id) + "'")
 
 	if err != nil {
 		return macaroon, err
@@ -67,21 +67,10 @@ func (database *Database) QueryMacaroon(id []byte) (macaroon *Macaroon, err erro
 }
 
 func (database *Database) CreateMacaroon(macaroon Macaroon) error {
-	insertStatement := "INSERT INTO macaroons (id, rootKey) VALUES (?, ?)"
-	statement, err := database.db.Prepare(insertStatement)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = statement.Exec(
+	_, err := database.Exec(
+		"INSERT INTO macaroons (id, rootKey) VALUES (?, ?)",
 		hex.EncodeToString(macaroon.Id),
 		hex.EncodeToString(macaroon.RootKey),
 	)
-
-	if err != nil {
-		return err
-	}
-
-	return statement.Close()
+	return err
 }

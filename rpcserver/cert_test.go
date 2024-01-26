@@ -1,11 +1,10 @@
 package rpcserver
 
 import (
-	"io"
 	"os"
 	"testing"
 
-	"github.com/google/logger"
+	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +14,7 @@ const (
 )
 
 func TestLoadCertificate(t *testing.T) {
-	logger.Init("test", false, false, io.Discard)
+	logger.Init("", "info")
 
 	cleanup(t)
 

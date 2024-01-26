@@ -2,21 +2,22 @@ package utils
 
 import (
 	"strconv"
+
+	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
 // Block times in minutes
 const BitcoinBlockTime = float64(10)
-const LitecoinBlockTime = float64(2.5)
+const LiquidBlockTime = float64(1)
 
-func GetBlockTime(symbol string) float64 {
+func GetBlockTime(pairId boltz.Pair) float64 {
 	var blockTime float64
 
-	switch symbol {
-	case "BTC":
+	switch pairId {
+	case boltz.PairBtc:
 		blockTime = BitcoinBlockTime
-
-	case "LTC":
-		blockTime = LitecoinBlockTime
+	case boltz.PairLiquid:
+		blockTime = LiquidBlockTime
 	}
 
 	return blockTime

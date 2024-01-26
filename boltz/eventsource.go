@@ -9,7 +9,7 @@ import (
 
 var responseDelimiter = []byte{':', ' '}
 
-func streamSwapStatus(url string, events chan *SwapStatusResponse, stopListening chan bool) error {
+func streamSwapStatus(url string, events chan *SwapStatusResponse, stopListening <-chan bool) error {
 	handleError := make(chan error)
 
 	client := &http.Client{}
@@ -22,7 +22,7 @@ func streamSwapStatus(url string, events chan *SwapStatusResponse, stopListening
 	req.Header.Set("Accept", "text/event-stream")
 
 	var res *http.Response
-
+	closed := false
 	go func() {
 		res, err = client.Do(req)
 
@@ -47,7 +47,7 @@ func streamSwapStatus(url string, events chan *SwapStatusResponse, stopListening
 
 			currentEvent = &SwapStatusResponse{}
 
-			if string(split[0]) == "data" {
+			if string(split[0]) == "data" && !closed {
 				data := bytes.TrimSpace(split[1])
 				err = json.Unmarshal(data, currentEvent)
 
@@ -70,6 +70,7 @@ func streamSwapStatus(url string, events chan *SwapStatusResponse, stopListening
 			if res != nil {
 				_ = res.Body.Close()
 			}
+			closed = true
 
 			return nil
 		}

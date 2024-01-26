@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path"
-	"runtime"
 	"testing"
 )
 
@@ -24,11 +23,7 @@ func TestExpandDefaultPath(t *testing.T) {
 func TestGetDefaultDataDir(t *testing.T) {
 	homeDir, _ := os.UserHomeDir()
 
-	dataFolder := "boltz-lnd"
-
-	if runtime.GOOS != "windows" {
-		dataFolder = "." + dataFolder
-	}
+	dataFolder := ".boltz"
 
 	dataDir, err := GetDefaultDataDir()
 

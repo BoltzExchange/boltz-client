@@ -3,18 +3,25 @@ package boltz
 import (
 	"crypto/sha256"
 	"errors"
+
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/vulpemventures/go-elements/address"
 )
 
-func CheckSwapAddress(chainParams *chaincfg.Params, address string, redeemScript []byte, isNested bool) error {
+func CheckSwapAddress(pair Pair, net *Network, address string, redeemScript []byte, isNested bool, blindingKey *btcec.PublicKey) error {
 	var err error
 	var encodedAddress string
 
-	if isNested {
-		encodedAddress, err = NestedScriptHashAddress(chainParams, redeemScript)
+	if pair == PairLiquid {
+		encodedAddress, err = LiquidWitnessScriptHashAddress(net, redeemScript, blindingKey)
 	} else {
-		encodedAddress, err = WitnessScriptHashAddress(chainParams, redeemScript)
+		if isNested {
+			encodedAddress, err = NestedScriptHashAddress(net.Btc, redeemScript)
+		} else {
+			encodedAddress, err = BtcWitnessScriptHashAddress(net.Btc, redeemScript)
+		}
 	}
 
 	if err != nil {
@@ -28,7 +35,15 @@ func CheckSwapAddress(chainParams *chaincfg.Params, address string, redeemScript
 	return nil
 }
 
-func WitnessScriptHashAddress(chainParams *chaincfg.Params, redeemScript []byte) (string, error) {
+func WitnessScriptHashAddress(pair Pair, net *Network, redeemScript []byte, blindingKey *btcec.PublicKey) (string, error) {
+	if pair == PairLiquid {
+		return LiquidWitnessScriptHashAddress(net, redeemScript, blindingKey)
+	} else {
+		return BtcWitnessScriptHashAddress(net.Btc, redeemScript)
+	}
+}
+
+func BtcWitnessScriptHashAddress(chainParams *chaincfg.Params, redeemScript []byte) (string, error) {
 	hash := sha256.Sum256(redeemScript)
 	address, err := btcutil.NewAddressWitnessScriptHash(hash[:], chainParams)
 
@@ -54,4 +69,19 @@ func NestedScriptHashAddress(chainParams *chaincfg.Params, redeemScript []byte) 
 	encodedAddress, err := ScriptHashAddress(chainParams, addressScript)
 
 	return encodedAddress, err
+}
+
+func ValidateAddress(network *Network, rawAddress string, pair Pair) error {
+	var err error
+	if pair == PairBtc {
+		var address btcutil.Address
+		address, err = btcutil.DecodeAddress(rawAddress, network.Btc)
+		if _, ok := address.(*btcutil.AddressPubKey); ok {
+			err = errors.New("p2pk addresses are not allowed")
+		}
+	} else {
+		// elements library does not implement p2pk addresses, so we dont have to check for that
+		_, err = address.DecodeType(rawAddress)
+	}
+	return err
 }
