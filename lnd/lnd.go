@@ -285,18 +285,17 @@ func (lnd *LND) GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error) {
 func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 	var outgoungIds []uint64
 	for _, chanId := range chanIds {
-		outgoungIds = append(outgoungIds, uint64(chanId))
+		if chanId != 0 {
+			outgoungIds = append(outgoungIds, uint64(chanId))
+		}
 	}
-
-	fmt.Println(outgoungIds)
 
 	client, err := lnd.router.SendPaymentV2(lnd.ctx, &routerrpc.SendPaymentRequest{
 		PaymentRequest:    invoice,
 		TimeoutSeconds:    int32(timeoutSeconds),
 		FeeLimitSat:       int64(feeLimit),
 		NoInflightUpdates: true,
-		// TODO: this is not working right now
-		OutgoingChanIds: outgoungIds,
+		OutgoingChanIds:   outgoungIds,
 	})
 	if err != nil {
 		return nil, err

@@ -284,8 +284,10 @@ func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, err
 
 func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address string) error {
 	pair := string(swapper.cfg.pair)
-	chanId := recommendation.Channel.GetId()
-	rawChanid := []string{chanId.ToCln()}
+	var chanIds []string
+	if chanId := recommendation.Channel.GetId(); chanId != 0 {
+		chanIds = append(chanIds, chanId.ToCln())
+	}
 	var err error
 	if recommendation.Type == boltz.ReverseSwap {
 		err = swapper.ExecuteReverseSwap(&boltzrpc.CreateReverseSwapRequest{
@@ -293,14 +295,14 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 			Address:        address,
 			AcceptZeroConf: swapper.cfg.AcceptZeroConf,
 			PairId:         pair,
-			ChanIds:        rawChanid,
+			ChanIds:        chanIds,
 			Wallet:         &swapper.cfg.Wallet,
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
 		err = swapper.ExecuteSwap(&boltzrpc.CreateSwapRequest{
 			Amount:   int64(recommendation.Amount),
 			PairId:   pair,
-			ChanIds:  rawChanid,
+			ChanIds:  chanIds,
 			AutoSend: true,
 			Wallet:   &swapper.cfg.Wallet,
 		})
