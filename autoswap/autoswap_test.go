@@ -412,24 +412,24 @@ func TestDismissedChannels(t *testing.T) {
 			},
 			swaps: []database.Swap{
 				{
-					Id:     "TEST",
-					State:  boltzrpc.SwapState_PENDING,
-					ChanId: 1,
-					IsAuto: true,
+					Id:      "TEST",
+					State:   boltzrpc.SwapState_PENDING,
+					ChanIds: []lightning.ChanId{1},
+					IsAuto:  true,
 				},
 			},
 			reverseSwaps: []database.ReverseSwap{
 				{
-					Id:     "TEST",
-					State:  boltzrpc.SwapState_PENDING,
-					IsAuto: true,
-					ChanId: 2,
+					Id:      "TEST",
+					State:   boltzrpc.SwapState_PENDING,
+					IsAuto:  true,
+					ChanIds: []lightning.ChanId{2},
 				},
 				{
-					Id:     "TEST1",
-					State:  boltzrpc.SwapState_SUCCESSFUL,
-					IsAuto: true,
-					ChanId: 3,
+					Id:      "TEST1",
+					State:   boltzrpc.SwapState_SUCCESSFUL,
+					IsAuto:  true,
+					ChanIds: []lightning.ChanId{3},
 				},
 			},
 			dismissed: DismissedChannels{
@@ -444,10 +444,10 @@ func TestDismissedChannels(t *testing.T) {
 			},
 			swaps: []database.Swap{
 				{
-					Id:     "TEST",
-					State:  boltzrpc.SwapState_ERROR,
-					ChanId: 1,
-					IsAuto: true,
+					Id:      "TEST",
+					State:   boltzrpc.SwapState_ERROR,
+					ChanIds: []lightning.ChanId{1},
+					IsAuto:  true,
 				},
 			},
 			reverseSwaps: []database.ReverseSwap{
@@ -456,7 +456,7 @@ func TestDismissedChannels(t *testing.T) {
 					State:     boltzrpc.SwapState_ERROR,
 					CreatedAt: time.Now().Add(time.Duration(-2000) * time.Second),
 					IsAuto:    true,
-					ChanId:    2,
+					ChanIds:   []lightning.ChanId{2},
 				},
 			},
 			dismissed: DismissedChannels{

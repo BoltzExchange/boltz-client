@@ -193,7 +193,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN chanId INT")
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
 		}
@@ -239,7 +239,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanId INT")
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
 		}

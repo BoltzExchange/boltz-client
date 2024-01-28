@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -27,6 +28,17 @@ type Database struct {
 
 type Transaction struct {
 	Database
+}
+
+type JsonScanner[T any] struct {
+	Value T
+}
+
+func (j *JsonScanner[T]) Scan(src any) error {
+	if str, ok := src.(string); ok {
+		return json.Unmarshal([]byte(str), &j.Value)
+	}
+	return fmt.Errorf("unsupported type: %T", src)
 }
 
 func (database *Database) BeginTx() (*Transaction, error) {
@@ -140,13 +152,13 @@ func (database *Database) createTables() error {
 		return err
 	}
 
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanId INT, state INT, error VARCHAR, status VARCHAR, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, refundTransactionId VARCHAR, refundAddress VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT, autoSend BOOLEAN)")
+	_, err = database.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, refundTransactionId VARCHAR, refundAddress VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT, autoSend BOOLEAN)")
 
 	if err != nil {
 		return err
 	}
 
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS reverseSwaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanId INT, state INT, error VARCHAR, status VARCHAR, acceptZeroConf BOOLEAN, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, claimAddress VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, claimTransactionId VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN, routingFeeMsat INT, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT)")
+	_, err = database.Exec("CREATE TABLE IF NOT EXISTS reverseSwaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, acceptZeroConf BOOLEAN, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, claimAddress VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, claimTransactionId VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN, routingFeeMsat INT, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT)")
 
 	if err != nil {
 		return err
@@ -205,4 +217,12 @@ func addToOptional[V constraints.Integer](value *V, add V) *V {
 		value = &add
 	}
 	return value
+}
+
+func formatJson(value any) string {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		logger.Errorf("Could not marshal json value %v: %v", value, err)
+	}
+	return string(encoded)
 }

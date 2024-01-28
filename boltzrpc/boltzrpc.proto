@@ -164,7 +164,7 @@ message SwapInfo {
     string refund_transaction_id = 14;
     optional string refund_address = 20;
 
-    optional ChannelId chan_id = 15;
+    repeated ChannelId chan_ids = 15;
     optional string blinding_key = 16;
     int64 created_at = 17;
     optional uint64 service_fee = 18;
@@ -209,7 +209,7 @@ message ReverseSwapInfo {
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
     string pair_id = 14;
-    optional ChannelId chan_id = 15;
+    repeated ChannelId chan_ids = 15;
     optional string blinding_key = 16;
     int64 created_at = 17;
     optional uint64 service_fee = 18;
@@ -303,7 +303,7 @@ message DepositResponse {
 message CreateSwapRequest {
     int64 amount = 1;
     string pair_id = 2;
-    optional string chan_id = 3;
+    repeated string chan_ids = 3;
     bool auto_send = 4;
     string refund_address = 5;
     optional string wallet = 6;
@@ -334,7 +334,7 @@ message CreateReverseSwapRequest {
     string address = 2;
     bool accept_zero_conf = 3;
     string pair_id = 4;
-    optional string chan_id = 5;
+    repeated string chan_ids = 5;
     optional string wallet = 6;
 }
 message CreateReverseSwapResponse {

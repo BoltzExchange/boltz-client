@@ -340,11 +340,12 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		AutoSend:            request.AutoSend,
 	}
 
-	if request.ChanId != nil {
-		swap.ChanId, err = lightning.NewChanIdFromString(*request.ChanId)
+	for _, chanId := range request.ChanIds {
+		parsed, err := lightning.NewChanIdFromString(chanId)
 		if err != nil {
 			return nil, handleError(errors.New("invalid channel id: " + err.Error()))
 		}
+		swap.ChanIds = append(swap.ChanIds, parsed)
 	}
 
 	var blindingPubKey *btcec.PublicKey
@@ -495,11 +496,12 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		ServiceFeePercent:   utils.Percentage(fees.Percentage),
 	}
 
-	if request.ChanId != nil {
-		reverseSwap.ChanId, err = lightning.NewChanIdFromString(*request.ChanId)
+	for _, chanId := range request.ChanIds {
+		parsed, err := lightning.NewChanIdFromString(chanId)
 		if err != nil {
 			return nil, handleError(errors.New("invalid channel id: " + err.Error()))
 		}
+		reverseSwap.ChanIds = append(reverseSwap.ChanIds, parsed)
 	}
 
 	if pair == boltz.PairLiquid {
