@@ -161,17 +161,17 @@ func (cfg *Config) Init() error {
 }
 
 func (cfg *Config) GetAddress(network *boltz.Network) (address string, err error) {
-	if cfg.pair == boltz.PairLiquid && cfg.LiquidAddress != "" {
+	if cfg.Currency == boltz.CurrencyLiquid && cfg.LiquidAddress != "" {
 		address = cfg.LiquidAddress
-	} else if cfg.pair == boltz.PairBtc && cfg.BitcoinAddress != "" {
+	} else if cfg.Currency == boltz.CurrencyBtc && cfg.BitcoinAddress != "" {
 		address = cfg.BitcoinAddress
 	}
 	if address == "" {
-		return "", errors.New("No address for pair " + string(cfg.pair))
+		return "", errors.New("No address for Currency " + string(cfg.Currency))
 	}
-	err = boltz.ValidateAddress(network, address, cfg.pair)
+	err = boltz.ValidateAddress(network, address, cfg.Currency)
 	if err != nil {
-		return "", errors.New("Invalid address for pair " + string(cfg.pair) + " :" + err.Error())
+		return "", errors.New("Invalid address for Currency " + string(cfg.Currency) + " :" + err.Error())
 	}
 	return address, nil
 }
@@ -257,12 +257,12 @@ func (cfg *Config) SetValue(field string, value any) error {
 			f.SetBool(value)
 		case reflect.String:
 			switch f.Interface().(type) {
-			case boltz.Pair:
-				pair, err := boltz.ParsePair(stringValue)
+			case boltz.Currency:
+				currency, err := boltz.ParseCurrency(stringValue)
 				if err != nil {
-					return fmt.Errorf("invalid pair value: %w", err)
+					return fmt.Errorf("invalid currency value: %w", err)
 				}
-				f.Set(reflect.ValueOf(pair))
+				f.Set(reflect.ValueOf(currency))
 			case boltz.SwapType:
 				swapType, err := boltz.ParseSwapType(stringValue)
 				if err != nil {

@@ -27,7 +27,7 @@ require (
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli/v2 v2.25.7
-	github.com/vulpemventures/go-elements v0.4.6
+	github.com/vulpemventures/go-elements v0.5.3
 	golang.org/x/crypto v0.17.0
 	golang.org/x/exp v0.0.0-20221111094246-ab4555d3164f
 	google.golang.org/grpc v1.60.1

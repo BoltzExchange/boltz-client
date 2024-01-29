@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/utils"
-	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -15,7 +17,7 @@ import (
 
 type ReverseSwap struct {
 	Id                  string
-	PairId              boltz.Pair
+	Pair                boltz.Pair
 	ChanIds             []lightning.ChanId
 	State               boltzrpc.SwapState
 	Error               string
@@ -23,6 +25,8 @@ type ReverseSwap struct {
 	Status              boltz.SwapUpdateEvent
 	AcceptZeroConf      bool
 	PrivateKey          *btcec.PrivateKey
+	RefundPubKey        *btcec.PublicKey
+	SwapTree            *boltz.SwapTree
 	Preimage            []byte
 	RedeemScript        []byte
 	Invoice             string
@@ -41,13 +45,15 @@ type ReverseSwap struct {
 
 type ReverseSwapSerialized struct {
 	Id                  string
-	PairId              string
+	From                string
+	To                  string
 	ChanIds             string
 	State               string
 	Error               string
 	Status              string
 	AcceptZeroConf      bool
 	PrivateKey          string
+	SwapTree            string
 	Preimage            string
 	RedeemScript        string
 	Invoice             string
@@ -67,7 +73,8 @@ type ReverseSwapSerialized struct {
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	return ReverseSwapSerialized{
 		Id:                  reverseSwap.Id,
-		PairId:              string(reverseSwap.PairId),
+		From:                string(reverseSwap.Pair.From),
+		To:                  string(reverseSwap.Pair.To),
 		ChanIds:             formatJson(reverseSwap.ChanIds),
 		State:               boltzrpc.SwapState_name[int32(reverseSwap.State)],
 		Error:               reverseSwap.Error,
@@ -91,29 +98,41 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	}
 }
 
+func (reverseSwap *ReverseSwap) InitTree() error {
+	return reverseSwap.SwapTree.Init(
+		reverseSwap.Pair.To == boltz.CurrencyLiquid,
+		reverseSwap.PrivateKey,
+		reverseSwap.RefundPubKey,
+	)
+}
+
 func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var reverseSwap ReverseSwap
 
 	var status string
-	var privateKey string
+	var privateKey PrivateKeyScanner
 	var preimage string
 	var redeemScript string
-	var pairId string
-	var blindingKey sql.NullString
+	blindingKey := PrivateKeyScanner{Nullable: true}
 	var createdAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
+	swapTree := JsonScanner[*boltz.SerializedTree]{Nullable: true}
+	refundPubKey := PublicKeyScanner{Nullable: true}
 	chanIds := JsonScanner[[]lightning.ChanId]{Nullable: true}
 
 	err := scanRow(
 		rows,
 		map[string]interface{}{
 			"id":                  &reverseSwap.Id,
-			"pairId":              &pairId,
+			"fromCurrency":        &reverseSwap.Pair.From,
+			"toCurrency":          &reverseSwap.Pair.To,
 			"chanIds":             &chanIds,
 			"state":               &reverseSwap.State,
 			"error":               &reverseSwap.Error,
 			"status":              &status,
 			"acceptZeroConf":      &reverseSwap.AcceptZeroConf,
 			"privateKey":          &privateKey,
+			"refundPubKey":        &refundPubKey,
+			"swapTree":            &swapTree,
 			"preimage":            &preimage,
 			"redeemScript":        &redeemScript,
 			"invoice":             &reverseSwap.Invoice,
@@ -139,18 +158,14 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	reverseSwap.ServiceFee = parseNullInt(serviceFee)
 	reverseSwap.OnchainFee = parseNullInt(onchainFee)
 	reverseSwap.RoutingFeeMsat = parseNullInt(routingFeeMsat)
-
 	reverseSwap.Status = boltz.ParseEvent(status)
 	reverseSwap.ChanIds = chanIds.Value
 
-	reverseSwap.PrivateKey, err = ParsePrivateKey(privateKey)
-
-	if err != nil {
-		return nil, err
-	}
+	reverseSwap.PrivateKey = privateKey.Value
+	reverseSwap.BlindingKey = blindingKey.Value
+	reverseSwap.RefundPubKey = refundPubKey.Value
 
 	reverseSwap.Preimage, err = hex.DecodeString(preimage)
-
 	if err != nil {
 		return nil, err
 	}
@@ -160,21 +175,19 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 		return nil, err
 	}
 
-	reverseSwap.PairId, err = boltz.ParsePair(pairId)
-
 	if err != nil {
 		return nil, err
 	}
 
-	if blindingKey.Valid {
-		reverseSwap.BlindingKey, err = ParsePrivateKey(blindingKey.String)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if createdAt.Valid {
 		reverseSwap.CreatedAt = ParseTime(createdAt.Int64)
+	}
+
+	if swapTree.Value != nil {
+		reverseSwap.SwapTree = swapTree.Value.Deserialize()
+		if err := reverseSwap.InitTree(); err != nil {
+			return nil, fmt.Errorf("could not initialize swap tree: %w", err)
+		}
 	}
 
 	return &reverseSwap, err
@@ -241,18 +254,19 @@ func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]ReverseSwa
 }
 
 const insertReverseSwapStatement = `
-INSERT INTO reverseSwaps (id, pairId, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
+INSERT INTO reverseSwaps (id, fromCurrency, toCurrency, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
                           invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId,
                           claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee,
-                          serviceFeePercent, onchainFee)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          serviceFeePercent, onchainFee, refundPubKey, swapTree)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 	_, err := database.Exec(
 		insertReverseSwapStatement,
 		reverseSwap.Id,
-		reverseSwap.PairId,
+		reverseSwap.Pair.From,
+		reverseSwap.Pair.To,
 		formatJson(reverseSwap.ChanIds),
 		reverseSwap.State,
 		reverseSwap.Error,
@@ -274,6 +288,8 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		reverseSwap.ServiceFee,
 		reverseSwap.ServiceFeePercent,
 		reverseSwap.OnchainFee,
+		formatPublicKey(reverseSwap.RefundPubKey),
+		formatJson(reverseSwap.SwapTree.Serialize()),
 	)
 	return err
 }

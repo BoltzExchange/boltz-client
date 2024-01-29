@@ -11,6 +11,8 @@ import (
 
 type Boltz struct {
 	URL string `long:"boltz.url" description:"URL endpoint of the Boltz API"`
+
+	DisablePartialSignatures bool
 }
 
 type SwapType string
@@ -39,6 +41,40 @@ type Error error
 type GetVersionResponse struct {
 	Version string `json:"version"`
 }
+
+type SubmarinePair struct {
+	Hash   string  `json:"hash"`
+	Rate   float64 `json:"rate"`
+	Limits struct {
+		Minimal               uint64 `json:"minimal"`
+		Maximal               uint64 `json:"maximal"`
+		MaximalZeroConfAmount uint64 `json:"maximalZeroConfAmount"`
+	} `json:"limits"`
+	Fees struct {
+		Percentage float64 `json:"percentage"`
+		MinerFees  uint64  `json:"minerFees"`
+	} `json:"fees"`
+}
+
+type SubmarinePairs map[string]map[string]SubmarinePair
+
+type ReversePair struct {
+	Hash   string  `json:"hash"`
+	Rate   float64 `json:"rate"`
+	Limits struct {
+		Minimal uint64 `json:"minimal"`
+		Maximal uint64 `json:"maximal"`
+	} `json:"limits"`
+	Fees struct {
+		Percentage float64 `json:"percentage"`
+		MinerFees  struct {
+			Lockup uint64 `json:"lockup"`
+			Claim  uint64 `json:"claim"`
+		} `json:"minerFees"`
+	} `json:"fees"`
+}
+
+type ReversePairs map[string]map[string]ReversePair
 
 type symbolMinerFees struct {
 	Normal  uint64 `json:"normal"`
@@ -78,8 +114,9 @@ type SwapStatusRequest struct {
 }
 
 type SwapStatusResponse struct {
-	Status      string `json:"status"`
-	Transaction struct {
+	Status           string `json:"status"`
+	ZeroConfRejected bool   `json:"zeroConfRejected"`
+	Transaction      struct {
 		Id  string `json:"id"`
 		Hex string `json:"hex"`
 	} `json:"transaction"`
@@ -124,26 +161,36 @@ type BroadcastTransactionResponse struct {
 }
 
 type CreateSwapRequest struct {
-	Type            SwapType `json:"type"`
-	PairId          string   `json:"pairId"`
-	OrderSide       string   `json:"orderSide"`
+	From            Currency `json:"from"`
+	To              Currency `json:"to"`
+	PairHash        string   `json:"pairHash"`
 	RefundPublicKey string   `json:"refundPublicKey"`
 	Invoice         string   `json:"invoice"`
-	PreimageHash    string   `json:"preimageHash"`
 	ReferralId      string   `json:"referralId"`
+	//PreimageHash    string   `json:"preimageHash"`
+
+	Error string `json:"error"`
 }
 
 type CreateSwapResponse struct {
-	Id                 string `json:"id"`
-	Bip21              string `json:"bip21"`
-	Address            string `json:"address"`
-	RedeemScript       string `json:"redeemScript"`
-	AcceptZeroConf     bool   `json:"acceptZeroConf"`
-	ExpectedAmount     uint64 `json:"expectedAmount"`
-	TimeoutBlockHeight uint32 `json:"timeoutBlockHeight"`
-	BlindingKey        string `json:"blindingKey"`
+	Id                 string          `json:"id"`
+	Bip21              string          `json:"bip21"`
+	Address            string          `json:"address"`
+	SwapTree           *SerializedTree `json:"swapTree"`
+	ClaimPublicKey     string          `json:"claimPublicKey"`
+	TimeoutBlockHeight uint32          `json:"timeoutBlockHeight"`
+	AcceptZeroConf     bool            `json:"acceptZeroConf"`
+	ExpectedAmount     uint64          `json:"expectedAmount"`
+	BlindingKey        string          `json:"blindingKey"`
 
 	Error string `json:"error"`
+}
+
+type RefundSwapRequest struct {
+	Id          string `json:"id"`
+	PubNonce    string `json:"pubNonce"`
+	Transaction string `json:"transaction"`
+	Index       int    `json:"index"`
 }
 
 type SwapRatesRequest struct {
@@ -169,23 +216,41 @@ type SetInvoiceResponse struct {
 }
 
 type CreateReverseSwapRequest struct {
-	Type           SwapType `json:"type"`
-	PairId         string   `json:"pairId"`
-	OrderSide      string   `json:"orderSide"`
-	InvoiceAmount  uint64   `json:"invoiceAmount"`
+	From           Currency `json:"from"`
+	To             Currency `json:"to"`
 	PreimageHash   string   `json:"preimageHash"`
 	ClaimPublicKey string   `json:"claimPublicKey"`
+	InvoiceAmount  uint64   `json:"invoiceAmount,omitempty"`
+	OnchainAmount  uint64   `json:"onchainAmount,omitempty"`
+	PairHash       string   `json:"pairHash"`
 	ReferralId     string   `json:"referralId"`
+
+	Error string `json:"error"`
 }
 
 type CreateReverseSwapResponse struct {
-	Id                 string `json:"id"`
-	Invoice            string `json:"invoice"`
-	OnchainAmount      uint64 `json:"onchainAmount"`
-	RedeemScript       string `json:"redeemScript"`
-	LockupAddress      string `json:"lockupAddress"`
-	TimeoutBlockHeight uint32 `json:"TimeoutBlockHeight"`
-	BlindingKey        string `json:"blindingKey"`
+	Id                 string          `json:"id"`
+	Invoice            string          `json:"invoice"`
+	SwapTree           *SerializedTree `json:"swapTree"`
+	RefundPublicKey    string          `json:"refundPublicKey"`
+	LockupAddress      string          `json:"lockupAddress"`
+	TimeoutBlockHeight uint32          `json:"timeoutBlockHeight"`
+	OnchainAmount      uint64          `json:"onchainAmount"`
+	BlindingKey        string          `json:"blindingKey"`
+
+	Error string `json:"error"`
+}
+type ClaimReverseSwapRequest struct {
+	Id          string `json:"id"`
+	Preimage    string `json:"preimage"`
+	PubNonce    string `json:"pubNonce"`
+	Transaction string `json:"transaction"`
+	Index       int    `json:"index"`
+}
+
+type PartialSignature struct {
+	PubNonce         string `json:"pubNonce"`
+	PartialSignature string `json:"partialSignature"`
 
 	Error string `json:"error"`
 }
@@ -209,6 +274,18 @@ func (boltz *Boltz) GetFeeEstimation() (*map[string]uint64, error) {
 	err := boltz.sendGetRequest("/getfeeestimation", &response)
 
 	return &response, err
+}
+
+func (boltz *Boltz) GetSubmarinePairs() (response SubmarinePairs, err error) {
+	err = boltz.sendGetRequest("/v2/swap/submarine", &response)
+
+	return response, err
+}
+
+func (boltz *Boltz) GetReversePairs() (response ReversePairs, err error) {
+	err = boltz.sendGetRequest("/v2/swap/reverse", &response)
+
+	return response, err
 }
 
 func (boltz *Boltz) GetNodes() (*GetNodesResponse, error) {
@@ -278,7 +355,21 @@ func (boltz *Boltz) BroadcastTransaction(transactionHex string, currency Currenc
 
 func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, error) {
 	var response CreateSwapResponse
-	err := boltz.sendPostRequest("/createswap", request, &response)
+	err := boltz.sendPostRequest("/v2/swap/submarine", request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) RefundSwap(request RefundSwapRequest) (*PartialSignature, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, errors.New("partial signatures are disabled")
+	}
+	var response PartialSignature
+	err := boltz.sendPostRequest("/v2/swap/submarine/refund", request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -311,7 +402,21 @@ func (boltz *Boltz) SetInvoice(request SetInvoiceRequest) (*SetInvoiceResponse, 
 
 func (boltz *Boltz) CreateReverseSwap(request CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {
 	var response CreateReverseSwapResponse
-	err := boltz.sendPostRequest("/createswap", request, &response)
+	err := boltz.sendPostRequest("/v2/swap/reverse", request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) ClaimReverseSwap(request ClaimReverseSwapRequest) (*PartialSignature, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, errors.New("partial signatures are disabled")
+	}
+	var response PartialSignature
+	err := boltz.sendPostRequest("/v2/swap/reverse/claim", request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))

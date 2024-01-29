@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/utils"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -16,13 +18,15 @@ import (
 
 type Swap struct {
 	Id                  string
-	PairId              boltz.Pair
+	Pair                boltz.Pair
 	ChanIds             []lightning.ChanId
 	State               boltzrpc.SwapState
 	CreatedAt           time.Time
 	Error               string
 	Status              boltz.SwapUpdateEvent
 	PrivateKey          *btcec.PrivateKey
+	SwapTree            *boltz.SwapTree
+	ClaimPubKey         *btcec.PublicKey
 	Preimage            []byte
 	RedeemScript        []byte
 	Invoice             string
@@ -42,12 +46,14 @@ type Swap struct {
 
 type SwapSerialized struct {
 	Id                  string
-	PairId              string
+	From                string
+	To                  string
 	ChanIds             string
 	State               string
 	Error               string
 	Status              string
 	PrivateKey          string
+	SwapTree            string
 	Preimage            string
 	RedeemScript        string
 	Invoice             string
@@ -74,7 +80,8 @@ func (swap *Swap) Serialize() SwapSerialized {
 
 	return SwapSerialized{
 		Id:                  swap.Id,
-		PairId:              string(swap.PairId),
+		From:                string(swap.Pair.From),
+		To:                  string(swap.Pair.To),
 		ChanIds:             formatJson(swap.ChanIds),
 		State:               boltzrpc.SwapState_name[int32(swap.State)],
 		Error:               swap.Error,
@@ -98,28 +105,40 @@ func (swap *Swap) Serialize() SwapSerialized {
 	}
 }
 
+func (swap *Swap) InitTree() error {
+	return swap.SwapTree.Init(
+		swap.Pair.From == boltz.CurrencyLiquid,
+		swap.PrivateKey,
+		swap.ClaimPubKey,
+	)
+}
+
 func parseSwap(rows *sql.Rows) (*Swap, error) {
 	var swap Swap
 
 	var status string
-	var privateKey string
+	privateKey := PrivateKeyScanner{}
 	var preimage string
 	var redeemScript string
-	var pairId string
-	var blindingKey sql.NullString
+	blindingKey := PrivateKeyScanner{Nullable: true}
 	var createdAt, serviceFee, onchainFee sql.NullInt64
+	swapTree := JsonScanner[*boltz.SerializedTree]{Nullable: true}
+	claimPubKey := PublicKeyScanner{Nullable: true}
 	chanIds := JsonScanner[[]lightning.ChanId]{Nullable: true}
 
 	err := scanRow(
 		rows,
 		map[string]interface{}{
 			"id":                  &swap.Id,
-			"pairId":              &pairId,
+			"fromCurrency":        &swap.Pair.From,
+			"toCurrency":          &swap.Pair.To,
 			"chanIds":             &chanIds,
 			"state":               &swap.State,
 			"error":               &swap.Error,
 			"status":              &status,
 			"privateKey":          &privateKey,
+			"claimPubKey":         &claimPubKey,
+			"swapTree":            &swapTree,
 			"preimage":            &preimage,
 			"redeemScript":        &redeemScript,
 			"invoice":             &swap.Invoice,
@@ -140,19 +159,17 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	)
 
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
 	swap.ServiceFee = parseNullInt(serviceFee)
 	swap.OnchainFee = parseNullInt(onchainFee)
-
 	swap.Status = boltz.ParseEvent(status)
 	swap.ChanIds = chanIds.Value
-	swap.PrivateKey, err = ParsePrivateKey(privateKey)
-
-	if err != nil {
-		return nil, err
-	}
+	swap.PrivateKey = privateKey.Value
+	swap.BlindingKey = blindingKey.Value
+	swap.ClaimPubKey = claimPubKey.Value
 
 	if preimage != "" {
 		swap.Preimage, err = hex.DecodeString(preimage)
@@ -168,21 +185,15 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 		return nil, err
 	}
 
-	swap.PairId, err = boltz.ParsePair(pairId)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if blindingKey.Valid {
-		swap.BlindingKey, err = ParsePrivateKey(blindingKey.String)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if createdAt.Valid {
 		swap.CreatedAt = ParseTime(createdAt.Int64)
+	}
+
+	if swapTree.Value != nil {
+		swap.SwapTree = swapTree.Value.Deserialize()
+		if err := swap.InitTree(); err != nil {
+			return nil, fmt.Errorf("could not initialize swap tree: %w", err)
+		}
 	}
 
 	return &swap, err
@@ -247,16 +258,19 @@ func (database *Database) QueryFailedSwaps(since time.Time) ([]Swap, error) {
 	return database.QuerySwaps(SwapQuery{State: &state, Since: since})
 }
 
-func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, pair boltz.Pair) ([]Swap, error) {
+func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, currency boltz.Currency) ([]Swap, error) {
 	height := strconv.FormatUint(uint64(currentBlockHeight), 10)
-	return database.querySwaps("SELECT * FROM swaps WHERE (state = ? OR state = ? OR state = ?) AND timeoutBlockheight <= ? AND pairId = ?", boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, height, pair)
+	return database.querySwaps(
+		"SELECT * FROM swaps WHERE (state = ? OR state = ? OR state = ?) AND timeoutBlockheight <= ? AND fromCurrency = ?",
+		boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, height, currency,
+	)
 }
 
 const insertSwapStatement = `
-INSERT INTO swaps (id, pairId, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address,
+INSERT INTO swaps (id, fromCurrency, toCurrency, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address,
                    expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress,
-                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, autoSend)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, autoSend, claimPubKey, swapTree)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateSwap(swap Swap) error {
@@ -269,7 +283,8 @@ func (database *Database) CreateSwap(swap Swap) error {
 	_, err := database.Exec(
 		insertSwapStatement,
 		swap.Id,
-		swap.PairId,
+		swap.Pair.From,
+		swap.Pair.To,
 		formatJson(swap.ChanIds),
 		swap.State,
 		swap.Error,
@@ -291,6 +306,8 @@ func (database *Database) CreateSwap(swap Swap) error {
 		swap.ServiceFeePercent,
 		swap.OnchainFee,
 		swap.AutoSend,
+		formatPublicKey(swap.ClaimPubKey),
+		formatJson(swap.SwapTree.Serialize()),
 	)
 	return err
 }

@@ -62,13 +62,13 @@ type Onchain struct {
 	Wallets []Wallet
 }
 
-func (onchain *Onchain) GetCurrency(pair boltz.Pair) (*Currency, error) {
-	if pair == boltz.PairBtc && onchain.Btc != nil {
+func (onchain *Onchain) GetCurrency(currency boltz.Currency) (*Currency, error) {
+	if currency == boltz.CurrencyBtc && onchain.Btc != nil {
 		return onchain.Btc, nil
-	} else if pair == boltz.PairLiquid && onchain.Liquid != nil {
+	} else if currency == boltz.CurrencyLiquid && onchain.Liquid != nil {
 		return onchain.Liquid, nil
 	}
-	return nil, errors.New("no currency for pair")
+	return nil, errors.New("invalid currency")
 }
 
 func (onchain *Onchain) getWallet(name string, currency boltz.Currency, readonly bool, allowMultiple bool) (Wallet, error) {
@@ -117,27 +117,27 @@ func (onchain *Onchain) GetAnyWallet(currency boltz.Currency, readonly bool) (wa
 	return onchain.getWallet("", currency, readonly, true)
 }
 
-func (onchain *Onchain) EstimateFee(pair boltz.Pair, confTarget int32) (float64, error) {
-	currency, err := onchain.GetCurrency(pair)
+func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (float64, error) {
+	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return 0, err
 	}
 
 	var minFee float64
-	if currency == onchain.Liquid {
+	if chain == onchain.Liquid {
 		minFee = 0.11
-	} else if currency == onchain.Btc {
+	} else if chain == onchain.Btc {
 		minFee = 1.1
 	}
 
-	if currency.Fees != nil {
-		fee, err := currency.Fees.EstimateFee(confTarget)
+	if chain.Fees != nil {
+		fee, err := chain.Fees.EstimateFee(confTarget)
 		if err == nil {
 			return math.Max(minFee, fee), nil
 		}
 		logger.Warn("Fee provider failed. Falling back to wallet fee estimation: " + err.Error())
 	}
-	wallet, err := onchain.GetAnyWallet(boltz.CurrencyForPair(pair), true)
+	wallet, err := onchain.GetAnyWallet(currency, true)
 	if err == nil {
 		var fee float64
 		fee, err = wallet.EstimateFee(confTarget)
@@ -145,25 +145,25 @@ func (onchain *Onchain) EstimateFee(pair boltz.Pair, confTarget int32) (float64,
 			return math.Max(minFee, fee), err
 		}
 	} else {
-		err = fmt.Errorf("no fee provider for %s", pair)
+		err = fmt.Errorf("no fee provider for %s", currency)
 	}
-	if err != nil && pair == boltz.PairLiquid {
+	if err != nil && currency == boltz.CurrencyLiquid {
 		logger.Warnf("Could not get fee for liquid, falling back to hardcoded min fee: %s", err.Error())
 		return minFee, nil
 	}
 	return 0, err
 }
 
-func (onchain *Onchain) GetTransactionFee(pair boltz.Pair, txId string) (uint64, error) {
-	currency, err := onchain.GetCurrency(pair)
+func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) (uint64, error) {
+	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return 0, err
 	}
-	hex, err := currency.Tx.GetTxHex(txId)
+	hex, err := chain.Tx.GetTxHex(txId)
 	if err != nil {
 		return 0, err
 	}
-	if currency == onchain.Btc {
+	if chain == onchain.Btc {
 		transaction, err := boltz.NewBtcTxFromHex(hex)
 		if err != nil {
 			return 0, err
@@ -175,7 +175,7 @@ func (onchain *Onchain) GetTransactionFee(pair boltz.Pair, txId string) (uint64,
 			id := prevOut.Hash.String()
 			inputTx, ok := transactions[id]
 			if !ok {
-				inputTxHex, err := currency.Tx.GetTxHex(id)
+				inputTxHex, err := chain.Tx.GetTxHex(id)
 				if err != nil {
 					return 0, err
 				}
@@ -191,7 +191,7 @@ func (onchain *Onchain) GetTransactionFee(pair boltz.Pair, txId string) (uint64,
 			fee -= uint64(output.Value)
 		}
 		return fee, nil
-	} else if currency == onchain.Liquid {
+	} else if chain == onchain.Liquid {
 		liquidTx, err := boltz.NewLiquidTxFromHex(hex, nil)
 		if err != nil {
 			return 0, err
@@ -207,24 +207,24 @@ func (onchain *Onchain) GetTransactionFee(pair boltz.Pair, txId string) (uint64,
 	return 0, fmt.Errorf("unknown transaction type")
 }
 
-func (onchain *Onchain) GetBlockListener(pair boltz.Pair) BlockListener {
-	wallet, err := onchain.GetAnyWallet(boltz.CurrencyForPair(pair), true)
+func (onchain *Onchain) GetBlockListener(currency boltz.Currency) BlockListener {
+	wallet, err := onchain.GetAnyWallet(currency, true)
 	if err == nil {
 		return wallet
 	}
 
-	currency, err := onchain.GetCurrency(pair)
+	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return nil
 	}
 
-	return currency.Listener
+	return chain.Listener
 }
 
-func (onchain *Onchain) GetBlockHeight(pair boltz.Pair) (uint32, error) {
-	listener := onchain.GetBlockListener(pair)
+func (onchain *Onchain) GetBlockHeight(currency boltz.Currency) (uint32, error) {
+	listener := onchain.GetBlockListener(currency)
 	if listener != nil {
 		return listener.GetBlockHeight()
 	}
-	return 0, fmt.Errorf("no block listener for pair %s", pair)
+	return 0, fmt.Errorf("no block listener for currency %s", currency)
 }

@@ -6,14 +6,14 @@ import (
 	"errors"
 	"math"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/vulpemventures/go-elements/address"
 	"github.com/vulpemventures/go-elements/psetv2"
 
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/vulpemventures/go-elements/confidential"
-	"github.com/vulpemventures/go-elements/payment"
 	liquidtx "github.com/vulpemventures/go-elements/transaction"
 )
 
@@ -48,22 +48,12 @@ func NewLiquidTxFromHex(hexString string, ourOutputBlindingKey *btcec.PrivateKey
 }
 
 func (transaction *LiquidTransaction) FindVout(network *Network, addressToFind string) (uint32, uint64, error) {
+	info, err := address.FromConfidential(addressToFind)
+	if err != nil {
+		return 0, 0, err
+	}
 	for vout, output := range transaction.Outputs {
-		p, err := payment.FromScript(output.Script, network.Liquid, transaction.OurOutputBlindingKey.PubKey())
-
-		// Just ignore outputs we can't decode
-		if err != nil {
-			continue
-		}
-
-		outputAddr, err := p.ConfidentialWitnessScriptHash()
-
-		// Just ignore outputs we can't decode
-		if err != nil {
-			continue
-		}
-
-		if outputAddr == addressToFind {
+		if bytes.Equal(info.Script, output.Script) {
 			unblinded, err := confidential.UnblindOutputWithKey(output, transaction.OurOutputBlindingKey.Serialize())
 			if err != nil {
 				return 0, 0, errors.New("Failed to unblind lockup tx: " + err.Error())
@@ -79,6 +69,29 @@ func (transaction *LiquidTransaction) FindVout(network *Network, addressToFind s
 func (transaction *LiquidTransaction) VSize() uint64 {
 	witnessSize := transaction.SerializeSize(true, true) - transaction.SerializeSize(false, true)
 	return uint64(transaction.SerializeSize(false, true)) + uint64(math.Ceil(float64(witnessSize)/4))
+}
+
+func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, output *OutputDetails, index int, cooperative bool) [32]byte {
+	lockupTx := output.LockupTransaction.(*LiquidTransaction)
+	txOut := lockupTx.Outputs[output.Vout]
+
+	var leafHash *chainhash.Hash
+	if !cooperative {
+		hash := output.SwapTree.GetLeafHash(output.IsRefund())
+		leafHash = &hash
+	}
+	genesisHash, _ := chainhash.NewHashFromStr(network.Liquid.GenesisBlockHash)
+
+	return transaction.HashForWitnessV1(
+		index,
+		[][]byte{txOut.Script},
+		[][]byte{txOut.Asset},
+		[][]byte{txOut.Value},
+		sigHashType,
+		genesisHash,
+		leafHash,
+		nil,
+	)
 }
 
 func constructLiquidTransaction(network *Network, outputs []OutputDetails, outputAddressRaw string, fee uint64) (Transaction, error) {
@@ -113,10 +126,6 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 	if err != nil {
 		return nil, err
 	}
-	signer, err := psetv2.NewSigner(p)
-	if err != nil {
-		return nil, err
-	}
 
 	var inPrivateBlindingKeys [][]byte
 
@@ -136,19 +145,11 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 			return nil, err
 		}
 
-		if err := updater.AddInSighashType(i, txscript.SigHashAll); err != nil {
-			return nil, err
-		}
-
 		if err := updater.AddInWitnessUtxo(i, out); err != nil {
 			return nil, err
 		}
 
 		if err := updater.AddInUtxoRangeProof(i, out.RangeProof); err != nil {
-			return nil, err
-		}
-
-		if err := updater.AddInWitnessScript(i, output.RedeemScript); err != nil {
 			return nil, err
 		}
 
@@ -234,30 +235,33 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 
 	// Construct the signature script and witnesses and sign the inputs
 	for i, output := range outputs {
-		if output.OutputType != Legacy {
-			lockupTx := output.LockupTransaction.(*LiquidTransaction)
-			txOut := lockupTx.Outputs[output.Vout]
-
-			sigHash := tx.HashForWitnessV0(i, output.RedeemScript, txOut.Value, txscript.SigHashAll)
-
-			signature := ecdsa.Sign(output.PrivateKey, sigHash[:])
-
-			sigWithHashType := append(signature.Serialize(), byte(txscript.SigHashAll))
-
-			pubKey := output.PrivateKey.PubKey().SerializeCompressed()
-			if err := signer.SignInput(i, sigWithHashType, pubKey, nil, nil); err != nil {
-				return nil, err
-			}
-
-			valid, err := p.ValidateInputSignatures(i)
+		if output.Cooperative {
+			p.Inputs[i].FinalScriptWitness, err = writeTxWitness(dummySignature)
 			if err != nil {
 				return nil, err
 			}
-			if !valid {
-				return nil, errors.New("invalid signatures")
+		} else {
+			sigHash := liquidTaprootHash(tx, network, &output, i, false)
+			signature, err := schnorr.Sign(output.PrivateKey, sigHash[:])
+			if err != nil {
+				return nil, err
 			}
 
-			p.Inputs[i].FinalScriptWitness, _ = writeTxWitness([][]byte{sigWithHashType, output.Preimage, output.RedeemScript})
+			if !signature.Verify(sigHash[:], output.PrivateKey.PubKey()) {
+				return nil, errors.New("Signature verification failed")
+			}
+
+			tree := output.SwapTree
+			isRefund := output.IsRefund()
+			controlBlock, err := tree.GetControlBlock(isRefund)
+			if err != nil {
+				return nil, err
+			}
+
+			p.Inputs[i].FinalScriptWitness, err = writeTxWitness(signature.Serialize(), output.Preimage, tree.GetLeafScript(isRefund), controlBlock)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -271,26 +275,7 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 	}, nil
 }
 
-func LiquidWitnessScriptHashAddress(net *Network, redeemScript []byte, blindingKey *btcec.PublicKey) (string, error) {
-	outputScript, err := createP2wshScript(redeemScript)
-	if err != nil {
-		return "", err
-	}
-
-	p, err := payment.FromScript(outputScript, net.Liquid, blindingKey)
-	if err != nil {
-		return "", err
-	}
-
-	lockupAddress, err := p.ConfidentialWitnessScriptHash()
-	if err != nil {
-		return "", err
-	}
-
-	return lockupAddress, nil
-}
-
-func writeTxWitness(wit [][]byte) ([]byte, error) {
+func writeTxWitness(wit ...[]byte) ([]byte, error) {
 	b := bytes.NewBuffer(nil)
 
 	if err := b.WriteByte(byte(len(wit))); err != nil {
@@ -298,12 +283,14 @@ func writeTxWitness(wit [][]byte) ([]byte, error) {
 	}
 
 	for _, item := range wit {
-		if err := b.WriteByte(byte(len(item))); err != nil {
-			return nil, err
-		}
-		if _, err := b.Write(item); err != nil {
-			return nil, err
+		if len(item) > 0 {
+			if err := b.WriteByte(byte(len(item))); err != nil {
+				return nil, err
+			}
+			if _, err := b.Write(item); err != nil {
+				return nil, err
 
+			}
 		}
 	}
 	return b.Bytes(), nil

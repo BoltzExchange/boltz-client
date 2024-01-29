@@ -27,15 +27,15 @@ func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
 
 // TODO: abstract interactions with chain (querying and broadcasting transactions) into interface to be able to switch between Boltz API and bitcoin core
 
-func (nursery *Nursery) startBlockListener(pair boltz.Pair) {
-	blockNotifier := nursery.registerBlockListener(pair)
+func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
+	blockNotifier := nursery.registerBlockListener(currency)
 
 	go func() {
 		for newBlock := range blockNotifier {
 			if nursery.stopped {
 				return
 			}
-			swapsToRefund, err := nursery.database.QueryRefundableSwaps(newBlock.Height, pair)
+			swapsToRefund, err := nursery.database.QueryRefundableSwaps(newBlock.Height, currency)
 
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
@@ -71,10 +71,10 @@ func (nursery *Nursery) startBlockListener(pair boltz.Pair) {
 				}
 
 				if refundAddress == "" {
-					wallet, err := nursery.onchain.GetAnyWallet(boltz.CurrencyForPair(pair), true)
+					wallet, err := nursery.onchain.GetAnyWallet(currency, true)
 					if err != nil {
-						message := "%d Swaps can not be refunded because they got no refund address and no wallet for pair %s is available! Set up a wallet to refund"
-						logger.Warnf(message, len(refundedSwaps), pair)
+						message := "%d Swaps can not be refunded because they got no refund address and no wallet for currency %s is available! Set up a wallet to refund"
+						logger.Warnf(message, len(refundedSwaps), currency)
 						continue
 					}
 					refundAddress, err = wallet.NewAddress()
@@ -89,9 +89,7 @@ func (nursery *Nursery) startBlockListener(pair boltz.Pair) {
 					continue
 				}
 
-				// TODO: make sure that all refund swaps are from the same pair
-				pair := refundedSwaps[0].PairId
-				feeSatPerVbyte, err := nursery.getFeeEstimation(pair)
+				feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
 
 				if err != nil {
 					logger.Error("Could not get fee estimation: " + err.Error())
@@ -101,7 +99,7 @@ func (nursery *Nursery) startBlockListener(pair boltz.Pair) {
 				logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
 
 				refundTransaction, totalRefundFee, err := boltz.ConstructTransaction(
-					pair,
+					currency,
 					nursery.network,
 					refundOutputs,
 					refundAddress,
@@ -115,8 +113,8 @@ func (nursery *Nursery) startBlockListener(pair boltz.Pair) {
 				refundTransactionId := refundTransaction.Hash()
 				logger.Infof("Constructed refund transaction for %d swaps: %s", len(refundOutputs), refundTransactionId)
 
-				// TODO: right pair?
-				err = nursery.broadcastTransaction(refundTransaction, pair)
+				// TODO: right currency?
+				err = nursery.broadcastTransaction(refundTransaction, currency)
 
 				if err != nil {
 					logger.Error("Could not finalize refund transaction: " + err.Error())
@@ -178,8 +176,6 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetail
 	return &boltz.OutputDetails{
 		LockupTransaction:  lockupTransaction,
 		Vout:               lockupVout,
-		OutputType:         boltz.Compatibility,
-		RedeemScript:       swap.RedeemScript,
 		PrivateKey:         swap.PrivateKey,
 		Preimage:           []byte{},
 		TimeoutBlockHeight: swap.TimoutBlockHeight,
@@ -281,7 +277,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			}
 
 			if swap.AutoSend {
-				fee, err := nursery.onchain.GetTransactionFee(swap.PairId, swap.LockupTransactionId)
+				fee, err := nursery.onchain.GetTransactionFee(swap.Pair.From, swap.LockupTransactionId)
 				if err != nil {
 					handleError("could not get lockup transaction fee: " + err.Error())
 					return
@@ -323,7 +319,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			return
 		}
 
-		blockHeight, err := nursery.onchain.GetBlockHeight(swap.PairId)
+		blockHeight, err := nursery.onchain.GetBlockHeight(swap.Pair.From)
 
 		if err != nil {
 			handleError("Could not get block height: " + err.Error())
@@ -333,8 +329,8 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		invoice, err := nursery.lightning.CreateInvoice(
 			int64(swapRates.SubmarineSwap.InvoiceAmount),
 			swap.Preimage,
-			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-blockHeight, utils.GetBlockTime(swap.PairId)),
-			utils.GetSwapMemo(utils.CurrencyFromPair(swap.PairId)),
+			boltz.CalculateInvoiceExpiry(swap.TimoutBlockHeight-blockHeight, swap.Pair.From),
+			utils.GetSwapMemo(string(swap.Pair.From)),
 		)
 
 		if err != nil {

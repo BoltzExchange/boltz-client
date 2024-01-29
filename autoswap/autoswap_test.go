@@ -472,12 +472,12 @@ func TestDismissedChannels(t *testing.T) {
 			db := swapper.database
 
 			for _, swap := range tc.swaps {
-				swap.PairId = boltz.PairBtc
+				swap.Pair = boltz.PairBtc
 				require.NoError(t, db.CreateSwap(swap))
 			}
 
 			for _, reverseSwap := range tc.reverseSwaps {
-				reverseSwap.PairId = boltz.PairBtc
+				reverseSwap.Pair = boltz.PairBtc
 				require.NoError(t, db.CreateReverseSwap(reverseSwap))
 			}
 

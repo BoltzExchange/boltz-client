@@ -24,9 +24,7 @@ func (boltz *Boltz) GetInfo() (*boltzrpc.GetInfoResponse, error) {
 }
 
 func (boltz *Boltz) GetServiceInfo(pair string) (*boltzrpc.GetServiceInfoResponse, error) {
-	return boltz.Client.GetServiceInfo(boltz.Ctx, &boltzrpc.GetServiceInfoRequest{
-		PairId: pair,
-	})
+	return boltz.Client.GetServiceInfo(boltz.Ctx, &boltzrpc.GetServiceInfoRequest{})
 }
 
 func (boltz *Boltz) ListSwaps(request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {

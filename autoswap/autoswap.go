@@ -78,7 +78,7 @@ func (swapper *AutoSwapper) SetConfig(cfg *Config) error {
 	if cfg.Type != "" {
 		message += " of type " + string(cfg.Type)
 	}
-	message += " for pair " + string(cfg.pair)
+	message += " for currency " + string(cfg.Currency)
 
 	logger.Info(message)
 	swapper.cfg = cfg
@@ -234,7 +234,7 @@ func (swapper *AutoSwapper) GetSwapRecommendations() ([]*SwapRecommendation, err
 }
 
 func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address string) error {
-	pair := string(swapper.cfg.pair)
+	currency := boltzrpc.Currency_Btc
 	var chanIds []string
 	if chanId := recommendation.Channel.GetId(); chanId != 0 {
 		chanIds = append(chanIds, chanId.ToCln())
@@ -245,14 +245,20 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 			Amount:         int64(recommendation.Amount),
 			Address:        address,
 			AcceptZeroConf: swapper.cfg.AcceptZeroConf,
-			PairId:         pair,
-			ChanIds:        chanIds,
-			Wallet:         &swapper.cfg.Wallet,
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_Btc,
+				To:   currency,
+			},
+			ChanIds: chanIds,
+			Wallet:  &swapper.cfg.Wallet,
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
 		err = swapper.ExecuteSwap(&boltzrpc.CreateSwapRequest{
-			Amount:   int64(recommendation.Amount),
-			PairId:   pair,
+			Amount: int64(recommendation.Amount),
+			Pair: &boltzrpc.Pair{
+				From: currency,
+				To:   boltzrpc.Currency_Btc,
+			},
 			ChanIds:  chanIds,
 			AutoSend: true,
 			Wallet:   &swapper.cfg.Wallet,
@@ -300,7 +306,7 @@ func (swapper *AutoSwapper) Start() error {
 			logger.Debugf("Got new address %v from wallet %v", address, wallet.Name())
 		}
 	} else if address == "" {
-		err = fmt.Errorf("neither external address or wallet is available for pair %s: %v", cfg.pair, err)
+		err = fmt.Errorf("neither external address or wallet is available for currency %s: %v", cfg.Currency, err)
 	} else if normalSwaps {
 		err = fmt.Errorf("normal swaps require a wallet: %v", err)
 	}

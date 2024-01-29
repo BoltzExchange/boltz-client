@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/btcsuite/btcd/btcutil"
@@ -49,21 +50,35 @@ func (transaction *BtcTransaction) VSize() uint64 {
 }
 
 func (transaction *BtcTransaction) FindVout(network *Network, addressToFind string) (uint32, uint64, error) {
+	find, err := btcutil.DecodeAddress(addressToFind, network.Btc)
+	if err != nil {
+		return 0, 0, err
+	}
 	for vout, output := range transaction.MsgTx().TxOut {
-		_, outputAddresses, _, err := txscript.ExtractPkScriptAddrs(output.PkScript, network.Btc)
-
-		// Just ignore outputs we can't decode
-		if err != nil {
-			continue
-		}
-
-		for _, outputAddress := range outputAddresses {
-			if outputAddress.EncodeAddress() == addressToFind {
-				return uint32(vout), uint64(output.Value), nil
-			}
+		if bytes.Equal(output.PkScript, find.ScriptAddress()) {
+			return uint32(vout), uint64(output.Value), nil
 		}
 	}
 	return 0, 0, errors.New("Could not find address in transaction")
+}
+
+func btcTaprootHash(transaction Transaction, output *OutputDetails, index int) ([32]byte, error) {
+	lockupTx := output.LockupTransaction.(*BtcTransaction)
+	txOut := lockupTx.MsgTx().TxOut[output.Vout]
+
+	tx := transaction.(*BtcTransaction).MsgTx()
+
+	prevoutFetcher := txscript.NewCannedPrevOutputFetcher(txOut.PkScript, txOut.Value)
+	sigHashes := txscript.NewTxSigHashes(tx, prevoutFetcher)
+
+	hash, err := txscript.CalcTaprootSignatureHash(
+		sigHashes,
+		sigHashType,
+		tx,
+		index,
+		prevoutFetcher,
+	)
+	return [32]byte(hash), err
 }
 
 func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAddressRaw string, fee uint64) (Transaction, error) {
@@ -108,70 +123,44 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 
 	// Construct the signature script and witnesses and sign the inputs
 	for i, output := range outputs {
-		lockupTx := output.LockupTransaction.(*BtcTransaction)
-		txOut := lockupTx.MsgTx().TxOut[output.Vout]
+		if output.Cooperative {
+			// dummy signature for accurate fee estimation - actual signature is added later
+			transaction.TxIn[i].Witness = wire.TxWitness{dummySignature}
+		} else {
+			lockupTx := output.LockupTransaction.(*BtcTransaction)
+			txOut := lockupTx.MsgTx().TxOut[output.Vout]
 
-		switch output.OutputType {
-		case Legacy:
-			// Set the signed signature script for legacy output
-			signature, err := txscript.RawTxInSignature(
-				transaction,
-				i,
-				output.RedeemScript,
-				txscript.SigHashAll,
-				output.PrivateKey,
-			)
-
-			if err != nil {
-				return nil, err
-			}
-
-			signatureScriptBuilder := txscript.NewScriptBuilder()
-			signatureScriptBuilder.AddData(signature)
-			signatureScriptBuilder.AddData(output.Preimage)
-			signatureScriptBuilder.AddData(output.RedeemScript)
-
-			signatureScript, err := signatureScriptBuilder.Script()
-
-			if err != nil {
-				return nil, err
-			}
-
-			transaction.TxIn[i].SignatureScript = signatureScript
-
-		case Compatibility:
-			// Set the signature script for compatibility outputs
-			signatureScriptBuilder := txscript.NewScriptBuilder()
-			signatureScriptBuilder.AddData(createNestedP2shScript(output.RedeemScript))
-
-			signatureScript, err := signatureScriptBuilder.Script()
-
-			if err != nil {
-				return nil, err
-			}
-
-			transaction.TxIn[i].SignatureScript = signatureScript
-		}
-
-		// Add the signed witness in case the output is not a legacy one
-		if output.OutputType != Legacy {
 			prevoutFetcher := txscript.NewCannedPrevOutputFetcher(txOut.PkScript, txOut.Value)
-			signatureHash := txscript.NewTxSigHashes(transaction, prevoutFetcher)
-			signature, err := txscript.RawTxInWitnessSignature(
+			sigHashes := txscript.NewTxSigHashes(transaction, prevoutFetcher)
+
+			isRefund := output.IsRefund()
+			leaf := output.SwapTree.GetLeaf(isRefund)
+
+			signature, err := txscript.RawTxInTapscriptSignature(
 				transaction,
-				signatureHash,
+				sigHashes,
 				i,
 				txOut.Value,
-				output.RedeemScript,
-				txscript.SigHashAll,
+				txOut.PkScript,
+				leaf,
+				sigHashType,
 				output.PrivateKey,
 			)
-
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("could not calculate tapscript signature: block %w", err)
 			}
 
-			transaction.TxIn[i].Witness = wire.TxWitness{signature, output.Preimage, output.RedeemScript}
+			witness := wire.TxWitness{signature}
+			if !isRefund {
+				witness = append(witness, output.Preimage)
+			}
+
+			controlBlockBytes, err := output.SwapTree.GetControlBlock(isRefund)
+			if err != nil {
+				return nil, fmt.Errorf("could not serialize control block: %w", err)
+			}
+
+			transaction.TxIn[i].Witness = append(witness, leaf.Script, controlBlockBytes)
 		}
 	}
 

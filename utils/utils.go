@@ -2,17 +2,11 @@ package utils
 
 import (
 	"bytes"
-	"golang.org/x/exp/constraints"
 	"os"
 	"strconv"
-	"strings"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
+	"golang.org/x/exp/constraints"
 )
-
-func CurrencyFromPair(pair boltz.Pair) string {
-	return strings.Split(string(pair), "/")[0]
-}
 
 // TODO: test this on real network
 func FormatMilliSat(milliSat int64) string {

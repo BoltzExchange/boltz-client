@@ -14,7 +14,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 3
+const latestSchemaVersion = 4
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -180,7 +180,11 @@ func (database *Database) performMigration(oldVersion int) error {
 	case 2:
 		logMigration(oldVersion)
 
-		_, err := database.Exec("ALTER TABLE swaps ADD COLUMN pairId VARCHAR")
+		_, err := database.Exec("ALTER TABLE swaps ADD COLUMN fromCurrency VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN toCurrency VARCHAR")
 		if err != nil {
 			return err
 		}
@@ -226,7 +230,11 @@ func (database *Database) performMigration(oldVersion int) error {
 			return err
 		}
 
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN pairId VARCHAR")
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN fromCurrency VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN toCurrency VARCHAR")
 		if err != nil {
 			return err
 		}
@@ -285,6 +293,26 @@ func (database *Database) performMigration(oldVersion int) error {
 
 		_, err = database.Exec("UPDATE version SET version = 3")
 		if err != nil {
+			return err
+		}
+
+		return database.postMigration(oldVersion)
+
+	case 3:
+		logMigration(oldVersion)
+
+		const migration = `
+		ALTER TABLE swaps ADD COLUMN swapTree JSON;
+		ALTER TABLE swaps ADD COLUMN claimPubKey VARCHAR;
+		ALTER TABLE swaps ADD COLUMN fromCurrency VARCHAR;
+		ALTER TABLE swaps ADD COLUMN toCurrency VARCHAR;
+
+		ALTER TABLE reverseSwaps ADD COLUMN swapTree JSON;
+		ALTER TABLE reverseSwaps ADD COLUMN refundPubKey VARCHAR;
+		ALTER TABLE reverseSwaps ADD COLUMN fromCurrency VARCHAR;
+		ALTER TABLE reverseSwaps ADD COLUMN toCurrency VARCHAR;
+		`
+		if _, err := database.Exec(migration); err != nil {
 			return err
 		}
 

@@ -95,11 +95,11 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 
 	blockHeights := make(map[string]uint32)
 
-	blockHeights[string(boltz.CurrencyBtc)], err = server.onchain.GetBlockHeight(boltz.PairBtc)
+	blockHeights[string(boltz.CurrencyBtc)], err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
 	if err != nil {
 		logger.Infof("Failed to get block height for btc: %v", err)
 	}
-	blockHeights[string(boltz.CurrencyLiquid)], err = server.onchain.GetBlockHeight(boltz.PairLiquid)
+	blockHeights[string(boltz.CurrencyLiquid)], err = server.onchain.GetBlockHeight(boltz.CurrencyLiquid)
 	if err != nil {
 		logger.Infof("Failed to get block height for liquid: %v", err)
 	}
@@ -133,11 +133,7 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 }
 
 func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
-	pair, err := boltz.ParsePair(request.PairId)
-	if err != nil {
-		return nil, handleError(err)
-	}
-	fees, limits, err := server.getPairs(pair)
+	fees, limits, err := server.getPairs(boltz.PairBtc)
 
 	if err != nil {
 		return nil, handleError(err)
@@ -152,6 +148,21 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *bolt
 	}, nil
 }
 
+func ParseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
+	if grpcCurrency == boltzrpc.Currency_Btc {
+		return boltz.CurrencyBtc
+	} else {
+		return boltz.CurrencyLiquid
+	}
+}
+
+func ParsePair(grpcPair *boltzrpc.Pair) (pair boltz.Pair) {
+	return boltz.Pair{
+		From: ParseCurrency(grpcPair.From),
+		To:   ParseCurrency(grpcPair.To),
+	}
+}
+
 func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
 	response := &boltzrpc.ListSwapsResponse{}
 
@@ -160,11 +171,8 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 		State:  request.State,
 	}
 
-	if request.PairId != nil {
-		parsed, err := boltz.ParsePair(*request.PairId)
-		if err != nil {
-			return nil, handleError(err)
-		}
+	if request.Pair != nil {
+		parsed := ParsePair(request.Pair)
 		args.Pair = &parsed
 	}
 
@@ -240,7 +248,12 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 }
 
 func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
-	response, err := server.createSwap(false, &boltzrpc.CreateSwapRequest{PairId: request.PairId})
+	response, err := server.createSwap(false, &boltzrpc.CreateSwapRequest{
+		Pair: &boltzrpc.Pair{
+			From: boltzrpc.Currency_Btc,
+			To:   boltzrpc.Currency_Btc,
+		},
+	})
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -261,22 +274,24 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		return nil, handleError(err)
 	}
 
-	pair, err := boltz.ParsePair(request.PairId)
+	pair := ParsePair(request.Pair)
+
+	submarinePair, err := server.getSubmarinePair(pair)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
 	createSwap := boltz.CreateSwapRequest{
-		Type:            boltz.NormalSwap,
-		PairId:          string(pair),
-		OrderSide:       "sell",
+		From:            "BTC",
+		To:              "BTC",
+		PairHash:        submarinePair.Hash,
 		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
 		ReferralId:      referralId,
 	}
 
 	var preimage, preimageHash []byte
 	if request.Amount != 0 {
-		invoice, err := server.lightning.CreateInvoice(request.Amount, nil, 0, utils.GetSwapMemo(request.PairId))
+		invoice, err := server.lightning.CreateInvoice(request.Amount, nil, 0, utils.GetSwapMemo(string(pair.From)))
 		if err != nil {
 			return nil, handleError(err)
 		}
@@ -290,13 +305,13 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 
 		logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
 
-		createSwap.PreimageHash = hex.EncodeToString(preimageHash)
+		//createSwap.PreimageHash = hex.EncodeToString(preimageHash)
 		if err != nil {
 			return nil, handleError(err)
 		}
 	}
 
-	wallet, err := server.onchain.GetWallet(request.GetWallet(), boltz.CurrencyForPair(pair), false)
+	wallet, err := server.onchain.GetWallet(request.GetWallet(), pair.From, false)
 	if err != nil {
 		if request.AutoSend {
 			return nil, handleError(err)
@@ -306,41 +321,35 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		}
 	}
 
-	fees, _, err := server.getPairs(pair)
-	if err != nil {
-		return nil, handleError(err)
-	}
-
 	response, err := server.boltz.CreateSwap(createSwap)
 
 	if err != nil {
 		return nil, handleError(errors.New("boltz error: " + err.Error()))
 	}
 
-	redeemScript, err := hex.DecodeString(response.RedeemScript)
-
-	if err != nil {
-		return nil, handleError(err)
-	}
-
 	swap := database.Swap{
 		Id:                  response.Id,
-		PairId:              pair,
+		Pair:                pair,
 		State:               boltzrpc.SwapState_PENDING,
 		Error:               "",
 		PrivateKey:          privateKey,
 		Preimage:            preimage,
-		RedeemScript:        redeemScript,
 		Invoice:             createSwap.Invoice,
 		Address:             response.Address,
 		ExpectedAmount:      response.ExpectedAmount,
 		TimoutBlockHeight:   response.TimeoutBlockHeight,
+		SwapTree:            response.SwapTree.Deserialize(),
 		LockupTransactionId: "",
 		RefundTransactionId: "",
 		RefundAddress:       request.RefundAddress,
 		IsAuto:              isAuto,
-		ServiceFeePercent:   utils.Percentage(fees.Percentage),
+		ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
 		AutoSend:            request.AutoSend,
+	}
+
+	swap.ClaimPubKey, err = database.ParsePublicKey(response.ClaimPublicKey)
+	if err != nil {
+		return nil, handleError(err)
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -361,37 +370,44 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		}
 	}
 
-	err = boltz.CheckSwapScript(swap.RedeemScript, preimageHash, swap.PrivateKey, swap.TimoutBlockHeight)
-
-	if err != nil {
+	if err := swap.InitTree(); err != nil {
 		return nil, handleError(err)
 	}
 
-	err = boltz.CheckSwapAddress(pair, server.network, swap.Address, swap.RedeemScript, true, blindingPubKey)
+	if err := swap.SwapTree.Check(false, swap.TimoutBlockHeight, preimageHash); err != nil {
+		return nil, handleError(err)
+	}
 
-	if err != nil {
+	fmt.Println("address" + response.Address)
+	if err := swap.SwapTree.CheckAddress(response.Address, server.network, blindingPubKey); err != nil {
 		return nil, handleError(err)
 	}
 
 	logger.Info("Verified redeem script and address of Swap " + swap.Id)
 
 	err = server.database.CreateSwap(swap)
-
 	if err != nil {
 		return nil, handleError(err)
 	}
 
+	blockHeight, err := server.onchain.GetBlockHeight(pair.From)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	timeoutHours := boltz.BlocksToHours(response.TimeoutBlockHeight-blockHeight, pair.From)
 	swapResponse := &boltzrpc.CreateSwapResponse{
 		Id:                 swap.Id,
 		Address:            response.Address,
 		ExpectedAmount:     int64(response.ExpectedAmount),
 		Bip21:              response.Bip21,
 		TimeoutBlockHeight: response.TimeoutBlockHeight,
+		TimeoutHours:       float32(timeoutHours),
 	}
 
 	if request.AutoSend {
 		// TODO: custom block target?
-		feeSatPerVbyte, err := server.onchain.EstimateFee(pair, 2)
+		feeSatPerVbyte, err := server.onchain.EstimateFee(pair.From, 2)
 		if err != nil {
 			return nil, handleError(err)
 		}
@@ -419,18 +435,15 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 
 	claimAddress := request.Address
 
-	pair, err := boltz.ParsePair(request.PairId)
-	if err != nil {
-		return nil, handleError(err)
-	}
+	pair := ParsePair(request.Pair)
 	if claimAddress != "" {
-		err := boltz.ValidateAddress(server.network, claimAddress, pair)
+		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
 
 		if err != nil {
 			return nil, handleError(fmt.Errorf("Invalid claim address %s: %w", claimAddress, err))
 		}
 	} else {
-		wallet, err := server.onchain.GetWallet(request.GetWallet(), boltz.CurrencyForPair(pair), true)
+		wallet, err := server.onchain.GetWallet(request.GetWallet(), pair.To, true)
 		if err != nil {
 			return nil, handleError(err)
 		}
@@ -457,27 +470,25 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		return nil, handleError(err)
 	}
 
+	reversePair, err := server.getReversePair(pair)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
 	response, err := server.boltz.CreateReverseSwap(boltz.CreateReverseSwapRequest{
-		Type:           boltz.ReverseSwap,
-		PairId:         string(pair),
-		OrderSide:      "buy",
+		From:           pair.From,
+		To:             pair.To,
+		PairHash:       reversePair.Hash,
 		InvoiceAmount:  uint64(request.Amount),
 		PreimageHash:   hex.EncodeToString(preimageHash),
 		ClaimPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
 		ReferralId:     referralId,
 	})
-
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	redeemScript, err := hex.DecodeString(response.RedeemScript)
-
-	if err != nil {
-		return nil, handleError(err)
-	}
-
-	fees, _, err := server.getPairs(pair)
+	key, err := database.ParsePublicKey(response.RefundPublicKey)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -485,19 +496,20 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 	reverseSwap := database.ReverseSwap{
 		Id:                  response.Id,
 		IsAuto:              isAuto,
-		PairId:              pair,
+		Pair:                pair,
 		Status:              boltz.SwapCreated,
 		AcceptZeroConf:      request.AcceptZeroConf,
 		PrivateKey:          privateKey,
+		SwapTree:            response.SwapTree.Deserialize(),
+		RefundPubKey:        key,
 		Preimage:            preimage,
-		RedeemScript:        redeemScript,
 		Invoice:             response.Invoice,
 		ClaimAddress:        claimAddress,
 		OnchainAmount:       response.OnchainAmount,
 		TimeoutBlockHeight:  response.TimeoutBlockHeight,
 		LockupTransactionId: "",
 		ClaimTransactionId:  "",
-		ServiceFeePercent:   utils.Percentage(fees.Percentage),
+		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -508,16 +520,25 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		reverseSwap.ChanIds = append(reverseSwap.ChanIds, parsed)
 	}
 
-	if pair == boltz.PairLiquid {
+	var blindingPubKey *btcec.PublicKey
+	if reverseSwap.Pair.To == boltz.CurrencyLiquid {
 		reverseSwap.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
+		blindingPubKey = reverseSwap.BlindingKey.PubKey()
 
 		if err != nil {
 			return nil, handleError(err)
 		}
 	}
-	err = boltz.CheckReverseSwapScript(reverseSwap.RedeemScript, preimageHash, privateKey, response.TimeoutBlockHeight)
 
-	if err != nil {
+	if err := reverseSwap.InitTree(); err != nil {
+		return nil, handleError(err)
+	}
+
+	if err := reverseSwap.SwapTree.Check(true, reverseSwap.TimeoutBlockHeight, preimageHash); err != nil {
+		return nil, handleError(err)
+	}
+
+	if err := reverseSwap.SwapTree.CheckAddress(response.LockupAddress, server.network, blindingPubKey); err != nil {
 		return nil, handleError(err)
 	}
 
@@ -958,6 +979,71 @@ func (server *routedBoltzServer) getOwnWallet(name string, readonly bool) (*wall
 	return wallet, nil
 }
 
+func findPair[T any](pair boltz.Pair, nested map[string]map[string]T) (*T, error) {
+	from, hasPair := nested[string(pair.From)]
+	if !hasPair {
+		return nil, fmt.Errorf("could not find pair from %v", pair)
+	}
+	result, hasPair := from[string(pair.To)]
+	if !hasPair {
+		return nil, fmt.Errorf("could not find pair to %v", pair)
+	}
+	return &result, nil
+}
+
+func (server *routedBoltzServer) getSubmarinePair(pairId boltz.Pair) (*boltzrpc.SubmarinePair, error) {
+	pairsResponse, err := server.boltz.GetSubmarinePairs()
+	if err != nil {
+		return nil, err
+	}
+	pair, err := findPair(pairId, pairsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &boltzrpc.SubmarinePair{
+		Hash: pair.Hash,
+		Rate: float32(pair.Rate),
+		Fees: &boltzrpc.SubmarinePair_Fees{
+			Percentage: float32(pair.Fees.Percentage),
+			MinerFees:  pair.Fees.MinerFees,
+		},
+		Limits: &boltzrpc.Limits{
+			Minimal:               int64(pair.Limits.Minimal),
+			Maximal:               int64(pair.Limits.Maximal),
+			MaximalZeroConfAmount: int64(pair.Limits.MaximalZeroConfAmount),
+		},
+	}, nil
+}
+
+func (server *routedBoltzServer) getReversePair(pairId boltz.Pair) (*boltzrpc.ReversePair, error) {
+	pairsResponse, err := server.boltz.GetReversePairs()
+	fmt.Println(pairsResponse)
+	if err != nil {
+		return nil, err
+	}
+	pair, err := findPair(pairId, pairsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &boltzrpc.ReversePair{
+		Hash: pair.Hash,
+		Rate: float32(pair.Rate),
+		Fees: &boltzrpc.ReversePair_Fees{
+			Percentage: float32(pair.Fees.Percentage),
+			MinerFees: &boltzrpc.ReversePair_Fees_MinerFees{
+				Lockup: pair.Fees.MinerFees.Lockup,
+				Claim:  pair.Fees.MinerFees.Claim,
+			},
+		},
+		Limits: &boltzrpc.Limits{
+			Minimal: int64(pair.Limits.Minimal),
+			Maximal: int64(pair.Limits.Maximal),
+		},
+	}, nil
+}
+
 func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *boltzrpc.Limits, error) {
 	pairsResponse, err := server.boltz.GetPairs()
 
@@ -965,10 +1051,10 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 		return nil, nil, err
 	}
 
-	pair, hasPair := pairsResponse.Pairs[string(pairId)]
+	pair, hasPair := pairsResponse.Pairs[pairId.String()]
 
 	if !hasPair {
-		return nil, nil, errors.New("could not find pair with id: " + string(pairId))
+		return nil, nil, fmt.Errorf("could not find pair with id %s", pairId)
 	}
 
 	minerFees := pair.Fees.MinerFees.BaseAsset
