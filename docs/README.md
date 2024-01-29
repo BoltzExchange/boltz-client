@@ -5,7 +5,7 @@ coverY: 0
 
 # 👋 Introduction
 
-`boltz-lnd` is a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (mainchain Bitcoin -> Lightning) and Reverse Submarine Swaps (Lightning -> mainchain Bitcoin). Other layers like Liquid are currently _not_ supported. It consists of two main components:
+`boltz-client` is a [Boltz](https://boltz.exchange) client for [LND](https://github.com/lightningnetwork/lnd). It supports Normal Submarine Swaps (mainchain Bitcoin -> Lightning) and Reverse Submarine Swaps (Lightning -> mainchain Bitcoin). Other layers like Liquid are currently _not_ supported. It consists of two main components:
 
 ## `boltzd`
 
