@@ -1,5 +1,5 @@
 ---
-cover: .gitbook/assets/boltz-lnd_header.png
+cover: .gitbook/assets/boltz-client.png
 coverY: 0
 ---
 
