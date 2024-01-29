@@ -184,7 +184,8 @@ func (transaction *Transaction) Rollback(cause error) error {
 }
 
 type SwapQuery struct {
-	Pair   *boltz.Pair
+	From   *boltz.Currency
+	To     *boltz.Currency
 	State  *boltzrpc.SwapState
 	IsAuto *bool
 	Since  time.Time
@@ -192,9 +193,13 @@ type SwapQuery struct {
 
 func (query *SwapQuery) ToWhereClause() (where string, values []any) {
 	var conditions []string
-	if query.Pair != nil {
-		conditions = append(conditions, "pairId = ?")
-		values = append(values, *query.Pair)
+	if query.From != nil {
+		conditions = append(conditions, "fromCurrency = ?")
+		values = append(values, *query.From)
+	}
+	if query.To != nil {
+		conditions = append(conditions, "toCurrency = ?")
+		values = append(values, *query.To)
 	}
 	if query.State != nil {
 		conditions = append(conditions, "state = ?")

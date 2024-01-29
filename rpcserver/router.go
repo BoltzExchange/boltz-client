@@ -171,9 +171,14 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 		State:  request.State,
 	}
 
-	if request.Pair != nil {
-		parsed := ParsePair(request.Pair)
-		args.Pair = &parsed
+	if request.From != nil {
+		parsed := ParseCurrency(*request.From)
+		args.From = &parsed
+	}
+
+	if request.To != nil {
+		parsed := ParseCurrency(*request.To)
+		args.To = &parsed
 	}
 
 	swaps, err := server.database.QuerySwaps(args)

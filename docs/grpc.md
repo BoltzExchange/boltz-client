@@ -675,7 +675,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `pair` | [`Pair`](#boltzrpc.Pair) | optional |  |
+| `from` | [`Currency`](#boltzrpc.Currency) | optional |  |
+| `to` | [`Currency`](#boltzrpc.Currency) | optional |  |
 | `is_auto` | [`bool`](#bool) | optional |  |
 | `state` | [`SwapState`](#boltzrpc.SwapState) | optional |  |
 

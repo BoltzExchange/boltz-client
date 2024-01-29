@@ -75,13 +75,6 @@ func formatPercentageFee(percentageFee float32) string {
 	return strconv.FormatFloat(float64(percentageFee), 'f', 1, 32)
 }
 
-func getPair(ctx *cli.Context) string {
-	if ctx.Bool("liquid") {
-		return "L-BTC/BTC"
-	}
-	return ctx.String("pair")
-}
-
 func requireNArgs(n int, action cli.ActionFunc) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		if ctx.NArg() < n {
