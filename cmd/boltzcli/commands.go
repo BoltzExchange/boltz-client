@@ -898,6 +898,9 @@ var createReverseSwapCommand = &cli.Command{
 			Name:  "no-zero-conf",
 			Usage: "Disable zero-conf for this swap",
 		},
+		&cli.StringSliceFlag{
+			Name: "chan-id",
+		},
 	},
 }
 
@@ -935,6 +938,7 @@ func createReverseSwap(ctx *cli.Context) error {
 		AcceptZeroConf: !ctx.Bool("no-zero-conf"),
 		PairId:         pair,
 		Wallet:         &wallet,
+		ChanIds:        ctx.StringSlice("chan-id"),
 	})
 	if err != nil {
 		return err

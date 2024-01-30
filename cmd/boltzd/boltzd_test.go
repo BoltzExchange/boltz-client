@@ -635,7 +635,7 @@ func TestAutoSwap(t *testing.T) {
 
 				response, err := to.CreateInvoice(int64(amount), nil, 100000, "Testt")
 				require.NoError(t, err)
-				_, err = from.PayInvoice(response.PaymentRequest, 10000, 30, channel.Id)
+				_, err = from.PayInvoice(response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
 				require.NoError(t, err)
 
 				time.Sleep(1000 * time.Millisecond)

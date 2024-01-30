@@ -317,7 +317,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new P2WKH address from LND |
 | `accept_zero_conf` | [`bool`](#bool) |  |  |
 | `pair_id` | [`string`](#string) |  |  |
-| `chan_id` | [`string`](#string) | optional |  |
+| `chan_ids` | [`string`](#string) | repeated |  |
 | `wallet` | [`string`](#string) | optional |  |
 
 
@@ -347,7 +347,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `amount` | [`int64`](#int64) |  |  |
 | `pair_id` | [`string`](#string) |  |  |
-| `chan_id` | [`string`](#string) | optional |  |
+| `chan_ids` | [`string`](#string) | repeated |  |
 | `auto_send` | [`bool`](#bool) |  |  |
 | `refund_address` | [`string`](#string) |  |  |
 | `wallet` | [`string`](#string) | optional |  |
@@ -753,7 +753,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `claim_transaction_id` | [`string`](#string) |  |  |
 | `pair_id` | [`string`](#string) |  |  |
-| `chan_id` | [`ChannelId`](#boltzrpc.ChannelId) | optional |  |
+| `chan_ids` | [`ChannelId`](#boltzrpc.ChannelId) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
@@ -812,7 +812,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `refund_transaction_id` | [`string`](#string) |  | If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the `lockup_address` back to the configured wallet or the address specified in the `refund_address` field. |
 | `refund_address` | [`string`](#string) | optional |  |
-| `chan_id` | [`ChannelId`](#boltzrpc.ChannelId) | optional |  |
+| `chan_ids` | [`ChannelId`](#boltzrpc.ChannelId) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |

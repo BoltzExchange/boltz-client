@@ -17,7 +17,7 @@ import (
 type Swap struct {
 	Id                  string
 	PairId              boltz.Pair
-	ChanId              lightning.ChanId
+	ChanIds             []lightning.ChanId
 	State               boltzrpc.SwapState
 	CreatedAt           time.Time
 	Error               string
@@ -43,7 +43,7 @@ type Swap struct {
 type SwapSerialized struct {
 	Id                  string
 	PairId              string
-	ChanId              uint64
+	ChanIds             string
 	State               string
 	Error               string
 	Status              string
@@ -75,7 +75,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 	return SwapSerialized{
 		Id:                  swap.Id,
 		PairId:              string(swap.PairId),
-		ChanId:              uint64(swap.ChanId),
+		ChanIds:             formatJson(swap.ChanIds),
 		State:               boltzrpc.SwapState_name[int32(swap.State)],
 		Error:               swap.Error,
 		Status:              swap.Status.String(),
@@ -108,13 +108,14 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	var pairId string
 	var blindingKey sql.NullString
 	var createdAt, serviceFee, onchainFee sql.NullInt64
+	chanIds := JsonScanner[[]lightning.ChanId]{Nullable: true}
 
 	err := scanRow(
 		rows,
 		map[string]interface{}{
 			"id":                  &swap.Id,
 			"pairId":              &pairId,
-			"chanId":              &swap.ChanId,
+			"chanIds":             &chanIds,
 			"state":               &swap.State,
 			"error":               &swap.Error,
 			"status":              &status,
@@ -146,7 +147,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	swap.OnchainFee = parseNullInt(onchainFee)
 
 	swap.Status = boltz.ParseEvent(status)
-
+	swap.ChanIds = chanIds.Value
 	swap.PrivateKey, err = ParsePrivateKey(privateKey)
 
 	if err != nil {
@@ -252,7 +253,7 @@ func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, pair b
 }
 
 func (database *Database) CreateSwap(swap Swap) error {
-	insertStatement := "INSERT INTO swaps (id, pairId, chanId, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress, blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, autoSend) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO swaps (id, pairId, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress, blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, autoSend) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	preimage := ""
 
 	if swap.Preimage != nil {
@@ -263,7 +264,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 		insertStatement,
 		swap.Id,
 		swap.PairId,
-		swap.ChanId,
+		formatJson(swap.ChanIds),
 		swap.State,
 		swap.Error,
 		swap.Status.String(),

@@ -16,7 +16,7 @@ import (
 type ReverseSwap struct {
 	Id                  string
 	PairId              boltz.Pair
-	ChanId              lightning.ChanId
+	ChanIds             []lightning.ChanId
 	State               boltzrpc.SwapState
 	Error               string
 	CreatedAt           time.Time
@@ -42,7 +42,7 @@ type ReverseSwap struct {
 type ReverseSwapSerialized struct {
 	Id                  string
 	PairId              string
-	ChanId              uint64
+	ChanIds             string
 	State               string
 	Error               string
 	Status              string
@@ -68,7 +68,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	return ReverseSwapSerialized{
 		Id:                  reverseSwap.Id,
 		PairId:              string(reverseSwap.PairId),
-		ChanId:              uint64(reverseSwap.ChanId),
+		ChanIds:             formatJson(reverseSwap.ChanIds),
 		State:               boltzrpc.SwapState_name[int32(reverseSwap.State)],
 		Error:               reverseSwap.Error,
 		Status:              reverseSwap.Status.String(),
@@ -101,13 +101,14 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var pairId string
 	var blindingKey sql.NullString
 	var createdAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
+	chanIds := JsonScanner[[]lightning.ChanId]{Nullable: true}
 
 	err := scanRow(
 		rows,
 		map[string]interface{}{
 			"id":                  &reverseSwap.Id,
 			"pairId":              &pairId,
-			"chanId":              &reverseSwap.ChanId,
+			"chanIds":             &chanIds,
 			"state":               &reverseSwap.State,
 			"error":               &reverseSwap.Error,
 			"status":              &status,
@@ -140,6 +141,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	reverseSwap.RoutingFeeMsat = parseNullInt(routingFeeMsat)
 
 	reverseSwap.Status = boltz.ParseEvent(status)
+	reverseSwap.ChanIds = chanIds.Value
 
 	reverseSwap.PrivateKey, err = ParsePrivateKey(privateKey)
 
@@ -239,12 +241,12 @@ func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]ReverseSwa
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, pairId, chanId, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee, serviceFeePercent, onchainFee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO reverseSwaps (id, pairId, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee, serviceFeePercent, onchainFee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	_, err := database.Exec(
 		insertStatement,
 		reverseSwap.Id,
 		reverseSwap.PairId,
-		reverseSwap.ChanId,
+		formatJson(reverseSwap.ChanIds),
 		reverseSwap.State,
 		reverseSwap.Error,
 		reverseSwap.Status.String(),
