@@ -107,8 +107,8 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	var redeemScript string
 	var pairId string
 	var blindingKey sql.NullString
-	var chanIds JsonScanner[[]lightning.ChanId]
 	var createdAt, serviceFee, onchainFee sql.NullInt64
+	chanIds := JsonScanner[[]lightning.ChanId]{Nullable: true}
 
 	err := scanRow(
 		rows,

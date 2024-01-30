@@ -31,10 +31,14 @@ type Transaction struct {
 }
 
 type JsonScanner[T any] struct {
-	Value T
+	Value    T
+	Nullable bool
 }
 
 func (j *JsonScanner[T]) Scan(src any) error {
+	if src == nil && j.Nullable {
+		return nil
+	}
 	if str, ok := src.(string); ok {
 		return json.Unmarshal([]byte(str), &j.Value)
 	}
@@ -152,13 +156,13 @@ func (database *Database) createTables() error {
 		return err
 	}
 
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, refundTransactionId VARCHAR, refundAddress VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT, autoSend BOOLEAN)")
+	_, err = database.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, refundTransactionId VARCHAR, refundAddress VARCHAR DEFAULT '', blindingKey VARCHAR, isAuto BOOLEAN DEFAULT 0, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT, autoSend BOOLEAN)")
 
 	if err != nil {
 		return err
 	}
 
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS reverseSwaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, acceptZeroConf BOOLEAN, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, claimAddress VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, claimTransactionId VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN, routingFeeMsat INT, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT)")
+	_, err = database.Exec("CREATE TABLE IF NOT EXISTS reverseSwaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, acceptZeroConf BOOLEAN, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, claimAddress VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, claimTransactionId VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN DEFAULT 0, routingFeeMsat INT, serviceFee INT, serviceFeePercent REAL DEFAULT 0, onchainFee INT, createdAt INT)")
 
 	if err != nil {
 		return err

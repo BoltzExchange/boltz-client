@@ -99,9 +99,9 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var preimage string
 	var redeemScript string
 	var pairId string
-	var chanIds JsonScanner[[]lightning.ChanId]
 	var blindingKey sql.NullString
 	var createdAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
+	chanIds := JsonScanner[[]lightning.ChanId]{Nullable: true}
 
 	err := scanRow(
 		rows,
