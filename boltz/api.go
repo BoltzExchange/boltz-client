@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -102,15 +103,14 @@ type GetPairsResponse struct {
 	} `json:"pairs"`
 }
 
-type GetNodesResponse struct {
-	Nodes map[string]struct {
-		NodeKey string   `json:"nodeKey"`
-		URIs    []string `json:"uris"`
-	} `json:"nodes"`
+type NodeInfo struct {
+	PublicKey string   `json:"publicKey"`
+	Uris      []string `json:"uris"`
 }
 
-type SwapStatusRequest struct {
-	Id string `json:"id"`
+type Nodes struct {
+	CLN *NodeInfo `json:"CLN"`
+	LND *NodeInfo `json:"LND"`
 }
 
 type SwapStatusResponse struct {
@@ -144,7 +144,7 @@ type GetTransactionRequest struct {
 }
 
 type GetTransactionResponse struct {
-	TransactionHex string `json:"transactionHex"`
+	Hex string `json:"hex"`
 
 	Error string `json:"error"`
 }
@@ -288,18 +288,16 @@ func (boltz *Boltz) GetReversePairs() (response ReversePairs, err error) {
 	return response, err
 }
 
-func (boltz *Boltz) GetNodes() (*GetNodesResponse, error) {
-	var response GetNodesResponse
-	err := boltz.sendGetRequest("/getnodes", &response)
+func (boltz *Boltz) GetNodes() (map[string]Nodes, error) {
+	var response map[string]Nodes
+	err := boltz.sendGetRequest("/v2/nodes", &response)
 
-	return &response, err
+	return response, err
 }
 
 func (boltz *Boltz) SwapStatus(id string) (*SwapStatusResponse, error) {
 	var response SwapStatusResponse
-	err := boltz.sendPostRequest("/swapstatus", SwapStatusRequest{
-		Id: id,
-	}, &response)
+	err := boltz.sendGetRequest("/v2/swap/"+id, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -327,16 +325,14 @@ func (boltz *Boltz) GetSwapTransaction(id string) (*GetSwapTransactionResponse, 
 
 func (boltz *Boltz) GetTransaction(transactionId string, currency Currency) (string, error) {
 	var response GetTransactionResponse
-	err := boltz.sendPostRequest("/gettransaction", GetTransactionRequest{
-		TransactionId: transactionId,
-		Currency:      string(currency),
-	}, &response)
+	path := fmt.Sprintf("/v2/chain/%s/transaction/%s", currency, transactionId)
+	err := boltz.sendGetRequest(path, &response)
 
 	if response.Error != "" {
 		return "", Error(errors.New(response.Error))
 	}
 
-	return response.TransactionHex, err
+	return response.Hex, err
 }
 
 func (boltz *Boltz) BroadcastTransaction(transactionHex string, currency Currency) (*BroadcastTransactionResponse, error) {

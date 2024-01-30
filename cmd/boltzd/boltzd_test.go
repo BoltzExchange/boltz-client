@@ -301,10 +301,10 @@ func TestSwap(t *testing.T) {
 		defer stop()
 		pair := pairBtc
 
-		serviceInfo, err := client.GetServiceInfo(pair.String())
+		submarinePair, err := client.GetSubmarinePair(pair)
 
 		require.NoError(t, err)
-		amount := serviceInfo.Limits.Minimal - 100
+		amount := submarinePair.Limits.Minimal - 100
 		swaps := make([]*boltzrpc.CreateSwapResponse, 3)
 
 		refundAddress := test.BtcCli("getnewaddress")
@@ -327,7 +327,7 @@ func TestSwap(t *testing.T) {
 		var streams []nextFunc
 		for _, swap := range swaps {
 			stream := swapStream(t, client, swap.Id)
-			test.SendToAddress(test.BtcCli, swap.Address, amount)
+			test.SendToAddress(test.BtcCli, swap.Address, int64(amount))
 			stream(boltzrpc.SwapState_ERROR)
 			streams = append(streams, stream)
 		}

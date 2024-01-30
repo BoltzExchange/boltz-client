@@ -295,10 +295,6 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		fallthrough
 
 	case boltz.TransactionConfirmed:
-		// Connect to the LND node of Boltz to allow for channels to be opened and to gossip our channels
-		// to increase the chances that the provided invoice can be paid
-		_, _ = utils.ConnectBoltz(nursery.lightning, nursery.boltz)
-
 		// Set the invoice of Swaps that were created with only a preimage hash
 		if swap.Invoice != "" {
 			break

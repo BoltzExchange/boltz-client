@@ -6,8 +6,7 @@ type Pair struct {
 }
 
 var (
-	PairBtc    = Pair{From: CurrencyBtc, To: CurrencyBtc}
-	PairLiquid = Pair{From: CurrencyBtc, To: CurrencyBtc}
+	PairBtc = Pair{From: CurrencyBtc, To: CurrencyBtc}
 )
 
 func (p Pair) String() string {

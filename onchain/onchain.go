@@ -163,10 +163,10 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 	if err != nil {
 		return 0, err
 	}
-	if chain == onchain.Btc {
+	if currency == boltz.CurrencyBtc {
 		transaction, err := boltz.NewBtcTxFromHex(hex)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("could not decode tx %s: %v", hex, err)
 		}
 		var fee uint64
 		transactions := make(map[string]*boltz.BtcTransaction)
@@ -191,7 +191,7 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 			fee -= uint64(output.Value)
 		}
 		return fee, nil
-	} else if chain == onchain.Liquid {
+	} else if currency == boltz.CurrencyLiquid {
 		liquidTx, err := boltz.NewLiquidTxFromHex(hex, nil)
 		if err != nil {
 			return 0, err

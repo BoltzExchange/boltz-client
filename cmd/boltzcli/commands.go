@@ -824,7 +824,7 @@ func createSwap(ctx *cli.Context) error {
 	autoSend := ctx.Bool("auto-send")
 	json := ctx.Bool("json")
 
-	serviceInfo, err := client.GetServiceInfo("")
+	submarinePair, err := client.GetSubmarinePair(pair)
 	if err != nil {
 		return err
 	}
@@ -832,8 +832,8 @@ func createSwap(ctx *cli.Context) error {
 	if !json {
 		fmt.Println("You will receive your deposit via lightning.")
 		fmt.Println("The fees for this service are:")
-		fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
-		fmt.Println("  - Miner fee: " + utils.Satoshis(int(serviceInfo.Fees.Miner.Normal)))
+		fmt.Println("  - Service fee: " + formatPercentageFee(submarinePair.Fees.Percentage) + "%")
+		fmt.Println("  - Miner fee: " + utils.Satoshis(int(submarinePair.Fees.MinerFees)))
 		fmt.Println()
 
 		if !prompt("Do you want to continue?") {
@@ -861,7 +861,7 @@ func createSwap(ctx *cli.Context) error {
 	if !autoSend || amount == 0 {
 		var amountString string
 		if amount == 0 {
-			amountString = fmt.Sprintf("between %d and %d satoshis", serviceInfo.Limits.Minimal, serviceInfo.Limits.Maximal)
+			amountString = fmt.Sprintf("between %d and %d satoshis", submarinePair.Limits.Minimal, submarinePair.Limits.Maximal)
 		} else {
 			amountString = utils.Satoshis(int(amount))
 		}
@@ -934,15 +934,16 @@ func createReverseSwap(ctx *cli.Context) error {
 	json := ctx.Bool("json")
 
 	if !json {
-		serviceInfo, err := client.GetServiceInfo("")
+		reversePair, err := client.GetReversePair(pair)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("You will receive the withdrawal to the specified onchain address")
 		fmt.Println("The fees for this service are:")
-		fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
-		fmt.Println("  - Miner fee: " + utils.Satoshis(int(serviceInfo.Fees.Miner.Reverse)))
+		fmt.Println("  - Service fee: " + formatPercentageFee(reversePair.Fees.Percentage) + "%")
+		fmt.Println("  - Boltz lockup fee: " + utils.Satoshis(int(reversePair.Fees.MinerFees.Lockup)))
+		fmt.Println("  - Claim fee: " + utils.Satoshis(int(reversePair.Fees.MinerFees.Claim)))
 		fmt.Println()
 
 		if !prompt("Do you want to continue?") {

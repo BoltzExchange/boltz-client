@@ -75,8 +75,8 @@ type Config struct {
 	Type                boltz.SwapType
 	PerChannel          bool
 	Wallet              string
+	MaxSwapAmount       uint64
 
-	pair         boltz.Pair
 	maxBalance   Balance
 	minBalance   Balance
 	strategy     Strategy
@@ -84,6 +84,7 @@ type Config struct {
 }
 
 type DismissedChannels map[lightning.ChanId][]string
+type ChannelLimits map[lightning.ChanId]uint64
 
 func (dismissed DismissedChannels) addChannels(chanIds []lightning.ChanId, reason string) {
 	for _, chanId := range chanIds {
@@ -148,10 +149,8 @@ func (cfg *Config) Init() error {
 
 	switch strings.ToUpper(string(cfg.Currency)) {
 	case string(boltz.CurrencyBtc):
-		cfg.pair = boltz.PairBtc
 		cfg.Currency = boltz.CurrencyBtc
 	case string(boltz.CurrencyLiquid), "":
-		cfg.pair = boltz.PairLiquid
 		cfg.Currency = boltz.CurrencyLiquid
 	default:
 		return errors.New("invalid currency")

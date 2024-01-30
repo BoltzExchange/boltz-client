@@ -28,6 +28,30 @@ Fetches the latest limits and fees from the Boltz backend API it is connected to
 | ------- | -------- |
 | [`GetServiceInfoRequest`](#boltzrpc.GetServiceInfoRequest) | [`GetServiceInfoResponse`](#boltzrpc.GetServiceInfoResponse) |
 
+#### GetSubmarinePair
+
+Fetches information about a specific pair for a submarine swap.
+
+| Request | Response |
+| ------- | -------- |
+| [`Pair`](#boltzrpc.Pair) | [`SubmarinePair`](#boltzrpc.SubmarinePair) |
+
+#### GetReversePair
+
+Fetches information about a specific pair for a reverse swap.
+
+| Request | Response |
+| ------- | -------- |
+| [`Pair`](#boltzrpc.Pair) | [`ReversePair`](#boltzrpc.ReversePair) |
+
+#### GetPairs
+
+Returns all available swap pairs.
+
+| Request | Response |
+| ------- | -------- |
+| [`.google.protobuf.Empty`](#google.protobuf.Empty) | [`GetPairsResponse`](#boltzrpc.GetPairsResponse) |
+
 #### GetFeeEstimation
 
 Fetches the latest limits and fees from the Boltz backend API it is connected to.
@@ -495,6 +519,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### <div id="boltzrpc.GetPairsResponse">GetPairsResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `submarinePairs` | [`SubmarinePair`](#boltzrpc.SubmarinePair) | repeated |  |
+| `reversePairs` | [`ReversePair`](#boltzrpc.ReversePair) | repeated |  |
+
+
+
+
+
 #### <div id="boltzrpc.GetServiceInfoRequest">GetServiceInfoRequest</div>
 
 
@@ -530,6 +567,18 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `current` | [`uint64`](#uint64) | optional |  |
 | `subaccounts` | [`Subaccount`](#boltzrpc.Subaccount) | repeated |  |
+
+
+
+
+
+#### <div id="boltzrpc.GetSubmarinePairsResponse">GetSubmarinePairsResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pairs` | [`SubmarinePair`](#boltzrpc.SubmarinePair) | repeated |  |
 
 
 
@@ -661,9 +710,9 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `minimal` | [`int64`](#int64) |  |  |
-| `maximal` | [`int64`](#int64) |  |  |
-| `maximal_zero_conf_amount` | [`int64`](#int64) |  |  |
+| `minimal` | [`uint64`](#uint64) |  |  |
+| `maximal` | [`uint64`](#uint64) |  |  |
+| `maximal_zero_conf_amount` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -785,18 +834,6 @@ Reverse Pair
 
 
 
-#### <div id="boltzrpc.ReversePairsResponse">ReversePairsResponse</div>
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pairs` | [`ReversePair`](#boltzrpc.ReversePair) | repeated |  |
-
-
-
-
-
 #### <div id="boltzrpc.ReverseSwapInfo">ReverseSwapInfo</div>
 
 
@@ -879,18 +916,6 @@ Submarine Pair
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
 | `miner_fees` | [`uint64`](#uint64) |  |  |
-
-
-
-
-
-#### <div id="boltzrpc.SubmarinePairsResponse">SubmarinePairsResponse</div>
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pairs` | [`SubmarinePair`](#boltzrpc.SubmarinePair) | repeated |  |
 
 
 

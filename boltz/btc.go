@@ -55,7 +55,8 @@ func (transaction *BtcTransaction) FindVout(network *Network, addressToFind stri
 		return 0, 0, err
 	}
 	for vout, output := range transaction.MsgTx().TxOut {
-		if bytes.Equal(output.PkScript, find.ScriptAddress()) {
+		// first 2 bytes are witness type and length
+		if bytes.Equal(output.PkScript[2:], find.ScriptAddress()) {
 			return uint32(vout), uint64(output.Value), nil
 		}
 	}

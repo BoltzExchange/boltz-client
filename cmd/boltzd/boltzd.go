@@ -90,10 +90,8 @@ func Init(cfg *config.Config) {
 
 	checkBoltzVersion(cfg.Boltz)
 
-	_, err = utils.ConnectBoltz(cfg.Lightning, cfg.Boltz)
-
-	if err != nil {
-		logger.Warn("Could not connect to to Boltz LND node: " + err.Error())
+	if err := utils.ConnectBoltz(cfg.Lightning, cfg.Boltz); err != nil {
+		logger.Warn("Could not connect to to boltz node: " + err.Error())
 	}
 
 	onchain, err := initOnchain(cfg, network)

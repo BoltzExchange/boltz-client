@@ -281,14 +281,14 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 
 	pair := ParsePair(request.Pair)
 
-	submarinePair, err := server.getSubmarinePair(pair)
+	submarinePair, err := server.GetSubmarinePair(context.Background(), request.Pair)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, err
 	}
 
 	createSwap := boltz.CreateSwapRequest{
-		From:            "BTC",
-		To:              "BTC",
+		From:            pair.From,
+		To:              pair.To,
 		PairHash:        submarinePair.Hash,
 		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
 		ReferralId:      referralId,
@@ -366,7 +366,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 	}
 
 	var blindingPubKey *btcec.PublicKey
-	if pair == boltz.PairLiquid {
+	if pair.From == boltz.CurrencyLiquid {
 		swap.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
 		blindingPubKey = swap.BlindingKey.PubKey()
 
@@ -475,7 +475,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		return nil, handleError(err)
 	}
 
-	reversePair, err := server.getReversePair(pair)
+	reversePair, err := server.GetReversePair(context.Background(), request.Pair)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -996,14 +996,14 @@ func findPair[T any](pair boltz.Pair, nested map[string]map[string]T) (*T, error
 	return &result, nil
 }
 
-func (server *routedBoltzServer) getSubmarinePair(pairId boltz.Pair) (*boltzrpc.SubmarinePair, error) {
+func (server *routedBoltzServer) GetSubmarinePair(ctx context.Context, request *boltzrpc.Pair) (*boltzrpc.SubmarinePair, error) {
 	pairsResponse, err := server.boltz.GetSubmarinePairs()
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
-	pair, err := findPair(pairId, pairsResponse)
+	pair, err := findPair(ParsePair(request), pairsResponse)
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	return &boltzrpc.SubmarinePair{
@@ -1014,20 +1014,19 @@ func (server *routedBoltzServer) getSubmarinePair(pairId boltz.Pair) (*boltzrpc.
 			MinerFees:  pair.Fees.MinerFees,
 		},
 		Limits: &boltzrpc.Limits{
-			Minimal:               int64(pair.Limits.Minimal),
-			Maximal:               int64(pair.Limits.Maximal),
-			MaximalZeroConfAmount: int64(pair.Limits.MaximalZeroConfAmount),
+			Minimal:               pair.Limits.Minimal,
+			Maximal:               pair.Limits.Maximal,
+			MaximalZeroConfAmount: pair.Limits.MaximalZeroConfAmount,
 		},
 	}, nil
 }
 
-func (server *routedBoltzServer) getReversePair(pairId boltz.Pair) (*boltzrpc.ReversePair, error) {
+func (server *routedBoltzServer) GetReversePair(ctx context.Context, request *boltzrpc.Pair) (*boltzrpc.ReversePair, error) {
 	pairsResponse, err := server.boltz.GetReversePairs()
-	fmt.Println(pairsResponse)
 	if err != nil {
 		return nil, err
 	}
-	pair, err := findPair(pairId, pairsResponse)
+	pair, err := findPair(ParsePair(request), pairsResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -1043,8 +1042,8 @@ func (server *routedBoltzServer) getReversePair(pairId boltz.Pair) (*boltzrpc.Re
 			},
 		},
 		Limits: &boltzrpc.Limits{
-			Minimal: int64(pair.Limits.Minimal),
-			Maximal: int64(pair.Limits.Maximal),
+			Minimal: pair.Limits.Minimal,
+			Maximal: pair.Limits.Maximal,
 		},
 	}, nil
 }
@@ -1071,12 +1070,12 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 				Reverse: uint32(minerFees.Reverse.Lockup + minerFees.Reverse.Claim),
 			},
 		}, &boltzrpc.Limits{
-			Minimal: int64(pair.Limits.Minimal),
-			Maximal: int64(pair.Limits.Maximal),
+			Minimal: pair.Limits.Minimal,
+			Maximal: pair.Limits.Maximal,
 		}, nil
 }
 
-func calculateDepositLimit(limit int64, fees *boltzrpc.Fees, isMin bool) int64 {
+func calculateDepositLimit(limit uint64, fees *boltzrpc.Fees, isMin bool) uint64 {
 	effectiveRate := 1 + float64(fees.Percentage)/100
 	limitFloat := float64(limit) * effectiveRate
 
@@ -1087,7 +1086,7 @@ func calculateDepositLimit(limit int64, fees *boltzrpc.Fees, isMin bool) int64 {
 		limitFloat = math.Floor(limitFloat)
 	}
 
-	return int64(limitFloat) + int64(fees.Miner.Normal)
+	return uint64(limitFloat) + uint64(fees.Miner.Normal)
 }
 
 func newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {

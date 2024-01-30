@@ -2,6 +2,7 @@ package rpcserver
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/macaroons"
 	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -48,7 +50,7 @@ type RpcServer struct {
 func (server *RpcServer) Init(
 	network *boltz.Network,
 	lightning lightning.LightningNode,
-	boltz *boltz.Boltz,
+	boltzApi *boltz.Boltz,
 	database *database.Database,
 	onchain *onchain.Onchain,
 	autoSwapConfigPath string,
@@ -61,7 +63,7 @@ func (server *RpcServer) Init(
 		network: network,
 
 		lightning: lightning,
-		boltz:     boltz,
+		boltz:     boltzApi,
 		database:  database,
 		onchain:   onchain,
 
@@ -78,8 +80,39 @@ func (server *RpcServer) Init(
 			_, err := routedServer.createReverseSwap(true, request)
 			return err
 		},
-		ListChannels:   routedServer.lightning.ListChannels,
-		GetServiceInfo: routedServer.getPairs,
+		ListChannels: routedServer.lightning.ListChannels,
+		GetPairInfo: func(pair *boltzrpc.Pair, swapType boltz.SwapType) (*autoswap.PairInfo, error) {
+			ctx := context.Background()
+			if swapType == boltz.NormalSwap {
+				pair, err := routedServer.GetSubmarinePair(ctx, pair)
+				if err != nil {
+					return nil, err
+				}
+				return &autoswap.PairInfo{
+					Limits: autoswap.Limits{
+						MinAmount: pair.Limits.Minimal,
+						MaxAmount: pair.Limits.Maximal,
+					},
+					PercentageFee: utils.Percentage(pair.Fees.Percentage),
+					OnchainFee:    pair.Fees.MinerFees,
+				}, nil
+			} else if swapType == boltz.ReverseSwap {
+				pair, err := routedServer.GetReversePair(ctx, pair)
+				if err != nil {
+					return nil, err
+				}
+				return &autoswap.PairInfo{
+					Limits: autoswap.Limits{
+						MinAmount: pair.Limits.Minimal,
+						MaxAmount: pair.Limits.Maximal,
+					},
+					PercentageFee: utils.Percentage(pair.Fees.Percentage),
+					OnchainFee:    pair.Fees.MinerFees.Claim + pair.Fees.MinerFees.Lockup,
+				}, nil
+			}
+
+			return nil, errors.New("invalid swap type")
+		},
 	}
 	swapper.Init(database, onchain, autoSwapConfigPath)
 	routedServer.swapper = swapper
