@@ -292,6 +292,13 @@ func (database *Database) performMigration(fromVersion int) error {
 			return err
 		}
 
+		_, err = database.Exec("UPDATE version SET version = 3")
+		if err != nil {
+			return err
+		}
+
+		logger.Info("Update to database version 3 completed")
+		return database.postMigration(fromVersion)
 	case latestSchemaVersion:
 		logger.Info("Database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 
