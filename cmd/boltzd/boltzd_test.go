@@ -24,8 +24,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/test"
 
-	boltzlnd "github.com/BoltzExchange/boltz-client"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/config"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,9 +34,10 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-func loadConfig() *boltzlnd.Config {
+func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
-	cfg := boltzlnd.LoadConfig(dataDir)
+	cfg, err := config.LoadConfig(dataDir)
+	require.NoError(t, err)
 	cfg.Database.Path = "file:test.db?cache=shared&mode=memory"
 	cfg.Node = "cln"
 	cfg.Node = "lnd"
@@ -48,9 +49,9 @@ var password = "password"
 var walletInfo = &boltzrpc.WalletInfo{Currency: "L-BTC", Name: walletName}
 var credentials *wallet.Credentials
 
-func setup(t *testing.T, cfg *boltzlnd.Config, password string) (client.Boltz, client.AutoSwap, func()) {
+func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, client.AutoSwap, func()) {
 	if cfg == nil {
-		cfg = loadConfig()
+		cfg = loadConfig(t)
 	}
 
 	logger.Init("", "debug")
@@ -192,7 +193,7 @@ func TestGetInfo(t *testing.T) {
 	for _, node := range nodes {
 		node := node
 		t.Run(node, func(t *testing.T) {
-			cfg := loadConfig()
+			cfg := loadConfig(t)
 			cfg.Node = node
 			client, _, stop := setup(t, cfg, "")
 			defer stop()
@@ -238,7 +239,7 @@ func checkTxOutAddress(t *testing.T, chain onchain.Onchain, pair boltz.Pair, txI
 func TestSwap(t *testing.T) {
 	nodes := []string{"CLN", "LND"}
 
-	cfg := loadConfig()
+	cfg := loadConfig(t)
 	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
 	cfg.Node = "LND"
 
@@ -451,7 +452,7 @@ func TestReverseSwap(t *testing.T) {
 		t.Run(node, func(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
-					cfg := loadConfig()
+					cfg := loadConfig(t)
 					client, _, stop := setup(t, cfg, "")
 					cfg.Node = node
 					boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
@@ -534,7 +535,7 @@ func TestReverseSwap(t *testing.T) {
 
 func TestAutoSwap(t *testing.T) {
 
-	cfg := loadConfig()
+	cfg := loadConfig(t)
 	cfg.Node = "cln"
 
 	require.NoError(t, cfg.Cln.Connect())
@@ -780,7 +781,7 @@ func TestAutoSwap(t *testing.T) {
 }
 
 func TestWallet(t *testing.T) {
-	cfg := loadConfig()
+	cfg := loadConfig(t)
 	client, _, stop := setup(t, cfg, "")
 	defer stop()
 
@@ -822,7 +823,7 @@ func TestWallet(t *testing.T) {
 }
 
 func TestUnlock(t *testing.T) {
-	cfg := loadConfig()
+	cfg := loadConfig(t)
 	password := "password"
 	client, _, stop := setup(t, cfg, password)
 	defer stop()
@@ -853,7 +854,7 @@ func TestUnlock(t *testing.T) {
 }
 
 func TestCreateWalletWithPassword(t *testing.T) {
-	cfg := loadConfig()
+	cfg := loadConfig(t)
 	client, _, stop := setup(t, cfg, "")
 	defer stop()
 
@@ -877,7 +878,7 @@ func TestCreateWalletWithPassword(t *testing.T) {
 }
 
 func TestImportDuplicateCredentials(t *testing.T) {
-	cfg := loadConfig()
+	cfg := loadConfig(t)
 	client, _, stop := setup(t, cfg, "")
 	defer stop()
 
@@ -891,7 +892,7 @@ func TestImportDuplicateCredentials(t *testing.T) {
 }
 
 func TestChangePassword(t *testing.T) {
-	cfg := loadConfig()
+	cfg := loadConfig(t)
 	client, _, stop := setup(t, cfg, "")
 	defer stop()
 

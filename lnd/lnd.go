@@ -50,6 +50,7 @@ type LND struct {
 	Port        int    `long:"lnd.port" description:"gRPC port of the LND node"`
 	Macaroon    string `long:"lnd.macaroon" description:"Path to a macaroon file of the LND node"`
 	Certificate string `long:"lnd.certificate" description:"Path to a certificate file of the LND node"`
+	DataDir     string `long:"lnd.datadir" description:"Path to the data directory of the LND node"`
 
 	ChainParams *chaincfg.Params
 
