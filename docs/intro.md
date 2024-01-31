@@ -55,7 +55,7 @@ You can also run `make install` which will place the binaries into your `GOBIN` 
 
 ## Setup
 
-Binaries for the latest release of Boltz Client can be found on the [releases page](https://github.com/BoltzExchange/boltz-client/releases). If no binaries are available for your platform, you can build them yourself with the instructions provided in the [README](https://github.com/BoltzExchange/boltz-client#building).
+Binaries for the latest release of Boltz Client can be found on the [releases page](https://github.com/BoltzExchange/boltz-client/releases). If no binaries are available for your platform, you can build them yourself with the instructions above.
 
 ### Configuration
 
