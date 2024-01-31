@@ -15,10 +15,9 @@ func (nursery *Nursery) streamSwapStatus(
 ) {
 	go func() {
 		err := nursery.boltz.StreamSwapStatus(id, eventStream, stopListening)
-		defer close(eventStream)
-
 		if err == nil {
 			logger.Info("Stopping event listener of Swap" + " " + id)
+			close(eventStream)
 		} else {
 			logger.Error("Could not listen to events of Swap " + id + ": " + err.Error())
 			logRetry(id, swapType)
@@ -45,10 +44,9 @@ func (nursery *Nursery) streamSwapStatus(
 
 					logger.Info("Could not fetch status of " + swapType + " " + id + ": " + err.Error())
 					logRetry(id, swapType)
-					break
-
 				case <-stopListening:
 					logger.Info("Stopping reconnection loop of " + swapType + " " + id)
+					close(eventStream)
 
 					ticker.Stop()
 					return
