@@ -88,4 +88,4 @@ You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.cert
 
 ### Macaroons
 
-The macaroons for the gRPC server of `boltzd` can be found in the `macaroons` folder inside the data directory of the daemon. By default, that data directory is `~/.boltz-client` on Linux.
+The macaroons for the gRPC server of `boltzd` can be found in the `macaroons` folder inside the data directory of the daemon. By default, that data directory is `~/.boltz` on Linux.
