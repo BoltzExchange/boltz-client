@@ -1,4 +1,4 @@
-# A sample systemd service file for boltz-client
+# A sample systemd service file for Boltz Client
 
 [Unit]
 Description=Boltz-Client

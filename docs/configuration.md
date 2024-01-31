@@ -1,8 +1,6 @@
 # 🎛 Configuration
 
-`boltz-client` can be configured via a `TOML` config file or CLI arguments. By default, the config file is called `boltz.toml` and located in the data directory of `boltz-client` (`~/.boltz` by default on Linux).
-
-> > > > > > > main
+Boltz Client can be configured via a `TOML` config file or CLI arguments. By default, the config file is called `boltz.toml` and located in the data directory of Boltz Client (`~/.boltz` by default on Linux).
 
 ## Example
 
@@ -11,7 +9,7 @@
 logfile = ""
 
 [BOLTZ]
-# By default the daemon automatically connects to the official Boltz Backend for the network LND is on
+# By default the daemon automatically connects to the official Boltz Backend for the network your node is on
 # This value is used to overwrite that
 url = "https://api.boltz.exchange"
 
