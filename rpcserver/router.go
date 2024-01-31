@@ -36,6 +36,8 @@ import (
 	"github.com/lightningnetwork/lnd/zpay32"
 )
 
+const referralId = "boltz-client"
+
 type routedBoltzServer struct {
 	boltzrpc.BoltzServer
 
@@ -269,6 +271,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		PairId:          string(pair),
 		OrderSide:       "sell",
 		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
+		ReferralId:      referralId,
 	}
 
 	var preimage, preimageHash []byte
@@ -461,6 +464,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		InvoiceAmount:  uint64(request.Amount),
 		PreimageHash:   hex.EncodeToString(preimageHash),
 		ClaimPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
+		ReferralId:     referralId,
 	})
 
 	if err != nil {

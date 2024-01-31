@@ -130,6 +130,7 @@ type CreateSwapRequest struct {
 	RefundPublicKey string   `json:"refundPublicKey"`
 	Invoice         string   `json:"invoice"`
 	PreimageHash    string   `json:"preimageHash"`
+	ReferralId      string   `json:"referralId"`
 }
 
 type CreateSwapResponse struct {
@@ -174,6 +175,7 @@ type CreateReverseSwapRequest struct {
 	InvoiceAmount  uint64   `json:"invoiceAmount"`
 	PreimageHash   string   `json:"preimageHash"`
 	ClaimPublicKey string   `json:"claimPublicKey"`
+	ReferralId     string   `json:"referralId"`
 }
 
 type CreateReverseSwapResponse struct {
