@@ -29,6 +29,13 @@ func serializeChanId(chanId lightning.ChanId) *boltzrpc.ChannelId {
 	return nil
 }
 
+func serializeChanIds(chanIds []lightning.ChanId) (result []*boltzrpc.ChannelId) {
+	for _, chanId := range chanIds {
+		result = append(result, serializeChanId(chanId))
+	}
+	return result
+}
+
 func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	if swap == nil {
 		return nil
@@ -38,7 +45,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	return &boltzrpc.SwapInfo{
 		Id:                  serializedSwap.Id,
 		PairId:              serializedSwap.PairId,
-		ChanId:              serializeChanId(swap.ChanId),
+		ChanIds:             serializeChanIds(swap.ChanIds),
 		State:               swap.State,
 		Error:               serializedSwap.Error,
 		Status:              serializedSwap.Status,
@@ -69,7 +76,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 	return &boltzrpc.ReverseSwapInfo{
 		Id:                  serializedReverseSwap.Id,
 		PairId:              serializedReverseSwap.PairId,
-		ChanId:              serializeChanId(reverseSwap.ChanId),
+		ChanIds:             serializeChanIds(reverseSwap.ChanIds),
 		State:               reverseSwap.State,
 		Error:               serializedReverseSwap.Error,
 		Status:              serializedReverseSwap.Status,

@@ -146,10 +146,10 @@ func (swapper *AutoSwapper) getDismissedChannels() (DismissedChannels, error) {
 	}
 
 	for _, swap := range swaps {
-		reasons.addChannel(swap.ChanId, ReasonPendingSwap)
+		reasons.addChannels(swap.ChanIds, ReasonPendingSwap)
 	}
 	for _, swap := range reverseSwaps {
-		reasons.addChannel(swap.ChanId, ReasonPendingSwap)
+		reasons.addChannels(swap.ChanIds, ReasonPendingSwap)
 	}
 
 	since := time.Now().Add(time.Duration(-swapper.cfg.FailureBackoff) * time.Second)
@@ -163,10 +163,10 @@ func (swapper *AutoSwapper) getDismissedChannels() (DismissedChannels, error) {
 		return nil, errors.New("Could not query failed reverse swaps: " + err.Error())
 	}
 	for _, swap := range failedSwaps {
-		reasons.addChannel(swap.ChanId, ReasonFailedSwap)
+		reasons.addChannels(swap.ChanIds, ReasonFailedSwap)
 	}
 	for _, swap := range failedReverseSwaps {
-		reasons.addChannel(swap.ChanId, ReasonFailedSwap)
+		reasons.addChannels(swap.ChanIds, ReasonFailedSwap)
 	}
 
 	return reasons, nil
@@ -284,8 +284,10 @@ func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, err
 
 func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address string) error {
 	pair := string(swapper.cfg.pair)
-	chanId := recommendation.Channel.GetId()
-	rawChanid := chanId.ToCln()
+	var chanIds []string
+	if chanId := recommendation.Channel.GetId(); chanId != 0 {
+		chanIds = append(chanIds, chanId.ToCln())
+	}
 	var err error
 	if recommendation.Type == boltz.ReverseSwap {
 		err = swapper.ExecuteReverseSwap(&boltzrpc.CreateReverseSwapRequest{
@@ -293,14 +295,14 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 			Address:        address,
 			AcceptZeroConf: swapper.cfg.AcceptZeroConf,
 			PairId:         pair,
-			ChanId:         &rawChanid,
+			ChanIds:        chanIds,
 			Wallet:         &swapper.cfg.Wallet,
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
 		err = swapper.ExecuteSwap(&boltzrpc.CreateSwapRequest{
 			Amount:   int64(recommendation.Amount),
 			PairId:   pair,
-			ChanId:   &rawChanid,
+			ChanIds:  chanIds,
 			AutoSend: true,
 			Wallet:   &swapper.cfg.Wallet,
 		})

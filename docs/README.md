@@ -34,11 +34,7 @@ Download the latest binaries from the [releases](https://github.com/BoltzExchang
 
 ### Docker
 
-`boltz-client` is also available as [docker image](https://hub.docker.com/r/boltz/boltz-client/tags).
-
-Example usage where your lnd macaroon and certificate are placed inside `~/.lnd`
-
-To start the build process, run:
+`boltz-client` is also available as [docker image](https://hub.docker.com/r/boltz/boltz-client/tags). Assuming your lnd macaroon and certificate are placed in `~/.lnd`, run:
 
 ```
 docker create -v ~/.boltz:/root/.boltz -v ~/.lnd:/root/.lnd --name boltz-client boltz/boltz-client:latest

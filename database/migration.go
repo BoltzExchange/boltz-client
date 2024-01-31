@@ -193,7 +193,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN chanId INT")
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
 		}
@@ -201,7 +201,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN isAuto BOOLEAN")
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN isAuto BOOLEAN DEFAULT 0")
 		if err != nil {
 			return err
 		}
@@ -209,7 +209,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN serviceFeePercent REAL")
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN serviceFeePercent REAL DEFAULT 0")
 		if err != nil {
 			return err
 		}
@@ -221,11 +221,11 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN autoSend BOOLEAN")
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN autoSend BOOLEAN DEFAULT 0")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN refundAddress VARCHAR")
+		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN refundAddress VARCHAR DEFAULT ''")
 		if err != nil {
 			return err
 		}
@@ -239,7 +239,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanId INT")
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
 		}
@@ -247,7 +247,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN isAuto BOOLEAN")
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN isAuto BOOLEAN DEFAULT 0")
 		if err != nil {
 			return err
 		}
@@ -259,7 +259,7 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFeePercent REAL")
+		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFeePercent REAL DEFAULT 0")
 		if err != nil {
 			return err
 		}
@@ -292,6 +292,13 @@ func (database *Database) performMigration(fromVersion int) error {
 			return err
 		}
 
+		_, err = database.Exec("UPDATE version SET version = 3")
+		if err != nil {
+			return err
+		}
+
+		logger.Info("Update to database version 3 completed")
+		return database.postMigration(fromVersion)
 	case latestSchemaVersion:
 		logger.Info("Database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 

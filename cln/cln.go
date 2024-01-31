@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"time"
 
@@ -192,18 +193,18 @@ func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo str
 	}, nil
 }
 
-func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanId lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
+func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 	retry := uint32(timeoutSeconds)
 
 	var exclude []string
 
-	if chanId != 0 {
+	if len(chanIds) > 0 {
 		channels, err := c.ListChannels()
 		if err != nil {
 			return nil, err
 		}
 		for _, channel := range channels {
-			if channel.Id != chanId {
+			if !slices.Contains(chanIds, channel.Id) {
 				exclude = append(exclude, channel.Id.ToCln()+"/0")
 				exclude = append(exclude, channel.Id.ToCln()+"/1")
 			}

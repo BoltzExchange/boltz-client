@@ -85,9 +85,11 @@ type Config struct {
 
 type DismissedChannels map[lightning.ChanId][]string
 
-func (dismissed DismissedChannels) addChannel(id lightning.ChanId, reason string) {
-	if !slices.Contains(dismissed[id], reason) {
-		dismissed[id] = append(dismissed[id], reason)
+func (dismissed DismissedChannels) addChannels(chanIds []lightning.ChanId, reason string) {
+	for _, chanId := range chanIds {
+		if !slices.Contains(dismissed[chanId], reason) {
+			dismissed[chanId] = append(dismissed[chanId], reason)
+		}
 	}
 }
 
