@@ -4,47 +4,61 @@ Boltz Client can be configured via a `TOML` config file or CLI arguments. By def
 
 ## Example
 
-```toml
+````toml
 # Path to the log file
 logfile = ""
+
+# possible values: fatal, error, warn, info, debug, silly
+loglevel = "info"
+
+# possible values: "mainnet", "testnet" or "regtest"
+network = "mainnet"
+
+# you will have to set this to "cln" or "lnd" if you have configuration values for both
+node = ""
 
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network your node is on
 # This value is used to overwrite that
-url = "https://api.boltz.exchange"
+# url = "https://api.boltz.exchange"
 
 [DATABASE]
 # Path to the SQLite database file
-path = "/home/me/test.db"
+# path = "~/test.db"
 
 [LND]
 # Host of the gRPC interface of LND
-host = "127.0.0.1"
+# host = "127.0.0.1"
 
 # Port of the gRPC interface of LND
-port = 10009
+# port = 10009
 
-# Path to a macaroon file of LND
+# Path to the data directory of LND
+# datadir = "~/.lnd"
+
+# Path to a macaroon file of LND.
 # The daemon needs to have permission to read various endpoints, generate addresses and pay invoices
-macaroon = ""
+# Not required if datadir is specified
+# macaroon = "~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon"
 
 # Path to the TLS certificate of LND
-certificate = ""
+# Not required if datadir is specified
+# certificate = "~/.lnd/tls.cert"
 
 [CLN]
 # Host of the gRPC interface of CLN
-host = "127.0.0.1"
+# host = "127.0.0.1"
 
 # Port of the gRPC interface of CLN
-port = 9736
+# port = 9736
 
 # Path to the data directory of CLN
-datadir = "~/.lightning"
+# datadir = "~/.lightning"
 
-# Paths to TLS certificates and keys of CLN
-rootcert = ""
-privatekey = ""
-certchain =  ""
+# Paths to TLS certificates and keys of CLN. Not required if datadir is specified
+# rootcert = "~/.lightning/bitcoin/ca.pem"
+# privatekey = "~/.lightning/bitcoin/client-key.pem"
+# certchain =  "~/.lightning/bitcoin/client.pem"
 
 [RPC]
 # Host of the gRPC interface
@@ -76,4 +90,4 @@ adminMacaroonPath = ""
 
 # Path to the read-only macaroon for the gRPC and REST interface
 readOnlyMacaroonPath = ""
-```
+````

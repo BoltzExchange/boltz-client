@@ -9,11 +9,11 @@ Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or
 
 Design principles:
 
-* CLI-first, fine-grained control and enhanced setup UX via `boltzcli`
-* CLN-first: full support of all features
-* [Liquid](https://liquid.net/)-first: optimized for Lightning -> Liquid -> mainchain swaps
-* Create or import Liquid/mainchain wallets, swap to read-only wallets
-* Fully backwards compatible with last [boltz-lnd release](https://github.com/BoltzExchange/boltz-client/releases/tag/v1.2.7)
+- CLI-first, fine-grained control and enhanced setup UX via `boltzcli`
+- CLN-first: full support of all features
+- [Liquid](https://liquid.net/)-first: optimized for Lightning -> Liquid -> mainchain swaps
+- Create or import Liquid/mainchain wallets, swap to read-only wallets
+- Fully backwards compatible with last [boltz-lnd release](https://github.com/BoltzExchange/boltz-client/releases/tag/v1.2.7)
 
 It consists of two main components:
 
@@ -57,31 +57,35 @@ Binaries for the latest release of Boltz Client can be found on the [release pag
 
 ### Configuration
 
-`boltzd` requires a connection to a lightning node. It can connect to either CLN or LND.
+Configuration can be done via cli params or a TOML configuration file (default `~/.boltz/boltz.toml`). An example configuration file can be found [here](configuration.md). We suggest you start off with it. We suggest you start off with it.
+
+`boltzd` requires a connection to a lightning node, which ban be CLN or LND. If you set configuration values for both, you can specify which to use with the `node` param.
+
+To view all CLI flags use `--help`.
 
 #### LND
 
 The LND node to which the daemon connects has to be version `v0.10.0-beta` or higher. Also, LND needs to be compiled with these build flags (official binaries from Lightning Labs releases include them):
 
-* `invoicerpc` (hold invoices)
-* `routerrpc` (multi path payments)
-* `chainrpc` (block listener)
-* `walletrpc` (fee estimations)
+- `invoicerpc` (hold invoices)
+- `routerrpc` (multi path payments)
+- `chainrpc` (block listener)
+- `walletrpc` (fee estimations)
 
-In most cases, the CLI flags `--lnd.certificate <path to the tls.cert of LND>` and `--lnd.macaroon <path to the admin.macaroon of LND>` should be enough.
+By default, boltzd will attempt to connect to lnd running at `localhost:10009` (`lnd.host` and `lnd.port`) and looking for certificate and macaroon inside the data directory `~/.lnd` (`lnd.datadir`).
+
+You can manually set the location of the tls certificate (`lnd.certificate`) and admin macaroon (`lnd.macaroon`) instead of speciyfing the data directory aswell.
 
 #### CLN
 
 The daemon connects to CLN through [gRPC](https://docs.corelightning.org/docs/grpc). You need start CLN with the `--grpc-port` CLI flag, or set it in your config:
 
-* `--cln.port` same port as used for `--grpc-port`
-* `--cln.host` host of the machine CLN is running on
-* `--cln.datadir` data directory of cln
+- `--cln.port` same port as used for `--grpc-port`
+- `--cln.host` host of the machine CLN is running on
+- `--cln.datadir` data directory of cln (`~/.lightning` by default)
 
-To view all CLI flags use `--help`.
-
-`boltzd` can also be configured via a TOML file. The documentation for the configuration file can be found [here](configuration.md).
+You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory aswell.
 
 ### Macaroons
 
-The macaroons for the gRPC server of `boltzd` can be found in the `macaroons` folder inside the data directory of the daemon. By default, that data directory is `~/.boltz-client` on Linux.
+The macaroons for the gRPC server of `boltzd` can be found in the `macaroons` folder inside the data directory of the daemon. By default, that data directory is `~/.boltz` on Linux.
