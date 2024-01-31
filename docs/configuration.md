@@ -89,5 +89,5 @@ noMacaroons = false
 adminMacaroonPath = ""
 
 # Path to the read-only macaroon for the gRPC and REST interface
-readOnlyMacaroonPath = ""```
+readOnlyMacaroonPath = ""
 ````
