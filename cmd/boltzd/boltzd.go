@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
-	boltzClient "github.com/BoltzExchange/boltz-client"
 	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/config"
 	"github.com/BoltzExchange/boltz-client/electrum"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/mempool"
@@ -26,7 +26,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg := boltzClient.LoadConfig(defaultDataDir)
+	cfg, err := config.LoadConfig(defaultDataDir)
+	if err != nil {
+		logger.Fatal("Could not load config: " + err.Error())
+	}
 
 	logger.Init(cfg.LogFile, cfg.LogLevel)
 
@@ -42,7 +45,7 @@ func main() {
 	Start(cfg)
 }
 
-func Init(cfg *boltzClient.Config) {
+func Init(cfg *config.Config) {
 
 	err := cfg.Database.Connect()
 
@@ -102,7 +105,7 @@ func Init(cfg *boltzClient.Config) {
 	}
 }
 
-func Start(cfg *boltzClient.Config) {
+func Start(cfg *config.Config) {
 	errChannel := cfg.RPC.Start()
 
 	err := <-errChannel
@@ -112,7 +115,7 @@ func Start(cfg *boltzClient.Config) {
 	}
 }
 
-func setLightningNode(cfg *boltzClient.Config) {
+func setLightningNode(cfg *config.Config) {
 	isClnConfigured := cfg.Cln.RootCert != ""
 	isLndConfigured := cfg.LND.Macaroon != ""
 
@@ -149,7 +152,7 @@ func setBoltzEndpoint(boltzCfg *boltz.Boltz, network *boltz.Network) {
 	logger.Info("Using default Boltz endpoint for network " + network.Name + ": " + boltzCfg.URL)
 }
 
-func initOnchain(cfg *boltzClient.Config, network *boltz.Network) (*onchain.Onchain, error) {
+func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, error) {
 	onchain := &onchain.Onchain{
 		Btc: &onchain.Currency{
 			Listener: cfg.Lightning,

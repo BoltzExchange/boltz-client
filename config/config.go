@@ -1,10 +1,11 @@
-package boltz_lnd
+package config
 
 import (
 	"fmt"
 	"os"
 	"path"
 	"runtime"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
@@ -32,6 +33,8 @@ type Config struct {
 	LogFile  string `short:"l" long:"logfile" description:"Path to the log file"`
 	LogLevel string `long:"loglevel" description:"Log level (fatal, error, warn, info, debug, silly)"`
 
+	Network string `long:"network" description:"Network to use (mainnet, testnet, regtest)"`
+
 	Boltz *boltz.Boltz `group:"Boltz Options"`
 	LND   *lnd.LND     `group:"LND Options"`
 	Cln   *cln.Cln     `group:"Cln Options"`
@@ -54,7 +57,7 @@ type Config struct {
 	Help *helpOptions `group:"Help Options"`
 }
 
-func LoadConfig(dataDir string) *Config {
+func LoadConfig(dataDir string) (*Config, error) {
 	cfg := Config{
 		DataDir: dataDir,
 
@@ -62,6 +65,8 @@ func LoadConfig(dataDir string) *Config {
 
 		LogFile:  "",
 		LogLevel: "info",
+
+		Network: "mainnet",
 
 		Boltz: &boltz.Boltz{
 			URL: "",
@@ -75,7 +80,7 @@ func LoadConfig(dataDir string) *Config {
 		},
 
 		Cln: &cln.Cln{
-			Host: "",
+			Host: "127.0.0.1",
 			Port: 10009,
 
 			RootCert:   "",
@@ -106,6 +111,9 @@ func LoadConfig(dataDir string) *Config {
 
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
 	_, err := parser.Parse()
+	if err != nil {
+		printCouldNotParse(err)
+	}
 
 	if cfg.Help.ShowVersion {
 		fmt.Println(build.GetVersion())
@@ -118,29 +126,62 @@ func LoadConfig(dataDir string) *Config {
 		os.Exit(0)
 	}
 
-	if err != nil {
-		printCouldNotParse(err)
-	}
-
 	cfg.ConfigFile = utils.ExpandDefaultPath(cfg.DataDir, cfg.ConfigFile, "boltz.toml")
 
 	if cfg.ConfigFile != "" {
 		_, err := toml.DecodeFile(cfg.ConfigFile, &cfg)
 
 		if err != nil {
-			fmt.Printf("Could not read config file: " + err.Error() + "\n")
+			return nil, fmt.Errorf("Could not read config file: %v", err)
 		}
+	}
+
+	// parse a second time to ensure cli flags go over config values
+	_, err = parser.Parse()
+	if err != nil {
+		printCouldNotParse(err)
 	}
 
 	fmt.Println("Using data dir: " + cfg.DataDir)
 
+	if strings.EqualFold(cfg.Node, "CLN") && cfg.Cln.DataDir == "" {
+		cfg.Cln.DataDir = "~/.lightning"
+	} else if strings.EqualFold(cfg.Node, "LND") && cfg.LND.DataDir == "" {
+		cfg.LND.DataDir = "~/.lnd"
+	}
+
 	cfg.LND.Macaroon = utils.ExpandHomeDir(cfg.LND.Macaroon)
 	cfg.LND.Certificate = utils.ExpandHomeDir(cfg.LND.Certificate)
 
-	cfg.Cln.DataDir = utils.ExpandHomeDir(cfg.Cln.DataDir)
-	cfg.Cln.RootCert = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.RootCert, "ca.pem")
-	cfg.Cln.PrivateKey = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.PrivateKey, "client-key.pem")
-	cfg.Cln.CertChain = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.CertChain, "client.pem")
+	if cfg.LND.DataDir != "" {
+		cfg.LND.DataDir = utils.ExpandHomeDir(cfg.LND.DataDir)
+		if cfg.Network == "" {
+			return nil, fmt.Errorf("network must be set when lnd datadir is configured")
+		}
+
+		defaultMacaroon := fmt.Sprintf("./data/chain/bitcoin/%s/admin.macaroon", cfg.Network)
+		cfg.LND.Macaroon = utils.ExpandDefaultPath(cfg.LND.DataDir, cfg.LND.Macaroon, defaultMacaroon)
+		cfg.LND.Certificate = utils.ExpandDefaultPath(cfg.LND.DataDir, cfg.LND.Certificate, "tls.cert")
+	}
+
+	cfg.Cln.RootCert = utils.ExpandHomeDir(cfg.Cln.RootCert)
+	cfg.Cln.PrivateKey = utils.ExpandHomeDir(cfg.Cln.PrivateKey)
+	cfg.Cln.CertChain = utils.ExpandHomeDir(cfg.Cln.CertChain)
+
+	if cfg.Cln.DataDir != "" {
+		cfg.Cln.DataDir = utils.ExpandHomeDir(cfg.Cln.DataDir)
+		if cfg.Network == "" {
+			return nil, fmt.Errorf("network must be set when cln datadir is configured")
+		}
+		if cfg.Network == "mainnet" {
+			cfg.Cln.DataDir += "/bitcoin"
+		} else {
+			cfg.Cln.DataDir += "/" + cfg.Network
+		}
+		cfg.Cln.RootCert = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.RootCert, "ca.pem")
+		cfg.Cln.PrivateKey = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.PrivateKey, "client-key.pem")
+		cfg.Cln.CertChain = utils.ExpandDefaultPath(cfg.Cln.DataDir, cfg.Cln.CertChain, "client.pem")
+	}
 
 	cfg.LogFile = utils.ExpandDefaultPath(cfg.DataDir, cfg.LogFile, "boltz.log")
 	cfg.Database.Path = utils.ExpandDefaultPath(cfg.DataDir, cfg.Database.Path, "boltz.db")
@@ -156,7 +197,7 @@ func LoadConfig(dataDir string) *Config {
 	createDirIfNotExists(cfg.DataDir)
 	createDirIfNotExists(macaroonDir)
 
-	return &cfg
+	return &cfg, nil
 }
 
 func createDirIfNotExists(dir string) {
