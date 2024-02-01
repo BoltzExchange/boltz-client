@@ -50,33 +50,39 @@ func main() {
 	}
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:  "host",
-			Value: "127.0.0.1",
-			Usage: "gRPC host of Boltz",
+			Name:    "host",
+			Value:   "127.0.0.1",
+			Usage:   "gRPC host of Boltz",
+			EnvVars: []string{"BOLTZ_HOST"},
 		},
 		&cli.IntFlag{
-			Name:  "port",
-			Value: 9002,
-			Usage: "gRPC port of Boltz",
+			Name:    "port",
+			Value:   9002,
+			Usage:   "gRPC port of Boltz",
+			EnvVars: []string{"BOLTZ_PORT"},
 		},
 		&cli.StringFlag{
-			Name:  "datadir",
-			Value: defaultDataDir,
-			Usage: "Data directory of boltz-client",
+			Name:    "datadir",
+			Value:   defaultDataDir,
+			Usage:   "Data directory of boltz-client",
+			EnvVars: []string{"BOLTZ_DATADIR"},
 		},
 		&cli.StringFlag{
-			Name:  "tlscert",
-			Value: "",
-			Usage: "Path to the gRPC TLS certificate of Boltz",
+			Name:    "tlscert",
+			Value:   "",
+			Usage:   "Path to the gRPC TLS certificate of Boltz",
+			EnvVars: []string{"BOLTZ_TLSCERT"},
 		},
 		&cli.BoolFlag{
-			Name:  "no-macaroons",
-			Usage: "Disables Macaroon authentication",
+			Name:    "no-macaroons",
+			Usage:   "Disables Macaroon authentication",
+			EnvVars: []string{"BOLTZ_NO_MACAROONS"},
 		},
 		&cli.StringFlag{
-			Name:  "macaroon",
-			Value: "",
-			Usage: "Path to a gRPC Macaroon of Boltz",
+			Name:    "macaroon",
+			Value:   "",
+			Usage:   "Path to a gRPC Macaroon of Boltz",
+			EnvVars: []string{"BOLTZ_MACAROON"},
 		},
 	}
 	app.Commands = []*cli.Command{
