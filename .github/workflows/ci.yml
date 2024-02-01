@@ -31,7 +31,7 @@ jobs:
 
       - name: Setup Regtest
         run: |
-          git clone https://github.com/BoltzExchange/legend-regtest-enviroment.git ~/regtest -b remove-mempool
+          git clone https://github.com/BoltzExchange/legend-regtest-enviroment.git ~/regtest
           sudo chmod -R 777 ~/regtest
           cd ~/regtest
           chmod +x ./regtest
