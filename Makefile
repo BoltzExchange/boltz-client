@@ -10,7 +10,6 @@ GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v
 GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
 GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
-GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/' | grep -v '/cmd/'
 
 COMMIT := $(shell git log --pretty=format:'%h' -n 1)
 LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -w -s"
@@ -53,11 +52,11 @@ proto: $(TOOLS_PATH)
 
 unit:
 	@$(call print, "Running unit tests")
-	$(GOLIST) | $(XARGS) env $(GOTEST)
+	$(GOTEST) ./... -v -tags unit
 
 integration:
 	@$(call print, "Running integration tests")
-	$(GOTEST) -v $(PKG)/cmd/boltzd -skip TestAutoSwap/BTC/PerChannel
+	$(GOTEST) ./... -v
 
 
 #
