@@ -245,7 +245,7 @@ func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, err
 	now := time.Now()
 	if budgetInterval == nil || now.After(budgetInterval.EndDate) {
 		if createIfMissing {
-			budgetDuration := time.Duration(swapper.cfg.AutoBudgetInterval) * time.Second
+			budgetDuration := time.Duration(swapper.cfg.BudgetInterval) * time.Second
 			if budgetInterval == nil {
 				budgetInterval = &database.BudgetInterval{
 					StartDate: now,
@@ -273,12 +273,12 @@ func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, err
 		return nil, errors.New("Could not get past fees: " + err.Error())
 	}
 
-	budget := int64(swapper.cfg.AutoBudget) - int64(stats.TotalFees)
+	budget := int64(swapper.cfg.Budget) - int64(stats.TotalFees)
 
 	return &Budget{
 		BudgetInterval: *budgetInterval,
 		Amount:         budget,
-		Total:          swapper.cfg.AutoBudget,
+		Total:          swapper.cfg.Budget,
 	}, nil
 }
 

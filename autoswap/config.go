@@ -26,8 +26,8 @@ var DefaultConfig Config = Config{
 	ChannelPollInterval: 30,
 	Type:                "",
 	Currency:            boltz.CurrencyLiquid,
-	AutoBudget:          100000,
-	AutoBudgetInterval:  7 * 60 * 60 * 24,
+	Budget:              100000,
+	BudgetInterval:      7 * 60 * 60 * 24,
 }
 
 type Balance struct {
@@ -69,8 +69,8 @@ type Config struct {
 	MaxFeePercent       utils.Percentage
 	AcceptZeroConf      bool
 	FailureBackoff      uint64
-	AutoBudget          uint64
-	AutoBudgetInterval  uint64
+	Budget              uint64
+	BudgetInterval      uint64
 	Currency            boltz.Currency
 	Type                boltz.SwapType
 	PerChannel          bool
@@ -113,12 +113,12 @@ func (cfg *Config) Init() error {
 		}
 	}
 
-	if cfg.AutoBudget == 0 {
-		cfg.AutoBudget = DefaultConfig.AutoBudget
+	if cfg.Budget == 0 {
+		cfg.Budget = DefaultConfig.Budget
 	}
 
-	if cfg.AutoBudgetInterval == 0 {
-		cfg.AutoBudgetInterval = DefaultConfig.AutoBudgetInterval
+	if cfg.BudgetInterval == 0 {
+		cfg.BudgetInterval = DefaultConfig.BudgetInterval
 	}
 
 	if cfg.PerChannel {

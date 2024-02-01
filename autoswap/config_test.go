@@ -24,13 +24,13 @@ func TestSetConfigValue(t *testing.T) {
 
 	require.Error(t, cfg.SetValue("Auto", "invalid"))
 
-	require.NoError(t, cfg.SetValue("AutoBudget", "123"))
-	require.Equal(t, 123, int(cfg.AutoBudget))
+	require.NoError(t, cfg.SetValue("Budget", "123"))
+	require.Equal(t, 123, int(cfg.Budget))
 
 	require.NoError(t, cfg.SetValue("MaxFeePercent", "2.5"))
 	require.Equal(t, 2.5, float64(cfg.MaxFeePercent))
 
-	require.Error(t, cfg.SetValue("AutoBudget", "invalid"))
+	require.Error(t, cfg.SetValue("Budget", "invalid"))
 
 	require.Error(t, cfg.SetValue("unknown", "123"))
 

@@ -518,17 +518,17 @@ func autoSwapSetup(ctx *cli.Context) error {
 	config := response.(map[string]any)
 
 	var answers struct {
-		Currency           string
-		Type               string
-		AutoBudget         uint64
-		AutoBudgetInterval uint64
-		MinBalance         uint64
-		MaxBalance         uint64
-		MinBalancePercent  float64
-		MaxBalancePercent  float64
-		AcceptZeroConf     bool
-		BalanceType        string `json:"-"`
-		Wallet             string
+		Currency          string
+		Type              string
+		Budget            uint64
+		BudgetInterval    uint64
+		MinBalance        uint64
+		MaxBalance        uint64
+		MinBalancePercent float64
+		MaxBalancePercent float64
+		AcceptZeroConf    bool
+		BalanceType       string `json:"-"`
+		Wallet            string
 	}
 
 	var qs = []*survey.Question{
@@ -659,21 +659,21 @@ func autoSwapSetup(ctx *cli.Context) error {
 		}
 	}
 
-	budgetDuration := config["AutoBudgetInterval"].(float64) / (24 * time.Hour).Seconds()
+	budgetDuration := config["BudgetInterval"].(float64) / (24 * time.Hour).Seconds()
 	qs = append(
 		qs,
 		&survey.Question{
-			Name: "AutoBudgetInterval",
+			Name: "BudgetInterval",
 			Prompt: &survey.Input{
 				Message: "In which interval should the fee budget of the auto swapper be reset? (days)",
 				Default: fmt.Sprint(budgetDuration),
 			},
 		},
 		&survey.Question{
-			Name: "autoBudget",
+			Name: "Budget",
 			Prompt: &survey.Input{
 				Message: "How many sats do you want to spend max on fees per budget interval?",
-				Default: fmt.Sprint(config["AutoBudget"]),
+				Default: fmt.Sprint(config["Budget"]),
 			},
 		},
 		&survey.Question{
@@ -689,7 +689,7 @@ func autoSwapSetup(ctx *cli.Context) error {
 		return err
 	}
 
-	answers.AutoBudgetInterval = answers.AutoBudgetInterval * 24 * uint64(time.Hour.Seconds())
+	answers.BudgetInterval = answers.BudgetInterval * 24 * uint64(time.Hour.Seconds())
 
 	_, err = autoSwap.SetConfig(answers)
 	if err != nil {
