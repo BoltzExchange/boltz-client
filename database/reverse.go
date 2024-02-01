@@ -240,10 +240,17 @@ func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]ReverseSwa
 	return database.QueryReverseSwaps(SwapQuery{State: &state, Since: since})
 }
 
+const insertReverseSwapStatement = `
+INSERT INTO reverseSwaps (id, pairId, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
+                          invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId,
+                          claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee,
+                          serviceFeePercent, onchainFee)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, pairId, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee, serviceFeePercent, onchainFee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	_, err := database.Exec(
-		insertStatement,
+		insertReverseSwapStatement,
 		reverseSwap.Id,
 		reverseSwap.PairId,
 		formatJson(reverseSwap.ChanIds),
