@@ -4,4 +4,4 @@
 * [🎛 Configuration](configuration.md)
 * [🤖 gRPC API](grpc.md)
 * [🤖 REST API](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml)
-* [🔙 Back to Docs Home](http://127.0.0.1:5000/o/SPM8mTvJyc7OIzGL3HD7/s/XUXMXrD8YTzvuqvAeom7/)
+* [🔙 Back to Docs Home](https://app.gitbook.com/o/SPM8mTvJyc7OIzGL3HD7/s/XUXMXrD8YTzvuqvAeom7/)
