@@ -90,8 +90,8 @@ func TestBudget(t *testing.T) {
 		{
 			name: "Normal Swaps",
 			config: &Config{
-				AutoBudget:         100,
-				AutoBudgetInterval: 1000,
+				Budget:         100,
+				BudgetInterval: 1000,
 			},
 			swaps: []database.Swap{
 				fakeSwap(10, 10, true, 0),
@@ -101,8 +101,8 @@ func TestBudget(t *testing.T) {
 		{
 			name: "Reverse Swaps",
 			config: &Config{
-				AutoBudget:         100,
-				AutoBudgetInterval: 1000,
+				Budget:         100,
+				BudgetInterval: 1000,
 			},
 			reverseSwaps: []database.ReverseSwap{
 				fakeReverseSwap(10, 10, 10000, true, 0),
@@ -112,8 +112,8 @@ func TestBudget(t *testing.T) {
 		{
 			name: "Auto-Only",
 			config: &Config{
-				AutoBudget:         100,
-				AutoBudgetInterval: 1000,
+				Budget:         100,
+				BudgetInterval: 1000,
 			},
 			swaps: []database.Swap{
 				fakeSwap(10, 10, false, 0),
@@ -123,8 +123,8 @@ func TestBudget(t *testing.T) {
 		{
 			name: "New",
 			config: &Config{
-				AutoBudget:         100,
-				AutoBudgetInterval: 1000,
+				Budget:         100,
+				BudgetInterval: 1000,
 			},
 			swaps: []database.Swap{
 				fakeSwap(10, 10, true, 1500),
@@ -150,7 +150,7 @@ func TestBudget(t *testing.T) {
 
 			budget, err := swapper.GetCurrentBudget(true)
 			require.NoError(t, err)
-			require.Equal(t, int64(tc.config.AutoBudget), budget.Amount)
+			require.Equal(t, int64(tc.config.Budget), budget.Amount)
 
 			for _, swap := range tc.swaps {
 				require.NoError(t, db.CreateSwap(swap))
@@ -512,7 +512,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			name: "MaxFeePercent/High",
 			config: &Config{
 				MaxFeePercent: 25,
-				AutoBudget:    150,
+				Budget:        150,
 			},
 			recommendation: &rawRecommendation{
 
@@ -558,7 +558,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			name: "BudgetExceeded",
 			config: &Config{
 				MaxFeePercent: 25,
-				AutoBudget:    10,
+				Budget:        10,
 			},
 			recommendation: &rawRecommendation{
 				Type:   boltz.NormalSwap,
@@ -573,13 +573,13 @@ func TestCheckSwapRecommendation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if tc.config.AutoBudget == 0 {
-				tc.config.AutoBudget = tc.recommendation.Amount
+			if tc.config.Budget == 0 {
+				tc.config.Budget = tc.recommendation.Amount
 			}
 
 			swapper := getSwapper(t, tc.config)
 
-			validated, err := swapper.validateRecommendations([]*rawRecommendation{tc.recommendation}, int64(tc.config.AutoBudget))
+			validated, err := swapper.validateRecommendations([]*rawRecommendation{tc.recommendation}, int64(tc.config.Budget))
 			require.NoError(t, err)
 			require.Equal(t, tc.outcome, validated[0].DismissedReasons)
 		})

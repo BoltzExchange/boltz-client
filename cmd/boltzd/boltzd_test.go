@@ -647,7 +647,7 @@ func TestAutoSwap(t *testing.T) {
 			swapCfg := autoswap.DefaultConfig
 			swapCfg.AcceptZeroConf = true
 			swapCfg.MaxFeePercent = 10
-			swapCfg.AutoBudget = 1000000
+			swapCfg.Budget = 1000000
 			swapCfg.Currency = tc.pair
 			swapCfg.Type = ""
 			swapCfg.Wallet = ""
@@ -673,7 +673,7 @@ func TestAutoSwap(t *testing.T) {
 				swapCfg.Type = boltz.ReverseSwap
 				swapCfg.PerChannel = false
 				swapCfg.Enabled = false
-				swapCfg.AutoBudget = 1000000
+				swapCfg.Budget = 1000000
 				swapCfg.AcceptZeroConf = true
 
 				writeConfig(t)

@@ -233,55 +233,6 @@ func (swapper *AutoSwapper) GetSwapRecommendations() ([]*SwapRecommendation, err
 	return swapper.validateRecommendations(recommendations, budget.Amount)
 }
 
-func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
-	if err := swapper.requireConfig(); err != nil {
-		return nil, err
-	}
-	budgetInterval, err := swapper.database.QueryCurrentBudgetInterval()
-	if err != nil {
-		return nil, errors.New("Could not get budget period: " + err.Error())
-	}
-
-	now := time.Now()
-	if budgetInterval == nil || now.After(budgetInterval.EndDate) {
-		if createIfMissing {
-			budgetDuration := time.Duration(swapper.cfg.AutoBudgetInterval) * time.Second
-			if budgetInterval == nil {
-				budgetInterval = &database.BudgetInterval{
-					StartDate: now,
-					EndDate:   now.Add(budgetDuration),
-				}
-			}
-			for now.After(budgetInterval.EndDate) {
-				budgetInterval.StartDate = budgetInterval.EndDate
-				budgetInterval.EndDate = budgetInterval.EndDate.Add(budgetDuration)
-			}
-			if err := swapper.database.CreateBudget(*budgetInterval); err != nil {
-				return nil, errors.New("Could not create budget period: " + err.Error())
-			}
-		} else {
-			return nil, nil
-		}
-	}
-
-	isAuto := true
-	stats, err := swapper.database.QueryStats(database.SwapQuery{
-		Since:  budgetInterval.StartDate,
-		IsAuto: &isAuto,
-	})
-	if err != nil {
-		return nil, errors.New("Could not get past fees: " + err.Error())
-	}
-
-	budget := int64(swapper.cfg.AutoBudget) - int64(stats.TotalFees)
-
-	return &Budget{
-		BudgetInterval: *budgetInterval,
-		Amount:         budget,
-		Total:          swapper.cfg.AutoBudget,
-	}, nil
-}
-
 func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address string) error {
 	pair := string(swapper.cfg.pair)
 	var chanIds []string
