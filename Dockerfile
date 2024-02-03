@@ -34,4 +34,4 @@ COPY --from=builder /boltz-client/boltzcli /bin/
 # gRPC and REST ports
 EXPOSE 9002 9003
 
-CMD ["boltzd"]
+ENTRYPOINT ["boltzd"]
