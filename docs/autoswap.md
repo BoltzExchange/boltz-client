@@ -26,7 +26,6 @@ These thresholds can be set as absolute amounts of sats (`MaxBalance` and `MinBa
 
 The autoswapper also needs access to a `Wallet` (specified by name) which normal swaps can be paid from and reverse swap funds will end up.
 You can see a list of available wallets using `boltzcli wallet list`. Note that the wallet currency must be the same as the autoswap currency. 
-See [wallets](wallets.md) for more details.
 
 ### Swap Types
 
