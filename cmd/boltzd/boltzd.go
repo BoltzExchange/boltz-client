@@ -42,6 +42,10 @@ func main() {
 
 	logger.Info("Parsed config and CLI arguments: " + formattedCfg)
 
+	if strings.HasSuffix(defaultDataDir, "boltz-lnd") {
+		logger.Warn("You still have data in the .boltz-lnd folder - please rename to .boltz")
+	}
+
 	Init(cfg)
 	Start(cfg)
 }

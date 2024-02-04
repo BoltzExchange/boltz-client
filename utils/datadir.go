@@ -5,8 +5,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/BoltzExchange/boltz-client/logger"
 )
 
 func ExpandHomeDir(path string) string {
@@ -46,7 +44,6 @@ func GetDefaultDataDir() (string, error) {
 
 	var dataFolder string
 	if _, err := os.Stat(path.Join(homeDir, ".boltz-lnd")); err == nil {
-		logger.Warn("You still have your configuration in .boltz-lnd folder - please rename to .boltz")
 		dataFolder = ".boltz-lnd"
 	} else {
 		dataFolder = ".boltz"
