@@ -211,7 +211,7 @@ func Init(walletConfig Config) error {
 	if config != nil {
 		return errors.New("already initialized")
 	}
-	walletConfig.DataDir += "/liquid-wallet"
+	walletConfig.DataDir += "/wallet"
 	params := map[string]any{
 		"datadir":   walletConfig.DataDir,
 		"log_level": "error",
