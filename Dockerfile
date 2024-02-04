@@ -24,6 +24,8 @@ COPY --from=builder /boltz-client/boltzcli /
 # Start a new, final image.
 FROM ubuntu:jammy as final
 
+RUN apt update && apt install ca-certificates -y 
+
 # Root volume for data persistence.
 VOLUME /root/.boltz
 
