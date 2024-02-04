@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"strconv"
 
@@ -22,16 +21,14 @@ func (database *Database) migrate() error {
 
 	if err != nil {
 		// Insert the latest schema version when no row is found
-		if err == sql.ErrNoRows {
-			logger.Info("No database schema version found")
-			logger.Info("Inserting latest database schema version: " + strconv.Itoa(latestSchemaVersion))
-
-			_, err = database.Exec("INSERT INTO version (version) VALUES (?)", latestSchemaVersion)
-
-			return err
-		} else {
+		logger.Infof("No database schema version found, inserting latest schema version %d", latestSchemaVersion)
+		if err := database.createTables(); err != nil {
 			return err
 		}
+
+		_, err = database.Exec("INSERT INTO version (version) VALUES (?)", latestSchemaVersion)
+
+		return err
 	}
 
 	return database.performMigration(version)

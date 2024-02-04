@@ -187,12 +187,6 @@ func (database *Database) Connect() error {
 
 		database.db = db
 
-		err = database.createTables()
-
-		if err != nil {
-			return err
-		}
-
 		return database.migrate()
 	}
 	return nil
