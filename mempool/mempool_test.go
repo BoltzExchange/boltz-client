@@ -1,3 +1,5 @@
+//go:build mempool
+
 package mempool
 
 import (
