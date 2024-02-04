@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -26,13 +27,16 @@ func ConnectBoltz(lightning lightning.LightningNode, boltz *boltz.Boltz) (string
 	if len(node.URIs) == 0 {
 		return node.NodeKey, errors.New("could not find URIs for Boltz LND node for symbol: " + symbol)
 	}
-	err = lightning.ConnectPeer(node.URIs[0])
+	uri := node.URIs[0]
+	err = lightning.ConnectPeer(uri)
 
 	if err == nil {
-		logger.Info("Connected to Boltz node: " + node.URIs[0])
-	} else if strings.HasPrefix(err.Error(), "already connected to peer") {
-		logger.Info("Already connected to Boltz node: " + node.URIs[0])
+		logger.Info("Connected to Boltz node: " + uri)
+	} else if strings.Contains(err.Error(), "already connected to peer") {
+		logger.Info("Already connected to Boltz node: " + uri)
 		err = nil
+	} else {
+		err = fmt.Errorf("could not connect to boltz node %s: %w", uri, err)
 	}
 
 	return node.NodeKey, err

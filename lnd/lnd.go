@@ -151,8 +151,8 @@ func (lnd *LND) ConnectPeer(uri string) error {
 	_, err := lnd.client.ConnectPeer(lnd.ctx, &lnrpc.ConnectPeerRequest{
 		Perm: true,
 		Addr: &lnrpc.LightningAddress{
-			Host:   uriParts[0],
-			Pubkey: uriParts[1],
+			Pubkey: uriParts[0],
+			Host:   uriParts[1],
 		},
 	})
 	return err
