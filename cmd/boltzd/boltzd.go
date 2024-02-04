@@ -28,7 +28,8 @@ func main() {
 
 	cfg, err := config.LoadConfig(defaultDataDir)
 	if err != nil {
-		logger.Fatal("Could not load config: " + err.Error())
+		fmt.Println("Could not load config: " + err.Error())
+		os.Exit(1)
 	}
 
 	logger.Init(cfg.LogFile, cfg.LogLevel)

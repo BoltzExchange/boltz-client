@@ -128,7 +128,7 @@ func LoadConfig(dataDir string) (*Config, error) {
 
 	cfg.ConfigFile = utils.ExpandDefaultPath(cfg.DataDir, cfg.ConfigFile, "boltz.toml")
 
-	if cfg.ConfigFile != "" {
+	if cfg.ConfigFile != "" && utils.FileExists(cfg.ConfigFile) {
 		_, err := toml.DecodeFile(cfg.ConfigFile, &cfg)
 
 		if err != nil {
