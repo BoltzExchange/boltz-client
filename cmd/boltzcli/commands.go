@@ -961,6 +961,8 @@ var walletCommands = &cli.Command{
 			Name:      "create",
 			Usage:     "Create a new wallet",
 			ArgsUsage: "name currency",
+			Description: "Creates a new wallet for the specified currency and unique name.\n" +
+				"Currency has to be BTC or L-BTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
 				return createWallet(ctx, walletInfo(ctx))
 			}),
@@ -969,6 +971,9 @@ var walletCommands = &cli.Command{
 			Name:      "import",
 			Usage:     "Imports an existing wallet",
 			ArgsUsage: "name currency",
+			Description: "Imports an existing wallet for the specified currency with an unique name.\n" +
+				"You can either choose to import a full mnemonic to give the daemon full control over the wallet or import a readonly wallet using a xpub or core descriptor.\n" +
+				"Currency has to be BTC ot L-BTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
 				return importWallet(ctx, walletInfo(ctx), true)
 			}),
@@ -987,10 +992,11 @@ var walletCommands = &cli.Command{
 			Flags:  []cli.Flag{jsonFlag},
 		},
 		{
-			Name:      "subaccount",
-			Usage:     "Select the subaccount for a wallet",
-			ArgsUsage: "name",
-			Action:    requireNArgs(1, selectSubaccount),
+			Name:        "subaccount",
+			Usage:       "Select the subaccount for a wallet",
+			Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
+			ArgsUsage:   "name",
+			Action:      requireNArgs(1, selectSubaccount),
 		},
 		{
 			Name:      "remove",
