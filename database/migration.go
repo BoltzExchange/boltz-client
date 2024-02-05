@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"strconv"
 
@@ -22,25 +21,23 @@ func (database *Database) migrate() error {
 
 	if err != nil {
 		// Insert the latest schema version when no row is found
-		if err == sql.ErrNoRows {
-			logger.Info("No database schema version found")
-			logger.Info("Inserting latest database schema version: " + strconv.Itoa(latestSchemaVersion))
-
-			_, err = database.Exec("INSERT INTO version (version) VALUES (?)", latestSchemaVersion)
-
-			return err
-		} else {
+		logger.Infof("No database schema version found, inserting latest schema version %d", latestSchemaVersion)
+		if err := database.createTables(); err != nil {
 			return err
 		}
+
+		_, err = database.Exec("INSERT INTO version (version) VALUES (?)", latestSchemaVersion)
+
+		return err
 	}
 
 	return database.performMigration(version)
 }
 
-func (database *Database) performMigration(fromVersion int) error {
-	switch fromVersion {
+func (database *Database) performMigration(oldVersion int) error {
+	switch oldVersion {
 	case 1:
-		logger.Info("Updating database from version 1 to 2")
+		logMigration(oldVersion)
 
 		logger.Info("Migrating table \"swaps\"")
 
@@ -178,16 +175,10 @@ func (database *Database) performMigration(fromVersion int) error {
 			}
 		}
 
-		_, err = database.Exec("UPDATE version SET version = 2 WHERE version = 1")
-		if err != nil {
-			return err
-		}
-
-		logger.Info("Update to database version 2 completed")
-		return database.postMigration(fromVersion)
+		return database.postMigration(oldVersion)
 
 	case 2:
-		logger.Info("Updating database from version 2 to 3")
+		logMigration(oldVersion)
 
 		_, err := database.Exec("ALTER TABLE swaps ADD COLUMN pairId VARCHAR")
 		if err != nil {
@@ -297,19 +288,25 @@ func (database *Database) performMigration(fromVersion int) error {
 			return err
 		}
 
-		logger.Info("Update to database version 3 completed")
-		return database.postMigration(fromVersion)
+		return database.postMigration(oldVersion)
 	case latestSchemaVersion:
 		logger.Info("Database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 
 	default:
-		return errors.New("found unexpected database schema version: " + strconv.Itoa(fromVersion))
+		return errors.New("found unexpected database schema version: " + strconv.Itoa(oldVersion))
 	}
 
 	return nil
 }
 
 func (database *Database) postMigration(fromVersion int) error {
+	newVersion := fromVersion + 1
+
+	if _, err := database.Exec("UPDATE version SET version = ?", newVersion); err != nil {
+		return err
+	}
+	logger.Infof("Update to database version %d completed", fromVersion+1)
+
 	if fromVersion+1 < latestSchemaVersion {
 		logger.Info("Running migration again")
 		return database.migrate()
@@ -328,4 +325,8 @@ func (database *Database) queryVersion() (int, error) {
 	)
 
 	return version, err
+}
+
+func logMigration(oldVersion int) {
+	logger.Infof("Updating database from version %d to %d", oldVersion, oldVersion+1)
 }

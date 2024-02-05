@@ -19,6 +19,85 @@ import (
 
 // TODO: prepare insert statements only once
 
+const createTables = `
+CREATE TABLE version
+(
+    version INT
+);
+CREATE TABLE macaroons
+(
+    id      VARCHAR PRIMARY KEY,
+    rootKey VARCHAR
+);
+CREATE TABLE swaps
+(
+    id                  VARCHAR PRIMARY KEY,
+    pairId              VARCHAR,
+    chanIds             JSON,
+    state               INT,
+    error               VARCHAR,
+    status              VARCHAR,
+    privateKey          VARCHAR,
+    preimage            VARCHAR,
+    redeemScript        VARCHAR,
+    invoice             VARCHAR,
+    address             VARCHAR,
+    expectedAmount      INT,
+    timeoutBlockheight  INTEGER,
+    lockupTransactionId VARCHAR,
+    refundTransactionId VARCHAR,
+    refundAddress       VARCHAR DEFAULT '',
+    blindingKey         VARCHAR,
+    isAuto              BOOLEAN DEFAULT 0,
+    serviceFee          INT,
+    serviceFeePercent   REAL,
+    onchainFee          INT,
+    createdAt           INT,
+    autoSend            BOOLEAN
+);
+CREATE TABLE reverseSwaps
+(
+    id                  VARCHAR PRIMARY KEY,
+    pairId              VARCHAR,
+    chanIds             JSON,
+    state               INT,
+    error               VARCHAR,
+    status              VARCHAR,
+    acceptZeroConf      BOOLEAN,
+    privateKey          VARCHAR,
+    preimage            VARCHAR,
+    redeemScript        VARCHAR,
+    invoice             VARCHAR,
+    claimAddress        VARCHAR,
+    expectedAmount      INT,
+    timeoutBlockheight  INTEGER,
+    lockupTransactionId VARCHAR,
+    claimTransactionId  VARCHAR,
+    blindingKey         VARCHAR,
+    isAuto              BOOLEAN DEFAULT 0,
+    routingFeeMsat      INT,
+    serviceFee          INT,
+    serviceFeePercent   REAL    DEFAULT 0,
+    onchainFee          INT,
+    createdAt           INT
+);
+CREATE TABLE autobudget
+(
+    startDate INTEGER PRIMARY KEY,
+    endDate   INTEGER
+);
+CREATE TABLE wallets
+(
+    name           VARCHAR PRIMARY KEY,
+    currency       VARCHAR,
+    xpub           VARCHAR,
+    coreDescriptor VARCHAR,
+    mnemonic       VARCHAR,
+    subaccount     INT,
+    salt           VARCHAR
+);
+`
+
 type Database struct {
 	Path string `long:"database.path" description:"Path to the database file"`
 
@@ -108,12 +187,6 @@ func (database *Database) Connect() error {
 
 		database.db = db
 
-		err = database.createTables()
-
-		if err != nil {
-			return err
-		}
-
 		return database.migrate()
 	}
 	return nil
@@ -144,38 +217,7 @@ func (database *Database) QueryRow(query string, args ...any) *sql.Row {
 }
 
 func (database *Database) createTables() error {
-	_, err := database.Exec("CREATE TABLE IF NOT EXISTS version (version INT)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS macaroons (id VARCHAR PRIMARY KEY, rootKey VARCHAR)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS swaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, address VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, refundTransactionId VARCHAR, refundAddress VARCHAR DEFAULT '', blindingKey VARCHAR, isAuto BOOLEAN DEFAULT 0, serviceFee INT, serviceFeePercent REAL, onchainFee INT, createdAt INT, autoSend BOOLEAN)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS reverseSwaps (id VARCHAR PRIMARY KEY, pairId VARCHAR, chanIds JSON, state INT, error VARCHAR, status VARCHAR, acceptZeroConf BOOLEAN, privateKey VARCHAR, preimage VARCHAR, redeemScript VARCHAR, invoice VARCHAR, claimAddress VARCHAR, expectedAmount INT, timeoutBlockheight INTEGER, lockupTransactionId VARCHAR, claimTransactionId VARCHAR, blindingKey VARCHAR, isAuto BOOLEAN DEFAULT 0, routingFeeMsat INT, serviceFee INT, serviceFeePercent REAL DEFAULT 0, onchainFee INT, createdAt INT)")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS autobudget (startDate INTEGER PRIMARY KEY, endDate INTEGER)")
-	if err != nil {
-		return err
-	}
-
-	// create table for wallet credentials
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS wallets (name VARCHAR PRIMARY KEY, currency VARCHAR, xpub VARCHAR, coreDescriptor VARCHAR, mnemonic VARCHAR, subaccount INT, salt VARCHAR)")
-
+	_, err := database.Exec(createTables)
 	return err
 }
 

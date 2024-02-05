@@ -252,8 +252,14 @@ func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, pair b
 	return database.querySwaps("SELECT * FROM swaps WHERE (state = ? OR state = ? OR state = ?) AND timeoutBlockheight <= ? AND pairId = ?", boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, height, pair)
 }
 
+const insertSwapStatement = `
+INSERT INTO swaps (id, pairId, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address,
+                   expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress,
+                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, autoSend)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+
 func (database *Database) CreateSwap(swap Swap) error {
-	insertStatement := "INSERT INTO swaps (id, pairId, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress, blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, autoSend) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	preimage := ""
 
 	if swap.Preimage != nil {
@@ -261,7 +267,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 	}
 
 	_, err := database.Exec(
-		insertStatement,
+		insertSwapStatement,
 		swap.Id,
 		swap.PairId,
 		formatJson(swap.ChanIds),
