@@ -1,4 +1,31 @@
 
+<a name="v2.0.0-beta"></a>
+## [v2.0.0-beta] - 2024-02-05
+### Feat
+- improve errors if wallet subaccount doesnt exist ([#82](https://github.com/BoltzExchange/boltz-client/issues/82))
+- allow settings cli flags through env vars
+- allow node configuration through datadir + network ([#77](https://github.com/BoltzExchange/boltz-client/issues/77))
+- add referralId
+
+### Fix
+- exclude electrum tests from unit tests
+- install ca-certificates in docker image to avoid ssl errors
+- correct request to lnd `ConnectPeer`
+- only try to decode config if file exists
+- specify entrypoint isntead of cmd in docker image
+- gitbook back to home link
+- add missing `transaction.lockupFailed` event
+- dont close event stream when reconnecting
+- update version table after migrating db
+
+### Refactor
+- print data folder warning after config
+- change wallet data directory
+- rename autobudget config values ([#79](https://github.com/BoltzExchange/boltz-client/issues/79))
+- allow specifying multiple channel ids instead of one ([#73](https://github.com/BoltzExchange/boltz-client/issues/73))
+- move docs to gitbook
+
+
 <a name="v1.2.7"></a>
 ## [v1.2.7] - 2023-04-03
 ### Feat
@@ -14,29 +41,29 @@
 <a name="v1.2.6"></a>
 ## [v1.2.6] - 2021-07-22
 ### Feat
-- add Dockerfile ([#47](https://github.com/BoltzExchange/boltz-lnd/issues/47))
+- add Dockerfile ([#47](https://github.com/BoltzExchange/boltz-client/issues/47))
 
 ### Fix
 - set fee floor to 2 sat/vByte
-- claimTransactionId typo ([#45](https://github.com/BoltzExchange/boltz-lnd/issues/45))
+- claimTransactionId typo ([#45](https://github.com/BoltzExchange/boltz-client/issues/45))
 
 
 <a name="v1.2.5"></a>
 ## [v1.2.5] - 2021-03-10
 ### Fix
-- replace int data type ([#41](https://github.com/BoltzExchange/boltz-lnd/issues/41))
+- replace int data type ([#41](https://github.com/BoltzExchange/boltz-client/issues/41))
 
 
 <a name="v1.2.4"></a>
 ## [v1.2.4] - 2021-03-01
 ### Fix
-- refund expired deposit swaps ([#38](https://github.com/BoltzExchange/boltz-lnd/issues/38))
+- refund expired deposit swaps ([#38](https://github.com/BoltzExchange/boltz-client/issues/38))
 
 
 <a name="v1.2.3"></a>
 ## [v1.2.3] - 2021-02-20
 ### Feat
-- save errors to database ([#36](https://github.com/BoltzExchange/boltz-lnd/issues/36))
+- save errors to database ([#36](https://github.com/BoltzExchange/boltz-client/issues/36))
 
 
 <a name="v1.2.2"></a>
@@ -62,7 +89,7 @@
 <a name="v1.2.0"></a>
 ## [v1.2.0] - 2020-12-14
 ### Feat
-- print parsed config on startup ([#29](https://github.com/BoltzExchange/boltz-lnd/issues/29))
+- print parsed config on startup ([#29](https://github.com/BoltzExchange/boltz-client/issues/29))
 - add network to GetInfo response
 - custom paths for REST proxy
 - add REST proxy for gRPC server
@@ -82,7 +109,7 @@
 <a name="v1.1.1"></a>
 ## [v1.1.1] - 2020-09-09
 ### Fix
-- nil pointer dereference when LND is killed ([#18](https://github.com/BoltzExchange/boltz-lnd/issues/18))
+- nil pointer dereference when LND is killed ([#18](https://github.com/BoltzExchange/boltz-client/issues/18))
 
 
 <a name="v1.1.0"></a>
@@ -97,7 +124,7 @@
 ### Feat
 - store transaction ids of Reverse Swaps
 - store transaction ids of Swaps
-- add ListSwaps command ([#15](https://github.com/BoltzExchange/boltz-lnd/issues/15))
+- add ListSwaps command ([#15](https://github.com/BoltzExchange/boltz-client/issues/15))
 - add Channel Creations to GetSwapInfo
 - add database schema version
 - inbound parameter for deposit call
@@ -112,7 +139,7 @@
 - add startup sanity checks
 - set default Boltz endpoint based on chain
 - add Channel Creations
-- add Reverse Swaps ([#3](https://github.com/BoltzExchange/boltz-lnd/issues/3))
+- add Reverse Swaps ([#3](https://github.com/BoltzExchange/boltz-client/issues/3))
 - fee of refund transactions
 - batch refund transactions
 - add refund logic
@@ -121,7 +148,7 @@
 ### Fix
 - show lockup address for Reverse Swaps
 - limits of deposit call
-- cleanup streams ([#14](https://github.com/BoltzExchange/boltz-lnd/issues/14))
+- cleanup streams ([#14](https://github.com/BoltzExchange/boltz-client/issues/14))
 - invoice expiry timeout
 - parsing of percentage fee
 - bech32 litecoin addresses
@@ -134,14 +161,15 @@
 - improve Channel Creation enforcement
 
 
-[v1.2.7]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.6...v1.2.7
-[v1.2.6]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.5...v1.2.6
-[v1.2.5]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.4...v1.2.5
-[v1.2.4]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.3...v1.2.4
-[v1.2.3]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.2...v1.2.3
-[v1.2.2]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.1...v1.2.2
-[v1.2.1]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.2.0...v1.2.1
-[v1.2.0]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.2...v1.2.0
-[v1.1.2]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.1...v1.1.2
-[v1.1.1]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.1.0...v1.1.1
-[v1.1.0]: https://github.com/BoltzExchange/boltz-lnd/compare/v1.0.0...v1.1.0
+[v2.0.0-beta]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.7...v2.0.0-beta
+[v1.2.7]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.6...v1.2.7
+[v1.2.6]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.5...v1.2.6
+[v1.2.5]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.4...v1.2.5
+[v1.2.4]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.3...v1.2.4
+[v1.2.3]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.2...v1.2.3
+[v1.2.2]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.1...v1.2.2
+[v1.2.1]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.0...v1.2.1
+[v1.2.0]: https://github.com/BoltzExchange/boltz-client/compare/v1.1.2...v1.2.0
+[v1.1.2]: https://github.com/BoltzExchange/boltz-client/compare/v1.1.1...v1.1.2
+[v1.1.1]: https://github.com/BoltzExchange/boltz-client/compare/v1.1.0...v1.1.1
+[v1.1.0]: https://github.com/BoltzExchange/boltz-client/compare/v1.0.0...v1.1.0
