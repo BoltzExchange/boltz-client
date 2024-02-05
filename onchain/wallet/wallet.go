@@ -417,7 +417,7 @@ func Login(credentials *Credentials) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
-	wallet := &Wallet{currency: credentials.Currency, name: credentials.Name, subaccount: credentials.Subaccount}
+	wallet := &Wallet{currency: credentials.Currency, name: credentials.Name}
 	login := make(map[string]any)
 
 	if credentials.Mnemonic != "" {
@@ -451,6 +451,13 @@ func Login(credentials *Credentials) (*Wallet, error) {
 		return nil, err
 	}
 	logger.Debugf("Logged in: %v", result)
+
+	if credentials.Subaccount != nil {
+		if _, err := wallet.SetSubaccount(credentials.Subaccount); err != nil {
+			logger.Errorf("Failed to set subaccount for wallet %s. You might have to resync it using GetSubaccounts: %v", credentials.Name, err)
+		}
+	}
+
 	return wallet, nil
 }
 
