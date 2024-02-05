@@ -9,11 +9,11 @@ Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or
 
 Design principles:
 
-- CLI-first, fine-grained control and enhanced setup UX via `boltzcli`
-- CLN-first: full support of all features
-- [Liquid](https://liquid.net/)-first: optimized for Lightning -> Liquid -> mainchain swaps
-- Create or import Liquid/mainchain wallets, swap to read-only wallets
-- Fully backwards compatible with last [boltz-lnd release](https://github.com/BoltzExchange/boltz-client/releases/tag/v1.2.7)
+* CLI-first, fine-grained control and enhanced setup UX via `boltzcli`
+* CLN-first: first-class citizen support
+* [Liquid](https://liquid.net/)-first: optimized for Lightning -> Liquid -> mainchain swaps
+* Create or import Liquid/mainchain wallets, swap to read-only wallets
+* Fully backwards compatible with last [boltz-lnd release](https://github.com/BoltzExchange/boltz-client/releases/tag/v1.2.7)
 
 It consists of two main components:
 
@@ -67,10 +67,10 @@ To view all CLI flags use `--help`.
 
 The LND node to which the daemon connects has to be version `v0.10.0-beta` or higher. Also, LND needs to be compiled with these build flags (official binaries from Lightning Labs releases include them):
 
-- `invoicerpc` (hold invoices)
-- `routerrpc` (multi path payments)
-- `chainrpc` (block listener)
-- `walletrpc` (fee estimations)
+* `invoicerpc` (hold invoices)
+* `routerrpc` (multi path payments)
+* `chainrpc` (block listener)
+* `walletrpc` (fee estimations)
 
 By default, boltzd will attempt to connect to lnd running at `localhost:10009` (`lnd.host` and `lnd.port`) and looking for certificate and macaroon inside the data directory `~/.lnd` (`lnd.datadir`).
 
@@ -80,9 +80,9 @@ You can manually set the location of the tls certificate (`lnd.certificate`) and
 
 The daemon connects to CLN through [gRPC](https://docs.corelightning.org/docs/grpc). You need start CLN with the `--grpc-port` CLI flag, or set it in your config:
 
-- `--cln.port` same port as used for `--grpc-port`
-- `--cln.host` host of the machine CLN is running on
-- `--cln.datadir` data directory of cln (`~/.lightning` by default)
+* `--cln.port` same port as used for `--grpc-port`
+* `--cln.host` host of the machine CLN is running on
+* `--cln.datadir` data directory of cln (`~/.lightning` by default)
 
 You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory aswell.
 

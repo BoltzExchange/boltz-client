@@ -1,4 +1,4 @@
-# Wallets
+# 💰 Wallets
 
 `boltz-client` allows you to manage Bitcoin and [Liquid](https://liquid.net/) wallets using [GDK](https://github.com/Blockstream/gdk).
 
@@ -8,10 +8,10 @@ To create a new Liquid called "MyLiquidWallet" run:
 
 `boltzcli wallet create MyLiquidWallet L-BTC`
 
-Existing wallets can be **imported**. This can be done as hot wallet via mnemonic or cold read-only wallet via xpub or core descriptor. Read-only wallets serve as a swap target for reverse swaps.
+Existing wallets can be **imported**. This can be done as hot wallet via mnemonic or cold read-only wallet via xpub or core descriptor. Read-only wallets can serve as a swap target for reverse swaps.
 
 To import a Bitcoin wallet called "cold" run:
 
 `boltzcli wallet import cold BTC`
 
-A list of available wallets can be generated using `boltzcli wallet list`. The connected lighnting node's internal wallet is available by default. All listed wallets can be used for manual swaps (e.g. `createreverseswap`) or [autoswap](autoswap.md).
+A list of available wallets can be generated using `boltzcli wallet list`. The connected lightning node's internal wallet is available by default. All listed wallets can be used for manual swaps (e.g. `createreverseswap`) or [autoswap](autoswap.md).
