@@ -34,4 +34,4 @@ tls.cert
 # Goland
 .idea/
 
-liquid-wallet
+test-data
