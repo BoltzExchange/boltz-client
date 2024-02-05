@@ -90,10 +90,11 @@ func (c *Credentials) Encrypt(password string) (*Credentials, error) {
 }
 
 type Subaccount struct {
-	Pointer uint64 `json:"pointer"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Used    bool   `json:"bip44_discovered"`
+	Pointer         uint64   `json:"pointer"`
+	Name            string   `json:"name"`
+	Type            string   `json:"type"`
+	Used            bool     `json:"bip44_discovered"`
+	CoreDescriptors []string `json:"core_descriptors"`
 }
 
 type Wallet struct {
