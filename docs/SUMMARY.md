@@ -1,6 +1,8 @@
 # Table of contents
 
 * [👋 Introduction](README.md)
+* [💰 Wallets](wallets.md)
+* [🦾 Autoswap](autoswap.md)
 * [🎛 Configuration](configuration.md)
 * [🤖 gRPC API](grpc.md)
 * [🤖 REST API](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml)
