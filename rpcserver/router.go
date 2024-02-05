@@ -735,7 +735,7 @@ func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.
 	balance, err := wal.GetBalance()
 	if err != nil {
 		if !errors.Is(err, wallet.ErrSubAccountNotSet) {
-			return nil, handleError(err)
+			return nil, handleError(fmt.Errorf("could not get balance for wallet %s: %w", wal.Name(), err))
 		}
 	} else {
 		result.Balance = serializeWalletBalance(balance)
@@ -759,7 +759,7 @@ func (server *routedBoltzServer) GetWallets(_ context.Context, request *boltzrpc
 		if (currency == "" || current.Currency() == currency) && (!current.Readonly() || request.GetIncludeReadonly()) {
 			wallet, err := server.serializeWallet(current)
 			if err != nil {
-				return nil, handleError(err)
+				return nil, err
 			}
 			response.Wallets = append(response.Wallets, wallet)
 		}
