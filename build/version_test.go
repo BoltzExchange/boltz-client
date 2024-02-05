@@ -6,8 +6,9 @@ import (
 )
 
 func TestGetVersion(t *testing.T) {
-	assert.Equal(t, "v"+version, GetVersion())
+	Version = "1.0.0"
+	assert.Equal(t, "v"+Version, GetVersion())
 
 	Commit = "123"
-	assert.Equal(t, "v"+version+"-"+Commit, GetVersion())
+	assert.Equal(t, "v"+Version+"-"+Commit, GetVersion())
 }

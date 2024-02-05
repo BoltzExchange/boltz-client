@@ -1,5 +1,5 @@
 PKG := github.com/BoltzExchange/boltz-client
-VERSION := 1.3.0-beta
+VERSION := 2.0.0-beta
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
 PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
@@ -12,7 +12,7 @@ GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
 
 COMMIT := $(shell git log --pretty=format:'%h' -n 1)
-LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -w -s"
+LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -X $(PKG)/build.Version=$(VERSION) -w -s"
 
 XARGS := xargs -L 1
 

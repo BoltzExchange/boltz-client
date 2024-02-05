@@ -1,11 +1,13 @@
 package build
 
 var Commit string
-
-const version = "1.3.0-rc1"
+var Version string
 
 func GetVersion() string {
-	basicVersion := "v" + version
+	if Version == "" {
+		return Commit
+	}
+	basicVersion := "v" + Version
 
 	if Commit == "" {
 		return basicVersion
