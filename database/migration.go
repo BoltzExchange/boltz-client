@@ -2,7 +2,9 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -301,7 +303,23 @@ func (database *Database) performMigration(oldVersion int) error {
 	case 3:
 		logMigration(oldVersion)
 
-		const migration = `
+		rows, err := database.Query("SELECT id FROM swaps WHERE state = ?", boltzrpc.SwapState_PENDING)
+		if err != nil {
+			return err
+		}
+		if rows.Next() {
+			return errors.New("database migration failed: found pending swaps")
+		}
+
+		rows, err = database.Query("SELECT id FROM reverseSwaps WHERE state = ?", boltzrpc.SwapState_PENDING)
+		if err != nil {
+			return err
+		}
+		if rows.Next() {
+			return errors.New("database migration failed: found pending reverse swaps")
+		}
+
+		var migration = `
 		ALTER TABLE swaps ADD COLUMN swapTree JSON;
 		ALTER TABLE swaps ADD COLUMN claimPubKey VARCHAR;
 		ALTER TABLE swaps ADD COLUMN fromCurrency VARCHAR;
@@ -311,6 +329,51 @@ func (database *Database) performMigration(oldVersion int) error {
 		ALTER TABLE reverseSwaps ADD COLUMN refundPubKey VARCHAR;
 		ALTER TABLE reverseSwaps ADD COLUMN fromCurrency VARCHAR;
 		ALTER TABLE reverseSwaps ADD COLUMN toCurrency VARCHAR;
+		`
+		if _, err := database.Exec(migration); err != nil {
+			return err
+		}
+
+		updatePairs := func(table string) error {
+			rows, err = database.Query("SELECT id, pairId FROM " + table)
+			if err != nil {
+				return err
+			}
+			var ids, pairs []string
+			for rows.Next() {
+				var id, pair string
+				if err := rows.Scan(&id, &pair); err != nil {
+					return err
+				}
+				ids = append(ids, id)
+				pairs = append(pairs, pair)
+
+			}
+			rows.Close()
+			for i, id := range ids {
+				split := strings.Split(pairs[i], "/")
+				from := split[0]
+				to := split[1]
+				if table == "reverseSwaps" {
+					to = split[0]
+					from = split[1]
+				}
+				if _, err := database.Exec(fmt.Sprintf("UPDATE %s SET fromCurrency = ?, toCurrency = ? WHERE id = ?", table), from, to, id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+		if err := updatePairs("swaps"); err != nil {
+			return err
+		}
+		if err := updatePairs("reverseSwaps"); err != nil {
+			return err
+		}
+
+		migration = `
+		ALTER TABLE swaps DROP COLUMN pairId;
+		ALTER TABLE reverseSwaps DROP COLUMN pairId;
 		`
 		if _, err := database.Exec(migration); err != nil {
 			return err
