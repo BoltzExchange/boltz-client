@@ -33,29 +33,37 @@ func (database *Database) migrate() error {
 		return err
 	}
 
-	return database.performMigration(version)
+	tx, err := database.BeginTx()
+	if err != nil {
+		return fmt.Errorf("failed to start transaction for migration: %w", err)
+	}
+
+	if err = database.performMigration(tx, version); err != nil {
+		return tx.Rollback(err)
+	}
+	return tx.Commit()
 }
 
-func (database *Database) performMigration(oldVersion int) error {
+func (database *Database) performMigration(tx *Transaction, oldVersion int) error {
 	switch oldVersion {
 	case 1:
 		logMigration(oldVersion)
 
 		logger.Info("Migrating table \"swaps\"")
 
-		_, err := database.Exec("ALTER TABLE swaps ADD COLUMN state INT")
+		_, err := tx.Exec("ALTER TABLE swaps ADD COLUMN state INT")
 
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN error VARCHAR")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN error VARCHAR")
 
 		if err != nil {
 			return err
 		}
 
-		swapRows, err := database.Query("SELECT id, status FROM swaps")
+		swapRows, err := tx.Query("SELECT id, status FROM swaps")
 
 		if err != nil {
 			return err
@@ -105,7 +113,7 @@ func (database *Database) performMigration(oldVersion int) error {
 				}
 			}
 
-			err = database.UpdateSwapState(&Swap{
+			err = tx.UpdateSwapState(&Swap{
 				Id: swapToUpdate.id,
 			}, newState, "")
 
@@ -116,19 +124,19 @@ func (database *Database) performMigration(oldVersion int) error {
 
 		logger.Info("Migrating table \"reverseSwaps\"")
 
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN state INT")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN state INT")
 
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN error VARCHAR")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN error VARCHAR")
 
 		if err != nil {
 			return err
 		}
 
-		reverseSwapRows, err := database.Query("SELECT id, status FROM reverseSwaps")
+		reverseSwapRows, err := tx.Query("SELECT id, status FROM reverseSwaps")
 
 		if err != nil {
 			return err
@@ -168,7 +176,7 @@ func (database *Database) performMigration(oldVersion int) error {
 				newState = boltzrpc.SwapState_PENDING
 			}
 
-			err = database.UpdateReverseSwapState(&ReverseSwap{
+			err = tx.UpdateReverseSwapState(&ReverseSwap{
 				Id: reverseSwapToUpdate.id,
 			}, newState, "")
 
@@ -177,146 +185,130 @@ func (database *Database) performMigration(oldVersion int) error {
 			}
 		}
 
-		return database.postMigration(oldVersion)
+		return tx.postMigration(oldVersion)
 
 	case 2:
 		logMigration(oldVersion)
 
-		_, err := database.Exec("ALTER TABLE swaps ADD COLUMN fromCurrency VARCHAR")
+		_, err := tx.Exec("ALTER TABLE swaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN toCurrency VARCHAR")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN blindingKey VARCHAR")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN chanIds JSON")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN isAuto BOOLEAN DEFAULT 0")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN blindingKey VARCHAR")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN serviceFee INT")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN isAuto BOOLEAN DEFAULT 0")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN serviceFeePercent REAL DEFAULT 0")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN serviceFee INT")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN onchainFee INT")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN serviceFeePercent REAL DEFAULT 0")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN createdAt INT")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN onchainFee INT")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN autoSend BOOLEAN DEFAULT 0")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN createdAt INT")
-		if err != nil {
-			return err
-		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN autoSend BOOLEAN DEFAULT 0")
-		if err != nil {
-			return err
-		}
-		_, err = database.Exec("ALTER TABLE swaps ADD COLUMN refundAddress VARCHAR DEFAULT ''")
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN refundAddress VARCHAR DEFAULT ''")
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("UPDATE swaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
+		_, err = tx.Exec("UPDATE swaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN fromCurrency VARCHAR")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN toCurrency VARCHAR")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN blindingKey VARCHAR")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanIds JSON")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN isAuto BOOLEAN DEFAULT 0")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN blindingKey VARCHAR")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN routingFeeMsat INT")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN isAuto BOOLEAN DEFAULT 0")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFee INT")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN routingFeeMsat INT")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFeePercent REAL DEFAULT 0")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFee INT")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN onchainFee INT")
 		if err != nil {
 			return err
 		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN serviceFeePercent REAL DEFAULT 0")
-		if err != nil {
-			return err
-		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN onchainFee INT")
-		if err != nil {
-			return err
-		}
-		_, err = database.Exec("ALTER TABLE reverseSwaps ADD COLUMN createdAt INT")
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN createdAt INT")
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("UPDATE reverseSwaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
+		_, err = tx.Exec("UPDATE reverseSwaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("CREATE TABLE IF NOT EXISTS autobudget (startDate INT PRIMARY KEY, endDate INT)")
+		_, err = tx.Exec("CREATE TABLE IF NOT EXISTS autobudget (startDate INT PRIMARY KEY, endDate INT)")
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("CREATE TABLE IF NOT EXISTS wallets (name VARCHAR PRIMARY KEY, currency VARCHAR, xpub VARCHAR, coreDescriptor VARCHAR, mnemonic VARCHAR, subaccount INT, salt VARCHAR)")
+		_, err = tx.Exec("CREATE TABLE IF NOT EXISTS wallets (name VARCHAR PRIMARY KEY, currency VARCHAR, xpub VARCHAR, coreDescriptor VARCHAR, mnemonic VARCHAR, subaccount INT, salt VARCHAR)")
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("DROP TABLE channelCreations")
+		_, err = tx.Exec("DROP TABLE channelCreations")
 		if err != nil {
 			return err
 		}
 
-		_, err = database.Exec("UPDATE version SET version = 3")
+		_, err = tx.Exec("UPDATE version SET version = 3")
 		if err != nil {
 			return err
 		}
 
-		return database.postMigration(oldVersion)
+		return tx.postMigration(oldVersion)
 
 	case 3:
 		logMigration(oldVersion)
 
-		rows, err := database.Query("SELECT id FROM swaps WHERE state = ?", boltzrpc.SwapState_PENDING)
+		rows, err := tx.Query("SELECT id FROM swaps WHERE state = ?", boltzrpc.SwapState_PENDING)
 		if err != nil {
 			return err
 		}
 		if rows.Next() {
-			return errors.New("database migration failed: found pending swaps")
+			return errors.New("tx migration failed: found pending swaps")
 		}
 
-		rows, err = database.Query("SELECT id FROM reverseSwaps WHERE state = ?", boltzrpc.SwapState_PENDING)
+		rows, err = tx.Query("SELECT id FROM reverseSwaps WHERE state = ?", boltzrpc.SwapState_PENDING)
 		if err != nil {
 			return err
 		}
 		if rows.Next() {
-			return errors.New("database migration failed: found pending reverse swaps")
+			return errors.New("tx migration failed: found pending reverse swaps")
 		}
 
 		var migration = `
@@ -330,12 +322,12 @@ func (database *Database) performMigration(oldVersion int) error {
 		ALTER TABLE reverseSwaps ADD COLUMN fromCurrency VARCHAR;
 		ALTER TABLE reverseSwaps ADD COLUMN toCurrency VARCHAR;
 		`
-		if _, err := database.Exec(migration); err != nil {
+		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}
 
 		updatePairs := func(table string) error {
-			rows, err = database.Query("SELECT id, pairId FROM " + table)
+			rows, err = tx.Query("SELECT id, pairId FROM " + table)
 			if err != nil {
 				return err
 			}
@@ -347,7 +339,6 @@ func (database *Database) performMigration(oldVersion int) error {
 				}
 				ids = append(ids, id)
 				pairs = append(pairs, pair)
-
 			}
 			rows.Close()
 			for i, id := range ids {
@@ -358,7 +349,7 @@ func (database *Database) performMigration(oldVersion int) error {
 					to = split[0]
 					from = split[1]
 				}
-				if _, err := database.Exec(fmt.Sprintf("UPDATE %s SET fromCurrency = ?, toCurrency = ? WHERE id = ?", table), from, to, id); err != nil {
+				if _, err := tx.Exec(fmt.Sprintf("UPDATE %s SET fromCurrency = ?, toCurrency = ? WHERE id = ?", table), from, to, id); err != nil {
 					return err
 				}
 			}
@@ -375,13 +366,13 @@ func (database *Database) performMigration(oldVersion int) error {
 		ALTER TABLE swaps DROP COLUMN pairId;
 		ALTER TABLE reverseSwaps DROP COLUMN pairId;
 		`
-		if _, err := database.Exec(migration); err != nil {
+		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}
 
-		return database.postMigration(oldVersion)
+		return tx.postMigration(oldVersion)
 	case latestSchemaVersion:
-		logger.Info("Database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
+		logger.Info("tx already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 
 	default:
 		return errors.New("found unexpected database schema version: " + strconv.Itoa(oldVersion))
