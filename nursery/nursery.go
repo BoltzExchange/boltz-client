@@ -2,6 +2,7 @@ package nursery
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -90,7 +91,6 @@ func (nursery *Nursery) getSwapListener(id string) *swapListener {
 }
 
 func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
-	logger.Debugf("Trying to send update for swap %s", id)
 	if listener := nursery.getSwapListener(id); listener != nil {
 		listener.updates <- update
 		logger.Debugf("Sent update for swap %s", id)
@@ -98,6 +98,8 @@ func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
 		if update.IsFinal {
 			listener.close()
 		}
+	} else {
+		logger.Debugf("No listener for swap %s", id)
 	}
 }
 
@@ -199,6 +201,20 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onc
 
 func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, error) {
 	return nursery.onchain.EstimateFee(currency, 2)
+}
+
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64) (string, uint64, error) {
+	transaction, fee, err := nursery.boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte)
+	if err != nil {
+		return "", 0, fmt.Errorf("construct transaction: %v", err)
+	}
+
+	id := transaction.Hash()
+	err = nursery.broadcastTransaction(transaction, currency)
+	if err != nil {
+		return "", 0, fmt.Errorf("broadcast transaction: %v", err)
+	}
+	return id, fee, nil
 }
 
 func (nursery *Nursery) broadcastTransaction(transaction boltz.Transaction, currency boltz.Currency) error {

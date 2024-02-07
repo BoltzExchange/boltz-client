@@ -1,7 +1,6 @@
 package nursery
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -257,61 +256,5 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 }
 
 func (nursery *Nursery) claimReverseSwap(reverseSwap *database.ReverseSwap, details []boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
-	claimTransaction, claimFee, err := nursery.createClaimTransaction(reverseSwap, details, feeSatPerVbyte)
-	if err != nil {
-		return "", 0, err
-	}
-
-	claimTransactionId := claimTransaction.Hash()
-
-	err = nursery.broadcastTransaction(claimTransaction, reverseSwap.Pair.To)
-	if err != nil {
-		return "", 0, fmt.Errorf("Could not finalize claim transaction: %v", err)
-	}
-	return claimTransactionId, claimFee, nil
-}
-
-func (nursery *Nursery) createClaimTransaction(reverseSwap *database.ReverseSwap, details []boltz.OutputDetails, feeSatPerVbyte float64) (boltz.Transaction, uint64, error) {
-	tx, fee, err := boltz.ConstructTransaction(
-		reverseSwap.Pair.To,
-		nursery.network,
-		details,
-		reverseSwap.ClaimAddress,
-		feeSatPerVbyte,
-	)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	if details[0].Cooperative {
-		session, err := boltz.NewSigningSession(&details[0])
-		if err != nil {
-			return nil, 0, fmt.Errorf("could not initialize signing session: %w", err)
-		}
-
-		serialized, err := tx.Serialize()
-		if err != nil {
-			return nil, 0, fmt.Errorf("could not serialize transaction: %w", err)
-		}
-		pubNonce := session.PublicNonce()
-
-		signature, err := nursery.boltz.ClaimReverseSwap(boltz.ClaimReverseSwapRequest{
-			Id:          reverseSwap.Id,
-			Preimage:    hex.EncodeToString(reverseSwap.Preimage[:]),
-			PubNonce:    hex.EncodeToString(pubNonce[:]),
-			Transaction: serialized,
-			Index:       0,
-		})
-		if err != nil {
-			return nil, 0, fmt.Errorf("could not get partial signature from boltz: %w", err)
-		}
-
-		if err := session.Finalize(tx, nursery.network, signature); err != nil {
-			return tx, 0, err
-		}
-
-		return tx, fee, nil
-
-	}
-	return tx, fee, nil
+	return nursery.createTransaction(reverseSwap.Pair.To, details, reverseSwap.ClaimAddress, feeSatPerVbyte)
 }

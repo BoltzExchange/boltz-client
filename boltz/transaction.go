@@ -33,6 +33,9 @@ type OutputDetails struct {
 	// taproot only
 	SwapTree    *SwapTree
 	Cooperative bool
+
+	SwapId   string
+	SwapType SwapType
 }
 
 func (output *OutputDetails) IsRefund() bool {
@@ -50,7 +53,7 @@ func NewTxFromHex(hexString string, ourOutputBlindingKey *btcec.PrivateKey) (Tra
 	return NewBtcTxFromHex(hexString)
 }
 
-func ConstructTransaction(currency Currency, network *Network, outputs []OutputDetails, outputAddress string, satPerVbyte float64) (Transaction, uint64, error) {
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, outputAddress string, satPerVbyte float64) (Transaction, uint64, error) {
 	var construct func(*Network, []OutputDetails, string, uint64) (Transaction, error)
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction

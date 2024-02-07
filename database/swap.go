@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/lightning"
@@ -69,6 +68,13 @@ type SwapSerialized struct {
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
 	AutoSend            bool
+}
+
+func (swap *Swap) BlindingPubKey() *btcec.PublicKey {
+	if swap.BlindingKey == nil {
+		return nil
+	}
+	return swap.BlindingKey.PubKey()
 }
 
 func (swap *Swap) Serialize() SwapSerialized {
@@ -258,11 +264,17 @@ func (database *Database) QueryFailedSwaps(since time.Time) ([]Swap, error) {
 	return database.QuerySwaps(SwapQuery{State: &state, Since: since})
 }
 
+func (database *Database) QueryNonSuccessfullSwaps(currency boltz.Currency) ([]Swap, error) {
+	return database.querySwaps(
+		"SELECT * FROM swaps WHERE (state = ? OR state = ?) AND fromCurrency = ?",
+		boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, currency,
+	)
+}
+
 func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, currency boltz.Currency) ([]Swap, error) {
-	height := strconv.FormatUint(uint64(currentBlockHeight), 10)
 	return database.querySwaps(
 		"SELECT * FROM swaps WHERE (state = ? OR state = ? OR state = ?) AND timeoutBlockheight <= ? AND fromCurrency = ?",
-		boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, height, currency,
+		boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, currentBlockHeight, currency,
 	)
 }
 

@@ -13,11 +13,12 @@ import (
 
 type MusigSession struct {
 	*musig2.Session
-	output *OutputDetails
+	outputs []OutputDetails
+	idx     int
 }
 
-func NewSigningSession(output *OutputDetails) (*MusigSession, error) {
-	tree := output.SwapTree
+func NewSigningSession(outputs []OutputDetails, idx int) (*MusigSession, error) {
+	tree := outputs[idx].SwapTree
 	ctx, err := musig2.NewContext(
 		tree.ourKey,
 		false,
@@ -33,7 +34,7 @@ func NewSigningSession(output *OutputDetails) (*MusigSession, error) {
 		return nil, err
 	}
 
-	return &MusigSession{session, output}, nil
+	return &MusigSession{session, outputs, idx}, nil
 }
 
 func (session *MusigSession) Finalize(transaction Transaction, network *Network, boltzSignature *PartialSignature) error {
@@ -56,11 +57,11 @@ func (session *MusigSession) Finalize(transaction Transaction, network *Network,
 	}
 
 	var hash [32]byte
-	isLiquid := session.output.SwapTree.isLiquid
+	isLiquid := session.outputs[session.idx].SwapTree.isLiquid
 	if isLiquid {
-		hash = liquidTaprootHash(&transaction.(*LiquidTransaction).Transaction, network, session.output, 0, true)
+		hash = liquidTaprootHash(&transaction.(*LiquidTransaction).Transaction, network, session.outputs, session.idx, true)
 	} else {
-		hash, err = btcTaprootHash(transaction, session.output, 0)
+		hash, err = btcTaprootHash(transaction, session.outputs, session.idx)
 	}
 	if err != nil {
 		return err
@@ -85,10 +86,10 @@ func (session *MusigSession) Finalize(transaction Transaction, network *Network,
 	signature := session.FinalSig().Serialize()
 	if isLiquid {
 		tx := transaction.(*LiquidTransaction)
-		tx.Transaction.Inputs[0].Witness = liquidtx.TxWitness{signature}
+		tx.Transaction.Inputs[session.idx].Witness = liquidtx.TxWitness{signature}
 	} else {
 		tx := transaction.(*BtcTransaction)
-		tx.MsgTx().TxIn[0].Witness = wire.TxWitness{signature}
+		tx.MsgTx().TxIn[session.idx].Witness = wire.TxWitness{signature}
 	}
 	return nil
 }

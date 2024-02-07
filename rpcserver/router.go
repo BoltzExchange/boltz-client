@@ -310,7 +310,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 
 		logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
 
-		//createSwap.PreimageHash = hex.EncodeToString(preimageHash)
+		createSwap.PreimageHash = hex.EncodeToString(preimageHash)
 		if err != nil {
 			return nil, handleError(err)
 		}
@@ -365,10 +365,8 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		swap.ChanIds = append(swap.ChanIds, parsed)
 	}
 
-	var blindingPubKey *btcec.PublicKey
 	if pair.From == boltz.CurrencyLiquid {
 		swap.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
-		blindingPubKey = swap.BlindingKey.PubKey()
 
 		if err != nil {
 			return nil, handleError(err)
@@ -384,7 +382,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 	}
 
 	fmt.Println("address" + response.Address)
-	if err := swap.SwapTree.CheckAddress(response.Address, server.network, blindingPubKey); err != nil {
+	if err := swap.SwapTree.CheckAddress(response.Address, server.network, swap.BlindingPubKey()); err != nil {
 		return nil, handleError(err)
 	}
 

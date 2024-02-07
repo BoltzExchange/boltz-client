@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -71,22 +72,30 @@ func (transaction *LiquidTransaction) VSize() uint64 {
 	return uint64(transaction.SerializeSize(false, true)) + uint64(math.Ceil(float64(witnessSize)/4))
 }
 
-func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, output *OutputDetails, index int, cooperative bool) [32]byte {
-	lockupTx := output.LockupTransaction.(*LiquidTransaction)
-	txOut := lockupTx.Outputs[output.Vout]
-
+func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outputs []OutputDetails, index int, cooperative bool) [32]byte {
 	var leafHash *chainhash.Hash
 	if !cooperative {
+		output := outputs[index]
 		hash := output.SwapTree.GetLeafHash(output.IsRefund())
 		leafHash = &hash
 	}
 	genesisHash, _ := chainhash.NewHashFromStr(network.Liquid.GenesisBlockHash)
 
+	var scripts, assets, values [][]byte
+	for i, input := range transaction.Inputs {
+		lockupTx := outputs[i].LockupTransaction.(*LiquidTransaction)
+		out := lockupTx.Outputs[input.Index]
+
+		scripts = append(scripts, out.Script)
+		assets = append(assets, out.Asset)
+		values = append(values, out.Value)
+	}
+
 	return transaction.HashForWitnessV1(
 		index,
-		[][]byte{txOut.Script},
-		[][]byte{txOut.Asset},
-		[][]byte{txOut.Value},
+		scripts,
+		assets,
+		values,
 		sigHashType,
 		genesisHash,
 		leafHash,
@@ -133,15 +142,17 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 		lockupTx := output.LockupTransaction.(*LiquidTransaction)
 
 		out := lockupTx.Outputs[output.Vout]
+		input := psetv2.InputArgs{
+			Txid:    output.LockupTransaction.Hash(),
+			TxIndex: output.Vout,
+			//HeightLock: output.TimeoutBlockHeight,
+			Sequence: 0xfffffffd,
+		}
+		if !output.Cooperative {
+			input.HeightLock = output.TimeoutBlockHeight
+		}
 
-		if err := updater.AddInputs([]psetv2.InputArgs{
-			{
-				Txid:       output.LockupTransaction.Hash(),
-				TxIndex:    output.Vout,
-				HeightLock: output.TimeoutBlockHeight,
-				Sequence:   0xfffffffd,
-			},
-		}); err != nil {
+		if err := updater.AddInputs([]psetv2.InputArgs{input}); err != nil {
 			return nil, err
 		}
 
@@ -235,13 +246,11 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 
 	// Construct the signature script and witnesses and sign the inputs
 	for i, output := range outputs {
+		var witness [][]byte
 		if output.Cooperative {
-			p.Inputs[i].FinalScriptWitness, err = writeTxWitness(dummySignature)
-			if err != nil {
-				return nil, err
-			}
+			witness = append(witness, dummySignature)
 		} else {
-			sigHash := liquidTaprootHash(tx, network, &output, i, false)
+			sigHash := liquidTaprootHash(tx, network, outputs, i, false)
 			signature, err := schnorr.Sign(output.PrivateKey, sigHash[:])
 			if err != nil {
 				return nil, err
@@ -258,16 +267,21 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 				return nil, err
 			}
 
-			p.Inputs[i].FinalScriptWitness, err = writeTxWitness(signature.Serialize(), output.Preimage, tree.GetLeafScript(isRefund), controlBlock)
-			if err != nil {
-				return nil, err
+			witness = [][]byte{signature.Serialize()}
+			if !isRefund {
+				witness = append(witness, output.Preimage)
 			}
+			witness = append(witness, tree.GetLeafScript(isRefund), controlBlock)
+		}
+		p.Inputs[i].FinalScriptWitness, err = writeTxWitness(witness...)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	finalized, err := psetv2.Extract(p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not extract pset: %w", err)
 	}
 
 	return &LiquidTransaction{
@@ -283,14 +297,12 @@ func writeTxWitness(wit ...[]byte) ([]byte, error) {
 	}
 
 	for _, item := range wit {
-		if len(item) > 0 {
-			if err := b.WriteByte(byte(len(item))); err != nil {
-				return nil, err
-			}
-			if _, err := b.Write(item); err != nil {
-				return nil, err
+		if err := b.WriteByte(byte(len(item))); err != nil {
+			return nil, err
+		}
+		if _, err := b.Write(item); err != nil {
+			return nil, err
 
-			}
 		}
 	}
 	return b.Bytes(), nil

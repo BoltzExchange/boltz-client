@@ -2,6 +2,7 @@ package boltz
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -165,9 +166,9 @@ type CreateSwapRequest struct {
 	To              Currency `json:"to"`
 	PairHash        string   `json:"pairHash"`
 	RefundPublicKey string   `json:"refundPublicKey"`
-	Invoice         string   `json:"invoice"`
+	Invoice         string   `json:"invoice,omitempty"`
 	ReferralId      string   `json:"referralId"`
-	//PreimageHash    string   `json:"preimageHash"`
+	PreimageHash    string   `json:"preimageHash,omitempty"`
 
 	Error string `json:"error"`
 }
@@ -193,21 +194,12 @@ type RefundSwapRequest struct {
 	Index       int    `json:"index"`
 }
 
-type SwapRatesRequest struct {
-	Id string `json:"id"`
-}
-
-type SwapRatesResponse struct {
-	OnchainAmount uint64 `json:"onchainAmount"`
-	SubmarineSwap struct {
-		InvoiceAmount uint64 `json:"invoiceAmount"`
-	} `json:"submarineSwap"`
-
-	Error string `json:"error"`
+type GetInvoiceAmountResponse struct {
+	InvoiceAmount uint64 `json:"invoiceAmount"`
+	Error         string `json:"error"`
 }
 
 type SetInvoiceRequest struct {
-	Id      string `json:"id"`
 	Invoice string `json:"invoice"`
 }
 
@@ -374,9 +366,9 @@ func (boltz *Boltz) RefundSwap(request RefundSwapRequest) (*PartialSignature, er
 	return &response, err
 }
 
-func (boltz *Boltz) SwapRates(request SwapRatesRequest) (*SwapRatesResponse, error) {
-	var response SwapRatesResponse
-	err := boltz.sendPostRequest("/swaprates", request, &response)
+func (boltz *Boltz) GetInvoiceAmount(swapId string) (*GetInvoiceAmountResponse, error) {
+	var response GetInvoiceAmountResponse
+	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/submarine/%s/invoice/amount", swapId), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -385,9 +377,9 @@ func (boltz *Boltz) SwapRates(request SwapRatesRequest) (*SwapRatesResponse, err
 	return &response, err
 }
 
-func (boltz *Boltz) SetInvoice(request SetInvoiceRequest) (*SetInvoiceResponse, error) {
+func (boltz *Boltz) SetInvoice(swapId string, invoice string) (*SetInvoiceResponse, error) {
 	var response SetInvoiceResponse
-	err := boltz.sendPostRequest("/setinvoice", request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/invoice", swapId), SetInvoiceRequest{Invoice: invoice}, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -419,6 +411,62 @@ func (boltz *Boltz) ClaimReverseSwap(request ClaimReverseSwapRequest) (*PartialS
 	}
 
 	return &response, err
+}
+
+func (boltz *Boltz) ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, address string, feeSatPerVbyte float64) (Transaction, uint64, error) {
+	tx, fee, err := ConstructTransaction(
+		network,
+		currency,
+		outputs,
+		address,
+		feeSatPerVbyte,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for i, output := range outputs {
+		if output.Cooperative {
+			session, err := NewSigningSession(outputs, i)
+			if err != nil {
+				return nil, 0, fmt.Errorf("could not initialize signing session: %w", err)
+			}
+
+			serialized, err := tx.Serialize()
+			if err != nil {
+				return nil, 0, fmt.Errorf("could not serialize transaction: %w", err)
+			}
+
+			pubNonce := session.PublicNonce()
+
+			var signature *PartialSignature
+			if output.SwapType == NormalSwap {
+				signature, err = boltz.RefundSwap(RefundSwapRequest{
+					Id:          output.SwapId,
+					PubNonce:    hex.EncodeToString(pubNonce[:]),
+					Transaction: serialized,
+					Index:       i,
+				})
+			} else {
+				signature, err = boltz.ClaimReverseSwap(ClaimReverseSwapRequest{
+					Id:          output.SwapId,
+					Preimage:    hex.EncodeToString(output.Preimage),
+					PubNonce:    hex.EncodeToString(pubNonce[:]),
+					Transaction: serialized,
+					Index:       i,
+				})
+			}
+			if err != nil {
+				return nil, 0, fmt.Errorf("could not get partial signature from boltz: %w", err)
+			}
+
+			if err := session.Finalize(tx, network, signature); err != nil {
+				return tx, 0, fmt.Errorf("could not finalize signing session: %w", err)
+			}
+		}
+	}
+
+	return tx, fee, nil
 }
 
 func (boltz *Boltz) sendGetRequest(endpoint string, response interface{}) error {

@@ -165,7 +165,7 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) nextFunc {
 				} else {
 					require.Fail(t, fmt.Sprintf("update stream for swap %s stopped before state %s", swapId, state))
 				}
-			case <-time.After(1000 * time.Second):
+			case <-time.After(15 * time.Second):
 				require.Fail(t, fmt.Sprintf("timed out while waiting for swap %s to reach state %s", swapId, state))
 			}
 		}
@@ -285,80 +285,6 @@ func TestSwap(t *testing.T) {
 		require.Equal(t, excpectedFees, int64(actualFees))
 	}
 
-	t.Run("RefundAddressRequired", func(t *testing.T) {
-		client, _, stop := setup(t, cfg, "")
-		defer stop()
-		withoutWallet(t, client, func() {
-			_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-				Pair: pairLiquid,
-			})
-			assert.Error(t, err)
-		})
-	})
-
-	t.Run("Refund", func(t *testing.T) {
-		client, _, stop := setup(t, cfg, "")
-		defer stop()
-		pair := pairBtc
-
-		submarinePair, err := client.GetSubmarinePair(pair)
-
-		require.NoError(t, err)
-		amount := submarinePair.Limits.Minimal - 100
-		swaps := make([]*boltzrpc.CreateSwapResponse, 3)
-
-		refundAddress := test.BtcCli("getnewaddress")
-		swaps[0], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			Pair:          pair,
-			RefundAddress: refundAddress,
-		})
-		require.NoError(t, err)
-
-		swaps[1], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			Pair: pair,
-		})
-		require.NoError(t, err)
-
-		swaps[2], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			Pair: pair,
-		})
-		require.NoError(t, err)
-
-		var streams []nextFunc
-		for _, swap := range swaps {
-			stream := swapStream(t, client, swap.Id)
-			test.SendToAddress(test.BtcCli, swap.Address, int64(amount))
-			stream(boltzrpc.SwapState_ERROR)
-			streams = append(streams, stream)
-		}
-
-		test.MineUntil(t, test.BtcCli, int64(swaps[0].TimeoutBlockHeight))
-
-		var infos []*boltzrpc.SwapInfo
-		for _, stream := range streams {
-			info := stream(boltzrpc.SwapState_REFUNDED)
-			require.Zero(t, info.Swap.ServiceFee)
-			infos = append(infos, info.Swap)
-			test.MineBlock()
-		}
-
-		from := parseCurrency(pair.From)
-
-		require.NotEqual(t, infos[0].RefundTransactionId, infos[1].RefundTransactionId)
-		require.Equal(t, infos[1].RefundTransactionId, infos[2].RefundTransactionId)
-
-		refundFee, err := chain.GetTransactionFee(from, infos[1].RefundTransactionId)
-		require.NoError(t, err)
-
-		require.Equal(t, int(refundFee), int(*infos[1].OnchainFee)+int(*infos[2].OnchainFee))
-
-		checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress)
-
-		refundFee, err = chain.GetTransactionFee(from, infos[0].RefundTransactionId)
-		require.NoError(t, err)
-		require.Equal(t, int(refundFee), int(*infos[0].OnchainFee))
-	})
-
 	t.Run("Recovery", func(t *testing.T) {
 		client, _, stop := setup(t, cfg, "")
 		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
@@ -448,6 +374,114 @@ func TestSwap(t *testing.T) {
 
 						info := next(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
+					})
+
+					if node == "CLN" {
+						return
+					}
+
+					t.Run("Refund", func(t *testing.T) {
+						client, _, stop := setup(t, cfg, "")
+						defer stop()
+						cli := tc.cli
+
+						submarinePair, err := client.GetSubmarinePair(pair)
+
+						require.NoError(t, err)
+						amount := submarinePair.Limits.Minimal
+
+						t.Run("AddressRequired", func(t *testing.T) {
+							withoutWallet(t, client, func() {
+								_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+									Pair: pairLiquid,
+								})
+								assert.Error(t, err)
+							})
+						})
+
+						t.Run("Script", func(t *testing.T) {
+							cfg.Boltz.DisablePartialSignatures = true
+							swaps := make([]*boltzrpc.CreateSwapResponse, 3)
+
+							refundAddress := cli("getnewaddress")
+							swaps[0], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:          pair,
+								RefundAddress: refundAddress,
+								Amount:        int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							swaps[1], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:   pair,
+								Amount: int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							swaps[2], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:   pair,
+								Amount: int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							var streams []nextFunc
+							for _, swap := range swaps {
+								stream := swapStream(t, client, swap.Id)
+								test.SendToAddress(cli, swap.Address, int64(amount))
+								stream(boltzrpc.SwapState_ERROR)
+								streams = append(streams, stream)
+							}
+
+							test.MineUntil(t, cli, int64(swaps[0].TimeoutBlockHeight))
+
+							var infos []*boltzrpc.SwapInfo
+							for _, stream := range streams {
+								info := stream(boltzrpc.SwapState_REFUNDED)
+								require.Zero(t, info.Swap.ServiceFee)
+								infos = append(infos, info.Swap)
+								test.MineBlock()
+							}
+
+							from := parseCurrency(pair.From)
+
+							require.NotEqual(t, infos[0].RefundTransactionId, infos[1].RefundTransactionId)
+							require.Equal(t, infos[1].RefundTransactionId, infos[2].RefundTransactionId)
+
+							refundFee, err := chain.GetTransactionFee(from, infos[1].RefundTransactionId)
+							require.NoError(t, err)
+
+							require.Equal(t, int(refundFee), int(*infos[1].OnchainFee)+int(*infos[2].OnchainFee))
+
+							checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress)
+
+							refundFee, err = chain.GetTransactionFee(from, infos[0].RefundTransactionId)
+							require.NoError(t, err)
+							require.Equal(t, int(refundFee), int(*infos[0].OnchainFee))
+						})
+
+						t.Run("Cooperative", func(t *testing.T) {
+							cfg.Boltz.DisablePartialSignatures = false
+							amount := submarinePair.Limits.Minimal + 100
+							refundAddress := cli("getnewaddress")
+							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:          pair,
+								RefundAddress: refundAddress,
+								Amount:        int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							stream := swapStream(t, client, swap.Id)
+							test.SendToAddress(cli, swap.Address, int64(amount))
+
+							info := stream(boltzrpc.SwapState_REFUNDED).Swap
+							require.Zero(t, info.ServiceFee)
+
+							from := parseCurrency(pair.From)
+
+							refundFee, err := chain.GetTransactionFee(from, info.RefundTransactionId)
+							require.NoError(t, err)
+							require.Equal(t, int(refundFee), int(*info.OnchainFee))
+						})
+
 					})
 
 				})

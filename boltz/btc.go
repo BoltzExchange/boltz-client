@@ -63,13 +63,28 @@ func (transaction *BtcTransaction) FindVout(network *Network, addressToFind stri
 	return 0, 0, errors.New("Could not find address in transaction")
 }
 
-func btcTaprootHash(transaction Transaction, output *OutputDetails, index int) ([32]byte, error) {
-	lockupTx := output.LockupTransaction.(*BtcTransaction)
-	txOut := lockupTx.MsgTx().TxOut[output.Vout]
+func getPrevoutFetcher(tx *wire.MsgTx, outputs []OutputDetails) txscript.PrevOutputFetcher {
+	previous := make(map[wire.OutPoint]*wire.TxOut)
+	for i, input := range tx.TxIn {
+		prevOut := input.PreviousOutPoint
+		lockupTx := outputs[i].LockupTransaction.(*BtcTransaction).MsgTx()
+		previous[prevOut] = lockupTx.TxOut[prevOut.Index]
+	}
 
+	return txscript.NewMultiPrevOutFetcher(previous)
+}
+
+func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int) ([32]byte, error) {
 	tx := transaction.(*BtcTransaction).MsgTx()
 
-	prevoutFetcher := txscript.NewCannedPrevOutputFetcher(txOut.PkScript, txOut.Value)
+	previous := make(map[wire.OutPoint]*wire.TxOut)
+	for i, input := range tx.TxIn {
+		prevOut := input.PreviousOutPoint
+		lockupTx := outputs[i].LockupTransaction.(*BtcTransaction)
+		previous[prevOut] = lockupTx.MsgTx().TxOut[prevOut.Index]
+	}
+
+	prevoutFetcher := getPrevoutFetcher(tx, outputs)
 	sigHashes := txscript.NewTxSigHashes(tx, prevoutFetcher)
 
 	hash, err := txscript.CalcTaprootSignatureHash(
@@ -79,6 +94,7 @@ func btcTaprootHash(transaction Transaction, output *OutputDetails, index int) (
 		index,
 		prevoutFetcher,
 	)
+	fmt.Println(hex.EncodeToString(hash))
 	return [32]byte(hash), err
 }
 
@@ -94,8 +110,10 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 
 	for _, output := range outputs {
 		// Set the highest timeout block height as locktime
-		if output.TimeoutBlockHeight > transaction.LockTime {
-			transaction.LockTime = output.TimeoutBlockHeight
+		if !output.Cooperative {
+			if output.TimeoutBlockHeight > transaction.LockTime {
+				transaction.LockTime = output.TimeoutBlockHeight
+			}
 		}
 
 		lockupTx := output.LockupTransaction.(*BtcTransaction).Tx
@@ -131,7 +149,7 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 			lockupTx := output.LockupTransaction.(*BtcTransaction)
 			txOut := lockupTx.MsgTx().TxOut[output.Vout]
 
-			prevoutFetcher := txscript.NewCannedPrevOutputFetcher(txOut.PkScript, txOut.Value)
+			prevoutFetcher := getPrevoutFetcher(transaction, outputs)
 			sigHashes := txscript.NewTxSigHashes(transaction, prevoutFetcher)
 
 			isRefund := output.IsRefund()
@@ -148,7 +166,7 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 				output.PrivateKey,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("could not calculate tapscript signature: block %w", err)
+				return nil, fmt.Errorf("could not calculate tapscript signature: %w", err)
 			}
 
 			witness := wire.TxWitness{signature}
