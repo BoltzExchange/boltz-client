@@ -185,8 +185,6 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			}
 		}
 
-		return tx.postMigration(oldVersion)
-
 	case 2:
 		logMigration(oldVersion)
 
@@ -290,8 +288,6 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			return err
 		}
 
-		return tx.postMigration(oldVersion)
-
 	case 3:
 		logMigration(oldVersion)
 
@@ -369,29 +365,25 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}
-
-		return tx.postMigration(oldVersion)
 	case latestSchemaVersion:
-		logger.Info("tx already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
+		logger.Info("database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
+		return nil
 
 	default:
 		return errors.New("found unexpected database schema version: " + strconv.Itoa(oldVersion))
 	}
 
-	return nil
-}
+	newVersion := oldVersion + 1
 
-func (database *Database) postMigration(fromVersion int) error {
-	newVersion := fromVersion + 1
-
-	if _, err := database.Exec("UPDATE version SET version = ?", newVersion); err != nil {
+	if _, err := tx.Exec("UPDATE version SET version = ?", newVersion); err != nil {
 		return err
 	}
-	logger.Infof("Update to database version %d completed", fromVersion+1)
 
-	if fromVersion+1 < latestSchemaVersion {
+	logger.Infof("Update to database version %d completed", newVersion)
+
+	if oldVersion+1 < latestSchemaVersion {
 		logger.Info("Running migration again")
-		return database.migrate()
+		return database.performMigration(tx, newVersion)
 	}
 
 	return nil
