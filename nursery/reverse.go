@@ -169,7 +169,8 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		}
 
 		if lockupValue < reverseSwap.OnchainAmount {
-			logger.Warn("Boltz locked up less onchain coins than expected. Abandoning Reverse Swap")
+			handleError("Boltz locked up less onchain coins than expected. Abandoning Reverse Swap")
+			return
 		}
 
 		logger.Info("Constructing claim transaction for Reverse Swap " + reverseSwap.Id + " with output: " + lockupTx.Hash() + ":" + strconv.Itoa(int(lockupVout)))
