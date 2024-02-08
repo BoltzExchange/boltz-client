@@ -381,8 +381,6 @@ func TestSwap(t *testing.T) {
 					}
 
 					t.Run("Refund", func(t *testing.T) {
-						client, _, stop := setup(t, cfg, "")
-						defer stop()
 						cli := tc.cli
 
 						submarinePair, err := client.GetSubmarinePair(pair)
