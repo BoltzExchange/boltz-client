@@ -166,7 +166,7 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 				output.PrivateKey,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("could not calculate tapscript signature: %w", err)
+				return nil, fmt.Errorf("could not sign Taproot input: %w", err)
 			}
 
 			witness := wire.TxWitness{signature}
@@ -176,7 +176,7 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 
 			controlBlockBytes, err := output.SwapTree.GetControlBlock(isRefund)
 			if err != nil {
-				return nil, fmt.Errorf("could not serialize control block: %w", err)
+				return nil, fmt.Errorf("could not create control block: %w", err)
 			}
 
 			transaction.TxIn[i].Witness = append(witness, leaf.Script, controlBlockBytes)
