@@ -145,10 +145,6 @@ func (tree *SwapTree) GetControlBlock(isRefund bool) ([]byte, error) {
 	}
 }
 
-func (tree *SwapTree) GetLeafScript(isRefund bool) []byte {
-	return tree.GetLeaf(isRefund).Script
-}
-
 func (tree *SwapTree) GetLeafHash(isRefund bool) chainhash.Hash {
 	leaf := tree.GetLeaf(isRefund)
 	if tree.isLiquid {
@@ -238,10 +234,6 @@ func checkScript(actual []byte, expected *txscript.ScriptBuilder) error {
 	}
 
 	if !bytes.Equal(actual, expectedScript) {
-		expected, _ := txscript.DisasmString(expectedScript)
-		fmt.Printf("expected:\n%v\n", expected)
-		actual, _ := txscript.DisasmString(actual)
-		fmt.Printf("actual:\n%v\n", actual)
 		return errors.New("invalid script")
 	}
 	return nil

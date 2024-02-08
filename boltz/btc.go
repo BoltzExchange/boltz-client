@@ -50,13 +50,13 @@ func (transaction *BtcTransaction) VSize() uint64 {
 }
 
 func (transaction *BtcTransaction) FindVout(network *Network, addressToFind string) (uint32, uint64, error) {
-	find, err := btcutil.DecodeAddress(addressToFind, network.Btc)
+	toFind, err := btcutil.DecodeAddress(addressToFind, network.Btc)
 	if err != nil {
 		return 0, 0, err
 	}
 	for vout, output := range transaction.MsgTx().TxOut {
 		// first 2 bytes are witness type and length
-		if bytes.Equal(output.PkScript[2:], find.ScriptAddress()) {
+		if bytes.Equal(output.PkScript[2:], toFind.ScriptAddress()) {
 			return uint32(vout), uint64(output.Value), nil
 		}
 	}
@@ -94,7 +94,6 @@ func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int)
 		index,
 		prevoutFetcher,
 	)
-	fmt.Println(hex.EncodeToString(hash))
 	return [32]byte(hash), err
 }
 
@@ -140,6 +139,9 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 		Value:    inputSum - int64(fee),
 	})
 
+	prevoutFetcher := getPrevoutFetcher(transaction, outputs)
+	sigHashes := txscript.NewTxSigHashes(transaction, prevoutFetcher)
+
 	// Construct the signature script and witnesses and sign the inputs
 	for i, output := range outputs {
 		if output.Cooperative {
@@ -148,9 +150,6 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 		} else {
 			lockupTx := output.LockupTransaction.(*BtcTransaction)
 			txOut := lockupTx.MsgTx().TxOut[output.Vout]
-
-			prevoutFetcher := getPrevoutFetcher(transaction, outputs)
-			sigHashes := txscript.NewTxSigHashes(transaction, prevoutFetcher)
 
 			isRefund := output.IsRefund()
 			leaf := output.SwapTree.GetLeaf(isRefund)

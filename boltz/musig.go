@@ -48,6 +48,10 @@ func (session *MusigSession) Finalize(transaction Transaction, network *Network,
 		return err
 	}
 
+	if len(nonce) != 66 {
+		return errors.New("invalid nonce length")
+	}
+
 	all, err := session.RegisterPubNonce([66]byte(nonce))
 	if err != nil {
 		return err

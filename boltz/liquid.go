@@ -143,9 +143,8 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 
 		out := lockupTx.Outputs[output.Vout]
 		input := psetv2.InputArgs{
-			Txid:    output.LockupTransaction.Hash(),
-			TxIndex: output.Vout,
-			//HeightLock: output.TimeoutBlockHeight,
+			Txid:     output.LockupTransaction.Hash(),
+			TxIndex:  output.Vout,
 			Sequence: 0xfffffffd,
 		}
 		if !output.Cooperative {
@@ -256,10 +255,6 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 				return nil, err
 			}
 
-			if !signature.Verify(sigHash[:], output.PrivateKey.PubKey()) {
-				return nil, errors.New("Signature verification failed")
-			}
-
 			tree := output.SwapTree
 			isRefund := output.IsRefund()
 			controlBlock, err := tree.GetControlBlock(isRefund)
@@ -271,7 +266,7 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 			if !isRefund {
 				witness = append(witness, output.Preimage)
 			}
-			witness = append(witness, tree.GetLeafScript(isRefund), controlBlock)
+			witness = append(witness, tree.GetLeaf(isRefund).Script, controlBlock)
 		}
 		p.Inputs[i].FinalScriptWitness, err = writeTxWitness(witness...)
 		if err != nil {
