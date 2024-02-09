@@ -14,8 +14,9 @@ service Boltz {
     /*
     Fetches the latest limits and fees from the Boltz backend API it is connected to.
     */
-    rpc GetServiceInfo (GetServiceInfoRequest) returns (GetServiceInfoResponse);
-
+    rpc GetServiceInfo (GetServiceInfoRequest) returns (GetServiceInfoResponse) {
+        option deprecated = true;
+    };
 
     /*
     Fetches information about a specific pair for a submarine swap.
@@ -26,11 +27,6 @@ service Boltz {
     Fetches information about a specific pair for a reverse swap.
     */
     rpc GetReversePair (Pair) returns (ReversePair);
-
-    /*
-    Returns all available swap pairs.
-    */
-    rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
 
     /*
     Fetches the latest limits and fees from the Boltz backend API it is connected to.
@@ -296,11 +292,6 @@ message ReversePair {
 
 message GetSubmarinePairsResponse {
     repeated SubmarinePair pairs = 1;
-}
-
-message GetPairsResponse {
-    repeated SubmarinePair submarinePairs = 1;
-    repeated ReversePair reversePairs = 2;
 }
 
 message MinerFees {

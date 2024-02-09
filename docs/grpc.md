@@ -44,14 +44,6 @@ Fetches information about a specific pair for a reverse swap.
 | ------- | -------- |
 | [`Pair`](#boltzrpc.Pair) | [`ReversePair`](#boltzrpc.ReversePair) |
 
-#### GetPairs
-
-Returns all available swap pairs.
-
-| Request | Response |
-| ------- | -------- |
-| [`.google.protobuf.Empty`](#google.protobuf.Empty) | [`GetPairsResponse`](#boltzrpc.GetPairsResponse) |
-
 #### GetFeeEstimation
 
 Fetches the latest limits and fees from the Boltz backend API it is connected to.
@@ -514,19 +506,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `key` | [`string`](#string) |  |  |
 | `value` | [`uint32`](#uint32) |  |  |
-
-
-
-
-
-#### <div id="boltzrpc.GetPairsResponse">GetPairsResponse</div>
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `submarinePairs` | [`SubmarinePair`](#boltzrpc.SubmarinePair) | repeated |  |
-| `reversePairs` | [`ReversePair`](#boltzrpc.ReversePair) | repeated |  |
 
 
 
