@@ -82,8 +82,6 @@ func Init(cfg *config.Config) {
 
 	logger.Info("Parsed chain: " + network.Name)
 
-	cfg.LND.ChainParams = network.Btc
-
 	waitForLightningSynced(cfg.Lightning)
 
 	setBoltzEndpoint(cfg.Boltz, network)

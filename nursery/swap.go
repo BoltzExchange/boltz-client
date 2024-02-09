@@ -406,7 +406,6 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				return
 			}
 		}
-		fmt.Println("debug2")
 
 		logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
 		if err := nursery.refundSwaps([]database.Swap{*swap}, true); err != nil {

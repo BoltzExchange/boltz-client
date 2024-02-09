@@ -32,6 +32,8 @@ type Cln struct {
 	CertChain  string `long:"cln.certchain" description:"Path to the client cert of the CLN gRPC"`
 
 	Client protos.NodeClient
+
+	regtest bool
 }
 
 const (
@@ -105,6 +107,7 @@ func (c *Cln) GetInfo() (*lightning.LightningInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.regtest = info.Network == "regtest"
 	return &lightning.LightningInfo{
 		Pubkey:      hex.EncodeToString(info.Id),
 		BlockHeight: info.Blockheight,
@@ -176,6 +179,10 @@ func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo str
 		Preimage:    preimage,
 		Description: memo,
 		Label:       fmt.Sprint(time.Now().UTC().UnixMilli()),
+	}
+	if c.regtest {
+		cltv := uint32(20)
+		request.Cltv = &cltv
 	}
 	if expiry != 0 {
 		expiryDate := uint64(time.Now().Unix()) + uint64(expiry)

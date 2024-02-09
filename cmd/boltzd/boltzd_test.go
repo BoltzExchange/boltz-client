@@ -359,7 +359,6 @@ func TestSwap(t *testing.T) {
 						info := next(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
 					})
-
 					t.Run("Deposit", func(t *testing.T) {
 						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 							Pair: pair,
@@ -387,15 +386,6 @@ func TestSwap(t *testing.T) {
 
 						require.NoError(t, err)
 						amount := submarinePair.Limits.Minimal
-
-						t.Run("AddressRequired", func(t *testing.T) {
-							withoutWallet(t, client, func() {
-								_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-									Pair: pairLiquid,
-								})
-								assert.Error(t, err)
-							})
-						})
 
 						t.Run("Script", func(t *testing.T) {
 							cfg.Boltz.DisablePartialSignatures = true
@@ -480,6 +470,14 @@ func TestSwap(t *testing.T) {
 							require.Equal(t, int(refundFee), int(*info.OnchainFee))
 						})
 
+						t.Run("AddressRequired", func(t *testing.T) {
+							withoutWallet(t, client, func() {
+								_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+									Pair: pairLiquid,
+								})
+								assert.Error(t, err)
+							})
+						})
 					})
 
 				})

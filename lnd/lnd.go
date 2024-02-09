@@ -15,7 +15,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
@@ -52,10 +51,8 @@ type LND struct {
 	Certificate string `long:"lnd.certificate" description:"Path to a certificate file of the LND node"`
 	DataDir     string `long:"lnd.datadir" description:"Path to the data directory of the LND node"`
 
-	ChainParams *chaincfg.Params
-
-	ctx context.Context
-
+	ctx           context.Context
+	regtest       bool
 	client        lnrpc.LightningClient
 	router        routerrpc.RouterClient
 	invoices      invoicesrpc.InvoicesClient
@@ -125,11 +122,13 @@ func (lnd *LND) GetInfo() (*lightning.LightningInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	network := info.Chains[0].Network
+	lnd.regtest = network == "regtest"
 	return &lightning.LightningInfo{
 		Pubkey:      info.IdentityPubkey,
 		BlockHeight: info.BlockHeight,
 		Version:     info.Version,
-		Network:     info.Chains[0].Network,
+		Network:     network,
 		Synced:      info.SyncedToChain,
 	}, nil
 }
@@ -205,12 +204,16 @@ func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 }
 
 func (lnd *LND) CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
-	invoice, err := lnd.client.AddInvoice(lnd.ctx, &lnrpc.Invoice{
+	request := &lnrpc.Invoice{
 		Memo:      memo,
 		Value:     value,
 		Expiry:    expiry,
 		RPreimage: preimage,
-	})
+	}
+	if lnd.regtest {
+		request.CltvExpiry = 20
+	}
+	invoice, err := lnd.client.AddInvoice(lnd.ctx, request)
 	if err != nil {
 		return nil, err
 	}
