@@ -2,7 +2,6 @@ package boltz
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -411,62 +410,6 @@ func (boltz *Boltz) ClaimReverseSwap(request ClaimReverseSwapRequest) (*PartialS
 	}
 
 	return &response, err
-}
-
-func (boltz *Boltz) ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, address string, feeSatPerVbyte float64) (Transaction, uint64, error) {
-	tx, fee, err := ConstructTransaction(
-		network,
-		currency,
-		outputs,
-		address,
-		feeSatPerVbyte,
-	)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	for i, output := range outputs {
-		if output.Cooperative {
-			session, err := NewSigningSession(outputs, i)
-			if err != nil {
-				return nil, 0, fmt.Errorf("could not initialize signing session: %w", err)
-			}
-
-			serialized, err := tx.Serialize()
-			if err != nil {
-				return nil, 0, fmt.Errorf("could not serialize transaction: %w", err)
-			}
-
-			pubNonce := session.PublicNonce()
-
-			var signature *PartialSignature
-			if output.SwapType == NormalSwap {
-				signature, err = boltz.RefundSwap(RefundSwapRequest{
-					Id:          output.SwapId,
-					PubNonce:    hex.EncodeToString(pubNonce[:]),
-					Transaction: serialized,
-					Index:       i,
-				})
-			} else {
-				signature, err = boltz.ClaimReverseSwap(ClaimReverseSwapRequest{
-					Id:          output.SwapId,
-					Preimage:    hex.EncodeToString(output.Preimage),
-					PubNonce:    hex.EncodeToString(pubNonce[:]),
-					Transaction: serialized,
-					Index:       i,
-				})
-			}
-			if err != nil {
-				return nil, 0, fmt.Errorf("could not get partial signature from boltz: %w", err)
-			}
-
-			if err := session.Finalize(tx, network, signature); err != nil {
-				return tx, 0, fmt.Errorf("could not finalize signing session: %w", err)
-			}
-		}
-	}
-
-	return tx, fee, nil
 }
 
 func (boltz *Boltz) sendGetRequest(endpoint string, response interface{}) error {

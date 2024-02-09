@@ -1,6 +1,7 @@
 package boltz
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -53,7 +54,9 @@ func NewTxFromHex(hexString string, ourOutputBlindingKey *btcec.PrivateKey) (Tra
 	return NewBtcTxFromHex(hexString)
 }
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, outputAddress string, satPerVbyte float64) (Transaction, uint64, error) {
+type Signer = func(transaction string, pubNonce string, index int) (*PartialSignature, error)
+
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, outputAddress string, satPerVbyte float64, signer Signer) (Transaction, uint64, error) {
 	var construct func(*Network, []OutputDetails, string, uint64) (Transaction, error)
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
@@ -71,5 +74,33 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 
 	fee := uint64(float64(noFeeTransaction.VSize()) * satPerVbyte)
 	transaction, err := construct(network, outputs, outputAddress, fee)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for i, output := range outputs {
+		if output.Cooperative {
+			session, err := NewSigningSession(outputs, i)
+			if err != nil {
+				return nil, 0, fmt.Errorf("could not initialize signing session: %w", err)
+			}
+
+			serialized, err := transaction.Serialize()
+			if err != nil {
+				return nil, 0, fmt.Errorf("could not serialize transaction: %w", err)
+			}
+
+			pubNonce := session.PublicNonce()
+			signature, err := signer(serialized, hex.EncodeToString(pubNonce[:]), i)
+			if err != nil {
+				return nil, 0, fmt.Errorf("could not get partial signature from boltz: %w", err)
+			}
+
+			if err := session.Finalize(transaction, network, signature); err != nil {
+				return nil, 0, fmt.Errorf("could not finalize signing session: %w", err)
+			}
+		}
+	}
+
 	return transaction, fee, err
 }

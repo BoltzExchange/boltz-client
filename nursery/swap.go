@@ -101,7 +101,15 @@ func (nursery *Nursery) refundSwaps(swapsToRefund []database.Swap, cooperative b
 
 	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
 
-	refundTransactionId, totalRefundFee, err := nursery.createTransaction(currency, refundOutputs, refundAddress, feeSatPerVbyte)
+	var signer boltz.Signer = func(transaction string, pubNonce string, i int) (*boltz.PartialSignature, error) {
+		return nursery.boltz.RefundSwap(boltz.RefundSwapRequest{
+			Id:          swapsToRefund[i].Id,
+			PubNonce:    pubNonce,
+			Transaction: transaction,
+			Index:       i,
+		})
+	}
+	refundTransactionId, totalRefundFee, err := nursery.createTransaction(currency, refundOutputs, refundAddress, feeSatPerVbyte, signer)
 	if err != nil {
 		return errors.New("Could not create refund transaction: " + err.Error())
 	}

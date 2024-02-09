@@ -1,6 +1,7 @@
 package nursery
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -175,22 +176,20 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		logger.Info("Constructing claim transaction for Reverse Swap " + reverseSwap.Id + " with output: " + lockupTx.Hash() + ":" + strconv.Itoa(int(lockupVout)))
 
-		details := []boltz.OutputDetails{
-			{
-				LockupTransaction: lockupTx,
-				Vout:              lockupVout,
-				PrivateKey:        reverseSwap.PrivateKey,
-				Preimage:          reverseSwap.Preimage,
-				SwapTree:          reverseSwap.SwapTree,
-				Cooperative:       true,
-			},
+		output := boltz.OutputDetails{
+			LockupTransaction: lockupTx,
+			Vout:              lockupVout,
+			PrivateKey:        reverseSwap.PrivateKey,
+			Preimage:          reverseSwap.Preimage,
+			SwapTree:          reverseSwap.SwapTree,
+			Cooperative:       true,
 		}
 
-		claimTransactionId, claimFee, err := nursery.claimReverseSwap(reverseSwap, details, feeSatPerVbyte)
+		claimTransactionId, claimFee, err := nursery.claimReverseSwap(reverseSwap, output, feeSatPerVbyte)
 		if err != nil {
 			logger.Warnf("Could not construct cooperative claim transaction: %v", err)
-			details[0].Cooperative = false
-			claimTransactionId, claimFee, err = nursery.claimReverseSwap(reverseSwap, details, feeSatPerVbyte)
+			output.Cooperative = false
+			claimTransactionId, claimFee, err = nursery.claimReverseSwap(reverseSwap, output, feeSatPerVbyte)
 			if err != nil {
 				handleError("Could not construct claim transaction: " + err.Error())
 				return
@@ -256,6 +255,16 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	nursery.sendReverseSwapUpdate(*reverseSwap)
 }
 
-func (nursery *Nursery) claimReverseSwap(reverseSwap *database.ReverseSwap, details []boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
-	return nursery.createTransaction(reverseSwap.Pair.To, details, reverseSwap.ClaimAddress, feeSatPerVbyte)
+func (nursery *Nursery) claimReverseSwap(reverseSwap *database.ReverseSwap, output boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
+	var signer boltz.Signer = func(transaction string, pubNonce string, i int) (*boltz.PartialSignature, error) {
+		return nursery.boltz.ClaimReverseSwap(boltz.ClaimReverseSwapRequest{
+			Id:          reverseSwap.Id,
+			Preimage:    hex.EncodeToString(reverseSwap.Preimage),
+			PubNonce:    pubNonce,
+			Transaction: transaction,
+			Index:       i,
+		})
+	}
+
+	return nursery.createTransaction(reverseSwap.Pair.To, []boltz.OutputDetails{output}, reverseSwap.ClaimAddress, feeSatPerVbyte, signer)
 }

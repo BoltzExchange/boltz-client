@@ -203,8 +203,8 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64) (string, uint64, error) {
-	transaction, fee, err := nursery.boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte)
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64, signer boltz.Signer) (string, uint64, error) {
+	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte, signer)
 	if err != nil {
 		return "", 0, fmt.Errorf("construct transaction: %v", err)
 	}
