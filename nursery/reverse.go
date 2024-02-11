@@ -88,11 +88,11 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) {
 	go func() {
 		eventStream := make(chan *boltz.SwapStatusResponse)
 
-		nursery.sendReverseSwapUpdate(reverseSwap)
-
 		listener, remove := nursery.newListener(reverseSwap.Id)
 		defer remove()
 		nursery.streamSwapStatus(reverseSwap.Id, "Reverse Swap", eventStream, listener.stop)
+
+		nursery.sendReverseSwapUpdate(reverseSwap)
 
 		for event := range eventStream {
 			logger.Info("Reverse Swap " + reverseSwap.Id + " status update: " + event.Status)
@@ -143,8 +143,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for claim transaction", feeSatPerVbyte))
 
-		lockupTx, err := boltz.NewTxFromHex(event.Transaction.Hex, reverseSwap.BlindingKey)
-
+		lockupTx, err := boltz.NewTxFromHex(reverseSwap.Pair.To, event.Transaction.Hex, reverseSwap.BlindingKey)
 		if err != nil {
 			handleError("Could not decode lockup transaction: " + err.Error())
 			return

@@ -49,6 +49,9 @@ func NewLiquidTxFromHex(hexString string, ourOutputBlindingKey *btcec.PrivateKey
 }
 
 func (transaction *LiquidTransaction) FindVout(network *Network, addressToFind string) (uint32, uint64, error) {
+	if transaction.OurOutputBlindingKey == nil {
+		return 0, 0, errors.New("No blinding key set")
+	}
 	info, err := address.FromConfidential(addressToFind)
 	if err != nil {
 		return 0, 0, err
@@ -72,7 +75,7 @@ func (transaction *LiquidTransaction) VSize() uint64 {
 	return uint64(transaction.SerializeSize(false, true)) + uint64(math.Ceil(float64(witnessSize)/4))
 }
 
-func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outputs []OutputDetails, index int, cooperative bool) [32]byte {
+func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outputs []OutputDetails, index int, cooperative bool) []byte {
 	var leafHash *chainhash.Hash
 	if !cooperative {
 		output := outputs[index]
@@ -91,7 +94,7 @@ func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outp
 		values = append(values, out.Value)
 	}
 
-	return transaction.HashForWitnessV1(
+	hash := transaction.HashForWitnessV1(
 		index,
 		scripts,
 		assets,
@@ -101,6 +104,7 @@ func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outp
 		leafHash,
 		nil,
 	)
+	return hash[:]
 }
 
 func constructLiquidTransaction(network *Network, outputs []OutputDetails, outputAddressRaw string, fee uint64) (Transaction, error) {

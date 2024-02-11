@@ -43,8 +43,8 @@ func (output *OutputDetails) IsRefund() bool {
 	return len(output.Preimage) == 0
 }
 
-func NewTxFromHex(hexString string, ourOutputBlindingKey *btcec.PrivateKey) (Transaction, error) {
-	if ourOutputBlindingKey != nil {
+func NewTxFromHex(currency Currency, hexString string, ourOutputBlindingKey *btcec.PrivateKey) (Transaction, error) {
+	if currency == CurrencyLiquid {
 		liquidTx, err := NewLiquidTxFromHex(hexString, ourOutputBlindingKey)
 		if err == nil {
 			return liquidTx, nil

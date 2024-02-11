@@ -1,6 +1,8 @@
 package nursery
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"strconv"
@@ -60,20 +62,22 @@ func (nursery *Nursery) refundSwaps(swapsToRefund []database.Swap, cooperative b
 	var refundAddress string
 
 	for _, swapToRefund := range swapsToRefund {
-		refundOutput := nursery.getRefundOutput(&swapToRefund)
-
-		if refundOutput != nil {
-			refundOutput.Cooperative = cooperative
-			if swapToRefund.RefundAddress != "" {
-				// we process all swaps that have an explicit refund address isolated
-				refundedSwaps = []database.Swap{swapToRefund}
-				refundOutputs = []boltz.OutputDetails{*refundOutput}
-				refundAddress = swapToRefund.RefundAddress
-				break
-			}
-			refundedSwaps = append(refundedSwaps, swapToRefund)
-			refundOutputs = append(refundOutputs, *refundOutput)
+		refundOutput, err := nursery.getRefundOutput(&swapToRefund)
+		if err != nil {
+			logger.Warnf("Could not get refund output of swap %s: %v", swapToRefund.Id, err)
+			continue
 		}
+
+		refundOutput.Cooperative = cooperative
+		if swapToRefund.RefundAddress != "" {
+			// we process all swaps that have an explicit refund address isolated
+			refundedSwaps = []database.Swap{swapToRefund}
+			refundOutputs = []boltz.OutputDetails{*refundOutput}
+			refundAddress = swapToRefund.RefundAddress
+			break
+		}
+		refundedSwaps = append(refundedSwaps, swapToRefund)
+		refundOutputs = append(refundOutputs, *refundOutput)
 	}
 
 	if refundAddress == "" {
@@ -137,36 +141,15 @@ func (nursery *Nursery) refundSwaps(swapsToRefund []database.Swap, cooperative b
 	return nil
 }
 
-func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetails {
-	swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
-
+func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*boltz.OutputDetails, error) {
+	lockupTransaction, err := nursery.onchain.GetTransaction(swap.Pair.From, swap.LockupTransactionId, swap.BlindingKey)
 	if err != nil {
-		logger.Error("Could not get lockup transaction from Boltz: " + err.Error())
-		err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_ABANDONED, "")
-
-		if err != nil {
-			logger.Error("Could not update state of Swap " + swap.Id + ": " + err.Error())
-		}
-
-		return nil
+		return nil, errors.New("could not fetch lockup transaction: " + err.Error())
 	}
 
-	lockupTransaction, err := boltz.NewTxFromHex(swapTransactionResponse.TransactionHex, swap.BlindingKey)
-
+	lockupVout, _, err := lockupTransaction.FindVout(nursery.network, swap.Address)
 	if err != nil {
-		logger.Error("Could not parse lockup transaction from Boltz: " + err.Error())
-		return nil
-	}
-
-	logger.Info("Got lockup transaction of Swap " + swap.Id + " from Boltz: " + lockupTransaction.Hash())
-
-	addr, _ := swap.SwapTree.Address(nursery.network, swap.BlindingPubKey())
-
-	lockupVout, _, err := lockupTransaction.FindVout(nursery.network, addr)
-
-	if err != nil {
-		logger.Error("Could not find lockup vout of Swap " + swap.Id)
-		return nil
+		return nil, fmt.Errorf("could not find lockup vout of Swap %s: %w", swap.Id, err)
 	}
 
 	return &boltz.OutputDetails{
@@ -180,7 +163,7 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *boltz.OutputDetail
 		SwapTree:           swap.SwapTree,
 		// TODO: remember if cooperative fails and set this to false
 		Cooperative: true,
-	}
+	}, nil
 }
 
 func (nursery *Nursery) recoverSwaps() error {
@@ -239,6 +222,45 @@ func (nursery *Nursery) RegisterSwap(swap database.Swap) {
 	}()
 }
 
+func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.SwapStatusResponse) error {
+	logger.Debugf("Trying to claim swap %s cooperatively", swap.Id)
+
+	claimDetails, err := nursery.boltz.GetSwapClaimDetails(swap.Id)
+	if err != nil {
+		return fmt.Errorf("Could not get claim details from boltz: %w", err)
+	}
+
+	// Verify that the invoice was actually paid
+	decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+	if err != nil {
+		return fmt.Errorf("could not decode swap invoice: %w", err)
+	}
+
+	preimageHash := sha256.Sum256(claimDetails.Preimage)
+	if !bytes.Equal(decodedInvoice.PaymentHash[:], preimageHash[:]) {
+		return fmt.Errorf("boltz returned wrong preimage: %x", claimDetails.Preimage)
+	}
+
+	output, err := nursery.getRefundOutput(swap)
+	if err != nil {
+		return fmt.Errorf("could not get swap output: %w", err)
+	}
+	session, err := boltz.NewSigningSession([]boltz.OutputDetails{*output}, 0)
+	if err != nil {
+		return fmt.Errorf("could not create signing session: %w", err)
+	}
+
+	partial, err := session.Sign(claimDetails.TransactionHash, claimDetails.PubNonce)
+	if err != nil {
+		return fmt.Errorf("could not create partial signature: %w", err)
+	}
+
+	if err := nursery.boltz.SendSwapClaimSignature(swap.Id, partial); err != nil {
+		return fmt.Errorf("could not send partial signature to boltz: %w", err)
+	}
+	return nil
+}
+
 func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapStatusResponse) {
 	parsedStatus := boltz.ParseEvent(status.Status)
 
@@ -264,7 +286,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				return
 			}
 		} else {
-			lockupTransaction, err := boltz.NewTxFromHex(swapTransactionResponse.TransactionHex, swap.BlindingKey)
+			lockupTransaction, err := boltz.NewTxFromHex(swap.Pair.From, swapTransactionResponse.TransactionHex, swap.BlindingKey)
 			if err != nil {
 				handleError("Could not decode lockup transaction: " + err.Error())
 				return
@@ -356,6 +378,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 	case boltz.TransactionClaimed:
+	case boltz.TransactionClaimPending:
 		// Verify that the invoice was actually paid
 		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
 
@@ -372,11 +395,17 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 		if !paid {
-			logger.Warn("Swap " + swap.Id + " was not actually settled. Refunding at block " + strconv.FormatUint(uint64(swap.TimoutBlockHeight), 10))
+			logger.Warnf("Swap %s was not actually settled. Refunding at block %d", swap.Id, swap.TimoutBlockHeight)
 			return
 		}
 
-		logger.Info("Swap " + swap.Id + " succeeded")
+		logger.Infof("Swap %s succeeded", swap.Id)
+
+		if parsedStatus == boltz.TransactionClaimPending {
+			if err := nursery.cooperativeSwapClaim(swap, status); err != nil {
+				logger.Warnf("Could not claim swap %s cooperatively: %s", swap.Id, err)
+			}
+		}
 	}
 
 	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
