@@ -390,7 +390,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		paid, err := nursery.lightning.CheckInvoicePaid(decodedInvoice.PaymentHash[:])
 
 		if err != nil {
-			handleError("Could not get invoice information from LND: " + err.Error())
+			handleError("Could not get invoice information from lightning node: " + err.Error())
 			return
 		}
 
