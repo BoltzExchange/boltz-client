@@ -296,7 +296,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			return err
 		}
 		if rows.Next() {
-			return errors.New("tx migration failed: found pending swaps")
+			return errors.New("database migration failed: found pending swaps")
 		}
 
 		rows, err = tx.Query("SELECT id FROM reverseSwaps WHERE state = ?", boltzrpc.SwapState_PENDING)
@@ -304,7 +304,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			return err
 		}
 		if rows.Next() {
-			return errors.New("tx migration failed: found pending reverse swaps")
+			return errors.New("database migration failed: found pending reverse swaps")
 		}
 
 		var migration = `
