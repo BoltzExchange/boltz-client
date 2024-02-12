@@ -160,6 +160,11 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) nextFunc {
 			select {
 			case status, ok := <-updates:
 				if ok {
+					// ignore initial swap.created message
+					created := boltz.SwapCreated.String()
+					if status.Swap.GetStatus() == created || status.ReverseSwap.GetStatus() == created {
+						continue
+					}
 					if state == status.Swap.GetState() || state == status.ReverseSwap.GetState() {
 						return status
 					}
@@ -386,12 +391,10 @@ func TestSwap(t *testing.T) {
 						})
 						require.NoError(t, err)
 
-						next := swapStream(t, client, swap.Id)
-						next(boltzrpc.SwapState_PENDING)
-
 						test.SendToAddress(tc.cli, swap.Address, 100000)
 						test.MineBlock()
 
+						next := swapStream(t, client, swap.Id)
 						info := next(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
 					})
@@ -489,6 +492,8 @@ func TestSwap(t *testing.T) {
 							refundFee, err := chain.GetTransactionFee(from, info.RefundTransactionId)
 							require.NoError(t, err)
 							require.Equal(t, int(refundFee), int(*info.OnchainFee))
+
+							checkTxOutAddress(t, chain, from, info.RefundTransactionId, "", true)
 						})
 
 						t.Run("AddressRequired", func(t *testing.T) {
