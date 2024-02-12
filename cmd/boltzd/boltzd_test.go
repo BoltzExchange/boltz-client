@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -11,12 +12,15 @@ import (
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
+	"github.com/vulpemventures/go-elements/address"
 
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/lightningnetwork/lnd/zpay32"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -205,11 +209,54 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
-func checkTxOutAddress(t *testing.T, chain onchain.Onchain, currency boltz.Currency, txId string, outAddress string) {
+func checkTxOutAddress(t *testing.T, chain onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
 	transaction, err := chain.GetTransaction(currency, txId, nil)
 	require.NoError(t, err)
-	_, _, err = transaction.FindVout(boltz.Regtest, outAddress)
-	require.NoError(t, err)
+
+	if tx, ok := transaction.(*boltz.BtcTransaction); ok {
+
+		for _, input := range tx.MsgTx().TxIn {
+			if cooperative {
+				require.Len(t, input.Witness, 1)
+			} else {
+				require.Greater(t, len(input.Witness), 1)
+			}
+		}
+
+		if outAddress != "" {
+			decoded, err := btcutil.DecodeAddress(outAddress, &chaincfg.RegressionNetParams)
+			require.NoError(t, err)
+			script, err := txscript.PayToAddrScript(decoded)
+			require.NoError(t, err)
+			for _, output := range tx.MsgTx().TxOut {
+				if bytes.Equal(output.PkScript, script) {
+					return
+				}
+			}
+			require.Fail(t, "could not find output address in transaction")
+		}
+	} else if tx, ok := transaction.(*boltz.LiquidTransaction); ok {
+		for _, input := range tx.Inputs {
+			if cooperative {
+				require.Len(t, input.Witness, 1)
+			} else {
+				require.Greater(t, len(input.Witness), 1)
+			}
+		}
+		if outAddress != "" {
+			script, err := address.ToOutputScript(outAddress)
+			require.NoError(t, err)
+			for _, output := range tx.Outputs {
+				if len(output.Script) == 0 {
+					continue
+				}
+				if bytes.Equal(output.Script, script) {
+					return
+				}
+			}
+			require.Fail(t, "could not find output address in transaction")
+		}
+	}
 }
 
 func parseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
@@ -413,7 +460,7 @@ func TestSwap(t *testing.T) {
 
 							require.Equal(t, int(refundFee), int(*infos[1].OnchainFee)+int(*infos[2].OnchainFee))
 
-							checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress)
+							checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress, false)
 
 							refundFee, err = chain.GetTransactionFee(from, infos[0].RefundTransactionId)
 							require.NoError(t, err)
@@ -566,7 +613,7 @@ func TestReverseSwap(t *testing.T) {
 					if tc.external {
 						require.Equal(t, addr, info.ReverseSwap.ClaimAddress)
 					}
-					checkTxOutAddress(t, chain, currency, info.ReverseSwap.ClaimTransactionId, info.ReverseSwap.ClaimAddress)
+					checkTxOutAddress(t, chain, currency, info.ReverseSwap.ClaimTransactionId, info.ReverseSwap.ClaimAddress, !tc.disablePartials)
 
 					stop()
 				})
