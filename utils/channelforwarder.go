@@ -5,6 +5,8 @@ import (
 )
 
 type ChannelForwarder[T any] struct {
+	Original chan T
+
 	channels []chan T
 	isClosed bool
 
@@ -13,8 +15,9 @@ type ChannelForwarder[T any] struct {
 	lock        sync.Mutex
 }
 
-func ForwardChannel[T any](orig <-chan T, buffer int, saveValues bool) *ChannelForwarder[T] {
+func ForwardChannel[T any](orig chan T, buffer int, saveValues bool) *ChannelForwarder[T] {
 	cf := &ChannelForwarder[T]{
+		Original: orig,
 		isClosed: false,
 		buffer:   buffer,
 	}

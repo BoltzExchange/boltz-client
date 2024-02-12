@@ -100,7 +100,6 @@ func (c *Client) GetTxHex(txId string) (string, error) {
 }
 
 func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-
 	ws, err := url.Parse(c.apiv1)
 	if err != nil {
 		return err

@@ -57,7 +57,7 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 		cfg = loadConfig(t)
 	}
 
-	logger.Init("", "debug")
+	logger.Init("", cfg.LogLevel)
 
 	cfg.RPC.NoTls = true
 	cfg.RPC.NoMacaroons = true
@@ -142,7 +142,7 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) nextFunc {
 	stream, err := client.GetSwapInfoStream(swapId)
 	require.NoError(t, err)
 
-	updates := make(chan *boltzrpc.GetSwapInfoResponse)
+	updates := make(chan *boltzrpc.GetSwapInfoResponse, 3)
 
 	go func() {
 		for {
@@ -378,8 +378,6 @@ func TestSwap(t *testing.T) {
 						require.NotZero(t, swap.TimeoutBlockHeight)
 
 						next := swapStream(t, client, swap.Id)
-						next(boltzrpc.SwapState_PENDING)
-
 						test.MineBlock()
 
 						info := next(boltzrpc.SwapState_SUCCESSFUL)
@@ -592,7 +590,7 @@ func TestReverseSwap(t *testing.T) {
 						require.NoError(t, err)
 
 						next := swapStream(t, client, swap.Id)
-						next(boltzrpc.SwapState_PENDING)
+						next(boltzrpc.SwapState_SUCCESSFUL)
 
 						if !tc.zeroConf {
 							test.MineBlock()
