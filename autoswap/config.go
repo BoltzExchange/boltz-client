@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/BurntSushi/toml"
@@ -288,4 +289,21 @@ func (cfg *Config) Write(path string) error {
 
 func (cfg *Config) StrategyName() string {
 	return cfg.strategyName
+}
+
+func (cfg *Config) GetPair(swapType boltz.SwapType) *boltzrpc.Pair {
+	currency := boltzrpc.Currency_Btc
+	if cfg.Currency == boltz.CurrencyLiquid {
+		currency = boltzrpc.Currency_Liquid
+	}
+	result := &boltzrpc.Pair{}
+	switch swapType {
+	case boltz.NormalSwap:
+		result.From = currency
+		result.To = boltzrpc.Currency_Btc
+	case boltz.ReverseSwap:
+		result.From = boltzrpc.Currency_Btc
+		result.To = currency
+	}
+	return result
 }

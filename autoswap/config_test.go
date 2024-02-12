@@ -3,6 +3,8 @@ package autoswap
 import (
 	"testing"
 
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,4 +38,22 @@ func TestSetConfigValue(t *testing.T) {
 
 	// cant set unexported field
 	require.Error(t, cfg.SetValue("strategyName", "L-BTC"))
+}
+
+func TestGetPair(t *testing.T) {
+	cfg := DefaultConfig
+
+	pair := cfg.GetPair(boltz.NormalSwap)
+	require.Equal(t, boltzrpc.Currency_Liquid, pair.From)
+	require.Equal(t, boltzrpc.Currency_Btc, pair.To)
+
+	pair = cfg.GetPair(boltz.ReverseSwap)
+	require.Equal(t, boltzrpc.Currency_Liquid, pair.To)
+	require.Equal(t, boltzrpc.Currency_Btc, pair.From)
+
+	require.NoError(t, cfg.SetValue("Currency", "BTC"))
+
+	pair = cfg.GetPair(boltz.ReverseSwap)
+	require.Equal(t, boltzrpc.Currency_Btc, pair.To)
+	require.Equal(t, boltzrpc.Currency_Btc, pair.From)
 }

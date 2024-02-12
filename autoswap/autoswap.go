@@ -19,12 +19,6 @@ import (
 
 var ErrorNotConfigured = errors.New("autoswap not configured")
 
-type SwapExecution struct {
-	Amount  uint64
-	Channel *boltzrpc.LightningChannel
-	Pair    boltz.Pair
-}
-
 type Limits struct {
 	MinAmount uint64
 	MaxAmount uint64
@@ -201,7 +195,7 @@ func (swapper *AutoSwapper) validateRecommendations(
 
 	var checked []*SwapRecommendation
 	for _, recommendation := range recommendations {
-		pairInfo, err := swapper.GetPairInfo(swapper.getPair(recommendation.Type), recommendation.Type)
+		pairInfo, err := swapper.GetPairInfo(swapper.cfg.GetPair(recommendation.Type), recommendation.Type)
 		if err != nil {
 			logger.Warn("Could not get pair info: " + err.Error())
 			continue
@@ -245,26 +239,12 @@ func (swapper *AutoSwapper) GetSwapRecommendations() ([]*SwapRecommendation, err
 	return swapper.validateRecommendations(recommendations, budget.Amount)
 }
 
-func (swapper *AutoSwapper) getPair(swapType boltz.SwapType) *boltzrpc.Pair {
-	currency := boltzrpc.Currency_Btc
-	result := &boltzrpc.Pair{}
-	switch swapType {
-	case boltz.NormalSwap:
-		result.From = currency
-		result.To = boltzrpc.Currency_Btc
-	case boltz.ReverseSwap:
-		result.From = boltzrpc.Currency_Btc
-		result.To = currency
-	}
-	return result
-}
-
 func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address string) error {
 	var chanIds []string
 	if chanId := recommendation.Channel.GetId(); chanId != 0 {
 		chanIds = append(chanIds, chanId.ToCln())
 	}
-	pair := swapper.getPair(recommendation.Type)
+	pair := swapper.cfg.GetPair(recommendation.Type)
 	var err error
 	if recommendation.Type == boltz.ReverseSwap {
 		err = swapper.ExecuteReverseSwap(&boltzrpc.CreateReverseSwapRequest{
