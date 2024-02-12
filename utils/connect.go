@@ -12,9 +12,19 @@ import (
 
 func connect(node lightning.LightningNode, peer *boltz.NodeInfo) error {
 	if len(peer.Uris) == 0 {
-		return fmt.Errorf("no uris found for peer: %s", peer.PublicKey)
+		return fmt.Errorf("no uris for peer: %s", peer.PublicKey)
 	}
-	uri := peer.Uris[0]
+	var uri string
+	for _, current := range peer.Uris {
+		uri = current
+		// prefer clearnet
+		if !strings.Contains(current, "onion") {
+			break
+		}
+	}
+	if uri == "" {
+		return fmt.Errorf("no  uri for peer: %s", peer.PublicKey)
+	}
 	err := node.ConnectPeer(uri)
 	if err == nil {
 		logger.Infof("Connected to Boltz node: %s", uri)
@@ -35,18 +45,22 @@ func ConnectBoltz(lightning lightning.LightningNode, boltz *boltz.Boltz) error {
 	}
 
 	symbol := "BTC"
-	btcNodes, hasNode := nodes[symbol]
+	nodesForSymbol, hasNodesForSymbol := nodes[symbol]
 
-	if !hasNode {
+	if !hasNodesForSymbol {
 		return errors.New("could not find Boltz node for symbol: " + symbol)
 	}
 
-	if err := connect(lightning, btcNodes.LND); err != nil {
-		return err
+	if nodesForSymbol.LND != nil {
+		if err := connect(lightning, nodesForSymbol.LND); err != nil {
+			logger.Errorf("Could not connect to LND node: %s", err)
+		}
 	}
 
-	if err := connect(lightning, btcNodes.CLN); err != nil {
-		return err
+	if nodesForSymbol.CLN != nil {
+		if err := connect(lightning, nodesForSymbol.CLN); err != nil {
+			logger.Errorf("Could not connect to CLN node: %s", err)
+		}
 	}
 	return err
 }
