@@ -3,6 +3,7 @@ package rpcserver
 import (
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
@@ -36,6 +37,21 @@ func serializeChanIds(chanIds []lightning.ChanId) (result []*boltzrpc.ChannelId)
 	return result
 }
 
+func serializeCurrency(currency boltz.Currency) boltzrpc.Currency {
+	if currency == boltz.CurrencyBtc {
+		return boltzrpc.Currency_Btc
+	} else {
+		return boltzrpc.Currency_Liquid
+	}
+}
+
+func serializePair(pair boltz.Pair) *boltzrpc.Pair {
+	return &boltzrpc.Pair{
+		From: serializeCurrency(pair.From),
+		To:   serializeCurrency(pair.To),
+	}
+}
+
 func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	if swap == nil {
 		return nil
@@ -44,7 +60,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 
 	return &boltzrpc.SwapInfo{
 		Id:                  serializedSwap.Id,
-		PairId:              serializedSwap.PairId,
+		Pair:                serializePair(swap.Pair),
 		ChanIds:             serializeChanIds(swap.ChanIds),
 		State:               swap.State,
 		Error:               serializedSwap.Error,
@@ -75,7 +91,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 
 	return &boltzrpc.ReverseSwapInfo{
 		Id:                  serializedReverseSwap.Id,
-		PairId:              serializedReverseSwap.PairId,
+		Pair:                serializePair(reverseSwap.Pair),
 		ChanIds:             serializeChanIds(reverseSwap.ChanIds),
 		State:               reverseSwap.State,
 		Error:               serializedReverseSwap.Error,

@@ -2,6 +2,7 @@ package nursery
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -90,7 +91,6 @@ func (nursery *Nursery) getSwapListener(id string) *swapListener {
 }
 
 func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
-	logger.Debugf("Trying to send update for swap %s", id)
 	if listener := nursery.getSwapListener(id); listener != nil {
 		listener.updates <- update
 		logger.Debugf("Sent update for swap %s", id)
@@ -98,6 +98,8 @@ func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
 		if update.IsFinal {
 			listener.close()
 		}
+	} else {
+		logger.Debugf("No listener for swap %s", id)
 	}
 }
 
@@ -134,8 +136,8 @@ func (nursery *Nursery) Init(
 	if err := nursery.recoverSwaps(); err != nil {
 		return err
 	}
-	nursery.startBlockListener(boltz.PairBtc)
-	nursery.startBlockListener(boltz.PairLiquid)
+	nursery.startBlockListener(boltz.CurrencyBtc)
+	nursery.startBlockListener(boltz.CurrencyLiquid)
 
 	err := nursery.recoverReverseSwaps()
 
@@ -161,8 +163,8 @@ func (nursery *Nursery) Stop() {
 	nursery.blockListenerGroup.Wait()
 }
 
-func (nursery *Nursery) registerBlockListener(pair boltz.Pair) chan *onchain.BlockEpoch {
-	logger.Infof("Connecting to block %s epoch stream", pair)
+func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onchain.BlockEpoch {
+	logger.Infof("Connecting to block %s epoch stream", currency)
 	blockNotifier := make(chan *onchain.BlockEpoch)
 	stop := make(chan bool)
 	nursery.stopBlockListeners = append(nursery.stopBlockListeners, stop)
@@ -171,16 +173,16 @@ func (nursery *Nursery) registerBlockListener(pair boltz.Pair) chan *onchain.Blo
 		defer func() {
 			close(blockNotifier)
 			nursery.blockListenerGroup.Done()
-			logger.Debugf("Closed block listener for %s", pair)
+			logger.Debugf("Closed block listener for %s", currency)
 		}()
 		for !nursery.stopped {
-			listener := nursery.onchain.GetBlockListener(pair)
+			listener := nursery.onchain.GetBlockListener(currency)
 			if listener == nil {
-				logger.Errorf("no block listener for %s", pair)
+				logger.Errorf("no block listener for %s", currency)
 			} else {
 				err := listener.RegisterBlockListener(blockNotifier, stop)
 				if err != nil {
-					logger.Errorf("Lost connection to %s block epoch stream: %s", utils.CurrencyFromPair(pair), err.Error())
+					logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
 					logger.Infof("Retrying connection in " + strconv.Itoa(retryInterval) + " seconds")
 				}
 			}
@@ -197,18 +199,33 @@ func (nursery *Nursery) registerBlockListener(pair boltz.Pair) chan *onchain.Blo
 	return blockNotifier
 }
 
-func (nursery *Nursery) getFeeEstimation(pair boltz.Pair) (float64, error) {
-	return nursery.onchain.EstimateFee(pair, 2)
+func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, error) {
+	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) broadcastTransaction(transaction boltz.Transaction, pair boltz.Pair) error {
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64, signer boltz.Signer) (string, uint64, error) {
+	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte, signer)
+	if err != nil {
+		return "", 0, fmt.Errorf("construct transaction: %v", err)
+	}
+
+	id := transaction.Hash()
+	err = nursery.broadcastTransaction(transaction, currency)
+	if err != nil {
+		return "", 0, fmt.Errorf("broadcast transaction: %v", err)
+	}
+	return id, fee, nil
+}
+
+func (nursery *Nursery) broadcastTransaction(transaction boltz.Transaction, currency boltz.Currency) error {
 	transactionHex, err := transaction.Serialize()
 	if err != nil {
 		return errors.New("could not serialize transaction: " + err.Error())
 	}
 
-	_, err = nursery.boltz.BroadcastTransaction(transactionHex, boltz.Currency(utils.CurrencyFromPair(pair)))
+	_, err = nursery.boltz.BroadcastTransaction(transactionHex, currency)
 	if err != nil {
+		logger.Errorf("Could not broadcast transaction: %v\n%s", err, transactionHex)
 		return errors.New("could not broadcast transaction: " + err.Error())
 	}
 

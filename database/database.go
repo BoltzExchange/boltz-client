@@ -32,12 +32,15 @@ CREATE TABLE macaroons
 CREATE TABLE swaps
 (
     id                  VARCHAR PRIMARY KEY,
-    pairId              VARCHAR,
+    fromCurrency        VARCHAR,
+    toCurrency          VARCHAR,
     chanIds             JSON,
     state               INT,
     error               VARCHAR,
     status              VARCHAR,
     privateKey          VARCHAR,
+    swapTree            JSON, 
+    claimPubKey         VARCHAR, 
     preimage            VARCHAR,
     redeemScript        VARCHAR,
     invoice             VARCHAR,
@@ -58,13 +61,16 @@ CREATE TABLE swaps
 CREATE TABLE reverseSwaps
 (
     id                  VARCHAR PRIMARY KEY,
-    pairId              VARCHAR,
+    fromCurrency        VARCHAR,
+    toCurrency          VARCHAR,
     chanIds             JSON,
     state               INT,
     error               VARCHAR,
     status              VARCHAR,
     acceptZeroConf      BOOLEAN,
     privateKey          VARCHAR,
+    swapTree            JSON, 
+    refundPubKey        VARCHAR,
     preimage            VARCHAR,
     redeemScript        VARCHAR,
     invoice             VARCHAR,
@@ -115,11 +121,43 @@ type JsonScanner[T any] struct {
 }
 
 func (j *JsonScanner[T]) Scan(src any) error {
-	if src == nil && j.Nullable {
+	if (src == nil || src == "") && j.Nullable {
 		return nil
 	}
 	if str, ok := src.(string); ok {
 		return json.Unmarshal([]byte(str), &j.Value)
+	}
+	return fmt.Errorf("unsupported type: %T", src)
+}
+
+type PrivateKeyScanner struct {
+	Value    *btcec.PrivateKey
+	Nullable bool
+}
+
+func (s *PrivateKeyScanner) Scan(src any) (err error) {
+	if src == nil && s.Nullable {
+		return nil
+	}
+	if str, ok := src.(string); ok {
+		s.Value, err = ParsePrivateKey(str)
+		return err
+	}
+	return fmt.Errorf("unsupported type: %T", src)
+}
+
+type PublicKeyScanner struct {
+	Value    *btcec.PublicKey
+	Nullable bool
+}
+
+func (s *PublicKeyScanner) Scan(src any) (err error) {
+	if (src == nil || src == "") && s.Nullable {
+		return nil
+	}
+	if str, ok := src.(string); ok {
+		s.Value, err = ParsePublicKey(str)
+		return err
 	}
 	return fmt.Errorf("unsupported type: %T", src)
 }
@@ -146,7 +184,8 @@ func (transaction *Transaction) Rollback(cause error) error {
 }
 
 type SwapQuery struct {
-	Pair   *boltz.Pair
+	From   *boltz.Currency
+	To     *boltz.Currency
 	State  *boltzrpc.SwapState
 	IsAuto *bool
 	Since  time.Time
@@ -154,9 +193,13 @@ type SwapQuery struct {
 
 func (query *SwapQuery) ToWhereClause() (where string, values []any) {
 	var conditions []string
-	if query.Pair != nil {
-		conditions = append(conditions, "pairId = ?")
-		values = append(values, *query.Pair)
+	if query.From != nil {
+		conditions = append(conditions, "fromCurrency = ?")
+		values = append(values, *query.From)
+	}
+	if query.To != nil {
+		conditions = append(conditions, "toCurrency = ?")
+		values = append(values, *query.To)
 	}
 	if query.State != nil {
 		conditions = append(conditions, "state = ?")
@@ -230,11 +273,26 @@ func ParsePrivateKey(privateKeyHex string) (*btcec.PrivateKey, error) {
 	return priv, nil
 }
 
+func ParsePublicKey(publicKeyHex string) (*btcec.PublicKey, error) {
+	pubKeyBytes, err := hex.DecodeString(publicKeyHex)
+	if err != nil {
+		return nil, err
+	}
+	return btcec.ParsePubKey(pubKeyBytes)
+}
+
 func formatPrivateKey(key *btcec.PrivateKey) string {
 	if key == nil {
 		return ""
 	}
 	return hex.EncodeToString(key.Serialize())
+}
+
+func formatPublicKey(key *btcec.PublicKey) string {
+	if key == nil {
+		return ""
+	}
+	return hex.EncodeToString(key.SerializeCompressed())
 }
 
 func ParseTime(unix int64) time.Time {

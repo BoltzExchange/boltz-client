@@ -2,11 +2,11 @@ package autoswap
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/lightning"
 	"math"
 
+	"github.com/BoltzExchange/boltz-client/lightning"
+
 	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/utils"
 )
 
@@ -38,29 +38,21 @@ func (recommendation *SwapRecommendation) Dismissed() bool {
 	return len(recommendation.DismissedReasons) > 0
 }
 
-func (recommendation rawRecommendation) estimateFee(fees *boltzrpc.Fees) uint64 {
-	serviceFee := utils.Percentage(fees.Percentage).Calculate(float64(recommendation.Amount))
-
-	var onchainFee uint32
-	if recommendation.Type == boltz.NormalSwap {
-		onchainFee = fees.Miner.Normal
-	} else if recommendation.Type == boltz.ReverseSwap {
-		onchainFee = fees.Miner.Reverse
-	}
-
-	return uint64(serviceFee) + uint64(onchainFee)
+func (recommendation rawRecommendation) estimateFee(pair *PairInfo) uint64 {
+	serviceFee := utils.Percentage(pair.PercentageFee).Calculate(float64(recommendation.Amount))
+	return uint64(serviceFee) + pair.OnchainFee
 }
 
-func (recommendation rawRecommendation) Check(fees *boltzrpc.Fees, limits *boltzrpc.Limits, cfg *Config) *SwapRecommendation {
+func (recommendation rawRecommendation) Check(pair *PairInfo, cfg *Config) *SwapRecommendation {
 	var dismissedReasons []string
 
-	if recommendation.Amount < uint64(limits.Minimal) {
+	if recommendation.Amount < uint64(pair.MinAmount) {
 		dismissedReasons = append(dismissedReasons, ReasonAmountBelowMin)
 	}
-	recommendation.Amount = uint64(math.Min(float64(recommendation.Amount), float64(limits.Maximal)))
+	recommendation.Amount = uint64(math.Min(float64(recommendation.Amount), float64(pair.MaxAmount)))
 
 	maxFee := cfg.MaxFeePercent.Calculate(float64(recommendation.Amount))
-	fee := recommendation.estimateFee(fees)
+	fee := recommendation.estimateFee(pair)
 	if float64(fee) > maxFee {
 		dismissedReasons = append(dismissedReasons, ReasonMaxFeePercent)
 	}

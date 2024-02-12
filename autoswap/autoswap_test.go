@@ -12,18 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var fees = &boltzrpc.Fees{
-	Percentage: 10,
-	Miner: &boltzrpc.MinerFees{
-		Normal:  10,
-		Reverse: 10,
-	},
-}
-var limits = &boltzrpc.Limits{
-	Minimal: 100,
-	Maximal: 1000,
-}
-
 func getTestDb(t *testing.T) *database.Database {
 	db := &database.Database{
 		Path: ":memory:",
@@ -43,8 +31,16 @@ func getSwapper(t *testing.T, cfg *Config) *AutoSwapper {
 		ListChannels: func() ([]*lightning.LightningChannel, error) {
 			return nil, nil
 		},
-		GetServiceInfo: func(pair boltz.Pair) (*boltzrpc.Fees, *boltzrpc.Limits, error) {
-			return fees, limits, nil
+		GetPairInfo: func(pair *boltzrpc.Pair, swapType boltz.SwapType) (*PairInfo, error) {
+			return &PairInfo{
+				Limits{
+					MinAmount: 100,
+					MaxAmount: 1000,
+				},
+				10,
+				10,
+			}, nil
+
 		},
 	}
 	swapper.Init(getTestDb(t), nil, ".")
@@ -472,12 +468,12 @@ func TestDismissedChannels(t *testing.T) {
 			db := swapper.database
 
 			for _, swap := range tc.swaps {
-				swap.PairId = boltz.PairBtc
+				swap.Pair = boltz.PairBtc
 				require.NoError(t, db.CreateSwap(swap))
 			}
 
 			for _, reverseSwap := range tc.reverseSwaps {
-				reverseSwap.PairId = boltz.PairBtc
+				reverseSwap.Pair = boltz.PairBtc
 				require.NoError(t, db.CreateReverseSwap(reverseSwap))
 			}
 

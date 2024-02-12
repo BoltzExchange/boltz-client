@@ -127,8 +127,8 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 	}
 }
 
-func getCli(pair boltz.Pair) test.Cli {
-	if pair == boltz.PairLiquid {
+func getCli(pair boltz.Currency) test.Cli {
+	if pair == boltz.CurrencyLiquid {
 		return test.LiquidCli
 	} else {
 		return test.BtcCli
@@ -165,7 +165,7 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) nextFunc {
 				} else {
 					require.Fail(t, fmt.Sprintf("update stream for swap %s stopped before state %s", swapId, state))
 				}
-			case <-time.After(10 * time.Second):
+			case <-time.After(15 * time.Second):
 				require.Fail(t, fmt.Sprintf("timed out while waiting for swap %s to reach state %s", swapId, state))
 			}
 		}
@@ -208,13 +208,13 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
-func checkTxOutAddress(t *testing.T, chain onchain.Onchain, pair boltz.Pair, txId string, outAddress string) {
+func checkTxOutAddress(t *testing.T, chain onchain.Onchain, pair boltz.Currency, txId string, outAddress string) {
 	currency, err := chain.GetCurrency(pair)
 	require.NoError(t, err)
 	txHex, err := currency.Tx.GetTxHex(txId)
 	require.NoError(t, err)
 
-	if pair == boltz.PairBtc {
+	if pair == boltz.CurrencyBtc {
 		tx, err := boltz.NewBtcTxFromHex(txHex)
 		require.NoError(t, err)
 
@@ -223,7 +223,7 @@ func checkTxOutAddress(t *testing.T, chain onchain.Onchain, pair boltz.Pair, txI
 		script, err := txscript.PayToAddrScript(decoded)
 		require.NoError(t, err)
 		require.Equal(t, tx.MsgTx().TxOut[0].PkScript, script)
-	} else if pair == boltz.PairLiquid {
+	} else if pair == boltz.CurrencyLiquid {
 		tx, err := boltz.NewLiquidTxFromHex(txHex, nil)
 		require.NoError(t, err)
 
@@ -235,6 +235,14 @@ func checkTxOutAddress(t *testing.T, chain onchain.Onchain, pair boltz.Pair, txI
 			}
 			require.Equal(t, output.Script, script)
 		}
+	}
+}
+
+func parseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
+	if grpcCurrency == boltzrpc.Currency_Btc {
+		return boltz.CurrencyBtc
+	} else {
+		return boltz.CurrencyLiquid
 	}
 }
 
@@ -251,6 +259,16 @@ func TestSwap(t *testing.T) {
 		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
 	}
 
+	pairBtc := &boltzrpc.Pair{
+		From: boltzrpc.Currency_Btc,
+		To:   boltzrpc.Currency_Btc,
+	}
+
+	pairLiquid := &boltzrpc.Pair{
+		From: boltzrpc.Currency_Liquid,
+		To:   boltzrpc.Currency_Btc,
+	}
+
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
 		invoice, err := zpay32.Decode(swap.Invoice, &chaincfg.RegressionNetParams)
 		require.NoError(t, err)
@@ -258,7 +276,7 @@ func TestSwap(t *testing.T) {
 		excpectedFees := swap.ExpectedAmount - int64(invoice.MilliSat.ToSatoshis())
 		actualFees := *swap.OnchainFee + *swap.ServiceFee
 		if swap.AutoSend {
-			lockupFee, err := chain.GetTransactionFee(boltz.Pair(swap.PairId), swap.LockupTransactionId)
+			lockupFee, err := chain.GetTransactionFee(parseCurrency(swap.Pair.From), swap.LockupTransactionId)
 			require.NoError(t, err)
 
 			excpectedFees += int64(lockupFee)
@@ -267,82 +285,11 @@ func TestSwap(t *testing.T) {
 		require.Equal(t, excpectedFees, int64(actualFees))
 	}
 
-	t.Run("RefundAddressRequired", func(t *testing.T) {
-		client, _, stop := setup(t, cfg, "")
-		defer stop()
-		withoutWallet(t, client, func() {
-			_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-				PairId: string(boltz.PairLiquid),
-			})
-			assert.Error(t, err)
-		})
-	})
-
-	t.Run("Refund", func(t *testing.T) {
-		client, _, stop := setup(t, cfg, "")
-		defer stop()
-		pair := boltz.PairBtc
-		serviceInfo, err := client.GetServiceInfo(string(pair))
-		require.NoError(t, err)
-		amount := serviceInfo.Limits.Minimal - 100
-		swaps := make([]*boltzrpc.CreateSwapResponse, 3)
-
-		refundAddress := test.BtcCli("getnewaddress")
-		swaps[0], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			PairId:        string(pair),
-			RefundAddress: refundAddress,
-		})
-		require.NoError(t, err)
-
-		swaps[1], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			PairId: string(pair),
-		})
-		require.NoError(t, err)
-
-		swaps[2], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			PairId: string(pair),
-		})
-		require.NoError(t, err)
-
-		var streams []nextFunc
-		for _, swap := range swaps {
-			stream := swapStream(t, client, swap.Id)
-			test.SendToAddress(test.BtcCli, swap.Address, amount)
-			stream(boltzrpc.SwapState_ERROR)
-			streams = append(streams, stream)
-		}
-
-		test.MineUntil(t, test.BtcCli, int64(swaps[0].TimeoutBlockHeight))
-
-		var infos []*boltzrpc.SwapInfo
-		for _, stream := range streams {
-			info := stream(boltzrpc.SwapState_REFUNDED)
-			require.Zero(t, info.Swap.ServiceFee)
-			infos = append(infos, info.Swap)
-			test.MineBlock()
-		}
-
-		require.NotEqual(t, infos[0].RefundTransactionId, infos[1].RefundTransactionId)
-		require.Equal(t, infos[1].RefundTransactionId, infos[2].RefundTransactionId)
-
-		refundFee, err := chain.GetTransactionFee(pair, infos[1].RefundTransactionId)
-		require.NoError(t, err)
-
-		require.Equal(t, int(refundFee), int(*infos[1].OnchainFee)+int(*infos[2].OnchainFee))
-
-		checkTxOutAddress(t, chain, pair, infos[0].RefundTransactionId, refundAddress)
-
-		refundFee, err = chain.GetTransactionFee(pair, infos[0].RefundTransactionId)
-		require.NoError(t, err)
-		require.Equal(t, int(refundFee), int(*infos[0].OnchainFee))
-	})
-
 	t.Run("Recovery", func(t *testing.T) {
 		client, _, stop := setup(t, cfg, "")
-		pair := boltz.PairBtc
 		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 			Amount: 100000,
-			PairId: string(pair),
+			Pair:   pairBtc,
 		})
 		require.NoError(t, err)
 		time.Sleep(500 * time.Millisecond)
@@ -376,27 +323,33 @@ func TestSwap(t *testing.T) {
 		t.Run(node, func(t *testing.T) {
 
 			tests := []struct {
-				desc   string
-				pairId boltz.Pair
-				cli    func(string) string
+				desc string
+				from boltzrpc.Currency
+				cli  func(string) string
 			}{
-				{"BTC", boltz.PairBtc, test.BtcCli},
-				{"Liquid", boltz.PairLiquid, test.LiquidCli},
+				{"BTC", boltzrpc.Currency_Btc, test.BtcCli},
+				{"Liquid", boltzrpc.Currency_Liquid, test.LiquidCli},
 			}
 
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
+					pair := &boltzrpc.Pair{
+						From: tc.from,
+						To:   boltzrpc.Currency_Btc,
+					}
 					client, _, stop := setup(t, cfg, "")
 					defer stop()
 
 					t.Run("Normal", func(t *testing.T) {
 						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 							Amount:   100000,
-							PairId:   string(tc.pairId),
+							Pair:     pair,
 							AutoSend: true,
 						})
 						require.NoError(t, err)
 						require.NotEmpty(t, swap.TxId)
+						require.NotZero(t, swap.TimeoutHours)
+						require.NotZero(t, swap.TimeoutBlockHeight)
 
 						next := swapStream(t, client, swap.Id)
 						next(boltzrpc.SwapState_PENDING)
@@ -406,10 +359,9 @@ func TestSwap(t *testing.T) {
 						info := next(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
 					})
-
 					t.Run("Deposit", func(t *testing.T) {
 						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-							PairId: string(tc.pairId),
+							Pair: pair,
 						})
 						require.NoError(t, err)
 
@@ -421,6 +373,111 @@ func TestSwap(t *testing.T) {
 
 						info := next(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
+					})
+
+					if node == "CLN" {
+						return
+					}
+
+					t.Run("Refund", func(t *testing.T) {
+						cli := tc.cli
+
+						submarinePair, err := client.GetSubmarinePair(pair)
+
+						require.NoError(t, err)
+						amount := submarinePair.Limits.Minimal
+
+						t.Run("Script", func(t *testing.T) {
+							cfg.Boltz.DisablePartialSignatures = true
+							swaps := make([]*boltzrpc.CreateSwapResponse, 3)
+
+							refundAddress := cli("getnewaddress")
+							swaps[0], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:          pair,
+								RefundAddress: refundAddress,
+								Amount:        int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							swaps[1], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:   pair,
+								Amount: int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							swaps[2], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:   pair,
+								Amount: int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							var streams []nextFunc
+							for _, swap := range swaps {
+								stream := swapStream(t, client, swap.Id)
+								test.SendToAddress(cli, swap.Address, int64(amount))
+								stream(boltzrpc.SwapState_ERROR)
+								streams = append(streams, stream)
+							}
+
+							test.MineUntil(t, cli, int64(swaps[0].TimeoutBlockHeight))
+
+							var infos []*boltzrpc.SwapInfo
+							for _, stream := range streams {
+								info := stream(boltzrpc.SwapState_REFUNDED)
+								require.Zero(t, info.Swap.ServiceFee)
+								infos = append(infos, info.Swap)
+								test.MineBlock()
+							}
+
+							from := parseCurrency(pair.From)
+
+							require.NotEqual(t, infos[0].RefundTransactionId, infos[1].RefundTransactionId)
+							require.Equal(t, infos[1].RefundTransactionId, infos[2].RefundTransactionId)
+
+							refundFee, err := chain.GetTransactionFee(from, infos[1].RefundTransactionId)
+							require.NoError(t, err)
+
+							require.Equal(t, int(refundFee), int(*infos[1].OnchainFee)+int(*infos[2].OnchainFee))
+
+							checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress)
+
+							refundFee, err = chain.GetTransactionFee(from, infos[0].RefundTransactionId)
+							require.NoError(t, err)
+							require.Equal(t, int(refundFee), int(*infos[0].OnchainFee))
+						})
+
+						t.Run("Cooperative", func(t *testing.T) {
+							cfg.Boltz.DisablePartialSignatures = false
+							amount := submarinePair.Limits.Minimal + 100
+							refundAddress := cli("getnewaddress")
+							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:          pair,
+								RefundAddress: refundAddress,
+								Amount:        int64(amount + 100),
+							})
+							require.NoError(t, err)
+
+							stream := swapStream(t, client, swap.Id)
+							test.SendToAddress(cli, swap.Address, int64(amount))
+
+							info := stream(boltzrpc.SwapState_REFUNDED).Swap
+							require.Zero(t, info.ServiceFee)
+
+							from := parseCurrency(pair.From)
+
+							refundFee, err := chain.GetTransactionFee(from, info.RefundTransactionId)
+							require.NoError(t, err)
+							require.Equal(t, int(refundFee), int(*info.OnchainFee))
+						})
+
+						t.Run("AddressRequired", func(t *testing.T) {
+							withoutWallet(t, client, func() {
+								_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+									Pair: pairLiquid,
+								})
+								assert.Error(t, err)
+							})
+						})
 					})
 
 				})
@@ -435,18 +492,19 @@ func TestReverseSwap(t *testing.T) {
 	nodes := []string{"CLN", "LND"}
 
 	tests := []struct {
-		desc     string
-		pairId   boltz.Pair
-		zeroConf bool
-		external bool
-		recover  bool
+		desc            string
+		to              boltzrpc.Currency
+		zeroConf        bool
+		external        bool
+		recover         bool
+		disablePartials bool
 	}{
-		{desc: "BTC/Normal", pairId: boltz.PairBtc},
-		{desc: "BTC/ZeroConf", pairId: boltz.PairBtc, zeroConf: true, external: true},
-		{desc: "BTC/Recover", pairId: boltz.PairBtc, zeroConf: true, recover: true},
-		{desc: "Liquid/Normal", pairId: boltz.PairLiquid},
-		{desc: "Liquid/ZeroConf", pairId: boltz.PairLiquid, zeroConf: true, external: true},
-		{desc: "Liquid/Recover", pairId: boltz.PairLiquid, zeroConf: true, recover: true},
+		{desc: "BTC/Normal", to: boltzrpc.Currency_Btc},
+		{desc: "BTC/ZeroConf", to: boltzrpc.Currency_Btc, zeroConf: true, external: true},
+		{desc: "BTC/Recover", to: boltzrpc.Currency_Btc, zeroConf: true, recover: true},
+		{desc: "Liquid/Normal", to: boltzrpc.Currency_Liquid},
+		{desc: "Liquid/ZeroConf", to: boltzrpc.Currency_Liquid, zeroConf: true, external: true},
+		{desc: "Liquid/Recover", to: boltzrpc.Currency_Liquid, zeroConf: true, recover: true},
 	}
 
 	for _, node := range nodes {
@@ -455,17 +513,22 @@ func TestReverseSwap(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
+					cfg.Boltz.DisablePartialSignatures = true
 					client, _, stop := setup(t, cfg, "")
 					cfg.Node = node
-					boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
 					chain := onchain.Onchain{
-						Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
-						Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
+						Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc)},
+						Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid)},
+					}
+
+					pair := &boltzrpc.Pair{
+						From: boltzrpc.Currency_Btc,
+						To:   tc.to,
 					}
 
 					addr := ""
 					if tc.external {
-						addr = getCli(tc.pairId)("getnewaddress")
+						addr = getCli(parseCurrency(tc.to))("getnewaddress")
 					}
 
 					var info *boltzrpc.GetSwapInfoResponse
@@ -473,11 +536,12 @@ func TestReverseSwap(t *testing.T) {
 					request := &boltzrpc.CreateReverseSwapRequest{
 						Amount:         100000,
 						Address:        addr,
-						PairId:         string(tc.pairId),
+						Pair:           pair,
 						AcceptZeroConf: tc.zeroConf,
 					}
 
 					if tc.recover {
+						request.AcceptZeroConf = false
 						swap, err := client.CreateReverseSwap(request)
 						require.NoError(t, err)
 						stop()
@@ -517,7 +581,9 @@ func TestReverseSwap(t *testing.T) {
 					invoice, err := zpay32.Decode(info.ReverseSwap.Invoice, &chaincfg.RegressionNetParams)
 					require.NoError(t, err)
 
-					claimFee, err := chain.GetTransactionFee(tc.pairId, info.ReverseSwap.ClaimTransactionId)
+					currency := parseCurrency(tc.to)
+
+					claimFee, err := chain.GetTransactionFee(currency, info.ReverseSwap.ClaimTransactionId)
 					require.NoError(t, err)
 
 					totalFees := int64(invoice.MilliSat.ToSatoshis()) - info.ReverseSwap.OnchainAmount
@@ -526,7 +592,7 @@ func TestReverseSwap(t *testing.T) {
 					if tc.external {
 						require.Equal(t, addr, info.ReverseSwap.ClaimAddress)
 					}
-					checkTxOutAddress(t, chain, tc.pairId, info.ReverseSwap.ClaimTransactionId, info.ReverseSwap.ClaimAddress)
+					checkTxOutAddress(t, chain, currency, info.ReverseSwap.ClaimTransactionId, info.ReverseSwap.ClaimAddress)
 
 					stop()
 				})

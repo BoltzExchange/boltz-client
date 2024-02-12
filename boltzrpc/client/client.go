@@ -23,10 +23,12 @@ func (boltz *Boltz) GetInfo() (*boltzrpc.GetInfoResponse, error) {
 	return boltz.Client.GetInfo(boltz.Ctx, &boltzrpc.GetInfoRequest{})
 }
 
-func (boltz *Boltz) GetServiceInfo(pair string) (*boltzrpc.GetServiceInfoResponse, error) {
-	return boltz.Client.GetServiceInfo(boltz.Ctx, &boltzrpc.GetServiceInfoRequest{
-		PairId: pair,
-	})
+func (boltz *Boltz) GetSubmarinePair(pair *boltzrpc.Pair) (*boltzrpc.SubmarinePair, error) {
+	return boltz.Client.GetSubmarinePair(boltz.Ctx, pair)
+}
+
+func (boltz *Boltz) GetReversePair(pair *boltzrpc.Pair) (*boltzrpc.ReversePair, error) {
+	return boltz.Client.GetReversePair(boltz.Ctx, pair)
 }
 
 func (boltz *Boltz) ListSwaps(request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {

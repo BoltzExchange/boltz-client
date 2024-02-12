@@ -14,7 +14,19 @@ service Boltz {
     /*
     Fetches the latest limits and fees from the Boltz backend API it is connected to.
     */
-    rpc GetServiceInfo (GetServiceInfoRequest) returns (GetServiceInfoResponse);
+    rpc GetServiceInfo (GetServiceInfoRequest) returns (GetServiceInfoResponse) {
+        option deprecated = true;
+    };
+
+    /*
+    Fetches information about a specific pair for a submarine swap.
+    */
+    rpc GetSubmarinePair (Pair) returns (SubmarinePair);
+
+    /*
+    Fetches information about a specific pair for a reverse swap.
+    */
+    rpc GetReversePair (Pair) returns (ReversePair);
 
     /*
     Fetches the latest limits and fees from the Boltz backend API it is connected to.
@@ -139,9 +151,19 @@ enum SwapState {
     ABANDONED = 5;
 }
 
+enum Currency {
+    Btc = 0;
+    Liquid = 1;
+}
+
+message Pair {
+    Currency from = 1;
+    Currency to = 2;
+}
+
 message SwapInfo {
     string id = 1;
-    string pair_id = 22;
+    Pair pair = 22;
 
     SwapState state = 2;
     string error = 3;
@@ -207,7 +229,7 @@ message ReverseSwapInfo {
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
-    string pair_id = 14;
+    Pair pair = 14;
     repeated ChannelId chan_ids = 15;
     optional string blinding_key = 16;
     int64 created_at = 17;
@@ -232,6 +254,46 @@ message GetInfoResponse {
     repeated string pending_reverse_swaps = 6 [deprecated = true];
 }
 
+message Limits {
+    uint64 minimal = 1;
+    uint64 maximal = 2;
+    uint64 maximal_zero_conf_amount = 3;
+}
+
+// Submarine Pair
+message SubmarinePair {
+    Pair pair = 1;
+    string hash = 2;
+    float rate = 3;
+    Limits limits = 4;
+    message Fees {
+      float percentage = 1;
+      uint64 miner_fees = 2;
+    }
+    Fees fees = 5;
+}
+
+// Reverse Pair
+message ReversePair {
+    Pair pair = 1;
+    string hash = 2;
+    float rate = 3;
+    Limits limits = 4;
+    message Fees {
+      float percentage = 1;
+      message MinerFees {
+        uint64 lockup = 1;
+        uint64 claim = 2;
+      }
+      MinerFees miner_fees = 2;
+    }
+    Fees fees = 5;
+}
+
+message GetSubmarinePairsResponse {
+    repeated SubmarinePair pairs = 1;
+}
+
 message MinerFees {
     uint32 normal = 1;
     uint32 reverse = 2;
@@ -240,14 +302,9 @@ message Fees {
     float percentage = 1;
     MinerFees miner = 2;
 }
-message Limits {
-    int64 minimal = 1;
-    int64 maximal = 2;
-}
 
-message GetServiceInfoRequest {
-    string pair_id = 1;
-}
+message GetServiceInfoRequest {}
+
 message GetServiceInfoResponse {
     Fees fees = 1;
     Limits limits = 2;
@@ -257,7 +314,7 @@ message GetServiceInfoResponse {
 message GetFeeEstimationRequest {
     uint64 amount = 1;
     string swap_type = 2;
-    string pair_id = 3;
+    Pair pair = 3;
 }
 message GetFeeEstimationResponse {
     Fees fees = 1;
@@ -265,9 +322,10 @@ message GetFeeEstimationResponse {
 }
 
 message ListSwapsRequest {
-    optional string pair_id = 1;
-    optional bool is_auto = 2;
-    optional SwapState state = 3;
+    optional Currency from = 1;
+    optional Currency to = 2;
+    optional bool is_auto = 3;
+    optional SwapState state = 4;
 }
 message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
@@ -291,7 +349,6 @@ message DepositRequest {
     25 by default.
     */
     uint32 inbound_liquidity = 1;
-    string pairId = 2;
 }
 message DepositResponse {
     string id = 1;
@@ -301,7 +358,7 @@ message DepositResponse {
 
 message CreateSwapRequest {
     int64 amount = 1;
-    string pair_id = 2;
+    Pair pair = 2;
     repeated string chan_ids = 3;
     bool auto_send = 4;
     string refund_address = 5;
@@ -314,6 +371,7 @@ message CreateSwapResponse {
     string bip21 = 4;
     string tx_id = 5;
     uint32 timeout_block_height = 6;
+    float timeout_hours = 7;
 }
 
 message CreateChannelRequest {
@@ -332,7 +390,7 @@ message CreateReverseSwapRequest {
     // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
     bool accept_zero_conf = 3;
-    string pair_id = 4;
+    Pair pair = 4;
     repeated string chan_ids = 5;
     optional string wallet = 6;
 }

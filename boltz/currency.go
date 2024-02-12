@@ -22,14 +22,3 @@ func ParseCurrency(currency string) (Currency, error) {
 		return "", fmt.Errorf("invalid currency: %v", currency)
 	}
 }
-
-func CurrencyForPair(pair Pair) Currency {
-	switch pair {
-	case PairBtc:
-		return CurrencyBtc
-	case PairLiquid:
-		return CurrencyLiquid
-	default:
-		return ""
-	}
-}

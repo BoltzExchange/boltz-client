@@ -84,15 +84,19 @@ var walletFlag = &cli.StringFlag{
 	Usage: "Which wallet to use",
 }
 
-var pairFlag = &cli.StringFlag{
-	Name:  "pair",
-	Value: "BTC/BTC",
-	Usage: "Pair id to create a swap for",
+var currencyFlag = &cli.StringFlag{
+	Name:  "currency",
+	Value: "BTC",
+	Usage: "Currency to use",
 }
 
-var pairFilterFlag = &cli.StringFlag{
-	Name:  "pair",
-	Usage: "Filter swaps by pair",
+var fromFilterFlag = &cli.StringFlag{
+	Name:  "from",
+	Usage: "Originating swap currency",
+}
+var toFilterFlag = &cli.StringFlag{
+	Name:  "to",
+	Usage: "Destinaion swap currency",
 }
 var pendingFilterFlag = &cli.BoolFlag{
 	Name:  "pending",
@@ -113,7 +117,8 @@ var listSwapsCommand = &cli.Command{
 	},
 	Flags: []cli.Flag{
 		jsonFlag,
-		pairFilterFlag,
+		fromFilterFlag,
+		toFilterFlag,
 		pendingFilterFlag,
 		stateFilterFlag,
 		&cli.BoolFlag{
@@ -128,8 +133,13 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 	request := &boltzrpc.ListSwapsRequest{
 		IsAuto: isAuto,
 	}
-	if pair := ctx.String("pair"); pair != "" {
-		request.PairId = &pair
+	if from := ctx.String("from"); from != "" {
+		currency := parseCurrency(from)
+		request.From = &currency
+	}
+	if to := ctx.String("to"); to != "" {
+		currency := parseCurrency(to)
+		request.To = &currency
 	}
 	if ctx.Bool("pending") {
 		state := boltzrpc.SwapState_PENDING
@@ -163,11 +173,11 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 
 		if len(list.Swaps) > 0 {
 
-			tbl := table.New("ID", "Pair", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
 			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 			for _, swap := range list.Swaps {
-				tbl.AddRow(swap.Id, swap.PairId, swap.State, swap.Status, swap.ExpectedAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
+				tbl.AddRow(swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.ExpectedAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
 			}
 
 			if _, err := yellowBold.Println("Swaps"); err != nil {
@@ -180,11 +190,11 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 
 		if len(list.ReverseSwaps) > 0 {
 
-			tbl := table.New("ID", "Pair", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
 			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 			for _, swap := range list.ReverseSwaps {
-				tbl.AddRow(swap.Id, swap.PairId, swap.State, swap.Status, swap.OnchainAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
+				tbl.AddRow(swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.OnchainAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
 			}
 
 			if _, err := yellowBold.Println("Reverse Swaps"); err != nil {
@@ -347,13 +357,12 @@ var autoSwapCommands = &cli.Command{
 				isAuto := true
 				return listSwaps(ctx, &isAuto)
 			},
-			Flags: []cli.Flag{jsonFlag, pairFilterFlag, stateFilterFlag, pendingFilterFlag},
+			Flags: []cli.Flag{jsonFlag, fromFilterFlag, toFilterFlag, stateFilterFlag, pendingFilterFlag},
 		},
 		{
 			Name:   "setup",
 			Usage:  "Setup autoswap interactively",
 			Action: autoSwapSetup,
-			Flags:  []cli.Flag{jsonFlag, pairFilterFlag, stateFilterFlag, pendingFilterFlag},
 		},
 		{
 			Name:        "config",
@@ -780,7 +789,7 @@ var createSwapCommand = &cli.Command{
 	Action: createSwap,
 	Flags: []cli.Flag{
 		jsonFlag,
-		pairFlag,
+		currencyFlag,
 		liquidFlag,
 		walletFlag,
 		&cli.BoolFlag{
@@ -807,15 +816,15 @@ func createSwap(ctx *cli.Context) error {
 		return cli.ShowSubcommandHelp(ctx)
 	}
 
-	pair, err := boltz.ParsePair(getPair(ctx))
-	if err != nil {
-		return err
+	pair := &boltzrpc.Pair{
+		From: getCurrency(ctx),
+		To:   boltzrpc.Currency_Btc,
 	}
 
 	autoSend := ctx.Bool("auto-send")
 	json := ctx.Bool("json")
 
-	serviceInfo, err := client.GetServiceInfo(string(pair))
+	submarinePair, err := client.GetSubmarinePair(pair)
 	if err != nil {
 		return err
 	}
@@ -823,8 +832,8 @@ func createSwap(ctx *cli.Context) error {
 	if !json {
 		fmt.Println("You will receive your deposit via lightning.")
 		fmt.Println("The fees for this service are:")
-		fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
-		fmt.Println("  - Miner fee: " + utils.Satoshis(int(serviceInfo.Fees.Miner.Normal)))
+		fmt.Println("  - Service fee: " + formatPercentageFee(submarinePair.Fees.Percentage) + "%")
+		fmt.Println("  - Miner fee: " + utils.Satoshis(int(submarinePair.Fees.MinerFees)))
 		fmt.Println()
 
 		if !prompt("Do you want to continue?") {
@@ -835,7 +844,7 @@ func createSwap(ctx *cli.Context) error {
 	wallet := ctx.String("wallet")
 	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 		Amount:        amount,
-		PairId:        string(pair),
+		Pair:          pair,
 		RefundAddress: ctx.String("refund"),
 		AutoSend:      autoSend,
 		Wallet:        &wallet,
@@ -850,23 +859,16 @@ func createSwap(ctx *cli.Context) error {
 	}
 
 	if !autoSend || amount == 0 {
-		info, err := client.GetInfo()
-		if err != nil {
-			return err
-		}
-
 		var amountString string
 		if amount == 0 {
-			amountString = fmt.Sprintf("between %d and %d satoshis", serviceInfo.Limits.Minimal, serviceInfo.Limits.Maximal)
+			amountString = fmt.Sprintf("between %d and %d satoshis", submarinePair.Limits.Minimal, submarinePair.Limits.Maximal)
 		} else {
 			amountString = utils.Satoshis(int(amount))
 		}
 
-		height := info.BlockHeights[string(boltz.CurrencyForPair(pair))]
-		timeoutHours := utils.BlocksToHours(swap.TimeoutBlockHeight-height, utils.GetBlockTime(pair))
 		fmt.Printf(
-			"Please deposit %s into %s in the next ~%s hours (block height %d)\n",
-			amountString, swap.Address, timeoutHours, swap.TimeoutBlockHeight,
+			"Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
+			amountString, swap.Address, swap.TimeoutHours, swap.TimeoutBlockHeight,
 		)
 		fmt.Println()
 	}
@@ -891,7 +893,7 @@ var createReverseSwapCommand = &cli.Command{
 	Action: requireNArgs(1, createReverseSwap),
 	Flags: []cli.Flag{
 		jsonFlag,
-		pairFlag,
+		currencyFlag,
 		liquidFlag,
 		walletFlag,
 		&cli.BoolFlag{
@@ -904,26 +906,44 @@ var createReverseSwapCommand = &cli.Command{
 	},
 }
 
+func parseCurrency(currency string) boltzrpc.Currency {
+	if strings.EqualFold(currency, "L-BTC") {
+		return boltzrpc.Currency_Liquid
+	}
+	return boltzrpc.Currency_Btc
+}
+
+func getCurrency(ctx *cli.Context) boltzrpc.Currency {
+	if ctx.Bool("liquid") {
+		return boltzrpc.Currency_Liquid
+	}
+	return parseCurrency(ctx.String("currency"))
+}
+
 func createReverseSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 
 	address := ctx.Args().Get(1)
 
-	pair := getPair(ctx)
+	pair := &boltzrpc.Pair{
+		From: boltzrpc.Currency_Btc,
+		To:   getCurrency(ctx),
+	}
 
 	amount := parseInt64(ctx.Args().First(), "amount")
 	json := ctx.Bool("json")
 
 	if !json {
-		serviceInfo, err := client.GetServiceInfo(pair)
+		reversePair, err := client.GetReversePair(pair)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("You will receive the withdrawal to the specified onchain address")
 		fmt.Println("The fees for this service are:")
-		fmt.Println("  - Service fee: " + formatPercentageFee(serviceInfo.Fees.Percentage) + "%")
-		fmt.Println("  - Miner fee: " + utils.Satoshis(int(serviceInfo.Fees.Miner.Reverse)))
+		fmt.Println("  - Service fee: " + formatPercentageFee(reversePair.Fees.Percentage) + "%")
+		fmt.Println("  - Boltz lockup fee: " + utils.Satoshis(int(reversePair.Fees.MinerFees.Lockup)))
+		fmt.Println("  - Claim fee: " + utils.Satoshis(int(reversePair.Fees.MinerFees.Claim)))
 		fmt.Println()
 
 		if !prompt("Do you want to continue?") {
@@ -936,7 +956,7 @@ func createReverseSwap(ctx *cli.Context) error {
 		Address:        address,
 		Amount:         amount,
 		AcceptZeroConf: !ctx.Bool("no-zero-conf"),
-		PairId:         pair,
+		Pair:           pair,
 		Wallet:         &wallet,
 		ChanIds:        ctx.StringSlice("chan-id"),
 	})

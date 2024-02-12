@@ -14,6 +14,9 @@ const (
 
 	NodeTypeLnd LightningNodeType = "LND"
 	NodeTypeCln LightningNodeType = "CLN"
+
+	// The cltv expiry has to be lowered in regtest to allow for lower swap timeouts
+	RegtestCltv = 20
 )
 
 type PaymentStatus struct {
