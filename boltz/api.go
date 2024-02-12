@@ -111,7 +111,6 @@ type NodeInfo struct {
 type Nodes = map[string]map[string]NodeInfo
 
 type SwapStatusResponse struct {
-	Id               string `json:"id"`
 	Status           string `json:"status"`
 	ZeroConfRejected bool   `json:"zeroConfRejected"`
 	Transaction      struct {

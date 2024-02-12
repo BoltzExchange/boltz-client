@@ -11,9 +11,12 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const reconnectInterval = 15
+const reconnectInterval = 15 * time.Second
 
-type SwapUpdate = SwapStatusResponse
+type SwapUpdate struct {
+	SwapStatusResponse
+	Id string `json:"id"`
+}
 
 type BoltzWebsocket struct {
 	apiUrl  string
@@ -68,7 +71,7 @@ func (boltz *BoltzWebsocket) Connect() error {
 		return fmt.Errorf("could not connect to boltz ws at %s: %w", wsUrl, err)
 	}
 
-	logger.Infof("Connected to boltz ws at %s", wsUrl)
+	logger.Infof("Connected to Boltz ws at %s", wsUrl)
 
 	go func() {
 		for {
@@ -124,8 +127,8 @@ func (boltz *BoltzWebsocket) Connect() error {
 			}
 		}
 		for {
-			logger.Errorf("lost connection to boltz ws, reconnecting in %d seconds", reconnectInterval)
-			time.Sleep(reconnectInterval * time.Second)
+			logger.Errorf("lost connection to boltz ws, reconnecting in %d", reconnectInterval)
+			time.Sleep(reconnectInterval)
 			err := boltz.Connect()
 			if err == nil {
 				return
@@ -150,7 +153,7 @@ func (boltz *BoltzWebsocket) Subscribe(swapIds []string) error {
 	select {
 	case <-boltz.subscriptions:
 		return nil
-	case <-time.After(time.Second):
+	case <-time.After(5 * time.Second):
 		return errors.New("no answer from boltz")
 	}
 }

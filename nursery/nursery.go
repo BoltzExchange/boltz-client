@@ -47,7 +47,7 @@ type swapListener = *utils.ChannelForwarder[SwapUpdate]
 
 func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
 	if listener, ok := nursery.eventListeners[id]; ok {
-		listener.Original <- update
+		listener.Send(update)
 		logger.Debugf("Sent update for swap %s", id)
 
 		if update.IsFinal {
@@ -102,7 +102,7 @@ func (nursery *Nursery) Init(
 
 func (nursery *Nursery) Stop() {
 	nursery.stopped = true
-	nursery.stop.Original <- true
+	nursery.stop.Send(true)
 	logger.Debugf("Sent stop signal to block listener")
 	for id := range nursery.eventListeners {
 		nursery.removeSwapListener(id)
@@ -170,9 +170,9 @@ func (nursery *Nursery) startSwapListener() {
 				continue
 			}
 			if swap != nil {
-				nursery.handleSwapStatus(swap, status)
+				nursery.handleSwapStatus(swap, status.SwapStatusResponse)
 			} else if reverseSwap != nil {
-				nursery.handleReverseSwapStatus(reverseSwap, status)
+				nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
 			}
 		}
 		nursery.waitGroup.Done()
@@ -183,7 +183,7 @@ func (nursery *Nursery) removeSwapListener(id string) {
 	nursery.eventListenersLock.Lock()
 	defer nursery.eventListenersLock.Unlock()
 	if listener, ok := nursery.eventListeners[id]; ok {
-		close(listener.Original)
+		listener.Close()
 		delete(nursery.eventListeners, id)
 	}
 }

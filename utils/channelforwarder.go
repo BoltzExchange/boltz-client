@@ -5,7 +5,7 @@ import (
 )
 
 type ChannelForwarder[T any] struct {
-	Original chan T
+	original chan T
 
 	channels []chan T
 	isClosed bool
@@ -17,7 +17,7 @@ type ChannelForwarder[T any] struct {
 
 func ForwardChannel[T any](orig chan T, buffer int, saveValues bool) *ChannelForwarder[T] {
 	cf := &ChannelForwarder[T]{
-		Original: orig,
+		original: orig,
 		isClosed: false,
 		buffer:   buffer,
 	}
@@ -96,4 +96,15 @@ func (c *ChannelForwarder[T]) Get() <-chan T {
 	}
 
 	return newChan
+}
+
+func (c *ChannelForwarder[T]) Send(val T) {
+	c.original <- val
+}
+
+func (c *ChannelForwarder[T]) Close() {
+	if !c.isClosed {
+		c.isClosed = true
+		close(c.original)
+	}
 }

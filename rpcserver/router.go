@@ -207,7 +207,7 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
 	swap, reverseSwap, err := server.database.QueryAnySwap(request.Id)
 	if err != nil {
-		return nil, handleError(errors.New("could not find Swap or Reverse Swap with ID " + request.Id))
+		return nil, handleError(errors.New("could not find Swap with ID " + request.Id))
 	}
 	return &boltzrpc.GetSwapInfoResponse{
 		Swap:        serializeSwap(swap),
