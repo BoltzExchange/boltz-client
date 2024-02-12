@@ -19,9 +19,9 @@ type SwapUpdate struct {
 }
 
 type BoltzWebsocket struct {
-	apiUrl  string
 	Updates chan SwapUpdate
 
+	apiUrl        string
 	subscriptions chan bool
 	conn          *websocket.Conn
 	closed        bool
@@ -53,6 +53,9 @@ func (boltz *BoltzWebsocket) SendJson(data any) error {
 }
 
 func (boltz *BoltzWebsocket) Connect() error {
+	if boltz.closed {
+		return errors.New("websocket is closed")
+	}
 	wsUrl, err := url.Parse(boltz.apiUrl)
 	if err != nil {
 		return err
