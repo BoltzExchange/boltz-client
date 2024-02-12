@@ -108,10 +108,7 @@ type NodeInfo struct {
 	Uris      []string `json:"uris"`
 }
 
-type Nodes struct {
-	CLN *NodeInfo `json:"CLN"`
-	LND *NodeInfo `json:"LND"`
-}
+type Nodes = map[string]map[string]NodeInfo
 
 type SwapStatusResponse struct {
 	Status           string `json:"status"`
@@ -279,8 +276,8 @@ func (boltz *Boltz) GetReversePairs() (response ReversePairs, err error) {
 	return response, err
 }
 
-func (boltz *Boltz) GetNodes() (map[string]Nodes, error) {
-	var response map[string]Nodes
+func (boltz *Boltz) GetNodes() (Nodes, error) {
+	var response Nodes
 	err := boltz.sendGetRequest("/v2/nodes", &response)
 
 	return response, err

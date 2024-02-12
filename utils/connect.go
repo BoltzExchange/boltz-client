@@ -10,10 +10,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/logger"
 )
 
-func connect(node lightning.LightningNode, peer *boltz.NodeInfo) error {
-	if len(peer.Uris) == 0 {
-		return fmt.Errorf("no uris for peer: %s", peer.PublicKey)
-	}
+func connect(node lightning.LightningNode, peer boltz.NodeInfo) error {
 	var uri string
 	for _, current := range peer.Uris {
 		uri = current
@@ -23,7 +20,7 @@ func connect(node lightning.LightningNode, peer *boltz.NodeInfo) error {
 		}
 	}
 	if uri == "" {
-		return fmt.Errorf("no  uri for peer: %s", peer.PublicKey)
+		return fmt.Errorf("no uri for peer: %s", peer.PublicKey)
 	}
 	err := node.ConnectPeer(uri)
 	if err == nil {
@@ -48,18 +45,12 @@ func ConnectBoltz(lightning lightning.LightningNode, boltz *boltz.Boltz) error {
 	nodesForSymbol, hasNodesForSymbol := nodes[symbol]
 
 	if !hasNodesForSymbol {
-		return errors.New("could not find Boltz node for symbol: " + symbol)
+		return errors.New("could not find boltz nodes for symbol: " + symbol)
 	}
 
-	if nodesForSymbol.LND != nil {
-		if err := connect(lightning, nodesForSymbol.LND); err != nil {
-			logger.Errorf("Could not connect to LND node: %s", err)
-		}
-	}
-
-	if nodesForSymbol.CLN != nil {
-		if err := connect(lightning, nodesForSymbol.CLN); err != nil {
-			logger.Errorf("Could not connect to CLN node: %s", err)
+	for name, node := range nodesForSymbol {
+		if err := connect(lightning, node); err != nil {
+			logger.Errorf("Could not connect to node %s: %s", name, err)
 		}
 	}
 	return err
