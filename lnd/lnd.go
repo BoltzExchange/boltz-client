@@ -211,7 +211,7 @@ func (lnd *LND) CreateInvoice(value int64, preimage []byte, expiry int64, memo s
 		RPreimage: preimage,
 	}
 	if lnd.regtest {
-		request.CltvExpiry = 20
+		request.CltvExpiry = lightning.RegtestCltv
 	}
 	invoice, err := lnd.client.AddInvoice(lnd.ctx, request)
 	if err != nil {

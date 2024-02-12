@@ -181,7 +181,7 @@ func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo str
 		Label:       fmt.Sprint(time.Now().UTC().UnixMilli()),
 	}
 	if c.regtest {
-		cltv := uint32(20)
+		cltv := uint32(lightning.RegtestCltv)
 		request.Cltv = &cltv
 	}
 	if expiry != 0 {
