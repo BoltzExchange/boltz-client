@@ -1,7 +1,7 @@
 package boltz
 
 import (
-	"encoding/hex"
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -37,30 +37,43 @@ func NewSigningSession(outputs []OutputDetails, idx int) (*MusigSession, error) 
 	return &MusigSession{session, outputs, idx}, nil
 }
 
-func (session *MusigSession) Finalize(transaction Transaction, network *Network, boltzSignature *PartialSignature) error {
-	partialSignature, err := hex.DecodeString(boltzSignature.PartialSignature)
-	if err != nil {
-		return err
+func (session *MusigSession) Sign(hash []byte, boltzNonce []byte) (*PartialSignature, error) {
+	if len(hash) != 32 {
+		return nil, fmt.Errorf("invalid hash length %d", len(hash))
 	}
 
-	nonce, err := hex.DecodeString(boltzSignature.PubNonce)
-	if err != nil {
-		return err
+	if len(boltzNonce) != 66 {
+		return nil, fmt.Errorf("invalid nonce lenth %d", len(boltzNonce))
 	}
 
-	if len(nonce) != 66 {
-		return errors.New("invalid nonce length")
-	}
-
-	all, err := session.RegisterPubNonce([66]byte(nonce))
+	all, err := session.RegisterPubNonce([66]byte(boltzNonce))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !all {
-		return errors.New("could not combine nonces")
+		return nil, errors.New("could not combine nonces")
 	}
 
-	var hash [32]byte
+	ourNonce := session.PublicNonce()
+
+	partial, err := session.Session.Sign([32]byte(hash))
+	if err != nil {
+		return nil, err
+	}
+
+	b := bytes.NewBuffer(nil)
+	if err := partial.Encode(b); err != nil {
+		return nil, err
+	}
+
+	return &PartialSignature{
+		PubNonce:         HexString(ourNonce[:]),
+		PartialSignature: HexString(b.Bytes()),
+	}, nil
+}
+
+func (session *MusigSession) Finalize(transaction Transaction, network *Network, boltzSignature *PartialSignature) (err error) {
+	var hash []byte
 	isLiquid := session.outputs[session.idx].SwapTree.isLiquid
 	if isLiquid {
 		hash = liquidTaprootHash(&transaction.(*LiquidTransaction).Transaction, network, session.outputs, session.idx, true)
@@ -71,13 +84,13 @@ func (session *MusigSession) Finalize(transaction Transaction, network *Network,
 		return err
 	}
 
-	_, err = session.Sign(hash)
+	_, err = session.Sign(hash, boltzSignature.PubNonce)
 	if err != nil {
 		return err
 	}
 
 	s := &secp256k1.ModNScalar{}
-	s.SetByteSlice(partialSignature)
+	s.SetByteSlice(boltzSignature.PartialSignature)
 	partial := musig2.NewPartialSignature(s, nil)
 	haveFinal, err := session.CombineSig(&partial)
 	if err != nil {

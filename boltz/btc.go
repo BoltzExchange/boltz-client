@@ -77,7 +77,7 @@ func getPrevoutFetcher(tx *wire.MsgTx, outputs []OutputDetails) txscript.PrevOut
 	return txscript.NewMultiPrevOutFetcher(previous)
 }
 
-func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int) ([32]byte, error) {
+func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int) ([]byte, error) {
 	tx := transaction.(*BtcTransaction).MsgTx()
 
 	previous := make(map[wire.OutPoint]*wire.TxOut)
@@ -90,14 +90,13 @@ func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int)
 	prevoutFetcher := getPrevoutFetcher(tx, outputs)
 	sigHashes := txscript.NewTxSigHashes(tx, prevoutFetcher)
 
-	hash, err := txscript.CalcTaprootSignatureHash(
+	return txscript.CalcTaprootSignatureHash(
 		sigHashes,
 		sigHashType,
 		tx,
 		index,
 		prevoutFetcher,
 	)
-	return [32]byte(hash), err
 }
 
 func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAddressRaw string, fee uint64) (Transaction, error) {

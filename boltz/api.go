@@ -190,6 +190,15 @@ type RefundSwapRequest struct {
 	Index       int    `json:"index"`
 }
 
+type SwapClaimDetails struct {
+	PubNonce        HexString `json:"pubNonce"`
+	TransactionHash HexString `json:"transactionHash"`
+	Preimage        HexString `json:"preimage"`
+	PublicKey       HexString `json:"publicKey"`
+
+	Error string `json:"error"`
+}
+
 type GetInvoiceAmountResponse struct {
 	InvoiceAmount uint64 `json:"invoiceAmount"`
 	Error         string `json:"error"`
@@ -237,9 +246,13 @@ type ClaimReverseSwapRequest struct {
 }
 
 type PartialSignature struct {
-	PubNonce         string `json:"pubNonce"`
-	PartialSignature string `json:"partialSignature"`
+	PubNonce         HexString `json:"pubNonce"`
+	PartialSignature HexString `json:"partialSignature"`
 
+	Error string `json:"error"`
+}
+
+type ErrorMessage struct {
 	Error string `json:"error"`
 }
 
@@ -373,6 +386,31 @@ func (boltz *Boltz) GetInvoiceAmount(swapId string) (*GetInvoiceAmountResponse, 
 	return &response, err
 }
 
+func (boltz *Boltz) GetSwapClaimDetails(swapId string) (*SwapClaimDetails, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, errors.New("partial signatures are disabled")
+	}
+	var response SwapClaimDetails
+	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/submarine/%s/claim", swapId), &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) SendSwapClaimSignature(swapId string, signature *PartialSignature) error {
+	var response ErrorMessage
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/claim", swapId), signature, &response)
+
+	if response.Error != "" {
+		return Error(errors.New(response.Error))
+	}
+
+	return err
+}
+
 func (boltz *Boltz) SetInvoice(swapId string, invoice string) (*SetInvoiceResponse, error) {
 	var response SetInvoiceResponse
 	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/invoice", swapId), SetInvoiceRequest{Invoice: invoice}, &response)
@@ -432,7 +470,10 @@ func (boltz *Boltz) sendPostRequest(endpoint string, requestBody interface{}, re
 		return err
 	}
 
-	return unmarshalJson(res.Body, &response)
+	if err := unmarshalJson(res.Body, &response); err != nil {
+		return fmt.Errorf("could not parse boltz response with status %d: %v", res.StatusCode, err)
+	}
+	return nil
 }
 
 func unmarshalJson(body io.ReadCloser, response interface{}) error {

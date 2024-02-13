@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -159,6 +160,11 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) nextFunc {
 			select {
 			case status, ok := <-updates:
 				if ok {
+					// ignore initial swap.created message
+					created := boltz.SwapCreated.String()
+					if status.Swap.GetStatus() == created || status.ReverseSwap.GetStatus() == created {
+						continue
+					}
 					if state == status.Swap.GetState() || state == status.ReverseSwap.GetState() {
 						return status
 					}
@@ -208,32 +214,52 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
-func checkTxOutAddress(t *testing.T, chain onchain.Onchain, pair boltz.Currency, txId string, outAddress string) {
-	currency, err := chain.GetCurrency(pair)
-	require.NoError(t, err)
-	txHex, err := currency.Tx.GetTxHex(txId)
+func checkTxOutAddress(t *testing.T, chain onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
+	transaction, err := chain.GetTransaction(currency, txId, nil)
 	require.NoError(t, err)
 
-	if pair == boltz.CurrencyBtc {
-		tx, err := boltz.NewBtcTxFromHex(txHex)
-		require.NoError(t, err)
+	if tx, ok := transaction.(*boltz.BtcTransaction); ok {
 
-		decoded, err := btcutil.DecodeAddress(outAddress, &chaincfg.RegressionNetParams)
-		require.NoError(t, err)
-		script, err := txscript.PayToAddrScript(decoded)
-		require.NoError(t, err)
-		require.Equal(t, tx.MsgTx().TxOut[0].PkScript, script)
-	} else if pair == boltz.CurrencyLiquid {
-		tx, err := boltz.NewLiquidTxFromHex(txHex, nil)
-		require.NoError(t, err)
-
-		script, err := address.ToOutputScript(outAddress)
-		require.NoError(t, err)
-		for _, output := range tx.Outputs {
-			if len(output.Script) == 0 {
-				continue
+		for _, input := range tx.MsgTx().TxIn {
+			if cooperative {
+				require.Len(t, input.Witness, 1)
+			} else {
+				require.Greater(t, len(input.Witness), 1)
 			}
-			require.Equal(t, output.Script, script)
+		}
+
+		if outAddress != "" {
+			decoded, err := btcutil.DecodeAddress(outAddress, &chaincfg.RegressionNetParams)
+			require.NoError(t, err)
+			script, err := txscript.PayToAddrScript(decoded)
+			require.NoError(t, err)
+			for _, output := range tx.MsgTx().TxOut {
+				if bytes.Equal(output.PkScript, script) {
+					return
+				}
+			}
+			require.Fail(t, "could not find output address in transaction")
+		}
+	} else if tx, ok := transaction.(*boltz.LiquidTransaction); ok {
+		for _, input := range tx.Inputs {
+			if cooperative {
+				require.Len(t, input.Witness, 1)
+			} else {
+				require.Greater(t, len(input.Witness), 1)
+			}
+		}
+		if outAddress != "" {
+			script, err := address.ToOutputScript(outAddress)
+			require.NoError(t, err)
+			for _, output := range tx.Outputs {
+				if len(output.Script) == 0 {
+					continue
+				}
+				if bytes.Equal(output.Script, script) {
+					return
+				}
+			}
+			require.Fail(t, "could not find output address in transaction")
 		}
 	}
 }
@@ -365,12 +391,10 @@ func TestSwap(t *testing.T) {
 						})
 						require.NoError(t, err)
 
-						next := swapStream(t, client, swap.Id)
-						next(boltzrpc.SwapState_PENDING)
-
 						test.SendToAddress(tc.cli, swap.Address, 100000)
 						test.MineBlock()
 
+						next := swapStream(t, client, swap.Id)
 						info := next(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
 					})
@@ -439,7 +463,7 @@ func TestSwap(t *testing.T) {
 
 							require.Equal(t, int(refundFee), int(*infos[1].OnchainFee)+int(*infos[2].OnchainFee))
 
-							checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress)
+							checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress, false)
 
 							refundFee, err = chain.GetTransactionFee(from, infos[0].RefundTransactionId)
 							require.NoError(t, err)
@@ -468,6 +492,8 @@ func TestSwap(t *testing.T) {
 							refundFee, err := chain.GetTransactionFee(from, info.RefundTransactionId)
 							require.NoError(t, err)
 							require.Equal(t, int(refundFee), int(*info.OnchainFee))
+
+							checkTxOutAddress(t, chain, from, info.RefundTransactionId, "", true)
 						})
 
 						t.Run("AddressRequired", func(t *testing.T) {
@@ -499,10 +525,10 @@ func TestReverseSwap(t *testing.T) {
 		recover         bool
 		disablePartials bool
 	}{
-		{desc: "BTC/Normal", to: boltzrpc.Currency_Btc},
+		{desc: "BTC/Normal", to: boltzrpc.Currency_Btc, disablePartials: true},
 		{desc: "BTC/ZeroConf", to: boltzrpc.Currency_Btc, zeroConf: true, external: true},
 		{desc: "BTC/Recover", to: boltzrpc.Currency_Btc, zeroConf: true, recover: true},
-		{desc: "Liquid/Normal", to: boltzrpc.Currency_Liquid},
+		{desc: "Liquid/Normal", to: boltzrpc.Currency_Liquid, disablePartials: true},
 		{desc: "Liquid/ZeroConf", to: boltzrpc.Currency_Liquid, zeroConf: true, external: true},
 		{desc: "Liquid/Recover", to: boltzrpc.Currency_Liquid, zeroConf: true, recover: true},
 	}
@@ -513,7 +539,7 @@ func TestReverseSwap(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
-					cfg.Boltz.DisablePartialSignatures = true
+					cfg.Boltz.DisablePartialSignatures = tc.disablePartials
 					client, _, stop := setup(t, cfg, "")
 					cfg.Node = node
 					chain := onchain.Onchain{
@@ -592,7 +618,7 @@ func TestReverseSwap(t *testing.T) {
 					if tc.external {
 						require.Equal(t, addr, info.ReverseSwap.ClaimAddress)
 					}
-					checkTxOutAddress(t, chain, currency, info.ReverseSwap.ClaimTransactionId, info.ReverseSwap.ClaimAddress)
+					checkTxOutAddress(t, chain, currency, info.ReverseSwap.ClaimTransactionId, info.ReverseSwap.ClaimAddress, !tc.disablePartials)
 
 					stop()
 				})

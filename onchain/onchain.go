@@ -7,6 +7,7 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/vulpemventures/go-elements/confidential"
 )
 
@@ -154,49 +155,46 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (
 	return 0, err
 }
 
-func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) (uint64, error) {
+func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, ourOutputBlindingKey *btcec.PrivateKey) (boltz.Transaction, error) {
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	hex, err := chain.Tx.GetTxHex(txId)
 	if err != nil {
+		return nil, err
+	}
+
+	return boltz.NewTxFromHex(currency, hex, ourOutputBlindingKey)
+}
+
+func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) (uint64, error) {
+	transaction, err := onchain.GetTransaction(currency, txId, nil)
+	if err != nil {
 		return 0, err
 	}
-	if currency == boltz.CurrencyBtc {
-		transaction, err := boltz.NewBtcTxFromHex(hex)
-		if err != nil {
-			return 0, fmt.Errorf("could not decode tx %s: %v", hex, err)
-		}
+	if btcTransaction, ok := transaction.(*boltz.BtcTransaction); ok {
 		var fee uint64
 		transactions := make(map[string]*boltz.BtcTransaction)
-		for _, input := range transaction.MsgTx().TxIn {
+		for _, input := range btcTransaction.MsgTx().TxIn {
 			prevOut := input.PreviousOutPoint
 			id := prevOut.Hash.String()
-			inputTx, ok := transactions[id]
+			_, ok := transactions[id]
 			if !ok {
-				inputTxHex, err := chain.Tx.GetTxHex(id)
+				transaction, err := onchain.GetTransaction(currency, id, nil)
 				if err != nil {
-					return 0, err
+					return 0, errors.New("could not fetch input tx: " + err.Error())
 				}
-				inputTx, err = boltz.NewBtcTxFromHex(inputTxHex)
-				if err != nil {
-					return 0, errors.New("could not decode input tx: " + err.Error())
-				}
-				transactions[id] = inputTx
+				transactions[id] = transaction.(*boltz.BtcTransaction)
 			}
-			fee += uint64(inputTx.MsgTx().TxOut[prevOut.Index].Value)
+			fee += uint64(transactions[id].MsgTx().TxOut[prevOut.Index].Value)
 		}
-		for _, output := range transaction.MsgTx().TxOut {
+		for _, output := range btcTransaction.MsgTx().TxOut {
 			fee -= uint64(output.Value)
 		}
 		return fee, nil
-	} else if currency == boltz.CurrencyLiquid {
-		liquidTx, err := boltz.NewLiquidTxFromHex(hex, nil)
-		if err != nil {
-			return 0, err
-		}
-		for _, output := range liquidTx.Outputs {
+	} else if liquidTransaction, ok := transaction.(*boltz.LiquidTransaction); ok {
+		for _, output := range liquidTransaction.Outputs {
 			out, err := confidential.UnblindOutputWithKey(output, nil)
 			if err == nil && len(output.Script) == 0 {
 				return out.Value, nil
