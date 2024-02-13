@@ -9,13 +9,14 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 )
 
 const reconnectInterval = 15 * time.Second
 
 type SwapUpdate struct {
-	SwapStatusResponse
-	Id string `json:"id"`
+	SwapStatusResponse `mapstructure:",squash"`
+	Id                 string `json:"id"`
 }
 
 type BoltzWebsocket struct {
@@ -110,12 +111,11 @@ func (boltz *BoltzWebsocket) Connect() error {
 				case "update":
 					switch response.Channel {
 					case "swap.update":
-						var updates []SwapUpdate
-						data, _ := json.Marshal(response.Args)
-						if err := json.Unmarshal(data, &updates); err != nil {
-							logger.Errorf("invalid boltz response: %v", err)
-						}
-						for _, update := range updates {
+						for _, arg := range response.Args {
+							var update SwapUpdate
+							if err := mapstructure.Decode(arg, &update); err != nil {
+								logger.Errorf("invalid boltz response: %v", err)
+							}
 							boltz.Updates <- update
 						}
 					default:
