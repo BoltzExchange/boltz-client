@@ -205,24 +205,14 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 }
 
 func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
-	swap, err := server.database.QuerySwap(request.Id)
-
-	if err == nil {
-		return &boltzrpc.GetSwapInfoResponse{
-			Swap: serializeSwap(swap),
-		}, nil
+	swap, reverseSwap, err := server.database.QueryAnySwap(request.Id)
+	if err != nil {
+		return nil, handleError(errors.New("could not find Swap with ID " + request.Id))
 	}
-
-	// Try to find a Reverse Swap with that ID
-	reverseSwap, err := server.database.QueryReverseSwap(request.Id)
-
-	if err == nil {
-		return &boltzrpc.GetSwapInfoResponse{
-			ReverseSwap: serializeReverseSwap(reverseSwap),
-		}, nil
-	}
-
-	return nil, handleError(errors.New("could not find Swap or Reverse Swap with ID " + request.Id))
+	return &boltzrpc.GetSwapInfoResponse{
+		Swap:        serializeSwap(swap),
+		ReverseSwap: serializeReverseSwap(reverseSwap),
+	}, nil
 }
 
 func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfoRequest, stream boltzrpc.Boltz_GetSwapInfoStreamServer) error {
@@ -422,9 +412,11 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		swapResponse.TxId = txId
 	}
 
-	server.nursery.RegisterSwap(swap)
-
 	logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
+
+	if err := server.nursery.RegisterSwap(swap); err != nil {
+		return nil, handleError(err)
+	}
 
 	return swapResponse, nil
 }
@@ -563,7 +555,9 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		return nil, handleError(err)
 	}
 
-	server.nursery.RegisterReverseSwap(reverseSwap)
+	if err := server.nursery.RegisterReverseSwap(reverseSwap); err != nil {
+		return nil, handleError(err)
+	}
 
 	logger.Info("Created new Reverse Swap " + reverseSwap.Id + ": " + marshalJson(reverseSwap.Serialize()))
 

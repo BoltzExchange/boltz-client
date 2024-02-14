@@ -307,10 +307,6 @@ func (boltz *Boltz) SwapStatus(id string) (*SwapStatusResponse, error) {
 	return &response, err
 }
 
-func (boltz *Boltz) StreamSwapStatus(id string, events chan *SwapStatusResponse, stopListening <-chan bool) error {
-	return streamSwapStatus(boltz.URL+"/streamswapstatus?id="+id, events, stopListening)
-}
-
 func (boltz *Boltz) GetSwapTransaction(id string) (*GetSwapTransactionResponse, error) {
 	var response GetSwapTransactionResponse
 	err := boltz.sendPostRequest("/getswaptransaction", GetSwapTransactionRequest{

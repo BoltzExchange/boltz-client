@@ -24,13 +24,13 @@ type Nursery struct {
 
 	onchain  *onchain.Onchain
 	boltz    *boltz.Boltz
+	boltzWs  *boltz.BoltzWebsocket
 	database *database.Database
 
-	eventListenersGroup sync.WaitGroup
-	eventListeners      map[string]swapListener
-	eventListenersLock  sync.RWMutex
-	stopBlockListeners  []chan bool
-	blockListenerGroup  sync.WaitGroup
+	eventListeners     map[string]swapListener
+	eventListenersLock sync.RWMutex
+	waitGroup          sync.WaitGroup
+	stop               *utils.ChannelForwarder[bool]
 
 	stopped bool
 }
@@ -43,60 +43,15 @@ type SwapUpdate struct {
 	IsFinal     bool
 }
 
-type swapListener struct {
-	stop      chan bool
-	updates   chan<- SwapUpdate
-	forwarder *utils.ChannelForwarder[SwapUpdate]
-}
-
-func (listener *swapListener) close() {
-	select {
-	case listener.stop <- true:
-		logger.Debug("Sent stop signal to listener")
-	default:
-		logger.Debug("Listener already stopped")
-	}
-}
-
-// Map between Swap ids and a channel that tells its SSE event listeners to stop
-func (nursery *Nursery) newListener(id string) (swapListener, func()) {
-	nursery.eventListenersLock.Lock()
-	defer nursery.eventListenersLock.Unlock()
-	updates := make(chan SwapUpdate)
-	listener := swapListener{
-		stop:      make(chan bool),
-		updates:   updates,
-		forwarder: utils.ForwardChannel(updates, 0, true),
-	}
-	nursery.eventListeners[id] = listener
-	logger.Debug("Creating listener for swap " + id)
-	nursery.eventListenersGroup.Add(1)
-	return listener, func() {
-		nursery.eventListenersLock.Lock()
-		defer nursery.eventListenersLock.Unlock()
-		close(listener.updates)
-		delete(nursery.eventListeners, id)
-		nursery.eventListenersGroup.Done()
-	}
-}
-
-func (nursery *Nursery) getSwapListener(id string) *swapListener {
-	nursery.eventListenersLock.RLock()
-	defer nursery.eventListenersLock.RUnlock()
-	listener, ok := nursery.eventListeners[id]
-	if ok {
-		return &listener
-	}
-	return nil
-}
+type swapListener = *utils.ChannelForwarder[SwapUpdate]
 
 func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
-	if listener := nursery.getSwapListener(id); listener != nil {
-		listener.updates <- update
+	if listener, ok := nursery.eventListeners[id]; ok {
+		listener.Send(update)
 		logger.Debugf("Sent update for swap %s", id)
 
 		if update.IsFinal {
-			listener.close()
+			nursery.removeSwapListener(id)
 		}
 	} else {
 		logger.Debugf("No listener for swap %s", id)
@@ -104,12 +59,11 @@ func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
 }
 
 func (nursery *Nursery) SwapUpdates(id string) (<-chan SwapUpdate, func()) {
-	listener := nursery.getSwapListener(id)
-	if listener != nil {
-		updates := listener.forwarder.Get()
+	if listener, ok := nursery.eventListeners[id]; ok {
+		updates := listener.Get()
 		return updates, func() {
-			if listener := nursery.getSwapListener(id); listener != nil {
-				listener.forwarder.Remove(updates)
+			if listener, ok := nursery.eventListeners[id]; ok {
+				listener.Remove(updates)
 			}
 		}
 	}
@@ -124,55 +78,125 @@ func (nursery *Nursery) Init(
 	database *database.Database,
 ) error {
 	nursery.network = network
-
 	nursery.lightning = lightning
 	nursery.boltz = boltzClient
 	nursery.database = database
 	nursery.onchain = chain
 	nursery.eventListeners = make(map[string]swapListener)
+	nursery.stop = utils.ForwardChannel(make(chan bool), 0, false)
+	nursery.boltzWs = boltz.NewBoltzWebsocket(boltzClient.URL)
 
 	logger.Info("Starting nursery")
 
-	if err := nursery.recoverSwaps(); err != nil {
-		return err
+	if err := nursery.boltzWs.Connect(); err != nil {
+		return fmt.Errorf("could not connect to boltz websocket: %v", err)
 	}
+
 	nursery.startBlockListener(boltz.CurrencyBtc)
 	nursery.startBlockListener(boltz.CurrencyLiquid)
 
-	err := nursery.recoverReverseSwaps()
+	nursery.startSwapListener()
 
-	return err
+	return nursery.recoverPending()
 }
 
 func (nursery *Nursery) Stop() {
 	nursery.stopped = true
-	for _, stop := range nursery.stopBlockListeners {
-		select {
-		case stop <- true:
-			logger.Debugf("Sent stop signal to block listener")
-		case <-time.After(1 * time.Second):
-			logger.Debugf("block listener did not receive stop signal")
-		}
-	}
-	logger.Debugf("Closed all block listeners")
-	for _, listener := range nursery.eventListeners {
-		listener.close()
+	nursery.stop.Send(true)
+	logger.Debugf("Sent stop signal to block listener")
+	for id := range nursery.eventListeners {
+		nursery.removeSwapListener(id)
 	}
 	logger.Debugf("Closed all event listeners")
-	nursery.eventListenersGroup.Wait()
-	nursery.blockListenerGroup.Wait()
+	nursery.boltzWs.Close()
+	nursery.waitGroup.Wait()
+}
+
+func (nursery *Nursery) registerSwap(id string) error {
+	logger.Infof("Listening to events of Swap %s", id)
+	nursery.eventListenersLock.Lock()
+	defer nursery.eventListenersLock.Unlock()
+
+	if err := nursery.boltzWs.Subscribe([]string{id}); err != nil {
+		return err
+	}
+
+	updates := make(chan SwapUpdate)
+	nursery.eventListeners[id] = utils.ForwardChannel(updates, 0, true)
+
+	return nil
+}
+
+func (nursery *Nursery) recoverPending() error {
+	logger.Info("Recovering pending Swaps")
+
+	swaps, err := nursery.database.QueryPendingSwaps()
+	if err != nil {
+		return err
+	}
+
+	reverseSwaps, err := nursery.database.QueryPendingReverseSwaps()
+	if err != nil {
+		return err
+	}
+
+	var swapIds []string
+	for _, swap := range swaps {
+		swapIds = append(swapIds, swap.Id)
+	}
+	for _, reverseSwap := range reverseSwaps {
+		swapIds = append(swapIds, reverseSwap.Id)
+	}
+
+	return nursery.boltzWs.Subscribe(swapIds)
+}
+
+func (nursery *Nursery) startSwapListener() {
+	logger.Infof("Starting swap update listener")
+
+	nursery.waitGroup.Add(1)
+
+	go func() {
+		for status := range nursery.boltzWs.Updates {
+			logger.Infof("Swap %s status update: %s", status.Id, status.Status)
+
+			swap, reverseSwap, err := nursery.database.QueryAnySwap(status.Id)
+			if err != nil {
+				logger.Errorf("Could not query swap %s: %v", status.Id, status.Status)
+				continue
+			}
+			if status.Error != "" {
+				logger.Warnf("Boltz could not find Swap %s: %s ", swap.Id, status.Error)
+				continue
+			}
+			if swap != nil {
+				nursery.handleSwapStatus(swap, status.SwapStatusResponse)
+			} else if reverseSwap != nil {
+				nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
+			}
+		}
+		nursery.waitGroup.Done()
+	}()
+}
+
+func (nursery *Nursery) removeSwapListener(id string) {
+	nursery.eventListenersLock.Lock()
+	defer nursery.eventListenersLock.Unlock()
+	if listener, ok := nursery.eventListeners[id]; ok {
+		listener.Close()
+		delete(nursery.eventListeners, id)
+	}
 }
 
 func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onchain.BlockEpoch {
 	logger.Infof("Connecting to block %s epoch stream", currency)
 	blockNotifier := make(chan *onchain.BlockEpoch)
-	stop := make(chan bool)
-	nursery.stopBlockListeners = append(nursery.stopBlockListeners, stop)
-	nursery.blockListenerGroup.Add(1)
+	stop := nursery.stop.Get()
+	nursery.waitGroup.Add(1)
 	go func() {
 		defer func() {
 			close(blockNotifier)
-			nursery.blockListenerGroup.Done()
+			nursery.waitGroup.Done()
 			logger.Debugf("Closed block listener for %s", currency)
 		}()
 		for !nursery.stopped {

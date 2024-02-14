@@ -23,41 +23,11 @@ func (nursery *Nursery) sendReverseSwapUpdate(reverseSwap database.ReverseSwap) 
 	})
 }
 
-func (nursery *Nursery) recoverReverseSwaps() error {
-	logger.Info("Recovering pending Reverse Swaps")
-
-	reverseSwaps, err := nursery.database.QueryPendingReverseSwaps()
-
-	if err != nil {
+func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) error {
+	if err := nursery.registerSwap(reverseSwap.Id); err != nil {
 		return err
 	}
-
-	for _, reverseSwap := range reverseSwaps {
-		logger.Info("Recovering Reverse Swap " + reverseSwap.Id + " at state: " + reverseSwap.Status.String())
-
-		// TODO: handle race condition when status is updated between the POST request and the time the streaming starts
-		status, err := nursery.boltz.SwapStatus(reverseSwap.Id)
-
-		if err != nil {
-			logger.Warn("Boltz could not find Reverse Swap " + reverseSwap.Id + ": " + err.Error())
-			continue
-		}
-
-		if status.Status != reverseSwap.Status.String() {
-			logger.Info("Swap " + reverseSwap.Id + " status changed to: " + status.Status)
-			nursery.handleReverseSwapStatus(&reverseSwap, *status)
-
-			if reverseSwap.State == boltzrpc.SwapState_PENDING {
-				nursery.RegisterReverseSwap(reverseSwap)
-			}
-
-			continue
-		}
-
-		logger.Info("Reverse Swap " + reverseSwap.Id + " status did not change")
-		nursery.RegisterReverseSwap(reverseSwap)
-	}
-
+	nursery.sendReverseSwapUpdate(reverseSwap)
 	return nil
 }
 
@@ -80,25 +50,6 @@ func (nursery *Nursery) PayReverseSwap(reverseSwap *database.ReverseSwap) error 
 		}
 	}()
 	return nil
-}
-
-func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) {
-	logger.Info("Listening to events of Reverse Swap " + reverseSwap.Id)
-
-	go func() {
-		eventStream := make(chan *boltz.SwapStatusResponse)
-
-		listener, remove := nursery.newListener(reverseSwap.Id)
-		defer remove()
-		nursery.streamSwapStatus(reverseSwap.Id, "Reverse Swap", eventStream, listener.stop)
-
-		nursery.sendReverseSwapUpdate(reverseSwap)
-
-		for event := range eventStream {
-			logger.Info("Reverse Swap " + reverseSwap.Id + " status update: " + event.Status)
-			nursery.handleReverseSwapStatus(&reverseSwap, *event)
-		}
-	}()
 }
 
 // TODO: fail swap after "transaction.failed" event

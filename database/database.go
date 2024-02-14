@@ -259,6 +259,20 @@ func (database *Database) QueryRow(query string, args ...any) *sql.Row {
 	return database.db.QueryRow(query, args...)
 }
 
+func (database *Database) QueryAnySwap(id string) (*Swap, *ReverseSwap, error) {
+	swap, err := database.QuerySwap(id)
+	if err == nil {
+		return swap, nil, nil
+	}
+
+	reverseSwap, err := database.QueryReverseSwap(id)
+	if err == nil {
+		return nil, reverseSwap, nil
+	}
+
+	return nil, nil, fmt.Errorf("could not find Swap or Reverse Swap with ID %s", id)
+}
+
 func (database *Database) createTables() error {
 	_, err := database.Exec(createTables)
 	return err

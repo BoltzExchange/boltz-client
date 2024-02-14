@@ -166,60 +166,12 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*boltz.OutputDetai
 	}, nil
 }
 
-func (nursery *Nursery) recoverSwaps() error {
-	logger.Info("Recovering pending Swaps")
-
-	swaps, err := nursery.database.QueryPendingSwaps()
-
-	if err != nil {
+func (nursery *Nursery) RegisterSwap(swap database.Swap) error {
+	if err := nursery.registerSwap(swap.Id); err != nil {
 		return err
 	}
-
-	for _, swap := range swaps {
-		logger.Info("Recovering Swap" + " " + swap.Id + " at state: " + swap.Status.String())
-
-		// TODO: handle race condition when status is updated between the POST request and the time the streaming starts
-		status, err := nursery.boltz.SwapStatus(swap.Id)
-
-		if err != nil {
-			logger.Warn("Boltz could not find Swap " + swap.Id + ": " + err.Error())
-			continue
-		}
-
-		if status.Status != swap.Status.String() {
-			logger.Info("Swap " + swap.Id + " status changed to: " + status.Status)
-			nursery.handleSwapStatus(&swap, *status)
-
-			if swap.State == boltzrpc.SwapState_PENDING {
-				nursery.RegisterSwap(swap)
-			}
-
-			continue
-		}
-
-		logger.Info("Swap " + swap.Id + " status did not change")
-		nursery.RegisterSwap(swap)
-	}
+	nursery.sendSwapUpdate(swap)
 	return nil
-}
-
-func (nursery *Nursery) RegisterSwap(swap database.Swap) {
-	logger.Info("Listening to events of Swap " + swap.Id)
-
-	go func() {
-		listener, remove := nursery.newListener(swap.Id)
-		defer remove()
-
-		nursery.sendSwapUpdate(swap)
-
-		eventStream := make(chan *boltz.SwapStatusResponse)
-		nursery.streamSwapStatus(swap.Id, "Swap", eventStream, listener.stop)
-
-		for event := range eventStream {
-			logger.Info("Swap " + swap.Id + " status update: " + event.Status)
-			nursery.handleSwapStatus(&swap, *event)
-		}
-	}()
 }
 
 func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.SwapStatusResponse) error {
