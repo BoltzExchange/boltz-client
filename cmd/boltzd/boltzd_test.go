@@ -590,7 +590,7 @@ func TestReverseSwap(t *testing.T) {
 						require.NoError(t, err)
 
 						next := swapStream(t, client, swap.Id)
-						next(boltzrpc.SwapState_SUCCESSFUL)
+						next(boltzrpc.SwapState_PENDING)
 
 						if !tc.zeroConf {
 							test.MineBlock()
