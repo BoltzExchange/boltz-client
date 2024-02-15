@@ -257,8 +257,28 @@ func (s *HexString) UnmarshalText(data []byte) (err error) {
 	return err
 }
 
-func (s *HexString) MarshalText() ([]byte, error) {
-	return []byte(hex.EncodeToString(*s)), nil
+func (s HexString) MarshalText() ([]byte, error) {
+	return []byte(hex.EncodeToString(s)), nil
+}
+
+type PublicKey btcec.PublicKey
+
+func (key *PublicKey) UnmarshalText(data []byte) (err error) {
+	decoded, err := hex.DecodeString(string(data))
+	if err != nil {
+		return err
+	}
+	pubKey, err := btcec.ParsePubKey(decoded)
+	if err != nil {
+		return err
+	}
+	*key = PublicKey(*pubKey)
+	return nil
+}
+
+func (key PublicKey) MarshalText() ([]byte, error) {
+	serialized := btcec.PublicKey(key).SerializeCompressed()
+	return []byte(hex.EncodeToString(serialized)), nil
 }
 
 type SerializedLeaf struct {

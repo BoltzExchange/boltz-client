@@ -105,15 +105,7 @@ func (nursery *Nursery) refundSwaps(swapsToRefund []database.Swap, cooperative b
 
 	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
 
-	var signer boltz.Signer = func(transaction string, pubNonce string, i int) (*boltz.PartialSignature, error) {
-		return nursery.boltz.RefundSwap(boltz.RefundSwapRequest{
-			Id:          swapsToRefund[i].Id,
-			PubNonce:    pubNonce,
-			Transaction: transaction,
-			Index:       i,
-		})
-	}
-	refundTransactionId, totalRefundFee, err := nursery.createTransaction(currency, refundOutputs, refundAddress, feeSatPerVbyte, signer)
+	refundTransactionId, totalRefundFee, err := nursery.createTransaction(currency, refundOutputs, refundAddress, feeSatPerVbyte)
 	if err != nil {
 		return errors.New("Could not create refund transaction: " + err.Error())
 	}
@@ -193,11 +185,7 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 		return fmt.Errorf("boltz returned wrong preimage: %x", claimDetails.Preimage)
 	}
 
-	output, err := nursery.getRefundOutput(swap)
-	if err != nil {
-		return fmt.Errorf("could not get swap output: %w", err)
-	}
-	session, err := boltz.NewSigningSession([]boltz.OutputDetails{*output}, 0)
+	session, err := boltz.NewSigningSession(swap.SwapTree)
 	if err != nil {
 		return fmt.Errorf("could not create signing session: %w", err)
 	}

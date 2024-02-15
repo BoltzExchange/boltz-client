@@ -1,7 +1,7 @@
 package boltz
 
 import (
-	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -54,9 +54,7 @@ func NewTxFromHex(currency Currency, hexString string, ourOutputBlindingKey *btc
 	return NewBtcTxFromHex(hexString)
 }
 
-type Signer = func(transaction string, pubNonce string, index int) (*PartialSignature, error)
-
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, outputAddress string, satPerVbyte float64, signer Signer) (Transaction, uint64, error) {
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, outputAddress string, satPerVbyte float64, boltzApi *Boltz) (Transaction, uint64, error) {
 	var construct func(*Network, []OutputDetails, string, uint64) (Transaction, error)
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
@@ -80,7 +78,10 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 
 	for i, output := range outputs {
 		if output.Cooperative {
-			session, err := NewSigningSession(outputs, i)
+			if boltzApi == nil {
+				return nil, 0, errors.New("boltzApi is required for cooperative transactions")
+			}
+			session, err := NewSigningSession(outputs[i].SwapTree)
 			if err != nil {
 				return nil, 0, fmt.Errorf("could not initialize signing session: %w", err)
 			}
@@ -91,12 +92,28 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 			}
 
 			pubNonce := session.PublicNonce()
-			signature, err := signer(serialized, hex.EncodeToString(pubNonce[:]), i)
+			var signature *PartialSignature
+			if output.SwapType == ReverseSwap {
+				signature, err = boltzApi.ClaimReverseSwap(ClaimReverseSwapRequest{
+					Id:          output.SwapId,
+					Transaction: serialized,
+					PubNonce:    pubNonce[:],
+					Index:       i,
+					Preimage:    output.Preimage,
+				})
+			} else {
+				signature, err = boltzApi.RefundSwap(RefundSwapRequest{
+					Id:          output.SwapId,
+					Transaction: serialized,
+					PubNonce:    pubNonce[:],
+					Index:       i,
+				})
+			}
 			if err != nil {
 				return nil, 0, fmt.Errorf("could not get partial signature from boltz: %w", err)
 			}
 
-			if err := session.Finalize(transaction, network, signature); err != nil {
+			if err := session.Finalize(transaction, outputs, network, signature); err != nil {
 				return nil, 0, fmt.Errorf("could not finalize signing session: %w", err)
 			}
 		}
