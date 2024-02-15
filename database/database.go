@@ -309,7 +309,7 @@ func formatPublicKey(key *btcec.PublicKey) string {
 	return hex.EncodeToString(key.SerializeCompressed())
 }
 
-func ParseTime(unix int64) time.Time {
+func parseTime(unix int64) time.Time {
 	return time.Unix(unix, 0)
 }
 
