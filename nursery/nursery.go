@@ -1,7 +1,6 @@
 package nursery
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -227,33 +226,17 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64, signer boltz.Signer) (string, uint64, error) {
-	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte, signer)
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64) (string, uint64, error) {
+	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte, nursery.boltz)
 	if err != nil {
 		return "", 0, fmt.Errorf("construct transaction: %v", err)
 	}
 
-	id := transaction.Hash()
-	err = nursery.broadcastTransaction(transaction, currency)
+	response, err := nursery.boltz.BroadcastTransaction(transaction)
 	if err != nil {
 		return "", 0, fmt.Errorf("broadcast transaction: %v", err)
 	}
-	return id, fee, nil
-}
-
-func (nursery *Nursery) broadcastTransaction(transaction boltz.Transaction, currency boltz.Currency) error {
-	transactionHex, err := transaction.Serialize()
-	if err != nil {
-		return errors.New("could not serialize transaction: " + err.Error())
-	}
-
-	_, err = nursery.boltz.BroadcastTransaction(transactionHex, currency)
-	if err != nil {
-		logger.Errorf("Could not broadcast transaction: %v\n%s", err, transactionHex)
-		return errors.New("could not broadcast transaction: " + err.Error())
-	}
-
 	logger.Info("Broadcast transaction with Boltz API")
 
-	return nil
+	return response.TransactionId, fee, nil
 }

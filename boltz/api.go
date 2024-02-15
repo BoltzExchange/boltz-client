@@ -2,6 +2,7 @@ package boltz
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,6 +35,17 @@ func ParseSwapType(swapType string) (SwapType, error) {
 	default:
 		return "", errors.New("invalid swap type")
 	}
+}
+
+type HexString []byte
+
+func (s *HexString) UnmarshalText(data []byte) (err error) {
+	*s, err = hex.DecodeString(string(data))
+	return err
+}
+
+func (s HexString) MarshalText() ([]byte, error) {
+	return []byte(hex.EncodeToString(s)), nil
 }
 
 type Error error
@@ -158,13 +170,13 @@ type BroadcastTransactionResponse struct {
 }
 
 type CreateSwapRequest struct {
-	From            Currency `json:"from"`
-	To              Currency `json:"to"`
-	PairHash        string   `json:"pairHash"`
-	RefundPublicKey string   `json:"refundPublicKey"`
-	Invoice         string   `json:"invoice,omitempty"`
-	ReferralId      string   `json:"referralId"`
-	PreimageHash    string   `json:"preimageHash,omitempty"`
+	From            Currency  `json:"from"`
+	To              Currency  `json:"to"`
+	PairHash        string    `json:"pairHash,omitempty"`
+	RefundPublicKey HexString `json:"refundPublicKey"`
+	Invoice         string    `json:"invoice,omitempty"`
+	ReferralId      string    `json:"referralId"`
+	PreimageHash    HexString `json:"preimageHash,omitempty"`
 
 	Error string `json:"error"`
 }
@@ -174,20 +186,20 @@ type CreateSwapResponse struct {
 	Bip21              string          `json:"bip21"`
 	Address            string          `json:"address"`
 	SwapTree           *SerializedTree `json:"swapTree"`
-	ClaimPublicKey     string          `json:"claimPublicKey"`
+	ClaimPublicKey     HexString       `json:"claimPublicKey"`
 	TimeoutBlockHeight uint32          `json:"timeoutBlockHeight"`
 	AcceptZeroConf     bool            `json:"acceptZeroConf"`
 	ExpectedAmount     uint64          `json:"expectedAmount"`
-	BlindingKey        string          `json:"blindingKey"`
+	BlindingKey        HexString       `json:"blindingKey"`
 
 	Error string `json:"error"`
 }
 
 type RefundSwapRequest struct {
-	Id          string `json:"id"`
-	PubNonce    string `json:"pubNonce"`
-	Transaction string `json:"transaction"`
-	Index       int    `json:"index"`
+	Id          string    `json:"id"`
+	PubNonce    HexString `json:"pubNonce"`
+	Transaction string    `json:"transaction"`
+	Index       int       `json:"index"`
 }
 
 type SwapClaimDetails struct {
@@ -213,14 +225,14 @@ type SetInvoiceResponse struct {
 }
 
 type CreateReverseSwapRequest struct {
-	From           Currency `json:"from"`
-	To             Currency `json:"to"`
-	PreimageHash   string   `json:"preimageHash"`
-	ClaimPublicKey string   `json:"claimPublicKey"`
-	InvoiceAmount  uint64   `json:"invoiceAmount,omitempty"`
-	OnchainAmount  uint64   `json:"onchainAmount,omitempty"`
-	PairHash       string   `json:"pairHash"`
-	ReferralId     string   `json:"referralId"`
+	From           Currency  `json:"from"`
+	To             Currency  `json:"to"`
+	PreimageHash   HexString `json:"preimageHash"`
+	ClaimPublicKey HexString `json:"claimPublicKey"`
+	InvoiceAmount  uint64    `json:"invoiceAmount,omitempty"`
+	OnchainAmount  uint64    `json:"onchainAmount,omitempty"`
+	PairHash       string    `json:"pairHash,omitempty"`
+	ReferralId     string    `json:"referralId"`
 
 	Error string `json:"error"`
 }
@@ -229,20 +241,20 @@ type CreateReverseSwapResponse struct {
 	Id                 string          `json:"id"`
 	Invoice            string          `json:"invoice"`
 	SwapTree           *SerializedTree `json:"swapTree"`
-	RefundPublicKey    string          `json:"refundPublicKey"`
+	RefundPublicKey    HexString       `json:"refundPublicKey"`
 	LockupAddress      string          `json:"lockupAddress"`
 	TimeoutBlockHeight uint32          `json:"timeoutBlockHeight"`
 	OnchainAmount      uint64          `json:"onchainAmount"`
-	BlindingKey        string          `json:"blindingKey"`
+	BlindingKey        HexString       `json:"blindingKey"`
 
 	Error string `json:"error"`
 }
 type ClaimReverseSwapRequest struct {
-	Id          string `json:"id"`
-	Preimage    string `json:"preimage"`
-	PubNonce    string `json:"pubNonce"`
-	Transaction string `json:"transaction"`
-	Index       int    `json:"index"`
+	Id          string    `json:"id"`
+	Preimage    HexString `json:"preimage"`
+	PubNonce    HexString `json:"pubNonce"`
+	Transaction string    `json:"transaction"`
+	Index       int       `json:"index"`
 }
 
 type PartialSignature struct {
@@ -332,9 +344,17 @@ func (boltz *Boltz) GetTransaction(transactionId string, currency Currency) (str
 	return response.Hex, err
 }
 
-func (boltz *Boltz) BroadcastTransaction(transactionHex string, currency Currency) (*BroadcastTransactionResponse, error) {
+func (boltz *Boltz) BroadcastTransaction(transaction Transaction) (*BroadcastTransactionResponse, error) {
 	var response BroadcastTransactionResponse
-	err := boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
+	currency := CurrencyBtc
+	if _, ok := transaction.(*LiquidTransaction); ok {
+		currency = CurrencyLiquid
+	}
+	transactionHex, err := transaction.Serialize()
+	if err != nil {
+		return nil, fmt.Errorf("could not serialize transaction: %v", err)
+	}
+	err = boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
 		Currency:       string(currency),
 		TransactionHex: transactionHex,
 	}, &response)

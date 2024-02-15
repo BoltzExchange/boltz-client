@@ -1,7 +1,6 @@
 package nursery
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -127,6 +126,8 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		logger.Info("Constructing claim transaction for Reverse Swap " + reverseSwap.Id + " with output: " + lockupTx.Hash() + ":" + strconv.Itoa(int(lockupVout)))
 
 		output := boltz.OutputDetails{
+			SwapId:            reverseSwap.Id,
+			SwapType:          boltz.ReverseSwap,
 			LockupTransaction: lockupTx,
 			Vout:              lockupVout,
 			PrivateKey:        reverseSwap.PrivateKey,
@@ -206,15 +207,5 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 }
 
 func (nursery *Nursery) claimReverseSwap(reverseSwap *database.ReverseSwap, output boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
-	var signer boltz.Signer = func(transaction string, pubNonce string, i int) (*boltz.PartialSignature, error) {
-		return nursery.boltz.ClaimReverseSwap(boltz.ClaimReverseSwapRequest{
-			Id:          reverseSwap.Id,
-			Preimage:    hex.EncodeToString(reverseSwap.Preimage),
-			PubNonce:    pubNonce,
-			Transaction: transaction,
-			Index:       i,
-		})
-	}
-
-	return nursery.createTransaction(reverseSwap.Pair.To, []boltz.OutputDetails{output}, reverseSwap.ClaimAddress, feeSatPerVbyte, signer)
+	return nursery.createTransaction(reverseSwap.Pair.To, []boltz.OutputDetails{output}, reverseSwap.ClaimAddress, feeSatPerVbyte)
 }
