@@ -1,7 +1,7 @@
 # Table of contents
 
 * [👋 Introduction](README.md)
-* [☂ Umbrel Beta](rtl-testing.md)
+* [☂ Umbrel Bounty](rtl-testing.md)
 * [💰 Wallets](wallets.md)
 * [🔁 Autoswap](autoswap.md)
 * [🎛 Configuration](configuration.md)
