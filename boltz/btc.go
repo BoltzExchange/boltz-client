@@ -99,15 +99,10 @@ func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int)
 	)
 }
 
-func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAddressRaw string, fee uint64) (Transaction, error) {
-	outputAddress, err := btcutil.DecodeAddress(outputAddressRaw, network.Btc)
-	if err != nil {
-		return nil, errors.New("Could not decode address: " + err.Error())
-	}
-
+func constructBtcTransaction(network *Network, outputs []OutputDetails, fee uint64) (Transaction, error) {
 	transaction := wire.NewMsgTx(wire.TxVersion)
 
-	var inputSum int64
+	outValues := make(map[string]int64)
 
 	for _, output := range outputs {
 		// Set the highest timeout block height as locktime
@@ -119,27 +114,37 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outputAd
 
 		lockupTx := output.LockupTransaction.(*BtcTransaction).Tx
 
-		// Calculate the sum of all inputs
-		inputSum += lockupTx.MsgTx().TxOut[output.Vout].Value
-
 		// Add the input to the transaction
 		input := wire.NewTxIn(wire.NewOutPoint(lockupTx.Hash(), output.Vout), nil, nil)
 		input.Sequence = 0
 
 		transaction.AddTxIn(input)
+
+		value := lockupTx.MsgTx().TxOut[output.Vout].Value
+		existingValue, _ := outValues[output.Address]
+		outValues[output.Address] = existingValue + value
+
 	}
 
-	// Add the output
-	outputScript, err := txscript.PayToAddrScript(outputAddress)
+	feePerOutput := fee / uint64(len(outValues))
 
-	if err != nil {
-		return nil, err
+	for rawAddress, value := range outValues {
+		outputAddress, err := btcutil.DecodeAddress(rawAddress, network.Btc)
+		if err != nil {
+			return nil, errors.New("Could not decode address: " + err.Error())
+		}
+
+		// Add the output
+		outputScript, err := txscript.PayToAddrScript(outputAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		transaction.AddTxOut(&wire.TxOut{
+			PkScript: outputScript,
+			Value:    value - int64(feePerOutput),
+		})
 	}
-
-	transaction.AddTxOut(&wire.TxOut{
-		PkScript: outputScript,
-		Value:    inputSum - int64(fee),
-	})
 
 	prevoutFetcher := getPrevoutFetcher(transaction, outputs)
 	sigHashes := txscript.NewTxSigHashes(transaction, prevoutFetcher)

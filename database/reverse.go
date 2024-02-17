@@ -179,7 +179,9 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 		return nil, err
 	}
 
-	reverseSwap.CreatedAt = parseTime(createdAt.Int64)
+	if createdAt.Valid {
+		reverseSwap.CreatedAt = ParseTime(createdAt.Int64)
+	}
 
 	if swapTree.Value != nil {
 		reverseSwap.SwapTree = swapTree.Value.Deserialize()

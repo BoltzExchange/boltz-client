@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/utils"
 
 	"github.com/BoltzExchange/boltz-client/lightning"
@@ -16,6 +17,67 @@ import (
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
 )
+
+type Claimer struct {
+	ExpiryTolerance time.Duration `long:"expiry-tolerance" description:"Time before a swap expires that it should be claimed" default:"1h"`
+	DeferredSymbols []boltz.Currency
+	ClaimInterval   time.Duration `long:"claim-interval" description:"Interval at which the claimer should check for deferred swaps" default:"5m"`
+
+	claim         func([]*database.ReverseSwap) error
+	deferredSwaps []*database.ReverseSwap
+	database      *database.Database
+}
+
+func (nursery *Nursery) StartClaimer() {
+	logger.Infof("Starting claimer")
+
+	nursery.waitGroup.Add(1)
+	go func() {
+		stop := nursery.stop.Get()
+		ticker := time.NewTicker(nursery.claimer.ClaimInterval)
+		defer ticker.Stop()
+		defer nursery.waitGroup.Done()
+
+		for {
+			select {
+			case <-ticker.C:
+				if err := nursery.Sweep(); err != nil {
+					logger.Errorf("Error sweeping deferred swaps: %v", err)
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
+}
+
+func (claimer *Claimer) shouldDefer(reverseSwap *database.ReverseSwap, currentBlockHeight uint32) bool {
+	if reverseSwap.State != boltzrpc.SwapState_PENDING {
+		return false
+	}
+
+	claimer.deferredSwaps = append(claimer.deferredSwaps, reverseSwap)
+
+	blocks := reverseSwap.TimeoutBlockHeight - currentBlockHeight
+	timeout := time.Duration(boltz.BlocksToHours(blocks, reverseSwap.Pair.To) * float64(time.Hour))
+
+	if timeout < claimer.ExpiryTolerance {
+		return false
+	}
+
+	return true
+
+}
+
+func (nursery *Nursery) Sweep() error {
+	logger.Infof("Starting Sweep")
+
+	if err := nursery.claimReverseSwaps(nursery.claimer.deferredSwaps); err != nil {
+		return err
+	}
+	nursery.claimer.deferredSwaps = nil
+	return nil
+}
 
 type Nursery struct {
 	network *boltz.Network
@@ -33,6 +95,7 @@ type Nursery struct {
 	stop               *utils.ChannelForwarder[bool]
 
 	stopped bool
+	claimer *Claimer
 }
 
 const retryInterval = 15
@@ -76,6 +139,7 @@ func (nursery *Nursery) Init(
 	chain *onchain.Onchain,
 	boltzClient *boltz.Boltz,
 	database *database.Database,
+	claimer *Claimer,
 ) error {
 	nursery.network = network
 	nursery.lightning = lightning
@@ -85,6 +149,7 @@ func (nursery *Nursery) Init(
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.stop = utils.ForwardChannel(make(chan bool), 0, false)
 	nursery.boltzWs = boltz.NewBoltzWebsocket(boltzClient.URL)
+	nursery.claimer = claimer
 
 	logger.Info("Starting nursery")
 
@@ -227,8 +292,8 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64, signer boltz.Signer) (string, uint64, error) {
-	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte, signer)
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, feeSatPerVbyte float64, signer boltz.Signer) (string, uint64, error) {
+	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, feeSatPerVbyte, signer)
 	if err != nil {
 		return "", 0, fmt.Errorf("construct transaction: %v", err)
 	}

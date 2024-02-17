@@ -1,6 +1,8 @@
 # Path the the log file
 logfile = ""
 
+loglevel = "debug"
+
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz instance for the network LND is on
 # This value is used to override that

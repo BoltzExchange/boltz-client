@@ -911,6 +911,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 		server.onchain,
 		server.boltz,
 		server.database,
+		nil,
 	)
 	if err != nil {
 		return err

@@ -21,8 +21,8 @@ func (database *Database) QueryCurrentBudgetInterval() (*BudgetInterval, error) 
 		return nil, err
 	}
 
-	period.StartDate = parseTime(startDate)
-	period.EndDate = parseTime(endDate)
+	period.StartDate = ParseTime(startDate)
+	period.EndDate = ParseTime(endDate)
 	return &period, nil
 }
 

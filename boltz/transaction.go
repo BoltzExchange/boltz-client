@@ -23,6 +23,9 @@ type OutputDetails struct {
 	LockupTransaction Transaction
 	Vout              uint32
 
+	// which address to use as the destination for the output
+	Address string
+
 	PrivateKey *btcec.PrivateKey
 
 	// Should be set to an empty array in case of a refund
@@ -56,8 +59,16 @@ func NewTxFromHex(currency Currency, hexString string, ourOutputBlindingKey *btc
 
 type Signer = func(transaction string, pubNonce string, index int) (*PartialSignature, error)
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, outputAddress string, satPerVbyte float64, signer Signer) (Transaction, uint64, error) {
-	var construct func(*Network, []OutputDetails, string, uint64) (Transaction, error)
+type TransactionInfo struct {
+	network     *Network
+	currency    Currency
+	outputs     []OutputDetails
+	satPerVbyte float64
+	signer      Signer
+}
+
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, signer Signer) (Transaction, uint64, error) {
+	var construct func(*Network, []OutputDetails, uint64) (Transaction, error)
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
 	} else if currency == CurrencyBtc {
@@ -66,14 +77,14 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 		return nil, 0, fmt.Errorf("invalid pair: %v", currency)
 	}
 
-	noFeeTransaction, err := construct(network, outputs, outputAddress, 0)
+	noFeeTransaction, err := construct(network, outputs, 0)
 
 	if err != nil {
 		return nil, 0, err
 	}
 
 	fee := uint64(float64(noFeeTransaction.VSize()) * satPerVbyte)
-	transaction, err := construct(network, outputs, outputAddress, fee)
+	transaction, err := construct(network, outputs, fee)
 	if err != nil {
 		return nil, 0, err
 	}

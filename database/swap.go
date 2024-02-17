@@ -191,7 +191,9 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 		return nil, err
 	}
 
-	swap.CreatedAt = parseTime(createdAt.Int64)
+	if createdAt.Valid {
+		swap.CreatedAt = ParseTime(createdAt.Int64)
+	}
 
 	if swapTree.Value != nil {
 		swap.SwapTree = swapTree.Value.Deserialize()
