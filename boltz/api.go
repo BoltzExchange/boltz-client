@@ -45,7 +45,9 @@ func (s *HexString) UnmarshalText(data []byte) (err error) {
 }
 
 func (s HexString) MarshalText() ([]byte, error) {
-	return []byte(hex.EncodeToString(s)), nil
+	result := make([]byte, hex.EncodedLen(len(s)))
+	hex.Encode(result, s)
+	return result, nil
 }
 
 type Error error
