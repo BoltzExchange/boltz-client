@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/btcsuite/btcd/btcec/v2/schnorr/musig2"
 	"github.com/btcsuite/btcd/wire"
@@ -13,12 +14,10 @@ import (
 
 type MusigSession struct {
 	*musig2.Session
-	outputs []OutputDetails
-	idx     int
+	tree *SwapTree
 }
 
-func NewSigningSession(outputs []OutputDetails, idx int) (*MusigSession, error) {
-	tree := outputs[idx].SwapTree
+func NewSigningSession(tree *SwapTree) (*MusigSession, error) {
 	ctx, err := musig2.NewContext(
 		tree.ourKey,
 		false,
@@ -34,7 +33,7 @@ func NewSigningSession(outputs []OutputDetails, idx int) (*MusigSession, error) 
 		return nil, err
 	}
 
-	return &MusigSession{session, outputs, idx}, nil
+	return &MusigSession{session, tree}, nil
 }
 
 func (session *MusigSession) Sign(hash []byte, boltzNonce []byte) (*PartialSignature, error) {
@@ -72,13 +71,19 @@ func (session *MusigSession) Sign(hash []byte, boltzNonce []byte) (*PartialSigna
 	}, nil
 }
 
-func (session *MusigSession) Finalize(transaction Transaction, network *Network, boltzSignature *PartialSignature) (err error) {
+func (session *MusigSession) Finalize(transaction Transaction, outputs []OutputDetails, network *Network, boltzSignature *PartialSignature) (err error) {
 	var hash []byte
-	isLiquid := session.outputs[session.idx].SwapTree.isLiquid
+	isLiquid := session.tree.isLiquid
+	idx := slices.IndexFunc(outputs, func(output OutputDetails) bool {
+		return output.SwapTree == session.tree
+	})
+	if idx == -1 {
+		return errors.New("outputs do not contain session swap tree")
+	}
 	if isLiquid {
-		hash = liquidTaprootHash(&transaction.(*LiquidTransaction).Transaction, network, session.outputs, session.idx, true)
+		hash = liquidTaprootHash(&transaction.(*LiquidTransaction).Transaction, network, outputs, idx, true)
 	} else {
-		hash, err = btcTaprootHash(transaction, session.outputs, session.idx)
+		hash, err = btcTaprootHash(transaction, outputs, idx)
 	}
 	if err != nil {
 		return err
@@ -103,10 +108,10 @@ func (session *MusigSession) Finalize(transaction Transaction, network *Network,
 	signature := session.FinalSig().Serialize()
 	if isLiquid {
 		tx := transaction.(*LiquidTransaction)
-		tx.Transaction.Inputs[session.idx].Witness = liquidtx.TxWitness{signature}
+		tx.Transaction.Inputs[idx].Witness = liquidtx.TxWitness{signature}
 	} else {
 		tx := transaction.(*BtcTransaction)
-		tx.MsgTx().TxIn[session.idx].Witness = wire.TxWitness{signature}
+		tx.MsgTx().TxIn[idx].Witness = wire.TxWitness{signature}
 	}
 	return nil
 }

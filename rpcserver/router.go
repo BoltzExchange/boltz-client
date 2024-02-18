@@ -280,7 +280,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		From:            pair.From,
 		To:              pair.To,
 		PairHash:        submarinePair.Hash,
-		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
+		RefundPublicKey: publicKey.SerializeCompressed(),
 		ReferralId:      referralId,
 	}
 
@@ -297,13 +297,13 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 			return nil, handleError(errors.New("cannot auto send if amount is 0"))
 		}
 		preimage, preimageHash, err = newPreimage()
-
-		logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
-
-		createSwap.PreimageHash = hex.EncodeToString(preimageHash)
 		if err != nil {
 			return nil, handleError(err)
 		}
+
+		logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
+
+		createSwap.PreimageHash = preimageHash
 	}
 
 	wallet, err := server.onchain.GetWallet(request.GetWallet(), pair.From, false)
@@ -342,7 +342,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		AutoSend:            request.AutoSend,
 	}
 
-	swap.ClaimPubKey, err = database.ParsePublicKey(response.ClaimPublicKey)
+	swap.ClaimPubKey, err = btcec.ParsePubKey([]byte(response.ClaimPublicKey))
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -356,7 +356,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 	}
 
 	if pair.From == boltz.CurrencyLiquid {
-		swap.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
+		swap.BlindingKey, _ = btcec.PrivKeyFromBytes(response.BlindingKey)
 
 		if err != nil {
 			return nil, handleError(err)
@@ -475,15 +475,15 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		To:             pair.To,
 		PairHash:       reversePair.Hash,
 		InvoiceAmount:  uint64(request.Amount),
-		PreimageHash:   hex.EncodeToString(preimageHash),
-		ClaimPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
+		PreimageHash:   preimageHash,
+		ClaimPublicKey: publicKey.SerializeCompressed(),
 		ReferralId:     referralId,
 	})
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	key, err := database.ParsePublicKey(response.RefundPublicKey)
+	key, err := btcec.ParsePubKey(response.RefundPublicKey)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -517,7 +517,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 
 	var blindingPubKey *btcec.PublicKey
 	if reverseSwap.Pair.To == boltz.CurrencyLiquid {
-		reverseSwap.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
+		reverseSwap.BlindingKey, _ = btcec.PrivKeyFromBytes(response.BlindingKey)
 		blindingPubKey = reverseSwap.BlindingKey.PubKey()
 
 		if err != nil {

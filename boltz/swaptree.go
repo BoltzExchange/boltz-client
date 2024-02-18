@@ -2,7 +2,6 @@ package boltz
 
 import (
 	"bytes"
-	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -248,17 +247,6 @@ func leafVersion(isLiuqid bool) txscript.TapscriptLeafVersion {
 		return leafVersionLiquid
 	}
 	return txscript.BaseLeafVersion
-}
-
-type HexString []byte
-
-func (s *HexString) UnmarshalText(data []byte) (err error) {
-	*s, err = hex.DecodeString(string(data))
-	return err
-}
-
-func (s *HexString) MarshalText() ([]byte, error) {
-	return []byte(hex.EncodeToString(*s)), nil
 }
 
 type SerializedLeaf struct {
