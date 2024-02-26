@@ -128,7 +128,14 @@ func getConnection(ctx *cli.Context) client.Connection {
 	tlsCert := ctx.String("tlscert")
 	macaroon := ctx.String("macaroon")
 
-	tlsCert = utils.ExpandDefaultPath(dataDir, tlsCert, "tls.cert")
+	if tlsCert == "" {
+		defaultPath := path.Join(dataDir, "tls.cert")
+		// only use the default path if it exists, since the server is probably running without tls
+		if utils.FileExists(defaultPath) {
+			tlsCert = defaultPath
+		}
+	}
+
 	macaroon = utils.ExpandDefaultPath(macaroonDir, macaroon, "admin.macaroon")
 
 	boltz := client.Connection{
