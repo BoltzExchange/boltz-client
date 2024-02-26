@@ -78,6 +78,11 @@ func main() {
 			Usage:   "Disables Macaroon authentication",
 			EnvVars: []string{"BOLTZ_NO_MACAROONS"},
 		},
+		&cli.BoolFlag{
+			Name:    "no-tls",
+			Usage:   "Disables tls authentication",
+			EnvVars: []string{"BOLTZ_NO_TLS"},
+		},
 		&cli.StringFlag{
 			Name:    "macaroon",
 			Value:   "",
@@ -128,7 +133,14 @@ func getConnection(ctx *cli.Context) client.Connection {
 	tlsCert := ctx.String("tlscert")
 	macaroon := ctx.String("macaroon")
 
-	tlsCert = utils.ExpandDefaultPath(dataDir, tlsCert, "tls.cert")
+	if tlsCert == "" {
+		defaultPath := path.Join(dataDir, "tls.cert")
+		// only use the default path if it exists, since the server is probably running without tls
+		if utils.FileExists(defaultPath) {
+			tlsCert = defaultPath
+		}
+	}
+
 	macaroon = utils.ExpandDefaultPath(macaroonDir, macaroon, "admin.macaroon")
 
 	boltz := client.Connection{

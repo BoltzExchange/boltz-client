@@ -20,9 +20,11 @@ import (
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -211,11 +213,14 @@ func (server *RpcServer) Start() chan error {
 			restUrl := server.RestHost + ":" + strconv.Itoa(server.RestPort)
 			logger.Info("Starting REST server on: " + restUrl)
 
-			restCreds, err := getRestDialOptions(server.TlsCertPath)
-
-			if err != nil {
-				errChannel <- err
-				return
+			options := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+			var err error
+			if !server.NoTls {
+				options, err = getRestDialOptions(server.TlsCertPath)
+				if err != nil {
+					errChannel <- err
+					return
+				}
 			}
 
 			mux := runtime.NewServeMux()
@@ -232,9 +237,8 @@ func (server *RpcServer) Start() chan error {
 				context.Background(),
 				mux,
 				sanitizedRpcUrl,
-				restCreds,
+				options,
 			)
-
 			if err != nil {
 				errChannel <- err
 				return
@@ -242,10 +246,16 @@ func (server *RpcServer) Start() chan error {
 
 			httpServer = &http.Server{Addr: restUrl, Handler: mux}
 
-			if err := httpServer.ListenAndServeTLS(server.TlsCertPath, server.TlsKeyPath); err != nil {
-				if err.Error() != "http: Server closed" {
-					errChannel <- err
-				}
+			c := cors.AllowAll()
+			httpServer.Handler = c.Handler(httpServer.Handler)
+
+			if server.NoTls {
+				err = httpServer.ListenAndServe()
+			} else {
+				err = httpServer.ListenAndServeTLS(server.TlsCertPath, server.TlsKeyPath)
+			}
+			if err != nil && err.Error() != "http: Server closed" {
+				errChannel <- err
 			}
 			wg.Done()
 		}()
