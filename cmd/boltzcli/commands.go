@@ -899,6 +899,22 @@ func createSwap(ctx *cli.Context) error {
 	return swapInfoStream(ctx, swap.Id, false)
 }
 
+var refundSwapCommand = &cli.Command{
+	Name:      "refundswap",
+	Category:  "Swaps",
+	Usage:     "Refund a swap manually",
+	ArgsUsage: "id addresss",
+	Action:    requireNArgs(2, refundSwap),
+}
+
+func refundSwap(ctx *cli.Context) error {
+	client := getClient(ctx)
+	id := ctx.Args().First()
+	address := ctx.Args().Get(1)
+	_, err := client.RefundSwap(id, address)
+	return err
+}
+
 var createReverseSwapCommand = &cli.Command{
 	Name:      "createreverseswap",
 	Category:  "Swaps",

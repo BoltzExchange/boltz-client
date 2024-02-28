@@ -367,6 +367,13 @@ func (database *Database) SetSwapRefundTransactionId(swap *Swap, refundTransacti
 	return err
 }
 
+func (database *Database) SetSwapRefundRefundAddress(swap *Swap, refundAddress string) error {
+	swap.RefundAddress = refundAddress
+
+	_, err := database.Exec("UPDATE swaps SET refundAddress = ?  WHERE id = ?", refundAddress, swap.Id)
+	return err
+}
+
 func (database *Database) SetSwapOnchainFee(swap *Swap, onchainFee uint64) error {
 	swap.OnchainFee = &onchainFee
 

@@ -27,6 +27,7 @@ const (
 	Boltz_GetPairs_FullMethodName             = "/boltzrpc.Boltz/GetPairs"
 	Boltz_GetFeeEstimation_FullMethodName     = "/boltzrpc.Boltz/GetFeeEstimation"
 	Boltz_ListSwaps_FullMethodName            = "/boltzrpc.Boltz/ListSwaps"
+	Boltz_RefundSwap_FullMethodName           = "/boltzrpc.Boltz/RefundSwap"
 	Boltz_GetSwapInfo_FullMethodName          = "/boltzrpc.Boltz/GetSwapInfo"
 	Boltz_GetSwapInfoStream_FullMethodName    = "/boltzrpc.Boltz/GetSwapInfoStream"
 	Boltz_Deposit_FullMethodName              = "/boltzrpc.Boltz/Deposit"
@@ -68,6 +69,8 @@ type BoltzClient interface {
 	GetFeeEstimation(ctx context.Context, in *GetFeeEstimationRequest, opts ...grpc.CallOption) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
+	// Set the refund address of an existing submarine swap.
+	RefundSwap(ctx context.Context, in *RefundSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	// Returns the entire history of the swap if is still pending and streams updates in real time.
@@ -181,6 +184,15 @@ func (c *boltzClient) GetFeeEstimation(ctx context.Context, in *GetFeeEstimation
 func (c *boltzClient) ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error) {
 	out := new(ListSwapsResponse)
 	err := c.cc.Invoke(ctx, Boltz_ListSwaps_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) RefundSwap(ctx context.Context, in *RefundSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error) {
+	out := new(GetSwapInfoResponse)
+	err := c.cc.Invoke(ctx, Boltz_RefundSwap_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -395,6 +407,8 @@ type BoltzServer interface {
 	GetFeeEstimation(context.Context, *GetFeeEstimationRequest) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
+	// Set the refund address of an existing submarine swap.
+	RefundSwap(context.Context, *RefundSwapRequest) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
 	// Returns the entire history of the swap if is still pending and streams updates in real time.
@@ -467,6 +481,9 @@ func (UnimplementedBoltzServer) GetFeeEstimation(context.Context, *GetFeeEstimat
 }
 func (UnimplementedBoltzServer) ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSwaps not implemented")
+}
+func (UnimplementedBoltzServer) RefundSwap(context.Context, *RefundSwapRequest) (*GetSwapInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefundSwap not implemented")
 }
 func (UnimplementedBoltzServer) GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSwapInfo not implemented")
@@ -657,6 +674,24 @@ func _Boltz_ListSwaps_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).ListSwaps(ctx, req.(*ListSwapsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_RefundSwap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefundSwapRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).RefundSwap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_RefundSwap_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).RefundSwap(ctx, req.(*RefundSwapRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1022,6 +1057,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListSwaps",
 			Handler:    _Boltz_ListSwaps_Handler,
+		},
+		{
+			MethodName: "RefundSwap",
+			Handler:    _Boltz_RefundSwap_Handler,
 		},
 		{
 			MethodName: "GetSwapInfo",

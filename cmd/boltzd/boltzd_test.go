@@ -33,9 +33,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
+
+func requireCode(t *testing.T, err error, code codes.Code) {
+	assert.Equal(t, code, status.Code(err))
+}
 
 func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
@@ -302,11 +308,6 @@ func TestSwap(t *testing.T) {
 		To:   boltzrpc.Currency_BTC,
 	}
 
-	pairLiquid := &boltzrpc.Pair{
-		From: boltzrpc.Currency_LBTC,
-		To:   boltzrpc.Currency_BTC,
-	}
-
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
 		invoice, err := zpay32.Decode(swap.Invoice, &chaincfg.RegressionNetParams)
 		require.NoError(t, err)
@@ -515,10 +516,9 @@ func TestSwap(t *testing.T) {
 							require.Equal(t, int(refundFee), int(*infos[0].OnchainFee))
 						})
 
-						t.Run("Cooperative", func(t *testing.T) {
+						createFailedSwap := func(t *testing.T, refundAddress string) nextFunc {
 							cfg.Boltz.DisablePartialSignatures = false
 							amount := submarinePair.Limits.Minimal + 100
-							refundAddress := cli("getnewaddress")
 							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Pair:          pair,
 								RefundAddress: refundAddress,
@@ -528,6 +528,12 @@ func TestSwap(t *testing.T) {
 
 							stream := swapStream(t, client, swap.Id)
 							test.SendToAddress(cli, swap.Address, int64(amount))
+							return stream
+						}
+
+						t.Run("Cooperative", func(t *testing.T) {
+							refundAddress := cli("getnewaddress")
+							stream := createFailedSwap(t, refundAddress)
 
 							info := stream(boltzrpc.SwapState_REFUNDED).Swap
 							require.Zero(t, info.ServiceFee)
@@ -538,19 +544,47 @@ func TestSwap(t *testing.T) {
 							require.NoError(t, err)
 							require.Equal(t, int(refundFee), int(*info.OnchainFee))
 
-							checkTxOutAddress(t, chain, from, info.RefundTransactionId, "", true)
+							checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
 						})
 
-						t.Run("AddressRequired", func(t *testing.T) {
-							withoutWallet(t, client, func() {
-								_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-									Pair: pairLiquid,
+						t.Run("Manual", func(t *testing.T) {
+							if tc.from == boltzrpc.Currency_LBTC {
+								withoutWallet(t, client, func() {
+									stream := createFailedSwap(t, "")
+
+									info := stream(boltzrpc.SwapState_ERROR).Swap
+									refundAddress := cli("getnewaddress")
+
+									t.Run("Invalid", func(t *testing.T) {
+										_, err := client.RefundSwap(info.Id, "invalid")
+										requireCode(t, err, codes.InvalidArgument)
+
+										_, err = client.RefundSwap("invalid", refundAddress)
+										requireCode(t, err, codes.NotFound)
+									})
+
+									t.Run("Valid", func(t *testing.T) {
+										_, err := client.RefundSwap(info.Id, refundAddress)
+										require.NoError(t, err)
+
+										info = stream(boltzrpc.SwapState_REFUNDED).Swap
+										require.Zero(t, info.ServiceFee)
+
+										from := parseCurrency(pair.From)
+
+										refundFee, err := chain.GetTransactionFee(from, info.RefundTransactionId)
+										require.NoError(t, err)
+										assert.Equal(t, int(refundFee), int(*info.OnchainFee))
+
+										checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
+
+										_, err = client.RefundSwap(info.Id, refundAddress)
+										requireCode(t, err, codes.FailedPrecondition)
+									})
 								})
-								assert.Error(t, err)
-							})
+							}
 						})
 					})
-
 				})
 			}
 

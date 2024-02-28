@@ -46,7 +46,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 			if len(swapsToRefund) > 0 {
 				logger.Info("Found " + strconv.Itoa(len(swapsToRefund)) + " Swaps to refund at height " + strconv.FormatUint(uint64(newBlock.Height), 10))
 
-				if err := nursery.refundSwaps(swapsToRefund, false); err != nil {
+				if err := nursery.RefundSwaps(swapsToRefund, false); err != nil {
 					logger.Error("Could not refund Swaps: " + err.Error())
 				}
 			}
@@ -54,7 +54,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 	}()
 }
 
-func (nursery *Nursery) refundSwaps(swapsToRefund []database.Swap, cooperative bool) error {
+func (nursery *Nursery) RefundSwaps(swapsToRefund []database.Swap, cooperative bool) error {
 	currency := swapsToRefund[0].Pair.From
 
 	var refundedSwaps []database.Swap
@@ -351,7 +351,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
 
 	if err != nil {
-		handleError("Could not update status of Swap " + swap.Id + ": " + err.Error())
+		handleError(fmt.Sprintf("Could not update status of Swap %s to %s: %s", swap.Id, parsedStatus, err))
 		return
 	}
 
@@ -385,7 +385,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 		logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
-		if err := nursery.refundSwaps([]database.Swap{*swap}, true); err != nil {
+		if err := nursery.RefundSwaps([]database.Swap{*swap}, true); err != nil {
 			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 			return
 		}

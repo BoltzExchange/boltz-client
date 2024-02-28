@@ -207,6 +207,31 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 	return response, nil
 }
 
+func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzrpc.RefundSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
+	swap, err := server.database.QuerySwap(request.Id)
+	if err != nil {
+		return nil, handleError(status.Errorf(codes.NotFound, "swap not found"))
+	}
+
+	if swap.LockupTransactionId == "" || swap.RefundTransactionId != "" {
+		return nil, handleError(status.Errorf(codes.FailedPrecondition, "swap can not be refunded"))
+	}
+
+	if err := boltz.ValidateAddress(server.network, request.Address, swap.Pair.From); err != nil {
+		return nil, handleError(status.Errorf(codes.InvalidArgument, "invalid address"))
+	}
+
+	if err := server.database.SetSwapRefundRefundAddress(swap, request.Address); err != nil {
+		return nil, handleError(err)
+	}
+
+	if err := server.nursery.RefundSwaps([]database.Swap{*swap}, true); err != nil {
+		return nil, handleError(err)
+	}
+
+	return server.GetSwapInfo(ctx, &boltzrpc.GetSwapInfoRequest{Id: request.Id})
+}
+
 func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
 	swap, reverseSwap, err := server.database.QueryAnySwap(request.Id)
 	if err != nil {
@@ -320,9 +345,6 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 	if err != nil {
 		if request.AutoSend {
 			return nil, handleError(err)
-		}
-		if request.RefundAddress == "" {
-			return nil, handleError(fmt.Errorf("refund address is required if wallet is not available: %w", err))
 		}
 	}
 

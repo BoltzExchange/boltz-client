@@ -44,6 +44,11 @@ service Boltz {
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
 
     /*
+    Set the refund address of an existing submarine swap.
+    */
+    rpc RefundSwap (RefundSwapRequest) returns (GetSwapInfoResponse);
+
+    /*
     Gets all available information about a swap from the database.
     */
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
@@ -337,6 +342,10 @@ message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
     repeated CombinedChannelSwapInfo channel_creations = 2;
     repeated ReverseSwapInfo reverse_swaps = 3;
+}
+message RefundSwapRequest {
+    string id = 1;
+    string address = 2;
 }
 
 message GetSwapInfoRequest {
