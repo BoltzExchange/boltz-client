@@ -44,6 +44,14 @@ Fetches information about a specific pair for a reverse swap.
 | ------- | -------- |
 | [`Pair`](#boltzrpc.Pair) | [`ReversePair`](#boltzrpc.ReversePair) |
 
+#### GetPairs
+
+Fetches all available pairs for submarine and reverse swaps.
+
+| Request | Response |
+| ------- | -------- |
+| [`.google.protobuf.Empty`](#google.protobuf.Empty) | [`GetPairsResponse`](#boltzrpc.GetPairsResponse) |
+
 #### GetFeeEstimation
 
 Fetches the latest limits and fees from the Boltz backend API it is connected to.
@@ -511,6 +519,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### <div id="boltzrpc.GetPairsResponse">GetPairsResponse</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `submarine` | [`SubmarinePair`](#boltzrpc.SubmarinePair) | repeated |  |
+| `reverse` | [`ReversePair`](#boltzrpc.ReversePair) | repeated |  |
+
+
+
+
+
 #### <div id="boltzrpc.GetServiceInfoRequest">GetServiceInfoRequest</div>
 
 
@@ -546,18 +567,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `current` | [`uint64`](#uint64) | optional |  |
 | `subaccounts` | [`Subaccount`](#boltzrpc.Subaccount) | repeated |  |
-
-
-
-
-
-#### <div id="boltzrpc.GetSubmarinePairsResponse">GetSubmarinePairsResponse</div>
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pairs` | [`SubmarinePair`](#boltzrpc.SubmarinePair) | repeated |  |
 
 
 
@@ -1066,8 +1075,8 @@ Submarine Pair
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| Btc | 0 |  |
-| Liquid | 1 |  |
+| BTC | 0 |  |
+| LBTC | 1 |  |
 
 
 <a name="boltzrpc.SwapState"></a>

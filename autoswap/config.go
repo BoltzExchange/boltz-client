@@ -292,17 +292,17 @@ func (cfg *Config) StrategyName() string {
 }
 
 func (cfg *Config) GetPair(swapType boltz.SwapType) *boltzrpc.Pair {
-	currency := boltzrpc.Currency_Btc
+	currency := boltzrpc.Currency_BTC
 	if cfg.Currency == boltz.CurrencyLiquid {
-		currency = boltzrpc.Currency_Liquid
+		currency = boltzrpc.Currency_LBTC
 	}
 	result := &boltzrpc.Pair{}
 	switch swapType {
 	case boltz.NormalSwap:
 		result.From = currency
-		result.To = boltzrpc.Currency_Btc
+		result.To = boltzrpc.Currency_BTC
 	case boltz.ReverseSwap:
-		result.From = boltzrpc.Currency_Btc
+		result.From = boltzrpc.Currency_BTC
 		result.To = currency
 	}
 	return result

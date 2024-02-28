@@ -23,6 +23,10 @@ func (boltz *Boltz) GetInfo() (*boltzrpc.GetInfoResponse, error) {
 	return boltz.Client.GetInfo(boltz.Ctx, &boltzrpc.GetInfoRequest{})
 }
 
+func (boltz *Boltz) GetPairs() (*boltzrpc.GetPairsResponse, error) {
+	return boltz.Client.GetPairs(boltz.Ctx, &empty.Empty{})
+}
+
 func (boltz *Boltz) GetSubmarinePair(pair *boltzrpc.Pair) (*boltzrpc.SubmarinePair, error) {
 	return boltz.Client.GetSubmarinePair(boltz.Ctx, pair)
 }
