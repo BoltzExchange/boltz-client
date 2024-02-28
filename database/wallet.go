@@ -56,6 +56,8 @@ func parseWalletCredentials(rows *sql.Rows) (*wallet.Credentials, error) {
 }
 
 func (d *Database) GetWalletCredentials(name string) (*wallet.Credentials, error) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	query := "SELECT * FROM wallets WHERE name = ?"
 	rows, err := d.Query(query, name)
 	if err != nil {
@@ -69,6 +71,8 @@ func (d *Database) GetWalletCredentials(name string) (*wallet.Credentials, error
 }
 
 func (d *Database) QueryWalletCredentials() ([]*wallet.Credentials, error) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	query := "SELECT * FROM wallets"
 	rows, err := d.Query(query)
 	if err != nil {
