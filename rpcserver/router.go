@@ -288,7 +288,14 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 	}
 
 	var preimage, preimageHash []byte
-	if request.Amount != 0 {
+	if request.GetInvoice() != "" {
+		invoice, err := zpay32.Decode(request.GetInvoice(), server.network.Btc)
+		if err != nil {
+			return nil, handleError(fmt.Errorf("invalid invoice: %w", err))
+		}
+		preimageHash = invoice.PaymentHash[:]
+		createSwap.Invoice = request.GetInvoice()
+	} else if request.Amount != 0 {
 		invoice, err := server.lightning.CreateInvoice(request.Amount, nil, 0, utils.GetSwapMemo(string(pair.From)))
 		if err != nil {
 			return nil, handleError(err)

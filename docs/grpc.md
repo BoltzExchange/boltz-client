@@ -375,6 +375,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `auto_send` | [`bool`](#bool) |  |  |
 | `refund_address` | [`string`](#string) |  |  |
 | `wallet` | [`string`](#string) | optional |  |
+| `invoice` | [`string`](#string) | optional |  |
 
 
 
