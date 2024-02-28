@@ -46,7 +46,7 @@ Fetches information about a specific pair for a reverse swap.
 
 #### GetPairs
 
-Fetches all aaailable pairs for submarine and reverse swaps.
+Fetches all available pairs for submarine and reverse swaps.
 
 | Request | Response |
 | ------- | -------- |

@@ -62,7 +62,7 @@ type BoltzClient interface {
 	GetSubmarinePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*SubmarinePair, error)
 	// Fetches information about a specific pair for a reverse swap.
 	GetReversePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ReversePair, error)
-	// Fetches all aaailable pairs for submarine and reverse swaps.
+	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
 	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetFeeEstimation(ctx context.Context, in *GetFeeEstimationRequest, opts ...grpc.CallOption) (*GetFeeEstimationResponse, error)
@@ -389,7 +389,7 @@ type BoltzServer interface {
 	GetSubmarinePair(context.Context, *Pair) (*SubmarinePair, error)
 	// Fetches information about a specific pair for a reverse swap.
 	GetReversePair(context.Context, *Pair) (*ReversePair, error)
-	// Fetches all aaailable pairs for submarine and reverse swaps.
+	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(context.Context, *emptypb.Empty) (*GetPairsResponse, error)
 	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetFeeEstimation(context.Context, *GetFeeEstimationRequest) (*GetFeeEstimationResponse, error)

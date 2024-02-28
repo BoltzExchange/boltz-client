@@ -29,7 +29,7 @@ service Boltz {
     rpc GetReversePair (Pair) returns (ReversePair);
 
     /*
-    Fetches all aaailable pairs for submarine and reverse swaps.
+    Fetches all available pairs for submarine and reverse swaps.
     */
     rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
 
