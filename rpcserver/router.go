@@ -149,7 +149,7 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *bolt
 }
 
 func ParseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
-	if grpcCurrency == boltzrpc.Currency_Btc {
+	if grpcCurrency == boltzrpc.Currency_BTC {
 		return boltz.CurrencyBtc
 	} else {
 		return boltz.CurrencyLiquid
@@ -157,6 +157,9 @@ func ParseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
 }
 
 func ParsePair(grpcPair *boltzrpc.Pair) (pair boltz.Pair) {
+	if grpcPair == nil {
+		return boltz.PairBtc
+	}
 	return boltz.Pair{
 		From: ParseCurrency(grpcPair.From),
 		To:   ParseCurrency(grpcPair.To),
@@ -245,8 +248,8 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
 	response, err := server.createSwap(false, &boltzrpc.CreateSwapRequest{
 		Pair: &boltzrpc.Pair{
-			From: boltzrpc.Currency_Btc,
-			To:   boltzrpc.Currency_Btc,
+			From: boltzrpc.Currency_BTC,
+			To:   boltzrpc.Currency_BTC,
 		},
 	})
 	if err != nil {
@@ -371,7 +374,6 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		return nil, handleError(err)
 	}
 
-	fmt.Println("address" + response.Address)
 	if err := swap.SwapTree.CheckAddress(response.Address, server.network, swap.BlindingPubKey()); err != nil {
 		return nil, handleError(err)
 	}
@@ -976,12 +978,12 @@ func (server *routedBoltzServer) getOwnWallet(name string, readonly bool) (*wall
 	return wallet, nil
 }
 
-func findPair[T any](pair boltz.Pair, nested map[string]map[string]T) (*T, error) {
-	from, hasPair := nested[string(pair.From)]
+func findPair[T any](pair boltz.Pair, nested map[boltz.Currency]map[boltz.Currency]T) (*T, error) {
+	from, hasPair := nested[pair.From]
 	if !hasPair {
 		return nil, fmt.Errorf("could not find pair from %v", pair)
 	}
-	result, hasPair := from[string(pair.To)]
+	result, hasPair := from[pair.To]
 	if !hasPair {
 		return nil, fmt.Errorf("could not find pair to %v", pair)
 	}
@@ -993,24 +995,13 @@ func (server *routedBoltzServer) GetSubmarinePair(ctx context.Context, request *
 	if err != nil {
 		return nil, handleError(err)
 	}
-	pair, err := findPair(ParsePair(request), pairsResponse)
+	pair := ParsePair(request)
+	submarinePair, err := findPair(pair, pairsResponse)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	return &boltzrpc.SubmarinePair{
-		Hash: pair.Hash,
-		Rate: float32(pair.Rate),
-		Fees: &boltzrpc.SubmarinePair_Fees{
-			Percentage: float32(pair.Fees.Percentage),
-			MinerFees:  pair.Fees.MinerFees,
-		},
-		Limits: &boltzrpc.Limits{
-			Minimal:               pair.Limits.Minimal,
-			Maximal:               pair.Limits.Maximal,
-			MaximalZeroConfAmount: pair.Limits.MaximalZeroConfAmount,
-		},
-	}, nil
+	return serializeSubmarinePair(pair, submarinePair), nil
 }
 
 func (server *routedBoltzServer) GetReversePair(ctx context.Context, request *boltzrpc.Pair) (*boltzrpc.ReversePair, error) {
@@ -1018,26 +1009,52 @@ func (server *routedBoltzServer) GetReversePair(ctx context.Context, request *bo
 	if err != nil {
 		return nil, err
 	}
-	pair, err := findPair(ParsePair(request), pairsResponse)
+	pair := ParsePair(request)
+	reversePair, err := findPair(pair, pairsResponse)
 	if err != nil {
 		return nil, err
 	}
 
-	return &boltzrpc.ReversePair{
-		Hash: pair.Hash,
-		Rate: float32(pair.Rate),
-		Fees: &boltzrpc.ReversePair_Fees{
-			Percentage: float32(pair.Fees.Percentage),
-			MinerFees: &boltzrpc.ReversePair_Fees_MinerFees{
-				Lockup: pair.Fees.MinerFees.Lockup,
-				Claim:  pair.Fees.MinerFees.Claim,
-			},
-		},
-		Limits: &boltzrpc.Limits{
-			Minimal: pair.Limits.Minimal,
-			Maximal: pair.Limits.Maximal,
-		},
-	}, nil
+	return serializeReversePair(pair, reversePair), nil
+}
+
+func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltzrpc.GetPairsResponse, error) {
+	response := &boltzrpc.GetPairsResponse{}
+
+	submarinePairs, err := server.boltz.GetSubmarinePairs()
+	if err != nil {
+		return nil, err
+	}
+
+	for from, p := range submarinePairs {
+		for to, pair := range p {
+			if from != boltz.CurrencyRootstock {
+				response.Submarine = append(response.Submarine, serializeSubmarinePair(boltz.Pair{
+					From: from,
+					To:   to,
+				}, &pair))
+			}
+		}
+	}
+
+	reversePairs, err := server.boltz.GetReversePairs()
+	if err != nil {
+		return nil, err
+	}
+
+	for from, p := range reversePairs {
+		for to, pair := range p {
+			if to != boltz.CurrencyRootstock {
+				response.Reverse = append(response.Reverse, serializeReversePair(boltz.Pair{
+					From: from,
+					To:   to,
+				}, &pair))
+			}
+		}
+	}
+
+	return response, nil
+
 }
 
 func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *boltzrpc.Limits, error) {

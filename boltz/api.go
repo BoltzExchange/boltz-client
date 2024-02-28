@@ -71,7 +71,7 @@ type SubmarinePair struct {
 	} `json:"fees"`
 }
 
-type SubmarinePairs map[string]map[string]SubmarinePair
+type SubmarinePairs map[Currency]map[Currency]SubmarinePair
 
 type ReversePair struct {
 	Hash   string  `json:"hash"`
@@ -89,7 +89,7 @@ type ReversePair struct {
 	} `json:"fees"`
 }
 
-type ReversePairs map[string]map[string]ReversePair
+type ReversePairs map[Currency]map[Currency]ReversePair
 
 type symbolMinerFees struct {
 	Normal  uint64 `json:"normal"`

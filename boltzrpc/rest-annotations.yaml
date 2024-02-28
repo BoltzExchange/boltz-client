@@ -6,6 +6,9 @@ http:
     - selector: boltzrpc.Boltz.GetInfo
       get: "/v1/info"
 
+    - selector: boltzrpc.Boltz.GetPairs
+      get: "/v1/pairs"
+
     - selector: boltzrpc.Boltz.GetServiceInfo
       get: "/v1/serviceinfo"
 
@@ -14,6 +17,9 @@ http:
 
     - selector: boltzrpc.Boltz.GetSwapInfo
       get: "/v1/swap/{id}"
+
+    - selector: boltzrpc.Boltz.GetSwapInfoStream
+      get: "/v1/swap/{id}/stream"
 
     - selector: boltzrpc.Boltz.Deposit
       post: "/v1/deposit"
@@ -30,3 +36,6 @@ http:
     - selector: boltzrpc.Boltz.CreateReverseSwap
       post: "/v1/createreverseswap"
       body: "*"
+
+    - selector: boltzrpc.Boltz.GetWallets
+      get: "/v1/wallets"

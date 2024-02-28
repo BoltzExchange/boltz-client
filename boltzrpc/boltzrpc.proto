@@ -29,6 +29,11 @@ service Boltz {
     rpc GetReversePair (Pair) returns (ReversePair);
 
     /*
+    Fetches all aaailable pairs for submarine and reverse swaps.
+    */
+    rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
+
+    /*
     Fetches the latest limits and fees from the Boltz backend API it is connected to.
     */
     rpc GetFeeEstimation (GetFeeEstimationRequest) returns (GetFeeEstimationResponse);
@@ -152,8 +157,8 @@ enum SwapState {
 }
 
 enum Currency {
-    Btc = 0;
-    Liquid = 1;
+    BTC = 0;
+    LBTC = 1;
 }
 
 message Pair {
@@ -290,8 +295,9 @@ message ReversePair {
     Fees fees = 5;
 }
 
-message GetSubmarinePairsResponse {
-    repeated SubmarinePair pairs = 1;
+message GetPairsResponse {
+    repeated SubmarinePair submarine = 1;
+    repeated ReversePair reverse = 2;
 }
 
 message MinerFees {

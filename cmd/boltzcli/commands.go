@@ -818,7 +818,7 @@ func createSwap(ctx *cli.Context) error {
 
 	pair := &boltzrpc.Pair{
 		From: getCurrency(ctx),
-		To:   boltzrpc.Currency_Btc,
+		To:   boltzrpc.Currency_BTC,
 	}
 
 	autoSend := ctx.Bool("auto-send")
@@ -908,14 +908,14 @@ var createReverseSwapCommand = &cli.Command{
 
 func parseCurrency(currency string) boltzrpc.Currency {
 	if strings.EqualFold(currency, "L-BTC") {
-		return boltzrpc.Currency_Liquid
+		return boltzrpc.Currency_LBTC
 	}
-	return boltzrpc.Currency_Btc
+	return boltzrpc.Currency_BTC
 }
 
 func getCurrency(ctx *cli.Context) boltzrpc.Currency {
 	if ctx.Bool("liquid") {
-		return boltzrpc.Currency_Liquid
+		return boltzrpc.Currency_LBTC
 	}
 	return parseCurrency(ctx.String("currency"))
 }
@@ -926,7 +926,7 @@ func createReverseSwap(ctx *cli.Context) error {
 	address := ctx.Args().Get(1)
 
 	pair := &boltzrpc.Pair{
-		From: boltzrpc.Currency_Btc,
+		From: boltzrpc.Currency_BTC,
 		To:   getCurrency(ctx),
 	}
 

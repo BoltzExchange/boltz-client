@@ -165,7 +165,7 @@ func (nursery *Nursery) startSwapListener() {
 				continue
 			}
 			if status.Error != "" {
-				logger.Warnf("Boltz could not find Swap %s: %s ", swap.Id, status.Error)
+				logger.Warnf("Boltz could not find Swap %s: %s ", status.Id, status.Error)
 				continue
 			}
 			if swap != nil {

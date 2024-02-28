@@ -214,6 +214,18 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
+func TestGetPairs(t *testing.T) {
+	cfg := loadConfig(t)
+	client, _, stop := setup(t, cfg, "")
+	defer stop()
+
+	info, err := client.GetPairs()
+
+	require.NoError(t, err)
+	require.Len(t, info.Submarine, 2)
+	require.Len(t, info.Reverse, 2)
+}
+
 func checkTxOutAddress(t *testing.T, chain onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
 	transaction, err := chain.GetTransaction(currency, txId, nil)
 	require.NoError(t, err)
@@ -265,7 +277,7 @@ func checkTxOutAddress(t *testing.T, chain onchain.Onchain, currency boltz.Curre
 }
 
 func parseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
-	if grpcCurrency == boltzrpc.Currency_Btc {
+	if grpcCurrency == boltzrpc.Currency_BTC {
 		return boltz.CurrencyBtc
 	} else {
 		return boltz.CurrencyLiquid
@@ -286,13 +298,13 @@ func TestSwap(t *testing.T) {
 	}
 
 	pairBtc := &boltzrpc.Pair{
-		From: boltzrpc.Currency_Btc,
-		To:   boltzrpc.Currency_Btc,
+		From: boltzrpc.Currency_BTC,
+		To:   boltzrpc.Currency_BTC,
 	}
 
 	pairLiquid := &boltzrpc.Pair{
-		From: boltzrpc.Currency_Liquid,
-		To:   boltzrpc.Currency_Btc,
+		From: boltzrpc.Currency_LBTC,
+		To:   boltzrpc.Currency_BTC,
 	}
 
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
@@ -353,15 +365,15 @@ func TestSwap(t *testing.T) {
 				from boltzrpc.Currency
 				cli  func(string) string
 			}{
-				{"BTC", boltzrpc.Currency_Btc, test.BtcCli},
-				{"Liquid", boltzrpc.Currency_Liquid, test.LiquidCli},
+				{"BTC", boltzrpc.Currency_BTC, test.BtcCli},
+				{"Liquid", boltzrpc.Currency_LBTC, test.LiquidCli},
 			}
 
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
 					pair := &boltzrpc.Pair{
 						From: tc.from,
-						To:   boltzrpc.Currency_Btc,
+						To:   boltzrpc.Currency_BTC,
 					}
 					client, _, stop := setup(t, cfg, "")
 					defer stop()
@@ -523,12 +535,12 @@ func TestReverseSwap(t *testing.T) {
 		recover         bool
 		disablePartials bool
 	}{
-		{desc: "BTC/Normal", to: boltzrpc.Currency_Btc, disablePartials: true},
-		{desc: "BTC/ZeroConf", to: boltzrpc.Currency_Btc, zeroConf: true, external: true},
-		{desc: "BTC/Recover", to: boltzrpc.Currency_Btc, zeroConf: true, recover: true},
-		{desc: "Liquid/Normal", to: boltzrpc.Currency_Liquid, disablePartials: true},
-		{desc: "Liquid/ZeroConf", to: boltzrpc.Currency_Liquid, zeroConf: true, external: true},
-		{desc: "Liquid/Recover", to: boltzrpc.Currency_Liquid, zeroConf: true, recover: true},
+		{desc: "BTC/Normal", to: boltzrpc.Currency_BTC, disablePartials: true},
+		{desc: "BTC/ZeroConf", to: boltzrpc.Currency_BTC, zeroConf: true, external: true},
+		{desc: "BTC/Recover", to: boltzrpc.Currency_BTC, zeroConf: true, recover: true},
+		{desc: "Liquid/Normal", to: boltzrpc.Currency_LBTC, disablePartials: true},
+		{desc: "Liquid/ZeroConf", to: boltzrpc.Currency_LBTC, zeroConf: true, external: true},
+		{desc: "Liquid/Recover", to: boltzrpc.Currency_LBTC, zeroConf: true, recover: true},
 	}
 
 	for _, node := range nodes {
@@ -546,7 +558,7 @@ func TestReverseSwap(t *testing.T) {
 					}
 
 					pair := &boltzrpc.Pair{
-						From: boltzrpc.Currency_Btc,
+						From: boltzrpc.Currency_BTC,
 						To:   tc.to,
 					}
 

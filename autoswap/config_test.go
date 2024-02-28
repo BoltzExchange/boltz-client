@@ -44,16 +44,16 @@ func TestGetPair(t *testing.T) {
 	cfg := DefaultConfig
 
 	pair := cfg.GetPair(boltz.NormalSwap)
-	require.Equal(t, boltzrpc.Currency_Liquid, pair.From)
-	require.Equal(t, boltzrpc.Currency_Btc, pair.To)
+	require.Equal(t, boltzrpc.Currency_LBTC, pair.From)
+	require.Equal(t, boltzrpc.Currency_BTC, pair.To)
 
 	pair = cfg.GetPair(boltz.ReverseSwap)
-	require.Equal(t, boltzrpc.Currency_Liquid, pair.To)
-	require.Equal(t, boltzrpc.Currency_Btc, pair.From)
+	require.Equal(t, boltzrpc.Currency_LBTC, pair.To)
+	require.Equal(t, boltzrpc.Currency_BTC, pair.From)
 
 	require.NoError(t, cfg.SetValue("Currency", "BTC"))
 
 	pair = cfg.GetPair(boltz.ReverseSwap)
-	require.Equal(t, boltzrpc.Currency_Btc, pair.To)
-	require.Equal(t, boltzrpc.Currency_Btc, pair.From)
+	require.Equal(t, boltzrpc.Currency_BTC, pair.To)
+	require.Equal(t, boltzrpc.Currency_BTC, pair.From)
 }

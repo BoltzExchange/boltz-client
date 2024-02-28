@@ -39,9 +39,9 @@ func serializeChanIds(chanIds []lightning.ChanId) (result []*boltzrpc.ChannelId)
 
 func serializeCurrency(currency boltz.Currency) boltzrpc.Currency {
 	if currency == boltz.CurrencyBtc {
-		return boltzrpc.Currency_Btc
+		return boltzrpc.Currency_BTC
 	} else {
-		return boltzrpc.Currency_Liquid
+		return boltzrpc.Currency_LBTC
 	}
 }
 
@@ -110,6 +110,42 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		ServiceFee:          serializedReverseSwap.ServiceFee,
 		OnchainFee:          serializedReverseSwap.OnchainFee,
 		RoutingFeeMsat:      serializedReverseSwap.RoutingFeeMsat,
+	}
+}
+
+func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair) *boltzrpc.SubmarinePair {
+	return &boltzrpc.SubmarinePair{
+		Pair: serializePair(pair),
+		Hash: submarinePair.Hash,
+		Rate: float32(submarinePair.Rate),
+		Fees: &boltzrpc.SubmarinePair_Fees{
+			Percentage: float32(submarinePair.Fees.Percentage),
+			MinerFees:  submarinePair.Fees.MinerFees,
+		},
+		Limits: &boltzrpc.Limits{
+			Minimal:               submarinePair.Limits.Minimal,
+			Maximal:               submarinePair.Limits.Maximal,
+			MaximalZeroConfAmount: submarinePair.Limits.MaximalZeroConfAmount,
+		},
+	}
+}
+
+func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *boltzrpc.ReversePair {
+	return &boltzrpc.ReversePair{
+		Pair: serializePair(pair),
+		Hash: reversePair.Hash,
+		Rate: float32(reversePair.Rate),
+		Fees: &boltzrpc.ReversePair_Fees{
+			Percentage: float32(reversePair.Fees.Percentage),
+			MinerFees: &boltzrpc.ReversePair_Fees_MinerFees{
+				Lockup: reversePair.Fees.MinerFees.Lockup,
+				Claim:  reversePair.Fees.MinerFees.Claim,
+			},
+		},
+		Limits: &boltzrpc.Limits{
+			Minimal: reversePair.Limits.Minimal,
+			Maximal: reversePair.Limits.Maximal,
+		},
 	}
 }
 
