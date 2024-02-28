@@ -134,11 +134,17 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 		IsAuto: isAuto,
 	}
 	if from := ctx.String("from"); from != "" {
-		currency := parseCurrency(from)
+		currency, err := parseCurrency(from)
+		if err != nil {
+			return err
+		}
 		request.From = &currency
 	}
 	if to := ctx.String("to"); to != "" {
-		currency := parseCurrency(to)
+		currency, err := parseCurrency(to)
+		if err != nil {
+			return err
+		}
 		request.To = &currency
 	}
 	if ctx.Bool("pending") {
@@ -574,7 +580,11 @@ func autoSwapSetup(ctx *cli.Context) error {
 	}
 
 	readonly := answers.Type != "reverse"
-	wallets, err := client.GetWallets(answers.Currency, readonly)
+	currency, err := parseCurrency(answers.Currency)
+	if err != nil {
+		return err
+	}
+	wallets, err := client.GetWallets(&currency, readonly)
 	if err != nil {
 		return err
 	}
@@ -610,7 +620,7 @@ func autoSwapSetup(ctx *cli.Context) error {
 
 		info := &boltzrpc.WalletInfo{
 			Name:     answers.Wallet,
-			Currency: answers.Currency,
+			Currency: currency,
 		}
 		if choice == createNew {
 			err = createWallet(ctx, info)
@@ -816,8 +826,13 @@ func createSwap(ctx *cli.Context) error {
 		return cli.ShowSubcommandHelp(ctx)
 	}
 
+	currency, err := getCurrency(ctx)
+	if err != nil {
+		return err
+	}
+
 	pair := &boltzrpc.Pair{
-		From: getCurrency(ctx),
+		From: currency,
 		To:   boltzrpc.Currency_BTC,
 	}
 
@@ -906,16 +921,19 @@ var createReverseSwapCommand = &cli.Command{
 	},
 }
 
-func parseCurrency(currency string) boltzrpc.Currency {
-	if strings.EqualFold(currency, "L-BTC") {
-		return boltzrpc.Currency_LBTC
+func parseCurrency(currency string) (boltzrpc.Currency, error) {
+	upper := strings.ToUpper(currency)
+	if upper == "L-BTC" || upper == "LBTC" {
+		return boltzrpc.Currency_LBTC, nil
+	} else if upper == "BTC" {
+		return boltzrpc.Currency_BTC, nil
 	}
-	return boltzrpc.Currency_BTC
+	return boltzrpc.Currency_BTC, fmt.Errorf("invalid currency: %s, allowed values: BTC, L-BTC", currency)
 }
 
-func getCurrency(ctx *cli.Context) boltzrpc.Currency {
+func getCurrency(ctx *cli.Context) (boltzrpc.Currency, error) {
 	if ctx.Bool("liquid") {
-		return boltzrpc.Currency_LBTC
+		return boltzrpc.Currency_LBTC, nil
 	}
 	return parseCurrency(ctx.String("currency"))
 }
@@ -925,9 +943,14 @@ func createReverseSwap(ctx *cli.Context) error {
 
 	address := ctx.Args().Get(1)
 
+	currency, err := getCurrency(ctx)
+	if err != nil {
+		return err
+	}
+
 	pair := &boltzrpc.Pair{
 		From: boltzrpc.Currency_BTC,
-		To:   getCurrency(ctx),
+		To:   currency,
 	}
 
 	amount := parseInt64(ctx.Args().First(), "amount")
@@ -984,7 +1007,11 @@ var walletCommands = &cli.Command{
 			Description: "Creates a new wallet for the specified currency and unique name.\n" +
 				"Currency has to be BTC or L-BTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
-				return createWallet(ctx, walletInfo(ctx))
+				info, err := walletInfo(ctx)
+				if err != nil {
+					return err
+				}
+				return createWallet(ctx, info)
 			}),
 		},
 		{
@@ -995,7 +1022,11 @@ var walletCommands = &cli.Command{
 				"You can either choose to import a full mnemonic to give the daemon full control over the wallet or import a readonly wallet using a xpub or core descriptor.\n" +
 				"Currency has to be BTC ot L-BTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
-				return importWallet(ctx, walletInfo(ctx), true)
+				info, err := walletInfo(ctx)
+				if err != nil {
+					return err
+				}
+				return importWallet(ctx, info, true)
 			}),
 		},
 		{
@@ -1157,11 +1188,15 @@ func checkCurrency(currency string) error {
 	return nil
 }
 
-func walletInfo(ctx *cli.Context) *boltzrpc.WalletInfo {
+func walletInfo(ctx *cli.Context) (*boltzrpc.WalletInfo, error) {
+	currency, err := parseCurrency(ctx.Args().Get(1))
+	if err != nil {
+		return nil, err
+	}
 	return &boltzrpc.WalletInfo{
 		Name:     ctx.Args().Get(0),
-		Currency: ctx.Args().Get(1),
-	}
+		Currency: currency,
+	}, nil
 }
 
 func checkWalletName(ctx *cli.Context, name string) error {
@@ -1181,13 +1216,9 @@ func importWallet(ctx *cli.Context, info *boltzrpc.WalletInfo, readonly bool) er
 		return err
 	}
 
-	if err := checkCurrency(info.Currency); err != nil {
-		return err
-	}
-
 	mnemonic := ""
 	importType := "mnemonic"
-	if strings.EqualFold(info.Currency, "BTC") && readonly {
+	if info.Currency == boltzrpc.Currency_BTC && readonly {
 		prompt := &survey.Select{
 			Message: "Which import type do you want to use?",
 			Options: []string{"mnemonic", "xpub", "core descriptor"},
@@ -1239,7 +1270,10 @@ func selectSubaccount(ctx *cli.Context) error {
 	s.Suffix = " Fetching subaccounts..."
 	s.Start()
 
-	walletInfo := walletInfo(ctx)
+	walletInfo, err := walletInfo(ctx)
+	if err != nil {
+		return err
+	}
 	subaccounts, err := client.GetSubaccounts(walletInfo)
 	s.Stop()
 	if err != nil {
@@ -1305,9 +1339,6 @@ func createWallet(ctx *cli.Context, info *boltzrpc.WalletInfo) error {
 	if err := checkWalletName(ctx, info.Name); err != nil {
 		return err
 	}
-	if err := checkCurrency(info.Currency); err != nil {
-		return err
-	}
 
 	password, err := askPassword(ctx, true)
 	if err != nil {
@@ -1345,7 +1376,7 @@ func showCredentials(ctx *cli.Context) error {
 
 func listWallets(ctx *cli.Context) error {
 	client := getClient(ctx)
-	wallets, err := client.GetWallets("", true)
+	wallets, err := client.GetWallets(nil, true)
 	if err != nil {
 		return err
 	}

@@ -463,7 +463,7 @@ message WalletCredentials {
 
 message WalletInfo {
     string name = 1;
-    string currency = 2;
+    Currency currency = 2;
 }
 
 message ImportWalletRequest {
@@ -493,7 +493,7 @@ message GetSubaccountsResponse {
 message ImportWalletResponse {}
 
 message GetWalletsRequest {
-    optional string currency = 1;
+    optional Currency currency = 1;
     optional bool include_readonly = 2;
 }
 
@@ -513,7 +513,7 @@ message RemoveWalletRequest {
 
 message Wallet {
     string name = 1;
-    string currency = 2;
+    Currency currency = 2;
     bool readonly = 3;
     Balance balance = 4;
 }
