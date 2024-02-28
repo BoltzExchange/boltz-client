@@ -1179,15 +1179,6 @@ func printSubaccount(info *boltzrpc.Subaccount) {
 	fmt.Printf("Balance: %s (%s unconfirmed)\n", utils.Satoshis(balance.Total), utils.Satoshis(balance.Unconfirmed))
 }
 
-func checkCurrency(currency string) error {
-	upper := strings.ToUpper(currency)
-	// TODO: allowed values should be retrieved from the server
-	if upper != "BTC" && upper != "L-BTC" {
-		return fmt.Errorf("invalid currency: %s, allowed values: BTC, L-BTC", currency)
-	}
-	return nil
-}
-
 func walletInfo(ctx *cli.Context) (*boltzrpc.WalletInfo, error) {
 	currency, err := parseCurrency(ctx.Args().Get(1))
 	if err != nil {
