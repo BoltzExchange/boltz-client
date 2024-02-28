@@ -70,7 +70,7 @@ Returns a list of all swaps, reverse swaps and channel creations in the database
 
 #### RefundSwap
 
-Set the refund address of an existing submarine swap.
+Refund a failed swap manually. This is only required when no refund address has been set or the daemon has no wallet for the currency.
 
 | Request | Response |
 | ------- | -------- |

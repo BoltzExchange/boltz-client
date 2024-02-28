@@ -69,7 +69,8 @@ type BoltzClient interface {
 	GetFeeEstimation(ctx context.Context, in *GetFeeEstimationRequest, opts ...grpc.CallOption) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
-	// Set the refund address of an existing submarine swap.
+	// Refund a failed swap manually.
+	// This is only required when no refund address has been set or the daemon has no wallet for the currency.
 	RefundSwap(ctx context.Context, in *RefundSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
@@ -407,7 +408,8 @@ type BoltzServer interface {
 	GetFeeEstimation(context.Context, *GetFeeEstimationRequest) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
-	// Set the refund address of an existing submarine swap.
+	// Refund a failed swap manually.
+	// This is only required when no refund address has been set or the daemon has no wallet for the currency.
 	RefundSwap(context.Context, *RefundSwapRequest) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
