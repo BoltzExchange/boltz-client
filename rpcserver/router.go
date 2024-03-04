@@ -638,11 +638,7 @@ func (server *routedBoltzServer) ImportWallet(context context.Context, request *
 		return nil, handleError(err)
 	}
 
-	currency, err := boltz.ParseCurrency(request.Info.Currency)
-	if err != nil {
-		return nil, handleError(err)
-	}
-
+	currency := ParseCurrency(request.Info.Currency)
 	credentials := &wallet.Credentials{
 		Name:           request.Info.Name,
 		Currency:       currency,
@@ -749,7 +745,7 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {
 	result := &boltzrpc.Wallet{
 		Name:     wal.Name(),
-		Currency: string(wal.Currency()),
+		Currency: serializeCurrency(wal.Currency()),
 		Readonly: wal.Readonly(),
 	}
 	balance, err := wal.GetBalance()
@@ -774,7 +770,7 @@ func (server *routedBoltzServer) GetWallet(_ context.Context, request *boltzrpc.
 
 func (server *routedBoltzServer) GetWallets(_ context.Context, request *boltzrpc.GetWalletsRequest) (*boltzrpc.Wallets, error) {
 	var response boltzrpc.Wallets
-	currency, _ := boltz.ParseCurrency(request.GetCurrency())
+	currency := ParseCurrency(request.GetCurrency())
 	for _, current := range server.onchain.Wallets {
 		if (currency == "" || current.Currency() == currency) && (!current.Readonly() || request.GetIncludeReadonly()) {
 			wallet, err := server.serializeWallet(current)

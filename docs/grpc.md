@@ -648,7 +648,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `currency` | [`string`](#string) | optional |  |
+| `currency` | [`Currency`](#boltzrpc.Currency) | optional |  |
 | `include_readonly` | [`bool`](#bool) | optional |  |
 
 
@@ -1016,7 +1016,7 @@ Submarine Pair
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) |  |  |
-| `currency` | [`string`](#string) |  |  |
+| `currency` | [`Currency`](#boltzrpc.Currency) |  |  |
 | `readonly` | [`bool`](#bool) |  |  |
 | `balance` | [`Balance`](#boltzrpc.Balance) |  |  |
 
@@ -1046,7 +1046,7 @@ Submarine Pair
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) |  |  |
-| `currency` | [`string`](#string) |  |  |
+| `currency` | [`Currency`](#boltzrpc.Currency) |  |  |
 
 
 

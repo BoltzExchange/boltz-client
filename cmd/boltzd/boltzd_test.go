@@ -49,7 +49,7 @@ func loadConfig(t *testing.T) *config.Config {
 
 var walletName = "regtest"
 var password = "password"
-var walletInfo = &boltzrpc.WalletInfo{Currency: "L-BTC", Name: walletName}
+var walletInfo = &boltzrpc.WalletInfo{Currency: boltzrpc.Currency_LBTC, Name: walletName}
 var credentials *wallet.Credentials
 
 func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, client.AutoSwap, func()) {
@@ -66,7 +66,7 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 
 	if credentials == nil {
 		var wallet *wallet.Wallet
-		wallet, credentials, err = test.InitTestWallet(boltz.Currency(walletInfo.Currency), false)
+		wallet, credentials, err = test.InitTestWallet(parseCurrency(walletInfo.Currency), false)
 		require.NoError(t, err)
 		credentials.Name = walletInfo.Name
 		require.NoError(t, wallet.Remove())
@@ -190,7 +190,7 @@ func withoutWallet(t *testing.T, client client.Boltz, run func()) {
 
 	_, err = client.ImportWallet(&boltzrpc.WalletInfo{
 		Name:     name,
-		Currency: "L-BTC",
+		Currency: boltzrpc.Currency_LBTC,
 	}, credentials, "")
 	require.NoError(t, err)
 }
@@ -949,7 +949,7 @@ func TestUnlock(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, credentials.Mnemonic, *c.Mnemonic)
 
-	second := &boltzrpc.WalletInfo{Currency: "L-BTC", Name: "new"}
+	second := &boltzrpc.WalletInfo{Currency: boltzrpc.Currency_LBTC, Name: "new"}
 	_, err = client.CreateWallet(second, "wrong")
 	require.Error(t, err)
 
@@ -966,7 +966,7 @@ func TestCreateWalletWithPassword(t *testing.T) {
 	require.NoError(t, err)
 
 	// after creating one with a password, the first one will be encrypted aswell
-	second := &boltzrpc.WalletInfo{Name: "another", Currency: "BTC"}
+	second := &boltzrpc.WalletInfo{Name: "another", Currency: boltzrpc.Currency_BTC}
 	_, err = client.CreateWallet(second, password)
 	require.NoError(t, err)
 
@@ -990,7 +990,7 @@ func TestImportDuplicateCredentials(t *testing.T) {
 	require.NoError(t, err)
 
 	// after creating one with a password, the first one will be encrypted aswell
-	second := &boltzrpc.WalletInfo{Name: "another", Currency: "BTC"}
+	second := &boltzrpc.WalletInfo{Name: "another", Currency: boltzrpc.Currency_BTC}
 	_, err = client.ImportWallet(second, credentials, "")
 	require.Error(t, err)
 }
