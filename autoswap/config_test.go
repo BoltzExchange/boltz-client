@@ -9,22 +9,20 @@ import (
 )
 
 func TestGetConfigValue(t *testing.T) {
-	cfg := DefaultConfig
+	cfg := NewConfig(DefaultConfig())
 	value, err := cfg.GetValue("enabled")
 	require.NoError(t, err)
 	require.Equal(t, false, value)
 }
 
 func TestSetConfigValue(t *testing.T) {
-	cfg := DefaultConfig
+	cfg := NewConfig(DefaultConfig())
 
 	require.NoError(t, cfg.SetValue("Enabled", "true"))
 	require.Equal(t, true, cfg.Enabled)
 
 	require.NoError(t, cfg.SetValue("enabled", "false"))
 	require.Equal(t, false, cfg.Enabled)
-
-	require.Error(t, cfg.SetValue("Auto", "invalid"))
 
 	require.NoError(t, cfg.SetValue("Budget", "123"))
 	require.Equal(t, 123, int(cfg.Budget))
@@ -36,12 +34,15 @@ func TestSetConfigValue(t *testing.T) {
 
 	require.Error(t, cfg.SetValue("unknown", "123"))
 
-	// cant set unexported field
-	require.Error(t, cfg.SetValue("strategyName", "L-BTC"))
+	require.NoError(t, cfg.SetValue("Currency", "LBTC"))
+	require.Equal(t, boltzrpc.Currency_LBTC, cfg.Currency)
+
+	require.NoError(t, cfg.SetValue("Currency", "BTC"))
+	require.Equal(t, boltzrpc.Currency_BTC, cfg.Currency)
 }
 
 func TestGetPair(t *testing.T) {
-	cfg := DefaultConfig
+	cfg := NewConfig(DefaultConfig())
 
 	pair := cfg.GetPair(boltz.NormalSwap)
 	require.Equal(t, boltzrpc.Currency_LBTC, pair.From)

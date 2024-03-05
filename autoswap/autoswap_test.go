@@ -1,9 +1,10 @@
 package autoswap
 
 import (
-	"github.com/BoltzExchange/boltz-client/lightning"
 	"testing"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/lightning"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -20,7 +21,7 @@ func getTestDb(t *testing.T) *database.Database {
 	return db
 }
 
-func getSwapper(t *testing.T, cfg *Config) *AutoSwapper {
+func getSwapper(t *testing.T, cfg *SerializedConfig) *AutoSwapper {
 	swapper := &AutoSwapper{
 		ExecuteSwap: func(_ *boltzrpc.CreateSwapRequest) error {
 			return nil
@@ -43,9 +44,12 @@ func getSwapper(t *testing.T, cfg *Config) *AutoSwapper {
 
 		},
 	}
-	swapper.Init(getTestDb(t), nil, ".")
-	// don't call `LoadConfig` here because the test configs might not be completely valid
-	swapper.cfg = cfg
+	swapper.Init(getTestDb(t), nil, t.TempDir()+"/autoswap.toml")
+	if cfg.MaxBalancePercent == 0 && cfg.MinBalancePercent == 0 {
+		cfg.MinBalancePercent = 25
+		cfg.MaxBalancePercent = 75
+	}
+	require.NoError(t, swapper.SetConfig(cfg))
 	return swapper
 }
 
@@ -77,7 +81,7 @@ func TestBudget(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		config          *Config
+		config          *SerializedConfig
 		swaps           []database.Swap
 		reverseSwaps    []database.ReverseSwap
 		expected        int64
@@ -85,7 +89,7 @@ func TestBudget(t *testing.T) {
 	}{
 		{
 			name: "Normal Swaps",
-			config: &Config{
+			config: &SerializedConfig{
 				Budget:         100,
 				BudgetInterval: 1000,
 			},
@@ -96,7 +100,7 @@ func TestBudget(t *testing.T) {
 		},
 		{
 			name: "Reverse Swaps",
-			config: &Config{
+			config: &SerializedConfig{
 				Budget:         100,
 				BudgetInterval: 1000,
 			},
@@ -107,7 +111,7 @@ func TestBudget(t *testing.T) {
 		},
 		{
 			name: "Auto-Only",
-			config: &Config{
+			config: &SerializedConfig{
 				Budget:         100,
 				BudgetInterval: 1000,
 			},
@@ -118,7 +122,7 @@ func TestBudget(t *testing.T) {
 		},
 		{
 			name: "New",
-			config: &Config{
+			config: &SerializedConfig{
 				Budget:         100,
 				BudgetInterval: 1000,
 			},
@@ -164,7 +168,7 @@ func TestBudget(t *testing.T) {
 	}
 
 	t.Run("Missing", func(t *testing.T) {
-		swapper := getSwapper(t, &Config{})
+		swapper := getSwapper(t, &SerializedConfig{})
 		budget, err := swapper.GetCurrentBudget(false)
 		require.NoError(t, err)
 		require.Nil(t, budget)
@@ -197,7 +201,7 @@ func TestStrategies(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		config       *Config
+		config       *SerializedConfig
 		veverseSwaps []database.ReverseSwap
 		outcome      []*rawRecommendation
 		channels     []*lightning.LightningChannel
@@ -205,7 +209,7 @@ func TestStrategies(t *testing.T) {
 	}{
 		{
 			name: "PerChannel/Low",
-			config: &Config{
+			config: &SerializedConfig{
 				PerChannel:        true,
 				MaxBalancePercent: 60,
 				MinBalancePercent: 40,
@@ -225,7 +229,7 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "PerChannel/High",
-			config: &Config{
+			config: &SerializedConfig{
 				PerChannel:        true,
 				MaxBalancePercent: 75,
 				MinBalancePercent: 25,
@@ -240,17 +244,17 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "PerChannel/OnlyNormalSwap",
-			config: &Config{
+			config: &SerializedConfig{
 				PerChannel:        true,
 				MaxBalancePercent: 75,
 				MinBalancePercent: 25,
-				Type:              boltz.NormalSwap,
+				SwapType:          "normal",
 			},
 			outcome: nil,
 		},
 		{
 			name: "TotalBalance/Reverse",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxBalancePercent: 60,
 				MinBalancePercent: 40,
 			},
@@ -263,7 +267,7 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "TotalBalance/Normal",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxBalancePercent: 60,
 				MinBalancePercent: 40,
 			},
@@ -296,8 +300,8 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "TotalBalance/Max",
-			config: &Config{
-				Type:       boltz.ReverseSwap,
+			config: &SerializedConfig{
+				SwapType:   "reverse",
 				MaxBalance: 600,
 			},
 			outcome: []*rawRecommendation{
@@ -309,8 +313,8 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "TotalBalance/Min",
-			config: &Config{
-				Type:       boltz.NormalSwap,
+			config: &SerializedConfig{
+				SwapType:   "normal",
 				MinBalance: 400,
 			},
 			outcome: []*rawRecommendation{
@@ -329,7 +333,7 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "TotalBalance/Both/Above",
-			config: &Config{
+			config: &SerializedConfig{
 				MinBalance: 400,
 				MaxBalance: 600,
 			},
@@ -349,7 +353,7 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "TotalBalance/Both/Below",
-			config: &Config{
+			config: &SerializedConfig{
 				MinBalance: 400,
 				MaxBalance: 600,
 			},
@@ -369,7 +373,7 @@ func TestStrategies(t *testing.T) {
 		},
 		{
 			name: "TotalBalance/None",
-			config: &Config{
+			config: &SerializedConfig{
 				MinBalance: 400,
 				MaxBalance: 700,
 			},
@@ -380,11 +384,12 @@ func TestStrategies(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			require.NoError(t, tc.config.Init())
+			cfg := NewConfig(tc.config)
+			require.NoError(t, cfg.Init())
 			if tc.channels == nil {
 				tc.channels = channels
 			}
-			recommendations := tc.config.strategy(tc.channels)
+			recommendations := cfg.strategy(tc.channels)
 
 			require.Equal(t, tc.outcome, recommendations)
 		})
@@ -395,7 +400,7 @@ func TestStrategies(t *testing.T) {
 func TestDismissedChannels(t *testing.T) {
 	tests := []struct {
 		name         string
-		config       *Config
+		config       *SerializedConfig
 		channels     []*lightning.LightningChannel
 		swaps        []database.Swap
 		reverseSwaps []database.ReverseSwap
@@ -403,7 +408,7 @@ func TestDismissedChannels(t *testing.T) {
 	}{
 		{
 			name: "Pending Swaps",
-			config: &Config{
+			config: &SerializedConfig{
 				FailureBackoff: 1000,
 			},
 			swaps: []database.Swap{
@@ -435,7 +440,7 @@ func TestDismissedChannels(t *testing.T) {
 		},
 		{
 			name: "Failed Swaps",
-			config: &Config{
+			config: &SerializedConfig{
 				FailureBackoff: 1000,
 			},
 			swaps: []database.Swap{
@@ -489,13 +494,13 @@ func TestCheckSwapRecommendation(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		config         *Config
+		config         *SerializedConfig
 		recommendation *rawRecommendation
 		outcome        []string
 	}{
 		{
 			name: "MaxFeePercent/High",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxFeePercent: 25,
 			},
 			recommendation: &rawRecommendation{
@@ -506,7 +511,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 		},
 		{
 			name: "MaxFeePercent/High",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxFeePercent: 25,
 				Budget:        150,
 			},
@@ -519,7 +524,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 		},
 		{
 			name: "MaxFeePercent/Low",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxFeePercent: 10,
 			},
 			recommendation: &rawRecommendation{
@@ -530,7 +535,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 		},
 		{
 			name: "LowAmount",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxFeePercent: 25,
 			},
 			recommendation: &rawRecommendation{
@@ -541,7 +546,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 		},
 		{
 			name: "HighAmount",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxFeePercent: 25,
 			},
 			recommendation: &rawRecommendation{
@@ -552,7 +557,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 		},
 		{
 			name: "BudgetExceeded",
-			config: &Config{
+			config: &SerializedConfig{
 				MaxFeePercent: 25,
 				Budget:        10,
 			},

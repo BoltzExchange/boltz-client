@@ -148,26 +148,6 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *bolt
 	}, nil
 }
 
-func ParseCurrency(grpcCurrency *boltzrpc.Currency) boltz.Currency {
-	if grpcCurrency == nil {
-		return ""
-	} else if *grpcCurrency == boltzrpc.Currency_BTC {
-		return boltz.CurrencyBtc
-	} else {
-		return boltz.CurrencyLiquid
-	}
-}
-
-func ParsePair(grpcPair *boltzrpc.Pair) (pair boltz.Pair) {
-	if grpcPair == nil {
-		return boltz.PairBtc
-	}
-	return boltz.Pair{
-		From: ParseCurrency(&grpcPair.From),
-		To:   ParseCurrency(&grpcPair.To),
-	}
-}
-
 func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
 	response := &boltzrpc.ListSwapsResponse{}
 
@@ -177,12 +157,12 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 	}
 
 	if request.From != nil {
-		parsed := ParseCurrency(request.From)
+		parsed := utils.ParseCurrency(request.From)
 		args.From = &parsed
 	}
 
 	if request.To != nil {
-		parsed := ParseCurrency(request.To)
+		parsed := utils.ParseCurrency(request.To)
 		args.To = &parsed
 	}
 
@@ -299,7 +279,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		return nil, handleError(err)
 	}
 
-	pair := ParsePair(request.Pair)
+	pair := utils.ParsePair(request.Pair)
 
 	submarinePair, err := server.GetSubmarinePair(context.Background(), request.Pair)
 	if err != nil {
@@ -463,7 +443,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 
 	claimAddress := request.Address
 
-	pair := ParsePair(request.Pair)
+	pair := utils.ParsePair(request.Pair)
 	if claimAddress != "" {
 		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
 
@@ -669,7 +649,7 @@ func (server *routedBoltzServer) ImportWallet(context context.Context, request *
 		return nil, handleError(err)
 	}
 
-	currency := ParseCurrency(&request.Info.Currency)
+	currency := utils.ParseCurrency(&request.Info.Currency)
 	credentials := &wallet.Credentials{
 		Name:           request.Info.Name,
 		Currency:       currency,
@@ -801,7 +781,7 @@ func (server *routedBoltzServer) GetWallet(_ context.Context, request *boltzrpc.
 
 func (server *routedBoltzServer) GetWallets(_ context.Context, request *boltzrpc.GetWalletsRequest) (*boltzrpc.Wallets, error) {
 	var response boltzrpc.Wallets
-	currency := ParseCurrency(request.Currency)
+	currency := utils.ParseCurrency(request.Currency)
 	for _, current := range server.onchain.Wallets {
 		if (currency == "" || current.Currency() == currency) && (!current.Readonly() || request.GetIncludeReadonly()) {
 			wallet, err := server.serializeWallet(current)
@@ -1022,7 +1002,7 @@ func (server *routedBoltzServer) GetSubmarinePair(ctx context.Context, request *
 	if err != nil {
 		return nil, handleError(err)
 	}
-	pair := ParsePair(request)
+	pair := utils.ParsePair(request)
 	submarinePair, err := findPair(pair, pairsResponse)
 	if err != nil {
 		return nil, handleError(err)
@@ -1036,7 +1016,7 @@ func (server *routedBoltzServer) GetReversePair(ctx context.Context, request *bo
 	if err != nil {
 		return nil, err
 	}
-	pair := ParsePair(request)
+	pair := utils.ParsePair(request)
 	reversePair, err := findPair(pair, pairsResponse)
 	if err != nil {
 		return nil, err

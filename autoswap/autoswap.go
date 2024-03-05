@@ -1,15 +1,20 @@
 package autoswap
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"slices"
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/BurntSushi/toml"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -50,40 +55,23 @@ func (swapper *AutoSwapper) Init(database *database.Database, onchain *onchain.O
 	swapper.configPath = configPath
 }
 
-func (swapper *AutoSwapper) saveConfig() error {
-	return swapper.cfg.Write(swapper.configPath)
-}
-
-func (swapper *AutoSwapper) SetConfigValues(values map[string]any) error {
+func (swapper *AutoSwapper) SetConfigValue(name string, value any) error {
 	if err := swapper.requireConfig(); err != nil {
 		return err
 	}
-	cfg := *swapper.cfg
-	for field, value := range values {
-		logger.Debugf("Setting auto swap config field %v to %v", field, value)
-
-		if err := cfg.SetValue(field, value); err != nil {
-			return err
-		}
+	if err := swapper.cfg.SetValue(name, value); err != nil {
+		return err
 	}
-	return swapper.SetConfig(&cfg)
+	return swapper.setConfig(swapper.cfg)
 }
 
-func (swapper *AutoSwapper) SetConfigValue(field string, value any) error {
-	return swapper.SetConfigValues(map[string]any{field: value})
-}
-
-func (swapper *AutoSwapper) SetConfig(cfg *Config) error {
+func (swapper *AutoSwapper) setConfig(cfg *Config) error {
 	logger.Debugf("Setting auto swap config: %+v", cfg)
-	if err := cfg.Init(); err != nil {
-		return fmt.Errorf("invalid config: %w", err)
-	}
-
 	message := fmt.Sprintf("Using %v strategy to recommend swaps", cfg.strategyName)
-	if cfg.Type != "" {
-		message += " of type " + string(cfg.Type)
+	if cfg.swapType != "" {
+		message += " of type " + string(cfg.swapType)
 	}
-	message += " for currency " + string(cfg.Currency)
+	message += " for currency " + string(cfg.currency)
 
 	logger.Info(message)
 	swapper.cfg = cfg
@@ -97,26 +85,53 @@ func (swapper *AutoSwapper) SetConfig(cfg *Config) error {
 	return swapper.saveConfig()
 }
 
+func (swapper *AutoSwapper) SetConfig(values *autoswaprpc.Config) error {
+	cfg := NewConfig(values)
+	if err := cfg.Init(); err != nil {
+		return fmt.Errorf("invalid config: %w", err)
+	}
+	return swapper.setConfig(cfg)
+}
+
 func (swapper *AutoSwapper) LoadConfig() error {
-	var cfg Config
 	var err error
 
 	if !utils.FileExists(swapper.configPath) {
 		return nil
-	} else {
-		if _, err = toml.DecodeFile(swapper.configPath, &cfg); err != nil {
-			err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
-		}
+	}
+	var cfgToml any
+	if _, err = toml.DecodeFile(swapper.configPath, &cfgToml); err != nil {
+		err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
+	}
+	cfgJson, _ := json.Marshal(cfgToml)
+	serialized := &SerializedConfig{}
+	if err := protojson.Unmarshal(cfgJson, serialized); err != nil {
+		err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
 	}
 
 	if err == nil {
-		err = swapper.SetConfig(&cfg)
+		err = swapper.SetConfig(serialized)
 	}
 	// only set error if we dont have a config yet
 	if err != nil && swapper.cfg == nil {
 		swapper.err = err
 	}
 	return err
+}
+
+func (swapper *AutoSwapper) saveConfig() error {
+	buf := new(bytes.Buffer)
+	marshaler := protojson.MarshalOptions{
+		EmitUnpopulated:   true,
+		EmitDefaultValues: true,
+	}
+	marshalled, _ := marshaler.Marshal(swapper.cfg.SerializedConfig)
+	var asJson any
+	json.Unmarshal(marshalled, &asJson)
+	if err := toml.NewEncoder(buf).Encode(asJson); err != nil {
+		return err
+	}
+	return os.WriteFile(swapper.configPath, buf.Bytes(), 0666)
 }
 
 func (swapper *AutoSwapper) requireConfig() error {
@@ -295,8 +310,8 @@ func (swapper *AutoSwapper) Start() error {
 	if err != nil {
 		logger.Info(err.Error())
 	}
-	normalSwaps := cfg.Type == "" || cfg.Type == boltz.NormalSwap
-	wallet, err := swapper.onchain.GetWallet(cfg.Wallet, cfg.Currency, !normalSwaps)
+	normalSwaps := cfg.swapType == "" || cfg.swapType == boltz.NormalSwap
+	wallet, err := swapper.onchain.GetWallet(cfg.Wallet, cfg.currency, !normalSwaps)
 	if wallet != nil {
 		if normalSwaps || address == "" {
 			address, err = wallet.NewAddress()
@@ -306,7 +321,7 @@ func (swapper *AutoSwapper) Start() error {
 			logger.Debugf("Got new address %v from wallet %v", address, wallet.Name())
 		}
 	} else if address == "" {
-		err = fmt.Errorf("neither external address or wallet is available for currency %s: %v", cfg.Currency, err)
+		err = fmt.Errorf("neither external address or wallet is available for currency %s: %v", cfg.currency, err)
 	} else if normalSwaps {
 		err = fmt.Errorf("normal swaps require a wallet: %v", err)
 	}

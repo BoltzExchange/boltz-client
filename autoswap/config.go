@@ -1,34 +1,40 @@
 package autoswap
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"os"
-	"reflect"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/utils"
-	"github.com/BurntSushi/toml"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
-var DefaultConfig Config = Config{
-	MaxBalancePercent:   75,
-	MinBalancePercent:   25,
-	FailureBackoff:      24 * 60 * 60,
-	Enabled:             false,
-	MaxFeePercent:       1,
-	ChannelPollInterval: 30,
-	Type:                "",
-	Currency:            boltz.CurrencyLiquid,
-	Budget:              100000,
-	BudgetInterval:      7 * 60 * 60 * 24,
+func withBase(config *autoswaprpc.Config) *autoswaprpc.Config {
+	base := &autoswaprpc.Config{
+		FailureBackoff:      24 * 60 * 60,
+		MaxFeePercent:       1,
+		ChannelPollInterval: 30,
+		Budget:              100000,
+		BudgetInterval:      7 * 60 * 60 * 24,
+	}
+	proto.Merge(base, config)
+	return base
+}
+
+func DefaultConfig() *autoswaprpc.Config {
+	return withBase(&autoswaprpc.Config{
+		MaxBalancePercent: 75,
+		MinBalancePercent: 25,
+		Currency:          boltzrpc.Currency_LBTC,
+	})
 }
 
 type Balance struct {
@@ -58,30 +64,22 @@ func (b Balance) String() string {
 	return b.Relative.String()
 }
 
-type Config struct {
-	Enabled             bool
-	ChannelPollInterval uint64
-	LiquidAddress       string
-	BitcoinAddress      string
-	MaxBalance          uint64
-	MinBalance          uint64
-	MaxBalancePercent   utils.Percentage
-	MinBalancePercent   utils.Percentage
-	MaxFeePercent       utils.Percentage
-	AcceptZeroConf      bool
-	FailureBackoff      uint64
-	Budget              uint64
-	BudgetInterval      uint64
-	Currency            boltz.Currency
-	Type                boltz.SwapType
-	PerChannel          bool
-	Wallet              string
-	MaxSwapAmount       uint64
+type SerializedConfig = autoswaprpc.Config
 
-	maxBalance   Balance
-	minBalance   Balance
-	strategy     Strategy
-	strategyName string
+type Config struct {
+	*SerializedConfig
+
+	maxFeePercent utils.Percentage
+	currency      boltz.Currency
+	swapType      boltz.SwapType
+	maxBalance    Balance
+	minBalance    Balance
+	strategy      Strategy
+	strategyName  string
+}
+
+func NewConfig(serialized *SerializedConfig) *Config {
+	return &Config{SerializedConfig: withBase(serialized)}
 }
 
 type DismissedChannels map[lightning.ChanId][]string
@@ -96,13 +94,21 @@ func (dismissed DismissedChannels) addChannels(chanIds []lightning.ChanId, reaso
 }
 
 func (cfg *Config) Init() error {
+	var err error
+	cfg.swapType, err = boltz.ParseSwapType(cfg.SwapType)
+	if err != nil {
+		return fmt.Errorf("invalid swap type: %w", err)
+	}
+
+	cfg.currency = utils.ParseCurrency(&cfg.Currency)
+	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
 	cfg.maxBalance = Balance{Absolute: cfg.MaxBalance}
 	cfg.minBalance = Balance{Absolute: cfg.MinBalance}
 
 	// Only consider relative values if absolute values are not set
 	if cfg.MaxBalance == 0 && cfg.MinBalance == 0 {
-		cfg.maxBalance.Relative = cfg.MaxBalancePercent
-		cfg.minBalance.Relative = cfg.MinBalancePercent
+		cfg.maxBalance.Relative = utils.Percentage(cfg.MaxBalancePercent)
+		cfg.minBalance.Relative = utils.Percentage(cfg.MinBalancePercent)
 	}
 
 	if cfg.minBalance.IsZero() && cfg.maxBalance.IsZero() {
@@ -113,14 +119,6 @@ func (cfg *Config) Init() error {
 		if cfg.minBalance.Get(1) > cfg.maxBalance.Get(1) {
 			return errors.New("min balance must be smaller than max balance")
 		}
-	}
-
-	if cfg.Budget == 0 {
-		cfg.Budget = DefaultConfig.Budget
-	}
-
-	if cfg.BudgetInterval == 0 {
-		cfg.BudgetInterval = DefaultConfig.BudgetInterval
 	}
 
 	if cfg.PerChannel {
@@ -135,12 +133,12 @@ func (cfg *Config) Init() error {
 	}
 
 	if cfg.minBalance.IsZero() {
-		if cfg.Type != boltz.ReverseSwap {
+		if cfg.swapType != boltz.ReverseSwap {
 			return errors.New("min balance must be set for normal swaps")
 		}
 		cfg.strategyName += fmt.Sprintf(" (max %s)", cfg.maxBalance)
 	} else if cfg.maxBalance.IsZero() {
-		if cfg.Type != boltz.NormalSwap {
+		if cfg.swapType != boltz.NormalSwap {
 			return errors.New("max balance must be set for reverse swaps")
 		}
 		cfg.strategyName += fmt.Sprintf(" (min %s)", cfg.minBalance)
@@ -148,143 +146,106 @@ func (cfg *Config) Init() error {
 		cfg.strategyName += fmt.Sprintf(" (min %s, max %s)", cfg.minBalance, cfg.maxBalance)
 	}
 
-	switch strings.ToUpper(string(cfg.Currency)) {
-	case string(boltz.CurrencyBtc):
-		cfg.Currency = boltz.CurrencyBtc
-	case string(boltz.CurrencyLiquid), "":
-		cfg.Currency = boltz.CurrencyLiquid
-	default:
-		return errors.New("invalid currency")
-	}
-
 	return nil
 }
 
 func (cfg *Config) GetAddress(network *boltz.Network) (address string, err error) {
-	if cfg.Currency == boltz.CurrencyLiquid && cfg.LiquidAddress != "" {
+	if cfg.currency == boltz.CurrencyLiquid && cfg.LiquidAddress != "" {
 		address = cfg.LiquidAddress
-	} else if cfg.Currency == boltz.CurrencyBtc && cfg.BitcoinAddress != "" {
+	} else if cfg.currency == boltz.CurrencyBtc && cfg.BitcoinAddress != "" {
 		address = cfg.BitcoinAddress
 	}
 	if address == "" {
-		return "", errors.New("No address for Currency " + string(cfg.Currency))
+		return "", errors.New("No address for Currency " + string(cfg.currency))
 	}
-	err = boltz.ValidateAddress(network, address, cfg.Currency)
+	err = boltz.ValidateAddress(network, address, cfg.currency)
 	if err != nil {
-		return "", errors.New("Invalid address for Currency " + string(cfg.Currency) + " :" + err.Error())
+		return "", errors.New("Invalid address for Currency " + string(cfg.currency) + " :" + err.Error())
 	}
 	return address, nil
 }
 
-func (cfg *Config) getField(field string) *reflect.Value {
-	ps := reflect.ValueOf(cfg)
-	// struct
-	s := ps.Elem()
-	for i := 0; i < s.NumField(); i++ {
-		structField := s.Type().Field(i)
-		f := s.Field(i)
-		if f.IsValid() && structField.IsExported() && strings.EqualFold(field, structField.Name) {
-			return &f
+func (cfg *Config) getField(name string) (protoreflect.FieldDescriptor, error) {
+	reflect := cfg.SerializedConfig.ProtoReflect()
+	fields := reflect.Descriptor().Fields()
+	for i := 0; i < fields.Len(); i++ {
+		field := fields.Get(i)
+		if strings.EqualFold(name, string(field.JSONName())) {
+			return field, nil
 		}
 	}
-	return nil
+	return nil, errors.New("Unknown field")
 }
 
-func (cfg *Config) GetValue(field string) (any, error) {
-	f := cfg.getField(field)
-	if f == nil {
-		return "", errors.New("Unknown field")
+func (cfg *Config) GetValue(name string) (any, error) {
+	field, err := cfg.getField(name)
+	if err != nil {
+		return "", err
 	}
-	return f.Interface(), nil
+
+	return cfg.SerializedConfig.ProtoReflect().Get(field).Interface(), nil
 }
 
-func (cfg *Config) SetValue(field string, value any) error {
-	f := cfg.getField(field)
-	if f == nil {
-		return errors.New("Unknown field")
-	}
-	// A Value can be changed only if it is
-	// addressable and was not obtained by
-	// the use of unexported struct fields.
-	stringValue := fmt.Sprint(value)
-	if f.CanSet() {
-		if reflect.ValueOf(value).IsZero() {
-			f.SetZero()
-			return nil
-		}
-		input := reflect.ValueOf(value)
-		if f.Type() == input.Type() {
-			f.Set(input)
-			return nil
-		}
-		// change value of N
-		switch f.Kind() {
-		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-			value, err := strconv.ParseInt(stringValue, 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid integer: %w", err)
-			}
-			if !f.OverflowInt(value) {
-				f.SetInt(value)
-			} else {
-				return fmt.Errorf("too large integer: %w", err)
-			}
-		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-			value, err := strconv.ParseUint(stringValue, 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid integer: %w", err)
-			}
-			if !f.OverflowUint(value) {
-				f.SetUint(value)
-			} else {
-				return fmt.Errorf("too large integer: %w", err)
-			}
-		case reflect.Float32, reflect.Float64:
-			value, err := strconv.ParseFloat(stringValue, 64)
-			if err != nil {
-				return fmt.Errorf("invalid float: %w", err)
-			}
-			if !f.OverflowFloat(value) {
-				f.SetFloat(value)
-			} else {
-				return fmt.Errorf("too large float: %w", err)
-			}
-		case reflect.Bool:
-			value, err := strconv.ParseBool(stringValue)
-			if err != nil {
-				return fmt.Errorf("invalid boolean value: %w", err)
-			}
-			f.SetBool(value)
-		case reflect.String:
-			switch f.Interface().(type) {
-			case boltz.Currency:
-				currency, err := boltz.ParseCurrency(stringValue)
-				if err != nil {
-					return fmt.Errorf("invalid currency value: %w", err)
-				}
-				f.Set(reflect.ValueOf(currency))
-			case boltz.SwapType:
-				swapType, err := boltz.ParseSwapType(stringValue)
-				if err != nil {
-					return fmt.Errorf("invalid swap type value: %w", err)
-				}
-				f.Set(reflect.ValueOf(swapType))
-			default:
-				f.SetString(stringValue)
-			}
-		default:
-			return errors.New("Unknown field type")
-		}
-	}
-	return nil
-}
-
-func (cfg *Config) Write(path string) error {
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(cfg); err != nil {
+func (cfg *Config) SetValue(name string, value any) error {
+	field, err := cfg.getField(name)
+	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, buf.Bytes(), 0666)
+
+	cloned := proto.Clone(cfg.SerializedConfig)
+	clonedConfig := cloned.(*autoswaprpc.Config)
+	stringValue := fmt.Sprint(value)
+	var setValue any
+
+	switch field.Kind() {
+	case protoreflect.Int32Kind, protoreflect.Int64Kind:
+		value, err := strconv.ParseInt(stringValue, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid integer: %w", err)
+		}
+		setValue = value
+	case protoreflect.Uint32Kind, protoreflect.Uint64Kind:
+		value, err := strconv.ParseUint(stringValue, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid integer: %w", err)
+		}
+		setValue = value
+	case protoreflect.FloatKind:
+		value, err := strconv.ParseFloat(stringValue, 64)
+		if err != nil {
+			return fmt.Errorf("invalid float: %w", err)
+		}
+		setValue = value
+	case protoreflect.BoolKind:
+		value, err := strconv.ParseBool(stringValue)
+		if err != nil {
+			return fmt.Errorf("invalid boolean value: %w", err)
+		}
+		setValue = value
+	case protoreflect.StringKind:
+		setValue = value
+	case protoreflect.EnumKind:
+		values := field.Enum().Values()
+		for i := 0; i < values.Len(); i++ {
+			if strings.EqualFold(stringValue, string(values.Get(i).Name())) {
+				setValue = values.Get(i).Number()
+			}
+		}
+		if setValue == nil {
+			return fmt.Errorf("invalid enum value: %s", stringValue)
+		}
+
+	default:
+		return errors.New("Unknown field type")
+	}
+	clonedConfig.ProtoReflect().Set(field, protoreflect.ValueOf(setValue))
+	updated := NewConfig(clonedConfig)
+	// make sure the new values are still valid
+	if err := updated.Init(); err != nil {
+		return err
+	}
+	*cfg = *updated
+	return nil
 }
 
 func (cfg *Config) StrategyName() string {
@@ -292,10 +253,7 @@ func (cfg *Config) StrategyName() string {
 }
 
 func (cfg *Config) GetPair(swapType boltz.SwapType) *boltzrpc.Pair {
-	currency := boltzrpc.Currency_BTC
-	if cfg.Currency == boltz.CurrencyLiquid {
-		currency = boltzrpc.Currency_LBTC
-	}
+	currency := cfg.SerializedConfig.Currency
 	result := &boltzrpc.Pair{}
 	switch swapType {
 	case boltz.NormalSwap:

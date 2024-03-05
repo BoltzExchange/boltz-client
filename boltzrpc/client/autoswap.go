@@ -27,44 +27,31 @@ func (autoSwap *AutoSwap) GetStatus() (*autoswaprpc.GetStatusResponse, error) {
 	return autoSwap.Client.GetStatus(autoSwap.Ctx, &autoswaprpc.GetStatusRequest{})
 }
 
-func decodeConfig(config *autoswaprpc.Config, err error) (any, error) {
-	if err != nil {
-		return nil, err
-	}
-	var result any
-	err = json.Unmarshal([]byte(config.Json), &result)
-	return result, err
+func (autoSwap *AutoSwap) GetConfig() (*autoswaprpc.Config, error) {
+	return autoSwap.Client.GetConfig(autoSwap.Ctx, &autoswaprpc.GetConfigRequest{})
 }
 
-func (autoSwap *AutoSwap) GetConfig(key string) (any, error) {
-	return decodeConfig(autoSwap.Client.GetConfig(autoSwap.Ctx, &autoswaprpc.GetConfigRequest{Key: &key}))
+func (autoSwap *AutoSwap) ReloadConfig() (*autoswaprpc.Config, error) {
+	return autoSwap.Client.ReloadConfig(autoSwap.Ctx, &empty.Empty{})
 }
 
-func (autoSwap *AutoSwap) ReloadConfig() (any, error) {
-	return decodeConfig(autoSwap.Client.ReloadConfig(autoSwap.Ctx, &empty.Empty{}))
+func (autoSwap *AutoSwap) ResetConfig() (*autoswaprpc.Config, error) {
+	return autoSwap.Client.ResetConfig(autoSwap.Ctx, &empty.Empty{})
 }
 
-func (autoSwap *AutoSwap) ResetConfig() (any, error) {
-	return decodeConfig(autoSwap.Client.ResetConfig(autoSwap.Ctx, &empty.Empty{}))
+func (autoSwap *AutoSwap) SetConfig(config *autoswaprpc.Config) (*autoswaprpc.Config, error) {
+	return autoSwap.Client.SetConfig(autoSwap.Ctx, config)
 }
 
-func (autoSwap *AutoSwap) SetConfig(config any) (any, error) {
-	encoded, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-	return decodeConfig(autoSwap.Client.SetConfig(autoSwap.Ctx, &autoswaprpc.Config{Json: string(encoded)}))
-}
-
-func (autoSwap *AutoSwap) SetConfigValue(key string, value any) (any, error) {
+func (autoSwap *AutoSwap) SetConfigValue(key string, value any) (*autoswaprpc.Config, error) {
 	encoded, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
-	return decodeConfig(autoSwap.Client.SetConfigValue(autoSwap.Ctx, &autoswaprpc.SetConfigValueRequest{
+	return autoSwap.Client.SetConfigValue(autoSwap.Ctx, &autoswaprpc.SetConfigValueRequest{
 		Key:   key,
 		Value: string(encoded),
-	}))
+	})
 }
 
 func (autoSwap *AutoSwap) Enable() (any, error) {

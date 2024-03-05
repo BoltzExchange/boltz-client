@@ -1210,7 +1210,24 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `json` | [`string`](#string) |  |  |
+| `enabled` | [`bool`](#bool) |  |  |
+| `channel_poll_interval` | [`uint64`](#uint64) |  |  |
+| `liquid_address` | [`string`](#string) |  |  |
+| `bitcoin_address` | [`string`](#string) |  |  |
+| `max_balance` | [`uint64`](#uint64) |  |  |
+| `min_balance` | [`uint64`](#uint64) |  |  |
+| `max_balance_percent` | [`float`](#float) |  |  |
+| `min_balance_percent` | [`float`](#float) |  |  |
+| `max_fee_percent` | [`float`](#float) |  |  |
+| `accept_zero_conf` | [`bool`](#bool) |  |  |
+| `failure_backoff` | [`uint64`](#uint64) |  |  |
+| `budget` | [`uint64`](#uint64) |  |  |
+| `budget_interval` | [`uint64`](#uint64) |  |  |
+| `currency` | [`boltzrpc.Currency`](#boltzrpc.Currency) |  |  |
+| `swap_type` | [`string`](#string) |  |  |
+| `per_channel` | [`bool`](#bool) |  |  |
+| `wallet` | [`string`](#string) |  |  |
+| `max_swap_amount` | [`uint64`](#uint64) |  |  |
 
 
 
