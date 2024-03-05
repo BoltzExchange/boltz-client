@@ -369,6 +369,7 @@ message CreateSwapRequest {
     bool auto_send = 4;
     string refund_address = 5;
     optional string wallet = 6;
+    optional string invoice = 7;
 }
 message CreateSwapResponse {
     string id = 1;

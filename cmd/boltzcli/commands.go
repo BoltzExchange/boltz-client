@@ -795,7 +795,9 @@ var createSwapCommand = &cli.Command{
 		"Create a swap for 100000 satoshis that will be immediately paid by the clients wallet:\n" +
 		"> boltzcli createswap --auto-send 100000\n" +
 		"Create a swap for any amount of satoshis on liquid:\n" +
-		"> boltzcli createswap --any-amount --pair L-BTC/BTC",
+		"> boltzcli createswap --any-amount --pair L-BTC/BTC\n" +
+		"Create a swap using an existing invoice:\n" +
+		"> boltzcli createswap --invoice lnbcrt1m1pja7adjpp59xdpx33l80wf8rsmqkwjyccdzccsedp9qgy9agf0k8m5g8ttrnzsdq8w3jhxaqcqp5xqzjcsp528qsd7mec4jml9zy302tmr0t995fe9uu80qwgg4zegerh3weyn8s9qyyssqpwecwyvndxh9ar0crgpe4crr93pr4g682u5sstzfk6e0g73s6urxm320j5yuamlszxnk5fzzrtx2hkxw8ehy6kntrx4cr4kcq6zc4uqqy7tcst",
 	Action: createSwap,
 	Flags: []cli.Flag{
 		jsonFlag,
@@ -814,6 +816,10 @@ var createSwapCommand = &cli.Command{
 			Name:  "refund",
 			Usage: "Address to refund to in case the swap fails",
 		},
+		&cli.StringFlag{
+			Name:  "invoice",
+			Usage: "Invoice which should be paid",
+		},
 	},
 }
 
@@ -822,7 +828,7 @@ func createSwap(ctx *cli.Context) error {
 	var amount int64
 	if ctx.Args().First() != "" {
 		amount = parseInt64(ctx.Args().First(), "amount")
-	} else if !ctx.Bool("any-amount") {
+	} else if !ctx.Bool("any-amount") && ctx.String("invcoie") != "" {
 		return cli.ShowSubcommandHelp(ctx)
 	}
 
@@ -856,6 +862,7 @@ func createSwap(ctx *cli.Context) error {
 		}
 	}
 
+	invoice := ctx.String("invoice")
 	wallet := ctx.String("wallet")
 	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 		Amount:        amount,
@@ -863,6 +870,7 @@ func createSwap(ctx *cli.Context) error {
 		RefundAddress: ctx.String("refund"),
 		AutoSend:      autoSend,
 		Wallet:        &wallet,
+		Invoice:       &invoice,
 	})
 	if err != nil {
 		return err

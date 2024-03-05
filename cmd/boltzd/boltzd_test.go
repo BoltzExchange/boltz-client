@@ -356,6 +356,41 @@ func TestSwap(t *testing.T) {
 		}
 	})
 
+	t.Run("Invoice", func(t *testing.T) {
+		client, _, stop := setup(t, cfg, "")
+		defer stop()
+
+		t.Run("Invalid", func(t *testing.T) {
+			invoice := "invalid"
+			_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Invoice: &invoice,
+			})
+			require.Error(t, err)
+		})
+
+		t.Run("Valid", func(t *testing.T) {
+			node := cfg.LND
+			invoice, err := node.CreateInvoice(100000, nil, 600, "test")
+			require.NoError(t, err)
+			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Invoice:  &invoice.PaymentRequest,
+				AutoSend: true,
+			})
+			require.NoError(t, err)
+			info, err := client.GetSwapInfo(swap.Id)
+			require.NoError(t, err)
+			require.Equal(t, invoice.PaymentRequest, info.Swap.Invoice)
+
+			test.MineBlock()
+			stream := swapStream(t, client, swap.Id)
+			stream(boltzrpc.SwapState_SUCCESSFUL)
+
+			paid, err := node.CheckInvoicePaid(invoice.PaymentHash)
+			require.NoError(t, err)
+			require.True(t, paid)
+		})
+	})
+
 	for _, node := range nodes {
 		node := node
 		t.Run(node, func(t *testing.T) {
