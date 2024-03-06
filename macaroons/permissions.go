@@ -78,6 +78,10 @@ var (
 			Entity: "swap",
 			Action: "write",
 		}},
+		"/boltzrpc.Boltz/RefundSwap": {{
+			Entity: "swap",
+			Action: "write",
+		}},
 		"/boltzrpc.Boltz/CreateChannel": {{
 			Entity: "swap",
 			Action: "write",
