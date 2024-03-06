@@ -148,8 +148,10 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *bolt
 	}, nil
 }
 
-func ParseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
-	if grpcCurrency == boltzrpc.Currency_BTC {
+func ParseCurrency(grpcCurrency *boltzrpc.Currency) boltz.Currency {
+	if grpcCurrency == nil {
+		return ""
+	} else if *grpcCurrency == boltzrpc.Currency_BTC {
 		return boltz.CurrencyBtc
 	} else {
 		return boltz.CurrencyLiquid
@@ -161,8 +163,8 @@ func ParsePair(grpcPair *boltzrpc.Pair) (pair boltz.Pair) {
 		return boltz.PairBtc
 	}
 	return boltz.Pair{
-		From: ParseCurrency(grpcPair.From),
-		To:   ParseCurrency(grpcPair.To),
+		From: ParseCurrency(&grpcPair.From),
+		To:   ParseCurrency(&grpcPair.To),
 	}
 }
 
@@ -175,12 +177,12 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 	}
 
 	if request.From != nil {
-		parsed := ParseCurrency(*request.From)
+		parsed := ParseCurrency(request.From)
 		args.From = &parsed
 	}
 
 	if request.To != nil {
-		parsed := ParseCurrency(*request.To)
+		parsed := ParseCurrency(request.To)
 		args.To = &parsed
 	}
 
@@ -667,7 +669,7 @@ func (server *routedBoltzServer) ImportWallet(context context.Context, request *
 		return nil, handleError(err)
 	}
 
-	currency := ParseCurrency(request.Info.Currency)
+	currency := ParseCurrency(&request.Info.Currency)
 	credentials := &wallet.Credentials{
 		Name:           request.Info.Name,
 		Currency:       currency,
@@ -799,7 +801,7 @@ func (server *routedBoltzServer) GetWallet(_ context.Context, request *boltzrpc.
 
 func (server *routedBoltzServer) GetWallets(_ context.Context, request *boltzrpc.GetWalletsRequest) (*boltzrpc.Wallets, error) {
 	var response boltzrpc.Wallets
-	currency := ParseCurrency(request.GetCurrency())
+	currency := ParseCurrency(request.Currency)
 	for _, current := range server.onchain.Wallets {
 		if (currency == "" || current.Currency() == currency) && (!current.Readonly() || request.GetIncludeReadonly()) {
 			wallet, err := server.serializeWallet(current)
