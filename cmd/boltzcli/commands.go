@@ -911,8 +911,12 @@ func refundSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	id := ctx.Args().First()
 	address := ctx.Args().Get(1)
-	_, err := client.RefundSwap(id, address)
-	return err
+	swap, err := client.RefundSwap(id, address)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Refund Transaction: " + swap.Swap.RefundTransactionId)
+	return nil
 }
 
 var createReverseSwapCommand = &cli.Command{
