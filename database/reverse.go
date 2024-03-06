@@ -192,6 +192,8 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 }
 
 func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap, err error) {
+	database.lock.Lock()
+	defer database.lock.Unlock()
 	// TODO: avoid "SELECT *" to be compatible with migrations (or work with columns in parse functions?)
 	rows, err := database.Query("SELECT * FROM reverseSwaps WHERE id = ?", id)
 
@@ -215,6 +217,8 @@ func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap,
 }
 
 func (database *Database) queryReverseSwaps(query string, values ...any) (swaps []ReverseSwap, err error) {
+	database.lock.RLock()
+	defer database.lock.RUnlock()
 	rows, err := database.Query(query, values...)
 
 	if err != nil {

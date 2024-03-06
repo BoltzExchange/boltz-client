@@ -45,6 +45,8 @@ func parseMacaroon(rows *sql.Rows) (*Macaroon, error) {
 }
 
 func (database *Database) QueryMacaroon(id []byte) (macaroon *Macaroon, err error) {
+	database.lock.RLock()
+	defer database.lock.RUnlock()
 	rows, err := database.Query("SELECT * FROM macaroons WHERE id = '" + hex.EncodeToString(id) + "'")
 
 	if err != nil {

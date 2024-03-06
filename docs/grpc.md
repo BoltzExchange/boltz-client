@@ -68,6 +68,14 @@ Returns a list of all swaps, reverse swaps and channel creations in the database
 | ------- | -------- |
 | [`ListSwapsRequest`](#boltzrpc.ListSwapsRequest) | [`ListSwapsResponse`](#boltzrpc.ListSwapsResponse) |
 
+#### RefundSwap
+
+Refund a failed swap manually. This is only required when no refund address has been set or the daemon has no wallet for the currency.
+
+| Request | Response |
+| ------- | -------- |
+| [`RefundSwapRequest`](#boltzrpc.RefundSwapRequest) | [`GetSwapInfoResponse`](#boltzrpc.GetSwapInfoResponse) |
+
 #### GetSwapInfo
 
 Gets all available information about a swap from the database.
@@ -757,6 +765,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `from` | [`Currency`](#boltzrpc.Currency) |  |  |
 | `to` | [`Currency`](#boltzrpc.Currency) |  |  |
+
+
+
+
+
+#### <div id="boltzrpc.RefundSwapRequest">RefundSwapRequest</div>
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `address` | [`string`](#string) |  |  |
 
 
 

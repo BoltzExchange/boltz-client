@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -109,6 +110,8 @@ type Database struct {
 
 	db *sql.DB
 	tx *sql.Tx
+
+	lock sync.RWMutex
 }
 
 type Transaction struct {
@@ -236,6 +239,8 @@ func (database *Database) Connect() error {
 }
 
 func (database *Database) Exec(query string, args ...any) (sql.Result, error) {
+	database.lock.Lock()
+	defer database.lock.Unlock()
 	logger.Silly("Executing query: " + query)
 	if database.tx != nil {
 		return database.tx.Exec(query, args...)

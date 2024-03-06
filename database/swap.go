@@ -204,6 +204,8 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 }
 
 func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
+	database.lock.RLock()
+	defer database.lock.RUnlock()
 	rows, err := database.Query("SELECT * FROM swaps WHERE id = '" + id + "'")
 
 	if err != nil {
@@ -226,6 +228,8 @@ func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
 }
 
 func (database *Database) querySwaps(query string, args ...any) (swaps []Swap, err error) {
+	database.lock.RLock()
+	defer database.lock.RUnlock()
 	rows, err := database.Query(query, args...)
 
 	if err != nil {
@@ -364,6 +368,13 @@ func (database *Database) SetSwapRefundTransactionId(swap *Swap, refundTransacti
 	swap.OnchainFee = addToOptional(swap.OnchainFee, fee)
 
 	_, err := database.Exec("UPDATE swaps SET state = ?, refundTransactionId = ?, onchainFee = ? WHERE id = ?", swap.State, refundTransactionId, swap.OnchainFee, swap.Id)
+	return err
+}
+
+func (database *Database) SetSwapRefundRefundAddress(swap *Swap, refundAddress string) error {
+	swap.RefundAddress = refundAddress
+
+	_, err := database.Exec("UPDATE swaps SET refundAddress = ?  WHERE id = ?", refundAddress, swap.Id)
 	return err
 }
 
