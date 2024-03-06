@@ -83,7 +83,7 @@ func (nursery *Nursery) RefundSwaps(swapsToRefund []database.Swap, cooperative b
 	if refundAddress == "" {
 		wallet, err := nursery.onchain.GetAnyWallet(currency, true)
 		if err != nil {
-			message := "%d Swaps can not be refunded because they got no refund address and no wallet for currency %s is available! Set up a wallet to refund"
+			message := "%d Swaps can not be refunded because they got no refund address and no wallet for currency %s is available! Set up a wallet or refund manually"
 			return fmt.Errorf(message, len(refundedSwaps), currency)
 		}
 		refundAddress, err = wallet.NewAddress()
