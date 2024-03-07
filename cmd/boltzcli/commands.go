@@ -76,7 +76,7 @@ var jsonFlag = &cli.BoolFlag{
 
 var liquidFlag = &cli.BoolFlag{
 	Name:  "liquid",
-	Usage: "Shorthand for --pair LBTC/BTC",
+	Usage: "Shorthand for --currency LBTC",
 }
 
 var walletFlag = &cli.StringFlag{
@@ -902,7 +902,7 @@ var createReverseSwapCommand = &cli.Command{
 		"create a reverse swap for 100000 satoshis that will be sent to the specified btc address:\n" +
 		"> boltzcli createreverseswap 100000 bcrt1qkp70ncua3dqp6syqu24jw5mnpf3gdxqrm3gn2a\n" +
 		"create a reverse swap for 100000 satoshis that will be sent to the clients liquid wallet:\n" +
-		"> boltzcli createreverseswap --pair LBTC 100000",
+		"> boltzcli createreverseswap --currency LBTC 100000",
 	Action: requireNArgs(1, createReverseSwap),
 	Flags: []cli.Flag{
 		jsonFlag,
