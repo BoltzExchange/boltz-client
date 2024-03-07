@@ -30,6 +30,8 @@ func withBase(config *autoswaprpc.Config) *autoswaprpc.Config {
 }
 
 func DefaultConfig() *autoswaprpc.Config {
+	// we cant include values like currency in the base config
+	// since we couldnt know wether the user didnt set the currency at all or set it to BTC
 	return withBase(&autoswaprpc.Config{
 		MaxBalancePercent: 75,
 		MinBalancePercent: 25,
