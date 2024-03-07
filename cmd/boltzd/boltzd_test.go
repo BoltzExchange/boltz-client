@@ -603,6 +603,7 @@ func TestReverseSwap(t *testing.T) {
 		external        bool
 		recover         bool
 		disablePartials bool
+		waitForClaim    bool
 	}{
 		{desc: "BTC/Normal", to: boltzrpc.Currency_BTC, disablePartials: true},
 		{desc: "BTC/ZeroConf", to: boltzrpc.Currency_BTC, zeroConf: true, external: true},
@@ -610,6 +611,7 @@ func TestReverseSwap(t *testing.T) {
 		{desc: "Liquid/Normal", to: boltzrpc.Currency_LBTC, disablePartials: true},
 		{desc: "Liquid/ZeroConf", to: boltzrpc.Currency_LBTC, zeroConf: true, external: true},
 		{desc: "Liquid/Recover", to: boltzrpc.Currency_LBTC, zeroConf: true, recover: true},
+		{desc: "Wait", to: boltzrpc.Currency_BTC, zeroConf: true, waitForClaim: true},
 	}
 
 	for _, node := range nodes {
@@ -639,10 +641,11 @@ func TestReverseSwap(t *testing.T) {
 					var info *boltzrpc.GetSwapInfoResponse
 
 					request := &boltzrpc.CreateReverseSwapRequest{
-						Amount:         100000,
-						Address:        addr,
-						Pair:           pair,
-						AcceptZeroConf: tc.zeroConf,
+						Amount:            100000,
+						Address:           addr,
+						Pair:              pair,
+						AcceptZeroConf:    tc.zeroConf,
+						ReturnImmediately: !tc.waitForClaim,
 					}
 
 					if tc.recover {
@@ -670,14 +673,21 @@ func TestReverseSwap(t *testing.T) {
 						swap, err := client.CreateReverseSwap(request)
 						require.NoError(t, err)
 
-						next := swapStream(t, client, swap.Id)
-						next(boltzrpc.SwapState_PENDING)
+						if tc.waitForClaim && tc.zeroConf {
+							require.NotZero(t, swap.ClaimTransactionId)
+							info, err = client.GetSwapInfo(swap.Id)
+							require.NoError(t, err)
+						} else {
+							next := swapStream(t, client, swap.Id)
+							next(boltzrpc.SwapState_PENDING)
 
-						if !tc.zeroConf {
-							test.MineBlock()
+							if !tc.zeroConf {
+								test.MineBlock()
+							}
+
+							info = next(boltzrpc.SwapState_SUCCESSFUL)
 						}
 
-						info = next(boltzrpc.SwapState_SUCCESSFUL)
 					}
 
 					require.NotZero(t, info.ReverseSwap.OnchainFee)

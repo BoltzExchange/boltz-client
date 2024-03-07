@@ -1004,12 +1004,13 @@ func createReverseSwap(ctx *cli.Context) error {
 
 	wallet := ctx.String("wallet")
 	response, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-		Address:        address,
-		Amount:         amount,
-		AcceptZeroConf: !ctx.Bool("no-zero-conf"),
-		Pair:           pair,
-		Wallet:         &wallet,
-		ChanIds:        ctx.StringSlice("chan-id"),
+		Address:           address,
+		Amount:            amount,
+		AcceptZeroConf:    !ctx.Bool("no-zero-conf"),
+		Pair:              pair,
+		Wallet:            &wallet,
+		ChanIds:           ctx.StringSlice("chan-id"),
+		ReturnImmediately: true,
 	})
 	if err != nil {
 		return err

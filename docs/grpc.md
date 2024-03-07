@@ -351,6 +351,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#boltzrpc.Pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated |  |
 | `wallet` | [`string`](#string) | optional |  |
+| `return_immediately` | [`bool`](#bool) |  | The daemon will return immediately after zero conf swaps aswell. |
 
 
 
@@ -364,8 +365,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `lockup_address` | [`string`](#string) |  |  |
-| `routing_fee_milli_sat` | [`uint32`](#uint32) |  | **Deprecated.**  |
-| `claim_transaction_id` | [`string`](#string) |  | **Deprecated.** Only populated when 0-conf is accepted |
+| `routing_fee_milli_sat` | [`uint64`](#uint64) |  | Only populated when 0-conf is accepted and return_immediately is set to false |
+| `claim_transaction_id` | [`string`](#string) |  |  |
 
 
 
