@@ -99,14 +99,17 @@ func (swapper *AutoSwapper) LoadConfig() error {
 	if !utils.FileExists(swapper.configPath) {
 		return nil
 	}
+	serialized := &SerializedConfig{}
 	var cfgToml any
 	if _, err = toml.DecodeFile(swapper.configPath, &cfgToml); err != nil {
 		err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
 	}
-	cfgJson, _ := json.Marshal(cfgToml)
-	serialized := &SerializedConfig{}
-	if err := protojson.Unmarshal(cfgJson, serialized); err != nil {
-		err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
+	if err == nil {
+		// cant go from toml to proto directly, so we need to marshal again
+		cfgJson, _ := json.Marshal(cfgToml)
+		if err = protojson.Unmarshal(cfgJson, serialized); err != nil {
+			err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
+		}
 	}
 
 	if err == nil {
@@ -127,7 +130,8 @@ func (swapper *AutoSwapper) saveConfig() error {
 	}
 	marshalled, _ := marshaler.Marshal(swapper.cfg.SerializedConfig)
 	var asJson any
-	json.Unmarshal(marshalled, &asJson)
+	// cant go from json to toml directly, so we need to unmarshal again
+	_ = json.Unmarshal(marshalled, &asJson)
 	if err := toml.NewEncoder(buf).Encode(asJson); err != nil {
 		return err
 	}
