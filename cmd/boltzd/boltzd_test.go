@@ -371,7 +371,7 @@ func TestSwap(t *testing.T) {
 
 		t.Run("Valid", func(t *testing.T) {
 			node := cfg.LND
-			invoice, err := node.CreateInvoice(100000, nil, 600, "test")
+			invoice, err := node.CreateInvoice(100000, nil, 0, "test")
 			require.NoError(t, err)
 			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 				Invoice:  &invoice.PaymentRequest,
