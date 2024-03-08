@@ -9,6 +9,7 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 
 {{range .Services}}
 ## {{.FullName}}
+<a name="{{.FullName | anchor}}"></a>
 {{.Description}}
 
 ### Methods
@@ -19,21 +20,22 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 
 | Request | Response |
 | ------- | -------- |
-| [`{{.RequestLongType}}`](#{{.RequestFullType}}){{if .RequestStreaming}} stream{{end}} | [`{{.ResponseLongType}}`](#{{.ResponseFullType}}){{if .ResponseStreaming}} stream{{end}} |
+| [`{{.RequestLongType}}`](#{{.RequestFullType | anchor}}){{if .RequestStreaming}} stream{{end}} | [`{{.ResponseLongType}}`](#{{.ResponseFullType | anchor}}){{if .ResponseStreaming}} stream{{end}} |
 
 {{end}}
 {{end}}
 
 ### Messages
 {{range .Messages}}
-#### <div id="{{.FullName}}">{{.LongName}}</div>
+#### {{.LongName}}
+<a name="{{.FullName | anchor}}"></a>
 {{.Description}}
 
 {{if .HasFields}}
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 {{range .Fields -}}
-| `{{.Name}}` | [`{{.LongType}}`](#{{.FullType}}) | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+| `{{.Name}}` | [`{{.LongType}}`](#{{.LongType | anchor}}) | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
 {{end}}
 {{end}}
 
@@ -49,7 +51,7 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 ### Enums
 
 {{range .Enums}}
-<a name="{{.FullName}}"></a>
+<a name="{{.FullName | anchor}}"></a>
 
 #### {{.LongName}}
 {{.Description}}
