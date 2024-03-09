@@ -19,7 +19,12 @@ func CheckVersion(name string, version string, minVersion string) error {
 		return fmt.Errorf("Could not parse %s version %s: %s", name, version, err.Error())
 	}
 
-	if parsed.LessThan(semver.MustParse(minVersion)) {
+	minParsed, err := semver.NewVersion(minVersion)
+	if err != nil {
+		return fmt.Errorf("Could not parse %s min version %s: %s", name, minVersion, err.Error())
+	}
+
+	if parsed.LessThan(minParsed) {
 		return fmt.Errorf("Incompatible %s version %s detected. Minimal supported version is: %s", name, version, minVersion)
 	}
 	return nil
