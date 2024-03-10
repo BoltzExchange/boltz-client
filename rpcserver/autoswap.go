@@ -102,51 +102,6 @@ func (server *routedAutoSwapServer) ReloadConfig(ctx context.Context, _ *empty.E
 	return server.GetConfig(ctx, nil)
 }
 
-//	func deserializeConfig(request *autoswaprpc.Config) (*autoswap.Config, error) {
-//		return &autoswap.Config{
-//			Enabled:             request.Enabled,
-//			ChannelPollInterval: request.ChannelPollInterval,
-//			LiquidAddress:       request.LiquidAddress,
-//			BitcoinAddress:      request.BitcoinAddress,
-//			MaxBalance:          request.MaxBalance,
-//			MinBalance:          request.MinBalance,
-//			MaxBalancePercent:   utils.Percentage(request.MaxBalancePercent),
-//			MinBalancePercent:   utils.Percentage(request.MinBalancePercent),
-//			MaxFeePercent:       utils.Percentage(request.MaxFeePercent),
-//			AcceptZeroConf:      request.AcceptZeroConf,
-//			FailureBackoff:      request.FailureBackoff,
-//			Budget:              request.Budget,
-//			BudgetInterval:      request.BudgetInterval,
-//			Currency:            boltz.ParseCurrency(request.Currency),
-//			Type:                request.Type,
-//			PerChannel:          request.PerChannel,
-//			Wallet:              request.Wallet,
-//			MaxSwapAmount:       request.MaxSwapAmount,
-//		}, nil
-//	}
-//
-//	func deserializeConfig(request *autoswaprpc.Config) (*autoswap.Config, error) {
-//		return &autoswap.Config{
-//			Enabled:             request.Enabled,
-//			ChannelPollInterval: request.ChannelPollInterval,
-//			LiquidAddress:       request.LiquidAddress,
-//			BitcoinAddress:      request.BitcoinAddress,
-//			MaxBalance:          request.MaxBalance,
-//			MinBalance:          request.MinBalance,
-//			MaxBalancePercent:   utils.Percentage(request.MaxBalancePercent),
-//			MinBalancePercent:   utils.Percentage(request.MinBalancePercent),
-//			MaxFeePercent:       utils.Percentage(request.MaxFeePercent),
-//			AcceptZeroConf:      request.AcceptZeroConf,
-//			FailureBackoff:      request.FailureBackoff,
-//			Budget:              request.Budget,
-//			BudgetInterval:      request.BudgetInterval,
-//			Currency:            boltz.ParseCurrency(request.Currency),
-//			Type:                request.Type,
-//			PerChannel:          request.PerChannel,
-//			Wallet:              request.Wallet,
-//			MaxSwapAmount:       request.MaxSwapAmount,
-//		}, nil
-//	}
 func (server *routedAutoSwapServer) SetConfig(ctx context.Context, request *autoswaprpc.Config) (*autoswaprpc.Config, error) {
 	if err := server.swapper.SetConfig(request); err != nil {
 		return nil, err

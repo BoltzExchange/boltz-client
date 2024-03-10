@@ -17,8 +17,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
-func withBase(config *autoswaprpc.Config) *autoswaprpc.Config {
-	base := &autoswaprpc.Config{
+func withBase(config *SerializedConfig) *SerializedConfig {
+	base := &SerializedConfig{
 		FailureBackoff:      24 * 60 * 60,
 		MaxFeePercent:       1,
 		ChannelPollInterval: 30,
@@ -29,10 +29,10 @@ func withBase(config *autoswaprpc.Config) *autoswaprpc.Config {
 	return base
 }
 
-func DefaultConfig() *autoswaprpc.Config {
+func DefaultConfig() *SerializedConfig {
 	// we cant include values like currency in the base config
 	// since we couldnt know wether the user didnt set the currency at all or set it to BTC
-	return withBase(&autoswaprpc.Config{
+	return withBase(&SerializedConfig{
 		MaxBalancePercent: 75,
 		MinBalancePercent: 25,
 		Currency:          boltzrpc.Currency_LBTC,
@@ -194,8 +194,7 @@ func (cfg *Config) SetValue(name string, value any) error {
 		return err
 	}
 
-	cloned := proto.Clone(cfg.SerializedConfig)
-	clonedConfig := cloned.(*autoswaprpc.Config)
+	cloned := proto.Clone(cfg.SerializedConfig).(*SerializedConfig)
 	stringValue := fmt.Sprint(value)
 	var setValue any
 
@@ -240,8 +239,8 @@ func (cfg *Config) SetValue(name string, value any) error {
 	default:
 		return errors.New("Unknown field type")
 	}
-	clonedConfig.ProtoReflect().Set(field, protoreflect.ValueOf(setValue))
-	updated := NewConfig(clonedConfig)
+	cloned.ProtoReflect().Set(field, protoreflect.ValueOf(setValue))
+	updated := NewConfig(cloned)
 	// make sure the new values are still valid
 	if err := updated.Init(); err != nil {
 		return err

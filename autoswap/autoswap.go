@@ -9,7 +9,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/utils"
@@ -85,7 +84,7 @@ func (swapper *AutoSwapper) setConfig(cfg *Config) error {
 	return swapper.saveConfig()
 }
 
-func (swapper *AutoSwapper) SetConfig(values *autoswaprpc.Config) error {
+func (swapper *AutoSwapper) SetConfig(values *SerializedConfig) error {
 	cfg := NewConfig(values)
 	if err := cfg.Init(); err != nil {
 		return fmt.Errorf("invalid config: %w", err)
