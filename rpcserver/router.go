@@ -581,10 +581,29 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		return nil, handleError(err)
 	}
 
-	return &boltzrpc.CreateReverseSwapResponse{
+	rpcResponse := &boltzrpc.CreateReverseSwapResponse{
 		Id:            reverseSwap.Id,
 		LockupAddress: response.LockupAddress,
-	}, nil
+	}
+
+	if !request.GetReturnImmediately() && request.AcceptZeroConf {
+		updates, stop := server.nursery.SwapUpdates(reverseSwap.Id)
+		defer stop()
+
+		for update := range updates {
+			info := update.ReverseSwap
+			if info.State == boltzrpc.SwapState_SUCCESSFUL {
+				rpcResponse.ClaimTransactionId = &update.ReverseSwap.ClaimTransactionId
+				rpcResponse.RoutingFeeMilliSat = update.ReverseSwap.RoutingFeeMsat
+			}
+			if info.State == boltzrpc.SwapState_ERROR || info.State == boltzrpc.SwapState_SERVER_ERROR {
+				return nil, handleError(errors.New("reverse swap failed: " + info.Error))
+			}
+		}
+
+	}
+
+	return rpcResponse, nil
 }
 
 func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {

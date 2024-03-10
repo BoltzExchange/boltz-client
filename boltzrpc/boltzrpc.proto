@@ -410,14 +410,18 @@ message CreateReverseSwapRequest {
     Pair pair = 4;
     repeated string chan_ids = 5;
     optional string wallet = 6;
+    // Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed.
+    // It will always return immediately if `accept_zero_conf` is not set.
+    bool return_immediately = 7;
 }
 message CreateReverseSwapResponse {
     string id = 1;
     string lockup_address = 2;
-    uint32 routing_fee_milli_sat = 3 [deprecated = true];
 
-    // Only populated when 0-conf is accepted
-    string claim_transaction_id = 4 [deprecated = true];
+    // Only populated when zero-conf is accepted and return_immediately is set to false
+    optional uint64 routing_fee_milli_sat = 3;
+    // Only populated when zero-conf is accepted and return_immediately is set to false
+    optional string claim_transaction_id = 4;
 }
 
 message ChannelId {

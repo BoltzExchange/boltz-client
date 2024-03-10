@@ -361,6 +361,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#Pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated |  |
 | `wallet` | [`string`](#string) | optional |  |
+| `return_immediately` | [`bool`](#bool) |  | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. This is only relevant when `accept_zero_conf` is set. |
 
 
 
@@ -375,8 +376,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `lockup_address` | [`string`](#string) |  |  |
-| `routing_fee_milli_sat` | [`uint32`](#uint32) |  | **Deprecated.**  |
-| `claim_transaction_id` | [`string`](#string) |  | **Deprecated.** Only populated when 0-conf is accepted |
+| `routing_fee_milli_sat` | [`uint64`](#uint64) | optional | Only populated when zero-conf is accepted and return_immediately is set to false |
+| `claim_transaction_id` | [`string`](#string) | optional | Only populated when zero-conf is accepted and return_immediately is set to false |
 
 
 
