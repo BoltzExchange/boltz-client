@@ -27,7 +27,7 @@ func (cfg *Config) channelRecommendation(channel *lightning.LightningChannel) (r
 	} else if channel.LocalSat < lower {
 		swapType = boltz.NormalSwap
 	}
-	if swapType != "" && (swapType == cfg.Type || cfg.Type == "") {
+	if swapType != "" && (swapType == cfg.swapType || cfg.swapType == "") {
 		target := float64(upper+lower) / 2
 		recommendation = &rawRecommendation{
 			Type:   swapType,

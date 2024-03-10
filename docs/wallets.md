@@ -6,7 +6,7 @@ You can **create new** wallets, which will generate a new mnemonic and prompt yo
 
 To create a new Liquid called "MyLiquidWallet" run:
 
-`boltzcli wallet create MyLiquidWallet L-BTC`
+`boltzcli wallet create MyLiquidWallet LBTC`
 
 Existing wallets can be **imported**. This can be done as hot wallet via mnemonic or cold read-only wallet via xpub or core descriptor. Read-only wallets can serve as a swap target for reverse swaps.
 

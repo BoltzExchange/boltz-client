@@ -3,7 +3,7 @@ package rpcserver
 import (
 	"context"
 	"encoding/json"
-	"errors"
+
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
@@ -78,34 +78,17 @@ func (server *routedAutoSwapServer) GetStatus(_ context.Context, request *autosw
 }
 
 func (server *routedAutoSwapServer) GetConfig(ctx context.Context, request *autoswaprpc.GetConfigRequest) (*autoswaprpc.Config, error) {
-	var response any
 	var err error
 
 	config, err := server.swapper.GetConfig()
 	if err != nil {
 		return nil, handleError(err)
 	}
-
-	if request.GetKey() != "" {
-		response, err = config.GetValue(*request.Key)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		response = &config
-	}
-
-	bytes, err := json.Marshal(response)
-	if err != nil {
-		return nil, err
-	}
-	return &autoswaprpc.Config{
-		Json: string(bytes),
-	}, nil
+	return config.SerializedConfig, nil
 }
 
 func (server *routedAutoSwapServer) ResetConfig(ctx context.Context, _ *empty.Empty) (*autoswaprpc.Config, error) {
-	if err := server.swapper.SetConfig(&autoswap.DefaultConfig); err != nil {
+	if err := server.swapper.SetConfig(autoswap.DefaultConfig()); err != nil {
 		return nil, handleError(err)
 	}
 	return server.GetConfig(ctx, nil)
@@ -120,17 +103,8 @@ func (server *routedAutoSwapServer) ReloadConfig(ctx context.Context, _ *empty.E
 }
 
 func (server *routedAutoSwapServer) SetConfig(ctx context.Context, request *autoswaprpc.Config) (*autoswaprpc.Config, error) {
-	var value any
-	if err := json.Unmarshal([]byte(request.Json), &value); err != nil {
+	if err := server.swapper.SetConfig(request); err != nil {
 		return nil, err
-	}
-
-	if values, ok := value.(map[string]any); ok {
-		if err := server.swapper.SetConfigValues(values); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("invalid config")
 	}
 
 	return server.GetConfig(ctx, &autoswaprpc.GetConfigRequest{})

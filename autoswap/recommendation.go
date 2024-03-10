@@ -51,7 +51,7 @@ func (recommendation rawRecommendation) Check(pair *PairInfo, cfg *Config) *Swap
 	}
 	recommendation.Amount = uint64(math.Min(float64(recommendation.Amount), float64(pair.MaxAmount)))
 
-	maxFee := cfg.MaxFeePercent.Calculate(float64(recommendation.Amount))
+	maxFee := cfg.maxFeePercent.Calculate(float64(recommendation.Amount))
 	fee := recommendation.estimateFee(pair)
 	if float64(fee) > maxFee {
 		dismissedReasons = append(dismissedReasons, ReasonMaxFeePercent)

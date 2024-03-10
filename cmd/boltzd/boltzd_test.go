@@ -727,11 +727,11 @@ func TestAutoSwap(t *testing.T) {
 	defer stop()
 
 	tests := []struct {
-		desc string
-		cli  func(string) string
-		pair boltz.Currency
+		desc     string
+		cli      func(string) string
+		currency boltzrpc.Currency
 	}{
-		{"BTC", test.BtcCli, boltz.CurrencyBtc},
+		{"BTC", test.BtcCli, boltzrpc.Currency_BTC},
 		//{"Liquid", liquidCli, boltz.PairLiquid},
 	}
 
@@ -749,7 +749,7 @@ func TestAutoSwap(t *testing.T) {
 
 		running(false)
 
-		_, err = autoSwap.SetConfigValue("currency", "L-BTC")
+		_, err = autoSwap.SetConfigValue("currency", "LBTC")
 		require.NoError(t, err)
 
 		_, err = autoSwap.Enable()
@@ -815,18 +815,18 @@ func TestAutoSwap(t *testing.T) {
 				time.Sleep(1000 * time.Millisecond)
 			}
 
-			swapCfg := autoswap.DefaultConfig
+			swapCfg := autoswap.DefaultConfig()
 			swapCfg.AcceptZeroConf = true
 			swapCfg.MaxFeePercent = 10
 			swapCfg.Budget = 1000000
-			swapCfg.Currency = tc.pair
-			swapCfg.Type = ""
+			swapCfg.Currency = tc.currency
+			swapCfg.SwapType = ""
 			swapCfg.Wallet = ""
 
 			writeConfig := func(t *testing.T) {
-				swapCfgFile := cfg.DataDir + "/autoswap.toml"
-				require.NoError(t, swapCfg.Write(swapCfgFile))
-				_, err := autoSwap.ReloadConfig()
+				_, err := autoSwap.SetConfig(swapCfg)
+				require.NoError(t, err)
+				_, err = autoSwap.ReloadConfig()
 				require.NoError(t, err)
 			}
 
@@ -841,7 +841,7 @@ func TestAutoSwap(t *testing.T) {
 				}
 
 				swapCfg.MaxBalance = localBalance + 100
-				swapCfg.Type = boltz.ReverseSwap
+				swapCfg.SwapType = "reverse"
 				swapCfg.PerChannel = false
 				swapCfg.Enabled = false
 				swapCfg.Budget = 1000000

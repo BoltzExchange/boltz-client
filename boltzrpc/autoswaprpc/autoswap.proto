@@ -90,5 +90,22 @@ message GetConfigRequest {
 }
 
 message Config {
-  string json = 1;
+    bool enabled = 1;
+    uint64 channel_poll_interval = 2;
+    string liquid_address = 3;
+    string bitcoin_address = 4;
+    uint64 max_balance = 5;
+    uint64 min_balance = 6;
+    float max_balance_percent = 7;
+    float min_balance_percent = 8;
+    float max_fee_percent = 9;
+    bool accept_zero_conf = 10;
+    uint64 failure_backoff = 11;
+    uint64 budget = 12;
+    uint64 budget_interval = 13;
+    boltzrpc.Currency currency = 14;
+    string swap_type = 15;
+    bool per_channel = 16;
+    string wallet = 17;
+    uint64 max_swap_amount = 18;
 }
