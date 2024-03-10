@@ -613,8 +613,8 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		for update := range updates {
 			info := update.ReverseSwap
 			if info.State == boltzrpc.SwapState_SUCCESSFUL {
-				rpcResponse.ClaimTransactionId = update.ReverseSwap.ClaimTransactionId
-				rpcResponse.RoutingFeeMilliSat = *update.ReverseSwap.RoutingFeeMsat
+				rpcResponse.ClaimTransactionId = &update.ReverseSwap.ClaimTransactionId
+				rpcResponse.RoutingFeeMilliSat = update.ReverseSwap.RoutingFeeMsat
 			}
 			if info.State == boltzrpc.SwapState_ERROR || info.State == boltzrpc.SwapState_SERVER_ERROR {
 				return nil, handleError(errors.New("reverse swap failed: " + info.Error))

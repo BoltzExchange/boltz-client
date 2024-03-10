@@ -419,9 +419,9 @@ message CreateReverseSwapResponse {
     string lockup_address = 2;
 
     // Only populated when zero-conf is accepted and return_immediately is set to false
-    uint64 routing_fee_milli_sat = 3;
+    optional uint64 routing_fee_milli_sat = 3;
     // Only populated when zero-conf is accepted and return_immediately is set to false
-    string claim_transaction_id = 4;
+    optional string claim_transaction_id = 4;
 }
 
 message ChannelId {

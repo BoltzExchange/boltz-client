@@ -365,8 +365,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `lockup_address` | [`string`](#string) |  |  |
-| `routing_fee_milli_sat` | [`uint64`](#uint64) |  | Only populated when zero-conf is accepted and return_immediately is set to false |
-| `claim_transaction_id` | [`string`](#string) |  | Only populated when zero-conf is accepted and return_immediately is set to false |
+| `routing_fee_milli_sat` | [`uint64`](#uint64) | optional | Only populated when zero-conf is accepted and return_immediately is set to false |
+| `claim_transaction_id` | [`string`](#string) | optional | Only populated when zero-conf is accepted and return_immediately is set to false |
 
 
 
