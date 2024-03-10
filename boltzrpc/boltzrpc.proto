@@ -411,7 +411,7 @@ message CreateReverseSwapRequest {
     repeated string chan_ids = 5;
     optional string wallet = 6;
     // Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed.
-    // This is only relevant when `accept_zero_conf` is set.
+    // It will always return immediately if `accept_zero_conf` is not set.
     bool return_immediately = 7;
 }
 message CreateReverseSwapResponse {
