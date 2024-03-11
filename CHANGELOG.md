@@ -1,4 +1,30 @@
 
+<a name="v2.0.0"></a>
+## [v2.0.0] - 2024-03-11
+### Feat
+- release workflow
+- return_immediately parameter for reverse swap creation ([#94](https://github.com/BoltzExchange/boltz-client/issues/94))
+- refund rpc ([#89](https://github.com/BoltzExchange/boltz-client/issues/89))
+- allow custom swap invoice ([#91](https://github.com/BoltzExchange/boltz-client/issues/91))
+- use proper currency type in wallets grpc ([#90](https://github.com/BoltzExchange/boltz-client/issues/90))
+- compat dockerfile
+- getpairs rpc ([#88](https://github.com/BoltzExchange/boltz-client/issues/88))
+- replace sse with ws ([#85](https://github.com/BoltzExchange/boltz-client/issues/85))
+- cooperative submarine claims ([#84](https://github.com/BoltzExchange/boltz-client/issues/84))
+- v2 api ([#83](https://github.com/BoltzExchange/boltz-client/issues/83))
+
+### Fix
+- dont require currency when setting subaccount in cli
+- proper semver version check ([#92](https://github.com/BoltzExchange/boltz-client/issues/92))
+- dont specify unnecessary expiry in test invoice
+
+### Refactor
+- cleanup autoswap config ([#96](https://github.com/BoltzExchange/boltz-client/issues/96))
+- use proper message type for autoswap config instead of json ([#93](https://github.com/BoltzExchange/boltz-client/issues/93))
+- improve boltz package ([#86](https://github.com/BoltzExchange/boltz-client/issues/86))
+- parse null timestamp from db as 0
+
+
 <a name="v2.0.0-beta"></a>
 ## [v2.0.0-beta] - 2024-02-05
 ### Feat
@@ -161,6 +187,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.0.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0-beta...v2.0.0
 [v2.0.0-beta]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.7...v2.0.0-beta
 [v1.2.7]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.6...v1.2.7
 [v1.2.6]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.5...v1.2.6
