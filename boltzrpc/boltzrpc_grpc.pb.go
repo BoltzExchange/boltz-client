@@ -99,9 +99,9 @@ type BoltzClient interface {
 	ImportWallet(ctx context.Context, in *ImportWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
 	// Sets the subaccount of a wallet. Not supported for readonly wallets.
 	SetSubaccount(ctx context.Context, in *SetSubaccountRequest, opts ...grpc.CallOption) (*Subaccount, error)
-	// Returns a list of all subaccounts for a given wallet.
+	// Returns all subaccounts for a given wallet. Not supported for readonly wallets.
 	GetSubaccounts(ctx context.Context, in *WalletInfo, opts ...grpc.CallOption) (*GetSubaccountsResponse, error)
-	// Returns a list of all available wallets.
+	// Returns all available wallets.
 	GetWallets(ctx context.Context, in *GetWalletsRequest, opts ...grpc.CallOption) (*Wallets, error)
 	// Returns the current balance and subaccount of a wallet.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
@@ -438,9 +438,9 @@ type BoltzServer interface {
 	ImportWallet(context.Context, *ImportWalletRequest) (*Wallet, error)
 	// Sets the subaccount of a wallet. Not supported for readonly wallets.
 	SetSubaccount(context.Context, *SetSubaccountRequest) (*Subaccount, error)
-	// Returns a list of all subaccounts for a given wallet.
+	// Returns all subaccounts for a given wallet. Not supported for readonly wallets.
 	GetSubaccounts(context.Context, *WalletInfo) (*GetSubaccountsResponse, error)
-	// Returns a list of all available wallets.
+	// Returns all available wallets.
 	GetWallets(context.Context, *GetWalletsRequest) (*Wallets, error)
 	// Returns the current balance and subaccount of a wallet.
 	GetWallet(context.Context, *GetWalletRequest) (*Wallet, error)

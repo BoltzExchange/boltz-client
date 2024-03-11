@@ -9,7 +9,7 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 
 
 ## boltzrpc.Boltz
-<a name="boltzrpc-Boltz"></a>
+
 
 
 ### Methods
@@ -19,7 +19,7 @@ Gets general information about the daemon like the chain of the LND node it is c
 
 | Request | Response |
 | ------- | -------- |
-| [`GetInfoRequest`](#boltzrpc-GetInfoRequest) | [`GetInfoResponse`](#boltzrpc-GetInfoResponse) |
+| [`GetInfoRequest`](#getinforequest) | [`GetInfoResponse`](#getinforesponse) |
 
 #### GetServiceInfo
 
@@ -27,7 +27,7 @@ Fetches the latest limits and fees from the Boltz backend API it is connected to
 
 | Request | Response |
 | ------- | -------- |
-| [`GetServiceInfoRequest`](#boltzrpc-GetServiceInfoRequest) | [`GetServiceInfoResponse`](#boltzrpc-GetServiceInfoResponse) |
+| [`GetServiceInfoRequest`](#getserviceinforequest) | [`GetServiceInfoResponse`](#getserviceinforesponse) |
 
 #### GetSubmarinePair
 
@@ -35,7 +35,7 @@ Fetches information about a specific pair for a submarine swap.
 
 | Request | Response |
 | ------- | -------- |
-| [`Pair`](#boltzrpc-Pair) | [`SubmarinePair`](#boltzrpc-SubmarinePair) |
+| [`Pair`](#pair) | [`SubmarinePair`](#submarinepair) |
 
 #### GetReversePair
 
@@ -43,7 +43,7 @@ Fetches information about a specific pair for a reverse swap.
 
 | Request | Response |
 | ------- | -------- |
-| [`Pair`](#boltzrpc-Pair) | [`ReversePair`](#boltzrpc-ReversePair) |
+| [`Pair`](#pair) | [`ReversePair`](#reversepair) |
 
 #### GetPairs
 
@@ -51,7 +51,7 @@ Fetches all available pairs for submarine and reverse swaps.
 
 | Request | Response |
 | ------- | -------- |
-| [`.google.protobuf.Empty`](#google-protobuf-Empty) | [`GetPairsResponse`](#boltzrpc-GetPairsResponse) |
+| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`GetPairsResponse`](#getpairsresponse) |
 
 #### GetFeeEstimation
 
@@ -59,7 +59,7 @@ Fetches the latest limits and fees from the Boltz backend API it is connected to
 
 | Request | Response |
 | ------- | -------- |
-| [`GetFeeEstimationRequest`](#boltzrpc-GetFeeEstimationRequest) | [`GetFeeEstimationResponse`](#boltzrpc-GetFeeEstimationResponse) |
+| [`GetFeeEstimationRequest`](#getfeeestimationrequest) | [`GetFeeEstimationResponse`](#getfeeestimationresponse) |
 
 #### ListSwaps
 
@@ -67,7 +67,7 @@ Returns a list of all swaps, reverse swaps and channel creations in the database
 
 | Request | Response |
 | ------- | -------- |
-| [`ListSwapsRequest`](#boltzrpc-ListSwapsRequest) | [`ListSwapsResponse`](#boltzrpc-ListSwapsResponse) |
+| [`ListSwapsRequest`](#listswapsrequest) | [`ListSwapsResponse`](#listswapsresponse) |
 
 #### RefundSwap
 
@@ -75,7 +75,7 @@ Refund a failed swap manually. This is only required when no refund address has 
 
 | Request | Response |
 | ------- | -------- |
-| [`RefundSwapRequest`](#boltzrpc-RefundSwapRequest) | [`GetSwapInfoResponse`](#boltzrpc-GetSwapInfoResponse) |
+| [`RefundSwapRequest`](#refundswaprequest) | [`GetSwapInfoResponse`](#getswapinforesponse) |
 
 #### GetSwapInfo
 
@@ -83,7 +83,7 @@ Gets all available information about a swap from the database.
 
 | Request | Response |
 | ------- | -------- |
-| [`GetSwapInfoRequest`](#boltzrpc-GetSwapInfoRequest) | [`GetSwapInfoResponse`](#boltzrpc-GetSwapInfoResponse) |
+| [`GetSwapInfoRequest`](#getswapinforequest) | [`GetSwapInfoResponse`](#getswapinforesponse) |
 
 #### GetSwapInfoStream
 
@@ -91,7 +91,7 @@ Returns the entire history of the swap if is still pending and streams updates i
 
 | Request | Response |
 | ------- | -------- |
-| [`GetSwapInfoRequest`](#boltzrpc-GetSwapInfoRequest) | [`GetSwapInfoResponse`](#boltzrpc-GetSwapInfoResponse) stream |
+| [`GetSwapInfoRequest`](#getswapinforequest) | [`GetSwapInfoResponse`](#getswapinforesponse) stream |
 
 #### Deposit
 
@@ -99,7 +99,7 @@ This is a wrapper for channel creation swaps. The daemon only returns the ID, ti
 
 | Request | Response |
 | ------- | -------- |
-| [`DepositRequest`](#boltzrpc-DepositRequest) | [`DepositResponse`](#boltzrpc-DepositResponse) |
+| [`DepositRequest`](#depositrequest) | [`DepositResponse`](#depositresponse) |
 
 #### CreateSwap
 
@@ -107,7 +107,7 @@ Creates a new swap from onchain to lightning.
 
 | Request | Response |
 | ------- | -------- |
-| [`CreateSwapRequest`](#boltzrpc-CreateSwapRequest) | [`CreateSwapResponse`](#boltzrpc-CreateSwapResponse) |
+| [`CreateSwapRequest`](#createswaprequest) | [`CreateSwapResponse`](#createswapresponse) |
 
 #### CreateChannel
 
@@ -115,7 +115,7 @@ Create a new swap from onchain to a new lightning channel. The daemon will only 
 
 | Request | Response |
 | ------- | -------- |
-| [`CreateChannelRequest`](#boltzrpc-CreateChannelRequest) | [`CreateSwapResponse`](#boltzrpc-CreateSwapResponse) |
+| [`CreateChannelRequest`](#createchannelrequest) | [`CreateSwapResponse`](#createswapresponse) |
 
 #### CreateReverseSwap
 
@@ -123,7 +123,7 @@ Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is s
 
 | Request | Response |
 | ------- | -------- |
-| [`CreateReverseSwapRequest`](#boltzrpc-CreateReverseSwapRequest) | [`CreateReverseSwapResponse`](#boltzrpc-CreateReverseSwapResponse) |
+| [`CreateReverseSwapRequest`](#createreverseswaprequest) | [`CreateReverseSwapResponse`](#createreverseswapresponse) |
 
 #### CreateWallet
 
@@ -131,7 +131,7 @@ Creates a new liquid wallet and returns the mnemonic.
 
 | Request | Response |
 | ------- | -------- |
-| [`CreateWalletRequest`](#boltzrpc-CreateWalletRequest) | [`WalletCredentials`](#boltzrpc-WalletCredentials) |
+| [`CreateWalletRequest`](#createwalletrequest) | [`WalletCredentials`](#walletcredentials) |
 
 #### ImportWallet
 
@@ -139,7 +139,7 @@ Imports an existing wallet.
 
 | Request | Response |
 | ------- | -------- |
-| [`ImportWalletRequest`](#boltzrpc-ImportWalletRequest) | [`Wallet`](#boltzrpc-Wallet) |
+| [`ImportWalletRequest`](#importwalletrequest) | [`Wallet`](#wallet) |
 
 #### SetSubaccount
 
@@ -147,23 +147,23 @@ Sets the subaccount of a wallet. Not supported for readonly wallets.
 
 | Request | Response |
 | ------- | -------- |
-| [`SetSubaccountRequest`](#boltzrpc-SetSubaccountRequest) | [`Subaccount`](#boltzrpc-Subaccount) |
+| [`SetSubaccountRequest`](#setsubaccountrequest) | [`Subaccount`](#subaccount) |
 
 #### GetSubaccounts
 
-Returns a list of all subaccounts for a given wallet.
+Returns all subaccounts for a given wallet. Not supported for readonly wallets.
 
 | Request | Response |
 | ------- | -------- |
-| [`WalletInfo`](#boltzrpc-WalletInfo) | [`GetSubaccountsResponse`](#boltzrpc-GetSubaccountsResponse) |
+| [`WalletInfo`](#walletinfo) | [`GetSubaccountsResponse`](#getsubaccountsresponse) |
 
 #### GetWallets
 
-Returns a list of all available wallets.
+Returns all available wallets.
 
 | Request | Response |
 | ------- | -------- |
-| [`GetWalletsRequest`](#boltzrpc-GetWalletsRequest) | [`Wallets`](#boltzrpc-Wallets) |
+| [`GetWalletsRequest`](#getwalletsrequest) | [`Wallets`](#wallets) |
 
 #### GetWallet
 
@@ -171,7 +171,7 @@ Returns the current balance and subaccount of a wallet.
 
 | Request | Response |
 | ------- | -------- |
-| [`GetWalletRequest`](#boltzrpc-GetWalletRequest) | [`Wallet`](#boltzrpc-Wallet) |
+| [`GetWalletRequest`](#getwalletrequest) | [`Wallet`](#wallet) |
 
 #### GetWalletCredentials
 
@@ -179,7 +179,7 @@ Returns the credentials of a wallet. The password will be required if the wallet
 
 | Request | Response |
 | ------- | -------- |
-| [`GetWalletCredentialsRequest`](#boltzrpc-GetWalletCredentialsRequest) | [`WalletCredentials`](#boltzrpc-WalletCredentials) |
+| [`GetWalletCredentialsRequest`](#getwalletcredentialsrequest) | [`WalletCredentials`](#walletcredentials) |
 
 #### RemoveWallet
 
@@ -187,7 +187,7 @@ Removes a wallet.
 
 | Request | Response |
 | ------- | -------- |
-| [`RemoveWalletRequest`](#boltzrpc-RemoveWalletRequest) | [`RemoveWalletResponse`](#boltzrpc-RemoveWalletResponse) |
+| [`RemoveWalletRequest`](#removewalletrequest) | [`RemoveWalletResponse`](#removewalletresponse) |
 
 #### Stop
 
@@ -195,7 +195,7 @@ Gracefully stops the daemon.
 
 | Request | Response |
 | ------- | -------- |
-| [`.google.protobuf.Empty`](#google-protobuf-Empty) | [`.google.protobuf.Empty`](#google-protobuf-Empty) |
+| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
 #### Unlock
 
@@ -203,7 +203,7 @@ Unlocks the server.
 
 | Request | Response |
 | ------- | -------- |
-| [`UnlockRequest`](#boltzrpc-UnlockRequest) | [`.google.protobuf.Empty`](#google-protobuf-Empty) |
+| [`UnlockRequest`](#unlockrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
 #### VerifyWalletPassword
 
@@ -211,7 +211,7 @@ Check if the password is correct.
 
 | Request | Response |
 | ------- | -------- |
-| [`VerifyWalletPasswordRequest`](#boltzrpc-VerifyWalletPasswordRequest) | [`VerifyWalletPasswordResponse`](#boltzrpc-VerifyWalletPasswordResponse) |
+| [`VerifyWalletPasswordRequest`](#verifywalletpasswordrequest) | [`VerifyWalletPasswordResponse`](#verifywalletpasswordresponse) |
 
 #### ChangeWalletPassword
 
@@ -219,7 +219,7 @@ Changes the password for wallet encryption.
 
 | Request | Response |
 | ------- | -------- |
-| [`ChangeWalletPasswordRequest`](#boltzrpc-ChangeWalletPasswordRequest) | [`.google.protobuf.Empty`](#google-protobuf-Empty) |
+| [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
 
 
@@ -227,7 +227,7 @@ Changes the password for wallet encryption.
 ### Messages
 
 #### Account
-<a name="boltzrpc-Account"></a>
+
 
 
 
@@ -236,14 +236,14 @@ Changes the password for wallet encryption.
 | `name` | [`string`](#string) |  |  |
 | `type` | [`string`](#string) |  |  |
 | `pointer` | [`uint64`](#uint64) |  |  |
-| `balance` | [`Balance`](#Balance) |  |  |
+| `balance` | [`Balance`](#balance) |  |  |
 
 
 
 
 
 #### Balance
-<a name="boltzrpc-Balance"></a>
+
 
 
 
@@ -258,7 +258,7 @@ Changes the password for wallet encryption.
 
 
 #### Budget
-<a name="boltzrpc-Budget"></a>
+
 
 
 
@@ -274,7 +274,7 @@ Changes the password for wallet encryption.
 
 
 #### ChangeWalletPasswordRequest
-<a name="boltzrpc-ChangeWalletPasswordRequest"></a>
+
 
 
 
@@ -288,7 +288,7 @@ Changes the password for wallet encryption.
 
 
 #### ChannelCreationInfo
-<a name="boltzrpc-ChannelCreationInfo"></a>
+
 Channel creations are an optional extension to a submarine swap in the data types of boltz-client.
 
 
@@ -306,7 +306,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### ChannelId
-<a name="boltzrpc-ChannelId"></a>
+
 
 
 
@@ -320,21 +320,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### CombinedChannelSwapInfo
-<a name="boltzrpc-CombinedChannelSwapInfo"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swap` | [`SwapInfo`](#SwapInfo) |  |  |
-| `channel_creation` | [`ChannelCreationInfo`](#ChannelCreationInfo) |  |  |
+| `swap` | [`SwapInfo`](#swapinfo) |  |  |
+| `channel_creation` | [`ChannelCreationInfo`](#channelcreationinfo) |  |  |
 
 
 
 
 
 #### CreateChannelRequest
-<a name="boltzrpc-CreateChannelRequest"></a>
+
 
 
 
@@ -349,7 +349,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### CreateReverseSwapRequest
-<a name="boltzrpc-CreateReverseSwapRequest"></a>
+
 
 
 
@@ -358,7 +358,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`int64`](#int64) |  |  |
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new P2WKH address from LND |
 | `accept_zero_conf` | [`bool`](#bool) |  |  |
-| `pair` | [`Pair`](#Pair) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated |  |
 | `wallet` | [`string`](#string) | optional |  |
 | `return_immediately` | [`bool`](#bool) |  | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
@@ -368,7 +368,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### CreateReverseSwapResponse
-<a name="boltzrpc-CreateReverseSwapResponse"></a>
+
 
 
 
@@ -384,14 +384,14 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### CreateSwapRequest
-<a name="boltzrpc-CreateSwapRequest"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `amount` | [`int64`](#int64) |  |  |
-| `pair` | [`Pair`](#Pair) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated |  |
 | `auto_send` | [`bool`](#bool) |  |  |
 | `refund_address` | [`string`](#string) |  |  |
@@ -403,7 +403,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### CreateSwapResponse
-<a name="boltzrpc-CreateSwapResponse"></a>
+
 
 
 
@@ -422,13 +422,13 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### CreateWalletRequest
-<a name="boltzrpc-CreateWalletRequest"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `info` | [`WalletInfo`](#WalletInfo) |  |  |
+| `info` | [`WalletInfo`](#walletinfo) |  |  |
 | `password` | [`string`](#string) | optional |  |
 
 
@@ -436,7 +436,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### DepositRequest
-<a name="boltzrpc-DepositRequest"></a>
+
 
 
 
@@ -449,7 +449,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### DepositResponse
-<a name="boltzrpc-DepositResponse"></a>
+
 
 
 
@@ -464,21 +464,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### Fees
-<a name="boltzrpc-Fees"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
-| `miner` | [`MinerFees`](#MinerFees) |  |  |
+| `miner` | [`MinerFees`](#minerfees) |  |  |
 
 
 
 
 
 #### GetFeeEstimationRequest
-<a name="boltzrpc-GetFeeEstimationRequest"></a>
+
 
 
 
@@ -486,28 +486,28 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `amount` | [`uint64`](#uint64) |  |  |
 | `swap_type` | [`string`](#string) |  |  |
-| `pair` | [`Pair`](#Pair) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
 
 
 
 
 
 #### GetFeeEstimationResponse
-<a name="boltzrpc-GetFeeEstimationResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `fees` | [`Fees`](#Fees) |  |  |
-| `limits` | [`Limits`](#Limits) |  |  |
+| `fees` | [`Fees`](#fees) |  |  |
+| `limits` | [`Limits`](#limits) |  |  |
 
 
 
 
 
 #### GetInfoRequest
-<a name="boltzrpc-GetInfoRequest"></a>
+
 
 
 
@@ -515,7 +515,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetInfoResponse
-<a name="boltzrpc-GetInfoResponse"></a>
+
 
 
 
@@ -526,7 +526,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `network` | [`string`](#string) |  |  |
 | `node_pubkey` | [`string`](#string) |  |  |
 | `auto_swap_status` | [`string`](#string) |  |  |
-| `block_heights` | [`GetInfoResponse.BlockHeightsEntry`](#GetInfoResponse-BlockHeightsEntry) | repeated |  |
+| `block_heights` | [`GetInfoResponse.BlockHeightsEntry`](#getinforesponse.blockheightsentry) | repeated |  |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -538,7 +538,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetInfoResponse.BlockHeightsEntry
-<a name="boltzrpc-GetInfoResponse-BlockHeightsEntry"></a>
+
 
 
 
@@ -552,21 +552,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetPairsResponse
-<a name="boltzrpc-GetPairsResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `submarine` | [`SubmarinePair`](#SubmarinePair) | repeated |  |
-| `reverse` | [`ReversePair`](#ReversePair) | repeated |  |
+| `submarine` | [`SubmarinePair`](#submarinepair) | repeated |  |
+| `reverse` | [`ReversePair`](#reversepair) | repeated |  |
 
 
 
 
 
 #### GetServiceInfoRequest
-<a name="boltzrpc-GetServiceInfoRequest"></a>
+
 
 
 
@@ -574,21 +574,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetServiceInfoResponse
-<a name="boltzrpc-GetServiceInfoResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `fees` | [`Fees`](#Fees) |  |  |
-| `limits` | [`Limits`](#Limits) |  |  |
+| `fees` | [`Fees`](#fees) |  |  |
+| `limits` | [`Limits`](#limits) |  |  |
 
 
 
 
 
 #### GetSubaccountsRequest
-<a name="boltzrpc-GetSubaccountsRequest"></a>
+
 
 
 
@@ -596,21 +596,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetSubaccountsResponse
-<a name="boltzrpc-GetSubaccountsResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `current` | [`uint64`](#uint64) | optional |  |
-| `subaccounts` | [`Subaccount`](#Subaccount) | repeated |  |
+| `subaccounts` | [`Subaccount`](#subaccount) | repeated |  |
 
 
 
 
 
 #### GetSwapInfoRequest
-<a name="boltzrpc-GetSwapInfoRequest"></a>
+
 
 
 
@@ -623,22 +623,22 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetSwapInfoResponse
-<a name="boltzrpc-GetSwapInfoResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swap` | [`SwapInfo`](#SwapInfo) |  |  |
-| `channel_creation` | [`ChannelCreationInfo`](#ChannelCreationInfo) |  |  |
-| `reverse_swap` | [`ReverseSwapInfo`](#ReverseSwapInfo) |  |  |
+| `swap` | [`SwapInfo`](#swapinfo) |  |  |
+| `channel_creation` | [`ChannelCreationInfo`](#channelcreationinfo) |  |  |
+| `reverse_swap` | [`ReverseSwapInfo`](#reverseswapinfo) |  |  |
 
 
 
 
 
 #### GetSwapRecommendationsRequest
-<a name="boltzrpc-GetSwapRecommendationsRequest"></a>
+
 
 
 
@@ -646,20 +646,20 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetSwapRecommendationsResponse
-<a name="boltzrpc-GetSwapRecommendationsResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swaps` | [`SwapRecommendation`](#SwapRecommendation) | repeated |  |
+| `swaps` | [`SwapRecommendation`](#swaprecommendation) | repeated |  |
 
 
 
 
 
 #### GetWalletCredentialsRequest
-<a name="boltzrpc-GetWalletCredentialsRequest"></a>
+
 
 
 
@@ -673,7 +673,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetWalletRequest
-<a name="boltzrpc-GetWalletRequest"></a>
+
 
 
 
@@ -686,13 +686,13 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### GetWalletsRequest
-<a name="boltzrpc-GetWalletsRequest"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `currency` | [`Currency`](#Currency) | optional |  |
+| `currency` | [`Currency`](#currency) | optional |  |
 | `include_readonly` | [`bool`](#bool) | optional |  |
 
 
@@ -700,14 +700,14 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### ImportWalletRequest
-<a name="boltzrpc-ImportWalletRequest"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `credentials` | [`WalletCredentials`](#WalletCredentials) |  |  |
-| `info` | [`WalletInfo`](#WalletInfo) |  |  |
+| `credentials` | [`WalletCredentials`](#walletcredentials) |  |  |
+| `info` | [`WalletInfo`](#walletinfo) |  |  |
 | `password` | [`string`](#string) | optional |  |
 
 
@@ -715,7 +715,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### ImportWalletResponse
-<a name="boltzrpc-ImportWalletResponse"></a>
+
 
 
 
@@ -723,13 +723,13 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### LightningChannel
-<a name="boltzrpc-LightningChannel"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [`ChannelId`](#ChannelId) |  |  |
+| `id` | [`ChannelId`](#channelid) |  |  |
 | `capacity` | [`uint64`](#uint64) |  |  |
 | `local_sat` | [`uint64`](#uint64) |  |  |
 | `remote_sat` | [`uint64`](#uint64) |  |  |
@@ -740,7 +740,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### Limits
-<a name="boltzrpc-Limits"></a>
+
 
 
 
@@ -755,38 +755,38 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### ListSwapsRequest
-<a name="boltzrpc-ListSwapsRequest"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `from` | [`Currency`](#Currency) | optional |  |
-| `to` | [`Currency`](#Currency) | optional |  |
+| `from` | [`Currency`](#currency) | optional |  |
+| `to` | [`Currency`](#currency) | optional |  |
 | `is_auto` | [`bool`](#bool) | optional |  |
-| `state` | [`SwapState`](#SwapState) | optional |  |
+| `state` | [`SwapState`](#swapstate) | optional |  |
 
 
 
 
 
 #### ListSwapsResponse
-<a name="boltzrpc-ListSwapsResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swaps` | [`SwapInfo`](#SwapInfo) | repeated |  |
-| `channel_creations` | [`CombinedChannelSwapInfo`](#CombinedChannelSwapInfo) | repeated |  |
-| `reverse_swaps` | [`ReverseSwapInfo`](#ReverseSwapInfo) | repeated |  |
+| `swaps` | [`SwapInfo`](#swapinfo) | repeated |  |
+| `channel_creations` | [`CombinedChannelSwapInfo`](#combinedchannelswapinfo) | repeated |  |
+| `reverse_swaps` | [`ReverseSwapInfo`](#reverseswapinfo) | repeated |  |
 
 
 
 
 
 #### MinerFees
-<a name="boltzrpc-MinerFees"></a>
+
 
 
 
@@ -800,21 +800,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### Pair
-<a name="boltzrpc-Pair"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `from` | [`Currency`](#Currency) |  |  |
-| `to` | [`Currency`](#Currency) |  |  |
+| `from` | [`Currency`](#currency) |  |  |
+| `to` | [`Currency`](#currency) |  |  |
 
 
 
 
 
 #### RefundSwapRequest
-<a name="boltzrpc-RefundSwapRequest"></a>
+
 
 
 
@@ -828,7 +828,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### RemoveWalletRequest
-<a name="boltzrpc-RemoveWalletRequest"></a>
+
 
 
 
@@ -841,7 +841,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### RemoveWalletResponse
-<a name="boltzrpc-RemoveWalletResponse"></a>
+
 
 
 
@@ -849,38 +849,38 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 #### ReversePair
-<a name="boltzrpc-ReversePair"></a>
+
 Reverse Pair
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `pair` | [`Pair`](#Pair) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
 | `hash` | [`string`](#string) |  |  |
 | `rate` | [`float`](#float) |  |  |
-| `limits` | [`Limits`](#Limits) |  |  |
-| `fees` | [`ReversePair.Fees`](#ReversePair-Fees) |  |  |
+| `limits` | [`Limits`](#limits) |  |  |
+| `fees` | [`ReversePair.Fees`](#reversepair.fees) |  |  |
 
 
 
 
 
 #### ReversePair.Fees
-<a name="boltzrpc-ReversePair-Fees"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
-| `miner_fees` | [`ReversePair.Fees.MinerFees`](#ReversePair-Fees-MinerFees) |  |  |
+| `miner_fees` | [`ReversePair.Fees.MinerFees`](#reversepair.fees.minerfees) |  |  |
 
 
 
 
 
 #### ReversePair.Fees.MinerFees
-<a name="boltzrpc-ReversePair-Fees-MinerFees"></a>
+
 
 
 
@@ -894,14 +894,14 @@ Reverse Pair
 
 
 #### ReverseSwapInfo
-<a name="boltzrpc-ReverseSwapInfo"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
-| `state` | [`SwapState`](#SwapState) |  |  |
+| `state` | [`SwapState`](#swapstate) |  |  |
 | `error` | [`string`](#string) |  |  |
 | `status` | [`string`](#string) |  | Latest status message of the Boltz backend |
 | `private_key` | [`string`](#string) |  |  |
@@ -913,8 +913,8 @@ Reverse Pair
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `claim_transaction_id` | [`string`](#string) |  |  |
-| `pair` | [`Pair`](#Pair) |  |  |
-| `chan_ids` | [`ChannelId`](#ChannelId) | repeated |  |
+| `pair` | [`Pair`](#pair) |  |  |
+| `chan_ids` | [`ChannelId`](#channelid) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
@@ -926,7 +926,7 @@ Reverse Pair
 
 
 #### SetSubaccountRequest
-<a name="boltzrpc-SetSubaccountRequest"></a>
+
 
 
 
@@ -940,13 +940,13 @@ Reverse Pair
 
 
 #### Subaccount
-<a name="boltzrpc-Subaccount"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `balance` | [`Balance`](#Balance) |  |  |
+| `balance` | [`Balance`](#balance) |  |  |
 | `pointer` | [`uint64`](#uint64) |  |  |
 | `type` | [`string`](#string) |  |  |
 
@@ -955,24 +955,24 @@ Reverse Pair
 
 
 #### SubmarinePair
-<a name="boltzrpc-SubmarinePair"></a>
+
 Submarine Pair
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `pair` | [`Pair`](#Pair) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
 | `hash` | [`string`](#string) |  |  |
 | `rate` | [`float`](#float) |  |  |
-| `limits` | [`Limits`](#Limits) |  |  |
-| `fees` | [`SubmarinePair.Fees`](#SubmarinePair-Fees) |  |  |
+| `limits` | [`Limits`](#limits) |  |  |
+| `fees` | [`SubmarinePair.Fees`](#submarinepair.fees) |  |  |
 
 
 
 
 
 #### SubmarinePair.Fees
-<a name="boltzrpc-SubmarinePair-Fees"></a>
+
 
 
 
@@ -986,15 +986,15 @@ Submarine Pair
 
 
 #### SwapInfo
-<a name="boltzrpc-SwapInfo"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
-| `pair` | [`Pair`](#Pair) |  |  |
-| `state` | [`SwapState`](#SwapState) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
+| `state` | [`SwapState`](#swapstate) |  |  |
 | `error` | [`string`](#string) |  |  |
 | `status` | [`string`](#string) |  | Latest status message of the Boltz backend |
 | `private_key` | [`string`](#string) |  |  |
@@ -1007,7 +1007,7 @@ Submarine Pair
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `refund_transaction_id` | [`string`](#string) |  | If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the `lockup_address` back to the configured wallet or the address specified in the `refund_address` field. |
 | `refund_address` | [`string`](#string) | optional |  |
-| `chan_ids` | [`ChannelId`](#ChannelId) | repeated |  |
+| `chan_ids` | [`ChannelId`](#channelid) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
@@ -1019,7 +1019,7 @@ Submarine Pair
 
 
 #### SwapRecommendation
-<a name="boltzrpc-SwapRecommendation"></a>
+
 
 
 
@@ -1027,7 +1027,7 @@ Submarine Pair
 | ----- | ---- | ----- | ----------- |
 | `type` | [`string`](#string) |  |  |
 | `amount` | [`uint64`](#uint64) |  |  |
-| `channel` | [`LightningChannel`](#LightningChannel) |  |  |
+| `channel` | [`LightningChannel`](#lightningchannel) |  |  |
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
 | `dismissed_reasons` | [`string`](#string) | repeated |  |
 
@@ -1036,7 +1036,7 @@ Submarine Pair
 
 
 #### SwapStats
-<a name="boltzrpc-SwapStats"></a>
+
 
 
 
@@ -1053,7 +1053,7 @@ Submarine Pair
 
 
 #### UnlockRequest
-<a name="boltzrpc-UnlockRequest"></a>
+
 
 
 
@@ -1066,7 +1066,7 @@ Submarine Pair
 
 
 #### VerifyWalletPasswordRequest
-<a name="boltzrpc-VerifyWalletPasswordRequest"></a>
+
 
 
 
@@ -1079,7 +1079,7 @@ Submarine Pair
 
 
 #### VerifyWalletPasswordResponse
-<a name="boltzrpc-VerifyWalletPasswordResponse"></a>
+
 
 
 
@@ -1092,23 +1092,23 @@ Submarine Pair
 
 
 #### Wallet
-<a name="boltzrpc-Wallet"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) |  |  |
-| `currency` | [`Currency`](#Currency) |  |  |
+| `currency` | [`Currency`](#currency) |  |  |
 | `readonly` | [`bool`](#bool) |  |  |
-| `balance` | [`Balance`](#Balance) |  |  |
+| `balance` | [`Balance`](#balance) |  |  |
 
 
 
 
 
 #### WalletCredentials
-<a name="boltzrpc-WalletCredentials"></a>
+
 
 
 
@@ -1124,27 +1124,27 @@ Submarine Pair
 
 
 #### WalletInfo
-<a name="boltzrpc-WalletInfo"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) |  |  |
-| `currency` | [`Currency`](#Currency) |  |  |
+| `currency` | [`Currency`](#currency) |  |  |
 
 
 
 
 
 #### Wallets
-<a name="boltzrpc-Wallets"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `wallets` | [`Wallet`](#Wallet) | repeated |  |
+| `wallets` | [`Wallet`](#wallet) | repeated |  |
 
 
 
@@ -1154,7 +1154,6 @@ Submarine Pair
 ### Enums
 
 
-<a name="boltzrpc-Currency"></a>
 
 #### Currency
 
@@ -1165,7 +1164,6 @@ Submarine Pair
 | LBTC | 1 |  |
 
 
-<a name="boltzrpc-SwapState"></a>
 
 #### SwapState
 
@@ -1189,7 +1187,7 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 
 
 ## autoswaprpc.AutoSwap
-<a name="autoswaprpc-AutoSwap"></a>
+
 
 
 ### Methods
@@ -1199,7 +1197,7 @@ Returns a list of swaps which are currently recommended by the autoswapper. Also
 
 | Request | Response |
 | ------- | -------- |
-| [`GetSwapRecommendationsRequest`](#autoswaprpc-GetSwapRecommendationsRequest) | [`GetSwapRecommendationsResponse`](#autoswaprpc-GetSwapRecommendationsResponse) |
+| [`GetSwapRecommendationsRequest`](#getswaprecommendationsrequest) | [`GetSwapRecommendationsResponse`](#getswaprecommendationsresponse) |
 
 #### GetStatus
 
@@ -1207,7 +1205,7 @@ Returns the current budget of the autoswapper and some relevant stats.
 
 | Request | Response |
 | ------- | -------- |
-| [`GetStatusRequest`](#autoswaprpc-GetStatusRequest) | [`GetStatusResponse`](#autoswaprpc-GetStatusResponse) |
+| [`GetStatusRequest`](#getstatusrequest) | [`GetStatusResponse`](#getstatusresponse) |
 
 #### ResetConfig
 
@@ -1215,7 +1213,7 @@ Resets the configuration to default values.
 
 | Request | Response |
 | ------- | -------- |
-| [`.google.protobuf.Empty`](#google-protobuf-Empty) | [`Config`](#autoswaprpc-Config) |
+| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`Config`](#config) |
 
 #### SetConfig
 
@@ -1223,7 +1221,7 @@ Allows setting multiple json-encoded config values at once. The autoswapper will
 
 | Request | Response |
 | ------- | -------- |
-| [`Config`](#autoswaprpc-Config) | [`Config`](#autoswaprpc-Config) |
+| [`Config`](#config) | [`Config`](#config) |
 
 #### SetConfigValue
 
@@ -1231,7 +1229,7 @@ Allows setting a specific value in the configuration. The autoswapper will reloa
 
 | Request | Response |
 | ------- | -------- |
-| [`SetConfigValueRequest`](#autoswaprpc-SetConfigValueRequest) | [`Config`](#autoswaprpc-Config) |
+| [`SetConfigValueRequest`](#setconfigvaluerequest) | [`Config`](#config) |
 
 #### GetConfig
 
@@ -1239,7 +1237,7 @@ Returns the currently used configurationencoded as json. If a key is specfied, o
 
 | Request | Response |
 | ------- | -------- |
-| [`GetConfigRequest`](#autoswaprpc-GetConfigRequest) | [`Config`](#autoswaprpc-Config) |
+| [`GetConfigRequest`](#getconfigrequest) | [`Config`](#config) |
 
 #### ReloadConfig
 
@@ -1247,7 +1245,7 @@ Reloads the configuration from disk.
 
 | Request | Response |
 | ------- | -------- |
-| [`.google.protobuf.Empty`](#google-protobuf-Empty) | [`Config`](#autoswaprpc-Config) |
+| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`Config`](#config) |
 
 
 
@@ -1255,7 +1253,7 @@ Reloads the configuration from disk.
 ### Messages
 
 #### Budget
-<a name="autoswaprpc-Budget"></a>
+
 
 
 
@@ -1271,7 +1269,7 @@ Reloads the configuration from disk.
 
 
 #### Config
-<a name="autoswaprpc-Config"></a>
+
 
 
 
@@ -1289,7 +1287,7 @@ Reloads the configuration from disk.
 | `failure_backoff` | [`uint64`](#uint64) |  |  |
 | `budget` | [`uint64`](#uint64) |  |  |
 | `budget_interval` | [`uint64`](#uint64) |  |  |
-| `currency` | [`boltzrpc.Currency`](#boltzrpc-Currency) |  |  |
+| `currency` | [`boltzrpc.Currency`](#boltzrpc.currency) |  |  |
 | `swap_type` | [`string`](#string) |  |  |
 | `per_channel` | [`bool`](#bool) |  |  |
 | `wallet` | [`string`](#string) |  |  |
@@ -1300,7 +1298,7 @@ Reloads the configuration from disk.
 
 
 #### GetConfigRequest
-<a name="autoswaprpc-GetConfigRequest"></a>
+
 
 
 
@@ -1313,7 +1311,7 @@ Reloads the configuration from disk.
 
 
 #### GetStatusRequest
-<a name="autoswaprpc-GetStatusRequest"></a>
+
 
 
 
@@ -1321,7 +1319,7 @@ Reloads the configuration from disk.
 
 
 #### GetStatusResponse
-<a name="autoswaprpc-GetStatusResponse"></a>
+
 
 
 
@@ -1330,15 +1328,15 @@ Reloads the configuration from disk.
 | `running` | [`bool`](#bool) |  |  |
 | `strategy` | [`string`](#string) |  |  |
 | `error` | [`string`](#string) |  |  |
-| `stats` | [`boltzrpc.SwapStats`](#boltzrpc-SwapStats) | optional |  |
-| `budget` | [`Budget`](#Budget) | optional |  |
+| `stats` | [`boltzrpc.SwapStats`](#boltzrpc.swapstats) | optional |  |
+| `budget` | [`Budget`](#budget) | optional |  |
 
 
 
 
 
 #### GetSwapRecommendationsRequest
-<a name="autoswaprpc-GetSwapRecommendationsRequest"></a>
+
 
 
 
@@ -1351,20 +1349,20 @@ Reloads the configuration from disk.
 
 
 #### GetSwapRecommendationsResponse
-<a name="autoswaprpc-GetSwapRecommendationsResponse"></a>
+
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swaps` | [`SwapRecommendation`](#SwapRecommendation) | repeated |  |
+| `swaps` | [`SwapRecommendation`](#swaprecommendation) | repeated |  |
 
 
 
 
 
 #### SetConfigValueRequest
-<a name="autoswaprpc-SetConfigValueRequest"></a>
+
 
 
 
@@ -1378,7 +1376,7 @@ Reloads the configuration from disk.
 
 
 #### SwapRecommendation
-<a name="autoswaprpc-SwapRecommendation"></a>
+
 
 
 
@@ -1386,7 +1384,7 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `type` | [`string`](#string) |  |  |
 | `amount` | [`uint64`](#uint64) |  |  |
-| `channel` | [`boltzrpc.LightningChannel`](#boltzrpc-LightningChannel) |  |  |
+| `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.lightningchannel) |  |  |
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
 | `dismissed_reasons` | [`string`](#string) | repeated |  |
 
