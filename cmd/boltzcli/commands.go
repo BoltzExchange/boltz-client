@@ -1253,10 +1253,7 @@ func selectSubaccount(ctx *cli.Context) error {
 	s.Suffix = " Fetching subaccounts..."
 	s.Start()
 
-	walletInfo, err := walletInfo(ctx)
-	if err != nil {
-		return err
-	}
+	walletInfo := &boltzrpc.WalletInfo{Name: ctx.Args().First()}
 	subaccounts, err := client.GetSubaccounts(walletInfo)
 	s.Stop()
 	if err != nil {
