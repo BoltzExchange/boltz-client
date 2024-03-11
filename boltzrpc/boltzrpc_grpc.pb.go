@@ -95,21 +95,21 @@ type BoltzClient interface {
 	CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error)
 	// Creates a new liquid wallet and returns the mnemonic.
 	CreateWallet(ctx context.Context, in *CreateWalletRequest, opts ...grpc.CallOption) (*WalletCredentials, error)
-	// Imports a liquid wallet from a mnemonic.
+	// Imports an existing wallet.
 	ImportWallet(ctx context.Context, in *ImportWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
-	// Sets the subaccount of the liquid wallet which will be used by the daemon.
+	// Sets the subaccount of a wallet. Not supported for readonly wallets.
 	SetSubaccount(ctx context.Context, in *SetSubaccountRequest, opts ...grpc.CallOption) (*Subaccount, error)
-	// Returns a list of all subaccounts of the liquid wallet.
+	// Returns a list of all subaccounts for a given wallet.
 	GetSubaccounts(ctx context.Context, in *WalletInfo, opts ...grpc.CallOption) (*GetSubaccountsResponse, error)
-	// Returns the current balance and subaccount of the liquid wallet.
+	// Returns a list of all available wallets.
 	GetWallets(ctx context.Context, in *GetWalletsRequest, opts ...grpc.CallOption) (*Wallets, error)
-	// Returns the current balance and subaccount of the liquid wallet.
+	// Returns the current balance and subaccount of a wallet.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
-	// Returns the mnemonic of the liquid wallet.
+	// Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
 	GetWalletCredentials(ctx context.Context, in *GetWalletCredentialsRequest, opts ...grpc.CallOption) (*WalletCredentials, error)
-	// Removes the liquid wallet from the daemon.
+	// Removes a wallet.
 	RemoveWallet(ctx context.Context, in *RemoveWalletRequest, opts ...grpc.CallOption) (*RemoveWalletResponse, error)
-	// Stops the server.
+	// Gracefully stops the daemon.
 	Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Unlocks the server.
 	Unlock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -434,21 +434,21 @@ type BoltzServer interface {
 	CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error)
 	// Creates a new liquid wallet and returns the mnemonic.
 	CreateWallet(context.Context, *CreateWalletRequest) (*WalletCredentials, error)
-	// Imports a liquid wallet from a mnemonic.
+	// Imports an existing wallet.
 	ImportWallet(context.Context, *ImportWalletRequest) (*Wallet, error)
-	// Sets the subaccount of the liquid wallet which will be used by the daemon.
+	// Sets the subaccount of a wallet. Not supported for readonly wallets.
 	SetSubaccount(context.Context, *SetSubaccountRequest) (*Subaccount, error)
-	// Returns a list of all subaccounts of the liquid wallet.
+	// Returns a list of all subaccounts for a given wallet.
 	GetSubaccounts(context.Context, *WalletInfo) (*GetSubaccountsResponse, error)
-	// Returns the current balance and subaccount of the liquid wallet.
+	// Returns a list of all available wallets.
 	GetWallets(context.Context, *GetWalletsRequest) (*Wallets, error)
-	// Returns the current balance and subaccount of the liquid wallet.
+	// Returns the current balance and subaccount of a wallet.
 	GetWallet(context.Context, *GetWalletRequest) (*Wallet, error)
-	// Returns the mnemonic of the liquid wallet.
+	// Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
 	GetWalletCredentials(context.Context, *GetWalletCredentialsRequest) (*WalletCredentials, error)
-	// Removes the liquid wallet from the daemon.
+	// Removes a wallet.
 	RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error)
-	// Stops the server.
+	// Gracefully stops the daemon.
 	Stop(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// Unlocks the server.
 	Unlock(context.Context, *UnlockRequest) (*emptypb.Empty, error)

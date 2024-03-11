@@ -135,7 +135,7 @@ Creates a new liquid wallet and returns the mnemonic.
 
 #### ImportWallet
 
-Imports a liquid wallet from a mnemonic.
+Imports an existing wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -143,7 +143,7 @@ Imports a liquid wallet from a mnemonic.
 
 #### SetSubaccount
 
-Sets the subaccount of the liquid wallet which will be used by the daemon.
+Sets the subaccount of a wallet. Not supported for readonly wallets.
 
 | Request | Response |
 | ------- | -------- |
@@ -151,7 +151,7 @@ Sets the subaccount of the liquid wallet which will be used by the daemon.
 
 #### GetSubaccounts
 
-Returns a list of all subaccounts of the liquid wallet.
+Returns a list of all subaccounts for a given wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -159,7 +159,7 @@ Returns a list of all subaccounts of the liquid wallet.
 
 #### GetWallets
 
-Returns the current balance and subaccount of the liquid wallet.
+Returns a list of all available wallets.
 
 | Request | Response |
 | ------- | -------- |
@@ -167,7 +167,7 @@ Returns the current balance and subaccount of the liquid wallet.
 
 #### GetWallet
 
-Returns the current balance and subaccount of the liquid wallet.
+Returns the current balance and subaccount of a wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -175,7 +175,7 @@ Returns the current balance and subaccount of the liquid wallet.
 
 #### GetWalletCredentials
 
-Returns the mnemonic of the liquid wallet.
+Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
 
 | Request | Response |
 | ------- | -------- |
@@ -183,7 +183,7 @@ Returns the mnemonic of the liquid wallet.
 
 #### RemoveWallet
 
-Removes the liquid wallet from the daemon.
+Removes a wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -191,7 +191,7 @@ Removes the liquid wallet from the daemon.
 
 #### Stop
 
-Stops the server.
+Gracefully stops the daemon.
 
 | Request | Response |
 | ------- | -------- |
