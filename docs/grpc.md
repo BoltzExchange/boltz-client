@@ -361,7 +361,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#Pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated |  |
 | `wallet` | [`string`](#string) | optional |  |
-| `return_immediately` | [`bool`](#bool) |  | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. This is only relevant when `accept_zero_conf` is set. |
+| `return_immediately` | [`bool`](#bool) |  | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
 
 
 
@@ -1279,8 +1279,7 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `enabled` | [`bool`](#bool) |  |  |
 | `channel_poll_interval` | [`uint64`](#uint64) |  |  |
-| `liquid_address` | [`string`](#string) |  |  |
-| `bitcoin_address` | [`string`](#string) |  |  |
+| `static_address` | [`string`](#string) |  |  |
 | `max_balance` | [`uint64`](#uint64) |  |  |
 | `min_balance` | [`uint64`](#uint64) |  |  |
 | `max_balance_percent` | [`float`](#float) |  |  |
@@ -1290,7 +1289,7 @@ Reloads the configuration from disk.
 | `failure_backoff` | [`uint64`](#uint64) |  |  |
 | `budget` | [`uint64`](#uint64) |  |  |
 | `budget_interval` | [`uint64`](#uint64) |  |  |
-| `currency` | [`boltzrpc.Currency`](#boltzrpc.Currency) |  |  |
+| `currency` | [`boltzrpc.Currency`](#boltzrpc-Currency) |  |  |
 | `swap_type` | [`string`](#string) |  |  |
 | `per_channel` | [`bool`](#bool) |  |  |
 | `wallet` | [`string`](#string) |  |  |
