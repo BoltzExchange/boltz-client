@@ -665,13 +665,6 @@ func autoSwapSetup(ctx *cli.Context) error {
 				Default: fmt.Sprint(config.Budget),
 			},
 		},
-		&survey.Question{
-			Name: "acceptZeroConf",
-			Prompt: &survey.Confirm{
-				Message: "Do you want to accept zero conf swaps?",
-				Default: config.AcceptZeroConf,
-			},
-		},
 	)
 
 	if err := survey.Ask(qs, config); err != nil {

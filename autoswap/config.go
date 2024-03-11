@@ -152,15 +152,10 @@ func (cfg *Config) Init() error {
 }
 
 func (cfg *Config) GetAddress(network *boltz.Network) (address string, err error) {
-	if cfg.currency == boltz.CurrencyLiquid && cfg.LiquidAddress != "" {
-		address = cfg.LiquidAddress
-	} else if cfg.currency == boltz.CurrencyBtc && cfg.BitcoinAddress != "" {
-		address = cfg.BitcoinAddress
-	}
-	if address == "" {
+	if cfg.StaticAddress == "" {
 		return "", errors.New("No address for Currency " + string(cfg.currency))
 	}
-	err = boltz.ValidateAddress(network, address, cfg.currency)
+	err = boltz.ValidateAddress(network, cfg.StaticAddress, cfg.currency)
 	if err != nil {
 		return "", errors.New("Invalid address for Currency " + string(cfg.currency) + " :" + err.Error())
 	}
