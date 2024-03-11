@@ -1,15 +1,15 @@
 # gRPC Documentation
 
-{{range .Files}}
-{{$file_name := .Name}}
-
-This page was automatically generated based on the protobuf file `{{.Name}}`.
+This page was automatically generated.
 
 Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml).
 
+{{range .Files}}
+{{$file_name := .Name}}
+
 {{range .Services}}
 ## {{.FullName}}
-<a name="{{.FullName | anchor}}"></a>
+
 {{.Description}}
 
 ### Methods
@@ -20,7 +20,7 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 
 | Request | Response |
 | ------- | -------- |
-| [`{{.RequestLongType}}`](#{{.RequestFullType | anchor}}){{if .RequestStreaming}} stream{{end}} | [`{{.ResponseLongType}}`](#{{.ResponseFullType | anchor}}){{if .ResponseStreaming}} stream{{end}} |
+| [`{{.RequestLongType}}`](#{{.RequestLongType | lower}}){{if .RequestStreaming}} stream{{end}} | [`{{.ResponseLongType}}`](#{{.ResponseLongType | lower}}){{if .ResponseStreaming}} stream{{end}} |
 
 {{end}}
 {{end}}
@@ -28,14 +28,14 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 ### Messages
 {{range .Messages}}
 #### {{.LongName}}
-<a name="{{.FullName | anchor}}"></a>
+
 {{.Description}}
 
 {{if .HasFields}}
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 {{range .Fields -}}
-| `{{.Name}}` | [`{{.LongType}}`](#{{.LongType | anchor}}) | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+| `{{.Name}}` | [`{{.LongType}}`](#{{.LongType | lower}}) | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
 {{end}}
 {{end}}
 
@@ -51,7 +51,6 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 ### Enums
 
 {{range .Enums}}
-<a name="{{.FullName | anchor}}"></a>
 
 #### {{.LongName}}
 {{.Description}}
