@@ -1,11 +1,11 @@
 # gRPC Documentation
 
-{{range .Files}}
-{{$file_name := .Name}}
-
-This page was automatically generated based on the protobuf file `{{.Name}}`.
+This page was automatically generated.
 
 Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml).
+
+{{range .Files}}
+{{$file_name := .Name}}
 
 {{range .Services}}
 ## {{.FullName}}
