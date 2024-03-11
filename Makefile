@@ -121,5 +121,7 @@ docker:
 binaries:
 	@$(call print, "Building binaries")
 	docker buildx build --output bin --platform $(PLATFORMS) --target binaries .
+	zip -r bin/boltz-client-linux-amd64.zip bin/linux_amd64
+	zip -r bin/boltz-client-linux-arm64.zip bin/linux_arm64
 
 .PHONY: build binaries
