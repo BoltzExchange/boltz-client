@@ -104,13 +104,13 @@ fmt:
 	@$(call print, "Formatting source")
 	gofmt -l -s -w .
 
-lint: $(LINT_BIN)
+lint:
 	@$(call print, "Linting source")
-	$(LINT)
+	golangci-lint run -v
 
 changelog:
 	@$(call print, "Updating changelog")
-	$(CHANGELOG)
+	git-chglog --output CHANGELOG.md
 
 PLATFORMS := linux/amd64,linux/arm64
 
