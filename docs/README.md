@@ -29,7 +29,7 @@ It consists of two main components:
 
 ### Binaries
 
-Boltz Client is only available for linux. Download the latest binaries from the [release](https://github.com/BoltzExchange/boltz-client/releases) page.
+Boltz Client is available for linux on `amd64` and `arm64`. Download the latest binaries from the [release](https://github.com/BoltzExchange/boltz-client/releases) page. If you are on another platform, use the docker image below.
 
 ### Docker
 
