@@ -188,7 +188,11 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 	case 2:
 		logMigration(oldVersion)
 
-		_, err := tx.Exec("ALTER TABLE swaps ADD COLUMN chanIds JSON")
+		_, err := tx.Exec("ALTER TABLE swaps ADD COLUMN pairId VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec("ALTER TABLE swaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
 		}
@@ -230,6 +234,10 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			return err
 		}
 
+		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN pairId VARCHAR")
+		if err != nil {
+			return err
+		}
 		_, err = tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanIds JSON")
 		if err != nil {
 			return err
