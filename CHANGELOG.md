@@ -1,6 +1,6 @@
 
 <a name="v2.0.0"></a>
-## [v2.0.0] - 2024-03-11
+## [v2.0.0] - 2024-03-12
 ### Feat
 - release workflow
 - return_immediately parameter for reverse swap creation ([#94](https://github.com/BoltzExchange/boltz-client/issues/94))
@@ -14,6 +14,8 @@
 - v2 api ([#83](https://github.com/BoltzExchange/boltz-client/issues/83))
 
 ### Fix
+- makefile command binaries
+- db migrations ([#100](https://github.com/BoltzExchange/boltz-client/issues/100))
 - dont require currency when setting subaccount in cli
 - proper semver version check ([#92](https://github.com/BoltzExchange/boltz-client/issues/92))
 - dont specify unnecessary expiry in test invoice
