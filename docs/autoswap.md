@@ -8,15 +8,15 @@ The `boltzcli autoswap setup` command will guide you through the initial configu
 
 ## Advanced Configuration
 
-Advanced configuration that is not covered in the setup process can be managed using `boltzcli autoswap config`. For instance, run `boltzcli autoswap config AcceptZeroConf true` to enable [0-conf swaps](https://docs.boltz.exchange/v/api/0-conf). Optionally, you can instead edit the autoswap-specific `autoswap.toml` file inside your data directory. To apply changes while the daemon is running, reload the config file via `boltzcli autoswap config --reload`.
+Advanced configuration that is not covered in the setup process can be managed using `boltzcli autoswap config`. For instance, run `boltzcli autoswap config acceptZeroConf true` to enable [0-conf swaps](https://docs.boltz.exchange/v/api/0-conf). Optionally, you can instead edit the autoswap-specific `autoswap.toml` file inside your data directory. To apply changes while the daemon is running, reload the config file via `boltzcli autoswap config --reload`.
 
-While autoswap won't create any swaps if `Enabled` is set to false, you can still view swap recommendations, swaps which were to be executed with the current configuration, using `boltzcli autoswap recommendations.`
+While autoswap won't create any swaps if `enabled` is set to false, you can still view swap recommendations, swaps which were to be executed with the current configuration, using `boltzcli autoswap recommendations.`
 
-Autoswap can either rebalance individual channels or only look at the total balance of your node. This behavior can be controlled with the `PerChannel` parameter.
+Autoswap can either rebalance individual channels or only look at the total balance of your node. This behavior can be controlled with the `perChannel` parameter.
 
 ### Thresholds
 
-Autoswap will create normal swaps when the local balance goes below the minimum balance and reverse swaps when it exceeds the max balance. These thresholds can be set as absolute amounts of sats (`MaxBalance` and `MinBalance`) or as percentage of total channel capacity (`MaxBalancePercent` and `MinBalancePercent`).
+Autoswap will create normal swaps when the local balance goes below the minimum balance and reverse swaps when it exceeds the max balance. These thresholds can be set as absolute amounts of sats (`maxBalance` and `minBalance`) or as percentage of total channel capacity (`maxBalancePercent` and `minBalancePercent`).
 
 ### Wallet
 
@@ -28,26 +28,26 @@ You can choose to only create one type of swap. If set to `reverse`, only the ma
 
 ### Budget
 
-Autoswap has a fixed `Budget` (in sats) it is allowed to spend on fees in a specified `BudgetInterval` (in seconds).
+Autoswap has a fixed `budget` (in sats) it is allowed to spend on fees in a specified `budgetInterval` (in seconds).
 
 ### Full Example
 
 ```toml
-Enabled = false
-ChannelPollInterval = 30
-LiquidAddress = ""
-BitcoinAddress = ""
-MaxBalance = 0
-MinBalance = 0
-MaxBalancePercent = 75.0
-MinBalancePercent = 25.0
-MaxFeePercent = 1.0
-AcceptZeroConf = false
-FailureBackoff = 86400
-Budget = 100000
-BudgetInterval = 604800
-Currency = "LBTC"
-Type = ""
-PerChannel = false
-Wallet = "autoswap"
+acceptZeroConf = false
+budget = "100000"
+budgetInterval = "604800"
+channelPollInterval = "30"
+currency = "LBTC"
+enabled = true
+failureBackoff = "86400"
+maxBalance = "0"
+maxBalancePercent = 75.0
+maxFeePercent = 1.0
+maxSwapAmount = "0"
+minBalance = "0"
+minBalancePercent = 25.0
+perChannel = false
+staticAddress = ""
+swapType = "reverse"
+wallet = "autoswap"
 ```
