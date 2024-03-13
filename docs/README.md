@@ -86,6 +86,10 @@ The daemon connects to CLN through [gRPC](https://docs.corelightning.org/docs/gr
 
 You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory aswell.
 
+### CLI
+
+We recommend running `boltzcli completions` to setup autocompletions for the cli (only supported for zsh and bash).
+
 ### Macaroons
 
 The macaroons for the gRPC server of `boltzd` can be found in the `macaroons` folder inside the data directory of the daemon. By default, that data directory is `~/.boltz` on Linux.
