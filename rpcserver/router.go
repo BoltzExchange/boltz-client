@@ -93,15 +93,16 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 		pendingReverseSwapIds = append(pendingReverseSwapIds, pendingReverseSwap.Id)
 	}
 
-	blockHeights := make(map[string]uint32)
-
-	blockHeights[string(boltz.CurrencyBtc)], err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
+	blockHeights := &boltzrpc.BlockHeights{}
+	blockHeights.Btc, err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
 	if err != nil {
-		logger.Infof("Failed to get block height for btc: %v", err)
+		return nil, handleError(fmt.Errorf("Failed to get block height for btc: %v", err))
 	}
-	blockHeights[string(boltz.CurrencyLiquid)], err = server.onchain.GetBlockHeight(boltz.CurrencyLiquid)
+	liquidHeight, err := server.onchain.GetBlockHeight(boltz.CurrencyLiquid)
 	if err != nil {
 		logger.Infof("Failed to get block height for liquid: %v", err)
+	} else {
+		blockHeights.Liquid = &liquidHeight
 	}
 
 	response := &boltzrpc.GetInfoResponse{

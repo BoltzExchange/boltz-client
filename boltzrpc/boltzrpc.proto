@@ -249,6 +249,11 @@ message ReverseSwapInfo {
     optional uint64 routing_fee_msat = 20;
 }
 
+message BlockHeights {
+    uint32 btc = 1;
+    optional uint32 liquid = 2;
+}
+
 message GetInfoRequest {}
 message GetInfoResponse {
     string version = 9;
@@ -258,7 +263,7 @@ message GetInfoResponse {
     // one of: running, disabled, error
     string auto_swap_status = 11;
     // mapping of the currency to the latest block height.
-    map<string, uint32> block_heights = 8;
+    BlockHeights block_heights = 8;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];

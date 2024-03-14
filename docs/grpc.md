@@ -257,6 +257,20 @@ Changes the password for wallet encryption.
 
 
 
+#### BlockHeights
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `btc` | [`uint32`](#uint32) |  |  |
+| `liquid` | [`uint32`](#uint32) | optional |  |
+
+
+
+
+
 #### Budget
 
 
@@ -312,8 +326,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `cln` | [`string`](#string) |  |  |
-| `lnd` | [`uint64`](#uint64) |  |  |
+| `cln` | [`string`](#string) |  | cln style: 832347x2473x1 |
+| `lnd` | [`uint64`](#uint64) |  | lnd style: 915175205006540801 |
 
 
 
@@ -359,7 +373,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new address from the lightning node |
 | `accept_zero_conf` | [`bool`](#bool) |  | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
 | `pair` | [`Pair`](#pair) |  |  |
-| `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. |
+| `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style. |
 | `wallet` | [`string`](#string) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
 | `return_immediately` | [`bool`](#bool) |  | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
 
@@ -526,26 +540,12 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `network` | [`string`](#string) |  |  |
 | `node_pubkey` | [`string`](#string) |  |  |
 | `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
-| `block_heights` | [`GetInfoResponse.BlockHeightsEntry`](#getinforesponse.blockheightsentry) | repeated | mapping of the currency to the latest block height. |
+| `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
 | `pending_swaps` | [`string`](#string) | repeated | **Deprecated.**  |
 | `pending_reverse_swaps` | [`string`](#string) | repeated | **Deprecated.**  |
-
-
-
-
-
-#### GetInfoResponse.BlockHeightsEntry
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [`string`](#string) |  |  |
-| `value` | [`uint32`](#uint32) |  |  |
 
 
 
