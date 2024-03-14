@@ -830,13 +830,14 @@ func createSwap(ctx *cli.Context) error {
 
 	invoice := ctx.String("invoice")
 	wallet := ctx.String("wallet")
+	refundAddress := ctx.String("refund")
 	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 		Amount:           amount,
 		Pair:             pair,
-		RefundAddress:    ctx.String("refund"),
-		SendFromInternal: internalSend, 
-		Wallet: &wallet,
-		Invoice: &invoice,
+		RefundAddress:    &refundAddress,
+		SendFromInternal: internalSend,
+		Wallet:           &wallet,
+		Invoice:          &invoice,
 	})
 	if err != nil {
 		return err

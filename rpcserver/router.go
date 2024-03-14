@@ -351,7 +351,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		SwapTree:            response.SwapTree.Deserialize(),
 		LockupTransactionId: "",
 		RefundTransactionId: "",
-		RefundAddress:       request.RefundAddress,
+		RefundAddress:       request.GetRefundAddress(),
 		IsAuto:              isAuto,
 		ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
 	}

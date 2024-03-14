@@ -372,7 +372,7 @@ message CreateSwapRequest {
     // the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise.
     bool send_from_internal = 4;
     // address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise.
-    string refund_address = 5;
+    optional string refund_address = 5;
     // wallet to pay swap from. only used if `auto_send` is set to true
     optional string wallet = 6;
     // invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node

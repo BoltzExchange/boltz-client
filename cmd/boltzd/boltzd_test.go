@@ -464,7 +464,7 @@ func TestSwap(t *testing.T) {
 							refundAddress := cli("getnewaddress")
 							swaps[0], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Pair:          pair,
-								RefundAddress: refundAddress,
+								RefundAddress: &refundAddress,
 								Amount:        int64(amount + 100),
 							})
 							require.NoError(t, err)
@@ -521,7 +521,7 @@ func TestSwap(t *testing.T) {
 							amount := submarinePair.Limits.Minimal + 100
 							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Pair:          pair,
-								RefundAddress: refundAddress,
+								RefundAddress: &refundAddress,
 								Amount:        int64(amount + 100),
 							})
 							require.NoError(t, err)
