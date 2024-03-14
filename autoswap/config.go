@@ -118,7 +118,7 @@ func (cfg *Config) Init() error {
 	}
 
 	if !cfg.maxBalance.IsZero() && !cfg.minBalance.IsZero() {
-		if cfg.minBalance.Get(1) > cfg.maxBalance.Get(1) {
+		if cfg.minBalance.Get(100) > cfg.maxBalance.Get(100) {
 			return errors.New("min balance must be smaller than max balance")
 		}
 	}

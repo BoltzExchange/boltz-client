@@ -58,3 +58,57 @@ func TestGetPair(t *testing.T) {
 	require.Equal(t, boltzrpc.Currency_BTC, pair.To)
 	require.Equal(t, boltzrpc.Currency_BTC, pair.From)
 }
+
+func TestConfigInit(t *testing.T) {
+	tt := []struct {
+		name string
+		cfg  *SerializedConfig
+		err  bool
+	}{
+		{"Default", DefaultConfig(), false},
+		{
+			name: "MissingMax",
+			cfg: &SerializedConfig{
+				MinBalancePercent: 25,
+			},
+			err: true,
+		},
+		{
+			name: "ValidReverse",
+			cfg: &SerializedConfig{
+				MaxBalancePercent: 75,
+				SwapType:          "reverse",
+			},
+			err: false,
+		},
+		{
+			name: "MinGreaterMax/Percent",
+			cfg: &SerializedConfig{
+				MinBalancePercent: 75,
+				MaxBalancePercent: 25,
+			},
+			err: true,
+		},
+
+		{
+			name: "MinGreaterMax/Abs",
+			cfg: &SerializedConfig{
+				MinBalance: 10000,
+				MaxBalance: 5000,
+			},
+			err: true,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := NewConfig(tc.cfg)
+			err := cfg.Init()
+			if tc.err {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
