@@ -52,7 +52,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BoltzClient interface {
-	// Gets general information about the daemon like the chain of the LND node it is connected to
+	// Gets general information about the daemon like the chain of the lightning node it is connected to
 	// and the IDs of pending swaps.
 	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
 	// Deprecated: Do not use.
@@ -111,7 +111,7 @@ type BoltzClient interface {
 	RemoveWallet(ctx context.Context, in *RemoveWalletRequest, opts ...grpc.CallOption) (*RemoveWalletResponse, error)
 	// Gracefully stops the daemon.
 	Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Unlocks the server.
+	// Unlocks the server. This will be required on startup if there are any encrypted wallets.
 	Unlock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Check if the password is correct.
 	VerifyWalletPassword(ctx context.Context, in *VerifyWalletPasswordRequest, opts ...grpc.CallOption) (*VerifyWalletPasswordResponse, error)
@@ -391,7 +391,7 @@ func (c *boltzClient) ChangeWalletPassword(ctx context.Context, in *ChangeWallet
 // All implementations must embed UnimplementedBoltzServer
 // for forward compatibility
 type BoltzServer interface {
-	// Gets general information about the daemon like the chain of the LND node it is connected to
+	// Gets general information about the daemon like the chain of the lightning node it is connected to
 	// and the IDs of pending swaps.
 	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
 	// Deprecated: Do not use.
@@ -450,7 +450,7 @@ type BoltzServer interface {
 	RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error)
 	// Gracefully stops the daemon.
 	Stop(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
-	// Unlocks the server.
+	// Unlocks the server. This will be required on startup if there are any encrypted wallets.
 	Unlock(context.Context, *UnlockRequest) (*emptypb.Empty, error)
 	// Check if the password is correct.
 	VerifyWalletPassword(context.Context, *VerifyWalletPasswordRequest) (*VerifyWalletPasswordResponse, error)

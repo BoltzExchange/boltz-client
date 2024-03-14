@@ -15,7 +15,7 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 ### Methods
 #### GetInfo
 
-Gets general information about the daemon like the chain of the LND node it is connected to and the IDs of pending swaps.
+Gets general information about the daemon like the chain of the lightning node it is connected to and the IDs of pending swaps.
 
 | Request | Response |
 | ------- | -------- |
@@ -199,7 +199,7 @@ Gracefully stops the daemon.
 
 #### Unlock
 
-Unlocks the server.
+Unlocks the server. This will be required on startup if there are any encrypted wallets.
 
 | Request | Response |
 | ------- | -------- |
@@ -355,12 +355,12 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`int64`](#int64) |  |  |
-| `address` | [`string`](#string) |  | If no value is set, the daemon will query a new P2WKH address from LND |
-| `accept_zero_conf` | [`bool`](#bool) |  |  |
+| `amount` | [`int64`](#int64) |  | amount of satoshis to swap |
+| `address` | [`string`](#string) |  | If no value is set, the daemon will query a new address from the lightning node |
+| `accept_zero_conf` | [`bool`](#bool) |  | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
 | `pair` | [`Pair`](#pair) |  |  |
-| `chan_ids` | [`string`](#string) | repeated |  |
-| `wallet` | [`string`](#string) | optional |  |
+| `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. |
+| `wallet` | [`string`](#string) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
 | `return_immediately` | [`bool`](#bool) |  | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
 
 
@@ -393,10 +393,10 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`int64`](#int64) |  |  |
 | `pair` | [`Pair`](#pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated |  |
-| `auto_send` | [`bool`](#bool) |  |  |
-| `refund_address` | [`string`](#string) |  |  |
-| `wallet` | [`string`](#string) | optional |  |
-| `invoice` | [`string`](#string) | optional |  |
+| `auto_send` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
+| `refund_address` | [`string`](#string) |  | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
+| `wallet` | [`string`](#string) | optional | wallet to pay swap from. only used if `auto_send` is set to true |
+| `invoice` | [`string`](#string) | optional | invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node |
 
 
 
@@ -413,7 +413,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `address` | [`string`](#string) |  |  |
 | `expected_amount` | [`int64`](#int64) |  |  |
 | `bip21` | [`string`](#string) |  |  |
-| `tx_id` | [`string`](#string) |  |  |
+| `tx_id` | [`string`](#string) |  | lockup transaction id. Only populated when `auto_send` was specified in the request |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `timeout_hours` | [`float`](#float) |  |  |
 
@@ -429,7 +429,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `info` | [`WalletInfo`](#walletinfo) |  |  |
-| `password` | [`string`](#string) | optional |  |
+| `password` | [`string`](#string) | optional | the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used. |
 
 
 
@@ -525,8 +525,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `node` | [`string`](#string) |  |  |
 | `network` | [`string`](#string) |  |  |
 | `node_pubkey` | [`string`](#string) |  |  |
-| `auto_swap_status` | [`string`](#string) |  |  |
-| `block_heights` | [`GetInfoResponse.BlockHeightsEntry`](#getinforesponse.blockheightsentry) | repeated |  |
+| `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
+| `block_heights` | [`GetInfoResponse.BlockHeightsEntry`](#getinforesponse.blockheightsentry) | repeated | mapping of the currency to the latest block height. |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -708,7 +708,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `credentials` | [`WalletCredentials`](#walletcredentials) |  |  |
 | `info` | [`WalletInfo`](#walletinfo) |  |  |
-| `password` | [`string`](#string) | optional |  |
+| `password` | [`string`](#string) | optional | the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used. |
 
 
 

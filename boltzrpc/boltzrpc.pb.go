@@ -784,12 +784,14 @@ type GetInfoResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Version        string            `protobuf:"bytes,9,opt,name=version,proto3" json:"version,omitempty"`
-	Node           string            `protobuf:"bytes,10,opt,name=node,proto3" json:"node,omitempty"`
-	Network        string            `protobuf:"bytes,2,opt,name=network,proto3" json:"network,omitempty"`
-	NodePubkey     string            `protobuf:"bytes,7,opt,name=node_pubkey,json=nodePubkey,proto3" json:"node_pubkey,omitempty"`
-	AutoSwapStatus string            `protobuf:"bytes,11,opt,name=auto_swap_status,json=autoSwapStatus,proto3" json:"auto_swap_status,omitempty"`
-	BlockHeights   map[string]uint32 `protobuf:"bytes,8,rep,name=block_heights,json=blockHeights,proto3" json:"block_heights,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	Version    string `protobuf:"bytes,9,opt,name=version,proto3" json:"version,omitempty"`
+	Node       string `protobuf:"bytes,10,opt,name=node,proto3" json:"node,omitempty"`
+	Network    string `protobuf:"bytes,2,opt,name=network,proto3" json:"network,omitempty"`
+	NodePubkey string `protobuf:"bytes,7,opt,name=node_pubkey,json=nodePubkey,proto3" json:"node_pubkey,omitempty"`
+	// one of: running, disabled, error
+	AutoSwapStatus string `protobuf:"bytes,11,opt,name=auto_swap_status,json=autoSwapStatus,proto3" json:"auto_swap_status,omitempty"`
+	// mapping of the currency to the latest block height.
+	BlockHeights map[string]uint32 `protobuf:"bytes,8,rep,name=block_heights,json=blockHeights,proto3" json:"block_heights,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 	// Deprecated: Marked as deprecated in boltzrpc.proto.
 	Symbol string `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
 	// Deprecated: Marked as deprecated in boltzrpc.proto.
@@ -1931,13 +1933,17 @@ type CreateSwapRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Amount        int64    `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	Pair          *Pair    `protobuf:"bytes,2,opt,name=pair,proto3" json:"pair,omitempty"`
-	ChanIds       []string `protobuf:"bytes,3,rep,name=chan_ids,json=chanIds,proto3" json:"chan_ids,omitempty"`
-	AutoSend      bool     `protobuf:"varint,4,opt,name=auto_send,json=autoSend,proto3" json:"auto_send,omitempty"`
-	RefundAddress string   `protobuf:"bytes,5,opt,name=refund_address,json=refundAddress,proto3" json:"refund_address,omitempty"`
-	Wallet        *string  `protobuf:"bytes,6,opt,name=wallet,proto3,oneof" json:"wallet,omitempty"`
-	Invoice       *string  `protobuf:"bytes,7,opt,name=invoice,proto3,oneof" json:"invoice,omitempty"`
+	Amount  int64    `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	Pair    *Pair    `protobuf:"bytes,2,opt,name=pair,proto3" json:"pair,omitempty"`
+	ChanIds []string `protobuf:"bytes,3,rep,name=chan_ids,json=chanIds,proto3" json:"chan_ids,omitempty"`
+	// the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise.
+	AutoSend bool `protobuf:"varint,4,opt,name=auto_send,json=autoSend,proto3" json:"auto_send,omitempty"`
+	// address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise.
+	RefundAddress string `protobuf:"bytes,5,opt,name=refund_address,json=refundAddress,proto3" json:"refund_address,omitempty"`
+	// wallet to pay swap from. only used if `auto_send` is set to true
+	Wallet *string `protobuf:"bytes,6,opt,name=wallet,proto3,oneof" json:"wallet,omitempty"`
+	// invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node
+	Invoice *string `protobuf:"bytes,7,opt,name=invoice,proto3,oneof" json:"invoice,omitempty"`
 }
 
 func (x *CreateSwapRequest) Reset() {
@@ -2026,10 +2032,11 @@ type CreateSwapResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                 string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Address            string  `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
-	ExpectedAmount     int64   `protobuf:"varint,3,opt,name=expected_amount,json=expectedAmount,proto3" json:"expected_amount,omitempty"`
-	Bip21              string  `protobuf:"bytes,4,opt,name=bip21,proto3" json:"bip21,omitempty"`
+	Id             string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Address        string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	ExpectedAmount int64  `protobuf:"varint,3,opt,name=expected_amount,json=expectedAmount,proto3" json:"expected_amount,omitempty"`
+	Bip21          string `protobuf:"bytes,4,opt,name=bip21,proto3" json:"bip21,omitempty"`
+	// lockup transaction id. Only populated when `auto_send` was specified in the request
 	TxId               string  `protobuf:"bytes,5,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
 	TimeoutBlockHeight uint32  `protobuf:"varint,6,opt,name=timeout_block_height,json=timeoutBlockHeight,proto3" json:"timeout_block_height,omitempty"`
 	TimeoutHours       float32 `protobuf:"fixed32,7,opt,name=timeout_hours,json=timeoutHours,proto3" json:"timeout_hours,omitempty"`
@@ -2186,13 +2193,18 @@ type CreateReverseSwapRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// amount of satoshis to swap
 	Amount int64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	// If no value is set, the daemon will query a new P2WKH address from LND
-	Address        string   `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
-	AcceptZeroConf bool     `protobuf:"varint,3,opt,name=accept_zero_conf,json=acceptZeroConf,proto3" json:"accept_zero_conf,omitempty"`
-	Pair           *Pair    `protobuf:"bytes,4,opt,name=pair,proto3" json:"pair,omitempty"`
-	ChanIds        []string `protobuf:"bytes,5,rep,name=chan_ids,json=chanIds,proto3" json:"chan_ids,omitempty"`
-	Wallet         *string  `protobuf:"bytes,6,opt,name=wallet,proto3,oneof" json:"wallet,omitempty"`
+	// If no value is set, the daemon will query a new address from the lightning node
+	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	// Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool.
+	// Should only be used for smaller amounts as it involves trust in boltz.
+	AcceptZeroConf bool  `protobuf:"varint,3,opt,name=accept_zero_conf,json=acceptZeroConf,proto3" json:"accept_zero_conf,omitempty"`
+	Pair           *Pair `protobuf:"bytes,4,opt,name=pair,proto3" json:"pair,omitempty"`
+	// a list of channel ids which are allowed for paying the invoice.
+	ChanIds []string `protobuf:"bytes,5,rep,name=chan_ids,json=chanIds,proto3" json:"chan_ids,omitempty"`
+	// wallet from which the onchain address should be generated - only considered if `address` is not set
+	Wallet *string `protobuf:"bytes,6,opt,name=wallet,proto3,oneof" json:"wallet,omitempty"`
 	// Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed.
 	// It will always return immediately if `accept_zero_conf` is not set.
 	ReturnImmediately bool `protobuf:"varint,7,opt,name=return_immediately,json=returnImmediately,proto3" json:"return_immediately,omitempty"`
@@ -2935,7 +2947,8 @@ type ImportWalletRequest struct {
 
 	Credentials *WalletCredentials `protobuf:"bytes,1,opt,name=credentials,proto3" json:"credentials,omitempty"`
 	Info        *WalletInfo        `protobuf:"bytes,2,opt,name=info,proto3" json:"info,omitempty"`
-	Password    *string            `protobuf:"bytes,3,opt,name=password,proto3,oneof" json:"password,omitempty"`
+	// the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used.
+	Password *string `protobuf:"bytes,3,opt,name=password,proto3,oneof" json:"password,omitempty"`
 }
 
 func (x *ImportWalletRequest) Reset() {
@@ -2996,8 +3009,9 @@ type CreateWalletRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Info     *WalletInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
-	Password *string     `protobuf:"bytes,2,opt,name=password,proto3,oneof" json:"password,omitempty"`
+	Info *WalletInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
+	// the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used.
+	Password *string `protobuf:"bytes,2,opt,name=password,proto3,oneof" json:"password,omitempty"`
 }
 
 func (x *CreateWalletRequest) Reset() {
