@@ -21,14 +21,14 @@ type SwapType string
 
 const (
 	NormalSwap  SwapType = "submarine"
-	ReverseSwap SwapType = "reverseSubmarine"
+	ReverseSwap SwapType = "reverse"
 )
 
 func ParseSwapType(swapType string) (SwapType, error) {
 	switch strings.ToLower(swapType) {
 	case string(NormalSwap), "normal":
 		return NormalSwap, nil
-	case string(ReverseSwap), "reverse":
+	case string(ReverseSwap):
 		return ReverseSwap, nil
 	case "":
 		return "", nil
