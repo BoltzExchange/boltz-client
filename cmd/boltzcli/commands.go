@@ -808,7 +808,7 @@ func createSwap(ctx *cli.Context) error {
 		To:   boltzrpc.Currency_BTC,
 	}
 
-	internalSend := ctx.Bool("interal-send")
+	internalSend := ctx.Bool("internal-send")
 	json := ctx.Bool("json")
 
 	submarinePair, err := client.GetSubmarinePair(pair)
