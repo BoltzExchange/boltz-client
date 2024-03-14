@@ -37,14 +37,14 @@ func waitForLightningSynced(lightning lightning.LightningNode) {
 
 	if err == nil {
 		if !info.Synced {
-			logger.Warn("LND node not synced yet")
+			logger.Warn("Lightning node not synced yet")
 			logger.Info(retryMessage)
 			time.Sleep(retryInterval * time.Second)
 
 			waitForLightningSynced(lightning)
 		}
 	} else {
-		logger.Error("Could not get LND info: " + err.Error())
+		logger.Error("Could not get lightning info: " + err.Error())
 		logger.Info(retryMessage)
 		time.Sleep(retryInterval * time.Second)
 
