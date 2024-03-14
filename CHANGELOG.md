@@ -1,6 +1,6 @@
 
 <a name="v2.0.0"></a>
-## [v2.0.0] - 2024-03-12
+## [v2.0.0] - 2024-03-14
 ### Feat
 - release workflow
 - return_immediately parameter for reverse swap creation ([#94](https://github.com/BoltzExchange/boltz-client/issues/94))
@@ -14,6 +14,9 @@
 - v2 api ([#83](https://github.com/BoltzExchange/boltz-client/issues/83))
 
 ### Fix
+- make sure fresh wallet addresses are used in autoswap
+- cli typo
+- autoswap setup swaptype ([#115](https://github.com/BoltzExchange/boltz-client/issues/115))
 - makefile command binaries
 - db migrations ([#100](https://github.com/BoltzExchange/boltz-client/issues/100))
 - dont require currency when setting subaccount in cli
@@ -21,6 +24,9 @@
 - dont specify unnecessary expiry in test invoice
 
 ### Refactor
+- make `refund_address` optional in rpc
+- rename autoSend to sendFromInternal ([#116](https://github.com/BoltzExchange/boltz-client/issues/116))
+- use concrete type for block_heights in grpc
 - cleanup autoswap config ([#96](https://github.com/BoltzExchange/boltz-client/issues/96))
 - use proper message type for autoswap config instead of json ([#93](https://github.com/BoltzExchange/boltz-client/issues/93))
 - improve boltz package ([#86](https://github.com/BoltzExchange/boltz-client/issues/86))
@@ -52,6 +58,21 @@
 - rename autobudget config values ([#79](https://github.com/BoltzExchange/boltz-client/issues/79))
 - allow specifying multiple channel ids instead of one ([#73](https://github.com/BoltzExchange/boltz-client/issues/73))
 - move docs to gitbook
+
+
+<a name="v1.3.0-rc1"></a>
+## [v1.3.0-rc1] - 2023-11-28
+### Feat
+- listswaps filter ([#78](https://github.com/BoltzExchange/boltz-client/issues/78))
+- subaccount improvements ([#79](https://github.com/BoltzExchange/boltz-client/issues/79))
+- initial lightning implementation
+- use in-memory connection for tests
+- split `Start` into `Start` and `Init`, NoTls
+- integration tests
+
+### Fix
+- use right logger
+- .gitignore
 
 
 <a name="v1.2.7"></a>
@@ -190,7 +211,8 @@
 
 
 [v2.0.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0-beta...v2.0.0
-[v2.0.0-beta]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.7...v2.0.0-beta
+[v2.0.0-beta]: https://github.com/BoltzExchange/boltz-client/compare/v1.3.0-rc1...v2.0.0-beta
+[v1.3.0-rc1]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.7...v1.3.0-rc1
 [v1.2.7]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.6...v1.2.7
 [v1.2.6]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.5...v1.2.6
 [v1.2.5]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.4...v1.2.5
