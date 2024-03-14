@@ -151,15 +151,15 @@ func (cfg *Config) Init() error {
 	return nil
 }
 
-func (cfg *Config) GetAddress(network *boltz.Network) (address string, err error) {
+func (cfg *Config) GetAddress(network *boltz.Network) (string, error) {
 	if cfg.StaticAddress == "" {
 		return "", errors.New("No address for Currency " + string(cfg.currency))
 	}
-	err = boltz.ValidateAddress(network, cfg.StaticAddress, cfg.currency)
+	err := boltz.ValidateAddress(network, cfg.StaticAddress, cfg.currency)
 	if err != nil {
 		return "", errors.New("Invalid address for Currency " + string(cfg.currency) + " :" + err.Error())
 	}
-	return address, nil
+	return cfg.StaticAddress, nil
 }
 
 func (cfg *Config) getField(name string) (protoreflect.FieldDescriptor, error) {

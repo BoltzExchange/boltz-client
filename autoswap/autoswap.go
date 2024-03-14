@@ -315,18 +315,14 @@ func (swapper *AutoSwapper) Start() error {
 	}
 	normalSwaps := cfg.swapType == "" || cfg.swapType == boltz.NormalSwap
 	wallet, err := swapper.onchain.GetWallet(cfg.Wallet, cfg.currency, !normalSwaps)
-	if wallet != nil {
-		if normalSwaps || address == "" {
-			address, err = wallet.NewAddress()
-			if err != nil {
-				err = errors.New("could not get external address: " + err.Error())
-			}
-			logger.Debugf("Got new address %v from wallet %v", address, wallet.Name())
+	if wallet == nil {
+		if address == "" {
+			err = fmt.Errorf("neither external address or wallet is available for currency %s: %v", cfg.currency, err)
+		} else if normalSwaps {
+			err = fmt.Errorf("normal swaps require a wallet: %v", err)
+		} else {
+			err = nil
 		}
-	} else if address == "" {
-		err = fmt.Errorf("neither external address or wallet is available for currency %s: %v", cfg.currency, err)
-	} else if normalSwaps {
-		err = fmt.Errorf("normal swaps require a wallet: %v", err)
 	}
 
 	swapper.err = err
