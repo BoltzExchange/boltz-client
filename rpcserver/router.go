@@ -365,13 +365,13 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		return nil, handleError(err)
 	}
 
-	for _, chanId := range request.ChanIds {
-		parsed, err := lightning.NewChanIdFromString(chanId)
-		if err != nil {
-			return nil, handleError(errors.New("invalid channel id: " + err.Error()))
-		}
-		swap.ChanIds = append(swap.ChanIds, parsed)
-	}
+	// for _, chanId := range request.ChanIds {
+	// 	parsed, err := lightning.NewChanIdFromString(chanId)
+	// 	if err != nil {
+	// 		return nil, handleError(errors.New("invalid channel id: " + err.Error()))
+	// 	}
+	// 	swap.ChanIds = append(swap.ChanIds, parsed)
+	// }
 
 	if pair.From == boltz.CurrencyLiquid {
 		swap.BlindingKey, _ = btcec.PrivKeyFromBytes(response.BlindingKey)
