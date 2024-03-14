@@ -53,14 +53,6 @@ Fetches all available pairs for submarine and reverse swaps.
 | ------- | -------- |
 | [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`GetPairsResponse`](#getpairsresponse) |
 
-#### GetFeeEstimation
-
-Fetches the latest limits and fees from the Boltz backend API it is connected to.
-
-| Request | Response |
-| ------- | -------- |
-| [`GetFeeEstimationRequest`](#getfeeestimationrequest) | [`GetFeeEstimationResponse`](#getfeeestimationresponse) |
-
 #### ListSwaps
 
 Returns a list of all swaps, reverse swaps and channel creations in the database.
@@ -225,22 +217,6 @@ Changes the password for wallet encryption.
 
 
 ### Messages
-
-#### Account
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [`string`](#string) |  |  |
-| `type` | [`string`](#string) |  |  |
-| `pointer` | [`uint64`](#uint64) |  |  |
-| `balance` | [`Balance`](#balance) |  |  |
-
-
-
-
 
 #### Balance
 
@@ -491,35 +467,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### GetFeeEstimationRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) |  |  |
-| `swap_type` | [`string`](#string) |  |  |
-| `pair` | [`Pair`](#pair) |  |  |
-
-
-
-
-
-#### GetFeeEstimationResponse
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `fees` | [`Fees`](#fees) |  |  |
-| `limits` | [`Limits`](#limits) |  |  |
-
-
-
-
-
 #### GetInfoRequest
 
 
@@ -632,27 +579,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `swap` | [`SwapInfo`](#swapinfo) |  |  |
 | `channel_creation` | [`ChannelCreationInfo`](#channelcreationinfo) |  |  |
 | `reverse_swap` | [`ReverseSwapInfo`](#reverseswapinfo) |  |  |
-
-
-
-
-
-#### GetSwapRecommendationsRequest
-
-
-
-
-
-
-
-#### GetSwapRecommendationsResponse
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `swaps` | [`SwapRecommendation`](#swaprecommendation) | repeated |  |
 
 
 
@@ -1013,23 +939,6 @@ Submarine Pair
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `auto_send` | [`bool`](#bool) |  |  |
-
-
-
-
-
-#### SwapRecommendation
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `type` | [`string`](#string) |  |  |
-| `amount` | [`uint64`](#uint64) |  |  |
-| `channel` | [`LightningChannel`](#lightningchannel) |  |  |
-| `fee_estimate` | [`uint64`](#uint64) |  |  |
-| `dismissed_reasons` | [`string`](#string) | repeated |  |
 
 
 

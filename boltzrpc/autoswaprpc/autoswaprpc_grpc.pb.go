@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.24.4
-// source: autoswaprpc/autoswap.proto
+// source: autoswaprpc/autoswaprpc.proto
 
 package autoswaprpc
 
@@ -358,5 +358,5 @@ var AutoSwap_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "autoswaprpc/autoswap.proto",
+	Metadata: "autoswaprpc/autoswaprpc.proto",
 }

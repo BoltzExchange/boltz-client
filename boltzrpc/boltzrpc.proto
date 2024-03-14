@@ -34,11 +34,6 @@ service Boltz {
     rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
 
     /*
-    Fetches the latest limits and fees from the Boltz backend API it is connected to.
-    */
-    rpc GetFeeEstimation (GetFeeEstimationRequest) returns (GetFeeEstimationResponse);
-
-    /*
     Returns a list of all swaps, reverse swaps and channel creations in the database.
     */
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
@@ -330,16 +325,6 @@ message GetServiceInfoResponse {
 }
 
 
-message GetFeeEstimationRequest {
-    uint64 amount = 1;
-    string swap_type = 2;
-    Pair pair = 3;
-}
-message GetFeeEstimationResponse {
-    Fees fees = 1;
-    Limits limits = 2;
-}
-
 message ListSwapsRequest {
     optional Currency from = 1;
     optional Currency to = 2;
@@ -456,20 +441,6 @@ message LightningChannel {
     string peer_id = 5;
 }
 
-message SwapRecommendation {
-    string type = 1;
-    uint64 amount = 2;
-    LightningChannel channel = 3;
-    uint64 fee_estimate = 4;
-    repeated string dismissed_reasons = 5;
-}
-
-message GetSwapRecommendationsRequest {}
-
-message GetSwapRecommendationsResponse {
-    repeated SwapRecommendation swaps = 1;
-}
-
 message SwapStats {
     uint64 total_fees = 1;
     uint64 total_amount = 2;
@@ -562,13 +533,6 @@ message Balance {
     uint64 total = 1;
     uint64 confirmed = 2;
     uint64 unconfirmed = 3;
-}
-
-message Account {
-    string name = 1;
-    string type = 2;
-    uint64 pointer = 3;
-    Balance balance = 4;
 }
 
 message Subaccount {

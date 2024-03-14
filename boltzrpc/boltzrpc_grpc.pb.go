@@ -25,7 +25,6 @@ const (
 	Boltz_GetSubmarinePair_FullMethodName     = "/boltzrpc.Boltz/GetSubmarinePair"
 	Boltz_GetReversePair_FullMethodName       = "/boltzrpc.Boltz/GetReversePair"
 	Boltz_GetPairs_FullMethodName             = "/boltzrpc.Boltz/GetPairs"
-	Boltz_GetFeeEstimation_FullMethodName     = "/boltzrpc.Boltz/GetFeeEstimation"
 	Boltz_ListSwaps_FullMethodName            = "/boltzrpc.Boltz/ListSwaps"
 	Boltz_RefundSwap_FullMethodName           = "/boltzrpc.Boltz/RefundSwap"
 	Boltz_GetSwapInfo_FullMethodName          = "/boltzrpc.Boltz/GetSwapInfo"
@@ -65,8 +64,6 @@ type BoltzClient interface {
 	GetReversePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ReversePair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
-	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
-	GetFeeEstimation(ctx context.Context, in *GetFeeEstimationRequest, opts ...grpc.CallOption) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
@@ -167,15 +164,6 @@ func (c *boltzClient) GetReversePair(ctx context.Context, in *Pair, opts ...grpc
 func (c *boltzClient) GetPairs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error) {
 	out := new(GetPairsResponse)
 	err := c.cc.Invoke(ctx, Boltz_GetPairs_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *boltzClient) GetFeeEstimation(ctx context.Context, in *GetFeeEstimationRequest, opts ...grpc.CallOption) (*GetFeeEstimationResponse, error) {
-	out := new(GetFeeEstimationResponse)
-	err := c.cc.Invoke(ctx, Boltz_GetFeeEstimation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -404,8 +392,6 @@ type BoltzServer interface {
 	GetReversePair(context.Context, *Pair) (*ReversePair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(context.Context, *emptypb.Empty) (*GetPairsResponse, error)
-	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
-	GetFeeEstimation(context.Context, *GetFeeEstimationRequest) (*GetFeeEstimationResponse, error)
 	// Returns a list of all swaps, reverse swaps and channel creations in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
@@ -477,9 +463,6 @@ func (UnimplementedBoltzServer) GetReversePair(context.Context, *Pair) (*Reverse
 }
 func (UnimplementedBoltzServer) GetPairs(context.Context, *emptypb.Empty) (*GetPairsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPairs not implemented")
-}
-func (UnimplementedBoltzServer) GetFeeEstimation(context.Context, *GetFeeEstimationRequest) (*GetFeeEstimationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFeeEstimation not implemented")
 }
 func (UnimplementedBoltzServer) ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSwaps not implemented")
@@ -640,24 +623,6 @@ func _Boltz_GetPairs_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).GetPairs(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Boltz_GetFeeEstimation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetFeeEstimationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BoltzServer).GetFeeEstimation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Boltz_GetFeeEstimation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetFeeEstimation(ctx, req.(*GetFeeEstimationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1051,10 +1016,6 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPairs",
 			Handler:    _Boltz_GetPairs_Handler,
-		},
-		{
-			MethodName: "GetFeeEstimation",
-			Handler:    _Boltz_GetFeeEstimation_Handler,
 		},
 		{
 			MethodName: "ListSwaps",
