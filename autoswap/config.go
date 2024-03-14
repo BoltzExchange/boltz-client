@@ -88,6 +88,9 @@ type DismissedChannels map[lightning.ChanId][]string
 type ChannelLimits map[lightning.ChanId]uint64
 
 func (dismissed DismissedChannels) addChannels(chanIds []lightning.ChanId, reason string) {
+	if chanIds == nil {
+		chanIds = []lightning.ChanId{0}
+	}
 	for _, chanId := range chanIds {
 		if !slices.Contains(dismissed[chanId], reason) {
 			dismissed[chanId] = append(dismissed[chanId], reason)

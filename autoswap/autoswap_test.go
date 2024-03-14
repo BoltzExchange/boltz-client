@@ -421,10 +421,9 @@ func TestDismissedChannels(t *testing.T) {
 			},
 			reverseSwaps: []database.ReverseSwap{
 				{
-					Id:      "TEST",
-					State:   boltzrpc.SwapState_PENDING,
-					IsAuto:  true,
-					ChanIds: []lightning.ChanId{2},
+					Id:     "TEST",
+					State:  boltzrpc.SwapState_PENDING,
+					IsAuto: true,
 				},
 				{
 					Id:      "TEST1",
@@ -434,8 +433,8 @@ func TestDismissedChannels(t *testing.T) {
 				},
 			},
 			dismissed: DismissedChannels{
+				0: []string{ReasonPendingSwap},
 				1: []string{ReasonPendingSwap},
-				2: []string{ReasonPendingSwap},
 			},
 		},
 		{
