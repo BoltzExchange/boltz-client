@@ -212,7 +212,8 @@ type SwapInfo struct {
 	CreatedAt           int64        `protobuf:"varint,16,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	ServiceFee          *uint64      `protobuf:"varint,17,opt,name=service_fee,json=serviceFee,proto3,oneof" json:"service_fee,omitempty"`
 	OnchainFee          *uint64      `protobuf:"varint,18,opt,name=onchain_fee,json=onchainFee,proto3,oneof" json:"onchain_fee,omitempty"`
-	Wallet              *string      `protobuf:"bytes,20,opt,name=wallet,proto3,oneof" json:"wallet,omitempty"`
+	// internal wallet which was used to pay the swap
+	Wallet *string `protobuf:"bytes,20,opt,name=wallet,proto3,oneof" json:"wallet,omitempty"`
 }
 
 func (x *SwapInfo) Reset() {

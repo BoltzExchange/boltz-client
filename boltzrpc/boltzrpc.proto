@@ -196,6 +196,7 @@ message SwapInfo {
     int64 created_at = 16;
     optional uint64 service_fee = 17;
     optional uint64 onchain_fee = 18;
+    // internal wallet which was used to pay the swap
     optional string wallet = 20;
 }
 

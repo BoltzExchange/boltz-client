@@ -938,7 +938,7 @@ Submarine Pair
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
-| `wallet` | [`string`](#string) | optional |  |
+| `wallet` | [`string`](#string) | optional | internal wallet which was used to pay the swap |
 
 
 
