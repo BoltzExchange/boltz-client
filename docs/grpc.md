@@ -383,7 +383,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`int64`](#int64) |  |  |
 | `pair` | [`Pair`](#pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated |  |
-| `auto_send` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
+| `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
 | `refund_address` | [`string`](#string) |  | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
 | `wallet` | [`string`](#string) | optional | wallet to pay swap from. only used if `auto_send` is set to true |
 | `invoice` | [`string`](#string) | optional | invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node |
@@ -938,7 +938,7 @@ Submarine Pair
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
-| `auto_send` | [`bool`](#bool) |  |  |
+| `wallet` | [`string`](#string) | optional |  |
 
 
 

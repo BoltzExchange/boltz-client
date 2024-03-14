@@ -16,7 +16,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 4
+const latestSchemaVersion = 5
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -373,6 +373,16 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}
+	case 4:
+		logMigration(oldVersion)
+
+		if _, err := tx.Exec("ALTER TABLE swaps ADD COLUMN wallet VARCHAR"); err != nil {
+			return err
+		}
+		if _, err := tx.Exec("ALTER TABLE swaps DROP COLUMN autoSend"); err != nil {
+			return err
+		}
+
 	case latestSchemaVersion:
 		logger.Info("database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 		return nil

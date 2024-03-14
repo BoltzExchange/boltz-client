@@ -79,7 +79,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 		CreatedAt:           serializeTime(swap.CreatedAt),
 		ServiceFee:          serializedSwap.ServiceFee,
 		OnchainFee:          serializedSwap.OnchainFee,
-		AutoSend:            serializedSwap.AutoSend,
+		Wallet:              serializeOptionalString(serializedSwap.Wallet),
 	}
 }
 

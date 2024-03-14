@@ -314,7 +314,7 @@ func TestSwap(t *testing.T) {
 
 		excpectedFees := swap.ExpectedAmount - int64(invoice.MilliSat.ToSatoshis())
 		actualFees := *swap.OnchainFee + *swap.ServiceFee
-		if swap.AutoSend {
+		if swap.Wallet != nil {
 			lockupFee, err := chain.GetTransactionFee(parseCurrency(swap.Pair.From), swap.LockupTransactionId)
 			require.NoError(t, err)
 
@@ -374,8 +374,8 @@ func TestSwap(t *testing.T) {
 			invoice, err := node.CreateInvoice(100000, nil, 0, "test")
 			require.NoError(t, err)
 			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-				Invoice:  &invoice.PaymentRequest,
-				AutoSend: true,
+				Invoice:          &invoice.PaymentRequest,
+				SendFromInternal: true,
 			})
 			require.NoError(t, err)
 			info, err := client.GetSwapInfo(swap.Id)
@@ -416,9 +416,9 @@ func TestSwap(t *testing.T) {
 
 					t.Run("Normal", func(t *testing.T) {
 						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-							Amount:   100000,
-							Pair:     pair,
-							AutoSend: true,
+							Amount:           100000,
+							Pair:             pair,
+							SendFromInternal: true,
 						})
 						require.NoError(t, err)
 						require.NotEmpty(t, swap.TxId)

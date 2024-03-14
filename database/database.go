@@ -57,7 +57,7 @@ CREATE TABLE swaps
     serviceFeePercent   REAL,
     onchainFee          INT,
     createdAt           INT,
-    autoSend            BOOLEAN
+    wallet              VARCHAR
 );
 CREATE TABLE reverseSwaps
 (

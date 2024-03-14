@@ -196,7 +196,7 @@ message SwapInfo {
     int64 created_at = 16;
     optional uint64 service_fee = 17;
     optional uint64 onchain_fee = 18;
-    bool auto_send = 20;
+    optional string wallet = 20;
 }
 
 /*
@@ -369,7 +369,7 @@ message CreateSwapRequest {
     Pair pair = 2;
     repeated string chan_ids = 3;
     // the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise.
-    bool auto_send = 4;
+    bool send_from_internal = 4;
     // address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise.
     string refund_address = 5;
     // wallet to pay swap from. only used if `auto_send` is set to true
