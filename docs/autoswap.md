@@ -18,6 +18,14 @@ Autoswap can either rebalance individual channels or only look at the total bala
 
 Autoswap will create normal swaps when the local balance goes below the minimum balance and reverse swaps when it exceeds the max balance. These thresholds can be set as absolute amounts of sats (`maxBalance` and `minBalance`) or as percentage of total channel capacity (`maxBalancePercent` and `minBalancePercent`).
 
+The balance target will always be the average of the two thresholds.
+
+Example:
+Total channel balance: 100000sat
+Local balance: 80000sat
+Min/Max thresholds: 25%/75%
+In this situation, a reverse swap for 30000sats will be created since the target balance is 50000sat (50% of 100000sat).
+
 ### Wallet
 
 Autoswap needs access to a wallet (specified by name) which normal swaps use to send funds from and reverse swaps to send funds to. You can see a list of available wallets using `boltzcli wallet list`. Note that the wallet currency has to match the autoswap currency.
