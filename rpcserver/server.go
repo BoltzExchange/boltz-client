@@ -121,7 +121,7 @@ func (server *RpcServer) Init(
 	routedServer.swapper = swapper
 
 	if server.NoTls {
-		// cleanup previous certificates to avoid confusions
+		// cleanup previous certificates to avoid confusion
 		if err := os.Remove(server.TlsCertPath); !os.IsNotExist(err) {
 			return err
 		}
