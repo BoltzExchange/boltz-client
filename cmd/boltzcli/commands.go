@@ -552,6 +552,9 @@ func autoSwapSetup(ctx *cli.Context) error {
 	if err := survey.AskOne(prompt, &config.SwapType); err != nil {
 		return err
 	}
+	if config.SwapType == "both" {
+		config.SwapType = ""
+	}
 
 	readonly := config.SwapType != "reverse"
 	wallets, err := client.GetWallets(&config.Currency, readonly)
@@ -613,14 +616,14 @@ func autoSwapSetup(ctx *cli.Context) error {
 
 	qs := []*survey.Question{}
 	if balanceType == "sats" {
-		if config.SwapType == "both" || config.SwapType == "normal" {
+		if config.SwapType == "" || config.SwapType == "normal" {
 			qs = append(qs, &survey.Question{
 				Name:     "minBalance",
 				Prompt:   &survey.Input{Message: "What is the minimum amount of sats you want to keep in your channels?"},
 				Validate: survey.Required,
 			})
 		}
-		if config.SwapType == "both" || config.SwapType == "reverse" {
+		if config.SwapType == "" || config.SwapType == "reverse" {
 			qs = append(qs, &survey.Question{
 				Name:     "maxBalance",
 				Prompt:   &survey.Input{Message: "What is the maximum amount of sats you want to keep in your channels?"},
@@ -628,7 +631,7 @@ func autoSwapSetup(ctx *cli.Context) error {
 			})
 		}
 	} else {
-		if config.SwapType == "both" || config.SwapType == "normal" {
+		if config.SwapType == "" || config.SwapType == "normal" {
 			qs = append(qs, &survey.Question{
 				Name: "minBalancePercent",
 				Prompt: &survey.Input{Message: "What is the minimum percentage of total capacity you want to keep in your channels?",
@@ -637,7 +640,7 @@ func autoSwapSetup(ctx *cli.Context) error {
 				Validate: survey.Required,
 			})
 		}
-		if config.SwapType == "both" || config.SwapType == "reverse" {
+		if config.SwapType == "" || config.SwapType == "reverse" {
 			qs = append(qs, &survey.Question{
 				Name: "maxBalancePercent",
 				Prompt: &survey.Input{Message: "What is the maximum percentage of total capacity you want to keep in your channels?",
@@ -1039,7 +1042,10 @@ var walletCommands = &cli.Command{
 			Usage:       "Select the subaccount for a wallet",
 			Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
 			ArgsUsage:   "name",
-			Action:      requireNArgs(1, selectSubaccount),
+			Action: requireNArgs(1, func(ctx *cli.Context) error {
+				walletInfo := &boltzrpc.WalletInfo{Name: ctx.Args().First()}
+				return selectSubaccount(ctx, walletInfo)
+			}),
 		},
 		{
 			Name:      "remove",
@@ -1241,19 +1247,18 @@ func importWallet(ctx *cli.Context, info *boltzrpc.WalletInfo, readonly bool) er
 	fmt.Println("Successfully imported wallet!")
 
 	if !wallet.Readonly {
-		return selectSubaccount(ctx)
+		return selectSubaccount(ctx, info)
 	}
 	return nil
 }
 
-func selectSubaccount(ctx *cli.Context) error {
+func selectSubaccount(ctx *cli.Context, walletInfo *boltzrpc.WalletInfo) error {
 	client := getClient(ctx)
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " Fetching subaccounts..."
 	s.Start()
 
-	walletInfo := &boltzrpc.WalletInfo{Name: ctx.Args().First()}
 	subaccounts, err := client.GetSubaccounts(walletInfo)
 	s.Stop()
 	if err != nil {
