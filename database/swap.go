@@ -40,7 +40,7 @@ type Swap struct {
 	ServiceFee          *uint64
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
-	AutoSend            bool
+	Wallet              string
 }
 
 type SwapSerialized struct {
@@ -67,7 +67,7 @@ type SwapSerialized struct {
 	ServiceFee          *uint64
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
-	AutoSend            bool
+	Wallet              string
 }
 
 func (swap *Swap) BlindingPubKey() *btcec.PublicKey {
@@ -107,7 +107,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 		ServiceFee:          swap.ServiceFee,
 		ServiceFeePercent:   swap.ServiceFeePercent,
 		OnchainFee:          swap.OnchainFee,
-		AutoSend:            swap.AutoSend,
+		Wallet:              swap.Wallet,
 	}
 }
 
@@ -160,7 +160,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 			"serviceFeePercent":   &swap.ServiceFeePercent,
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
-			"autoSend":            &swap.AutoSend,
+			"wallet":              &swap.Wallet,
 		},
 	)
 
@@ -283,7 +283,7 @@ func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, curren
 const insertSwapStatement = `
 INSERT INTO swaps (id, fromCurrency, toCurrency, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address,
                    expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress,
-                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, autoSend, claimPubKey, swapTree)
+                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, wallet, claimPubKey, swapTree)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
@@ -319,7 +319,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 		swap.ServiceFee,
 		swap.ServiceFeePercent,
 		swap.OnchainFee,
-		swap.AutoSend,
+		swap.Wallet,
 		formatPublicKey(swap.ClaimPubKey),
 		formatJson(swap.SwapTree.Serialize()),
 	)

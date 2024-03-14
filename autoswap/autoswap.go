@@ -275,11 +275,11 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
 		err = swapper.ExecuteSwap(&boltzrpc.CreateSwapRequest{
-			Amount:   int64(recommendation.Amount),
-			Pair:     pair,
-			ChanIds:  chanIds,
-			AutoSend: true,
-			Wallet:   &swapper.cfg.Wallet,
+			Amount:           int64(recommendation.Amount),
+			Pair:             pair,
+			ChanIds:          chanIds,
+			SendFromInternal: true,
+			Wallet:           &swapper.cfg.Wallet,
 		})
 	}
 	return err

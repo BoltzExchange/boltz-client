@@ -311,7 +311,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		preimageHash = invoice.PaymentHash
 		createSwap.Invoice = invoice.PaymentRequest
 	} else {
-		if request.AutoSend {
+		if request.SendFromInternal {
 			return nil, handleError(errors.New("cannot auto send if amount is 0"))
 		}
 		preimage, preimageHash, err = newPreimage()
@@ -326,7 +326,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 
 	wallet, err := server.onchain.GetWallet(request.GetWallet(), pair.From, false)
 	if err != nil {
-		if request.AutoSend {
+		if request.SendFromInternal {
 			return nil, handleError(err)
 		}
 	}
@@ -354,7 +354,10 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		RefundAddress:       request.RefundAddress,
 		IsAuto:              isAuto,
 		ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
-		AutoSend:            request.AutoSend,
+	}
+
+	if request.SendFromInternal {
+		swap.Wallet = wallet.Name()
 	}
 
 	swap.ClaimPubKey, err = btcec.ParsePubKey([]byte(response.ClaimPublicKey))
@@ -412,7 +415,7 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		TimeoutHours:       float32(timeoutHours),
 	}
 
-	if request.AutoSend {
+	if request.SendFromInternal {
 		// TODO: custom block target?
 		feeSatPerVbyte, err := server.onchain.EstimateFee(pair.From, 2)
 		if err != nil {

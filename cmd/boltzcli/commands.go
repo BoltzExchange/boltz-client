@@ -759,7 +759,7 @@ var createSwapCommand = &cli.Command{
 		"If the --any-amount flag is specified, any amount within the displayed limits can be paid to the lockup address.\n" +
 		"\nExamples\n" +
 		"Create a swap for 100000 satoshis that will be immediately paid by the clients wallet:\n" +
-		"> boltzcli createswap --auto-send 100000\n" +
+		"> boltzcli createswap --internal-send 100000\n" +
 		"Create a swap for any amount of satoshis on liquid:\n" +
 		"> boltzcli createswap --any-amount --currency LBTC\n" +
 		"Create a swap using an existing invoice:\n" +
@@ -771,7 +771,7 @@ var createSwapCommand = &cli.Command{
 		liquidFlag,
 		walletFlag,
 		&cli.BoolFlag{
-			Name:  "auto-send",
+			Name:  "internal-send",
 			Usage: "Whether to automatically send the specified amount from the daemon wallet.",
 		},
 		&cli.BoolFlag{
@@ -808,7 +808,7 @@ func createSwap(ctx *cli.Context) error {
 		To:   boltzrpc.Currency_BTC,
 	}
 
-	autoSend := ctx.Bool("auto-send")
+	internalSend := ctx.Bool("interal-send")
 	json := ctx.Bool("json")
 
 	submarinePair, err := client.GetSubmarinePair(pair)
@@ -831,12 +831,12 @@ func createSwap(ctx *cli.Context) error {
 	invoice := ctx.String("invoice")
 	wallet := ctx.String("wallet")
 	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-		Amount:        amount,
-		Pair:          pair,
-		RefundAddress: ctx.String("refund"),
-		AutoSend:      autoSend,
-		Wallet:        &wallet,
-		Invoice:       &invoice,
+		Amount:           amount,
+		Pair:             pair,
+		RefundAddress:    ctx.String("refund"),
+		SendFromInternal: internalSend, 
+		Wallet: &wallet,
+		Invoice: &invoice,
 	})
 	if err != nil {
 		return err
@@ -847,7 +847,7 @@ func createSwap(ctx *cli.Context) error {
 		return nil
 	}
 
-	if !autoSend || amount == 0 {
+	if !internalSend || amount == 0 {
 		var amountString string
 		if amount == 0 {
 			amountString = fmt.Sprintf("between %d and %d satoshis", submarinePair.Limits.Minimal, submarinePair.Limits.Maximal)

@@ -101,7 +101,7 @@ func (onchain *Onchain) getWallet(name string, currency boltz.Currency, readonly
 		}
 		return nil, fmt.Errorf("no %v", errMessage)
 	} else if len(found) > 1 && !allowMultiple {
-		return nil, fmt.Errorf("multiple wallets for currency %s", currency)
+		return nil, fmt.Errorf("multiple wallets for currency %s, specify a specific one", currency)
 	}
 	result := found[0]
 	if !result.Ready() {
