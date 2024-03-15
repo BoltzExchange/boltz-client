@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -20,9 +21,11 @@ import (
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -117,7 +120,15 @@ func (server *RpcServer) Init(
 	swapper.Init(database, onchain, autoSwapConfigPath)
 	routedServer.swapper = swapper
 
-	if !server.NoTls {
+	if server.NoTls {
+		// cleanup previous certificates to avoid confusion
+		if err := os.Remove(server.TlsCertPath); !os.IsNotExist(err) {
+			return err
+		}
+		if err := os.Remove(server.TlsKeyPath); !os.IsNotExist(err) {
+			return err
+		}
+	} else {
 		certData, err := loadCertificate(server.TlsCertPath, server.TlsKeyPath, false)
 
 		if err != nil {
@@ -211,11 +222,14 @@ func (server *RpcServer) Start() chan error {
 			restUrl := server.RestHost + ":" + strconv.Itoa(server.RestPort)
 			logger.Info("Starting REST server on: " + restUrl)
 
-			restCreds, err := getRestDialOptions(server.TlsCertPath)
-
-			if err != nil {
-				errChannel <- err
-				return
+			creds := insecure.NewCredentials()
+			var err error
+			if !server.NoTls {
+				creds, err = credentials.NewClientTLSFromFile(server.TlsCertPath, "")
+				if err != nil {
+					errChannel <- err
+					return
+				}
 			}
 
 			mux := runtime.NewServeMux()
@@ -232,9 +246,8 @@ func (server *RpcServer) Start() chan error {
 				context.Background(),
 				mux,
 				sanitizedRpcUrl,
-				restCreds,
+				[]grpc.DialOption{grpc.WithTransportCredentials(creds)},
 			)
-
 			if err != nil {
 				errChannel <- err
 				return
@@ -242,10 +255,16 @@ func (server *RpcServer) Start() chan error {
 
 			httpServer = &http.Server{Addr: restUrl, Handler: mux}
 
-			if err := httpServer.ListenAndServeTLS(server.TlsCertPath, server.TlsKeyPath); err != nil {
-				if err.Error() != "http: Server closed" {
-					errChannel <- err
-				}
+			c := cors.AllowAll()
+			httpServer.Handler = c.Handler(httpServer.Handler)
+
+			if server.NoTls {
+				err = httpServer.ListenAndServe()
+			} else {
+				err = httpServer.ListenAndServeTLS(server.TlsCertPath, server.TlsKeyPath)
+			}
+			if err != nil && err.Error() != "http: Server closed" {
+				errChannel <- err
 			}
 			wg.Done()
 		}()
@@ -267,16 +286,4 @@ func (server *RpcServer) Start() chan error {
 	}()
 
 	return errChannel
-}
-
-func getRestDialOptions(tlsCertPath string) ([]grpc.DialOption, error) {
-	restCreds, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
-
-	if err != nil {
-		return nil, err
-	}
-
-	return []grpc.DialOption{
-		grpc.WithTransportCredentials(restCreds),
-	}, nil
 }

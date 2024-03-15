@@ -5,11 +5,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 	"os"
 	"strconv"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type Connection struct {
@@ -26,11 +28,16 @@ type Connection struct {
 }
 
 func (connection *Connection) Connect() error {
-	creds, err := credentials.NewClientTLSFromFile(connection.TlsCertPath, "")
+	creds := insecure.NewCredentials()
+	var err error
+	if connection.TlsCertPath != "" {
+		creds, err = credentials.NewClientTLSFromFile(connection.TlsCertPath, "")
 
-	if err != nil {
-		return errors.New(fmt.Sprint("could not read connection certificate: ", err))
+		if err != nil {
+			return errors.New(fmt.Sprint("could not read connection certificate: ", err))
+		}
 	}
+
 	con, err := grpc.Dial(connection.Host+":"+strconv.Itoa(connection.Port), grpc.WithTransportCredentials(creds))
 
 	if err != nil {
