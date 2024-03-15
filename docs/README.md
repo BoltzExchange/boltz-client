@@ -57,9 +57,9 @@ Binaries for the latest release of Boltz Client can be found on the [release pag
 
 ### Configuration
 
-Configuration can be done via cli params or a TOML configuration file (default `~/.boltz/boltz.toml`). An example configuration file can be found [here](configuration.md). We suggest you start off with it. We suggest you start off with it.
+Configuration can be done via CLI params or a TOML configuration file (by default located in `~/.boltz/boltz.toml`). We suggest starting off with the sample configuration file, which can be found [here](configuration.md).
 
-`boltzd` requires a connection to a lightning node, which ban be CLN or LND. If you set configuration values for both, you can specify which to use with the `node` param.
+`boltzd` requires a connection to a lightning node, which can be CLN or LND. If you set configuration values for both, you can specify which to use with the `node` param.
 
 To view all CLI flags use `--help`.
 
@@ -88,7 +88,7 @@ You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.cert
 
 ### CLI
 
-We recommend running `boltzcli completions` to setup autocompletions for the cli (only supported for zsh and bash).
+We recommend running `boltzcli completions` to setup autocompletions for the CLI (only supported for zsh and bash).
 
 ### Macaroons
 
