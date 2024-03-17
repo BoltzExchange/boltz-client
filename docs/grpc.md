@@ -381,10 +381,10 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `amount` | [`int64`](#int64) |  |  |
-| `pair` | [`Pair`](#pair) |  |  |
-| `send_from_internal` | [`bool`](#bool) |  | repeated string chan_ids = 3; the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
+| `pair` | [`Pair`](#pair) |  | not yet supported repeated string chan_ids = 3; |
+| `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
-| `wallet` | [`string`](#string) | optional | wallet to pay swap from. only used if `auto_send` is set to true |
+| `wallet` | [`string`](#string) | optional | wallet to pay swap from. only used if `send_from_internal` is set to true |
 | `invoice` | [`string`](#string) | optional | invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node |
 
 
@@ -402,7 +402,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `address` | [`string`](#string) |  |  |
 | `expected_amount` | [`int64`](#int64) |  |  |
 | `bip21` | [`string`](#string) |  |  |
-| `tx_id` | [`string`](#string) |  | lockup transaction id. Only populated when `auto_send` was specified in the request |
+| `tx_id` | [`string`](#string) |  | lockup transaction id. Only populated when `send_from_internal` was specified in the request |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `timeout_hours` | [`float`](#float) |  |  |
 
