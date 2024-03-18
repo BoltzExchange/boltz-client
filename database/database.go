@@ -86,7 +86,8 @@ CREATE TABLE reverseSwaps
     serviceFee          INT,
     serviceFeePercent   REAL    DEFAULT 0,
     onchainFee          INT,
-    createdAt           INT
+    createdAt           INT,
+    externalPay         BOOLEAN
 );
 CREATE TABLE autobudget
 (

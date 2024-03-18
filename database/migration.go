@@ -16,7 +16,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 5
+const latestSchemaVersion = 6
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -380,6 +380,12 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			return err
 		}
 		if _, err := tx.Exec("ALTER TABLE swaps DROP COLUMN autoSend"); err != nil {
+			return err
+		}
+	case 5:
+		logMigration(oldVersion)
+
+		if _, err := tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN externalPay BOOLEAN"); err != nil {
 			return err
 		}
 

@@ -110,6 +110,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		ServiceFee:          serializedReverseSwap.ServiceFee,
 		OnchainFee:          serializedReverseSwap.OnchainFee,
 		RoutingFeeMsat:      serializedReverseSwap.RoutingFeeMsat,
+		ExternalPay:         serializedReverseSwap.ExternalPay,
 	}
 }
 

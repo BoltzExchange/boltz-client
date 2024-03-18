@@ -522,6 +522,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		LockupTransactionId: "",
 		ClaimTransactionId:  "",
 		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
+		ExternalPay:         request.GetExternalPay(),
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -578,19 +579,31 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 
 	logger.Info("Created new Reverse Swap " + reverseSwap.Id + ": " + marshalJson(reverseSwap.Serialize()))
 
-	if err := server.nursery.PayReverseSwap(&reverseSwap); err != nil {
-		if dbErr := server.database.UpdateReverseSwapState(&reverseSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
-			return nil, handleError(dbErr)
-		}
-		return nil, handleError(err)
-	}
-
 	rpcResponse := &boltzrpc.CreateReverseSwapResponse{
 		Id:            reverseSwap.Id,
 		LockupAddress: response.LockupAddress,
 	}
 
-	if !request.GetReturnImmediately() && request.AcceptZeroConf {
+	externalPay := request.GetExternalPay()
+	returnImmediately := request.GetReturnImmediately()
+	if externalPay {
+		// only error if it was explicitly set to false, implicitly set to true otherwise
+		if request.ReturnImmediately != nil && !returnImmediately {
+			return nil, handleError(errors.New("can not wait for swap transaction when using external pay"))
+		} else {
+			returnImmediately = true
+		}
+		rpcResponse.Invoice = &reverseSwap.Invoice
+	} else {
+		if err := server.nursery.PayReverseSwap(&reverseSwap); err != nil {
+			if dbErr := server.database.UpdateReverseSwapState(&reverseSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+				return nil, handleError(dbErr)
+			}
+			return nil, handleError(err)
+		}
+	}
+
+	if !returnImmediately && request.AcceptZeroConf {
 		updates, stop := server.nursery.SwapUpdates(reverseSwap.Id)
 		defer stop()
 
