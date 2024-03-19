@@ -130,6 +130,9 @@ func (cfg *Config) Init() error {
 		if cfg.minBalance.IsAbsolute() {
 			return errors.New("absolute balance threshold not supported for per channel rebalancing")
 		}
+		if cfg.swapType == "" || cfg.swapType == boltz.NormalSwap {
+			return errors.New("per channel rebalancing only supported for reverse swaps")
+		}
 		cfg.strategy = cfg.perChannelStrategy
 		cfg.strategyName = "per channel"
 	} else {
