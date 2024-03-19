@@ -1,4 +1,10 @@
 
+<a name="v2.0.1"></a>
+## [v2.0.1] - 2024-03-19
+### Feat
+- noTls option and cors for rpcserver ([#102](https://github.com/BoltzExchange/boltz-client/issues/102))
+
+
 <a name="v2.0.0"></a>
 ## [v2.0.0] - 2024-03-14
 ### Feat
@@ -210,6 +216,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.0.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0...v2.0.1
 [v2.0.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0-beta...v2.0.0
 [v2.0.0-beta]: https://github.com/BoltzExchange/boltz-client/compare/v1.3.0-rc1...v2.0.0-beta
 [v1.3.0-rc1]: https://github.com/BoltzExchange/boltz-client/compare/v1.2.7...v1.3.0-rc1
