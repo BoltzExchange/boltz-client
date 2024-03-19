@@ -213,13 +213,9 @@ func TestStrategies(t *testing.T) {
 				PerChannel:        true,
 				MaxBalancePercent: 60,
 				MinBalancePercent: 40,
+				SwapType:          "reverse",
 			},
 			outcome: []*rawRecommendation{
-				{
-					Type:    boltz.NormalSwap,
-					Amount:  50,
-					Channel: channels[1],
-				},
 				{
 					Type:    boltz.ReverseSwap,
 					Amount:  200,
@@ -231,26 +227,23 @@ func TestStrategies(t *testing.T) {
 			name: "PerChannel/High",
 			config: &SerializedConfig{
 				PerChannel:        true,
-				MaxBalancePercent: 75,
-				MinBalancePercent: 25,
+				MaxBalancePercent: 90,
+				SwapType:          "reverse",
+			},
+			outcome: nil,
+		},
+		{
+			name: "TotalBalance/Reverse",
+			config: &SerializedConfig{
+				MaxBalancePercent: 60,
+				MinBalancePercent: 40,
 			},
 			outcome: []*rawRecommendation{
 				{
-					Type:    boltz.ReverseSwap,
-					Amount:  200,
-					Channel: channels[2],
+					Type:   boltz.ReverseSwap,
+					Amount: 150,
 				},
 			},
-		},
-		{
-			name: "PerChannel/OnlyNormalSwap",
-			config: &SerializedConfig{
-				PerChannel:        true,
-				MaxBalancePercent: 75,
-				MinBalancePercent: 25,
-				SwapType:          "normal",
-			},
-			outcome: nil,
 		},
 		{
 			name: "TotalBalance/Reverse",

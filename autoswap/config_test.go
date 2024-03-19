@@ -98,6 +98,15 @@ func TestConfigInit(t *testing.T) {
 			},
 			err: true,
 		},
+		{
+			name: "PerChannel/SubmarineForbidden",
+			cfg: &SerializedConfig{
+				MinBalance: 10000,
+				PerChannel: true,
+				SwapType:   "submarine",
+			},
+			err: true,
+		},
 	}
 
 	for _, tc := range tt {
