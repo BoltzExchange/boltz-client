@@ -351,7 +351,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style. |
 | `wallet` | [`string`](#string) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
-| `return_immediately` | [`bool`](#bool) |  | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
+| `return_immediately` | [`bool`](#bool) | optional | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
+| `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true. |
 
 
 
@@ -368,6 +369,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `lockup_address` | [`string`](#string) |  |  |
 | `routing_fee_milli_sat` | [`uint64`](#uint64) | optional | Only populated when zero-conf is accepted and return_immediately is set to false |
 | `claim_transaction_id` | [`string`](#string) | optional | Only populated when zero-conf is accepted and return_immediately is set to false |
+| `invoice` | [`string`](#string) | optional | Invoice to be paid. Only populated when `external_pay` is set to true |
 
 
 
@@ -845,6 +847,7 @@ Reverse Pair
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |
+| `external_pay` | [`bool`](#bool) |  |  |
 
 
 

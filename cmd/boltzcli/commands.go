@@ -310,6 +310,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				switch status {
 				case boltz.SwapCreated:
 					fmt.Printf("Swap ID: %s\n", swap.Id)
+					if swap.ExternalPay {
+						fmt.Printf("Invoice: %s\n", swap.Invoice)
+					}
 				case boltz.TransactionMempool:
 					fmt.Printf("Lockup Transaction ID: %s\n", swap.LockupTransactionId)
 				case boltz.InvoiceSettled:
@@ -910,6 +913,10 @@ var createReverseSwapCommand = &cli.Command{
 			Name:  "no-zero-conf",
 			Usage: "Disable zero-conf for this swap",
 		},
+		&cli.BoolFlag{
+			Name:  "external-pay",
+			Usage: "Do not automatically pay the swap from the connected lightning node",
+		},
 		&cli.StringSliceFlag{
 			Name: "chan-id",
 		},
@@ -970,6 +977,8 @@ func createReverseSwap(ctx *cli.Context) error {
 	}
 
 	wallet := ctx.String("wallet")
+	externalPay := ctx.Bool("external-pay")
+	returnImmediately := true
 	response, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
 		Address:           address,
 		Amount:            amount,
@@ -977,7 +986,8 @@ func createReverseSwap(ctx *cli.Context) error {
 		Pair:              pair,
 		Wallet:            &wallet,
 		ChanIds:           ctx.StringSlice("chan-id"),
-		ReturnImmediately: true,
+		ReturnImmediately: &returnImmediately,
+		ExternalPay:       &externalPay,
 	})
 	if err != nil {
 		return err

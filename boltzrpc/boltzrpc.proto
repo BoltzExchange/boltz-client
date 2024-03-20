@@ -243,6 +243,7 @@ message ReverseSwapInfo {
     optional uint64 service_fee = 18;
     optional uint64 onchain_fee = 19;
     optional uint64 routing_fee_msat = 20;
+    bool external_pay = 21;
 }
 
 message BlockHeights {
@@ -417,7 +418,9 @@ message CreateReverseSwapRequest {
     optional string wallet = 6;
     // Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed.
     // It will always return immediately if `accept_zero_conf` is not set.
-    bool return_immediately = 7;
+    optional bool return_immediately = 7;
+    // If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true.
+    optional bool external_pay = 8;
 }
 message CreateReverseSwapResponse {
     string id = 1;
@@ -427,6 +430,8 @@ message CreateReverseSwapResponse {
     optional uint64 routing_fee_milli_sat = 3;
     // Only populated when zero-conf is accepted and return_immediately is set to false
     optional string claim_transaction_id = 4;
+    // Invoice to be paid. Only populated when `external_pay` is set to true
+    optional string invoice = 5;
 }
 
 message ChannelId {

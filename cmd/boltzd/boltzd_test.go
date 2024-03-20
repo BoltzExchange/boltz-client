@@ -290,6 +290,11 @@ func parseCurrency(grpcCurrency boltzrpc.Currency) boltz.Currency {
 	}
 }
 
+var pairBtc = &boltzrpc.Pair{
+	From: boltzrpc.Currency_BTC,
+	To:   boltzrpc.Currency_BTC,
+}
+
 func TestSwap(t *testing.T) {
 	nodes := []string{"CLN", "LND"}
 
@@ -301,11 +306,6 @@ func TestSwap(t *testing.T) {
 	chain := onchain.Onchain{
 		Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
 		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
-	}
-
-	pairBtc := &boltzrpc.Pair{
-		From: boltzrpc.Currency_BTC,
-		To:   boltzrpc.Currency_BTC,
 	}
 
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
@@ -640,12 +640,13 @@ func TestReverseSwap(t *testing.T) {
 
 					var info *boltzrpc.GetSwapInfoResponse
 
+					returnImmediately := !tc.waitForClaim
 					request := &boltzrpc.CreateReverseSwapRequest{
 						Amount:            100000,
 						Address:           addr,
 						Pair:              pair,
 						AcceptZeroConf:    tc.zeroConf,
-						ReturnImmediately: !tc.waitForClaim,
+						ReturnImmediately: &returnImmediately,
 					}
 
 					if tc.recover {
@@ -714,6 +715,44 @@ func TestReverseSwap(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("ExternalPay", func(t *testing.T) {
+		cfg := loadConfig(t)
+		client, _, stop := setup(t, cfg, "")
+		defer stop()
+
+		externalPay := true
+		returnImmediately := false
+
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount:            100000,
+			AcceptZeroConf:    true,
+			ExternalPay:       &externalPay,
+			ReturnImmediately: &returnImmediately,
+		}
+
+		// cant wait for claim transaction if paid externally
+		_, err := client.CreateReverseSwap(request)
+		require.Error(t, err)
+
+		request.ReturnImmediately = nil
+
+		swap, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+		require.NotEmpty(t, swap.Invoice)
+
+		stream := swapStream(t, client, swap.Id)
+
+		_, err = cfg.Lightning.PayInvoice(*swap.Invoice, 10000, 30, nil)
+		require.NoError(t, err)
+
+		stream(boltzrpc.SwapState_PENDING)
+		info := stream(boltzrpc.SwapState_SUCCESSFUL)
+		require.True(t, info.ReverseSwap.ExternalPay)
+
+		test.MineBlock()
+	})
+
 }
 
 func TestAutoSwap(t *testing.T) {
