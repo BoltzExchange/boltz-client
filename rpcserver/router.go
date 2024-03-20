@@ -445,6 +445,16 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
 	logger.Info("Creating Reverse Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
+	returnImmediately := request.GetReturnImmediately()
+	if request.GetExternalPay() {
+		// only error if it was explicitly set to false, implicitly set to true otherwise
+		if request.ReturnImmediately != nil && !returnImmediately {
+			return nil, handleError(errors.New("can not wait for swap transaction when using external pay"))
+		} else {
+			returnImmediately = true
+		}
+	}
+
 	claimAddress := request.Address
 
 	pair := utils.ParsePair(request.Pair)
@@ -584,15 +594,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		LockupAddress: response.LockupAddress,
 	}
 
-	externalPay := request.GetExternalPay()
-	returnImmediately := request.GetReturnImmediately()
-	if externalPay {
-		// only error if it was explicitly set to false, implicitly set to true otherwise
-		if request.ReturnImmediately != nil && !returnImmediately {
-			return nil, handleError(errors.New("can not wait for swap transaction when using external pay"))
-		} else {
-			returnImmediately = true
-		}
+	if request.GetExternalPay() {
 		rpcResponse.Invoice = &reverseSwap.Invoice
 	} else {
 		if err := server.nursery.PayReverseSwap(&reverseSwap); err != nil {
