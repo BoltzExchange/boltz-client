@@ -36,6 +36,10 @@ func (nursery *Nursery) PayReverseSwap(reverseSwap *database.ReverseSwap) error 
 		return err
 	}
 
+	if nursery.lightning == nil {
+		return fmt.Errorf("no lightning node available to pay invoice")
+	}
+
 	go func() {
 		payment, err := nursery.lightning.PayInvoice(reverseSwap.Invoice, feeLimit, 30, reverseSwap.ChanIds)
 		if err != nil {
@@ -168,16 +172,18 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		}
 
 		paymentHash := *decodedInvoice.PaymentHash
-		status, err := nursery.lightning.PaymentStatus(paymentHash[:])
-		if err != nil {
-			handleError("Could not get payment status: " + err.Error())
-		} else if status.State == lightning.PaymentSucceeded {
-			if err := nursery.database.SetReverseSwapRoutingFee(reverseSwap, status.FeeMsat); err != nil {
-				handleError("Could not set reverse swap routing fee in database: " + err.Error())
-				return
+		if nursery.lightning != nil {
+			status, err := nursery.lightning.PaymentStatus(paymentHash[:])
+			if err != nil {
+				handleError("Could not get payment status: " + err.Error())
+			} else if status.State == lightning.PaymentSucceeded {
+				if err := nursery.database.SetReverseSwapRoutingFee(reverseSwap, status.FeeMsat); err != nil {
+					handleError("Could not set reverse swap routing fee in database: " + err.Error())
+					return
+				}
+			} else {
+				logger.Warn("Reverse Swap " + reverseSwap.Id + " has state completed but payment didnt succeed")
 			}
-		} else {
-			logger.Warn("Reverse Swap " + reverseSwap.Id + " has state completed but payment didnt succeed")
 		}
 
 		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())

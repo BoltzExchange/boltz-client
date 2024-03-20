@@ -1,4 +1,4 @@
-package utils
+package lightning
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 )
 
@@ -35,7 +34,7 @@ func searchUri(network string, uris []string) string {
 	return ""
 }
 
-func ConnectBoltz(lightning lightning.LightningNode, boltz *boltz.Boltz) error {
+func ConnectBoltz(lightning LightningNode, boltz *boltz.Boltz) error {
 	nodes, err := boltz.GetNodes()
 	if err != nil {
 		return err

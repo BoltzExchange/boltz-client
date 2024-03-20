@@ -9,6 +9,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/config"
 	"github.com/BoltzExchange/boltz-client/electrum"
+	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/mempool"
 	"github.com/BoltzExchange/boltz-client/onchain"
@@ -58,23 +59,36 @@ func Init(cfg *config.Config) {
 		logger.Fatal("Could not connect to database: " + err.Error())
 	}
 
-	setLightningNode(cfg)
+	if !cfg.Standalone {
+		setLightningNode(cfg)
 
-	if err = cfg.Lightning.Connect(); err != nil {
-		logger.Fatal("Could not initialize lightning client: " + err.Error())
+		if err = cfg.Lightning.Connect(); err != nil {
+			logger.Fatal("Could not initialize lightning client: " + err.Error())
+		}
+
+		info := connectLightning(cfg.Lightning)
+
+		if cfg.Lightning == cfg.Cln {
+			checkClnVersion(info)
+		} else if cfg.Lightning == cfg.LND {
+			checkLndVersion(info)
+		}
+
+		logger.Info(fmt.Sprintf("Connected to lightning node %v (%v): %v", cfg.Node, info.Version, info.Pubkey))
+
+		cfg.Network = info.Network
+
+		waitForLightningSynced(cfg.Lightning)
+
+		if err := lightning.ConnectBoltz(cfg.Lightning, cfg.Boltz); err != nil {
+			logger.Warn("Could not connect to to boltz node: " + err.Error())
+		}
+
+	} else if cfg.Network == "" {
+		logger.Fatal("Network must be set when no lightning node is configured")
 	}
 
-	info := connectLightning(cfg.Lightning)
-
-	if cfg.Lightning == cfg.Cln {
-		checkClnVersion(info)
-	} else if cfg.Lightning == cfg.LND {
-		checkLndVersion(info)
-	}
-
-	logger.Info(fmt.Sprintf("Connected to lightning node %v (%v): %v", cfg.Node, info.Version, info.Pubkey))
-
-	network, err := boltz.ParseChain(info.Network)
+	network, err := boltz.ParseChain(cfg.Network)
 
 	if err != nil {
 		logger.Fatal("Could not parse chain: " + err.Error())
@@ -82,15 +96,9 @@ func Init(cfg *config.Config) {
 
 	logger.Info("Parsed chain: " + network.Name)
 
-	waitForLightningSynced(cfg.Lightning)
-
 	setBoltzEndpoint(cfg.Boltz, network)
 
 	checkBoltzVersion(cfg.Boltz)
-
-	if err := utils.ConnectBoltz(cfg.Lightning, cfg.Boltz); err != nil {
-		logger.Warn("Could not connect to to boltz node: " + err.Error())
-	}
 
 	onchain, err := initOnchain(cfg, network)
 	if err != nil {
@@ -156,14 +164,18 @@ func setBoltzEndpoint(boltzCfg *boltz.Boltz, network *boltz.Network) {
 func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, error) {
 	onchain := &onchain.Onchain{
 		Btc: &onchain.Currency{
-			Listener: cfg.Lightning,
-			Tx:       onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc),
+			Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc),
 		},
 		Liquid: &onchain.Currency{
 			Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid),
 		},
 		Network: network,
-		Wallets: []onchain.Wallet{cfg.Lightning},
+	}
+
+	onchain.Init()
+
+	if cfg.Lightning != nil {
+		onchain.AddWallet(cfg.Lightning)
 	}
 
 	if !wallet.Initialized() {
@@ -184,6 +196,7 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
 		onchain.Btc.Fees = client
+		onchain.Btc.Listener = client
 	}
 	if cfg.ElectrumLiquidUrl != "" {
 		logger.Info("Using configured Electrum Liquid RPC: " + cfg.ElectrumLiquidUrl)
@@ -206,6 +219,7 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		logger.Info("mempool.space API: " + cfg.MempoolApi)
 		mempoolBtc := mempool.InitClient(cfg.MempoolApi)
 		onchain.Btc.Fees = mempoolBtc
+		onchain.Btc.Listener = mempoolBtc
 	}
 
 	if cfg.MempoolLiquidApi != "" {
@@ -214,5 +228,6 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		onchain.Liquid.Fees = mempoolLiquid
 		onchain.Liquid.Listener = mempoolLiquid
 	}
+
 	return onchain, nil
 }

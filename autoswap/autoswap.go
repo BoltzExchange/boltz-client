@@ -52,6 +52,20 @@ func (swapper *AutoSwapper) Init(database *database.Database, onchain *onchain.O
 	swapper.onchain = onchain
 	swapper.database = database
 	swapper.configPath = configPath
+
+	if onchain != nil {
+		go func() {
+			for range onchain.OnWalletChange.Get() {
+				if swapper.Running() || swapper.Enabled() {
+					logger.Info("Restarting auto swapper because of wallet change")
+					swapper.Stop()
+					if err := swapper.Start(); err != nil {
+						logger.Error("Could not restart auto swapper: " + err.Error())
+					}
+				}
+			}
+		}()
+	}
 }
 
 func (swapper *AutoSwapper) SetConfigValue(name string, value any) error {
@@ -239,6 +253,9 @@ func (swapper *AutoSwapper) validateRecommendations(
 func (swapper *AutoSwapper) GetSwapRecommendations() ([]*SwapRecommendation, error) {
 	if err := swapper.requireConfig(); err != nil {
 		return nil, err
+	}
+	if swapper.ListChannels == nil {
+		return nil, errors.New("lightning channels are not available")
 	}
 	channels, err := swapper.ListChannels()
 	if err != nil {

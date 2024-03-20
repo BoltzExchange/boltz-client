@@ -977,9 +977,8 @@ func createReverseSwap(ctx *cli.Context) error {
 	}
 
 	wallet := ctx.String("wallet")
-	externalPay := ctx.Bool("external-pay")
 	returnImmediately := true
-	response, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+	request := &boltzrpc.CreateReverseSwapRequest{
 		Address:           address,
 		Amount:            amount,
 		AcceptZeroConf:    !ctx.Bool("no-zero-conf"),
@@ -987,8 +986,12 @@ func createReverseSwap(ctx *cli.Context) error {
 		Wallet:            &wallet,
 		ChanIds:           ctx.StringSlice("chan-id"),
 		ReturnImmediately: &returnImmediately,
-		ExternalPay:       &externalPay,
-	})
+	}
+	if externalPay := ctx.Bool("external-pay"); externalPay {
+		request.ExternalPay = &externalPay
+	}
+
+	response, err := client.CreateReverseSwap(request)
 	if err != nil {
 		return err
 	}
