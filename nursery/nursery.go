@@ -191,7 +191,9 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onc
 	logger.Infof("Connecting to block %s epoch stream", currency)
 	blockNotifier := make(chan *onchain.BlockEpoch)
 	stop := nursery.stop.Get()
+	onWalletChange := nursery.onchain.OnWalletChange.Get()
 	nursery.waitGroup.Add(1)
+
 	go func() {
 		defer func() {
 			close(blockNotifier)
@@ -205,7 +207,7 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onc
 				select {
 				case <-stop:
 					return
-				case <-nursery.onchain.OnWalletChange.Get():
+				case <-onWalletChange:
 				}
 			} else {
 				err := listener.RegisterBlockListener(blockNotifier, stop)
