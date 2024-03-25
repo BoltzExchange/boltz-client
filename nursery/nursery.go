@@ -28,6 +28,7 @@ type Nursery struct {
 
 	eventListeners     map[string]swapListener
 	eventListenersLock sync.RWMutex
+	globalListener     swapListener
 	waitGroup          sync.WaitGroup
 	stop               *utils.ChannelForwarder[bool]
 
@@ -45,6 +46,7 @@ type SwapUpdate struct {
 type swapListener = *utils.ChannelForwarder[SwapUpdate]
 
 func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
+	nursery.globalListener.Send(update)
 	if listener, ok := nursery.eventListeners[id]; ok {
 		listener.Send(update)
 		logger.Debugf("Sent update for swap %s", id)
@@ -69,6 +71,13 @@ func (nursery *Nursery) SwapUpdates(id string) (<-chan SwapUpdate, func()) {
 	return nil, nil
 }
 
+func (nursery *Nursery) GlobalSwapUpdates() (<-chan SwapUpdate, func()) {
+	updates := nursery.globalListener.Get()
+	return updates, func() {
+		nursery.globalListener.Remove(updates)
+	}
+}
+
 func (nursery *Nursery) Init(
 	network *boltz.Network,
 	lightning lightning.LightningNode,
@@ -82,6 +91,7 @@ func (nursery *Nursery) Init(
 	nursery.database = database
 	nursery.onchain = chain
 	nursery.eventListeners = make(map[string]swapListener)
+	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
 	nursery.stop = utils.ForwardChannel(make(chan bool), 0, false)
 	nursery.boltzWs = boltz.NewBoltzWebsocket(boltzClient.URL)
 
@@ -106,6 +116,7 @@ func (nursery *Nursery) Stop() {
 	for id := range nursery.eventListeners {
 		nursery.removeSwapListener(id)
 	}
+	nursery.globalListener.Close()
 	logger.Debugf("Closed all event listeners")
 	nursery.boltzWs.Close()
 	nursery.waitGroup.Wait()

@@ -47,7 +47,7 @@ func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
 	cfg, err := config.LoadConfig(dataDir)
 	require.NoError(t, err)
-	cfg.Database.Path = "file:test.db?cache=shared&mode=memory"
+	cfg.Database.Path = ":memory:"
 	cfg.Node = "cln"
 	cfg.Node = "lnd"
 	return cfg
@@ -220,6 +220,46 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
+func TestGetSwapInfoStream(t *testing.T) {
+	client, _, stop := setup(t, nil, "")
+	defer stop()
+
+	stream, err := client.GetSwapInfoStream("")
+	require.NoError(t, err)
+
+	updates := make(chan *boltzrpc.GetSwapInfoResponse)
+	go func() {
+		for {
+			status, err := stream.Recv()
+			if err != nil {
+				close(updates)
+				return
+			}
+			updates <- status
+		}
+	}()
+
+	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{})
+	require.NoError(t, err)
+
+	select {
+	case info := <-updates:
+		require.Equal(t, swap.Id, info.Swap.Id)
+	case <-time.After(2 * time.Second):
+		require.Fail(t, "no swap update received")
+	}
+
+	reverseSwap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
+	require.NoError(t, err)
+
+	select {
+	case info := <-updates:
+		require.Equal(t, reverseSwap.Id, info.ReverseSwap.Id)
+	case <-time.After(2 * time.Second):
+		require.Fail(t, "no reverse swap update received")
+	}
+}
+
 func TestGetPairs(t *testing.T) {
 	cfg := loadConfig(t)
 	client, _, stop := setup(t, cfg, "")
@@ -378,12 +418,12 @@ func TestSwap(t *testing.T) {
 				SendFromInternal: true,
 			})
 			require.NoError(t, err)
-			info, err := client.GetSwapInfo(swap.Id)
-			require.NoError(t, err)
+
+			stream := swapStream(t, client, swap.Id)
+			info := stream(boltzrpc.SwapState_PENDING)
 			require.Equal(t, invoice.PaymentRequest, info.Swap.Invoice)
 
 			test.MineBlock()
-			stream := swapStream(t, client, swap.Id)
 			stream(boltzrpc.SwapState_SUCCESSFUL)
 
 			paid, err := node.CheckInvoicePaid(invoice.PaymentHash)

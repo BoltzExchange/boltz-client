@@ -79,7 +79,7 @@ Gets all available information about a swap from the database.
 
 #### GetSwapInfoStream
 
-Returns the entire history of the swap if is still pending and streams updates in real time.
+Returns the entire history of the swap if is still pending and streams updates in real time. If the swap id is empty or "*" updates for all swaps will be streamed.
 
 | Request | Response |
 | ------- | -------- |

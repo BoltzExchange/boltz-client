@@ -72,6 +72,7 @@ type BoltzClient interface {
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	// Returns the entire history of the swap if is still pending and streams updates in real time.
+	// If the swap id is empty or "*" updates for all swaps will be streamed.
 	GetSwapInfoStream(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (Boltz_GetSwapInfoStreamClient, error)
 	// Deprecated: Do not use.
 	//
@@ -400,6 +401,7 @@ type BoltzServer interface {
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
 	// Returns the entire history of the swap if is still pending and streams updates in real time.
+	// If the swap id is empty or "*" updates for all swaps will be streamed.
 	GetSwapInfoStream(*GetSwapInfoRequest, Boltz_GetSwapInfoStreamServer) error
 	// Deprecated: Do not use.
 	//
