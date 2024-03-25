@@ -182,7 +182,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 					return
 				}
 			} else {
-				logger.Warn("Reverse Swap " + reverseSwap.Id + " has state completed but payment didnt succeed")
+				logger.Warnf("Reverse Swap %s has state completed but payment did not succeed", reverseSwap.Id)
 			}
 		}
 
