@@ -227,25 +227,33 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 }
 
 func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfoRequest, stream boltzrpc.Boltz_GetSwapInfoStreamServer) error {
-	logger.Info("Starting Swap info stream for " + request.Id)
-	info, err := server.GetSwapInfo(context.Background(), request)
-	if err != nil {
-		return handleError(err)
-	}
+	var updates <-chan nursery.SwapUpdate
+	var stop func()
 
-	updates, stop := server.nursery.SwapUpdates(request.Id)
-	if updates != nil {
-		for update := range updates {
-			if err := stream.Send(&boltzrpc.GetSwapInfoResponse{
-				Swap:        serializeSwap(update.Swap),
-				ReverseSwap: serializeReverseSwap(update.ReverseSwap),
-			}); err != nil {
-				stop()
+	if request.Id == "" || request.Id == "*" {
+		logger.Info("Starting global Swap info stream")
+		updates, stop = server.nursery.GlobalSwapUpdates()
+	} else {
+		logger.Info("Starting Swap info stream for " + request.Id)
+		updates, stop = server.nursery.SwapUpdates(request.Id)
+		if updates == nil {
+			info, err := server.GetSwapInfo(context.Background(), request)
+			if err != nil {
 				return handleError(err)
 			}
+			if err := stream.Send(info); err != nil {
+				return handleError(err)
+			}
+			return nil
 		}
-	} else {
-		if err := stream.Send(info); err != nil {
+	}
+
+	for update := range updates {
+		if err := stream.Send(&boltzrpc.GetSwapInfoResponse{
+			Swap:        serializeSwap(update.Swap),
+			ReverseSwap: serializeReverseSwap(update.ReverseSwap),
+		}); err != nil {
+			stop()
 			return handleError(err)
 		}
 	}

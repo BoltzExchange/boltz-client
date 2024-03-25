@@ -51,6 +51,7 @@ service Boltz {
 
     /*
     Returns the entire history of the swap if is still pending and streams updates in real time.
+    If the swap id is empty or "*" updates for all swaps will be streamed.
     */
     rpc GetSwapInfoStream (GetSwapInfoRequest) returns (stream GetSwapInfoResponse);
 
