@@ -1,5 +1,5 @@
 PKG := github.com/BoltzExchange/boltz-client
-VERSION := 2.0.1
+VERSION := 2.0.2
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
 PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
