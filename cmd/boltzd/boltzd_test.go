@@ -138,8 +138,8 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 	}
 }
 
-func getCli(pair boltz.Currency) test.Cli {
-	if pair == boltz.CurrencyLiquid {
+func getCli(pair boltzrpc.Currency) test.Cli {
+	if pair == boltzrpc.Currency_LBTC {
 		return test.LiquidCli
 	} else {
 		return test.BtcCli
@@ -175,7 +175,7 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) nextFunc {
 					if status.Swap.GetStatus() == created || status.ReverseSwap.GetStatus() == created {
 						continue
 					}
-					if state == status.Swap.GetState() || state == status.ReverseSwap.GetState() {
+					if state == status.Swap.GetState() || state == status.ReverseSwap.GetState() || state == status.ChainSwap.GetState() {
 						return status
 					}
 				} else {
@@ -674,7 +674,7 @@ func TestReverseSwap(t *testing.T) {
 
 					addr := ""
 					if tc.external {
-						addr = getCli(parseCurrency(tc.to))("getnewaddress")
+						addr = getCli(tc.to)("getnewaddress")
 					}
 
 					var info *boltzrpc.GetSwapInfoResponse
@@ -824,6 +824,90 @@ func TestReverseSwap(t *testing.T) {
 
 		test.MineBlock()
 	})
+
+}
+
+func TestChainSwap(t *testing.T) {
+	nodes := []string{"CLN", "LND"}
+
+	cfg := loadConfig(t)
+	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
+	cfg.Node = "LND"
+	boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
+	chain := onchain.Onchain{
+		Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
+		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
+	}
+
+	for _, node := range nodes {
+		node := node
+		t.Run(node, func(t *testing.T) {
+
+			tests := []struct {
+				desc string
+				from boltzrpc.Currency
+				to   boltzrpc.Currency
+			}{
+				{"BTC", boltzrpc.Currency_BTC, boltzrpc.Currency_LBTC},
+				{"LBTC", boltzrpc.Currency_LBTC, boltzrpc.Currency_BTC},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.desc, func(t *testing.T) {
+					pair := &boltzrpc.Pair{
+						From: tc.from,
+						To:   tc.to,
+					}
+					client, _, stop := setup(t, cfg, "")
+					defer stop()
+
+					fromCli := getCli(tc.from)
+					toCli := getCli(tc.to)
+
+					claimAddress := toCli("getnewaddress")
+
+					t.Run("Normal", func(t *testing.T) {
+						sendFromInternal := true
+						swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+							Amount:           100000,
+							Pair:             pair,
+							SendFromInternal: &sendFromInternal,
+							ClaimAddress:     &claimAddress,
+						})
+						require.NoError(t, err)
+						require.NotEmpty(t, swap.Id)
+
+						stream := swapStream(t, client, swap.Id)
+						test.MineBlock()
+						stream(boltzrpc.SwapState_PENDING)
+						test.MineBlock()
+						info := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
+
+						to := parseCurrency(tc.to)
+						checkTxOutAddress(t, chain, to, info.ToData.TransactionId, info.ToData.Address, true)
+					})
+
+					t.Run("External", func(t *testing.T) {
+						swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+							Amount:       100000,
+							Pair:         pair,
+							ClaimAddress: &claimAddress,
+						})
+						require.NoError(t, err)
+						require.NotEmpty(t, swap.Id)
+
+						stream := swapStream(t, client, swap.Id)
+						test.SendToAddress(fromCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+						test.MineBlock()
+						stream(boltzrpc.SwapState_PENDING)
+						test.MineBlock()
+						stream(boltzrpc.SwapState_SUCCESSFUL)
+					})
+				})
+			}
+
+		})
+	}
 
 }
 

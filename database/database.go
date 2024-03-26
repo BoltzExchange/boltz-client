@@ -59,6 +59,44 @@ CREATE TABLE swaps
     createdAt           INT,
     wallet              VARCHAR
 );
+
+CREATE TABLE chainSwaps
+(
+    id                VARCHAR PRIMARY KEY,
+    fromCurrency      VARCHAR,
+    toCurrency        VARCHAR,
+    state             INT,
+    error             VARCHAR,
+    status            VARCHAR,
+    acceptZeroConf      BOOLEAN,
+    preimage          VARCHAR,
+    isAuto            BOOLEAN DEFAULT 0,
+    serviceFee        INT,
+    serviceFeePercent REAL,
+    onchainFee        INT,
+    createdAt         INT,
+    entity            VARCHAR
+);
+
+CREATE TABLE chainSwapsData
+(
+    id                  VARCHAR,
+    currency            VARCHAR,
+    privateKey          VARCHAR,
+    theirPublicKey      VARCHAR,
+    tree                JSON,
+    amount              INTEGER,
+    timeoutBlockheight  INTEGER,
+    lockupTransactionId VARCHAR,
+    transactionId       VARCHAR,
+    wallet              VARCHAR,
+    address             VARCHAR,
+    lockupAddress       VARCHAR,
+    blindingKey         VARCHAR,
+
+    PRIMARY KEY (id, currency)
+);
+
 CREATE TABLE reverseSwaps
 (
     id                  VARCHAR PRIMARY KEY,
@@ -265,18 +303,23 @@ func (database *Database) QueryRow(query string, args ...any) *sql.Row {
 	return database.db.QueryRow(query, args...)
 }
 
-func (database *Database) QueryAnySwap(id string) (*Swap, *ReverseSwap, error) {
+func (database *Database) QueryAnySwap(id string) (*Swap, *ReverseSwap, *ChainSwap, error) {
 	swap, err := database.QuerySwap(id)
 	if err == nil {
-		return swap, nil, nil
+		return swap, nil, nil, nil
 	}
 
 	reverseSwap, err := database.QueryReverseSwap(id)
 	if err == nil {
-		return nil, reverseSwap, nil
+		return nil, reverseSwap, nil, nil
 	}
 
-	return nil, nil, fmt.Errorf("could not find Swap or Reverse Swap with ID %s", id)
+	chainSwap, err := database.QueryChainSwap(id)
+	if err == nil {
+		return nil, nil, chainSwap, nil
+	}
+
+	return nil, nil, nil, fmt.Errorf("could not find any type of Swap with ID %s", id)
 }
 
 func (database *Database) createTables() error {

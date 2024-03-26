@@ -114,6 +114,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 func (swap *Swap) InitTree() error {
 	return swap.SwapTree.Init(
 		swap.Pair.From == boltz.CurrencyLiquid,
+		false,
 		swap.PrivateKey,
 		swap.ClaimPubKey,
 	)

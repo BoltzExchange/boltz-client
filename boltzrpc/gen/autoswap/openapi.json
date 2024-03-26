@@ -1,0 +1,256 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "autoswaprpc/autoswap.proto",
+    "version" : "version not set"
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ],
+  "tags" : [ {
+    "name" : "AutoSwap"
+  } ],
+  "paths" : { },
+  "components" : {
+    "schemas" : {
+      "Any" : {
+        "type" : "object",
+        "properties" : {
+          "@type" : {
+            "type" : "string"
+          }
+        },
+        "additionalProperties" : {
+          "type" : "object"
+        }
+      },
+      "ChannelId" : {
+        "type" : "object",
+        "properties" : {
+          "cln" : {
+            "type" : "string"
+          },
+          "lnd" : {
+            "type" : "string",
+            "format" : "uint64"
+          }
+        }
+      },
+      "Config" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "channelPollInterval" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "staticAddress" : {
+            "type" : "string"
+          },
+          "maxBalance" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "minBalance" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "maxBalancePercent" : {
+            "type" : "number",
+            "format" : "float"
+          },
+          "minBalancePercent" : {
+            "type" : "number",
+            "format" : "float"
+          },
+          "maxFeePercent" : {
+            "type" : "number",
+            "format" : "float"
+          },
+          "acceptZeroConf" : {
+            "type" : "boolean"
+          },
+          "failureBackoff" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "budget" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "budgetInterval" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "currency" : {
+            "$ref" : "#/components/schemas/Currency"
+          },
+          "swapType" : {
+            "type" : "string"
+          },
+          "perChannel" : {
+            "type" : "boolean"
+          },
+          "wallet" : {
+            "type" : "string"
+          },
+          "maxSwapAmount" : {
+            "type" : "string",
+            "format" : "uint64"
+          }
+        }
+      },
+      "Currency" : {
+        "type" : "string",
+        "default" : "BTC",
+        "enum" : [ "BTC", "LBTC" ]
+      },
+      "GetStatusResponse" : {
+        "type" : "object",
+        "properties" : {
+          "running" : {
+            "type" : "boolean"
+          },
+          "strategy" : {
+            "type" : "string"
+          },
+          "error" : {
+            "type" : "string"
+          },
+          "stats" : {
+            "$ref" : "#/components/schemas/SwapStats"
+          },
+          "budget" : {
+            "$ref" : "#/components/schemas/autoswaprpc.Budget"
+          }
+        }
+      },
+      "LightningChannel" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/ChannelId"
+          },
+          "capacity" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "localSat" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "remoteSat" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "peerId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Status" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "details" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Any"
+            }
+          }
+        }
+      },
+      "SwapStats" : {
+        "type" : "object",
+        "properties" : {
+          "totalFees" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "totalAmount" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "avgFees" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "avgAmount" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "count" : {
+            "type" : "string",
+            "format" : "uint64"
+          }
+        }
+      },
+      "autoswaprpc.Budget" : {
+        "type" : "object",
+        "properties" : {
+          "total" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "remaining" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "startDate" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "endDate" : {
+            "type" : "string",
+            "format" : "int64"
+          }
+        }
+      },
+      "autoswaprpc.GetSwapRecommendationsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "swaps" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/autoswaprpc.SwapRecommendation"
+            }
+          }
+        }
+      },
+      "autoswaprpc.SwapRecommendation" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "channel" : {
+            "$ref" : "#/components/schemas/LightningChannel"
+          },
+          "feeEstimate" : {
+            "type" : "string",
+            "format" : "uint64"
+          },
+          "dismissedReasons" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-original-swagger-version" : "2.0"
+}

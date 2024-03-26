@@ -114,6 +114,11 @@ func TestImportSlip132Wallet(t *testing.T) {
 			address, err := wallet.NewAddress()
 			require.NoError(t, err)
 			require.NotEmpty(t, address)
+
+			addr, err := wallet.NewAddress()
+			require.NoError(t, err)
+			require.NotEmpty(t, address)
+			require.Equal(t, address, addr)
 		})
 	}
 }

@@ -24,9 +24,11 @@ type SwapTree struct {
 	ClaimLeaf  TapLeaf
 	RefundLeaf TapLeaf
 
-	isLiquid bool
-	ourKey   *btcec.PrivateKey
-	boltzKey *btcec.PublicKey
+	isLiquid     bool
+	ourKey       *btcec.PrivateKey
+	boltzKey     *btcec.PublicKey
+	claimPubKey  *btcec.PublicKey
+	refundPubKey *btcec.PublicKey
 
 	aggregateKey  *musig2.AggregateKey
 	rootNode      txscript.TapNode
@@ -52,10 +54,18 @@ func (tree *SwapTree) Serialize() *SerializedTree {
 }
 func (tree *SwapTree) Init(
 	isLiquid bool,
+	isClaim bool,
 	ourKey *btcec.PrivateKey,
 	boltzKey *btcec.PublicKey,
 ) error {
 	tree.isLiquid = isLiquid
+	if isClaim {
+		tree.claimPubKey = ourKey.PubKey()
+		tree.refundPubKey = boltzKey
+	} else {
+		tree.refundPubKey = ourKey.PubKey()
+		tree.claimPubKey = boltzKey
+	}
 	tree.ourKey = ourKey
 	tree.boltzKey = boltzKey
 
@@ -169,7 +179,7 @@ func (tree *SwapTree) checkLeafVersions() error {
 }
 
 func (tree *SwapTree) Check(
-	isReverse bool,
+	swapType SwapType,
 	timeoutBlockHeight uint32,
 	preimageHash []byte,
 ) error {
@@ -178,24 +188,20 @@ func (tree *SwapTree) Check(
 	}
 
 	claim := txscript.NewScriptBuilder()
-	if isReverse {
-		claimPubKey := tree.ourKey.PubKey()
-
+	if swapType == ReverseSwap || swapType == ChainSwap {
 		claim.AddOp(txscript.OP_SIZE)
 		claim.AddInt64(32)
 		claim.AddOp(txscript.OP_EQUALVERIFY)
 		claim.AddOp(txscript.OP_HASH160)
 		claim.AddData(input.Ripemd160H(preimageHash))
 		claim.AddOp(txscript.OP_EQUALVERIFY)
-		claim.AddData(toXOnly(claimPubKey))
+		claim.AddData(toXOnly(tree.claimPubKey))
 		claim.AddOp(txscript.OP_CHECKSIG)
-	} else {
-
-		claimPubKey := tree.boltzKey
+	} else if swapType == NormalSwap {
 		claim.AddOp(txscript.OP_HASH160)
 		claim.AddData(input.Ripemd160H(preimageHash))
 		claim.AddOp(txscript.OP_EQUALVERIFY)
-		claim.AddData(toXOnly(claimPubKey))
+		claim.AddData(toXOnly(tree.claimPubKey))
 		claim.AddOp(txscript.OP_CHECKSIG)
 	}
 
@@ -203,13 +209,8 @@ func (tree *SwapTree) Check(
 		return err
 	}
 
-	refundPublicKey := tree.ourKey.PubKey()
-	if isReverse {
-		refundPublicKey = tree.boltzKey
-	}
-
 	refund := txscript.NewScriptBuilder()
-	refund.AddData(toXOnly(refundPublicKey))
+	refund.AddData(toXOnly(tree.refundPubKey))
 	refund.AddOp(txscript.OP_CHECKSIGVERIFY)
 	refund.AddInt64(int64(timeoutBlockHeight))
 	refund.AddOp(txscript.OP_CHECKLOCKTIMEVERIFY)
@@ -233,6 +234,10 @@ func checkScript(actual []byte, expected *txscript.ScriptBuilder) error {
 	}
 
 	if !bytes.Equal(actual, expectedScript) {
+		fmt.Println("expected")
+		fmt.Println(txscript.DisasmString(expectedScript))
+		fmt.Println("actual")
+		fmt.Println(txscript.DisasmString(actual))
 		return errors.New("invalid script")
 	}
 	return nil

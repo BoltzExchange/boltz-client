@@ -75,15 +75,7 @@ func (nursery *Nursery) RefundSwaps(swapsToRefund []database.Swap, cooperative b
 		logger.Info("Did not find any outputs to refund")
 		return nil
 	}
-
-	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
-	if err != nil {
-		return errors.New("Could not get fee estimation: " + err.Error())
-	}
-
-	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
-
-	refundTransactionId, totalRefundFee, err := nursery.createTransaction(currency, refundOutputs, feeSatPerVbyte)
+	refundTransactionId, totalRefundFee, err := nursery.refundOutputs(currency, refundOutputs)
 	if err != nil {
 		return err
 	}
