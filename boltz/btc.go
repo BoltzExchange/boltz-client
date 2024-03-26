@@ -127,7 +127,9 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, fee uint
 
 	}
 
-	feePerOutput := fee / uint64(len(outValues))
+	outLen := uint64(len(outValues))
+	feePerOutput := fee / outLen
+	feeRemainder := fee % outLen
 
 	for rawAddress, value := range outValues {
 		outputAddress, err := btcutil.DecodeAddress(rawAddress, network.Btc)
@@ -141,9 +143,12 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, fee uint
 			return nil, err
 		}
 
+		// give the remainder to the first output
+		fee := feePerOutput + feeRemainder
+		feeRemainder = 0
 		transaction.AddTxOut(&wire.TxOut{
 			PkScript: outputScript,
-			Value:    value - int64(feePerOutput),
+			Value:    value - int64(fee),
 		})
 	}
 

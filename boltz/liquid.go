@@ -175,7 +175,10 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, fee u
 			Amount: fee,
 		},
 	}
-	feePerOutput := fee / uint64(len(outValues))
+
+	outLen := uint64(len(outValues))
+	feePerOutput := fee / outLen
+	feeRemainder := fee % outLen
 	var blindingKeyCompressed []byte
 	var blinderIndex uint32
 	for rawAddres, value := range outValues {
@@ -200,9 +203,12 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, fee u
 			return nil, errors.New("Could not generate output script: " + err.Error())
 		}
 
+		// give the remainder to the first output
+		fee := feePerOutput + feeRemainder
+		feeRemainder = 0
 		txOutputs = append(txOutputs, psetv2.OutputArgs{
 			Asset:        btcAsset,
-			Amount:       value - feePerOutput,
+			Amount:       value - fee,
 			Script:       script,
 			BlindingKey:  blindingKeyCompressed,
 			BlinderIndex: blinderIndex,
