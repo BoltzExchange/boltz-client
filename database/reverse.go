@@ -118,6 +118,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var redeemScript string
 	blindingKey := PrivateKeyScanner{Nullable: true}
 	var createdAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
+	var externalPay sql.NullBool
 	swapTree := JsonScanner[*boltz.SerializedTree]{Nullable: true}
 	refundPubKey := PublicKeyScanner{Nullable: true}
 	chanIds := JsonScanner[[]lightning.ChanId]{Nullable: true}
@@ -151,7 +152,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"serviceFeePercent":   &reverseSwap.ServiceFeePercent,
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
-			"externalPay":         &reverseSwap.ExternalPay,
+			"externalPay":         &externalPay,
 		},
 	)
 
@@ -191,6 +192,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			return nil, fmt.Errorf("could not initialize swap tree: %w", err)
 		}
 	}
+	reverseSwap.ExternalPay = externalPay.Bool
 
 	return &reverseSwap, err
 }
