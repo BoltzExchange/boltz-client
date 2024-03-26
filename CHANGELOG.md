@@ -1,4 +1,14 @@
 
+<a name="v2.0.2"></a>
+## [v2.0.2] - 2024-03-26
+### Feat
+- global swap info stream ([#124](https://github.com/BoltzExchange/boltz-client/issues/124))
+- allow external pay for reverse swaps ([#121](https://github.com/BoltzExchange/boltz-client/issues/121))
+
+### Fix
+- allow null values for `Wallet` and `ExternalPay` in swap db ([#128](https://github.com/BoltzExchange/boltz-client/issues/128))
+
+
 <a name="v2.0.1"></a>
 ## [v2.0.1] - 2024-03-19
 ### Feat
@@ -216,6 +226,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.0.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.1...v2.0.2
 [v2.0.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0...v2.0.1
 [v2.0.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0-beta...v2.0.0
 [v2.0.0-beta]: https://github.com/BoltzExchange/boltz-client/compare/v1.3.0-rc1...v2.0.0-beta
