@@ -5,8 +5,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/database"
 	"net"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -35,6 +38,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -70,7 +74,7 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 	logger.Init("", cfg.LogLevel)
 
 	cfg.RPC.NoTls = true
-	cfg.RPC.NoMacaroons = true
+	cfg.RPC.NoMacaroons = false
 
 	var err error
 
@@ -90,7 +94,9 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 	}
 	_, err = cfg.Database.Exec("DELETE FROM wallets")
 	require.NoError(t, err)
-	require.NoError(t, cfg.Database.InsertWalletCredentials(encrytpedCredentials))
+	require.NoError(t, cfg.Database.CreateWallet(&database.Wallet{
+		Credentials: encrytpedCredentials,
+	}))
 
 	Init(cfg)
 
@@ -123,9 +129,15 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 	}()
 
 	clientConn := client.Connection{
-		ClientConn: conn,
-		Ctx:        context.Background(),
+		ClientConn:   conn,
+		Ctx:          context.Background(),
+		MacaroonPath: "./test/macaroons/admin.macaroon",
 	}
+	macaroonFile, err := os.ReadFile("./test/macaroons/admin.macaroon")
+	require.NoError(t, err)
+	macaroon := metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
+	clientConn.Ctx = metadata.NewOutgoingContext(context.Background(), macaroon)
+
 	boltzClient := client.NewBoltzClient(clientConn)
 	autoSwapClient := client.NewAutoSwapClient(clientConn)
 	// the liquid wallet needs a bit to sync its subaccounts
@@ -222,6 +234,77 @@ func TestGetInfo(t *testing.T) {
 			require.Equal(t, "regtest", info.Network)
 		})
 	}
+}
+
+func TestEntities(t *testing.T) {
+	client, _, stop := setup(t, nil, "")
+	defer stop()
+
+	entityName := "test"
+
+	_, err := client.CreateEntity(entityName)
+	require.NoError(t, err)
+
+	response, err := client.BakeMacaroon(entityName)
+	require.NoError(t, err)
+	require.NotZero(t, response.AdminMacaroon)
+
+	pairs := metadata.Pairs("macaroon", response.AdminMacaroon)
+	restrictedClient := client
+	restrictedClient.Ctx = metadata.NewOutgoingContext(context.Background(), pairs)
+
+	_, err = restrictedClient.BakeMacaroon(entityName)
+	require.Error(t, err)
+
+	t.Run("Info", func(t *testing.T) {
+		info, err := restrictedClient.GetInfo()
+		require.NoError(t, err)
+		require.Empty(t, info.NodePubkey)
+	})
+
+	t.Run("Wallet", func(t *testing.T) {
+		_, err = restrictedClient.GetWallet(walletName)
+		require.Error(t, err)
+
+		_, err = restrictedClient.CreateWallet(walletInfo, "")
+		require.NoError(t, err)
+
+		wallets, err := restrictedClient.GetWallets(nil, true)
+		require.NoError(t, err)
+		require.Len(t, wallets.Wallets, 1)
+
+		wallets, err = client.GetWallets(nil, true)
+		require.NoError(t, err)
+		require.Len(t, wallets.Wallets, 3)
+	})
+
+	t.Run("Swaps", func(t *testing.T) {
+		_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{})
+		require.NoError(t, err)
+		_, err = client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
+		require.NoError(t, err)
+
+		swaps, err := restrictedClient.ListSwaps(&boltzrpc.ListSwapsRequest{})
+		require.NoError(t, err)
+		require.Empty(t, swaps.Swaps)
+		require.Empty(t, swaps.ReverseSwaps)
+
+		_, err = restrictedClient.CreateSwap(&boltzrpc.CreateSwapRequest{})
+		require.Error(t, err, "no lightning node available, invoice required")
+
+		externalPay := false
+		_, err = restrictedClient.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+			Amount:      100000,
+			ExternalPay: &externalPay,
+		})
+		require.Errorf(t, err, "no lightning node available, external pay required")
+
+		swaps, err = client.ListSwaps(&boltzrpc.ListSwapsRequest{})
+		require.NoError(t, err)
+		require.Len(t, swaps.Swaps, 1)
+		require.Len(t, swaps.ReverseSwaps, 1)
+	})
+
 }
 
 func TestGetSwapInfoStream(t *testing.T) {
@@ -1080,7 +1163,11 @@ func TestWallet(t *testing.T) {
 	defer stop()
 
 	// the main setup function already created a wallet
-	_, err := client.RemoveWallet(walletName)
+	_, err := client.GetWalletCredentials(walletName, "")
+	require.NoError(t, err)
+
+	// the main setup function already created a wallet
+	_, err = client.RemoveWallet(walletName)
 	require.NoError(t, err)
 
 	credentials, err := client.CreateWallet(walletInfo, password)

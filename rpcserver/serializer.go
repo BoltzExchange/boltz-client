@@ -52,13 +52,13 @@ func serializePair(pair boltz.Pair) *boltzrpc.Pair {
 	}
 }
 
-func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
+func (server *routedBoltzServer) serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	if swap == nil {
 		return nil
 	}
 	serializedSwap := swap.Serialize()
 
-	return &boltzrpc.SwapInfo{
+	serialized := &boltzrpc.SwapInfo{
 		Id:                  serializedSwap.Id,
 		Pair:                serializePair(swap.Pair),
 		ChanIds:             serializeChanIds(swap.ChanIds),
@@ -79,8 +79,19 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 		CreatedAt:           serializeTime(swap.CreatedAt),
 		ServiceFee:          serializedSwap.ServiceFee,
 		OnchainFee:          serializedSwap.OnchainFee,
-		Wallet:              serializeOptionalString(serializedSwap.Wallet),
+		// TODO: get name from onchain
+		// Wallet:              serializeOptionalString(serializedSwap.WalletId),
 	}
+
+	if serializedSwap.WalletId != nil {
+		wallet, err := server.onchain.GetWalletById(*serializedSwap.WalletId)
+		if err == nil {
+			name := wallet.GetWalletInfo().Name
+			serialized.Wallet = &name
+		}
+	}
+
+	return serialized
 }
 
 func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSwapInfo {
@@ -189,5 +200,12 @@ func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.Li
 		LocalSat:  channel.LocalSat,
 		RemoteSat: channel.RemoteSat,
 		PeerId:    channel.PeerId,
+	}
+}
+
+func serializeEntity(entity *database.Entity) *boltzrpc.EntityInfo {
+	return &boltzrpc.EntityInfo{
+		Id:   entity.Id,
+		Name: entity.Name,
 	}
 }

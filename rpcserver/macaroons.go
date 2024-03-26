@@ -1,6 +1,7 @@
 package rpcserver
 
 import (
+	"context"
 	"os"
 
 	"github.com/BoltzExchange/boltz-client/database"
@@ -31,11 +32,12 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 		}
 
 		valid := true
-		if err := service.ValidateMacaroon(adminMac, macaroons.AdminPermissions()); err != nil {
+		ctx := context.Background()
+		if _, err := service.ValidateMacaroon(ctx, adminMac, macaroons.AdminPermissions()); err != nil {
 			valid = false
 		}
 
-		if err := service.ValidateMacaroon(readMac, macaroons.ReadPermissions); err != nil {
+		if _, err := service.ValidateMacaroon(ctx, readMac, macaroons.ReadPermissions); err != nil {
 			valid = false
 		}
 
@@ -48,13 +50,13 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	}
 	logger.Info("Generating new Macaroons")
 
-	err := writeMacaroon(service, macaroons.AdminPermissions(), server.AdminMacaroonPath)
+	err := writeMacaroon(service, "", macaroons.AdminPermissions(), server.AdminMacaroonPath)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = writeMacaroon(service, macaroons.ReadPermissions, server.ReadonlyMacaroonPath)
+	err = writeMacaroon(service, "", macaroons.ReadPermissions, server.ReadonlyMacaroonPath)
 
 	if err != nil {
 		return nil, err
@@ -63,8 +65,8 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	return &service, nil
 }
 
-func writeMacaroon(service macaroons.Service, permissions []bakery.Op, path string) error {
-	macaroon, err := service.NewMacaroon(permissions...)
+func writeMacaroon(service macaroons.Service, entity string, permissions []bakery.Op, path string) error {
+	macaroon, err := service.NewMacaroon(nil, permissions...)
 
 	if err != nil {
 		return err

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/build"
+	"github.com/BoltzExchange/boltz-client/macaroons"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -48,6 +49,7 @@ type routedBoltzServer struct {
 	nursery   *nursery.Nursery
 	database  *database.Database
 	swapper   *autoswap.AutoSwapper
+	macaroon  *macaroons.Service
 
 	stop   chan bool
 	locked bool
@@ -61,7 +63,7 @@ func handleError(err error) error {
 	return err
 }
 
-func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
+func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
 
 	pendingSwaps, err := server.database.QueryPendingSwaps()
 
@@ -110,7 +112,7 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 		BlockHeight: blockHeights.Btc,
 	}
 
-	if server.lightning != nil {
+	if server.lightningAvailable(ctx) {
 		lightningInfo, err := server.lightning.GetInfo()
 		if err != nil {
 			return nil, handleError(err)
@@ -156,12 +158,13 @@ func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *bolt
 	}, nil
 }
 
-func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
+func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
 	response := &boltzrpc.ListSwapsResponse{}
 
 	args := database.SwapQuery{
-		IsAuto: request.IsAuto,
-		State:  request.State,
+		IsAuto:   request.IsAuto,
+		State:    request.State,
+		EntityId: macaroons.EntityFromContext(ctx),
 	}
 
 	if request.From != nil {
@@ -174,13 +177,15 @@ func (server *routedBoltzServer) ListSwaps(_ context.Context, request *boltzrpc.
 		args.To = &parsed
 	}
 
+	fmt.Println(macaroons.EntityFromContext(ctx))
+
 	swaps, err := server.database.QuerySwaps(args)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, swap := range swaps {
-		response.Swaps = append(response.Swaps, serializeSwap(&swap))
+		response.Swaps = append(response.Swaps, server.serializeSwap(&swap))
 	}
 
 	// Reverse Swaps
@@ -228,7 +233,7 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 		return nil, handleError(errors.New("could not find Swap with ID " + request.Id))
 	}
 	return &boltzrpc.GetSwapInfoResponse{
-		Swap:        serializeSwap(swap),
+		Swap:        server.serializeSwap(swap),
 		ReverseSwap: serializeReverseSwap(reverseSwap),
 	}, nil
 }
@@ -257,7 +262,7 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 
 	for update := range updates {
 		if err := stream.Send(&boltzrpc.GetSwapInfoResponse{
-			Swap:        serializeSwap(update.Swap),
+			Swap:        server.serializeSwap(update.Swap),
 			ReverseSwap: serializeReverseSwap(update.ReverseSwap),
 		}); err != nil {
 			stop()
@@ -268,8 +273,8 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 	return nil
 }
 
-func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
-	response, err := server.createSwap(false, &boltzrpc.CreateSwapRequest{
+func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.DepositRequest) (*boltzrpc.DepositResponse, error) {
+	response, err := server.createSwap(ctx, false, &boltzrpc.CreateSwapRequest{
 		Pair: &boltzrpc.Pair{
 			From: boltzrpc.Currency_BTC,
 			To:   boltzrpc.Currency_BTC,
@@ -286,8 +291,17 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 	}, nil
 }
 
+func (server *routedBoltzServer) getWallet(ctx context.Context, currency boltz.Currency, name string, readonly bool) (onchain.Wallet, error) {
+	return server.onchain.GetAnyWallet(onchain.WalletChecker{
+		Currency: currency,
+		Name:     name,
+		Readonly: readonly,
+		EntityId: macaroons.EntityFromContext(ctx),
+	})
+}
+
 // TODO: custom refund address
-func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
+func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
 	privateKey, publicKey, err := newKeys()
@@ -318,10 +332,9 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		}
 		preimageHash = invoice.PaymentHash[:]
 		createSwap.Invoice = request.GetInvoice()
-	} else if server.lightning == nil {
+	} else if !server.lightningAvailable(ctx) {
 		return nil, handleError(errors.New("invoice is required in standalone mode"))
 	} else if request.Amount != 0 {
-
 		invoice, err := server.lightning.CreateInvoice(request.Amount, nil, 0, utils.GetSwapMemo(string(pair.From)))
 		if err != nil {
 			return nil, handleError(err)
@@ -342,7 +355,12 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		createSwap.PreimageHash = preimageHash
 	}
 
-	wallet, err := server.onchain.GetWallet(request.GetWallet(), pair.From, false)
+	wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
+		Currency: pair.From,
+		Name:     request.GetWallet(),
+		Readonly: false,
+		EntityId: macaroons.EntityFromContext(ctx),
+	})
 	if err != nil {
 		if request.SendFromInternal {
 			return nil, handleError(err)
@@ -372,10 +390,12 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		RefundAddress:       request.GetRefundAddress(),
 		IsAuto:              isAuto,
 		ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
+		EntityId:            macaroons.EntityFromContext(ctx),
 	}
 
 	if request.SendFromInternal {
-		swap.Wallet = wallet.Name()
+		id := wallet.GetWalletInfo().Id
+		swap.WalletId = &id
 	}
 
 	swap.ClaimPubKey, err = btcec.ParsePubKey([]byte(response.ClaimPublicKey))
@@ -456,15 +476,19 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 	return swapResponse, nil
 }
 
-func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
-	return server.createSwap(false, request)
+func (server *routedBoltzServer) CreateSwap(ctx context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
+	return server.createSwap(ctx, false, request)
 }
 
-func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
+func (server *routedBoltzServer) lightningAvailable(ctx context.Context) bool {
+	return server.lightning != nil && isAdmin(ctx)
+}
+
+func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
 	logger.Info("Creating Reverse Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
 	externalPay := request.GetExternalPay()
-	if server.lightning == nil {
+	if !server.lightningAvailable(ctx) {
 		if request.ExternalPay == nil {
 			externalPay = true
 		} else if !externalPay {
@@ -485,6 +509,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 	claimAddress := request.Address
 
 	pair := utils.ParsePair(request.Pair)
+
 	if claimAddress != "" {
 		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
 
@@ -492,7 +517,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 			return nil, handleError(fmt.Errorf("Invalid claim address %s: %w", claimAddress, err))
 		}
 	} else {
-		wallet, err := server.onchain.GetWallet(request.GetWallet(), pair.To, true)
+		wallet, err := server.getWallet(ctx, pair.To, request.GetWallet(), true)
 		if err != nil {
 			return nil, handleError(err)
 		}
@@ -502,7 +527,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 			return nil, handleError(err)
 		}
 
-		logger.Infof("Got claim address from wallet %v: %v", wallet.Name(), claimAddress)
+		logger.Infof("Got claim address from wallet %v: %v", wallet.GetWalletInfo(), claimAddress)
 	}
 
 	preimage, preimageHash, err := newPreimage()
@@ -560,6 +585,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		ClaimTransactionId:  "",
 		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
 		ExternalPay:         externalPay,
+		EntityId:            macaroons.EntityFromContext(ctx),
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -646,17 +672,16 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 				return nil, handleError(errors.New("reverse swap failed: " + info.Error))
 			}
 		}
-
 	}
 
 	return rpcResponse, nil
 }
 
-func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
-	return server.createReverseSwap(false, request)
+func (server *routedBoltzServer) CreateReverseSwap(ctx context.Context, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
+	return server.createReverseSwap(ctx, false, request)
 }
 
-func (server *routedBoltzServer) importWallet(credentials *wallet.Credentials, password string) error {
+func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *wallet.Credentials, password string) error {
 	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
 		return errors.New("wrong password")
@@ -672,7 +697,7 @@ func (server *routedBoltzServer) importWallet(credentials *wallet.Credentials, p
 	if err != nil {
 		return errors.New("could not login: " + err.Error())
 	}
-	if wallet.Readonly() {
+	if wallet.GetWalletInfo().Readonly {
 		var subaccount *uint64
 		subaccounts, err := wallet.GetSubaccounts(false)
 		if err != nil {
@@ -686,8 +711,9 @@ func (server *routedBoltzServer) importWallet(credentials *wallet.Credentials, p
 			return err
 		}
 	}
+
 	decryptWalletCredentials = append(decryptWalletCredentials, credentials)
-	if err := server.database.InsertWalletCredentials(credentials); err != nil {
+	if err := server.database.CreateWallet(&database.Wallet{Credentials: credentials, EntityId: macaroons.EntityFromContext(ctx)}); err != nil {
 		return err
 	}
 	if password != "" {
@@ -695,33 +721,38 @@ func (server *routedBoltzServer) importWallet(credentials *wallet.Credentials, p
 			return fmt.Errorf("could not encrypt credentials: %w", err)
 		}
 	}
+	wallet.Id = credentials.Id
+
 	server.onchain.AddWallet(wallet)
 	return nil
 }
 
-func (server *routedBoltzServer) ImportWallet(context context.Context, request *boltzrpc.ImportWalletRequest) (*boltzrpc.Wallet, error) {
+func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *boltzrpc.ImportWalletRequest) (*boltzrpc.Wallet, error) {
 	if err := checkName(request.Info.Name); err != nil {
 		return nil, handleError(err)
 	}
 
 	currency := utils.ParseCurrency(&request.Info.Currency)
 	credentials := &wallet.Credentials{
-		Name:           request.Info.Name,
-		Currency:       currency,
+		WalletInfo: onchain.WalletInfo{
+			Name:     request.Info.Name,
+			Currency: currency,
+			EntityId: macaroons.EntityFromContext(ctx),
+		},
 		Mnemonic:       request.Credentials.GetMnemonic(),
 		Xpub:           request.Credentials.GetXpub(),
 		CoreDescriptor: request.Credentials.GetCoreDescriptor(),
 		Subaccount:     request.Credentials.Subaccount,
 	}
 
-	if err := server.importWallet(credentials, request.GetPassword()); err != nil {
+	if err := server.importWallet(ctx, credentials, request.GetPassword()); err != nil {
 		return nil, handleError(err)
 	}
-	return server.GetWallet(context, &boltzrpc.GetWalletRequest{Name: request.Info.Name})
+	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Name: request.Info.Name})
 }
 
-func (server *routedBoltzServer) SetSubaccount(_ context.Context, request *boltzrpc.SetSubaccountRequest) (*boltzrpc.Subaccount, error) {
-	wallet, err := server.getOwnWallet(request.Name, false)
+func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *boltzrpc.SetSubaccountRequest) (*boltzrpc.Subaccount, error) {
+	wallet, err := server.getOwnWallet(ctx, request.Name, false)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -731,7 +762,7 @@ func (server *routedBoltzServer) SetSubaccount(_ context.Context, request *boltz
 		return nil, handleError(err)
 	}
 
-	if err := server.database.SetWalletSubaccount(wallet.Name(), string(wallet.Currency()), *subaccountNumber); err != nil {
+	if err := server.database.SetWalletSubaccount(wallet.GetWalletInfo().Id, *subaccountNumber); err != nil {
 		return nil, handleError(err)
 	}
 
@@ -746,8 +777,8 @@ func (server *routedBoltzServer) SetSubaccount(_ context.Context, request *boltz
 	return serializewalletSubaccount(*subaccount, balance), nil
 }
 
-func (server *routedBoltzServer) GetSubaccounts(_ context.Context, request *boltzrpc.WalletInfo) (*boltzrpc.GetSubaccountsResponse, error) {
-	wallet, err := server.getOwnWallet(request.Name, false)
+func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *boltzrpc.WalletInfo) (*boltzrpc.GetSubaccountsResponse, error) {
+	wallet, err := server.getOwnWallet(ctx, request.Name, false)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -803,15 +834,16 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 }
 
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {
+	info := wal.GetWalletInfo()
 	result := &boltzrpc.Wallet{
-		Name:     wal.Name(),
-		Currency: serializeCurrency(wal.Currency()),
-		Readonly: wal.Readonly(),
+		Name:     info.Name,
+		Currency: serializeCurrency(info.Currency),
+		Readonly: info.Readonly,
 	}
 	balance, err := wal.GetBalance()
 	if err != nil {
 		if !errors.Is(err, wallet.ErrSubAccountNotSet) {
-			return nil, handleError(fmt.Errorf("could not get balance for wallet %s: %w", wal.Name(), err))
+			return nil, handleError(fmt.Errorf("could not get balance for wallet %s: %w", info.Name, err))
 		}
 	} else {
 		result.Balance = serializeWalletBalance(balance)
@@ -819,8 +851,8 @@ func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.
 	return result, nil
 }
 
-func (server *routedBoltzServer) GetWallet(_ context.Context, request *boltzrpc.GetWalletRequest) (*boltzrpc.Wallet, error) {
-	wallet, err := server.onchain.GetWallet(request.Name, "", true)
+func (server *routedBoltzServer) GetWallet(ctx context.Context, request *boltzrpc.GetWalletRequest) (*boltzrpc.Wallet, error) {
+	wallet, err := server.getWallet(ctx, "", request.Name, true)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -828,59 +860,63 @@ func (server *routedBoltzServer) GetWallet(_ context.Context, request *boltzrpc.
 	return server.serializeWallet(wallet)
 }
 
-func (server *routedBoltzServer) GetWallets(_ context.Context, request *boltzrpc.GetWalletsRequest) (*boltzrpc.Wallets, error) {
+func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzrpc.GetWalletsRequest) (*boltzrpc.Wallets, error) {
 	var response boltzrpc.Wallets
-	currency := utils.ParseCurrency(request.Currency)
-	for _, current := range server.onchain.Wallets {
-		if (currency == "" || current.Currency() == currency) && (!current.Readonly() || request.GetIncludeReadonly()) {
-			wallet, err := server.serializeWallet(current)
-			if err != nil {
-				return nil, err
-			}
-			response.Wallets = append(response.Wallets, wallet)
+	checker := onchain.WalletChecker{
+		Currency: utils.ParseCurrency(request.Currency),
+		Readonly: request.GetIncludeReadonly(),
+		EntityId: macaroons.EntityFromContext(ctx),
+	}
+	for _, current := range server.onchain.GetWallets(checker) {
+		wallet, err := server.serializeWallet(current)
+		if err != nil {
+			return nil, err
 		}
+		response.Wallets = append(response.Wallets, wallet)
 	}
 	return &response, nil
 }
 
-func (server *routedBoltzServer) GetWalletCredentials(_ context.Context, request *boltzrpc.GetWalletCredentialsRequest) (*boltzrpc.WalletCredentials, error) {
-	creds, err := server.database.GetWalletCredentials(request.Name)
+func (server *routedBoltzServer) GetWalletCredentials(ctx context.Context, request *boltzrpc.GetWalletCredentialsRequest) (*boltzrpc.WalletCredentials, error) {
+	creds, err := server.database.GetWalletByName(request.Name, macaroons.EntityFromContext(ctx))
 	if err != nil {
 		return nil, handleError(fmt.Errorf("could not read credentials for wallet %s: %w", request.Name, err))
 	}
+	if creds.NodePubkey != nil {
+		return nil, handleError(errors.New("cant get credentials for node wallet"))
+	}
 	if creds.Encrypted() {
-		creds, err = creds.Decrypt(request.GetPassword())
+		creds.Credentials, err = creds.Decrypt(request.GetPassword())
 		if err != nil {
 			return nil, handleError(fmt.Errorf("invalid password: %w", err))
 		}
 	}
 
-	return serializeWalletCredentials(creds), err
+	return serializeWalletCredentials(creds.Credentials), err
 }
 
-func (server *routedBoltzServer) RemoveWallet(_ context.Context, request *boltzrpc.RemoveWalletRequest) (*boltzrpc.RemoveWalletResponse, error) {
-	if err := server.database.DeleteWalletCredentials(request.Name); err != nil {
-		return nil, handleError(err)
-	}
-	if server.swapper != nil {
-		cfg, err := server.swapper.GetConfig()
-		if err == nil {
-			if cfg.Wallet == request.Name {
-				return nil, handleError(fmt.Errorf(
-					"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet.",
-					request.Name,
-				))
-			}
+func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *boltzrpc.RemoveWalletRequest) (*boltzrpc.RemoveWalletResponse, error) {
+	cfg, err := server.swapper.GetConfig()
+	if err == nil {
+		if cfg.Wallet == request.Name {
+			return nil, handleError(fmt.Errorf(
+				"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet.",
+				request.Name,
+			))
 		}
 	}
-	wallet, err := server.getOwnWallet(request.Name, true)
+	wallet, err := server.getOwnWallet(ctx, request.Name, true)
 	if err != nil {
 		return nil, handleError(err)
 	}
 	if err := wallet.Remove(); err != nil {
 		return nil, handleError(err)
 	}
-	server.onchain.RemoveWallet(request.Name)
+	id := wallet.GetWalletInfo().Id
+	if err := server.database.DeleteWallet(id); err != nil {
+		return nil, handleError(err)
+	}
+	server.onchain.RemoveWallet(id)
 
 	logger.Debugf("Removed wallet %s", request.Name)
 
@@ -941,6 +977,31 @@ func (server *routedBoltzServer) VerifyWalletPassword(_ context.Context, request
 func (server *routedBoltzServer) unlock(password string) error {
 	if !server.locked {
 		return errors.New("boltzd already unlocked!")
+	}
+
+	if server.lightning != nil {
+		info, err := server.lightning.GetInfo()
+		if err != nil {
+			return fmt.Errorf("could not get info from lightning: %v", err)
+		}
+		nodeWallet, err := server.database.GetNodeWallet(info.Pubkey)
+		if err != nil {
+			err = server.database.CreateWallet(&database.Wallet{
+				Credentials: &wallet.Credentials{
+					WalletInfo: server.lightning.GetWalletInfo(),
+				},
+				NodePubkey: &info.Pubkey,
+			})
+			if err != nil {
+				return fmt.Errorf("could not create wallet for lightning node: %w", err)
+			}
+			nodeWallet, err = server.database.GetNodeWallet(info.Pubkey)
+			if err != nil {
+				return fmt.Errorf("could not get node wallet form db: %s", err)
+			}
+		}
+		server.lightning.SetId(nodeWallet.Id)
+
 	}
 
 	credentials, err := server.decryptWalletCredentials(password)
@@ -1026,8 +1087,8 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 	}
 }
 
-func (server *routedBoltzServer) getOwnWallet(name string, readonly bool) (*wallet.Wallet, error) {
-	existing, err := server.onchain.GetWallet(name, "", readonly)
+func (server *routedBoltzServer) getOwnWallet(ctx context.Context, name string, readonly bool) (*wallet.Wallet, error) {
+	existing, err := server.getWallet(ctx, "", name, readonly)
 	if err != nil {
 		return nil, err
 	}
@@ -1115,6 +1176,45 @@ func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltz
 
 	return response, nil
 
+}
+
+func isAdmin(ctx context.Context) bool {
+	return macaroons.EntityFromContext(ctx) == nil
+}
+
+func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {
+	permission := macaroons.AdminPermissions()
+
+	if !isAdmin(ctx) {
+		return nil, handleError(errors.New("only admin can bake macaroons"))
+	}
+
+	entity, err := server.database.GetEntityByName(request.Entity)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	mac, err := server.macaroon.NewMacaroon(&entity.Id, permission...)
+	if err != nil {
+		return nil, handleError(err)
+	}
+	macBytes, err := mac.M().MarshalBinary()
+	if err != nil {
+		return nil, handleError(err)
+	}
+	return &boltzrpc.BakeMacaroonResponse{
+		AdminMacaroon: hex.EncodeToString(macBytes),
+	}, nil
+}
+
+func (server *routedBoltzServer) CreateEntity(ctx context.Context, request *boltzrpc.CreateEntityRequest) (*boltzrpc.EntityInfo, error) {
+	entity := &database.Entity{Name: request.Name}
+
+	if err := server.database.CreateEntity(entity); err != nil {
+		return nil, handleError(err)
+	}
+
+	return serializeEntity(entity), nil
 }
 
 func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *boltzrpc.Limits, error) {

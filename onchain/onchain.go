@@ -23,6 +23,18 @@ type Balance struct {
 	Unconfirmed uint64
 }
 
+type WalletInfo struct {
+	Id       int64
+	Name     string
+	Currency boltz.Currency
+	Readonly bool
+	EntityId *int64
+}
+
+func (info *WalletChecker) String() string {
+	return fmt.Sprintf("%s (id: %d)", info.Name, info.Id)
+}
+
 type BlockListener interface {
 	RegisterBlockListener(channel chan<- *BlockEpoch, stop <-chan bool) error
 	GetBlockHeight() (uint32, error)
@@ -46,10 +58,8 @@ type Wallet interface {
 	NewAddress() (string, error)
 	SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error)
 	Ready() bool
-	Readonly() bool
-	Name() string
-	Currency() boltz.Currency
 	GetBalance() (*Balance, error)
+	GetWalletInfo() WalletInfo
 }
 
 type Currency struct {
@@ -75,9 +85,9 @@ func (onchain *Onchain) AddWallet(wallet Wallet) {
 	onchain.OnWalletChange.Send(onchain.Wallets)
 }
 
-func (onchain *Onchain) RemoveWallet(name string) {
+func (onchain *Onchain) RemoveWallet(id int64) {
 	onchain.Wallets = slices.DeleteFunc(onchain.Wallets, func(current Wallet) bool {
-		return current.Name() == name
+		return current.GetWalletInfo().Id == id
 	})
 	onchain.OnWalletChange.Send(onchain.Wallets)
 }
@@ -91,50 +101,45 @@ func (onchain *Onchain) GetCurrency(currency boltz.Currency) (*Currency, error) 
 	return nil, errors.New("invalid currency")
 }
 
-func (onchain *Onchain) getWallet(name string, currency boltz.Currency, readonly bool, allowMultiple bool) (Wallet, error) {
-	if onchain.Wallets == nil {
-		return nil, fmt.Errorf("no wallets")
-	}
-	var found []Wallet
+type WalletChecker struct {
+	Id       *int64
+	Currency boltz.Currency
+	Name     string
+	Readonly bool
+	EntityId *int64
+}
+
+func (checker *WalletChecker) Allowed(wallet Wallet) bool {
+	info := wallet.GetWalletInfo()
+	return wallet.Ready() &&
+		(checker.Id == nil || info.Id == *checker.Id) &&
+		(info.Currency == checker.Currency || checker.Currency == "") &&
+		(info.Name == checker.Name || checker.Name == "") &&
+		(!info.Readonly || checker.Readonly) &&
+		(checker.EntityId == nil || (info.EntityId != nil && *info.EntityId == *checker.EntityId))
+}
+
+func (onchain *Onchain) GetAnyWallet(checker WalletChecker) (Wallet, error) {
 	for _, wallet := range onchain.Wallets {
-		if (wallet.Currency() == currency || currency == "") && (!wallet.Readonly() || readonly) && (wallet.Name() == name || name == "") {
-			found = append(found, wallet)
+		if checker.Allowed(wallet) {
+			return wallet, nil
 		}
 	}
+	return nil, fmt.Errorf("no wallet found for checker: %+v", checker)
+}
 
-	errMessage := "wallet"
-	if name != "" {
-		errMessage += " " + name
-	}
-	if currency != "" {
-		errMessage += " for " + string(currency)
-	}
-
-	if len(found) == 0 {
-		// check if the specific wallet we are looking for is readonly, so we can display a better error in that case
-		if !readonly && name != "" {
-			other, _ := onchain.getWallet(name, currency, true, allowMultiple)
-			if other != nil {
-				return nil, fmt.Errorf("%v is read only", errMessage)
-			}
+func (onchain *Onchain) GetWallets(checker WalletChecker) []Wallet {
+	var wallets []Wallet
+	for _, wallet := range onchain.Wallets {
+		if checker.Allowed(wallet) {
+			wallets = append(wallets, wallet)
 		}
-		return nil, fmt.Errorf("no %v", errMessage)
-	} else if len(found) > 1 && !allowMultiple {
-		return nil, fmt.Errorf("multiple wallets for currency %s, specify a specific one", currency)
 	}
-	result := found[0]
-	if !result.Ready() {
-		return nil, fmt.Errorf("%v not ready", errMessage)
-	}
-	return result, nil
+	return wallets
 }
 
-func (onchain *Onchain) GetWallet(name string, currency boltz.Currency, readonly bool) (wallet Wallet, err error) {
-	return onchain.getWallet(name, currency, readonly, false)
-}
-
-func (onchain *Onchain) GetAnyWallet(currency boltz.Currency, readonly bool) (wallet Wallet, err error) {
-	return onchain.getWallet("", currency, readonly, true)
+func (onchain *Onchain) GetWalletById(id int64) (wallet Wallet, err error) {
+	return onchain.GetAnyWallet(WalletChecker{Id: &id})
 }
 
 func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (float64, error) {
@@ -157,7 +162,7 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (
 		}
 		logger.Warn("Fee provider failed. Falling back to wallet fee estimation: " + err.Error())
 	}
-	wallet, err := onchain.GetAnyWallet(currency, true)
+	wallet, err := onchain.GetAnyWallet(WalletChecker{Currency: currency})
 	if err == nil {
 		var fee float64
 		fee, err = wallet.EstimateFee(confTarget)
@@ -225,7 +230,7 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 }
 
 func (onchain *Onchain) GetBlockListener(currency boltz.Currency) BlockListener {
-	wallet, err := onchain.GetAnyWallet(currency, true)
+	wallet, err := onchain.GetAnyWallet(WalletChecker{Currency: currency, Readonly: true})
 	if err == nil {
 		return wallet
 	}

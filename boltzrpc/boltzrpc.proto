@@ -138,7 +138,36 @@ service Boltz {
     /*
     Changes the password for wallet encryption.
      */
-    rpc ChangeWalletPassword(ChangeWalletPasswordRequest) returns (google.protobuf.Empty); 
+    rpc ChangeWalletPassword(ChangeWalletPasswordRequest) returns (google.protobuf.Empty);
+
+    rpc CreateEntity(CreateEntityRequest) returns (EntityInfo);
+
+    rpc GetEntities(GetEntitiesRequest) returns (GetEntitiesResponse);
+
+    rpc BakeMacaroon(BakeMacaroonRequest) returns (BakeMacaroonResponse);
+}
+
+message CreateEntityRequest {
+    string name = 1;
+}
+message CreateEntityResponse {}
+
+message GetEntitiesRequest {}
+message GetEntitiesResponse {
+    repeated EntityInfo entities = 1;
+}
+
+message EntityInfo {
+    int64 id = 1;
+    string name = 2;
+}
+
+message BakeMacaroonRequest {
+    string entity = 1;
+}
+message BakeMacaroonResponse {
+    string admin_macaroon = 1;
+    string readonly_macaroon = 2;
 }
 
 enum SwapState {

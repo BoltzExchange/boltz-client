@@ -28,6 +28,10 @@ var (
 			Action: "write",
 		},
 		{
+			Entity: "admin",
+			Action: "write",
+		},
+		{
 			Entity: "swap",
 			Action: "write",
 		},
@@ -137,6 +141,18 @@ var (
 		"/boltzrpc.Boltz/VerifyWalletPassword": {{
 			Entity: "info",
 			Action: "read",
+		}},
+		"/boltzrpc.Boltz/CreateEntity": {{
+			Entity: "info",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/GetEntities": {{
+			Entity: "info",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/BakeMacaroon": {{
+			Entity: "info",
+			Action: "write",
 		}},
 		"/autoswaprpc.AutoSwap/GetSwapRecommendations": {{
 			Entity: "autoswap",

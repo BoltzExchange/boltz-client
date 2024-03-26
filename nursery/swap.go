@@ -11,6 +11,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/lightningnetwork/lnd/zpay32"
 )
@@ -124,13 +125,13 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*boltz.OutputDetai
 
 	if swap.RefundAddress == "" {
 		currency := swap.Pair.From
-		wallet, err := nursery.onchain.GetAnyWallet(currency, true)
+		wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Currency: currency, Readonly: true})
 		if err != nil {
 			message := "Swap %s can not be refunded because they got no refund address and no wallet for currency %s is available. Setup a wallet or refund manually"
 			return nil, fmt.Errorf(message, swap.Id, currency)
 		}
-		if swap.Wallet != "" {
-			wallet, err = nursery.onchain.GetWallet(swap.Wallet, currency, true)
+		if swap.WalletId != nil {
+			wallet, err = nursery.onchain.GetWalletById(*swap.WalletId)
 			if err != nil {
 				message := "Swap %s can not be refunded because the wallet is was funded from is not available anymore. Refund manually"
 				return nil, fmt.Errorf(message, swap.Id)
@@ -253,7 +254,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			}
 
 			// dont add onchain fee if the swap was paid externally as it might have been part of a larger transaction
-			if swap.Wallet != "" {
+			if swap.WalletId != nil {
 				fee, err := nursery.onchain.GetTransactionFee(swap.Pair.From, swap.LockupTransactionId)
 				if err != nil {
 					handleError("could not get lockup transaction fee: " + err.Error())
