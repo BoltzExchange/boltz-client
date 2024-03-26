@@ -1,4 +1,4 @@
-package utils
+package lightning
 
 import (
 	"testing"

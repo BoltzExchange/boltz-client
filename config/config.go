@@ -41,6 +41,8 @@ type Config struct {
 
 	Node string `long:"node" description:"Lightning node to use (cln or lnd)"`
 
+	Standalone bool `long:"standalone" description:"Run boltz-client without a lightning node"`
+
 	Lightning lightning.LightningNode
 
 	RPC      *rpcserver.RpcServer `group:"RPC options"`

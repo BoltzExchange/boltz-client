@@ -75,15 +75,6 @@ func (server *RpcServer) Init(
 	}
 
 	swapper := &autoswap.AutoSwapper{
-		ExecuteSwap: func(request *boltzrpc.CreateSwapRequest) error {
-			_, err := routedServer.createSwap(true, request)
-			return err
-		},
-		ExecuteReverseSwap: func(request *boltzrpc.CreateReverseSwapRequest) error {
-			_, err := routedServer.createReverseSwap(true, request)
-			return err
-		},
-		ListChannels: routedServer.lightning.ListChannels,
 		GetPairInfo: func(pair *boltzrpc.Pair, swapType boltz.SwapType) (*autoswap.PairInfo, error) {
 			ctx := context.Background()
 			if swapType == boltz.NormalSwap {
@@ -117,8 +108,24 @@ func (server *RpcServer) Init(
 			return nil, errors.New("invalid swap type")
 		},
 	}
+	if lightning != nil {
+		swapper.ExecuteSwap = func(request *boltzrpc.CreateSwapRequest) error {
+			_, err := routedServer.createSwap(true, request)
+			return err
+		}
+		swapper.ExecuteReverseSwap = func(request *boltzrpc.CreateReverseSwapRequest) error {
+			_, err := routedServer.createReverseSwap(true, request)
+			return err
+		}
+		swapper.ListChannels = routedServer.lightning.ListChannels
+	}
 	swapper.Init(database, onchain, autoSwapConfigPath)
 	routedServer.swapper = swapper
+
+	routedAutoSwapServer := &routedAutoSwapServer{
+		database: database,
+		swapper:  swapper,
+	}
 
 	if server.NoTls {
 		// cleanup previous certificates to avoid confusion
@@ -168,10 +175,6 @@ func (server *RpcServer) Init(
 	server.Grpc = grpc.NewServer(serverOpts...)
 	boltzrpc.RegisterBoltzServer(server.Grpc, routedServer)
 
-	routedAutoSwapServer := &routedAutoSwapServer{
-		swapper:  swapper,
-		database: database,
-	}
 	autoswaprpc.RegisterAutoSwapServer(server.Grpc, routedAutoSwapServer)
 
 	if err = routedServer.unlock(""); err != nil {

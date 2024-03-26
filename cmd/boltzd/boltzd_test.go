@@ -63,6 +63,10 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 		cfg = loadConfig(t)
 	}
 
+	if cfg.Node == "" || cfg.Node == "Standalone" {
+		cfg.Standalone = true
+	}
+
 	logger.Init("", cfg.LogLevel)
 
 	cfg.RPC.NoTls = true
@@ -202,7 +206,7 @@ func withoutWallet(t *testing.T, client client.Boltz, run func()) {
 }
 
 func TestGetInfo(t *testing.T) {
-	nodes := []string{"CLN"}
+	nodes := []string{"CLN", "LND", "Standalone"}
 
 	for _, node := range nodes {
 		node := node
@@ -430,6 +434,34 @@ func TestSwap(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, paid)
 		})
+	})
+
+	t.Run("Standalone", func(t *testing.T) {
+		cfg := loadConfig(t)
+		cfg.Standalone = true
+		client, _, stop := setup(t, cfg, "")
+		node := cfg.LND
+		require.NoError(t, node.Connect())
+		_, err := node.GetInfo()
+		require.NoError(t, err)
+		defer stop()
+
+		request := &boltzrpc.CreateSwapRequest{}
+		_, err = client.CreateSwap(request)
+		require.Error(t, err)
+
+		invoice, err := node.CreateInvoice(100000, nil, 0, "test")
+		require.NoError(t, err)
+		request.Invoice = &invoice.PaymentRequest
+		swap, err := client.CreateSwap(request)
+		require.NoError(t, err)
+
+		stream := swapStream(t, client, swap.Id)
+		test.SendToAddress(test.BtcCli, swap.Address, swap.ExpectedAmount)
+		stream(boltzrpc.SwapState_PENDING)
+		test.MineBlock()
+		info := stream(boltzrpc.SwapState_SUCCESSFUL)
+		require.Empty(t, info.Swap.Wallet)
 	})
 
 	for _, node := range nodes {
@@ -755,6 +787,39 @@ func TestReverseSwap(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("Standalone", func(t *testing.T) {
+		cfg := loadConfig(t)
+		cfg.Standalone = true
+		lnd := cfg.LND
+		connectLightning(lnd)
+
+		client, _, stop := setup(t, cfg, "")
+		defer stop()
+
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount:         100000,
+			AcceptZeroConf: true,
+		}
+		_, err := client.CreateReverseSwap(request)
+		// theres no btc wallet
+		require.Error(t, err)
+
+		request.Address = test.BtcCli("getnewaddress")
+		swap, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+		require.NotEmpty(t, swap.Invoice)
+
+		_, err = lnd.PayInvoice(*swap.Invoice, 10000, 30, nil)
+		require.NoError(t, err)
+
+		stream := swapStream(t, client, swap.Id)
+		stream(boltzrpc.SwapState_PENDING)
+		info := stream(boltzrpc.SwapState_SUCCESSFUL)
+
+		require.Equal(t, info.ReverseSwap.State, boltzrpc.SwapState_SUCCESSFUL)
+		require.True(t, info.ReverseSwap.ExternalPay)
+	})
 
 	t.Run("ExternalPay", func(t *testing.T) {
 		cfg := loadConfig(t)

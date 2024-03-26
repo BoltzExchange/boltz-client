@@ -290,6 +290,11 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			return
 		}
 
+		if nursery.lightning == nil {
+			handleError("No lightning node available, can not create invoice for Swap " + swap.Id)
+			return
+		}
+
 		invoice, err := nursery.lightning.CreateInvoice(
 			int64(swapRates.InvoiceAmount),
 			swap.Preimage,
@@ -328,16 +333,17 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			return
 		}
 
-		paid, err := nursery.lightning.CheckInvoicePaid(decodedInvoice.PaymentHash[:])
+		if nursery.lightning != nil {
+			paid, err := nursery.lightning.CheckInvoicePaid(decodedInvoice.PaymentHash[:])
+			if err != nil {
+				handleError("Could not get invoice information from lightning node: " + err.Error())
+				return
+			}
 
-		if err != nil {
-			handleError("Could not get invoice information from lightning node: " + err.Error())
-			return
-		}
-
-		if !paid {
-			logger.Warnf("Swap %s was not actually settled. Refunding at block %d", swap.Id, swap.TimoutBlockHeight)
-			return
+			if !paid {
+				logger.Warnf("Swap %s was not actually settled. Refunding at block %d", swap.Id, swap.TimoutBlockHeight)
+				return
+			}
 		}
 
 		logger.Infof("Swap %s succeeded", swap.Id)

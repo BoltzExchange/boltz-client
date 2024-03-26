@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -63,11 +62,6 @@ func handleError(err error) error {
 }
 
 func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
-	lightningInfo, err := server.lightning.GetInfo()
-
-	if err != nil {
-		return nil, handleError(err)
-	}
 
 	pendingSwaps, err := server.database.QueryPendingSwaps()
 
@@ -107,25 +101,38 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 
 	response := &boltzrpc.GetInfoResponse{
 		Version:             build.GetVersion(),
-		Node:                server.lightning.Name(),
 		Network:             server.network.Name,
-		NodePubkey:          lightningInfo.Pubkey,
 		BlockHeights:        blockHeights,
 		PendingSwaps:        pendingSwapIds,
 		PendingReverseSwaps: pendingReverseSwapIds,
 
 		Symbol:      "BTC",
-		LndPubkey:   lightningInfo.Pubkey,
-		BlockHeight: lightningInfo.BlockHeight,
+		BlockHeight: blockHeights.Btc,
 	}
 
-	if server.swapper.Running() {
-		response.AutoSwapStatus = "running"
+	if server.lightning != nil {
+		lightningInfo, err := server.lightning.GetInfo()
+		if err != nil {
+			return nil, handleError(err)
+		}
+
+		response.Node = server.lightning.Name()
+		response.NodePubkey = lightningInfo.Pubkey
+		//nolint:staticcheck
+		response.LndPubkey = lightningInfo.Pubkey
 	} else {
-		if server.swapper.Error() != "" {
-			response.AutoSwapStatus = "error"
+		response.Node = "standalone"
+	}
+
+	if server.swapper != nil {
+		if server.swapper.Running() {
+			response.AutoSwapStatus = "running"
 		} else {
-			response.AutoSwapStatus = "disabled"
+			if server.swapper.Error() != "" {
+				response.AutoSwapStatus = "error"
+			} else {
+				response.AutoSwapStatus = "disabled"
+			}
 		}
 	}
 
@@ -311,7 +318,10 @@ func (server *routedBoltzServer) createSwap(isAuto bool, request *boltzrpc.Creat
 		}
 		preimageHash = invoice.PaymentHash[:]
 		createSwap.Invoice = request.GetInvoice()
+	} else if server.lightning == nil {
+		return nil, handleError(errors.New("invoice is required in standalone mode"))
 	} else if request.Amount != 0 {
+
 		invoice, err := server.lightning.CreateInvoice(request.Amount, nil, 0, utils.GetSwapMemo(string(pair.From)))
 		if err != nil {
 			return nil, handleError(err)
@@ -453,8 +463,17 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
 	logger.Info("Creating Reverse Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
+	externalPay := request.GetExternalPay()
+	if server.lightning == nil {
+		if request.ExternalPay == nil {
+			externalPay = true
+		} else if !externalPay {
+			return nil, handleError(errors.New("can not create reverse swap without external pay in standalone mode"))
+		}
+	}
+
 	returnImmediately := request.GetReturnImmediately()
-	if request.GetExternalPay() {
+	if externalPay {
 		// only error if it was explicitly set to false, implicitly set to true otherwise
 		if request.ReturnImmediately != nil && !returnImmediately {
 			return nil, handleError(errors.New("can not wait for swap transaction when using external pay"))
@@ -540,7 +559,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		LockupTransactionId: "",
 		ClaimTransactionId:  "",
 		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
-		ExternalPay:         request.GetExternalPay(),
+		ExternalPay:         externalPay,
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -602,7 +621,7 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 		LockupAddress: response.LockupAddress,
 	}
 
-	if request.GetExternalPay() {
+	if externalPay {
 		rpcResponse.Invoice = &reverseSwap.Invoice
 	} else {
 		if err := server.nursery.PayReverseSwap(&reverseSwap); err != nil {
@@ -635,15 +654,6 @@ func (server *routedBoltzServer) createReverseSwap(isAuto bool, request *boltzrp
 
 func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
 	return server.createReverseSwap(false, request)
-}
-
-func (server *routedBoltzServer) onWalletChange() {
-	if server.swapper.Enabled() {
-		logger.Info("Restarting autoswapper because liquid wallet has changed.")
-		if err := server.swapper.Start(); err != nil {
-			logger.Errorf("Failed to restart swapper after liquid wallet has changed: %v", err)
-		}
-	}
 }
 
 func (server *routedBoltzServer) importWallet(credentials *wallet.Credentials, password string) error {
@@ -685,8 +695,7 @@ func (server *routedBoltzServer) importWallet(credentials *wallet.Credentials, p
 			return fmt.Errorf("could not encrypt credentials: %w", err)
 		}
 	}
-	server.onchain.Wallets = append(server.onchain.Wallets, wallet)
-	server.onWalletChange()
+	server.onchain.AddWallet(wallet)
 	return nil
 }
 
@@ -725,12 +734,6 @@ func (server *routedBoltzServer) SetSubaccount(_ context.Context, request *boltz
 	if err := server.database.SetWalletSubaccount(wallet.Name(), string(wallet.Currency()), *subaccountNumber); err != nil {
 		return nil, handleError(err)
 	}
-
-	if err := server.swapper.LoadConfig(); err != nil {
-		logger.Warnf("Could not load autoswap config: %v", err)
-	}
-
-	server.onWalletChange()
 
 	subaccount, err := wallet.GetSubaccount(*subaccountNumber)
 	if err != nil {
@@ -859,13 +862,15 @@ func (server *routedBoltzServer) RemoveWallet(_ context.Context, request *boltzr
 	if err := server.database.DeleteWalletCredentials(request.Name); err != nil {
 		return nil, handleError(err)
 	}
-	cfg, err := server.swapper.GetConfig()
-	if err == nil {
-		if cfg.Wallet == request.Name {
-			return nil, handleError(fmt.Errorf(
-				"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet.",
-				request.Name,
-			))
+	if server.swapper != nil {
+		cfg, err := server.swapper.GetConfig()
+		if err == nil {
+			if cfg.Wallet == request.Name {
+				return nil, handleError(fmt.Errorf(
+					"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet.",
+					request.Name,
+				))
+			}
 		}
 	}
 	wallet, err := server.getOwnWallet(request.Name, true)
@@ -875,10 +880,7 @@ func (server *routedBoltzServer) RemoveWallet(_ context.Context, request *boltzr
 	if err := wallet.Remove(); err != nil {
 		return nil, handleError(err)
 	}
-	server.onchain.Wallets = slices.DeleteFunc(server.onchain.Wallets, func(current onchain.Wallet) bool {
-		return current.Name() == request.Name
-	})
-	server.onWalletChange()
+	server.onchain.RemoveWallet(request.Name)
 
 	logger.Debugf("Removed wallet %s", request.Name)
 
@@ -950,15 +952,13 @@ func (server *routedBoltzServer) unlock(password string) error {
 		if err != nil {
 			return fmt.Errorf("could not login to wallet: %v", err)
 		} else {
-			server.onchain.Wallets = append(server.onchain.Wallets, wallet)
+			server.onchain.AddWallet(wallet)
 		}
 	}
 
 	if err := server.swapper.LoadConfig(); err != nil {
 		logger.Warnf("Could not load autoswap config: %v", err)
 	}
-	server.onWalletChange()
-
 	server.nursery = &nursery.Nursery{}
 	err = server.nursery.Init(
 		server.network,
@@ -989,6 +989,13 @@ func (server *routedBoltzServer) ChangeWalletPassword(_ context.Context, request
 
 var errLocked = errors.New("boltzd is locked, use \"unlock\" to enable full RPC access")
 
+func (server *routedBoltzServer) requestAllowed(fullMethod string) error {
+	if server.locked && !strings.Contains(fullMethod, "Unlock") {
+		return handleError(errLocked)
+	}
+	return nil
+}
+
 func (server *routedBoltzServer) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -996,8 +1003,8 @@ func (server *routedBoltzServer) UnaryServerInterceptor() grpc.UnaryServerInterc
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		if server.locked && !strings.Contains(info.FullMethod, "Unlock") {
-			return nil, handleError(errLocked)
+		if err := server.requestAllowed(info.FullMethod); err != nil {
+			return nil, err
 		}
 
 		return handler(ctx, req)
@@ -1011,8 +1018,8 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
-		if server.locked && !strings.Contains(info.FullMethod, "Unlock") {
-			return handleError(errLocked)
+		if err := server.requestAllowed(info.FullMethod); err != nil {
+			return err
 		}
 
 		return handler(srv, ss)

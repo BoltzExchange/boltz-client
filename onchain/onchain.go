@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/vulpemventures/go-elements/confidential"
 )
@@ -57,10 +59,27 @@ type Currency struct {
 }
 
 type Onchain struct {
-	Btc     *Currency
-	Liquid  *Currency
-	Network *boltz.Network
-	Wallets []Wallet
+	Btc            *Currency
+	Liquid         *Currency
+	Network        *boltz.Network
+	Wallets        []Wallet
+	OnWalletChange *utils.ChannelForwarder[[]Wallet]
+}
+
+func (onchain *Onchain) Init() {
+	onchain.OnWalletChange = utils.ForwardChannel(make(chan []Wallet), 0, false)
+}
+
+func (onchain *Onchain) AddWallet(wallet Wallet) {
+	onchain.Wallets = append(onchain.Wallets, wallet)
+	onchain.OnWalletChange.Send(onchain.Wallets)
+}
+
+func (onchain *Onchain) RemoveWallet(name string) {
+	onchain.Wallets = slices.DeleteFunc(onchain.Wallets, func(current Wallet) bool {
+		return current.Name() == name
+	})
+	onchain.OnWalletChange.Send(onchain.Wallets)
 }
 
 func (onchain *Onchain) GetCurrency(currency boltz.Currency) (*Currency, error) {

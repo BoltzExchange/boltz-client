@@ -202,31 +202,41 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onc
 	logger.Infof("Connecting to block %s epoch stream", currency)
 	blockNotifier := make(chan *onchain.BlockEpoch)
 	stop := nursery.stop.Get()
+
 	nursery.waitGroup.Add(1)
+
 	go func() {
 		defer func() {
 			close(blockNotifier)
+			nursery.stop.Remove(stop)
 			nursery.waitGroup.Done()
 			logger.Debugf("Closed block listener for %s", currency)
 		}()
 		for !nursery.stopped {
 			listener := nursery.onchain.GetBlockListener(currency)
 			if listener == nil {
-				logger.Errorf("no block listener for %s", currency)
+				logger.Warnf("no block listener for %s", currency)
+				onWalletChange := nursery.onchain.OnWalletChange.Get()
+				select {
+				case <-stop:
+					return
+				case <-onWalletChange:
+				}
+				nursery.onchain.OnWalletChange.Remove(onWalletChange)
 			} else {
 				err := listener.RegisterBlockListener(blockNotifier, stop)
 				if err != nil {
 					logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
 					logger.Infof("Retrying connection in " + strconv.Itoa(retryInterval) + " seconds")
 				}
-			}
-			if nursery.stopped {
-				return
-			}
-			select {
-			case <-stop:
-				return
-			case <-time.After(retryInterval * time.Second):
+				if nursery.stopped {
+					return
+				}
+				select {
+				case <-stop:
+					return
+				case <-time.After(retryInterval * time.Second):
+				}
 			}
 		}
 	}()

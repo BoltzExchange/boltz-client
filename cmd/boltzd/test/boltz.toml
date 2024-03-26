@@ -4,6 +4,8 @@ logfile = ""
 electrumUrl = "localhost:19001"
 electrumLiquidUrl = "localhost:19002"
 
+network = "regtest"
+
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz instance for the network LND is on
 # This value is used to override that
