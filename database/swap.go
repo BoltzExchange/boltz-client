@@ -126,6 +126,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	privateKey := PrivateKeyScanner{}
 	var preimage string
 	var redeemScript string
+	var wallet sql.NullString
 	blindingKey := PrivateKeyScanner{Nullable: true}
 	var createdAt, serviceFee, onchainFee sql.NullInt64
 	swapTree := JsonScanner[*boltz.SerializedTree]{Nullable: true}
@@ -160,7 +161,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 			"serviceFeePercent":   &swap.ServiceFeePercent,
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
-			"wallet":              &swap.Wallet,
+			"wallet":              &wallet,
 		},
 	)
 
@@ -176,6 +177,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	swap.PrivateKey = privateKey.Value
 	swap.BlindingKey = blindingKey.Value
 	swap.ClaimPubKey = claimPubKey.Value
+	swap.Wallet = wallet.String
 
 	if preimage != "" {
 		swap.Preimage, err = hex.DecodeString(preimage)
