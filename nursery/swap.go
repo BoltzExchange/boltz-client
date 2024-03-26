@@ -59,37 +59,16 @@ func (nursery *Nursery) RefundSwaps(swapsToRefund []database.Swap, cooperative b
 
 	var refundedSwaps []database.Swap
 	var refundOutputs []boltz.OutputDetails
-	var refundAddress string
 
 	for _, swapToRefund := range swapsToRefund {
 		refundOutput, err := nursery.getRefundOutput(&swapToRefund)
 		if err != nil {
-			logger.Warnf("Could not get refund output of swap %s: %v", swapToRefund.Id, err)
-			continue
+			return fmt.Errorf("Could not get refund output of swap %s: %v", swapToRefund.Id, err)
 		}
 
 		refundOutput.Cooperative = cooperative
-		if swapToRefund.RefundAddress != "" {
-			// we process all swaps that have an explicit refund address isolated
-			refundedSwaps = []database.Swap{swapToRefund}
-			refundOutputs = []boltz.OutputDetails{*refundOutput}
-			refundAddress = swapToRefund.RefundAddress
-			break
-		}
 		refundedSwaps = append(refundedSwaps, swapToRefund)
 		refundOutputs = append(refundOutputs, *refundOutput)
-	}
-
-	if refundAddress == "" {
-		wallet, err := nursery.onchain.GetAnyWallet(currency, true)
-		if err != nil {
-			message := "%d Swaps can not be refunded because they got no refund address and no wallet for currency %s is available! Set up a wallet or refund manually"
-			return fmt.Errorf(message, len(refundedSwaps), currency)
-		}
-		refundAddress, err = wallet.NewAddress()
-		if err != nil {
-			return fmt.Errorf("%d Swaps can not be refunded because they got no refund address and wallet failed to generate address: %v", len(refundedSwaps), err)
-		}
 	}
 
 	if len(refundOutputs) == 0 {
@@ -97,17 +76,9 @@ func (nursery *Nursery) RefundSwaps(swapsToRefund []database.Swap, cooperative b
 		return nil
 	}
 
-	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
-
+	refundTransactionId, totalRefundFee, err := nursery.claimOutputs(currency, refundOutputs)
 	if err != nil {
-		return errors.New("Could not get fee estimation: " + err.Error())
-	}
-
-	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
-
-	refundTransactionId, totalRefundFee, err := nursery.createTransaction(currency, refundOutputs, refundAddress, feeSatPerVbyte)
-	if err != nil {
-		return errors.New("Could not create refund transaction: " + err.Error())
+		return err
 	}
 
 	logger.Infof("Constructed refund transaction for %d swaps: %s", len(refundOutputs), refundTransactionId)
@@ -144,11 +115,33 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*boltz.OutputDetai
 		return nil, fmt.Errorf("could not find lockup vout of Swap %s: %w", swap.Id, err)
 	}
 
+	if swap.RefundAddress == "" {
+		currency := swap.Pair.From
+		wallet, err := nursery.onchain.GetAnyWallet(currency, true)
+		if err != nil {
+			message := "Swap %s can not be refunded because they got no refund address and no wallet for currency %s is available. Setup a wallet or refund manually"
+			return nil, fmt.Errorf(message, swap.Id, currency)
+		}
+		if swap.Wallet != "" {
+			wallet, err = nursery.onchain.GetWallet(swap.Wallet, currency, true)
+			if err != nil {
+				message := "Swap %s can not be refunded because the wallet is was funded from is not available anymore. Refund manually"
+				return nil, fmt.Errorf(message, swap.Id)
+			}
+		}
+		swap.RefundAddress, err = wallet.NewAddress()
+		if err != nil {
+			message := "Swap %s can not be refunded because it has no refund address and the associated wallet failed to generate address: %v"
+			return nil, fmt.Errorf(message, swap.Id, err)
+		}
+	}
+
 	return &boltz.OutputDetails{
 		SwapId:             swap.Id,
 		SwapType:           boltz.NormalSwap,
 		LockupTransaction:  lockupTransaction,
 		Vout:               lockupVout,
+		Address:            swap.RefundAddress,
 		PrivateKey:         swap.PrivateKey,
 		Preimage:           []byte{},
 		TimeoutBlockHeight: swap.TimoutBlockHeight,

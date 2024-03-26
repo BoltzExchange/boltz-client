@@ -531,61 +531,38 @@ func TestSwap(t *testing.T) {
 
 						t.Run("Script", func(t *testing.T) {
 							cfg.Boltz.DisablePartialSignatures = true
-							swaps := make([]*boltzrpc.CreateSwapResponse, 3)
 
-							refundAddress := cli("getnewaddress")
-							swaps[0], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-								Pair:          pair,
-								RefundAddress: &refundAddress,
-								Amount:        int64(amount + 100),
-							})
-							require.NoError(t, err)
-
-							swaps[1], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-								Pair:   pair,
-								Amount: int64(amount + 100),
-							})
-							require.NoError(t, err)
-
-							swaps[2], err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-								Pair:   pair,
-								Amount: int64(amount + 100),
-							})
-							require.NoError(t, err)
-
-							var streams []nextFunc
-							for _, swap := range swaps {
+							create := func(refundAddress string) (*boltzrpc.CreateSwapResponse, nextFunc) {
+								swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+									Pair:          pair,
+									RefundAddress: &refundAddress,
+									Amount:        int64(amount + 100),
+								})
+								require.NoError(t, err)
 								stream := swapStream(t, client, swap.Id)
 								test.SendToAddress(cli, swap.Address, int64(amount))
 								stream(boltzrpc.SwapState_ERROR)
-								streams = append(streams, stream)
+								return swap, stream
 							}
 
-							test.MineUntil(t, cli, int64(swaps[0].TimeoutBlockHeight))
+							refundAddress := cli("getnewaddress")
+							withAddress, withStream := create(refundAddress)
+							_, withoutStream := create("")
 
-							var infos []*boltzrpc.SwapInfo
-							for _, stream := range streams {
-								info := stream(boltzrpc.SwapState_REFUNDED)
-								require.Zero(t, info.Swap.ServiceFee)
-								infos = append(infos, info.Swap)
-								test.MineBlock()
-							}
+							test.MineUntil(t, cli, int64(withAddress.TimeoutBlockHeight))
+
+							withInfo := withStream(boltzrpc.SwapState_REFUNDED).Swap
+							withoutInfo := withoutStream(boltzrpc.SwapState_REFUNDED).Swap
 
 							from := parseCurrency(pair.From)
 
-							require.NotEqual(t, infos[0].RefundTransactionId, infos[1].RefundTransactionId)
-							require.Equal(t, infos[1].RefundTransactionId, infos[2].RefundTransactionId)
-
-							refundFee, err := chain.GetTransactionFee(from, infos[1].RefundTransactionId)
+							require.Equal(t, withInfo.RefundTransactionId, withoutInfo.RefundTransactionId)
+							refundFee, err := chain.GetTransactionFee(from, withInfo.RefundTransactionId)
 							require.NoError(t, err)
 
-							require.Equal(t, int(refundFee), int(*infos[1].OnchainFee)+int(*infos[2].OnchainFee))
+							require.Equal(t, int(refundFee), int(*withInfo.OnchainFee)+int(*withoutInfo.OnchainFee))
 
-							checkTxOutAddress(t, chain, from, infos[0].RefundTransactionId, refundAddress, false)
-
-							refundFee, err = chain.GetTransactionFee(from, infos[0].RefundTransactionId)
-							require.NoError(t, err)
-							require.Equal(t, int(refundFee), int(*infos[0].OnchainFee))
+							checkTxOutAddress(t, chain, from, withInfo.RefundTransactionId, refundAddress, false)
 						})
 
 						createFailedSwap := func(t *testing.T, refundAddress string) nextFunc {
@@ -693,6 +670,7 @@ func TestReverseSwap(t *testing.T) {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
 					cfg.Boltz.DisablePartialSignatures = tc.disablePartials
+					cfg.Claimer.DeferredSymbols = []boltz.Currency{boltz.CurrencyBtc}
 					client, _, stop := setup(t, cfg, "")
 					cfg.Node = node
 					chain := onchain.Onchain{

@@ -213,5 +213,5 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 }
 
 func (nursery *Nursery) claimReverseSwap(reverseSwap *database.ReverseSwap, output boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
-	return nursery.createTransaction(reverseSwap.Pair.To, []boltz.OutputDetails{output}, reverseSwap.ClaimAddress, feeSatPerVbyte)
+	return nursery.createTransaction(reverseSwap.Pair.To, []boltz.OutputDetails{output}, feeSatPerVbyte)
 }

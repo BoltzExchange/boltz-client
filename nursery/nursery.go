@@ -1,6 +1,7 @@
 package nursery
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -243,12 +244,35 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onc
 	return blockNotifier
 }
 
+func (nursery *Nursery) claimOutputs(currency boltz.Currency, outputs []boltz.OutputDetails) (string, uint64, error) {
+	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
+
+	if err != nil {
+		return "", 0, errors.New("Could not get fee estimation: " + err.Error())
+	}
+
+	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for transaction", feeSatPerVbyte))
+
+	transactionId, fee, err := nursery.createTransaction(currency, outputs, feeSatPerVbyte)
+	if err != nil {
+		logger.Warnf("Could not construct cooperative transaction: %v", err)
+		for i := range outputs {
+			outputs[i].Cooperative = false
+		}
+		transactionId, fee, err = nursery.createTransaction(currency, outputs, feeSatPerVbyte)
+		if err != nil {
+			return "", 0, errors.New("Could not construct transaction: " + err.Error())
+		}
+	}
+	return transactionId, fee, nil
+}
+
 func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, error) {
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, address string, feeSatPerVbyte float64) (string, uint64, error) {
-	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, address, feeSatPerVbyte, nursery.boltz)
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
+	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, feeSatPerVbyte, nursery.boltz)
 	if err != nil {
 		return "", 0, fmt.Errorf("construct transaction: %v", err)
 	}
