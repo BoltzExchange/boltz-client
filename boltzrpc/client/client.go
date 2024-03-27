@@ -109,7 +109,10 @@ func (boltz *Boltz) Unlock(password string) error {
 
 func (boltz *Boltz) VerifyWalletPassword(password string) (bool, error) {
 	response, err := boltz.Client.VerifyWalletPassword(boltz.Ctx, &boltzrpc.VerifyWalletPasswordRequest{Password: password})
-	return response.Correct, err
+	if err != nil {
+		return false, err
+	}
+	return response.Correct, nil
 }
 
 func (boltz *Boltz) HasPassword() (bool, error) {
