@@ -1,4 +1,4 @@
-//go:build static && !dynamic
+//go:build static || !dynamic
 
 package wallet
 

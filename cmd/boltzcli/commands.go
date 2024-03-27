@@ -1221,7 +1221,7 @@ func importWallet(ctx *cli.Context, info *boltzrpc.WalletInfo, readonly bool) er
 
 	mnemonic := ""
 	importType := "mnemonic"
-	if info.Currency == boltzrpc.Currency_BTC && readonly {
+	if readonly {
 		prompt := &survey.Select{
 			Message: "Which import type do you want to use?",
 			Options: []string{"mnemonic", "xpub", "core descriptor"},
