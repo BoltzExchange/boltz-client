@@ -3,6 +3,7 @@ package rpcserver
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -129,10 +130,10 @@ func (server *RpcServer) Init(
 
 	if server.NoTls {
 		// cleanup previous certificates to avoid confusion
-		if err := os.Remove(server.TlsCertPath); !os.IsNotExist(err) {
+		if err := os.Remove(server.TlsCertPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
-		if err := os.Remove(server.TlsKeyPath); !os.IsNotExist(err) {
+		if err := os.Remove(server.TlsKeyPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 	} else {
