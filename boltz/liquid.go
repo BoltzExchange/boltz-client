@@ -107,30 +107,7 @@ func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outp
 	return hash[:]
 }
 
-func constructLiquidTransaction(network *Network, outputs []OutputDetails, outputAddressRaw string, fee uint64) (Transaction, error) {
-	var blindingKeyCompressed []byte
-
-	isConfidential, err := address.IsConfidential(outputAddressRaw)
-	if err != nil {
-		return nil, errors.New("Could not decode address: " + err.Error())
-	}
-
-	if isConfidential {
-		outputAddress, err := address.FromConfidential(outputAddressRaw)
-		if err != nil {
-			return nil, errors.New("Could not decode address: " + err.Error())
-		}
-		blindingKey, err := btcec.ParsePubKey(outputAddress.BlindingKey)
-		if err != nil {
-			return nil, errors.New("Could not parse blinding key: " + err.Error())
-		}
-		blindingKeyCompressed = blindingKey.SerializeCompressed()
-	}
-	script, err := address.ToOutputScript(outputAddressRaw)
-	if err != nil {
-		return nil, errors.New("Could not generate output script: " + err.Error())
-	}
-
+func constructLiquidTransaction(network *Network, outputs []OutputDetails, fee uint64) (Transaction, error) {
 	p, err := psetv2.New(nil, nil, nil)
 	if err != nil {
 		return nil, err
@@ -182,26 +159,64 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outpu
 		return nil, errors.New("Failed to unblind inputs: " + err.Error())
 	}
 
-	var inputSum uint64
-	for _, input := range ownedInputs {
-		inputSum += input.Value
+	outValues := make(map[string]uint64)
+	for i, input := range ownedInputs {
+		address := outputs[i].Address
+		//nolint:gosimple
+		existingValue, _ := outValues[address]
+		outValues[address] = existingValue + input.Value
 	}
 
 	btcAsset := network.Liquid.AssetID
 
-	if err := updater.AddOutputs([]psetv2.OutputArgs{
-		{
-			Asset:        btcAsset,
-			Amount:       inputSum - fee,
-			Script:       script,
-			BlindingKey:  blindingKeyCompressed,
-			BlinderIndex: 0,
-		},
+	txOutputs := []psetv2.OutputArgs{
 		{
 			Asset:  btcAsset,
 			Amount: fee,
 		},
-	}); err != nil {
+	}
+
+	outLen := uint64(len(outValues))
+	feePerOutput := fee / outLen
+	feeRemainder := fee % outLen
+	var blindingKeyCompressed []byte
+	var blinderIndex uint32
+	for rawAddres, value := range outValues {
+		isConfidential, err := address.IsConfidential(rawAddres)
+		if err != nil {
+			return nil, errors.New("Could not decode address: " + err.Error())
+		}
+
+		if isConfidential {
+			outputAddress, err := address.FromConfidential(rawAddres)
+			if err != nil {
+				return nil, errors.New("Could not decode address: " + err.Error())
+			}
+			blindingKey, err := btcec.ParsePubKey(outputAddress.BlindingKey)
+			if err != nil {
+				return nil, errors.New("Could not parse blinding key: " + err.Error())
+			}
+			blindingKeyCompressed = blindingKey.SerializeCompressed()
+		}
+		script, err := address.ToOutputScript(rawAddres)
+		if err != nil {
+			return nil, errors.New("Could not generate output script: " + err.Error())
+		}
+
+		// give the remainder to the first output
+		fee := feePerOutput + feeRemainder
+		feeRemainder = 0
+		txOutputs = append(txOutputs, psetv2.OutputArgs{
+			Asset:        btcAsset,
+			Amount:       value - fee,
+			Script:       script,
+			BlindingKey:  blindingKeyCompressed,
+			BlinderIndex: blinderIndex,
+		})
+		blinderIndex += 1
+	}
+
+	if err := updater.AddOutputs(txOutputs); err != nil {
 		return nil, err
 	}
 
