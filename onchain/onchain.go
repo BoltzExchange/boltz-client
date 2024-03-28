@@ -31,8 +31,12 @@ type WalletInfo struct {
 	EntityId *int64
 }
 
-func (info *WalletChecker) String() string {
-	return fmt.Sprintf("%s (id: %d)", info.Name, info.Id)
+type WalletChecker struct {
+	Id       *int64
+	Name     string
+	Currency boltz.Currency
+	Readonly bool
+	EntityId *int64
 }
 
 type BlockListener interface {
@@ -101,22 +105,14 @@ func (onchain *Onchain) GetCurrency(currency boltz.Currency) (*Currency, error) 
 	return nil, errors.New("invalid currency")
 }
 
-type WalletChecker struct {
-	Id       *int64
-	Currency boltz.Currency
-	Name     string
-	Readonly bool
-	EntityId *int64
-}
-
-func (checker *WalletChecker) Allowed(wallet Wallet) bool {
+func (walletChecker *WalletChecker) Allowed(wallet Wallet) bool {
 	info := wallet.GetWalletInfo()
 	return wallet.Ready() &&
-		(checker.Id == nil || info.Id == *checker.Id) &&
-		(info.Currency == checker.Currency || checker.Currency == "") &&
-		(info.Name == checker.Name || checker.Name == "") &&
-		(!info.Readonly || checker.Readonly) &&
-		(info.EntityId == checker.EntityId || (info.EntityId != nil && checker.EntityId != nil && *info.EntityId == *checker.EntityId))
+		(walletChecker.Id == nil || info.Id == *walletChecker.Id) &&
+		(info.Currency == walletChecker.Currency || walletChecker.Currency == "") &&
+		(info.Name == walletChecker.Name || walletChecker.Name == "") &&
+		(!info.Readonly || walletChecker.Readonly) &&
+		(info.EntityId == walletChecker.EntityId || (info.EntityId != nil && walletChecker.EntityId != nil && *info.EntityId == *walletChecker.EntityId))
 }
 
 func (onchain *Onchain) GetAnyWallet(checker WalletChecker) (Wallet, error) {

@@ -62,6 +62,10 @@ var (
 			Entity: "info",
 			Action: "read",
 		}},
+		"/boltzrpc.Boltz/GetPairs": {{
+			Entity: "info",
+			Action: "read",
+		}},
 		"/boltzrpc.Boltz/ListSwaps": {{
 			Entity: "swap",
 			Action: "read",
