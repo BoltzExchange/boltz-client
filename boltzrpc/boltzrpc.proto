@@ -262,6 +262,8 @@ message GetInfoResponse {
     string auto_swap_status = 11;
     // mapping of the currency to the latest block height.
     BlockHeights block_heights = 8;
+    // swaps that need a manual refund
+    repeated string refundable_swaps = 12;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
