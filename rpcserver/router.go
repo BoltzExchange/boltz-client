@@ -1018,7 +1018,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 				return fmt.Errorf("could not get node wallet form db: %s", err)
 			}
 		}
-		server.lightning.SetId(nodeWallet.Id)
+		server.lightning.SetupWallet(nodeWallet.Id)
 
 	}
 

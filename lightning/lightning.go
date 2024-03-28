@@ -93,5 +93,5 @@ type LightningNode interface {
 
 	ConnectPeer(uri string) error
 
-	SetId(int64)
+	SetupWallet(int64)
 }

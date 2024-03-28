@@ -95,7 +95,7 @@ func (c *Cln) GetWalletInfo() onchain.WalletInfo {
 	return c.walletInfo
 }
 
-func (c *Cln) SetId(id int64) {
+func (c *Cln) SetupWallet(id int64) {
 	c.walletInfo = onchain.WalletInfo{
 		Id:       id,
 		Readonly: false,

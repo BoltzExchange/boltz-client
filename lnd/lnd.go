@@ -70,7 +70,7 @@ func (lnd *LND) Name() string {
 	return "LND"
 }
 
-func (lnd *LND) SetId(id int64) {
+func (lnd *LND) SetupWallet(id int64) {
 	lnd.walletInfo = onchain.WalletInfo{
 		Id:       id,
 		Readonly: false,
