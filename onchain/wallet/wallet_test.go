@@ -88,15 +88,19 @@ func TestImportSlip132Wallet(t *testing.T) {
 		{
 			"Xpub",
 			onchainWallet.Credentials{
-				Xpub:     "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
-				Currency: boltz.CurrencyBtc,
+				WalletInfo: onchain.WalletInfo{
+					Currency: boltz.CurrencyBtc,
+				},
+				Xpub: "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
 			},
 		},
 		{
 			"CoreDescriptor",
 			onchainWallet.Credentials{
+				WalletInfo: onchain.WalletInfo{
+					Currency: boltz.CurrencyBtc,
+				},
 				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
-				Currency:       boltz.CurrencyBtc,
 			},
 		},
 	}

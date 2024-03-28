@@ -92,4 +92,6 @@ type LightningNode interface {
 	//GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error)
 
 	ConnectPeer(uri string) error
+
+	SetId(int64)
 }

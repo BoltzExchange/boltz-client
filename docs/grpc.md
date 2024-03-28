@@ -213,10 +213,61 @@ Changes the password for wallet encryption.
 | ------- | -------- |
 | [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
+#### CreateEntity
+
+
+
+| Request | Response |
+| ------- | -------- |
+| [`CreateEntityRequest`](#createentityrequest) | [`EntityInfo`](#entityinfo) |
+
+#### GetEntities
+
+
+
+| Request | Response |
+| ------- | -------- |
+| [`GetEntitiesRequest`](#getentitiesrequest) | [`GetEntitiesResponse`](#getentitiesresponse) |
+
+#### BakeMacaroon
+
+
+
+| Request | Response |
+| ------- | -------- |
+| [`BakeMacaroonRequest`](#bakemacaroonrequest) | [`BakeMacaroonResponse`](#bakemacaroonresponse) |
+
 
 
 
 ### Messages
+
+#### BakeMacaroonRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `entity` | [`string`](#string) |  |  |
+
+
+
+
+
+#### BakeMacaroonResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `admin_macaroon` | [`string`](#string) |  |  |
+| `readonly_macaroon` | [`string`](#string) |  |  |
+
+
+
+
 
 #### Balance
 
@@ -338,6 +389,27 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### CreateEntityRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [`string`](#string) |  |  |
+
+
+
+
+
+#### CreateEntityResponse
+
+
+
+
+
+
+
 #### CreateReverseSwapRequest
 
 
@@ -454,6 +526,20 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### EntityInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`int64`](#int64) |  |  |
+| `name` | [`string`](#string) |  |  |
+
+
+
+
+
 #### Fees
 
 
@@ -463,6 +549,27 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
 | `miner` | [`MinerFees`](#minerfees) |  |  |
+
+
+
+
+
+#### GetEntitiesRequest
+
+
+
+
+
+
+
+#### GetEntitiesResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `entities` | [`EntityInfo`](#entityinfo) | repeated |  |
 
 
 
@@ -621,6 +728,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `currency` | [`Currency`](#currency) | optional |  |
 | `include_readonly` | [`bool`](#bool) | optional |  |
+| `entity` | [`string`](#string) | optional |  |
 
 
 
@@ -692,6 +800,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `to` | [`Currency`](#currency) | optional |  |
 | `is_auto` | [`bool`](#bool) | optional |  |
 | `state` | [`SwapState`](#swapstate) | optional |  |
+| `entity` | [`string`](#string) | optional |  |
 
 
 

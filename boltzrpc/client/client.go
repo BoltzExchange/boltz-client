@@ -124,3 +124,11 @@ func (boltz *Boltz) ChangeWalletPassword(old string, new string) error {
 	_, err := boltz.Client.ChangeWalletPassword(boltz.Ctx, &boltzrpc.ChangeWalletPasswordRequest{Old: old, New: new})
 	return err
 }
+
+func (boltz *Boltz) CreateEntity(name string) (*boltzrpc.EntityInfo, error) {
+	return boltz.Client.CreateEntity(boltz.Ctx, &boltzrpc.CreateEntityRequest{Name: name})
+}
+
+func (boltz *Boltz) BakeMacaroon(entity string) (*boltzrpc.BakeMacaroonResponse, error) {
+	return boltz.Client.BakeMacaroon(boltz.Ctx, &boltzrpc.BakeMacaroonRequest{Entity: entity})
+}

@@ -40,7 +40,8 @@ type Swap struct {
 	ServiceFee          *uint64
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
-	Wallet              string
+	WalletId            *int64
+	EntityId            *int64
 }
 
 type SwapSerialized struct {
@@ -67,7 +68,8 @@ type SwapSerialized struct {
 	ServiceFee          *uint64
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
-	Wallet              string
+	WalletId            *int64
+	EntityId            *int64
 }
 
 func (swap *Swap) BlindingPubKey() *btcec.PublicKey {
@@ -107,7 +109,8 @@ func (swap *Swap) Serialize() SwapSerialized {
 		ServiceFee:          swap.ServiceFee,
 		ServiceFeePercent:   swap.ServiceFeePercent,
 		OnchainFee:          swap.OnchainFee,
-		Wallet:              swap.Wallet,
+		WalletId:            swap.WalletId,
+		EntityId:            swap.EntityId,
 	}
 }
 
@@ -126,7 +129,6 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	privateKey := PrivateKeyScanner{}
 	var preimage string
 	var redeemScript string
-	var wallet sql.NullString
 	blindingKey := PrivateKeyScanner{Nullable: true}
 	var createdAt, serviceFee, onchainFee sql.NullInt64
 	swapTree := JsonScanner[*boltz.SerializedTree]{Nullable: true}
@@ -161,7 +163,8 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 			"serviceFeePercent":   &swap.ServiceFeePercent,
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
-			"wallet":              &wallet,
+			"walletId":            &swap.WalletId,
+			"entityId":            &swap.EntityId,
 		},
 	)
 
@@ -177,7 +180,6 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	swap.PrivateKey = privateKey.Value
 	swap.BlindingKey = blindingKey.Value
 	swap.ClaimPubKey = claimPubKey.Value
-	swap.Wallet = wallet.String
 
 	if preimage != "" {
 		swap.Preimage, err = hex.DecodeString(preimage)
@@ -285,8 +287,8 @@ func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32, curren
 const insertSwapStatement = `
 INSERT INTO swaps (id, fromCurrency, toCurrency, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address,
                    expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress,
-                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, wallet, claimPubKey, swapTree)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, walletId, claimPubKey, swapTree, entityId)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateSwap(swap Swap) error {
@@ -321,9 +323,10 @@ func (database *Database) CreateSwap(swap Swap) error {
 		swap.ServiceFee,
 		swap.ServiceFeePercent,
 		swap.OnchainFee,
-		swap.Wallet,
+		swap.WalletId,
 		formatPublicKey(swap.ClaimPubKey),
 		formatJson(swap.SwapTree.Serialize()),
+		swap.EntityId,
 	)
 	return err
 }

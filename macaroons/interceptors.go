@@ -16,7 +16,8 @@ func (service *Service) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		if err := service.validateRequest(ctx, info.FullMethod); err != nil {
+		var err error
+		if ctx, err = service.validateRequest(ctx, info.FullMethod); err != nil {
 			return nil, err
 		}
 
@@ -31,7 +32,7 @@ func (service *Service) StreamServerInterceptor() grpc.StreamServerInterceptor {
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
-		if err := service.validateRequest(ss.Context(), info.FullMethod); err != nil {
+		if _, err := service.validateRequest(ss.Context(), info.FullMethod); err != nil {
 			return err
 		}
 
@@ -39,28 +40,28 @@ func (service *Service) StreamServerInterceptor() grpc.StreamServerInterceptor {
 	}
 }
 
-func (service *Service) validateRequest(ctx context.Context, fullMethod string) error {
+func (service *Service) validateRequest(ctx context.Context, fullMethod string) (context.Context, error) {
 	requiredPermissions, foundPermissions := RPCServerPermissions[fullMethod]
 
 	if !foundPermissions {
-		return errors.New("could not find permissions requires for method: " + fullMethod)
+		return nil, errors.New("could not find permissions requires for method: " + fullMethod)
 	}
 
 	md, foundMetadata := metadata.FromIncomingContext(ctx)
 
 	if !foundMetadata {
-		return errors.New("could not get metadata from context")
+		return nil, errors.New("could not get metadata from context")
 	}
 
 	if len(md["macaroon"]) != 1 {
-		return errors.New("expected 1 macaroon, got " + strconv.Itoa(len(md["macaroon"])))
+		return nil, errors.New("expected 1 macaroon, got " + strconv.Itoa(len(md["macaroon"])))
 	}
 
 	macBytes, err := hex.DecodeString(md["macaroon"][0])
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return service.ValidateMacaroon(macBytes, requiredPermissions)
+	return service.ValidateMacaroon(ctx, macBytes, requiredPermissions)
 }

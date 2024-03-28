@@ -331,7 +331,11 @@ func (swapper *AutoSwapper) Start() error {
 		logger.Info(err.Error())
 	}
 	normalSwaps := cfg.swapType == "" || cfg.swapType == boltz.NormalSwap
-	wallet, err := swapper.onchain.GetWallet(cfg.Wallet, cfg.currency, !normalSwaps)
+	wallet, err := swapper.onchain.GetAnyWallet(onchain.WalletChecker{
+		Name:     cfg.Wallet,
+		Currency: cfg.currency,
+		Readonly: !normalSwaps,
+	})
 	if wallet == nil {
 		if address == "" {
 			err = fmt.Errorf("neither external address or wallet is available for currency %s: %v", cfg.currency, err)
