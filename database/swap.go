@@ -284,7 +284,8 @@ func (database *Database) QueryBlockRefundableSwaps(currentBlockHeight uint32, c
 
 func (database *Database) QueryRefundableSwaps() ([]Swap, error) {
 	return database.querySwaps(
-		"SELECT * FROM swaps WHERE lockupTransactionId != '' && refundTransactionId == ''",
+		"SELECT * FROM swaps WHERE state != ? AND lockupTransactionId != '' AND refundTransactionId = ''",
+		boltzrpc.SwapState_SUCCESSFUL,
 	)
 }
 
