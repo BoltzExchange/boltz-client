@@ -125,7 +125,7 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*boltz.OutputDetai
 
 	if swap.RefundAddress == "" {
 		currency := swap.Pair.From
-		wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Currency: currency, Readonly: true})
+		wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Currency: currency, AllowReadonly: true})
 		if err != nil {
 			message := "Swap %s can not be refunded because they got no refund address and no wallet for currency %s is available. Setup a wallet or refund manually"
 			return nil, fmt.Errorf(message, swap.Id, currency)

@@ -33,7 +33,6 @@ type Cln struct {
 
 	Client protos.NodeClient
 
-	// id which is used to satisfy wallet interface
 	regtest    bool
 	walletInfo onchain.WalletInfo
 }
@@ -89,7 +88,7 @@ func (c *Cln) Connect() error {
 }
 
 func (c *Cln) Name() string {
-	return "CLN"
+	return string(serviceName)
 }
 
 func (c *Cln) GetWalletInfo() onchain.WalletInfo {

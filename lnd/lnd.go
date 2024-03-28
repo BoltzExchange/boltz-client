@@ -59,7 +59,6 @@ type LND struct {
 	walletKit     walletrpc.WalletKitClient
 	chainNotifier chainrpc.ChainNotifierClient
 
-	// id which is used to satisfy wallet interface
 	walletInfo onchain.WalletInfo
 }
 

@@ -32,11 +32,11 @@ type WalletInfo struct {
 }
 
 type WalletChecker struct {
-	Id       *int64
-	Name     string
-	Currency boltz.Currency
-	Readonly bool
-	EntityId *int64
+	Id            *int64
+	Name          string
+	Currency      boltz.Currency
+	AllowReadonly bool
+	EntityId      *int64
 }
 
 type BlockListener interface {
@@ -107,12 +107,14 @@ func (onchain *Onchain) GetCurrency(currency boltz.Currency) (*Currency, error) 
 
 func (walletChecker *WalletChecker) Allowed(wallet Wallet) bool {
 	info := wallet.GetWalletInfo()
-	return wallet.Ready() &&
-		(walletChecker.Id == nil || info.Id == *walletChecker.Id) &&
-		(info.Currency == walletChecker.Currency || walletChecker.Currency == "") &&
-		(info.Name == walletChecker.Name || walletChecker.Name == "") &&
-		(!info.Readonly || walletChecker.Readonly) &&
-		(info.EntityId == walletChecker.EntityId || (info.EntityId != nil && walletChecker.EntityId != nil && *info.EntityId == *walletChecker.EntityId))
+	id := walletChecker.Id == nil || info.Id == *walletChecker.Id
+	currency := info.Currency == walletChecker.Currency || walletChecker.Currency == ""
+	name := info.Name == walletChecker.Name || walletChecker.Name == ""
+	readonly := !info.Readonly || walletChecker.AllowReadonly
+	// either both are nil or both have the same value
+	entityId := info.EntityId == walletChecker.EntityId ||
+		(info.EntityId != nil && walletChecker.EntityId != nil && *info.EntityId == *walletChecker.EntityId)
+	return wallet.Ready() && id && currency && name && readonly && entityId
 }
 
 func (onchain *Onchain) GetAnyWallet(checker WalletChecker) (Wallet, error) {
@@ -226,7 +228,7 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 }
 
 func (onchain *Onchain) GetBlockListener(currency boltz.Currency) BlockListener {
-	wallet, err := onchain.GetAnyWallet(WalletChecker{Currency: currency, Readonly: true})
+	wallet, err := onchain.GetAnyWallet(WalletChecker{Currency: currency, AllowReadonly: true})
 	if err == nil {
 		return wallet
 	}
