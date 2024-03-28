@@ -40,8 +40,8 @@ CREATE TABLE swaps
     error               VARCHAR,
     status              VARCHAR,
     privateKey          VARCHAR,
-    swapTree            JSON, 
-    claimPubKey         VARCHAR, 
+    swapTree            JSON,
+    claimPubKey         VARCHAR,
     preimage            VARCHAR,
     redeemScript        VARCHAR,
     invoice             VARCHAR,
@@ -57,8 +57,8 @@ CREATE TABLE swaps
     serviceFeePercent   REAL,
     onchainFee          INT,
     createdAt           INT,
-    walletId            INT REFERENCES wallets(id) ON DELETE SET NULL,
-    entityId			      INT REFERENCES entities(id)
+    walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
+    entityId            INT REFERENCES entities (id)
 );
 CREATE TABLE reverseSwaps
 (
@@ -71,7 +71,7 @@ CREATE TABLE reverseSwaps
     status              VARCHAR,
     acceptZeroConf      BOOLEAN,
     privateKey          VARCHAR,
-    swapTree            JSON, 
+    swapTree            JSON,
     refundPubKey        VARCHAR,
     preimage            VARCHAR,
     redeemScript        VARCHAR,
@@ -89,8 +89,8 @@ CREATE TABLE reverseSwaps
     onchainFee          INT,
     createdAt           INT,
     externalPay         BOOLEAN,
-    walletId            INT REFERENCES wallets(id) ON DELETE SET NULL,
-    entityId			      INT REFERENCES entities(id)
+    walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
+    entityId            INT REFERENCES entities (id)
 );
 CREATE TABLE autobudget
 (
@@ -102,21 +102,23 @@ CREATE TABLE wallets
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     name           VARCHAR,
     currency       VARCHAR,
-    nodePubkey 	   VARCHAR,
+    nodePubkey     VARCHAR,
     xpub           VARCHAR,
     coreDescriptor VARCHAR,
     mnemonic       VARCHAR,
     subaccount     INT,
     salt           VARCHAR,
-    entityId       INT REFERENCES entities(id),
-	
+    entityId       INT REFERENCES entities (id),
+
     UNIQUE (name, entityId, nodePubkey),
     UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
 );
-CREATE TABLE entities (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE entities
+(
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR UNIQUE
 )
+
 `
 
 type Database struct {
