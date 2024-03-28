@@ -162,9 +162,14 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	response := &boltzrpc.ListSwapsResponse{}
 
 	args := database.SwapQuery{
-		IsAuto:   request.IsAuto,
-		State:    request.State,
-		EntityId: macaroons.EntityFromContext(ctx),
+		IsAuto: request.IsAuto,
+		State:  request.State,
+	}
+
+	var err error
+	args.EntityId, err = server.getEntity(ctx, request.Entity)
+	if err != nil {
+		return nil, handleError(err)
 	}
 
 	if request.From != nil {
@@ -176,8 +181,6 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 		parsed := utils.ParseCurrency(request.To)
 		args.To = &parsed
 	}
-
-	fmt.Println(macaroons.EntityFromContext(ctx))
 
 	swaps, err := server.database.QuerySwaps(args)
 	if err != nil {
@@ -289,15 +292,6 @@ func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.
 		Address:            response.Address,
 		TimeoutBlockHeight: response.TimeoutBlockHeight,
 	}, nil
-}
-
-func (server *routedBoltzServer) getWallet(ctx context.Context, currency boltz.Currency, name string, readonly bool) (onchain.Wallet, error) {
-	return server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Currency: currency,
-		Name:     name,
-		Readonly: readonly,
-		EntityId: macaroons.EntityFromContext(ctx),
-	})
 }
 
 // TODO: custom refund address
@@ -517,7 +511,12 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 			return nil, handleError(fmt.Errorf("Invalid claim address %s: %w", claimAddress, err))
 		}
 	} else {
-		wallet, err := server.getWallet(ctx, pair.To, request.GetWallet(), true)
+		wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
+			Currency: pair.To,
+			Name:     request.GetWallet(),
+			Readonly: true,
+			EntityId: macaroons.EntityFromContext(ctx),
+		})
 		if err != nil {
 			return nil, handleError(err)
 		}
@@ -852,7 +851,11 @@ func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.
 }
 
 func (server *routedBoltzServer) GetWallet(ctx context.Context, request *boltzrpc.GetWalletRequest) (*boltzrpc.Wallet, error) {
-	wallet, err := server.getWallet(ctx, "", request.Name, true)
+	wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
+		Name:     request.Name,
+		Readonly: true,
+		EntityId: macaroons.EntityFromContext(ctx),
+	})
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -865,7 +868,22 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 	checker := onchain.WalletChecker{
 		Currency: utils.ParseCurrency(request.Currency),
 		Readonly: request.GetIncludeReadonly(),
-		EntityId: macaroons.EntityFromContext(ctx),
+	}
+	var err error
+	checker.EntityId, err = server.getEntity(ctx, request.Entity)
+	if err != nil {
+		return nil, handleError(err)
+	}
+	if request.Entity != nil {
+		if isAdmin(ctx) {
+			entity, err := server.database.GetEntityByName(request.GetEntity())
+			if err != nil {
+				return nil, handleError(fmt.Errorf("could not get entity %s: %w", request.GetEntity(), err))
+			}
+			checker.EntityId = &entity.Id
+		} else {
+			return nil, handleError(errors.New("only admins can specify entity"))
+		}
 	}
 	for _, current := range server.onchain.GetWallets(checker) {
 		wallet, err := server.serializeWallet(current)
@@ -1087,8 +1105,27 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 	}
 }
 
+func (server *routedBoltzServer) getEntity(ctx context.Context, entityName *string) (*int64, error) {
+	if entityName != nil {
+		if isAdmin(ctx) {
+			entity, err := server.database.GetEntityByName(*entityName)
+			if err != nil {
+				return nil, fmt.Errorf("could not get entity %s: %w", *entityName, err)
+			}
+			return &entity.Id, nil
+		} else {
+			return nil, errors.New("only admins can specify entity")
+		}
+	}
+	return macaroons.EntityFromContext(ctx), nil
+}
+
 func (server *routedBoltzServer) getOwnWallet(ctx context.Context, name string, readonly bool) (*wallet.Wallet, error) {
-	existing, err := server.getWallet(ctx, "", name, readonly)
+	existing, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
+		Name:     name,
+		Readonly: readonly,
+		EntityId: macaroons.EntityFromContext(ctx),
+	})
 	if err != nil {
 		return nil, err
 	}

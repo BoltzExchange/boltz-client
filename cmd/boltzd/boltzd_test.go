@@ -275,7 +275,7 @@ func TestEntities(t *testing.T) {
 
 		wallets, err = client.GetWallets(nil, true)
 		require.NoError(t, err)
-		require.Len(t, wallets.Wallets, 3)
+		require.Len(t, wallets.Wallets, 2)
 	})
 
 	t.Run("Swaps", func(t *testing.T) {

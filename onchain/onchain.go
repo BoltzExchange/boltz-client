@@ -116,7 +116,7 @@ func (checker *WalletChecker) Allowed(wallet Wallet) bool {
 		(info.Currency == checker.Currency || checker.Currency == "") &&
 		(info.Name == checker.Name || checker.Name == "") &&
 		(!info.Readonly || checker.Readonly) &&
-		(checker.EntityId == nil || (info.EntityId != nil && *info.EntityId == *checker.EntityId))
+		(info.EntityId == checker.EntityId || (info.EntityId != nil && checker.EntityId != nil && *info.EntityId == *checker.EntityId))
 }
 
 func (onchain *Onchain) GetAnyWallet(checker WalletChecker) (Wallet, error) {

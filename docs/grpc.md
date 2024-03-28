@@ -728,6 +728,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `currency` | [`Currency`](#currency) | optional |  |
 | `include_readonly` | [`bool`](#bool) | optional |  |
+| `entity` | [`string`](#string) | optional |  |
 
 
 
@@ -799,6 +800,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `to` | [`Currency`](#currency) | optional |  |
 | `is_auto` | [`bool`](#bool) | optional |  |
 | `state` | [`SwapState`](#swapstate) | optional |  |
+| `entity` | [`string`](#string) | optional |  |
 
 
 

@@ -362,6 +362,7 @@ message ListSwapsRequest {
     optional Currency to = 2;
     optional bool is_auto = 3;
     optional SwapState state = 4;
+    optional string entity = 5;
 }
 message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
@@ -540,6 +541,7 @@ message ImportWalletResponse {}
 message GetWalletsRequest {
     optional Currency currency = 1;
     optional bool include_readonly = 2;
+    optional string entity = 3;
 }
 
 message GetWalletRequest {
