@@ -52,7 +52,7 @@ func serializePair(pair boltz.Pair) *boltzrpc.Pair {
 	}
 }
 
-func (server *routedBoltzServer) serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
+func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	if swap == nil {
 		return nil
 	}
@@ -79,16 +79,7 @@ func (server *routedBoltzServer) serializeSwap(swap *database.Swap) *boltzrpc.Sw
 		CreatedAt:           serializeTime(swap.CreatedAt),
 		ServiceFee:          serializedSwap.ServiceFee,
 		OnchainFee:          serializedSwap.OnchainFee,
-		// TODO: get name from onchain
-		// Wallet:              serializeOptionalString(serializedSwap.WalletId),
-	}
-
-	if serializedSwap.WalletId != nil {
-		wallet, err := server.onchain.GetWalletById(*serializedSwap.WalletId)
-		if err == nil {
-			name := wallet.GetWalletInfo().Name
-			serialized.Wallet = &name
-		}
+		WalletId:            serializedSwap.WalletId,
 	}
 
 	return serialized

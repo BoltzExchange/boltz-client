@@ -41,6 +41,7 @@ type AutoSwapper struct {
 	stop       chan bool
 	configPath string
 	err        error
+	walletId   *int64
 
 	ExecuteSwap        func(request *boltzrpc.CreateSwapRequest) error
 	ExecuteReverseSwap func(request *boltzrpc.CreateReverseSwapRequest) error
@@ -285,10 +286,10 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 		err = swapper.ExecuteReverseSwap(&boltzrpc.CreateReverseSwapRequest{
 			Amount:         int64(recommendation.Amount),
 			Address:        address,
-			AcceptZeroConf: bool(swapper.cfg.AcceptZeroConf),
+			AcceptZeroConf: swapper.cfg.AcceptZeroConf,
 			Pair:           pair,
 			ChanIds:        chanIds,
-			Wallet:         &swapper.cfg.Wallet,
+			WalletId:       swapper.walletId,
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
 		err = swapper.ExecuteSwap(&boltzrpc.CreateSwapRequest{
@@ -296,7 +297,7 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 			Pair:   pair,
 			//ChanIds:          chanIds,
 			SendFromInternal: true,
-			Wallet:           &swapper.cfg.Wallet,
+			WalletId:         swapper.walletId,
 		})
 	}
 	return err
@@ -344,6 +345,9 @@ func (swapper *AutoSwapper) Start() error {
 		} else {
 			err = nil
 		}
+	} else {
+		id := wallet.GetWalletInfo().Id
+		swapper.walletId = &id
 	}
 
 	swapper.err = err

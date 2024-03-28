@@ -128,11 +128,7 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 		server.GracefulStop()
 	}()
 
-	clientConn := client.Connection{
-		ClientConn:   conn,
-		Ctx:          context.Background(),
-		MacaroonPath: "./test/macaroons/admin.macaroon",
-	}
+	clientConn := client.Connection{ClientConn: conn}
 	macaroonFile, err := os.ReadFile("./test/macaroons/admin.macaroon")
 	require.NoError(t, err)
 	macaroon := metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
@@ -242,14 +238,15 @@ func TestEntities(t *testing.T) {
 
 	entityName := "test"
 
-	_, err := admin.CreateEntity(entityName)
+	entityInfo, err := admin.CreateEntity(entityName)
 	require.NoError(t, err)
+	require.NotZero(t, entityInfo.Id)
 
-	write, err := admin.BakeMacaroon(entityName, boltzrpc.MacaroonPermissions_WRITE)
+	write, err := admin.BakeMacaroon(entityInfo.Id, boltzrpc.MacaroonPermissions_WRITE)
 	require.NoError(t, err)
 	require.NotZero(t, write.Macaroon)
 
-	readonly, err := admin.BakeMacaroon(entityName, boltzrpc.MacaroonPermissions_READ)
+	readonly, err := admin.BakeMacaroon(entityInfo.Id, boltzrpc.MacaroonPermissions_READ)
 	require.NoError(t, err)
 	require.NotZero(t, write.Macaroon)
 
@@ -267,7 +264,7 @@ func TestEntities(t *testing.T) {
 	readEntity := admin
 	readEntity.Ctx = readCtx
 
-	_, err = entity.BakeMacaroon(entityName, boltzrpc.MacaroonPermissions_WRITE)
+	_, err = entity.BakeMacaroon(entityInfo.Id, boltzrpc.MacaroonPermissions_WRITE)
 	require.Error(t, err)
 
 	t.Run("Info", func(t *testing.T) {
@@ -468,7 +465,7 @@ func TestSwap(t *testing.T) {
 
 		excpectedFees := swap.ExpectedAmount - int64(invoice.MilliSat.ToSatoshis())
 		actualFees := *swap.OnchainFee + *swap.ServiceFee
-		if swap.Wallet != nil {
+		if swap.WalletId != nil {
 			lockupFee, err := chain.GetTransactionFee(parseCurrency(swap.Pair.From), swap.LockupTransactionId)
 			require.NoError(t, err)
 
@@ -571,7 +568,7 @@ func TestSwap(t *testing.T) {
 		stream(boltzrpc.SwapState_PENDING)
 		test.MineBlock()
 		info := stream(boltzrpc.SwapState_SUCCESSFUL)
-		require.Empty(t, info.Swap.Wallet)
+		require.Empty(t, info.Swap.WalletId)
 	})
 
 	for _, node := range nodes {

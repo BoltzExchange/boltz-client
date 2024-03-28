@@ -118,8 +118,11 @@ type BoltzClient interface {
 	VerifyWalletPassword(ctx context.Context, in *VerifyWalletPasswordRequest, opts ...grpc.CallOption) (*VerifyWalletPasswordResponse, error)
 	// Changes the password for wallet encryption.
 	ChangeWalletPassword(ctx context.Context, in *ChangeWalletPasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Creates a new entity which can be used to bake restricted macaroons.
 	CreateEntity(ctx context.Context, in *CreateEntityRequest, opts ...grpc.CallOption) (*EntityInfo, error)
+	// Returns all entities.
 	GetEntities(ctx context.Context, in *GetEntitiesRequest, opts ...grpc.CallOption) (*GetEntitiesResponse, error)
+	// Bakes a new macaroon for a given entity with the specified permissions.
 	BakeMacaroon(ctx context.Context, in *BakeMacaroonRequest, opts ...grpc.CallOption) (*BakeMacaroonResponse, error)
 }
 
@@ -477,8 +480,11 @@ type BoltzServer interface {
 	VerifyWalletPassword(context.Context, *VerifyWalletPasswordRequest) (*VerifyWalletPasswordResponse, error)
 	// Changes the password for wallet encryption.
 	ChangeWalletPassword(context.Context, *ChangeWalletPasswordRequest) (*empty.Empty, error)
+	// Creates a new entity which can be used to bake restricted macaroons.
 	CreateEntity(context.Context, *CreateEntityRequest) (*EntityInfo, error)
+	// Returns all entities.
 	GetEntities(context.Context, *GetEntitiesRequest) (*GetEntitiesResponse, error)
+	// Bakes a new macaroon for a given entity with the specified permissions.
 	BakeMacaroon(context.Context, *BakeMacaroonRequest) (*BakeMacaroonResponse, error)
 	mustEmbedUnimplementedBoltzServer()
 }

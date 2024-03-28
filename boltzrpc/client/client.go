@@ -63,7 +63,7 @@ func (boltz *Boltz) CreateReverseSwap(request *boltzrpc.CreateReverseSwapRequest
 	return boltz.Client.CreateReverseSwap(boltz.Ctx, request)
 }
 func (boltz *Boltz) GetWallet(name string) (*boltzrpc.Wallet, error) {
-	return boltz.Client.GetWallet(boltz.Ctx, &boltzrpc.GetWalletRequest{Name: name})
+	return boltz.Client.GetWallet(boltz.Ctx, &boltzrpc.GetWalletRequest{Name: &name})
 }
 
 func (boltz *Boltz) GetWallets(currency *boltzrpc.Currency, includeReadonly bool) (*boltzrpc.Wallets, error) {
@@ -129,6 +129,6 @@ func (boltz *Boltz) CreateEntity(name string) (*boltzrpc.EntityInfo, error) {
 	return boltz.Client.CreateEntity(boltz.Ctx, &boltzrpc.CreateEntityRequest{Name: name})
 }
 
-func (boltz *Boltz) BakeMacaroon(entity string, permissions boltzrpc.MacaroonPermissions) (*boltzrpc.BakeMacaroonResponse, error) {
-	return boltz.Client.BakeMacaroon(boltz.Ctx, &boltzrpc.BakeMacaroonRequest{Entity: entity, Permissions: permissions})
+func (boltz *Boltz) BakeMacaroon(entityId int64, permissions boltzrpc.MacaroonPermissions) (*boltzrpc.BakeMacaroonResponse, error) {
+	return boltz.Client.BakeMacaroon(boltz.Ctx, &boltzrpc.BakeMacaroonRequest{EntityId: entityId, Permissions: permissions})
 }

@@ -167,7 +167,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	var err error
-	args.EntityId, err = server.getEntity(ctx, request.Entity)
+	args.EntityId, err = server.validateEntityId(ctx, request.EntityId)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -188,7 +188,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, swap := range swaps {
-		response.Swaps = append(response.Swaps, server.serializeSwap(&swap))
+		response.Swaps = append(response.Swaps, serializeSwap(&swap))
 	}
 
 	// Reverse Swaps
@@ -236,7 +236,7 @@ func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrp
 		return nil, handleError(errors.New("could not find Swap with ID " + request.Id))
 	}
 	return &boltzrpc.GetSwapInfoResponse{
-		Swap:        server.serializeSwap(swap),
+		Swap:        serializeSwap(swap),
 		ReverseSwap: serializeReverseSwap(reverseSwap),
 	}, nil
 }
@@ -265,7 +265,7 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 
 	for update := range updates {
 		if err := stream.Send(&boltzrpc.GetSwapInfoResponse{
-			Swap:        server.serializeSwap(update.Swap),
+			Swap:        serializeSwap(update.Swap),
 			ReverseSwap: serializeReverseSwap(update.ReverseSwap),
 		}); err != nil {
 			stop()
@@ -351,7 +351,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
 		Currency:      pair.From,
-		Name:          request.GetWallet(),
+		Id:            request.WalletId,
 		AllowReadonly: false,
 		EntityId:      macaroons.EntityFromContext(ctx),
 	})
@@ -513,7 +513,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	} else {
 		wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
 			Currency:      pair.To,
-			Name:          request.GetWallet(),
+			Id:            request.WalletId,
 			AllowReadonly: true,
 			EntityId:      macaroons.EntityFromContext(ctx),
 		})
@@ -747,7 +747,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 	if err := server.importWallet(ctx, credentials, request.GetPassword()); err != nil {
 		return nil, handleError(err)
 	}
-	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Name: request.Info.Name})
+	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Name: &request.Info.Name})
 }
 
 func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *boltzrpc.SetSubaccountRequest) (*boltzrpc.Subaccount, error) {
@@ -852,7 +852,8 @@ func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.
 
 func (server *routedBoltzServer) GetWallet(ctx context.Context, request *boltzrpc.GetWalletRequest) (*boltzrpc.Wallet, error) {
 	wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:          request.Name,
+		Name:          request.GetName(),
+		Id:            request.Id,
 		AllowReadonly: true,
 		EntityId:      macaroons.EntityFromContext(ctx),
 	})
@@ -870,20 +871,9 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 		AllowReadonly: request.GetIncludeReadonly(),
 	}
 	var err error
-	checker.EntityId, err = server.getEntity(ctx, request.Entity)
+	checker.EntityId, err = server.validateEntityId(ctx, request.EntityId)
 	if err != nil {
 		return nil, handleError(err)
-	}
-	if request.Entity != nil {
-		if isAdmin(ctx) {
-			entity, err := server.database.GetEntityByName(request.GetEntity())
-			if err != nil {
-				return nil, handleError(fmt.Errorf("could not get entity %s: %w", request.GetEntity(), err))
-			}
-			checker.EntityId = &entity.Id
-		} else {
-			return nil, handleError(errors.New("only admins can specify entity"))
-		}
 	}
 	for _, current := range server.onchain.GetWallets(checker) {
 		wallet, err := server.serializeWallet(current)
@@ -1105,16 +1095,16 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 	}
 }
 
-func (server *routedBoltzServer) getEntity(ctx context.Context, entityName *string) (*int64, error) {
-	if entityName != nil {
+func (server *routedBoltzServer) validateEntityId(ctx context.Context, entityId *int64) (*int64, error) {
+	if entityId != nil {
 		if isAdmin(ctx) {
-			entity, err := server.database.GetEntityByName(*entityName)
+			entity, err := server.database.GetEntity(*entityId)
 			if err != nil {
-				return nil, fmt.Errorf("could not get entity %s: %w", *entityName, err)
+				return nil, fmt.Errorf("could not find entity %d: %w", *entityId, err)
 			}
 			return &entity.Id, nil
 		} else {
-			return nil, errors.New("only admins can specify entity")
+			return nil, errors.New("only admins can specify an entity")
 		}
 	}
 	return macaroons.EntityFromContext(ctx), nil
@@ -1226,12 +1216,12 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 		return nil, handleError(errors.New("only admin can bake macaroons"))
 	}
 
-	entity, err := server.database.GetEntityByName(request.Entity)
+	entityId, err := server.validateEntityId(ctx, &request.EntityId)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	mac, err := server.macaroon.NewMacaroon(&entity.Id, permission...)
+	mac, err := server.macaroon.NewMacaroon(entityId, permission...)
 	if err != nil {
 		return nil, handleError(err)
 	}
