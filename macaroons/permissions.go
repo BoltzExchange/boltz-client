@@ -1,9 +1,12 @@
 package macaroons
 
-import "gopkg.in/macaroon-bakery.v2/bakery"
+import (
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+)
 
 var (
-	ReadPermissions = []bakery.Op{
+	EntityReadPermissions = []bakery.Op{
 		{
 			Entity: "info",
 			Action: "read",
@@ -13,37 +16,45 @@ var (
 			Action: "read",
 		},
 		{
-			Entity: "liquid",
+			Entity: "wallet",
+			Action: "read",
+		},
+	}
+	EntityWritePermissions = []bakery.Op{
+		{
+			Entity: "info",
+			Action: "write",
+		},
+		{
+			Entity: "swap",
+			Action: "write",
+		},
+		{
+			Entity: "wallet",
+			Action: "write",
+		},
+	}
+	ReadPermissions = append([]bakery.Op{
+		{
+			Entity: "admin",
 			Action: "read",
 		},
 		{
 			Entity: "autoswap",
 			Action: "read",
 		},
-	}
+	}, EntityReadPermissions...)
 
-	WritePermissions = []bakery.Op{
-		{
-			Entity: "info",
-			Action: "write",
-		},
+	WritePermissions = append([]bakery.Op{
 		{
 			Entity: "admin",
 			Action: "write",
 		},
 		{
-			Entity: "swap",
-			Action: "write",
-		},
-		{
-			Entity: "liquid",
-			Action: "write",
-		},
-		{
 			Entity: "autoswap",
 			Action: "write",
 		},
-	}
+	}, EntityWritePermissions...)
 
 	RPCServerPermissions = map[string][]bakery.Op{
 		"/boltzrpc.Boltz/GetInfo": {{
@@ -99,63 +110,63 @@ var (
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/CreateWallet": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/ImportWallet": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/SetSubaccount": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/GetSubaccounts": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "read",
 		}},
 		"/boltzrpc.Boltz/RemoveWallet": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/GetWalletCredentials": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/GetWallets": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "read",
 		}},
 		"/boltzrpc.Boltz/GetWallet": {{
-			Entity: "liquid",
+			Entity: "wallet",
 			Action: "read",
 		}},
 		"/boltzrpc.Boltz/Stop": {{
-			Entity: "info",
+			Entity: "admin",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/Unlock": {{
-			Entity: "info",
+			Entity: "admin",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/ChangeWalletPassword": {{
-			Entity: "info",
+			Entity: "admin",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/VerifyWalletPassword": {{
-			Entity: "info",
+			Entity: "admin",
 			Action: "read",
 		}},
 		"/boltzrpc.Boltz/CreateEntity": {{
-			Entity: "info",
+			Entity: "admin",
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/GetEntities": {{
-			Entity: "info",
-			Action: "write",
+			Entity: "admin",
+			Action: "read",
 		}},
 		"/boltzrpc.Boltz/BakeMacaroon": {{
-			Entity: "info",
+			Entity: "admin",
 			Action: "write",
 		}},
 		"/autoswaprpc.AutoSwap/GetSwapRecommendations": {{
@@ -195,4 +206,12 @@ func AdminPermissions() []bakery.Op {
 	copy(admin[len(ReadPermissions):], WritePermissions)
 
 	return admin
+}
+
+func EntityPermissions(permissions boltzrpc.MacaroonPermissions) []bakery.Op {
+	result := append([]bakery.Op{}, EntityReadPermissions...)
+	if permissions == boltzrpc.MacaroonPermissions_WRITE {
+		result = append(result, EntityWritePermissions...)
+	}
+	return result
 }

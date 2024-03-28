@@ -250,6 +250,7 @@ Changes the password for wallet encryption.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `entity` | [`string`](#string) |  |  |
+| `permissions` | [`MacaroonPermissions`](#macaroonpermissions) |  |  |
 
 
 
@@ -262,8 +263,7 @@ Changes the password for wallet encryption.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `admin_macaroon` | [`string`](#string) |  |  |
-| `readonly_macaroon` | [`string`](#string) |  |  |
+| `macaroon` | [`string`](#string) |  |  |
 
 
 
@@ -1182,6 +1182,16 @@ Submarine Pair
 | ---- | ------ | ----------- |
 | BTC | 0 |  |
 | LBTC | 1 |  |
+
+
+
+#### MacaroonPermissions
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| READ | 0 |  |
+| WRITE | 1 |  |
 
 
 

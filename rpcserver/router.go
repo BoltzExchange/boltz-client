@@ -1220,7 +1220,7 @@ func isAdmin(ctx context.Context) bool {
 }
 
 func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {
-	permission := macaroons.AdminPermissions()
+	permission := macaroons.EntityPermissions(request.Permissions)
 
 	if !isAdmin(ctx) {
 		return nil, handleError(errors.New("only admin can bake macaroons"))
@@ -1240,7 +1240,7 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 		return nil, handleError(err)
 	}
 	return &boltzrpc.BakeMacaroonResponse{
-		AdminMacaroon: hex.EncodeToString(macBytes),
+		Macaroon: hex.EncodeToString(macBytes),
 	}, nil
 }
 

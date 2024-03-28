@@ -162,12 +162,17 @@ message EntityInfo {
     string name = 2;
 }
 
+enum MacaroonPermissions {
+    READ = 0;
+    WRITE = 1;
+}
+
 message BakeMacaroonRequest {
     string entity = 1;
+    MacaroonPermissions permissions = 2;
 }
 message BakeMacaroonResponse {
-    string admin_macaroon = 1;
-    string readonly_macaroon = 2;
+    string macaroon = 1;
 }
 
 enum SwapState {

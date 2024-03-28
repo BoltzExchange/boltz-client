@@ -237,69 +237,96 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestEntities(t *testing.T) {
-	client, _, stop := setup(t, nil, "")
+	admin, adminAuto, stop := setup(t, nil, "")
 	defer stop()
 
 	entityName := "test"
 
-	_, err := client.CreateEntity(entityName)
+	_, err := admin.CreateEntity(entityName)
 	require.NoError(t, err)
 
-	response, err := client.BakeMacaroon(entityName)
+	write, err := admin.BakeMacaroon(entityName, boltzrpc.MacaroonPermissions_WRITE)
 	require.NoError(t, err)
-	require.NotZero(t, response.AdminMacaroon)
+	require.NotZero(t, write.Macaroon)
 
-	pairs := metadata.Pairs("macaroon", response.AdminMacaroon)
-	restrictedClient := client
-	restrictedClient.Ctx = metadata.NewOutgoingContext(context.Background(), pairs)
+	readonly, err := admin.BakeMacaroon(entityName, boltzrpc.MacaroonPermissions_READ)
+	require.NoError(t, err)
+	require.NotZero(t, write.Macaroon)
 
-	_, err = restrictedClient.BakeMacaroon(entityName)
+	pairs := metadata.Pairs("macaroon", write.Macaroon)
+	restrictedCtx := metadata.NewOutgoingContext(context.Background(), pairs)
+	pairs = metadata.Pairs("macaroon", readonly.Macaroon)
+	readCtx := metadata.NewOutgoingContext(context.Background(), pairs)
+
+	entity := admin
+	entity.Ctx = restrictedCtx
+
+	entityAuto := adminAuto
+	entityAuto.Ctx = restrictedCtx
+
+	readEntity := admin
+	readEntity.Ctx = readCtx
+
+	_, err = entity.BakeMacaroon(entityName, boltzrpc.MacaroonPermissions_WRITE)
 	require.Error(t, err)
 
 	t.Run("Info", func(t *testing.T) {
-		info, err := restrictedClient.GetInfo()
+		info, err := readEntity.GetInfo()
 		require.NoError(t, err)
 		require.Empty(t, info.NodePubkey)
 	})
 
+	t.Run("AutoSwap", func(t *testing.T) {
+		_, err := entityAuto.GetConfig()
+		require.Error(t, err)
+	})
+
 	t.Run("Wallet", func(t *testing.T) {
-		_, err = restrictedClient.GetWallet(walletName)
+		_, err = entity.GetWallet(walletName)
 		require.Error(t, err)
 
-		_, err = restrictedClient.CreateWallet(walletInfo, "")
+		_, err = readEntity.CreateWallet(walletInfo, "")
+		require.Error(t, err)
+
+		_, err = entity.CreateWallet(walletInfo, "")
 		require.NoError(t, err)
 
-		wallets, err := restrictedClient.GetWallets(nil, true)
+		wallets, err := entity.GetWallets(nil, true)
 		require.NoError(t, err)
 		require.Len(t, wallets.Wallets, 1)
 
-		wallets, err = client.GetWallets(nil, true)
+		wallets, err = admin.GetWallets(nil, true)
 		require.NoError(t, err)
 		require.Len(t, wallets.Wallets, 2)
 	})
 
 	t.Run("Swaps", func(t *testing.T) {
-		_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{})
+		_, err = admin.CreateSwap(&boltzrpc.CreateSwapRequest{})
 		require.NoError(t, err)
-		_, err = client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
+		_, err = admin.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
 		require.NoError(t, err)
 
-		swaps, err := restrictedClient.ListSwaps(&boltzrpc.ListSwapsRequest{})
+		swaps, err := readEntity.ListSwaps(&boltzrpc.ListSwapsRequest{})
 		require.NoError(t, err)
 		require.Empty(t, swaps.Swaps)
 		require.Empty(t, swaps.ReverseSwaps)
 
-		_, err = restrictedClient.CreateSwap(&boltzrpc.CreateSwapRequest{})
-		require.Error(t, err, "no lightning node available, invoice required")
+		_, err = readEntity.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+			Amount: 100000,
+		})
+		require.Error(t, err)
 
 		externalPay := false
-		_, err = restrictedClient.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+		_, err = entity.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
 			Amount:      100000,
 			ExternalPay: &externalPay,
 		})
 		require.Errorf(t, err, "no lightning node available, external pay required")
 
-		swaps, err = client.ListSwaps(&boltzrpc.ListSwapsRequest{})
+		_, err = entity.CreateSwap(&boltzrpc.CreateSwapRequest{})
+		require.Error(t, err, "no lightning node available, invoice required")
+
+		swaps, err = admin.ListSwaps(&boltzrpc.ListSwapsRequest{})
 		require.NoError(t, err)
 		require.Len(t, swaps.Swaps, 1)
 		require.Len(t, swaps.ReverseSwaps, 1)

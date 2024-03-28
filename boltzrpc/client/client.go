@@ -129,6 +129,6 @@ func (boltz *Boltz) CreateEntity(name string) (*boltzrpc.EntityInfo, error) {
 	return boltz.Client.CreateEntity(boltz.Ctx, &boltzrpc.CreateEntityRequest{Name: name})
 }
 
-func (boltz *Boltz) BakeMacaroon(entity string) (*boltzrpc.BakeMacaroonResponse, error) {
-	return boltz.Client.BakeMacaroon(boltz.Ctx, &boltzrpc.BakeMacaroonRequest{Entity: entity})
+func (boltz *Boltz) BakeMacaroon(entity string, permissions boltzrpc.MacaroonPermissions) (*boltzrpc.BakeMacaroonResponse, error) {
+	return boltz.Client.BakeMacaroon(boltz.Ctx, &boltzrpc.BakeMacaroonRequest{Entity: entity, Permissions: permissions})
 }
