@@ -7,9 +7,9 @@
 package boltzrpc
 
 import (
+	empty "github.com/golang/protobuf/ptypes/empty"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -856,7 +856,7 @@ type GetInfoResponse struct {
 	AutoSwapStatus string `protobuf:"bytes,11,opt,name=auto_swap_status,json=autoSwapStatus,proto3" json:"auto_swap_status,omitempty"`
 	// mapping of the currency to the latest block height.
 	BlockHeights *BlockHeights `protobuf:"bytes,8,opt,name=block_heights,json=blockHeights,proto3" json:"block_heights,omitempty"`
-	// swaps that need a manual refund
+	// swaps that need a manual interaction to refund
 	RefundableSwaps []string `protobuf:"bytes,12,rep,name=refundable_swaps,json=refundableSwaps,proto3" json:"refundable_swaps,omitempty"`
 	// Deprecated: Marked as deprecated in boltzrpc.proto.
 	Symbol string `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
@@ -4634,7 +4634,7 @@ var file_boltzrpc_proto_goTypes = []interface{}{
 	(*SubmarinePair_Fees)(nil),           // 55: boltzrpc.SubmarinePair.Fees
 	(*ReversePair_Fees)(nil),             // 56: boltzrpc.ReversePair.Fees
 	(*ReversePair_Fees_MinerFees)(nil),   // 57: boltzrpc.ReversePair.Fees.MinerFees
-	(*emptypb.Empty)(nil),                // 58: google.protobuf.Empty
+	(*empty.Empty)(nil),                  // 58: google.protobuf.Empty
 }
 var file_boltzrpc_proto_depIdxs = []int32{
 	1,  // 0: boltzrpc.Pair.from:type_name -> boltzrpc.Currency
