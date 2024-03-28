@@ -25,22 +25,9 @@ func (service *Service) Init() {
 		database: service.Database,
 	}
 
-	checker := checkers.New(nil)
-	// checker.Register(entityContextKey.Name, checkers.StdNamespace, func(ctx context.Context, cond, arg string) error {
-	// 	if cond == checkers.CondDeclared {
-	// 		split := strings.Split(arg, " ")
-	// 		if split[0] == entityContextKey.Name {
-	// 			fmt.Println("Adding entity to context", split[1])
-	// 			ctx = addEntityToContext(ctx, split[1])
-	// 		}
-	// 	}
-	// 	return nil
-	// })
-
 	macaroonParams := bakery.BakeryParams{
 		Location:     "boltz",
 		RootKeyStore: &rootKeyStorage,
-		Checker:      bakery.NewChecker(bakery.CheckerParams{Checker: checker}),
 	}
 
 	service.bakery = bakery.New(macaroonParams)

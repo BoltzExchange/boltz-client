@@ -58,14 +58,6 @@ func (c *Cln) Ready() bool {
 	return c.Client != nil
 }
 
-func (c *Cln) Readonly() bool {
-	return false
-}
-
-func (c *Cln) Currency() boltz.Currency {
-	return boltz.CurrencyBtc
-}
-
 func (c *Cln) Connect() error {
 	caFile, err := os.ReadFile(c.RootCert)
 	if err != nil {
