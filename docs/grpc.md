@@ -239,7 +239,7 @@ Get a specifiy entity.
 
 #### BakeMacaroon
 
-Bakes a new macaroon for a given entity with the specified permissions.
+Bakes a new macaroon for a given entity with the specified permissions. Any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities. The underlying lightning node of the daemon can not be used to pay or create invocies for swaps.
 
 | Request | Response |
 | ------- | -------- |
@@ -258,7 +258,7 @@ Bakes a new macaroon for a given entity with the specified permissions.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `entity_id` | [`int64`](#int64) |  |  |
-| `permissions` | [`MacaroonPermissions`](#macaroonpermissions) |  |  |
+| `permissions` | [`MacaroonPermissions`](#macaroonpermissions) | repeated |  |
 
 
 
@@ -835,6 +835,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### MacaroonPermissions
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `action` | [`MacaroonAction`](#macaroonaction) |  |  |
+
+
+
+
+
 #### MinerFees
 
 
@@ -1200,7 +1213,7 @@ Submarine Pair
 
 
 
-#### MacaroonPermissions
+#### MacaroonAction
 
 
 | Name | Number | Description |

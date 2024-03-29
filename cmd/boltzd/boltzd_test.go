@@ -242,11 +242,18 @@ func TestEntities(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, entityInfo.Id)
 
-	write, err := admin.BakeMacaroon(entityInfo.Id, boltzrpc.MacaroonPermissions_WRITE)
+	adminPermissions := []*boltzrpc.MacaroonPermissions{
+		{Action: boltzrpc.MacaroonAction_READ},
+		{Action: boltzrpc.MacaroonAction_WRITE},
+	}
+
+	write, err := admin.BakeMacaroon(entityInfo.Id, adminPermissions)
 	require.NoError(t, err)
 	require.NotZero(t, write.Macaroon)
 
-	readonly, err := admin.BakeMacaroon(entityInfo.Id, boltzrpc.MacaroonPermissions_READ)
+	readonly, err := admin.BakeMacaroon(entityInfo.Id, []*boltzrpc.MacaroonPermissions{
+		{Action: boltzrpc.MacaroonAction_READ},
+	})
 	require.NoError(t, err)
 	require.NotZero(t, write.Macaroon)
 
@@ -265,7 +272,7 @@ func TestEntities(t *testing.T) {
 	readEntity.Ctx = readCtx
 
 	t.Run("Admin", func(t *testing.T) {
-		_, err = entity.BakeMacaroon(entityInfo.Id, boltzrpc.MacaroonPermissions_WRITE)
+		_, err = entity.BakeMacaroon(entityInfo.Id, adminPermissions)
 		require.Error(t, err)
 
 		_, err = entity.GetEntity(entityInfo.Name)

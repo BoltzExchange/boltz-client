@@ -137,6 +137,6 @@ func (boltz *Boltz) ListEntities() (*boltzrpc.ListEntitiesResponse, error) {
 	return boltz.Client.ListEntities(boltz.Ctx, &boltzrpc.ListEntitiesRequest{})
 }
 
-func (boltz *Boltz) BakeMacaroon(entityId int64, permissions boltzrpc.MacaroonPermissions) (*boltzrpc.BakeMacaroonResponse, error) {
+func (boltz *Boltz) BakeMacaroon(entityId int64, permissions []*boltzrpc.MacaroonPermissions) (*boltzrpc.BakeMacaroonResponse, error) {
 	return boltz.Client.BakeMacaroon(boltz.Ctx, &boltzrpc.BakeMacaroonRequest{EntityId: entityId, Permissions: permissions})
 }

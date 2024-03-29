@@ -126,6 +126,8 @@ type BoltzClient interface {
 	// Get a specifiy entity.
 	GetEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (*Entity, error)
 	// Bakes a new macaroon for a given entity with the specified permissions.
+	// Any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities.
+	// The underlying lightning node of the daemon can not be used to pay or create invocies for swaps.
 	BakeMacaroon(ctx context.Context, in *BakeMacaroonRequest, opts ...grpc.CallOption) (*BakeMacaroonResponse, error)
 }
 
@@ -499,6 +501,8 @@ type BoltzServer interface {
 	// Get a specifiy entity.
 	GetEntity(context.Context, *GetEntityRequest) (*Entity, error)
 	// Bakes a new macaroon for a given entity with the specified permissions.
+	// Any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities.
+	// The underlying lightning node of the daemon can not be used to pay or create invocies for swaps.
 	BakeMacaroon(context.Context, *BakeMacaroonRequest) (*BakeMacaroonResponse, error)
 	mustEmbedUnimplementedBoltzServer()
 }
