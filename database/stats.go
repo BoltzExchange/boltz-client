@@ -4,18 +4,19 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 )
 
-func (database *Database) QueryStats(args SwapQuery) (*boltzrpc.SwapStats, error) {
-	where, values := args.ToWhereClause()
-	query := `
-		SELECT COALESCE(SUM(serviceFee + onchainFee), 0), COALESCE(SUM(expectedAmount), 0), COUNT(*)
-		FROM (SELECT serviceFee, onchainFee, expectedAmount, isAuto, createdAt
-			  FROM swaps
-			  UNION ALL
-			  SELECT serviceFee, onchainFee + (routingFeeMsat / 1000), expectedAmount, isAuto, createdAt
-			  FROM reverseSwaps) stats
-		` + where
+const statsQuery = `
+SELECT COALESCE(SUM(serviceFee + onchainFee), 0), COALESCE(SUM(expectedAmount), 0), COUNT(*)
+FROM (SELECT serviceFee, onchainFee, expectedAmount, isAuto, createdAt, false isChain
+      FROM swaps
+      UNION ALL
+      SELECT serviceFee, onchainFee + (routingFeeMsat / 1000), expectedAmount, isAuto, createdAt, false isChain
+      FROM reverseSwaps
+      ) stats
+`
 
-	rows := database.QueryRow(query, values...)
+func (database *Database) QueryStats(args SwapQuery, chainOnly bool) (*boltzrpc.SwapStats, error) {
+	where, values := args.ToWhereClause()
+	rows := database.QueryRow(statsQuery+where, values...)
 
 	stats := boltzrpc.SwapStats{}
 

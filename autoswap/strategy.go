@@ -8,9 +8,9 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
-type Strategy = func(channels []*lightning.LightningChannel) []*rawRecommendation
+type Strategy = func(channels []*lightning.LightningChannel) []*lightningRecommendation
 
-func (cfg *Config) channelRecommendation(channel *lightning.LightningChannel) (recommendation *rawRecommendation) {
+func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningChannel) (recommendation *lightningRecommendation) {
 	upper := channel.Capacity
 	lower := uint64(0)
 
@@ -27,9 +27,9 @@ func (cfg *Config) channelRecommendation(channel *lightning.LightningChannel) (r
 	} else if channel.LocalSat < lower {
 		swapType = boltz.NormalSwap
 	}
-	if swapType != "" && (swapType == cfg.swapType || cfg.swapType == "") {
+	if swapType != "" && cfg.Allowed(swapType) {
 		target := float64(upper+lower) / 2
-		recommendation = &rawRecommendation{
+		recommendation = &lightningRecommendation{
 			Type:   swapType,
 			Amount: uint64(math.Abs(float64(channel.LocalSat) - target)),
 		}
@@ -40,8 +40,8 @@ func (cfg *Config) channelRecommendation(channel *lightning.LightningChannel) (r
 	return recommendation
 }
 
-func (cfg *Config) totalBalanceStrategy(channels []*lightning.LightningChannel) []*rawRecommendation {
-	var recommendations []*rawRecommendation
+func (cfg *LightningConfig) totalBalanceStrategy(channels []*lightning.LightningChannel) []*lightningRecommendation {
+	var recommendations []*lightningRecommendation
 
 	var total lightning.LightningChannel
 
@@ -61,8 +61,8 @@ func (cfg *Config) totalBalanceStrategy(channels []*lightning.LightningChannel) 
 	return recommendations
 }
 
-func (cfg *Config) perChannelStrategy(channels []*lightning.LightningChannel) []*rawRecommendation {
-	var recommendations []*rawRecommendation
+func (cfg *LightningConfig) perChannelStrategy(channels []*lightning.LightningChannel) []*lightningRecommendation {
+	var recommendations []*lightningRecommendation
 
 	for _, channel := range channels {
 		recommendation := cfg.channelRecommendation(channel)

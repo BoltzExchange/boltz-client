@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/autoswap"
+	"google.golang.org/protobuf/proto"
 	"io"
 	"os"
 	"path"
@@ -21,7 +23,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/BurntSushi/toml"
 	"github.com/briandowns/spinner"
@@ -405,29 +406,20 @@ var autoSwapCommands = &cli.Command{
 			Name:   "setup",
 			Usage:  "Setup autoswap interactively",
 			Action: autoSwapSetup,
+			Subcommands: []*cli.Command{
+				{
+					Name:   "chain",
+					Usage:  "Setup chain configuration interactively",
+					Action: autoSwapChainSetup,
+				},
+			},
 		},
 		{
 			Name:        "config",
 			Usage:       "Manage configuration",
 			Description: configDescription,
-			Action:      autoSwapConfig,
-			ArgsUsage:   "[key] [value]",
-			BashComplete: func(ctx *cli.Context) {
-				var lastArg string
-
-				if len(os.Args) > 2 {
-					lastArg = os.Args[len(os.Args)-2]
-				}
-
-				if strings.HasPrefix(lastArg, "-") {
-					cli.DefaultCompleteWithFlags(ctx.Command)(ctx)
-				} else {
-					config := &autoswaprpc.Config{}
-					fields := config.ProtoReflect().Descriptor().Fields()
-					for i := 0; i < fields.Len(); i++ {
-						fmt.Println(fields.Get(i).JSONName())
-					}
-				}
+			Action: func(ctx *cli.Context) error {
+				return autoSwapConfig(ctx, nil)
 			},
 			Flags: []cli.Flag{
 				jsonFlag,
@@ -435,30 +427,114 @@ var autoSwapCommands = &cli.Command{
 					Name:  "reload",
 					Usage: "Reloads the config from the filesystem before any action is taken. Use if you manually changed the configuration file",
 				},
-				&cli.BoolFlag{
-					Name:  "reset",
-					Usage: "Resets to the default configuration",
+			},
+			Subcommands: []*cli.Command{
+				{
+					Name:      "ln",
+					Usage:     "Manage lightning configuration",
+					ArgsUsage: "[key] [value]",
+					Action: func(ctx *cli.Context) error {
+						return autoSwapConfig(ctx, &lightning)
+					},
+					BashComplete: func(ctx *cli.Context) {
+						var lastArg string
+
+						if len(os.Args) > 2 {
+							lastArg = os.Args[len(os.Args)-2]
+						}
+
+						if strings.HasPrefix(lastArg, "-") {
+							cli.DefaultCompleteWithFlags(ctx.Command)(ctx)
+						} else {
+							config := &autoswaprpc.LightningConfig{}
+							fields := config.ProtoReflect().Descriptor().Fields()
+							for i := 0; i < fields.Len(); i++ {
+								fmt.Println(fields.Get(i).JSONName())
+							}
+						}
+					},
+					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:  "reset",
+							Usage: "Resets to the default configuration",
+						},
+					},
+				},
+				{
+					Name:      "chain",
+					Usage:     "Manage chain configuration",
+					ArgsUsage: "[key] [value]",
+					Action: func(ctx *cli.Context) error {
+						return autoSwapConfig(ctx, &chain)
+					},
+					BashComplete: func(ctx *cli.Context) {
+						var lastArg string
+
+						if len(os.Args) > 2 {
+							lastArg = os.Args[len(os.Args)-2]
+						}
+
+						if strings.HasPrefix(lastArg, "-") {
+							cli.DefaultCompleteWithFlags(ctx.Command)(ctx)
+						} else {
+							config := &autoswaprpc.ChainConfig{}
+							fields := config.ProtoReflect().Descriptor().Fields()
+							for i := 0; i < fields.Len(); i++ {
+								fmt.Println(fields.Get(i).JSONName())
+							}
+						}
+					},
+					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:  "reset",
+							Usage: "Resets to the default configuration",
+						},
+					},
 				},
 			},
 		},
 		{
 			Name:  "enable",
 			Usage: "Enables autoswap",
-			Action: func(ctx *cli.Context) error {
-				return enableAutoSwap(ctx, true)
+			Subcommands: []*cli.Command{
+				{
+					Name: "ln",
+					Action: func(ctx *cli.Context) error {
+						return enableAutoSwap(ctx, true, lightning)
+					},
+				},
+				{
+					Name: "chain",
+					Action: func(ctx *cli.Context) error {
+						return enableAutoSwap(ctx, true, chain)
+					},
+				},
 			},
 		},
 		{
-			Name:   "disable",
-			Usage:  "Disables autoswap",
-			Action: disableAutoSwap,
+			Name:  "disable",
+			Usage: "Disables autoswap",
+			Subcommands: []*cli.Command{
+				{
+					Name: "ln",
+					Action: func(ctx *cli.Context) error {
+						return disableAutoSwap(ctx, lightning)
+					},
+				},
+				{
+					Name: "chain",
+					Action: func(ctx *cli.Context) error {
+						return disableAutoSwap(ctx, chain)
+					},
+				},
+			},
 		},
 	},
 }
 
 func listSwapRecommendations(ctx *cli.Context) error {
 	client := getAutoSwapClient(ctx)
-	list, err := client.GetSwapRecommendations(ctx.Bool("no-dismissed"))
+	list, err := client.GetRecommendations(ctx.Bool("no-dismissed"))
 
 	if err != nil {
 		return err
@@ -467,6 +543,32 @@ func listSwapRecommendations(ctx *cli.Context) error {
 	printJson(list)
 
 	return nil
+}
+
+func printStatus(prefix string, status *autoswaprpc.Status) {
+	prefix += ": "
+	if status.Running {
+		color.New(color.FgGreen, color.Bold).Println(prefix + "Running")
+	} else if status.Error != nil {
+		color.New(color.FgRed, color.Bold).Println(prefix + "Failed to start")
+		fmt.Println("Error: " + status.GetError())
+	} else {
+		color.New(color.FgYellow, color.Bold).Println(prefix + "Disabled")
+	}
+	if status.Description != "" {
+		fmt.Printf("%s\n", status.Description)
+	}
+	if status.Budget != nil {
+		yellowBold.Println("\nBudget")
+		fmt.Printf(" - From %s until %s\n", parseDate(status.Budget.StartDate), parseDate(status.Budget.EndDate))
+		fmt.Println(" - Total: " + utils.Satoshis(status.Budget.Total))
+		fmt.Println(" - Remaining: " + utils.Satoshis(status.Budget.Remaining))
+
+		yellowBold.Println("Stats")
+		fmt.Println(" - Swaps: " + strconv.Itoa(int(status.Stats.Count)))
+		fmt.Println(" - Amount: " + utils.Satoshis(status.Stats.TotalAmount) + " (avg " + utils.Satoshis(status.Stats.AvgAmount) + ")")
+		fmt.Println(" - Fees: " + utils.Satoshis(status.Stats.TotalFees) + " (avg " + utils.Satoshis(status.Stats.AvgFees) + ")")
+	}
 }
 
 func autoSwapStatus(ctx *cli.Context) error {
@@ -480,42 +582,39 @@ func autoSwapStatus(ctx *cli.Context) error {
 	if ctx.Bool("json") {
 		printJson(response)
 	} else {
-		if response.Running {
-			color.New(color.FgGreen, color.Bold).Println("Running")
-		} else if response.Error != "" {
-			color.New(color.FgRed, color.Bold).Println("Failed to start")
-			fmt.Println("Error: " + response.Error)
-		} else {
-			color.New(color.FgYellow, color.Bold).Println("Disabled")
+		if response.Lightning != nil {
+			printStatus("LN", response.Lightning)
+			if response.Chain != nil {
+				fmt.Println()
+			}
 		}
-		if response.Strategy != "" {
-			fmt.Printf("Strategy: %s\n", response.Strategy)
+		if response.Chain != nil {
+			printStatus("Chain", response.Chain)
 		}
-		if response.Budget != nil {
-			yellowBold.Println("\nBudget")
-			fmt.Printf(" - From %s until %s\n", parseDate(response.Budget.StartDate), parseDate(response.Budget.EndDate))
-			fmt.Println(" - Total: " + utils.Satoshis(response.Budget.Total))
-			fmt.Println(" - Remaining: " + utils.Satoshis(response.Budget.Remaining))
-
-			yellowBold.Println("Stats")
-			fmt.Println(" - Swaps: " + strconv.Itoa(int(response.Stats.Count)))
-			fmt.Println(" - Amount: " + utils.Satoshis(response.Stats.TotalAmount) + " (avg " + utils.Satoshis(response.Stats.AvgAmount) + ")")
-			fmt.Println(" - Fees: " + utils.Satoshis(response.Stats.TotalFees) + " (avg " + utils.Satoshis(response.Stats.AvgFees) + ")")
-		}
-
 	}
 
 	return nil
 }
 
-func printConfig(client client.AutoSwap, key string, asJson, hideZero bool) error {
-	config, err := client.GetConfig()
+func printConfig(ctx *cli.Context, autoSwapType *autoswap.SwapperType, key string, asJson, hideZero bool) error {
+	client := getAutoSwapClient(ctx)
+
+	var message proto.Message
+	var err error
+
+	if autoSwapType == nil {
+		message, err = client.GetConfig()
+	} else if *autoSwapType == lightning {
+		message, err = client.GetLightningConfig()
+	} else {
+		message, err = client.GetChainConfig()
+	}
 	if err != nil {
 		return err
 	}
 
 	marshal := protojson.MarshalOptions{EmitDefaultValues: !hideZero, Indent: "   "}
-	marshalled, err := marshal.Marshal(config)
+	marshalled, err := marshal.Marshal(message)
 	if err != nil {
 		return err
 	}
@@ -540,8 +639,23 @@ func printConfig(client client.AutoSwap, key string, asJson, hideZero bool) erro
 	return nil
 }
 
+func askCurrency(message string, defaultValue *boltzrpc.Currency) (result boltzrpc.Currency, err error) {
+	prompt := &survey.Select{
+		Message: message,
+		Options: []string{"LBTC", "BTC"},
+	}
+	if defaultValue != nil {
+		prompt.Default = fmt.Sprint(*defaultValue)
+	}
+
+	var currency string
+	if err = survey.AskOne(prompt, &currency); err != nil {
+		return
+	}
+	return parseCurrency(currency)
+}
+
 func autoSwapSetup(ctx *cli.Context) error {
-	client := getClient(ctx)
 	autoSwap := getAutoSwapClient(ctx)
 
 	_, err := autoSwap.GetConfig()
@@ -550,27 +664,18 @@ func autoSwapSetup(ctx *cli.Context) error {
 			return nil
 		}
 	}
-	config, err := autoSwap.ResetConfig()
+	entireConfig, err := autoSwap.ResetConfig(autoswap.Lightning)
+	if err != nil {
+		return err
+	}
+	config := entireConfig.Lightning[0]
+
+	config.Currency, err = askCurrency("Which currency should autoswaps be performed on?", &config.Currency)
 	if err != nil {
 		return err
 	}
 
 	prompt := &survey.Select{
-		Message: "Which currency should autoswaps be performed on?",
-		Options: []string{"LBTC", "BTC"},
-		Default: fmt.Sprint(config.Currency),
-	}
-
-	var currency string
-	if err := survey.AskOne(prompt, &currency); err != nil {
-		return err
-	}
-	config.Currency, err = parseCurrency(currency)
-	if err != nil {
-		return err
-	}
-
-	prompt = &survey.Select{
 		Message: "Which type of swaps should be executed?",
 		Options: []string{"reverse", "normal", "both"},
 		Description: func(value string, index int) string {
@@ -593,50 +698,7 @@ func autoSwapSetup(ctx *cli.Context) error {
 	}
 
 	readonly := config.SwapType != "reverse"
-	wallets, err := client.GetWallets(&config.Currency, readonly)
-	if err != nil {
-		return err
-	}
-
-	createNew := "Create New"
-	importExisting := "Import Existing"
-	var options []string
-	for _, wallet := range wallets.Wallets {
-		options = append(options, wallet.Name)
-	}
-	options = append(options, createNew)
-	options = append(options, importExisting)
-
-	prompt = &survey.Select{
-		Message: fmt.Sprintf("Select %s wallet", config.Currency),
-		Options: options,
-	}
-
-	var choice string
-	if err := survey.AskOne(prompt, &choice); err != nil {
-		return err
-	}
-	if choice != createNew && choice != importExisting {
-		config.Wallet = choice
-	} else {
-		input := &survey.Input{
-			Message: "Enter a name for the new wallet",
-			Default: "autoswap",
-		}
-		err = survey.AskOne(input, &config.Wallet, survey.WithValidator(func(ans interface{}) error {
-			return checkWalletName(ctx, ans.(string))
-		}))
-
-		info := &boltzrpc.WalletParams{
-			Name:     config.Wallet,
-			Currency: config.Currency,
-		}
-		if choice == createNew {
-			err = createWallet(ctx, info)
-		} else if choice == importExisting {
-			err = importWallet(ctx, info, config.SwapType == "reverse")
-		}
-	}
+	config.Wallet, err = askForWallet(ctx, fmt.Sprintf("Select %s wallet", config.Currency), config.Currency, readonly)
 	if err != nil {
 		return err
 	}
@@ -712,60 +774,180 @@ func autoSwapSetup(ctx *cli.Context) error {
 
 	config.BudgetInterval = config.BudgetInterval * 24 * uint64(time.Hour.Seconds())
 
-	_, err = autoSwap.SetConfig(config)
+	_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: config})
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Config was saved successfully!")
 
-	return enableAutoSwap(ctx, false)
+	return enableAutoSwap(ctx, false, lightning)
 }
 
-func autoSwapConfig(ctx *cli.Context) error {
-	client := getAutoSwapClient(ctx)
+func askForWallet(ctx *cli.Context, message string, currency boltzrpc.Currency, allowReadonly bool) (result string, err error) {
+	client := getClient(ctx)
 
-	if ctx.Bool("reset") {
-		if _, err := client.ResetConfig(); err != nil {
-			return err
+	wallets, err := client.GetWallets(&currency, allowReadonly)
+	if err != nil {
+		return "", err
+	}
+
+	createNew := "Create New"
+	importExisting := "Import Existing"
+	var options []string
+	for _, wallet := range wallets.Wallets {
+		options = append(options, wallet.Name)
+	}
+	options = append(options, createNew)
+	options = append(options, importExisting)
+
+	prompt := &survey.Select{
+		Message: message,
+		Options: options,
+	}
+
+	var choice string
+	if err := survey.AskOne(prompt, &choice); err != nil {
+		return "", err
+	}
+
+	if choice != createNew && choice != importExisting {
+		result = choice
+	} else {
+		input := &survey.Input{
+			Message: "Enter a name for the new wallet",
+			Default: "autoswap",
+		}
+		err = survey.AskOne(input, &result, survey.WithValidator(func(ans interface{}) error {
+			return checkWalletName(ctx, ans.(string))
+		}))
+
+		info := &boltzrpc.WalletParams{
+			Name:     result,
+			Currency: currency,
+		}
+		if choice == createNew {
+			err = createWallet(ctx, info)
+		} else if choice == importExisting {
+			err = importWallet(ctx, info, allowReadonly)
 		}
 	}
+	return result, err
+}
+
+func autoSwapChainSetup(ctx *cli.Context) error {
+	autoSwap := getAutoSwapClient(ctx)
+
+	config, err := autoSwap.GetChainConfig()
+	if err != nil {
+		config = &autoswaprpc.ChainConfig{}
+	}
+
+	fromCurrency, err := askCurrency("Which currency should autoswaps be performed on?", nil)
+	if err != nil {
+		return err
+	}
+
+	config.FromWallet, err = askForWallet(ctx, "Select source wallet", fromCurrency, false)
+	if err != nil {
+		return err
+	}
+
+	var toCurrency boltzrpc.Currency
+	if fromCurrency == boltzrpc.Currency_LBTC {
+		toCurrency = boltzrpc.Currency_BTC
+	} else {
+		toCurrency = boltzrpc.Currency_LBTC
+	}
+
+	config.ToWallet, err = askForWallet(ctx, "Select target wallet", toCurrency, true)
+	if err != nil {
+		return err
+	}
+
+	questions := []*survey.Question{
+		{
+			Name: "FromThreshold",
+			Prompt: &survey.Input{
+				Message: "What is the minimum amount of sats you want to keep in your wallet (sat)?",
+			},
+			Validate: survey.Required,
+		},
+	}
+
+	if err := survey.Ask(questions, config); err != nil {
+		return err
+	}
+
+	_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: config})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Config was saved successfully!")
+
+	return enableAutoSwap(ctx, false, chain)
+}
+
+var lightning = autoswap.Lightning
+var chain = autoswap.Chain
+
+func autoSwapConfig(ctx *cli.Context, swapper *autoswap.SwapperType) (err error) {
+	client := getAutoSwapClient(ctx)
+
 	if ctx.Bool("reload") {
 		if _, err := client.ReloadConfig(); err != nil {
 			return err
 		}
 	}
 
-	key := ctx.Args().First()
-	if ctx.NArg() == 2 {
-		args := ctx.Args()
-		if _, err := client.SetConfigValue(args.Get(0), args.Get(1)); err != nil {
+	if ctx.Bool("reset") && swapper != nil {
+		if _, err := client.ResetConfig(*swapper); err != nil {
 			return err
 		}
 	}
 
-	return printConfig(client, key, ctx.Bool("json"), false)
+	var key string
+	if swapper != nil {
+		key = ctx.Args().First()
+		if ctx.NArg() == 2 {
+			args := ctx.Args()
+			if _, err := client.SetConfigValue(*swapper, args.Get(0), args.Get(1)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return printConfig(ctx, swapper, key, ctx.Bool("json"), false)
 }
 
-func enableAutoSwap(ctx *cli.Context, showConfig bool) error {
+func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper autoswap.SwapperType) error {
 	client := getAutoSwapClient(ctx)
 
 	if showConfig {
 		fmt.Println("Enabling autoswap with the following config:")
 		fmt.Println()
-		if err := printConfig(client, "", false, true); err != nil {
+		if err := printConfig(ctx, &swapper, "", false, true); err != nil {
 			return err
 		}
 	}
 
-	recommendations, err := client.GetSwapRecommendations(true)
+	recommendations, err := client.GetRecommendations(true)
 	if err != nil {
 		return err
 	}
 
-	if len(recommendations.Swaps) > 0 {
-		fmt.Println("Based on above config the following swaps will be performed immediately:")
-		printJson(recommendations)
+	if swapper == lightning {
+		if len(recommendations.Lightning) > 0 {
+			fmt.Println("Based on above config the following swaps will be performed immediately:")
+			printJson(recommendations)
+		}
+	}
+	if swapper == chain {
+		if len(recommendations.Chain) > 0 {
+			fmt.Println("Based on above config the following swaps will be performed immediately:")
+			printJson(recommendations)
+		}
 	}
 
 	fmt.Println()
@@ -773,16 +955,15 @@ func enableAutoSwap(ctx *cli.Context, showConfig bool) error {
 		return nil
 	}
 
-	if _, err := client.Enable(); err != nil {
+	if _, err := client.SetConfigValue(swapper, "enabled", true); err != nil {
 		return err
 	}
 	return autoSwapStatus(ctx)
 }
 
-func disableAutoSwap(ctx *cli.Context) error {
+func disableAutoSwap(ctx *cli.Context, autoSwapType autoswap.SwapperType) error {
 	client := getAutoSwapClient(ctx)
-	_, err := client.Disable()
-	fmt.Println("Disabled")
+	_, err := client.SetConfigValue(autoSwapType, "enabled", false)
 	return err
 }
 
@@ -859,7 +1040,7 @@ func createSwap(ctx *cli.Context) error {
 	}
 
 	if !json {
-		printFees(pairInfo)
+		printFees(pairInfo.Fees)
 
 		if !prompt("Do you want to continue?") {
 			return nil
@@ -1031,7 +1212,7 @@ func createChainSwap(ctx *cli.Context) error {
 
 	json := ctx.Bool("json")
 	if !json {
-		printFees(pairInfo)
+		printFees(pairInfo.Fees)
 		if !prompt("Do you want to continue?") {
 			return nil
 		}
@@ -1179,7 +1360,7 @@ func createReverseSwap(ctx *cli.Context) error {
 		}
 
 		fmt.Println("You will receive the withdrawal to the specified onchain address")
-		printFees(pairInfo)
+		printFees(pairInfo.Fees)
 
 		if !prompt("Do you want to continue?") {
 			return nil
