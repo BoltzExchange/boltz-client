@@ -161,7 +161,11 @@ var (
 			Entity: "admin",
 			Action: "write",
 		}},
-		"/boltzrpc.Boltz/GetEntities": {{
+		"/boltzrpc.Boltz/ListEntities": {{
+			Entity: "admin",
+			Action: "read",
+		}},
+		"/boltzrpc.Boltz/GetEntity": {{
 			Entity: "admin",
 			Action: "read",
 		}},

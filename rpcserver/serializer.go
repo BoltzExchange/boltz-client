@@ -194,8 +194,8 @@ func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.Li
 	}
 }
 
-func serializeEntity(entity *database.Entity) *boltzrpc.EntityInfo {
-	return &boltzrpc.EntityInfo{
+func serializeEntity(entity *database.Entity) *boltzrpc.Entity {
+	return &boltzrpc.Entity{
 		Id:   entity.Id,
 		Name: entity.Name,
 	}

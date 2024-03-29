@@ -46,7 +46,8 @@ const (
 	Boltz_VerifyWalletPassword_FullMethodName = "/boltzrpc.Boltz/VerifyWalletPassword"
 	Boltz_ChangeWalletPassword_FullMethodName = "/boltzrpc.Boltz/ChangeWalletPassword"
 	Boltz_CreateEntity_FullMethodName         = "/boltzrpc.Boltz/CreateEntity"
-	Boltz_GetEntities_FullMethodName          = "/boltzrpc.Boltz/GetEntities"
+	Boltz_ListEntities_FullMethodName         = "/boltzrpc.Boltz/ListEntities"
+	Boltz_GetEntity_FullMethodName            = "/boltzrpc.Boltz/GetEntity"
 	Boltz_BakeMacaroon_FullMethodName         = "/boltzrpc.Boltz/BakeMacaroon"
 )
 
@@ -119,9 +120,11 @@ type BoltzClient interface {
 	// Changes the password for wallet encryption.
 	ChangeWalletPassword(ctx context.Context, in *ChangeWalletPasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Creates a new entity which can be used to bake restricted macaroons.
-	CreateEntity(ctx context.Context, in *CreateEntityRequest, opts ...grpc.CallOption) (*EntityInfo, error)
+	CreateEntity(ctx context.Context, in *CreateEntityRequest, opts ...grpc.CallOption) (*Entity, error)
 	// Returns all entities.
-	GetEntities(ctx context.Context, in *GetEntitiesRequest, opts ...grpc.CallOption) (*GetEntitiesResponse, error)
+	ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error)
+	// Get a specifiy entity.
+	GetEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (*Entity, error)
 	// Bakes a new macaroon for a given entity with the specified permissions.
 	BakeMacaroon(ctx context.Context, in *BakeMacaroonRequest, opts ...grpc.CallOption) (*BakeMacaroonResponse, error)
 }
@@ -385,8 +388,8 @@ func (c *boltzClient) ChangeWalletPassword(ctx context.Context, in *ChangeWallet
 	return out, nil
 }
 
-func (c *boltzClient) CreateEntity(ctx context.Context, in *CreateEntityRequest, opts ...grpc.CallOption) (*EntityInfo, error) {
-	out := new(EntityInfo)
+func (c *boltzClient) CreateEntity(ctx context.Context, in *CreateEntityRequest, opts ...grpc.CallOption) (*Entity, error) {
+	out := new(Entity)
 	err := c.cc.Invoke(ctx, Boltz_CreateEntity_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -394,9 +397,18 @@ func (c *boltzClient) CreateEntity(ctx context.Context, in *CreateEntityRequest,
 	return out, nil
 }
 
-func (c *boltzClient) GetEntities(ctx context.Context, in *GetEntitiesRequest, opts ...grpc.CallOption) (*GetEntitiesResponse, error) {
-	out := new(GetEntitiesResponse)
-	err := c.cc.Invoke(ctx, Boltz_GetEntities_FullMethodName, in, out, opts...)
+func (c *boltzClient) ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error) {
+	out := new(ListEntitiesResponse)
+	err := c.cc.Invoke(ctx, Boltz_ListEntities_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (*Entity, error) {
+	out := new(Entity)
+	err := c.cc.Invoke(ctx, Boltz_GetEntity_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -481,9 +493,11 @@ type BoltzServer interface {
 	// Changes the password for wallet encryption.
 	ChangeWalletPassword(context.Context, *ChangeWalletPasswordRequest) (*empty.Empty, error)
 	// Creates a new entity which can be used to bake restricted macaroons.
-	CreateEntity(context.Context, *CreateEntityRequest) (*EntityInfo, error)
+	CreateEntity(context.Context, *CreateEntityRequest) (*Entity, error)
 	// Returns all entities.
-	GetEntities(context.Context, *GetEntitiesRequest) (*GetEntitiesResponse, error)
+	ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error)
+	// Get a specifiy entity.
+	GetEntity(context.Context, *GetEntityRequest) (*Entity, error)
 	// Bakes a new macaroon for a given entity with the specified permissions.
 	BakeMacaroon(context.Context, *BakeMacaroonRequest) (*BakeMacaroonResponse, error)
 	mustEmbedUnimplementedBoltzServer()
@@ -568,11 +582,14 @@ func (UnimplementedBoltzServer) VerifyWalletPassword(context.Context, *VerifyWal
 func (UnimplementedBoltzServer) ChangeWalletPassword(context.Context, *ChangeWalletPasswordRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeWalletPassword not implemented")
 }
-func (UnimplementedBoltzServer) CreateEntity(context.Context, *CreateEntityRequest) (*EntityInfo, error) {
+func (UnimplementedBoltzServer) CreateEntity(context.Context, *CreateEntityRequest) (*Entity, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEntity not implemented")
 }
-func (UnimplementedBoltzServer) GetEntities(context.Context, *GetEntitiesRequest) (*GetEntitiesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEntities not implemented")
+func (UnimplementedBoltzServer) ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
+}
+func (UnimplementedBoltzServer) GetEntity(context.Context, *GetEntityRequest) (*Entity, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEntity not implemented")
 }
 func (UnimplementedBoltzServer) BakeMacaroon(context.Context, *BakeMacaroonRequest) (*BakeMacaroonResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BakeMacaroon not implemented")
@@ -1061,20 +1078,38 @@ func _Boltz_CreateEntity_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Boltz_GetEntities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEntitiesRequest)
+func _Boltz_ListEntities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEntitiesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BoltzServer).GetEntities(ctx, in)
+		return srv.(BoltzServer).ListEntities(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Boltz_GetEntities_FullMethodName,
+		FullMethod: Boltz_ListEntities_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetEntities(ctx, req.(*GetEntitiesRequest))
+		return srv.(BoltzServer).ListEntities(ctx, req.(*ListEntitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEntityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetEntity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetEntity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetEntity(ctx, req.(*GetEntityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1205,8 +1240,12 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Boltz_CreateEntity_Handler,
 		},
 		{
-			MethodName: "GetEntities",
-			Handler:    _Boltz_GetEntities_Handler,
+			MethodName: "ListEntities",
+			Handler:    _Boltz_ListEntities_Handler,
+		},
+		{
+			MethodName: "GetEntity",
+			Handler:    _Boltz_GetEntity_Handler,
 		},
 		{
 			MethodName: "BakeMacaroon",

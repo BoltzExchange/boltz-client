@@ -1234,7 +1234,7 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 	}, nil
 }
 
-func (server *routedBoltzServer) CreateEntity(ctx context.Context, request *boltzrpc.CreateEntityRequest) (*boltzrpc.EntityInfo, error) {
+func (server *routedBoltzServer) CreateEntity(ctx context.Context, request *boltzrpc.CreateEntityRequest) (*boltzrpc.Entity, error) {
 	entity := &database.Entity{Name: request.Name}
 
 	if err := server.database.CreateEntity(entity); err != nil {
@@ -1242,6 +1242,29 @@ func (server *routedBoltzServer) CreateEntity(ctx context.Context, request *bolt
 	}
 
 	return serializeEntity(entity), nil
+}
+
+func (server *routedBoltzServer) GetEntity(ctx context.Context, request *boltzrpc.GetEntityRequest) (*boltzrpc.Entity, error) {
+	entity, err := server.database.GetEntityByName(request.Name)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return serializeEntity(entity), nil
+}
+
+func (server *routedBoltzServer) ListEntities(ctx context.Context, request *boltzrpc.ListEntitiesRequest) (*boltzrpc.ListEntitiesResponse, error) {
+	entities, err := server.database.QueryEntities()
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	response := &boltzrpc.ListEntitiesResponse{}
+	for _, entity := range entities {
+		response.Entities = append(response.Entities, serializeEntity(entity))
+	}
+
+	return response, nil
 }
 
 func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *boltzrpc.Limits, error) {

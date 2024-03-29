@@ -143,12 +143,17 @@ service Boltz {
     /*
     Creates a new entity which can be used to bake restricted macaroons.
      */
-    rpc CreateEntity(CreateEntityRequest) returns (EntityInfo);
+    rpc CreateEntity(CreateEntityRequest) returns (Entity);
 
     /*
     Returns all entities.
      */
-    rpc GetEntities(GetEntitiesRequest) returns (GetEntitiesResponse);
+    rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+
+    /*
+    Get a specifiy entity.
+     */
+    rpc GetEntity(GetEntityRequest) returns (Entity);
 
     /*
     Bakes a new macaroon for a given entity with the specified permissions.
@@ -160,12 +165,16 @@ message CreateEntityRequest {
     string name = 1;
 }
 
-message GetEntitiesRequest {}
-message GetEntitiesResponse {
-    repeated EntityInfo entities = 1;
+message ListEntitiesRequest {}
+message ListEntitiesResponse {
+    repeated Entity entities = 1;
 }
 
-message EntityInfo {
+message GetEntityRequest {
+    string name = 1;
+}
+
+message Entity {
     int64 id = 1;
     string name = 2;
 }

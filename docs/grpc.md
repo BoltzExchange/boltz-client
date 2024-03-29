@@ -219,15 +219,23 @@ Creates a new entity which can be used to bake restricted macaroons.
 
 | Request | Response |
 | ------- | -------- |
-| [`CreateEntityRequest`](#createentityrequest) | [`EntityInfo`](#entityinfo) |
+| [`CreateEntityRequest`](#createentityrequest) | [`Entity`](#entity) |
 
-#### GetEntities
+#### ListEntities
 
 Returns all entities.
 
 | Request | Response |
 | ------- | -------- |
-| [`GetEntitiesRequest`](#getentitiesrequest) | [`GetEntitiesResponse`](#getentitiesresponse) |
+| [`ListEntitiesRequest`](#listentitiesrequest) | [`ListEntitiesResponse`](#listentitiesresponse) |
+
+#### GetEntity
+
+Get a specifiy entity.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetEntityRequest`](#getentityrequest) | [`Entity`](#entity) |
 
 #### BakeMacaroon
 
@@ -518,7 +526,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### EntityInfo
+#### Entity
 
 
 
@@ -546,22 +554,14 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### GetEntitiesRequest
-
-
-
-
-
-
-
-#### GetEntitiesResponse
+#### GetEntityRequest
 
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `entities` | [`EntityInfo`](#entityinfo) | repeated |  |
+| `name` | [`string`](#string) |  |  |
 
 
 
@@ -777,6 +777,27 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `minimal` | [`uint64`](#uint64) |  |  |
 | `maximal` | [`uint64`](#uint64) |  |  |
 | `maximal_zero_conf_amount` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### ListEntitiesRequest
+
+
+
+
+
+
+
+#### ListEntitiesResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `entities` | [`Entity`](#entity) | repeated |  |
 
 
 

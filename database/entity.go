@@ -46,7 +46,7 @@ func (d *Database) GetEntityByName(name string) (*Entity, error) {
 	return nil, fmt.Errorf("could not find entity with name %s", name)
 }
 
-func (d *Database) GetEntities() ([]*Entity, error) {
+func (d *Database) QueryEntities() ([]*Entity, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	rows, err := d.Query("SELECT * FROM entities")
