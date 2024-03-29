@@ -13,10 +13,7 @@ type Budget struct {
 	Total  uint64
 }
 
-func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
-	if err := swapper.requireConfig(); err != nil {
-		return nil, err
-	}
+func (swapper *LightningSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
 	budgetInterval, err := swapper.database.QueryCurrentBudgetInterval()
 	if err != nil {
 		return nil, errors.New("Could not get budget period: " + err.Error())
@@ -48,7 +45,7 @@ func (swapper *AutoSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, err
 	stats, err := swapper.database.QueryStats(database.SwapQuery{
 		Since:  budgetInterval.StartDate,
 		IsAuto: &isAuto,
-	})
+	}, false)
 	if err != nil {
 		return nil, errors.New("Could not get past fees: " + err.Error())
 	}

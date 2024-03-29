@@ -20,13 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AutoSwap_GetSwapRecommendations_FullMethodName = "/autoswaprpc.AutoSwap/GetSwapRecommendations"
-	AutoSwap_GetStatus_FullMethodName              = "/autoswaprpc.AutoSwap/GetStatus"
-	AutoSwap_ResetConfig_FullMethodName            = "/autoswaprpc.AutoSwap/ResetConfig"
-	AutoSwap_SetConfig_FullMethodName              = "/autoswaprpc.AutoSwap/SetConfig"
-	AutoSwap_SetConfigValue_FullMethodName         = "/autoswaprpc.AutoSwap/SetConfigValue"
-	AutoSwap_GetConfig_FullMethodName              = "/autoswaprpc.AutoSwap/GetConfig"
-	AutoSwap_ReloadConfig_FullMethodName           = "/autoswaprpc.AutoSwap/ReloadConfig"
+	AutoSwap_GetRecommendations_FullMethodName    = "/autoswaprpc.AutoSwap/GetRecommendations"
+	AutoSwap_GetStatus_FullMethodName             = "/autoswaprpc.AutoSwap/GetStatus"
+	AutoSwap_UpdateLightningConfig_FullMethodName = "/autoswaprpc.AutoSwap/UpdateLightningConfig"
+	AutoSwap_UpdateChainConfig_FullMethodName     = "/autoswaprpc.AutoSwap/UpdateChainConfig"
+	AutoSwap_GetConfig_FullMethodName             = "/autoswaprpc.AutoSwap/GetConfig"
+	AutoSwap_ReloadConfig_FullMethodName          = "/autoswaprpc.AutoSwap/ReloadConfig"
 )
 
 // AutoSwapClient is the client API for AutoSwap service.
@@ -35,19 +34,16 @@ const (
 type AutoSwapClient interface {
 	//
 	//Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
-	GetSwapRecommendations(ctx context.Context, in *GetSwapRecommendationsRequest, opts ...grpc.CallOption) (*GetSwapRecommendationsResponse, error)
+	GetRecommendations(ctx context.Context, in *GetRecommendationsRequest, opts ...grpc.CallOption) (*GetRecommendationsResponse, error)
 	//
 	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
 	//
-	//Resets the configuration to default values.
-	ResetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error)
+	//Partially updates the onchain configuration. The autoswapper will reload the configuration after this call.
+	UpdateLightningConfig(ctx context.Context, in *UpdateLightningConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
-	//Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
-	SetConfig(ctx context.Context, in *Config, opts ...grpc.CallOption) (*Config, error)
-	//
-	//Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
-	SetConfigValue(ctx context.Context, in *SetConfigValueRequest, opts ...grpc.CallOption) (*Config, error)
+	//Updates the lightning configuration completely or partially. Autoswap will reload the configuration after this call.
+	UpdateChainConfig(ctx context.Context, in *UpdateChainConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
 	//Returns the currently used configurationencoded as json.
 	//If a key is specfied, only the value of that key will be returned.
@@ -65,9 +61,9 @@ func NewAutoSwapClient(cc grpc.ClientConnInterface) AutoSwapClient {
 	return &autoSwapClient{cc}
 }
 
-func (c *autoSwapClient) GetSwapRecommendations(ctx context.Context, in *GetSwapRecommendationsRequest, opts ...grpc.CallOption) (*GetSwapRecommendationsResponse, error) {
-	out := new(GetSwapRecommendationsResponse)
-	err := c.cc.Invoke(ctx, AutoSwap_GetSwapRecommendations_FullMethodName, in, out, opts...)
+func (c *autoSwapClient) GetRecommendations(ctx context.Context, in *GetRecommendationsRequest, opts ...grpc.CallOption) (*GetRecommendationsResponse, error) {
+	out := new(GetRecommendationsResponse)
+	err := c.cc.Invoke(ctx, AutoSwap_GetRecommendations_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,27 +79,18 @@ func (c *autoSwapClient) GetStatus(ctx context.Context, in *GetStatusRequest, op
 	return out, nil
 }
 
-func (c *autoSwapClient) ResetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error) {
+func (c *autoSwapClient) UpdateLightningConfig(ctx context.Context, in *UpdateLightningConfigRequest, opts ...grpc.CallOption) (*Config, error) {
 	out := new(Config)
-	err := c.cc.Invoke(ctx, AutoSwap_ResetConfig_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AutoSwap_UpdateLightningConfig_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *autoSwapClient) SetConfig(ctx context.Context, in *Config, opts ...grpc.CallOption) (*Config, error) {
+func (c *autoSwapClient) UpdateChainConfig(ctx context.Context, in *UpdateChainConfigRequest, opts ...grpc.CallOption) (*Config, error) {
 	out := new(Config)
-	err := c.cc.Invoke(ctx, AutoSwap_SetConfig_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *autoSwapClient) SetConfigValue(ctx context.Context, in *SetConfigValueRequest, opts ...grpc.CallOption) (*Config, error) {
-	out := new(Config)
-	err := c.cc.Invoke(ctx, AutoSwap_SetConfigValue_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AutoSwap_UpdateChainConfig_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,19 +121,16 @@ func (c *autoSwapClient) ReloadConfig(ctx context.Context, in *empty.Empty, opts
 type AutoSwapServer interface {
 	//
 	//Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
-	GetSwapRecommendations(context.Context, *GetSwapRecommendationsRequest) (*GetSwapRecommendationsResponse, error)
+	GetRecommendations(context.Context, *GetRecommendationsRequest) (*GetRecommendationsResponse, error)
 	//
 	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	//
-	//Resets the configuration to default values.
-	ResetConfig(context.Context, *empty.Empty) (*Config, error)
+	//Partially updates the onchain configuration. The autoswapper will reload the configuration after this call.
+	UpdateLightningConfig(context.Context, *UpdateLightningConfigRequest) (*Config, error)
 	//
-	//Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
-	SetConfig(context.Context, *Config) (*Config, error)
-	//
-	//Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
-	SetConfigValue(context.Context, *SetConfigValueRequest) (*Config, error)
+	//Updates the lightning configuration completely or partially. Autoswap will reload the configuration after this call.
+	UpdateChainConfig(context.Context, *UpdateChainConfigRequest) (*Config, error)
 	//
 	//Returns the currently used configurationencoded as json.
 	//If a key is specfied, only the value of that key will be returned.
@@ -161,20 +145,17 @@ type AutoSwapServer interface {
 type UnimplementedAutoSwapServer struct {
 }
 
-func (UnimplementedAutoSwapServer) GetSwapRecommendations(context.Context, *GetSwapRecommendationsRequest) (*GetSwapRecommendationsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSwapRecommendations not implemented")
+func (UnimplementedAutoSwapServer) GetRecommendations(context.Context, *GetRecommendationsRequest) (*GetRecommendationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRecommendations not implemented")
 }
 func (UnimplementedAutoSwapServer) GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
-func (UnimplementedAutoSwapServer) ResetConfig(context.Context, *empty.Empty) (*Config, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ResetConfig not implemented")
+func (UnimplementedAutoSwapServer) UpdateLightningConfig(context.Context, *UpdateLightningConfigRequest) (*Config, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateLightningConfig not implemented")
 }
-func (UnimplementedAutoSwapServer) SetConfig(context.Context, *Config) (*Config, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetConfig not implemented")
-}
-func (UnimplementedAutoSwapServer) SetConfigValue(context.Context, *SetConfigValueRequest) (*Config, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetConfigValue not implemented")
+func (UnimplementedAutoSwapServer) UpdateChainConfig(context.Context, *UpdateChainConfigRequest) (*Config, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateChainConfig not implemented")
 }
 func (UnimplementedAutoSwapServer) GetConfig(context.Context, *GetConfigRequest) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
@@ -195,20 +176,20 @@ func RegisterAutoSwapServer(s grpc.ServiceRegistrar, srv AutoSwapServer) {
 	s.RegisterService(&AutoSwap_ServiceDesc, srv)
 }
 
-func _AutoSwap_GetSwapRecommendations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSwapRecommendationsRequest)
+func _AutoSwap_GetRecommendations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRecommendationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AutoSwapServer).GetSwapRecommendations(ctx, in)
+		return srv.(AutoSwapServer).GetRecommendations(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AutoSwap_GetSwapRecommendations_FullMethodName,
+		FullMethod: AutoSwap_GetRecommendations_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoSwapServer).GetSwapRecommendations(ctx, req.(*GetSwapRecommendationsRequest))
+		return srv.(AutoSwapServer).GetRecommendations(ctx, req.(*GetRecommendationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -231,56 +212,38 @@ func _AutoSwap_GetStatus_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AutoSwap_ResetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+func _AutoSwap_UpdateLightningConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLightningConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AutoSwapServer).ResetConfig(ctx, in)
+		return srv.(AutoSwapServer).UpdateLightningConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AutoSwap_ResetConfig_FullMethodName,
+		FullMethod: AutoSwap_UpdateLightningConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoSwapServer).ResetConfig(ctx, req.(*empty.Empty))
+		return srv.(AutoSwapServer).UpdateLightningConfig(ctx, req.(*UpdateLightningConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AutoSwap_SetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Config)
+func _AutoSwap_UpdateChainConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateChainConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AutoSwapServer).SetConfig(ctx, in)
+		return srv.(AutoSwapServer).UpdateChainConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AutoSwap_SetConfig_FullMethodName,
+		FullMethod: AutoSwap_UpdateChainConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoSwapServer).SetConfig(ctx, req.(*Config))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AutoSwap_SetConfigValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetConfigValueRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AutoSwapServer).SetConfigValue(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AutoSwap_SetConfigValue_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoSwapServer).SetConfigValue(ctx, req.(*SetConfigValueRequest))
+		return srv.(AutoSwapServer).UpdateChainConfig(ctx, req.(*UpdateChainConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -329,24 +292,20 @@ var AutoSwap_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AutoSwapServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetSwapRecommendations",
-			Handler:    _AutoSwap_GetSwapRecommendations_Handler,
+			MethodName: "GetRecommendations",
+			Handler:    _AutoSwap_GetRecommendations_Handler,
 		},
 		{
 			MethodName: "GetStatus",
 			Handler:    _AutoSwap_GetStatus_Handler,
 		},
 		{
-			MethodName: "ResetConfig",
-			Handler:    _AutoSwap_ResetConfig_Handler,
+			MethodName: "UpdateLightningConfig",
+			Handler:    _AutoSwap_UpdateLightningConfig_Handler,
 		},
 		{
-			MethodName: "SetConfig",
-			Handler:    _AutoSwap_SetConfig_Handler,
-		},
-		{
-			MethodName: "SetConfigValue",
-			Handler:    _AutoSwap_SetConfigValue_Handler,
+			MethodName: "UpdateChainConfig",
+			Handler:    _AutoSwap_UpdateChainConfig_Handler,
 		},
 		{
 			MethodName: "GetConfig",

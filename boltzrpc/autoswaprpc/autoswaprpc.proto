@@ -4,13 +4,14 @@ package autoswaprpc;
 option go_package = "github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
 import "boltzrpc.proto";
 
 service AutoSwap {
   /*
-  Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running. 
+  Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
   */
-  rpc GetSwapRecommendations (GetSwapRecommendationsRequest) returns (GetSwapRecommendationsResponse);
+  rpc GetRecommendations (GetRecommendationsRequest) returns (GetRecommendationsResponse);
 
   /*
   Returns the current budget of autoswap and some relevant stats.
@@ -18,19 +19,14 @@ service AutoSwap {
   rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
 
   /*
-  Resets the configuration to default values.
-   */
-  rpc ResetConfig(google.protobuf.Empty) returns (Config);
+  Partially updates the onchain configuration. The autoswapper will reload the configuration after this call.
+  */
+  rpc UpdateLightningConfig(UpdateLightningConfigRequest) returns (Config);
 
   /*
-  Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
+  Updates the lightning configuration completely or partially. Autoswap will reload the configuration after this call.
   */
-  rpc SetConfig(Config) returns (Config);
-
-  /*
-  Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
-  */
-  rpc SetConfigValue(SetConfigValueRequest) returns (Config);
+  rpc UpdateChainConfig(UpdateChainConfigRequest) returns (Config);
 
   /*
   Returns the currently used configurationencoded as json.
@@ -45,19 +41,26 @@ service AutoSwap {
 }
 
 
-message GetSwapRecommendationsRequest {
+message GetRecommendationsRequest {
   // Do not return any dismissed recommendations
   optional bool no_dismissed = 1;
 }
 
-message SwapRecommendation {
-  string type = 1;
-  uint64 amount = 2;
-  boltzrpc.LightningChannel channel = 3;
-  uint64 fee_estimate = 4;
-  repeated string dismissed_reasons = 5;
+message LightningRecommendation {
+  uint64 amount = 1;
+  uint64 fee_estimate = 2;
+  // any reasons why the recommendation is not being executed
+  repeated string dismissed_reasons = 3;
+  string type = 4;
+  boltzrpc.LightningChannel channel = 5;
 }
 
+message ChainRecommendation {
+  uint64 amount = 1;
+  uint64 fee_estimate = 2;
+  // any reasons why the recommendation is not being executed
+  repeated string dismissed_reasons = 3;
+}
 
 message Budget {
   uint64 total = 1;
@@ -66,30 +69,59 @@ message Budget {
   int64 end_date = 4;
 }
 
-message GetSwapRecommendationsResponse {
-  repeated SwapRecommendation swaps = 1;
+message GetRecommendationsResponse {
+  repeated LightningRecommendation lightning = 1;
+  repeated ChainRecommendation chain = 2;
 }
 
 message GetStatusRequest {}
+message GetLightningStatusRequest {}
+message GetChainStatusRequest {}
+
+message Status {
+  bool running = 1;
+  optional string error = 2;
+  optional boltzrpc.SwapStats stats = 3;
+  optional Budget budget = 4;
+  string description = 5;
+}
 
 message GetStatusResponse {
-  bool running = 1;
-  string strategy = 2;
-  string error = 3;
-  optional boltzrpc.SwapStats stats = 4;
-  optional Budget budget = 5;
+  optional Status lightning = 1;
+  optional Status chain = 2;
+  optional string error = 3;
 }
 
-message SetConfigValueRequest {
-  string key = 1;
-  string value = 2;
+message GetConfigRequest {}
+
+message UpdateLightningConfigRequest {
+  optional LightningConfig config = 1;
+  google.protobuf.FieldMask field_mask = 2;
+  optional bool reset = 3;
 }
 
-message GetConfigRequest {
-  optional string key = 1;
+message UpdateChainConfigRequest {
+  ChainConfig config = 1;
+  optional google.protobuf.FieldMask field_mask = 2;
+  optional bool reset = 3;
 }
 
 message Config {
+  repeated ChainConfig chain = 1;
+  repeated LightningConfig lightning = 2;
+}
+
+message ChainConfig {
+  bool enabled = 1;
+  string from_wallet = 2;
+  string to_wallet = 3;
+  string to_address = 4;
+  uint64 from_threshold = 5;
+  float max_fee_percent = 6;
+  optional string entity = 7;
+}
+
+message LightningConfig {
     bool enabled = 1;
     uint64 channel_poll_interval = 2;
     string static_address = 3;
@@ -107,4 +139,5 @@ message Config {
     bool per_channel = 15;
     string wallet = 16;
     uint64 max_swap_amount = 17;
+    optional string entity = 18;
 }

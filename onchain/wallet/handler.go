@@ -11,12 +11,13 @@ import "C"
 type Notification string
 
 var (
-	blockNotification Notification = "block"
+	blockNotification       Notification = "block"
+	transactionNotification Notification = "transaction"
 )
 
 type handlerFunc = func(map[string]any)
 
-var handlers = make(map[string]handlerFunc)
+var handlers = make(map[Notification]handlerFunc)
 var handlerLock = sync.Mutex{}
 
 // this has to be in a seperate file to avoid c redefition issues
@@ -32,7 +33,7 @@ func go_notification_handler(details Json) {
 	if !ok {
 		logger.Error("Could not parse notification event")
 	}
-	handler, ok := handlers[event]
+	handler, ok := handlers[Notification(event)]
 	if ok {
 		handler(v[event].(map[string]any))
 	}
@@ -42,11 +43,11 @@ func go_notification_handler(details Json) {
 func registerHandler(notification Notification, handler handlerFunc) {
 	handlerLock.Lock()
 	defer handlerLock.Unlock()
-	handlers[string(notification)] = handler
+	handlers[notification] = handler
 }
 
 func removeHandler(notification Notification) {
 	handlerLock.Lock()
 	defer handlerLock.Unlock()
-	delete(handlers, string(notification))
+	delete(handlers, notification)
 }
