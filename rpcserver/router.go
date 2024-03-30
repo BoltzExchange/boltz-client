@@ -105,6 +105,7 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		Version:             build.GetVersion(),
 		Network:             server.network.Name,
 		BlockHeights:        blockHeights,
+		EntityId:            macaroons.EntityFromContext(ctx),
 		PendingSwaps:        pendingSwapIds,
 		PendingReverseSwaps: pendingReverseSwapIds,
 
@@ -162,14 +163,9 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	response := &boltzrpc.ListSwapsResponse{}
 
 	args := database.SwapQuery{
-		IsAuto: request.IsAuto,
-		State:  request.State,
-	}
-
-	var err error
-	args.EntityId, err = server.validateEntityId(ctx, request.EntityId)
-	if err != nil {
-		return nil, handleError(err)
+		IsAuto:   request.IsAuto,
+		State:    request.State,
+		EntityId: macaroons.EntityFromContext(ctx),
 	}
 
 	if request.From != nil {
@@ -869,11 +865,7 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 	checker := onchain.WalletChecker{
 		Currency:      utils.ParseCurrency(request.Currency),
 		AllowReadonly: request.GetIncludeReadonly(),
-	}
-	var err error
-	checker.EntityId, err = server.validateEntityId(ctx, request.EntityId)
-	if err != nil {
-		return nil, handleError(err)
+		EntityId:      macaroons.EntityFromContext(ctx),
 	}
 	for _, current := range server.onchain.GetWallets(checker) {
 		wallet, err := server.serializeWallet(current)
@@ -1095,21 +1087,6 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 	}
 }
 
-func (server *routedBoltzServer) validateEntityId(ctx context.Context, entityId *int64) (*int64, error) {
-	if entityId != nil {
-		if isAdmin(ctx) {
-			entity, err := server.database.GetEntity(*entityId)
-			if err != nil {
-				return nil, fmt.Errorf("could not find entity %d: %w", *entityId, err)
-			}
-			return &entity.Id, nil
-		} else {
-			return nil, errors.New("only admins can specify an entity")
-		}
-	}
-	return macaroons.EntityFromContext(ctx), nil
-}
-
 func (server *routedBoltzServer) getOwnWallet(ctx context.Context, name string, readonly bool) (*wallet.Wallet, error) {
 	existing, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
 		Name:          name,
@@ -1216,12 +1193,12 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 		return nil, handleError(errors.New("only admin can bake macaroons"))
 	}
 
-	entityId, err := server.validateEntityId(ctx, &request.EntityId)
+	_, err := server.database.GetEntity(request.EntityId)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(fmt.Errorf("could not find entity %d: %w", request.EntityId, err))
 	}
 
-	mac, err := server.macaroon.NewMacaroon(entityId, permission...)
+	mac, err := server.macaroon.NewMacaroon(&request.EntityId, permission...)
 	if err != nil {
 		return nil, handleError(err)
 	}

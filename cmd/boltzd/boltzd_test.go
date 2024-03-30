@@ -38,7 +38,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -131,8 +130,7 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 	clientConn := client.Connection{ClientConn: conn}
 	macaroonFile, err := os.ReadFile("./test/macaroons/admin.macaroon")
 	require.NoError(t, err)
-	macaroon := metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
-	clientConn.Ctx = metadata.NewOutgoingContext(context.Background(), macaroon)
+	clientConn.SetMacaroon(hex.EncodeToString(macaroonFile))
 
 	boltzClient := client.NewBoltzClient(clientConn)
 	autoSwapClient := client.NewAutoSwapClient(clientConn)
@@ -233,7 +231,8 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestEntities(t *testing.T) {
-	admin, adminAuto, stop := setup(t, nil, "")
+	admin, _, stop := setup(t, nil, "")
+	conn := admin.Connection
 	defer stop()
 
 	entityName := "test"
@@ -257,19 +256,23 @@ func TestEntities(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, write.Macaroon)
 
-	pairs := metadata.Pairs("macaroon", write.Macaroon)
-	restrictedCtx := metadata.NewOutgoingContext(context.Background(), pairs)
-	pairs = metadata.Pairs("macaroon", readonly.Macaroon)
-	readCtx := metadata.NewOutgoingContext(context.Background(), pairs)
+	entity := client.NewBoltzClient(conn)
+	entity.SetMacaroon(write.Macaroon)
 
-	entity := admin
-	entity.Ctx = restrictedCtx
+	entityAuto := client.NewAutoSwapClient(conn)
+	entityAuto.SetMacaroon(write.Macaroon)
 
-	entityAuto := adminAuto
-	entityAuto.Ctx = restrictedCtx
+	readEntity := client.NewBoltzClient(conn)
+	readEntity.SetMacaroon(readonly.Macaroon)
 
-	readEntity := admin
-	readEntity.Ctx = readCtx
+	t.Run("Parameter", func(t *testing.T) {
+		withEntityParam := client.NewBoltzClient(conn)
+		withEntityParam.SetEntity(entityInfo.Id)
+
+		info, err := withEntityParam.GetInfo()
+		require.NoError(t, err)
+		require.Equal(t, entityInfo.Id, *info.EntityId)
+	})
 
 	t.Run("Admin", func(t *testing.T) {
 		_, err = entity.BakeMacaroon(entityInfo.Id, adminPermissions)
@@ -293,6 +296,7 @@ func TestEntities(t *testing.T) {
 		info, err := readEntity.GetInfo()
 		require.NoError(t, err)
 		require.Empty(t, info.NodePubkey)
+		require.Equal(t, entityInfo.Id, *info.EntityId)
 	})
 
 	t.Run("AutoSwap", func(t *testing.T) {

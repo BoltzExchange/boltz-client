@@ -319,6 +319,8 @@ message GetInfoResponse {
     string auto_swap_status = 11;
     // mapping of the currency to the latest block height.
     BlockHeights block_heights = 8;
+    // the currently authenticated entity
+    optional int64 entity_id = 12;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -390,7 +392,6 @@ message ListSwapsRequest {
     optional Currency to = 2;
     optional bool is_auto = 3;
     optional SwapState state = 4;
-    optional int64 entity_id = 5;
 }
 message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
@@ -569,7 +570,6 @@ message ImportWalletResponse {}
 message GetWalletsRequest {
     optional Currency currency = 1;
     optional bool include_readonly = 2;
-    optional int64 entity_id = 3;
 }
 
 message GetWalletRequest {

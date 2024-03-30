@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"strconv"
+	"strings"
 )
 
 func (service *Service) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
@@ -63,5 +66,49 @@ func (service *Service) validateRequest(ctx context.Context, fullMethod string) 
 		return nil, err
 	}
 
-	return service.ValidateMacaroon(ctx, macBytes, requiredPermissions)
+	info, err := service.ValidateMacaroon(macBytes, requiredPermissions)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, caveat := range info.Conditions() {
+		cond, arg, err := checkers.ParseCaveat(caveat)
+		if err != nil {
+			return nil, err
+		}
+		if cond == checkers.CondDeclared {
+			split := strings.Split(arg, " ")
+			if split[0] == string(entityContextKey) {
+				if split[1] != "" {
+					entity, err := strconv.ParseInt(split[1], 10, 64)
+					if err != nil {
+						return nil, err
+					}
+					ctx = addEntityToContext(ctx, entity)
+				}
+			}
+		}
+	}
+
+	if entity := md.Get("entity"); len(entity) > 0 {
+		if len(entity) != 1 {
+			return nil, fmt.Errorf("expected 1 entity, got %s", entity)
+		}
+		if ctx.Value(entityContextKey) != nil {
+			return nil, errors.New("entity restriction already set by macaroon")
+		}
+		entity, err := strconv.ParseInt(entity[0], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		ctx = addEntityToContext(ctx, entity)
+	}
+
+	if entityId := EntityFromContext(ctx); entityId != nil {
+		if _, err := service.Database.GetEntity(*entityId); err != nil {
+			return nil, fmt.Errorf("invalid entity %d: %w", *entityId, err)
+		}
+	}
+
+	return ctx, err
 }

@@ -3,9 +3,6 @@ package macaroons
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
-
 	"github.com/BoltzExchange/boltz-client/database"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
@@ -44,7 +41,7 @@ func (service *Service) NewMacaroon(entity *int64, ops ...bakery.Op) (*bakery.Ma
 	return service.bakery.Oven.NewMacaroon(ctx, bakery.LatestVersion, caveats, ops...)
 }
 
-func (service *Service) ValidateMacaroon(ctx context.Context, macBytes []byte, requiredPermissions []bakery.Op) (context.Context, error) {
+func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []bakery.Op) (*bakery.AuthInfo, error) {
 	mac := &macaroon.Macaroon{}
 	err := mac.UnmarshalBinary(macBytes)
 
@@ -53,29 +50,5 @@ func (service *Service) ValidateMacaroon(ctx context.Context, macBytes []byte, r
 	}
 
 	authChecker := service.bakery.Checker.Auth(macaroon.Slice{mac})
-	info, err := authChecker.Allow(context.Background(), requiredPermissions...)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, caveat := range info.Conditions() {
-		cond, arg, err := checkers.ParseCaveat(caveat)
-		if err != nil {
-			return nil, err
-		}
-		if cond == checkers.CondDeclared {
-			split := strings.Split(arg, " ")
-			if split[0] == string(entityContextKey) {
-				if split[1] != "" {
-					entity, err := strconv.ParseInt(split[1], 10, 64)
-					if err != nil {
-						return nil, err
-					}
-					ctx = addEntityToContext(ctx, entity)
-				}
-			}
-		}
-	}
-
-	return ctx, err
+	return authChecker.Allow(context.Background(), requiredPermissions...)
 }

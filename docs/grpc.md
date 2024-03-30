@@ -588,6 +588,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `node_pubkey` | [`string`](#string) |  |  |
 | `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
 | `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
+| `entity_id` | [`int64`](#int64) | optional | the currently authenticated entity |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -721,7 +722,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `currency` | [`Currency`](#currency) | optional |  |
 | `include_readonly` | [`bool`](#bool) | optional |  |
-| `entity_id` | [`int64`](#int64) | optional |  |
 
 
 
@@ -814,7 +814,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `to` | [`Currency`](#currency) | optional |  |
 | `is_auto` | [`bool`](#bool) | optional |  |
 | `state` | [`SwapState`](#swapstate) | optional |  |
-| `entity_id` | [`int64`](#int64) | optional |  |
 
 
 

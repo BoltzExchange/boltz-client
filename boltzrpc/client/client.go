@@ -1,21 +1,19 @@
 package client
 
 import (
-	"context"
-
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 
 type Boltz struct {
+	Connection
 	Client boltzrpc.BoltzClient
-	Ctx    context.Context
 }
 
 func NewBoltzClient(conn Connection) Boltz {
 	return Boltz{
-		Ctx:    conn.Ctx,
-		Client: boltzrpc.NewBoltzClient(conn.ClientConn),
+		Connection: conn,
+		Client:     boltzrpc.NewBoltzClient(conn.ClientConn),
 	}
 }
 

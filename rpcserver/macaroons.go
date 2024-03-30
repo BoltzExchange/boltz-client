@@ -1,7 +1,6 @@
 package rpcserver
 
 import (
-	"context"
 	"os"
 
 	"github.com/BoltzExchange/boltz-client/database"
@@ -32,12 +31,11 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 		}
 
 		valid := true
-		ctx := context.Background()
-		if _, err := service.ValidateMacaroon(ctx, adminMac, macaroons.AdminPermissions()); err != nil {
+		if _, err := service.ValidateMacaroon(adminMac, macaroons.AdminPermissions()); err != nil {
 			valid = false
 		}
 
-		if _, err := service.ValidateMacaroon(ctx, readMac, macaroons.ReadPermissions); err != nil {
+		if _, err := service.ValidateMacaroon(readMac, macaroons.ReadPermissions); err != nil {
 			valid = false
 		}
 
