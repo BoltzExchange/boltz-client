@@ -37,7 +37,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 			if nursery.stopped {
 				return
 			}
-			swapsToRefund, err := nursery.database.QueryRefundableSwaps(newBlock.Height, currency)
+			swapsToRefund, err := nursery.database.QueryRefundableSwapsForBlockHeight(newBlock.Height, currency)
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
 				continue
