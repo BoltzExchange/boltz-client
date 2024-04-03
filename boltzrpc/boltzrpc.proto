@@ -319,8 +319,10 @@ message GetInfoResponse {
     string auto_swap_status = 11;
     // mapping of the currency to the latest block height.
     BlockHeights block_heights = 8;
+    // swaps that need a manual interaction to refund
+    repeated string refundable_swaps = 12;
     // the currently authenticated entity
-    optional int64 entity_id = 12;
+    optional int64 entity_id = 13;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];

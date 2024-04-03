@@ -727,6 +727,10 @@ func TestSwap(t *testing.T) {
 									info := stream(boltzrpc.SwapState_ERROR).Swap
 									refundAddress := cli("getnewaddress")
 
+									clientInfo, err := client.GetInfo()
+									require.NoError(t, err)
+									require.Equal(t, clientInfo.RefundableSwaps[0], info.Id)
+
 									t.Run("Invalid", func(t *testing.T) {
 										_, err := client.RefundSwap(info.Id, "invalid")
 										requireCode(t, err, codes.InvalidArgument)

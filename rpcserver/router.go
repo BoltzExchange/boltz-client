@@ -89,6 +89,16 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		pendingReverseSwapIds = append(pendingReverseSwapIds, pendingReverseSwap.Id)
 	}
 
+	refundableSwaps, err := server.database.QueryRefundableSwaps()
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	var refundableSwapIds []string
+	for _, refundableSwap := range refundableSwaps {
+		refundableSwapIds = append(pendingReverseSwapIds, refundableSwap.Id)
+	}
+
 	blockHeights := &boltzrpc.BlockHeights{}
 	blockHeights.Btc, err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
 	if err != nil {
@@ -108,6 +118,7 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		EntityId:            macaroons.EntityFromContext(ctx),
 		PendingSwaps:        pendingSwapIds,
 		PendingReverseSwaps: pendingReverseSwapIds,
+		RefundableSwaps:     refundableSwapIds,
 
 		Symbol:      "BTC",
 		BlockHeight: blockHeights.Btc,

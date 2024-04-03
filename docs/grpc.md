@@ -588,6 +588,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `node_pubkey` | [`string`](#string) |  |  |
 | `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
 | `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
+| `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
 | `entity_id` | [`int64`](#int64) | optional | the currently authenticated entity |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
