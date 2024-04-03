@@ -239,7 +239,7 @@ Get a specifiy entity.
 
 #### BakeMacaroon
 
-Bakes a new macaroon for a given entity with the specified permissions. Any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities. The underlying lightning node of the daemon can not be used to pay or create invocies for swaps.
+Bakes a new macaroon with the specified permissions. The macaroon can also be restricted to a specific entity. In this case, - any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities. - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
 
 | Request | Response |
 | ------- | -------- |
@@ -257,7 +257,7 @@ Bakes a new macaroon for a given entity with the specified permissions. Any swap
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `entity_id` | [`int64`](#int64) |  |  |
+| `entity_id` | [`int64`](#int64) | optional |  |
 | `permissions` | [`MacaroonPermissions`](#macaroonpermissions) | repeated |  |
 
 

@@ -212,12 +212,20 @@ func AdminPermissions() []bakery.Op {
 	return admin
 }
 
-func EntityPermissions(permissions []*boltzrpc.MacaroonPermissions) (result []bakery.Op) {
+func GetPermissions(isEntity bool, permissions []*boltzrpc.MacaroonPermissions) (result []bakery.Op) {
 	for _, permission := range permissions {
 		if permission.Action == boltzrpc.MacaroonAction_READ {
-			result = append(result, EntityReadPermissions...)
+			if isEntity {
+				result = append(result, EntityReadPermissions...)
+			} else {
+				result = append(result, ReadPermissions...)
+			}
 		} else if permission.Action == boltzrpc.MacaroonAction_WRITE {
-			result = append(result, EntityWritePermissions...)
+			if isEntity {
+				result = append(result, EntityWritePermissions...)
+			} else {
+				result = append(result, WritePermissions...)
+			}
 		}
 	}
 	return result

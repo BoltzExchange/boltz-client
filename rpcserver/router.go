@@ -1198,18 +1198,20 @@ func isAdmin(ctx context.Context) bool {
 }
 
 func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {
-	permission := macaroons.EntityPermissions(request.Permissions)
 
 	if !isAdmin(ctx) {
 		return nil, handleError(errors.New("only admin can bake macaroons"))
 	}
 
-	_, err := server.database.GetEntity(request.EntityId)
-	if err != nil {
-		return nil, handleError(fmt.Errorf("could not find entity %d: %w", request.EntityId, err))
+	if request.EntityId != nil {
+		_, err := server.database.GetEntity(request.GetEntityId())
+		if err != nil {
+			return nil, handleError(fmt.Errorf("could not find entity %d: %w", request.EntityId, err))
+		}
 	}
 
-	mac, err := server.macaroon.NewMacaroon(&request.EntityId, permission...)
+	permissions := macaroons.GetPermissions(request.EntityId != nil, request.Permissions)
+	mac, err := server.macaroon.NewMacaroon(request.EntityId, permissions...)
 	if err != nil {
 		return nil, handleError(err)
 	}

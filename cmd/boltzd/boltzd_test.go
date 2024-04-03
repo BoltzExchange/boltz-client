@@ -7,12 +7,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/database"
 	"net"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/database"
 
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/vulpemventures/go-elements/address"
@@ -230,129 +231,171 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
-func TestEntities(t *testing.T) {
+func TestMacaroons(t *testing.T) {
 	admin, _, stop := setup(t, nil, "")
 	conn := admin.Connection
 	defer stop()
 
-	entityName := "test"
-
-	entityInfo, err := admin.CreateEntity(entityName)
-	require.NoError(t, err)
-	require.NotZero(t, entityInfo.Id)
-
-	adminPermissions := []*boltzrpc.MacaroonPermissions{
+	fullPermissions := []*boltzrpc.MacaroonPermissions{
 		{Action: boltzrpc.MacaroonAction_READ},
 		{Action: boltzrpc.MacaroonAction_WRITE},
 	}
 
-	write, err := admin.BakeMacaroon(entityInfo.Id, adminPermissions)
-	require.NoError(t, err)
-	require.NotZero(t, write.Macaroon)
-
-	readonly, err := admin.BakeMacaroon(entityInfo.Id, []*boltzrpc.MacaroonPermissions{
+	readPermissions := []*boltzrpc.MacaroonPermissions{
 		{Action: boltzrpc.MacaroonAction_READ},
-	})
-	require.NoError(t, err)
-	require.NotZero(t, write.Macaroon)
-
-	entity := client.NewBoltzClient(conn)
-	entity.SetMacaroon(write.Macaroon)
-
-	entityAuto := client.NewAutoSwapClient(conn)
-	entityAuto.SetMacaroon(write.Macaroon)
-
-	readEntity := client.NewBoltzClient(conn)
-	readEntity.SetMacaroon(readonly.Macaroon)
-
-	t.Run("Parameter", func(t *testing.T) {
-		withEntityParam := client.NewBoltzClient(conn)
-		withEntityParam.SetEntity(entityInfo.Id)
-
-		info, err := withEntityParam.GetInfo()
-		require.NoError(t, err)
-		require.Equal(t, entityInfo.Id, *info.EntityId)
-	})
+	}
 
 	t.Run("Admin", func(t *testing.T) {
-		_, err = entity.BakeMacaroon(entityInfo.Id, adminPermissions)
-		require.Error(t, err)
-
-		_, err = entity.GetEntity(entityInfo.Name)
-		require.Error(t, err)
-
-		_, err = entity.ListEntities()
-		require.Error(t, err)
-
-		_, err = admin.GetEntity(entityInfo.Name)
+		response, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+			Permissions: fullPermissions,
+		})
 		require.NoError(t, err)
 
-		list, err := admin.ListEntities()
-		require.NoError(t, err)
-		require.Len(t, list.Entities, 1)
-	})
+		anotherAdmin := client.NewBoltzClient(conn)
 
-	t.Run("Info", func(t *testing.T) {
-		info, err := readEntity.GetInfo()
-		require.NoError(t, err)
-		require.Empty(t, info.NodePubkey)
-		require.Equal(t, entityInfo.Id, *info.EntityId)
-	})
+		anotherAdmin.SetMacaroon(response.Macaroon)
 
-	t.Run("AutoSwap", func(t *testing.T) {
-		_, err := entityAuto.GetConfig()
-		require.Error(t, err)
-	})
-
-	t.Run("Wallet", func(t *testing.T) {
-		_, err = entity.GetWallet(walletName)
-		require.Error(t, err)
-
-		_, err = readEntity.CreateWallet(walletInfo, "")
-		require.Error(t, err)
-
-		_, err = entity.CreateWallet(walletInfo, "")
+		response, err = admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+			Permissions: readPermissions,
+		})
 		require.NoError(t, err)
 
-		wallets, err := entity.GetWallets(nil, true)
-		require.NoError(t, err)
-		require.Len(t, wallets.Wallets, 1)
+		anotherAdmin.SetMacaroon(response.Macaroon)
 
-		wallets, err = admin.GetWallets(nil, true)
-		require.NoError(t, err)
-		require.Len(t, wallets.Wallets, 2)
-	})
-
-	t.Run("Swaps", func(t *testing.T) {
-		_, err = admin.CreateSwap(&boltzrpc.CreateSwapRequest{})
-		require.NoError(t, err)
-		_, err = admin.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
-		require.NoError(t, err)
-
-		swaps, err := readEntity.ListSwaps(&boltzrpc.ListSwapsRequest{})
-		require.NoError(t, err)
-		require.Empty(t, swaps.Swaps)
-		require.Empty(t, swaps.ReverseSwaps)
-
-		_, err = readEntity.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-			Amount: 100000,
+		// write actions are not allowed now
+		_, err = anotherAdmin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+			Permissions: readPermissions,
 		})
 		require.Error(t, err)
 
-		externalPay := false
-		_, err = entity.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-			Amount:      100000,
-			ExternalPay: &externalPay,
-		})
-		require.Errorf(t, err, "no lightning node available, external pay required")
+		err = anotherAdmin.Stop()
+		require.Error(t, err)
 
-		_, err = entity.CreateSwap(&boltzrpc.CreateSwapRequest{})
-		require.Error(t, err, "no lightning node available, invoice required")
-
-		swaps, err = admin.ListSwaps(&boltzrpc.ListSwapsRequest{})
+		_, err = anotherAdmin.ListEntities()
 		require.NoError(t, err)
-		require.Len(t, swaps.Swaps, 1)
-		require.Len(t, swaps.ReverseSwaps, 1)
+	})
+
+	t.Run("Entity", func(t *testing.T) {
+
+		entityName := "test"
+
+		entityInfo, err := admin.CreateEntity(entityName)
+		require.NoError(t, err)
+		require.NotZero(t, entityInfo.Id)
+
+		write, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+			EntityId:    &entityInfo.Id,
+			Permissions: fullPermissions,
+		})
+		require.NoError(t, err)
+
+		readonly, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+			EntityId:    &entityInfo.Id,
+			Permissions: readPermissions,
+		})
+		require.NoError(t, err)
+
+		entity := client.NewBoltzClient(conn)
+		entity.SetMacaroon(write.Macaroon)
+
+		entityAuto := client.NewAutoSwapClient(conn)
+		entityAuto.SetMacaroon(write.Macaroon)
+
+		readEntity := client.NewBoltzClient(conn)
+		readEntity.SetMacaroon(readonly.Macaroon)
+
+		t.Run("Parameter", func(t *testing.T) {
+			withEntityParam := client.NewBoltzClient(conn)
+			withEntityParam.SetEntity(entityInfo.Id)
+
+			info, err := withEntityParam.GetInfo()
+			require.NoError(t, err)
+			require.Equal(t, entityInfo.Id, *info.EntityId)
+		})
+
+		t.Run("Admin", func(t *testing.T) {
+			_, err = entity.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+				EntityId:    &entityInfo.Id,
+				Permissions: readPermissions,
+			})
+			require.Error(t, err)
+
+			_, err = entity.GetEntity(entityInfo.Name)
+			require.Error(t, err)
+
+			_, err = entity.ListEntities()
+			require.Error(t, err)
+
+			_, err = admin.GetEntity(entityInfo.Name)
+			require.NoError(t, err)
+
+			list, err := admin.ListEntities()
+			require.NoError(t, err)
+			require.Len(t, list.Entities, 1)
+		})
+
+		t.Run("Info", func(t *testing.T) {
+			info, err := readEntity.GetInfo()
+			require.NoError(t, err)
+			require.Empty(t, info.NodePubkey)
+			require.Equal(t, entityInfo.Id, *info.EntityId)
+		})
+
+		t.Run("AutoSwap", func(t *testing.T) {
+			_, err := entityAuto.GetConfig()
+			require.Error(t, err)
+		})
+
+		t.Run("Wallet", func(t *testing.T) {
+			_, err = entity.GetWallet(walletName)
+			require.Error(t, err)
+
+			_, err = readEntity.CreateWallet(walletInfo, "")
+			require.Error(t, err)
+
+			_, err = entity.CreateWallet(walletInfo, "")
+			require.NoError(t, err)
+
+			wallets, err := entity.GetWallets(nil, true)
+			require.NoError(t, err)
+			require.Len(t, wallets.Wallets, 1)
+
+			wallets, err = admin.GetWallets(nil, true)
+			require.NoError(t, err)
+			require.Len(t, wallets.Wallets, 2)
+		})
+
+		t.Run("Swaps", func(t *testing.T) {
+			_, err = admin.CreateSwap(&boltzrpc.CreateSwapRequest{})
+			require.NoError(t, err)
+			_, err = admin.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
+			require.NoError(t, err)
+
+			swaps, err := readEntity.ListSwaps(&boltzrpc.ListSwapsRequest{})
+			require.NoError(t, err)
+			require.Empty(t, swaps.Swaps)
+			require.Empty(t, swaps.ReverseSwaps)
+
+			_, err = readEntity.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+				Amount: 100000,
+			})
+			require.Error(t, err)
+
+			externalPay := false
+			_, err = entity.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+				Amount:      100000,
+				ExternalPay: &externalPay,
+			})
+			require.Errorf(t, err, "no lightning node available, external pay required")
+
+			_, err = entity.CreateSwap(&boltzrpc.CreateSwapRequest{})
+			require.Error(t, err, "no lightning node available, invoice required")
+
+			swaps, err = admin.ListSwaps(&boltzrpc.ListSwapsRequest{})
+			require.NoError(t, err)
+			require.Len(t, swaps.Swaps, 1)
+			require.Len(t, swaps.ReverseSwaps, 1)
+		})
 	})
 
 }
