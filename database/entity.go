@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 )
 
@@ -20,30 +19,16 @@ func (d *Database) GetEntity(id int64) (*Entity, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	query := "SELECT * FROM entities WHERE id = ?"
-	rows, err := d.Query(query, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query entities: %w", err)
-	}
-	defer rows.Close()
-	if rows.Next() {
-		return parseEntity(rows)
-	}
-	return nil, fmt.Errorf("could not find entity with id %d", id)
+	row := d.QueryRow(query, id)
+	return parseEntity(row)
 }
 
 func (d *Database) GetEntityByName(name string) (*Entity, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	query := "SELECT * FROM entities WHERE name  = ?"
-	rows, err := d.Query(query, name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query entities: %w", err)
-	}
-	defer rows.Close()
-	if rows.Next() {
-		return parseEntity(rows)
-	}
-	return nil, fmt.Errorf("could not find entity with name %s", name)
+	row := d.QueryRow(query, name)
+	return parseEntity(row)
 }
 
 func (d *Database) QueryEntities() ([]*Entity, error) {
@@ -65,9 +50,9 @@ func (d *Database) QueryEntities() ([]*Entity, error) {
 	return result, nil
 }
 
-func parseEntity(rows *sql.Rows) (*Entity, error) {
+func parseEntity(r row) (*Entity, error) {
 	entity := &Entity{}
-	err := rows.Scan(&entity.Id, &entity.Name)
+	err := r.Scan(&entity.Id, &entity.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse entity: %w", err)
 	}

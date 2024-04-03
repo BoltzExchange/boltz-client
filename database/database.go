@@ -134,6 +134,10 @@ type Transaction struct {
 	Database
 }
 
+type row interface {
+	Scan(dest ...any) error
+}
+
 type JsonScanner[T any] struct {
 	Value    T
 	Nullable bool
