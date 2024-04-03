@@ -74,7 +74,7 @@ func (lnd *LND) SetupWallet(id int64) {
 	lnd.walletInfo = onchain.WalletInfo{
 		Id:       id,
 		Readonly: false,
-		Name:     "LND",
+		Name:     lnd.Name(),
 		Currency: boltz.CurrencyBtc,
 	}
 }
