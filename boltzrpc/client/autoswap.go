@@ -1,21 +1,20 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 
 type AutoSwap struct {
+	Connection
 	Client autoswaprpc.AutoSwapClient
-	Ctx    context.Context
 }
 
 func NewAutoSwapClient(conn Connection) AutoSwap {
 	return AutoSwap{
-		Ctx:    conn.Ctx,
-		Client: autoswaprpc.NewAutoSwapClient(conn.ClientConn),
+		Connection: conn,
+		Client:     autoswaprpc.NewAutoSwapClient(conn.ClientConn),
 	}
 }
 

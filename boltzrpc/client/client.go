@@ -1,21 +1,19 @@
 package client
 
 import (
-	"context"
-
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 
 type Boltz struct {
+	Connection
 	Client boltzrpc.BoltzClient
-	Ctx    context.Context
 }
 
 func NewBoltzClient(conn Connection) Boltz {
 	return Boltz{
-		Ctx:    conn.Ctx,
-		Client: boltzrpc.NewBoltzClient(conn.ClientConn),
+		Connection: conn,
+		Client:     boltzrpc.NewBoltzClient(conn.ClientConn),
 	}
 }
 
@@ -63,7 +61,7 @@ func (boltz *Boltz) CreateReverseSwap(request *boltzrpc.CreateReverseSwapRequest
 	return boltz.Client.CreateReverseSwap(boltz.Ctx, request)
 }
 func (boltz *Boltz) GetWallet(name string) (*boltzrpc.Wallet, error) {
-	return boltz.Client.GetWallet(boltz.Ctx, &boltzrpc.GetWalletRequest{Name: name})
+	return boltz.Client.GetWallet(boltz.Ctx, &boltzrpc.GetWalletRequest{Name: &name})
 }
 
 func (boltz *Boltz) GetWallets(currency *boltzrpc.Currency, includeReadonly bool) (*boltzrpc.Wallets, error) {
@@ -123,4 +121,20 @@ func (boltz *Boltz) HasPassword() (bool, error) {
 func (boltz *Boltz) ChangeWalletPassword(old string, new string) error {
 	_, err := boltz.Client.ChangeWalletPassword(boltz.Ctx, &boltzrpc.ChangeWalletPasswordRequest{Old: old, New: new})
 	return err
+}
+
+func (boltz *Boltz) CreateEntity(name string) (*boltzrpc.Entity, error) {
+	return boltz.Client.CreateEntity(boltz.Ctx, &boltzrpc.CreateEntityRequest{Name: name})
+}
+
+func (boltz *Boltz) GetEntity(name string) (*boltzrpc.Entity, error) {
+	return boltz.Client.GetEntity(boltz.Ctx, &boltzrpc.GetEntityRequest{Name: name})
+}
+
+func (boltz *Boltz) ListEntities() (*boltzrpc.ListEntitiesResponse, error) {
+	return boltz.Client.ListEntities(boltz.Ctx, &boltzrpc.ListEntitiesRequest{})
+}
+
+func (boltz *Boltz) BakeMacaroon(request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {
+	return boltz.Client.BakeMacaroon(boltz.Ctx, request)
 }

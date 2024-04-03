@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"github.com/stretchr/testify/require"
 
@@ -41,8 +42,10 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 		}
 	}
 	credentials := &wallet.Credentials{
+		WalletInfo: onchain.WalletInfo{
+			Currency: currency,
+		},
 		Mnemonic: "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large",
-		Currency: currency,
 	}
 	wallet, err := wallet.Login(credentials)
 	if err != nil {

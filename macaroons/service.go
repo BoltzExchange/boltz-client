@@ -2,12 +2,14 @@ package macaroons
 
 import (
 	"context"
+	"fmt"
 	"github.com/BoltzExchange/boltz-client/database"
 	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"
 )
 
-var defaultRootKeyID = []byte("0")
+var defaultRootKeyID = []byte("abcdef")
 
 type Service struct {
 	Database *database.Database
@@ -28,22 +30,25 @@ func (service *Service) Init() {
 	service.bakery = bakery.New(macaroonParams)
 }
 
-func (service *Service) NewMacaroon(ops ...bakery.Op) (*bakery.Macaroon, error) {
+func (service *Service) NewMacaroon(entity *int64, ops ...bakery.Op) (*bakery.Macaroon, error) {
 	ctx := addRootKeyIdToContext(context.Background(), defaultRootKeyID)
 
-	return service.bakery.Oven.NewMacaroon(ctx, bakery.LatestVersion, nil, ops...)
+	var caveats []checkers.Caveat
+	if entity != nil {
+		caveats = append(caveats, checkers.DeclaredCaveat(string(entityContextKey), fmt.Sprint(*entity)))
+	}
+
+	return service.bakery.Oven.NewMacaroon(ctx, bakery.LatestVersion, caveats, ops...)
 }
 
-func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []bakery.Op) error {
+func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []bakery.Op) (*bakery.AuthInfo, error) {
 	mac := &macaroon.Macaroon{}
 	err := mac.UnmarshalBinary(macBytes)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	authChecker := service.bakery.Checker.Auth(macaroon.Slice{mac})
-	_, err = authChecker.Allow(context.Background(), requiredPermissions...)
-
-	return err
+	return authChecker.Allow(context.Background(), requiredPermissions...)
 }

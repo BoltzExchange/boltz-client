@@ -58,22 +58,29 @@ type LND struct {
 	invoices      invoicesrpc.InvoicesClient
 	walletKit     walletrpc.WalletKitClient
 	chainNotifier chainrpc.ChainNotifierClient
+
+	walletInfo onchain.WalletInfo
+}
+
+func (lnd *LND) GetWalletInfo() onchain.WalletInfo {
+	return lnd.walletInfo
 }
 
 func (lnd *LND) Name() string {
 	return "LND"
 }
 
+func (lnd *LND) SetupWallet(id int64) {
+	lnd.walletInfo = onchain.WalletInfo{
+		Id:       id,
+		Readonly: false,
+		Name:     lnd.Name(),
+		Currency: boltz.CurrencyBtc,
+	}
+}
+
 func (lnd *LND) Ready() bool {
 	return lnd.client != nil
-}
-
-func (lnd *LND) Readonly() bool {
-	return false
-}
-
-func (lnd *LND) Currency() boltz.Currency {
-	return boltz.CurrencyBtc
 }
 
 func (lnd *LND) Connect() error {

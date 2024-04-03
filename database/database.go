@@ -40,8 +40,8 @@ CREATE TABLE swaps
     error               VARCHAR,
     status              VARCHAR,
     privateKey          VARCHAR,
-    swapTree            JSON, 
-    claimPubKey         VARCHAR, 
+    swapTree            JSON,
+    claimPubKey         VARCHAR,
     preimage            VARCHAR,
     redeemScript        VARCHAR,
     invoice             VARCHAR,
@@ -57,7 +57,8 @@ CREATE TABLE swaps
     serviceFeePercent   REAL,
     onchainFee          INT,
     createdAt           INT,
-    wallet              VARCHAR
+    walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
+    entityId            INT REFERENCES entities (id)
 );
 CREATE TABLE reverseSwaps
 (
@@ -70,7 +71,7 @@ CREATE TABLE reverseSwaps
     status              VARCHAR,
     acceptZeroConf      BOOLEAN,
     privateKey          VARCHAR,
-    swapTree            JSON, 
+    swapTree            JSON,
     refundPubKey        VARCHAR,
     preimage            VARCHAR,
     redeemScript        VARCHAR,
@@ -87,7 +88,9 @@ CREATE TABLE reverseSwaps
     serviceFeePercent   REAL    DEFAULT 0,
     onchainFee          INT,
     createdAt           INT,
-    externalPay         BOOLEAN
+    externalPay         BOOLEAN,
+    walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
+    entityId            INT REFERENCES entities (id)
 );
 CREATE TABLE autobudget
 (
@@ -96,14 +99,26 @@ CREATE TABLE autobudget
 );
 CREATE TABLE wallets
 (
-    name           VARCHAR PRIMARY KEY,
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    name           VARCHAR,
     currency       VARCHAR,
+    nodePubkey     VARCHAR,
     xpub           VARCHAR,
     coreDescriptor VARCHAR,
     mnemonic       VARCHAR,
     subaccount     INT,
-    salt           VARCHAR
+    salt           VARCHAR,
+    entityId       INT REFERENCES entities (id),
+
+    UNIQUE (name, entityId, nodePubkey),
+    UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
 );
+CREATE TABLE entities
+(
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR UNIQUE
+)
+
 `
 
 type Database struct {
@@ -117,6 +132,10 @@ type Database struct {
 
 type Transaction struct {
 	Database
+}
+
+type row interface {
+	Scan(dest ...any) error
 }
 
 type JsonScanner[T any] struct {
@@ -188,11 +207,12 @@ func (transaction *Transaction) Rollback(cause error) error {
 }
 
 type SwapQuery struct {
-	From   *boltz.Currency
-	To     *boltz.Currency
-	State  *boltzrpc.SwapState
-	IsAuto *bool
-	Since  time.Time
+	From     *boltz.Currency
+	To       *boltz.Currency
+	State    *boltzrpc.SwapState
+	IsAuto   *bool
+	Since    time.Time
+	EntityId *int64
 }
 
 func (query *SwapQuery) ToWhereClause() (where string, values []any) {
@@ -216,6 +236,10 @@ func (query *SwapQuery) ToWhereClause() (where string, values []any) {
 	if !query.Since.IsZero() {
 		conditions = append(conditions, "createdAt >= ?")
 		values = append(values, query.Since.Unix())
+	}
+	if query.EntityId != nil {
+		conditions = append(conditions, "entityId = ?")
+		values = append(values, query.EntityId)
 	}
 	if len(conditions) > 0 {
 		where = " WHERE " + strings.Join(conditions, " AND ")

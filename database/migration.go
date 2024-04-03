@@ -16,7 +16,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 6
+const latestSchemaVersion = 7
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -388,7 +388,45 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		if _, err := tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN externalPay BOOLEAN"); err != nil {
 			return err
 		}
+	case 6:
+		logMigration(oldVersion)
 
+		migration := `
+		CREATE TABLE entities
+		(
+			id   INTEGER PRIMARY KEY AUTOINCREMENT,
+			name VARCHAR UNIQUE
+		);
+		ALTER TABLE wallets RENAME TO old_wallets;
+		CREATE TABLE wallets
+		(
+			id             INTEGER PRIMARY KEY AUTOINCREMENT,
+			name           VARCHAR,
+			currency       VARCHAR,
+			nodePubkey     VARCHAR,
+			xpub           VARCHAR,
+			coreDescriptor VARCHAR,
+			mnemonic       VARCHAR,
+			subaccount     INT,
+			salt           VARCHAR,
+			entityId       INT REFERENCES entities (id),
+
+			UNIQUE (name, entityId, nodePubkey),
+			UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
+		);
+		INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt)
+		SELECT name, currency,  xpub, coreDescriptor, mnemonic, subaccount, salt FROM old_wallets;
+		DROP TABLE old_wallets;
+		ALTER TABLE swaps ADD COLUMN walletId INT REFERENCES wallets(id) ON DELETE SET NULL;
+		ALTER TABLE swaps ADD COLUMN entityId INT REFERENCES entities(id);
+		ALTER TABLE reverseSwaps ADD COLUMN walletId INT REFERENCES wallets(id) ON DELETE SET NULL;
+		ALTER TABLE reverseSwaps ADD COLUMN entityId INT REFERENCES entities(id);
+		ALTER TABLE swaps DROP COLUMN wallet;
+		`
+
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
 	case latestSchemaVersion:
 		logger.Info("database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 		return nil

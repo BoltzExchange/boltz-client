@@ -27,6 +27,17 @@ type Connection struct {
 	Ctx context.Context
 }
 
+func (connection *Connection) SetMacaroon(macaroon string) {
+	md := metadata.Pairs("macaroon", macaroon)
+	connection.Ctx = metadata.NewOutgoingContext(context.Background(), md)
+}
+
+func (connection *Connection) SetEntity(entity int64) {
+	md, _ := metadata.FromOutgoingContext(connection.Ctx)
+	md.Set("entity", fmt.Sprint(entity))
+	connection.Ctx = metadata.NewOutgoingContext(context.Background(), md)
+}
+
 func (connection *Connection) Connect() error {
 	creds := insecure.NewCredentials()
 	var err error
@@ -56,8 +67,7 @@ func (connection *Connection) Connect() error {
 				return errors.New(fmt.Sprint("could not read connection macaroon: ", err))
 			}
 
-			macaroon := metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
-			connection.Ctx = metadata.NewOutgoingContext(connection.Ctx, macaroon)
+			connection.SetMacaroon(hex.EncodeToString(macaroonFile))
 		}
 	}
 

@@ -33,7 +33,8 @@ type Cln struct {
 
 	Client protos.NodeClient
 
-	regtest bool
+	regtest    bool
+	walletInfo onchain.WalletInfo
 }
 
 const (
@@ -54,14 +55,6 @@ var (
 
 func (c *Cln) Ready() bool {
 	return c.Client != nil
-}
-
-func (c *Cln) Readonly() bool {
-	return false
-}
-
-func (c *Cln) Currency() boltz.Currency {
-	return boltz.CurrencyBtc
 }
 
 func (c *Cln) Connect() error {
@@ -96,6 +89,19 @@ func (c *Cln) Connect() error {
 
 func (c *Cln) Name() string {
 	return string(serviceName)
+}
+
+func (c *Cln) GetWalletInfo() onchain.WalletInfo {
+	return c.walletInfo
+}
+
+func (c *Cln) SetupWallet(id int64) {
+	c.walletInfo = onchain.WalletInfo{
+		Id:       id,
+		Readonly: false,
+		Name:     c.Name(),
+		Currency: boltz.CurrencyBtc,
+	}
 }
 
 func (c *Cln) NodeType() lightning.LightningNodeType {

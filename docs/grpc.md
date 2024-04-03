@@ -213,10 +213,69 @@ Changes the password for wallet encryption.
 | ------- | -------- |
 | [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
+#### CreateEntity
+
+Creates a new entity which can be used to bake restricted macaroons.
+
+| Request | Response |
+| ------- | -------- |
+| [`CreateEntityRequest`](#createentityrequest) | [`Entity`](#entity) |
+
+#### ListEntities
+
+Returns all entities.
+
+| Request | Response |
+| ------- | -------- |
+| [`ListEntitiesRequest`](#listentitiesrequest) | [`ListEntitiesResponse`](#listentitiesresponse) |
+
+#### GetEntity
+
+Get a specifiy entity.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetEntityRequest`](#getentityrequest) | [`Entity`](#entity) |
+
+#### BakeMacaroon
+
+Bakes a new macaroon with the specified permissions. The macaroon can also be restricted to a specific entity. In this case, - any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities. - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
+
+| Request | Response |
+| ------- | -------- |
+| [`BakeMacaroonRequest`](#bakemacaroonrequest) | [`BakeMacaroonResponse`](#bakemacaroonresponse) |
+
 
 
 
 ### Messages
+
+#### BakeMacaroonRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `entity_id` | [`int64`](#int64) | optional |  |
+| `permissions` | [`MacaroonPermissions`](#macaroonpermissions) | repeated |  |
+
+
+
+
+
+#### BakeMacaroonResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `macaroon` | [`string`](#string) |  |  |
+
+
+
+
 
 #### Balance
 
@@ -338,6 +397,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### CreateEntityRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [`string`](#string) |  |  |
+
+
+
+
+
 #### CreateReverseSwapRequest
 
 
@@ -350,7 +422,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `accept_zero_conf` | [`bool`](#bool) |  | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
 | `pair` | [`Pair`](#pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style. |
-| `wallet` | [`string`](#string) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
+| `wallet_id` | [`int64`](#int64) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
 | `return_immediately` | [`bool`](#bool) | optional | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true. |
 
@@ -386,7 +458,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  | not yet supported repeated string chan_ids = 3; |
 | `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
-| `wallet` | [`string`](#string) | optional | wallet to pay swap from. only used if `send_from_internal` is set to true |
+| `wallet_id` | [`int64`](#int64) | optional | wallet to pay swap from. only used if `send_from_internal` is set to true |
 | `invoice` | [`string`](#string) | optional | invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node |
 
 
@@ -454,6 +526,20 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### Entity
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`int64`](#int64) |  |  |
+| `name` | [`string`](#string) |  |  |
+
+
+
+
+
 #### Fees
 
 
@@ -463,6 +549,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
 | `miner` | [`MinerFees`](#minerfees) |  |  |
+
+
+
+
+
+#### GetEntityRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [`string`](#string) |  |  |
 
 
 
@@ -490,6 +589,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
 | `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
 | `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
+| `entity_id` | [`int64`](#int64) | optional | the currently authenticated entity |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -607,7 +707,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `name` | [`string`](#string) |  |  |
+| `name` | [`string`](#string) | optional |  |
+| `id` | [`int64`](#int64) | optional |  |
 
 
 
@@ -682,6 +783,27 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### ListEntitiesRequest
+
+
+
+
+
+
+
+#### ListEntitiesResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `entities` | [`Entity`](#entity) | repeated |  |
+
+
+
+
+
 #### ListSwapsRequest
 
 
@@ -708,6 +830,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `swaps` | [`SwapInfo`](#swapinfo) | repeated |  |
 | `channel_creations` | [`CombinedChannelSwapInfo`](#combinedchannelswapinfo) | repeated |  |
 | `reverse_swaps` | [`ReverseSwapInfo`](#reverseswapinfo) | repeated |  |
+
+
+
+
+
+#### MacaroonPermissions
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `action` | [`MacaroonAction`](#macaroonaction) |  |  |
 
 
 
@@ -941,7 +1076,7 @@ Submarine Pair
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
-| `wallet` | [`string`](#string) | optional | internal wallet which was used to pay the swap |
+| `wallet_id` | [`int64`](#int64) | optional | internal wallet which was used to pay the swap |
 
 
 
@@ -1010,6 +1145,7 @@ Submarine Pair
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `id` | [`int64`](#int64) |  |  |
 | `name` | [`string`](#string) |  |  |
 | `currency` | [`Currency`](#currency) |  |  |
 | `readonly` | [`bool`](#bool) |  |  |
@@ -1074,6 +1210,16 @@ Submarine Pair
 | ---- | ------ | ----------- |
 | BTC | 0 |  |
 | LBTC | 1 |  |
+
+
+
+#### MacaroonAction
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| READ | 0 |  |
+| WRITE | 1 |  |
 
 
 

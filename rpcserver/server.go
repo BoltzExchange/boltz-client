@@ -18,7 +18,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/macaroons"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -111,11 +110,11 @@ func (server *RpcServer) Init(
 	}
 	if lightning != nil {
 		swapper.ExecuteSwap = func(request *boltzrpc.CreateSwapRequest) error {
-			_, err := routedServer.createSwap(true, request)
+			_, err := routedServer.createSwap(context.Background(), true, request)
 			return err
 		}
 		swapper.ExecuteReverseSwap = func(request *boltzrpc.CreateReverseSwapRequest) error {
-			_, err := routedServer.createReverseSwap(true, request)
+			_, err := routedServer.createReverseSwap(context.Background(), true, request)
 			return err
 		}
 		swapper.ListChannels = routedServer.lightning.ListChannels
@@ -146,10 +145,8 @@ func (server *RpcServer) Init(
 
 		serverOpts = append(serverOpts, serverCreds)
 	}
-	var macaroonService *macaroons.Service
-
 	if !server.NoMacaroons {
-		macaroonService, err = server.generateMacaroons(database)
+		routedServer.macaroon, err = server.generateMacaroons(database)
 
 		if err != nil {
 			return err
@@ -161,9 +158,9 @@ func (server *RpcServer) Init(
 	unaryInterceptors := []grpc.UnaryServerInterceptor{routedServer.UnaryServerInterceptor()}
 	streamInterceptors := []grpc.StreamServerInterceptor{routedServer.StreamServerInterceptor()}
 
-	if macaroonService != nil {
-		unaryInterceptors = append(unaryInterceptors, macaroonService.UnaryServerInterceptor())
-		streamInterceptors = append(streamInterceptors, macaroonService.StreamServerInterceptor())
+	if routedServer.macaroon != nil {
+		unaryInterceptors = append(unaryInterceptors, routedServer.macaroon.UnaryServerInterceptor())
+		streamInterceptors = append(streamInterceptors, routedServer.macaroon.StreamServerInterceptor())
 	}
 
 	if len(unaryInterceptors) != 0 || len(streamInterceptors) != 0 {

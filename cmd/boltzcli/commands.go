@@ -832,14 +832,17 @@ func createSwap(ctx *cli.Context) error {
 	}
 
 	invoice := ctx.String("invoice")
-	wallet := ctx.String("wallet")
 	refundAddress := ctx.String("refund")
+	walletId, err := getWalletId(ctx)
+	if err != nil {
+		return err
+	}
 	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 		Amount:           amount,
 		Pair:             pair,
 		RefundAddress:    &refundAddress,
 		SendFromInternal: internalSend,
-		Wallet:           &wallet,
+		WalletId:         walletId,
 		Invoice:          &invoice,
 	})
 	if err != nil {
@@ -940,6 +943,18 @@ func getCurrency(ctx *cli.Context) (boltzrpc.Currency, error) {
 	return parseCurrency(ctx.String("currency"))
 }
 
+func getWalletId(ctx *cli.Context) (*int64, error) {
+	if name := ctx.String("wallet"); name != "" {
+		client := getClient(ctx)
+		wallet, err := client.GetWallet(name)
+		if err != nil {
+			return nil, err
+		}
+		return &wallet.Id, nil
+	}
+	return nil, nil
+}
+
 func createReverseSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 
@@ -976,14 +991,17 @@ func createReverseSwap(ctx *cli.Context) error {
 		}
 	}
 
-	wallet := ctx.String("wallet")
 	returnImmediately := true
+	walletId, err := getWalletId(ctx)
+	if err != nil {
+		return err
+	}
 	request := &boltzrpc.CreateReverseSwapRequest{
 		Address:           address,
 		Amount:            amount,
 		AcceptZeroConf:    !ctx.Bool("no-zero-conf"),
 		Pair:              pair,
-		Wallet:            &wallet,
+		WalletId:          walletId,
 		ChanIds:           ctx.StringSlice("chan-id"),
 		ReturnImmediately: &returnImmediately,
 	}

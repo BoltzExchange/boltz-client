@@ -42,6 +42,8 @@ type ReverseSwap struct {
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
+	WalletId            *int64
+	EntityId            *int64
 }
 
 type ReverseSwapSerialized struct {
@@ -70,6 +72,8 @@ type ReverseSwapSerialized struct {
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
+	WalletId            *int64
+	EntityId            *int64
 }
 
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
@@ -98,6 +102,8 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		ServiceFeePercent:   reverseSwap.ServiceFeePercent,
 		OnchainFee:          reverseSwap.OnchainFee,
 		ExternalPay:         reverseSwap.ExternalPay,
+		WalletId:            reverseSwap.WalletId,
+		EntityId:            reverseSwap.EntityId,
 	}
 }
 
@@ -153,6 +159,8 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
 			"externalPay":         &externalPay,
+			"entityId":            &reverseSwap.EntityId,
+			"walletId":            &reverseSwap.WalletId,
 		},
 	)
 
@@ -265,8 +273,8 @@ const insertReverseSwapStatement = `
 INSERT INTO reverseSwaps (id, fromCurrency, toCurrency, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
                           invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId,
                           claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee,
-                          serviceFeePercent, onchainFee, refundPubKey, swapTree, externalPay)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          serviceFeePercent, onchainFee, refundPubKey, swapTree, externalPay, entityId, walletId)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
@@ -299,6 +307,8 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		formatPublicKey(reverseSwap.RefundPubKey),
 		formatJson(reverseSwap.SwapTree.Serialize()),
 		reverseSwap.ExternalPay,
+		reverseSwap.EntityId,
+		reverseSwap.WalletId,
 	)
 	return err
 }

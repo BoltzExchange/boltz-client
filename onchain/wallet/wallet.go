@@ -34,12 +34,11 @@ type Json = *C.GA_json
 type Session = *C.struct_GA_session
 
 type Credentials struct {
-	Name           string         `json:"name"`
-	Mnemonic       string         `json:"mnemonic"`
-	Subaccount     *uint64        `json:"subaccount"`
-	Xpub           string         `json:"xpub"`
-	CoreDescriptor string         `json:"core_descriptor"`
-	Currency       boltz.Currency `json:"currency"`
+	onchain.WalletInfo
+	Mnemonic       string  `json:"mnemonic"`
+	Subaccount     *uint64 `json:"subaccount"`
+	Xpub           string  `json:"xpub"`
+	CoreDescriptor string  `json:"core_descriptor"`
 	Salt           string
 }
 
@@ -95,14 +94,12 @@ type Subaccount struct {
 }
 
 type Wallet struct {
+	onchain.WalletInfo
 	subaccount         *uint64
 	session            Session
 	connected          bool
 	blockHeight        uint32
 	blockHeightChannel chan uint32
-	readonly           bool
-	currency           boltz.Currency
-	name               string
 }
 
 type Config struct {
@@ -278,7 +275,7 @@ func (wallet *Wallet) Connect() error {
 	}
 
 	params := make(map[string]any)
-	if wallet.currency == boltz.CurrencyBtc {
+	if wallet.Currency == boltz.CurrencyBtc {
 		if config.Network == boltz.MainNet {
 			params["name"] = "electrum-mainnet"
 		} else if config.Network == boltz.TestNet {
@@ -289,7 +286,7 @@ func (wallet *Wallet) Connect() error {
 		} else {
 			return errors.New("unknown network")
 		}
-	} else if wallet.currency == boltz.CurrencyLiquid {
+	} else if wallet.Currency == boltz.CurrencyLiquid {
 		if config.Network == boltz.MainNet {
 			params["name"] = "electrum-liquid"
 		} else if config.Network == boltz.TestNet {
@@ -417,18 +414,18 @@ func Login(credentials *Credentials) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
-	wallet := &Wallet{currency: credentials.Currency, name: credentials.Name}
+	wallet := &Wallet{WalletInfo: credentials.WalletInfo}
 	login := make(map[string]any)
 
 	if credentials.Mnemonic != "" {
 		login["mnemonic"] = credentials.Mnemonic
-		wallet.readonly = false
+		wallet.Readonly = false
 	} else if credentials.Xpub != "" {
 		login["slip132_extended_pubkeys"] = []string{credentials.Xpub}
-		wallet.readonly = true
+		wallet.Readonly = true
 	} else if credentials.CoreDescriptor != "" {
 		login["core_descriptors"] = []string{credentials.CoreDescriptor}
-		wallet.readonly = true
+		wallet.Readonly = true
 	} else {
 		return nil, errors.New("no login found in credentials")
 	}
@@ -561,7 +558,7 @@ func (wallet *Wallet) GetBalance() (*onchain.Balance, error) {
 }
 
 func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
-	if wallet.readonly {
+	if wallet.Readonly {
 		return "", errors.New("wallet is readonly")
 	}
 	if wallet.subaccount == nil {
@@ -582,7 +579,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 
 	asset := ""
-	if wallet.currency == boltz.CurrencyLiquid {
+	if wallet.Currency == boltz.CurrencyLiquid {
 		asset = config.Network.Liquid.AssetID
 	}
 
@@ -678,14 +675,6 @@ func (wallet *Wallet) Ready() bool {
 	return wallet.connected
 }
 
-func (wallet *Wallet) Readonly() bool {
-	return wallet.readonly
-}
-
-func (wallet *Wallet) Currency() boltz.Currency {
-	return wallet.currency
-}
-
-func (wallet *Wallet) Name() string {
-	return wallet.name
+func (wallet *Wallet) GetWalletInfo() onchain.WalletInfo {
+	return wallet.WalletInfo
 }

@@ -138,7 +138,65 @@ service Boltz {
     /*
     Changes the password for wallet encryption.
      */
-    rpc ChangeWalletPassword(ChangeWalletPasswordRequest) returns (google.protobuf.Empty); 
+    rpc ChangeWalletPassword(ChangeWalletPasswordRequest) returns (google.protobuf.Empty);
+
+    /*
+    Creates a new entity which can be used to bake restricted macaroons.
+     */
+    rpc CreateEntity(CreateEntityRequest) returns (Entity);
+
+    /*
+    Returns all entities.
+     */
+    rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+
+    /*
+    Get a specifiy entity.
+     */
+    rpc GetEntity(GetEntityRequest) returns (Entity);
+
+    /*
+    Bakes a new macaroon with the specified permissions.
+    The macaroon can also be restricted to a specific entity. In this case, 
+    - any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities.
+    - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
+     */
+    rpc BakeMacaroon(BakeMacaroonRequest) returns (BakeMacaroonResponse);
+}
+
+message CreateEntityRequest {
+    string name = 1;
+}
+
+message ListEntitiesRequest {}
+message ListEntitiesResponse {
+    repeated Entity entities = 1;
+}
+
+message GetEntityRequest {
+    string name = 1;
+}
+
+message Entity {
+    int64 id = 1;
+    string name = 2;
+}
+
+enum MacaroonAction {
+    READ = 0;
+    WRITE = 1;
+}
+
+message MacaroonPermissions {
+    MacaroonAction action = 2;
+}
+
+message BakeMacaroonRequest {
+    optional int64 entity_id = 1;
+    repeated MacaroonPermissions permissions = 2;
+}
+message BakeMacaroonResponse {
+    string macaroon = 1;
 }
 
 enum SwapState {
@@ -198,7 +256,7 @@ message SwapInfo {
     optional uint64 service_fee = 17;
     optional uint64 onchain_fee = 18;
     // internal wallet which was used to pay the swap
-    optional string wallet = 20;
+    optional int64 wallet_id = 20;
 }
 
 /*
@@ -264,6 +322,8 @@ message GetInfoResponse {
     BlockHeights block_heights = 8;
     // swaps that need a manual interaction to refund
     repeated string refundable_swaps = 12;
+    // the currently authenticated entity
+    optional int64 entity_id = 13;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -380,7 +440,7 @@ message CreateSwapRequest {
     // address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise.
     optional string refund_address = 5;
     // wallet to pay swap from. only used if `send_from_internal` is set to true
-    optional string wallet = 6;
+    optional int64 wallet_id = 6;
     // invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node
     optional string invoice = 7;
 }
@@ -418,7 +478,7 @@ message CreateReverseSwapRequest {
     // a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style.
     repeated string chan_ids = 5;
     // wallet from which the onchain address should be generated - only considered if `address` is not set
-    optional string wallet = 6;
+    optional int64 wallet_id = 6;
     // Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed.
     // It will always return immediately if `accept_zero_conf` is not set.
     optional bool return_immediately = 7;
@@ -516,7 +576,8 @@ message GetWalletsRequest {
 }
 
 message GetWalletRequest {
-    string name = 1;
+    optional string name = 1;
+    optional int64 id = 2;
 }
 
 message GetWalletCredentialsRequest {
@@ -530,10 +591,11 @@ message RemoveWalletRequest {
 
 
 message Wallet {
-    string name = 1;
-    Currency currency = 2;
-    bool readonly = 3;
-    Balance balance = 4;
+    int64 id = 1;
+    string name = 2;
+    Currency currency = 3;
+    bool readonly = 4;
+    Balance balance = 5;
 }
 
 message Wallets {
