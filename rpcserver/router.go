@@ -714,10 +714,10 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	}
 
 	createChainSwap := boltz.ChainRequest{
-		From:           pair.From,
-		To:             pair.To,
-		UserLockAmount: request.Amount,
-		//PairHash:        chainPair.Hash,
+		From:            pair.From,
+		To:              pair.To,
+		UserLockAmount:  request.Amount,
+		PairHash:        chainPair.Hash,
 		ClaimPublicKey:  claimPub.SerializeCompressed(),
 		RefundPublicKey: refundPub.SerializeCompressed(),
 		ReferralId:      referralId,

@@ -149,10 +149,10 @@ func (database *Database) CreateChainSwap(swap ChainSwap) error {
 	if err != nil {
 		return tx.Rollback(err)
 	}
-	if err := tx.CreateChainSwapData(*swap.FromData); err != nil {
+	if err := tx.createChainSwapData(*swap.FromData); err != nil {
 		return tx.Rollback(err)
 	}
-	if err := tx.CreateChainSwapData(*swap.ToData); err != nil {
+	if err := tx.createChainSwapData(*swap.ToData); err != nil {
 		return tx.Rollback(err)
 	}
 
@@ -165,7 +165,7 @@ const insertChainSwapData = `
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
-func (database *Database) CreateChainSwapData(swapData ChainSwapData) error {
+func (database *Database) createChainSwapData(swapData ChainSwapData) error {
 	serialized := swapData.Serialize()
 	_, err := database.Exec(
 		insertChainSwapData,
@@ -186,49 +186,6 @@ func (database *Database) CreateChainSwapData(swapData ChainSwapData) error {
 
 	return err
 }
-
-/*
-
-func (database *Database) UpdateChainSwap(swap ChainSwap) error {
-	_, err := database.Exec(`
-		UPDATE chainSwaps SET
-		fromCurrency = ?,
-		toCurrency = ?,
-		state = ?,
-		error = ?,
-		status = ?,
-		preimage = ?,
-		blindingKey = ?,
-		isAuto = ?,
-		serviceFee = ?,
-		serviceFeePercent = ?,
-		onchainFee = ?,
-		createdAt = ?,
-		entity = ?
-		WHERE id = ?
-	`, swap.FromCurrency, swap.ToCurrency, swap.State, swap.Error, swap.Status, swap.Preimage, swap.BlindingKey, swap.IsAuto, swap.ServiceFee, swap.ServiceFeePercent, swap.OnchainFee, swap.CreatedAt, swap.EntityId, swap.ID)
-	return err
-}
-
-func (database *Database) UpdateChainSwapData(swapData ChainSwapData) error {
-	_, err := database.Exec(`
-		UPDATE chainSwapsData SET
-		currency = ?,
-		privateKey = ?,
-		theirPublicKey = ?,
-		tree = ?,
-		amount = ?,
-		timeoutBlockheight = ?,
-		lockupTransactionId = ?,
-		claimTransactionId = ?,
-		refundTransactionId = ?,
-		wallet = ?,
-		address = ?
-		WHERE id = ?
-	`, swapData.Currency, swapData.PrivateKey, swapData.TheirPublicKey, swapData.Tree, swapData.Amount, swapData.TimeoutBlockHeight, swapData.LockupTransactionID, swapData.ClaimTransactionID, swapData.RefundTransactionID, swapData.WalletId, swapData.Address, swapData.ID)
-	return err
-}
-*/
 
 func (database *Database) UpdateChainSwapStatus(chainSwap *ChainSwap, status boltz.SwapUpdateEvent) error {
 	chainSwap.Status = status
@@ -292,7 +249,7 @@ func (database *Database) QueryChainSwap(id string) (swap *ChainSwap, err error)
 	return swap, err
 }
 
-func (database *Database) QueryChainSwapData(id string, currency boltz.Currency, isClaim bool) (data *ChainSwapData, err error) {
+func (database *Database) queryChainSwapData(id string, currency boltz.Currency, isClaim bool) (data *ChainSwapData, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
 	rows, err := database.Query("SELECT * FROM chainSwapsData WHERE id = ? AND currency = ?", id, currency)
@@ -375,11 +332,11 @@ func (database *Database) parseChainSwap(rows *sql.Rows) (*ChainSwap, error) {
 		}
 	}
 
-	swap.FromData, err = database.QueryChainSwapData(swap.Id, swap.Pair.From, false)
+	swap.FromData, err = database.queryChainSwapData(swap.Id, swap.Pair.From, false)
 	if err != nil {
 		return nil, err
 	}
-	swap.ToData, err = database.QueryChainSwapData(swap.Id, swap.Pair.To, true)
+	swap.ToData, err = database.queryChainSwapData(swap.Id, swap.Pair.To, true)
 	if err != nil {
 		return nil, err
 	}

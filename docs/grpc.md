@@ -47,7 +47,7 @@ Fetches information about a specific pair for a reverse swap.
 
 #### GetChainPair
 
-Fetches information about a specific pair for a reverse swap.
+Fetches information about a specific pair for a chain swap.
 
 | Request | Response |
 | ------- | -------- |

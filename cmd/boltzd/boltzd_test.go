@@ -275,7 +275,7 @@ func TestMacaroons(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("EntityId", func(t *testing.T) {
+	t.Run("Entity", func(t *testing.T) {
 
 		entityName := "test"
 
@@ -346,7 +346,7 @@ func TestMacaroons(t *testing.T) {
 			require.Error(t, err)
 		})
 
-		t.Run("WalletId", func(t *testing.T) {
+		t.Run("Wallet", func(t *testing.T) {
 			_, err = entity.GetWallet(walletName)
 			require.Error(t, err)
 

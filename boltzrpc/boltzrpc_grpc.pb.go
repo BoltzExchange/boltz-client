@@ -68,7 +68,7 @@ type BoltzClient interface {
 	GetSubmarinePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*SubmarinePair, error)
 	// Fetches information about a specific pair for a reverse swap.
 	GetReversePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ReversePair, error)
-	// Fetches information about a specific pair for a reverse swap.
+	// Fetches information about a specific pair for a chain swap.
 	GetChainPair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ChainPair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
@@ -467,7 +467,7 @@ type BoltzServer interface {
 	GetSubmarinePair(context.Context, *Pair) (*SubmarinePair, error)
 	// Fetches information about a specific pair for a reverse swap.
 	GetReversePair(context.Context, *Pair) (*ReversePair, error)
-	// Fetches information about a specific pair for a reverse swap.
+	// Fetches information about a specific pair for a chain swap.
 	GetChainPair(context.Context, *Pair) (*ChainPair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(context.Context, *empty.Empty) (*GetPairsResponse, error)

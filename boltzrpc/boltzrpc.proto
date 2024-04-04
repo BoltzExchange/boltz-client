@@ -29,7 +29,7 @@ service Boltz {
     rpc GetReversePair (Pair) returns (ReversePair);
 
     /*
-    Fetches information about a specific pair for a reverse swap.
+    Fetches information about a specific pair for a chain swap.
     */
     rpc GetChainPair (Pair) returns (ChainPair);
 
