@@ -5,13 +5,10 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"strconv"
-
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/lightningnetwork/lnd/zpay32"
 )
@@ -30,89 +27,12 @@ func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
 
 // TODO: abstract interactions with chain (querying and broadcasting transactions) into interface to be able to switch between Boltz API and bitcoin core
 
-func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
-	blockNotifier := nursery.registerBlockListener(currency)
-
-	go func() {
-		for newBlock := range blockNotifier {
-			if nursery.stopped {
-				return
-			}
-			swapsToRefund, err := nursery.database.QueryRefundableSwapsForBlockHeight(newBlock.Height, currency)
-			if err != nil {
-				logger.Error("Could not query refundable Swaps: " + err.Error())
-				continue
-			}
-
-			if len(swapsToRefund) > 0 {
-				logger.Info("Found " + strconv.Itoa(len(swapsToRefund)) + " Swaps to refund at height " + strconv.FormatUint(uint64(newBlock.Height), 10))
-
-				if err := nursery.RefundSwaps(swapsToRefund, false); err != nil {
-					logger.Error("Could not refund Swaps: " + err.Error())
-				}
-			}
-		}
-	}()
+type Output struct {
+	*boltz.OutputDetails
+	walletId *int64
 }
 
-func (nursery *Nursery) RefundSwaps(swapsToRefund []database.Swap, cooperative bool) error {
-	currency := swapsToRefund[0].Pair.From
-
-	var refundedSwaps []database.Swap
-	var refundOutputs []boltz.OutputDetails
-
-	for _, swapToRefund := range swapsToRefund {
-		refundOutput, err := nursery.getRefundOutput(&swapToRefund)
-		if err != nil {
-			return fmt.Errorf("Could not get refund output of swap %s: %v", swapToRefund.Id, err)
-		}
-
-		refundOutput.Cooperative = cooperative
-		refundedSwaps = append(refundedSwaps, swapToRefund)
-		refundOutputs = append(refundOutputs, *refundOutput)
-	}
-
-	if len(refundOutputs) == 0 {
-		logger.Info("Did not find any outputs to refund")
-		return nil
-	}
-
-	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
-	if err != nil {
-		return errors.New("Could not get fee estimation: " + err.Error())
-	}
-
-	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
-
-	refundTransactionId, totalRefundFee, err := nursery.createTransaction(currency, refundOutputs, feeSatPerVbyte)
-	if err != nil {
-		return err
-	}
-
-	logger.Infof("Constructed refund transaction for %d swaps: %s", len(refundOutputs), refundTransactionId)
-
-	count := uint64(len(refundedSwaps))
-	refundFee := totalRefundFee / count
-	for i, refundedSwap := range refundedSwaps {
-		// distribute the remainder of the fee to the last swap
-		if i == int(count)-1 {
-			refundFee += totalRefundFee % count
-		}
-		err = nursery.database.SetSwapRefundTransactionId(&refundedSwap, refundTransactionId, refundFee)
-
-		if err != nil {
-			logger.Error("Could not set refund transaction id in database: " + err.Error())
-			continue
-		}
-
-		nursery.sendSwapUpdate(refundedSwap)
-
-		logger.Infof("Refunded Swap %s with refund transaction %s", refundedSwap.Id, refundTransactionId)
-	}
-	return nil
-}
-
-func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*boltz.OutputDetails, error) {
+func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*Output, error) {
 	lockupTransaction, err := nursery.onchain.GetTransaction(swap.Pair.From, swap.LockupTransactionId, swap.BlindingKey)
 	if err != nil {
 		return nil, errors.New("could not fetch lockup transaction: " + err.Error())
@@ -123,39 +43,21 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) (*boltz.OutputDetai
 		return nil, fmt.Errorf("could not find lockup vout of Swap %s: %w", swap.Id, err)
 	}
 
-	if swap.RefundAddress == "" {
-		currency := swap.Pair.From
-		wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Currency: currency, AllowReadonly: true})
-		if err != nil {
-			message := "Swap %s can not be refunded because they got no refund address and no wallet for currency %s is available. Setup a wallet or refund manually"
-			return nil, fmt.Errorf(message, swap.Id, currency)
-		}
-		if swap.WalletId != nil {
-			wallet, err = nursery.onchain.GetWalletById(*swap.WalletId)
-			if err != nil {
-				message := "Swap %s can not be refunded because the wallet is was funded from is not available anymore. Refund manually"
-				return nil, fmt.Errorf(message, swap.Id)
-			}
-		}
-		swap.RefundAddress, err = wallet.NewAddress()
-		if err != nil {
-			message := "Swap %s can not be refunded because it has no refund address and the associated wallet failed to generate address: %v"
-			return nil, fmt.Errorf(message, swap.Id, err)
-		}
-	}
-
-	return &boltz.OutputDetails{
-		SwapId:             swap.Id,
-		SwapType:           boltz.NormalSwap,
-		LockupTransaction:  lockupTransaction,
-		Vout:               lockupVout,
-		Address:            swap.RefundAddress,
-		PrivateKey:         swap.PrivateKey,
-		Preimage:           []byte{},
-		TimeoutBlockHeight: swap.TimoutBlockHeight,
-		SwapTree:           swap.SwapTree,
-		// TODO: remember if cooperative fails and set this to false
-		Cooperative: true,
+	return &Output{
+		&boltz.OutputDetails{
+			SwapId:             swap.Id,
+			SwapType:           boltz.NormalSwap,
+			LockupTransaction:  lockupTransaction,
+			Vout:               lockupVout,
+			Address:            swap.RefundAddress,
+			PrivateKey:         swap.PrivateKey,
+			Preimage:           []byte{},
+			TimeoutBlockHeight: swap.TimoutBlockHeight,
+			SwapTree:           swap.SwapTree,
+			// TODO: remember if cooperative fails and set this to false
+			Cooperative: true,
+		},
+		swap.WalletId,
 	}, nil
 }
 
@@ -393,7 +295,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 		logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
-		if err := nursery.RefundSwaps([]database.Swap{*swap}, true); err != nil {
+		if err := nursery.RefundSwaps([]database.Swap{*swap}, nil, true); err != nil {
 			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 			return
 		}

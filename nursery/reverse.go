@@ -129,23 +129,23 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		logger.Info("Constructing claim transaction for Reverse Swap " + reverseSwap.Id + " with output: " + lockupTx.Hash() + ":" + strconv.Itoa(int(lockupVout)))
 
-		output := boltz.OutputDetails{
-			SwapId:            reverseSwap.Id,
-			SwapType:          boltz.ReverseSwap,
-			LockupTransaction: lockupTx,
-			Vout:              lockupVout,
-			Address:           reverseSwap.ClaimAddress,
-			PrivateKey:        reverseSwap.PrivateKey,
-			Preimage:          reverseSwap.Preimage,
-			SwapTree:          reverseSwap.SwapTree,
-			Cooperative:       true,
+		output := &Output{
+			&boltz.OutputDetails{
+				SwapId:            reverseSwap.Id,
+				SwapType:          boltz.ReverseSwap,
+				LockupTransaction: lockupTx,
+				Vout:              lockupVout,
+				Address:           reverseSwap.ClaimAddress,
+				PrivateKey:        reverseSwap.PrivateKey,
+				Preimage:          reverseSwap.Preimage,
+				SwapTree:          reverseSwap.SwapTree,
+				Cooperative:       true,
+			},
+			reverseSwap.WalletId,
 		}
 
-		claimTransactionId, claimFee, err := nursery.claimReverseSwap(reverseSwap, output, feeSatPerVbyte)
+		claimTransactionId, claimFee, err := nursery.claimOutputs(reverseSwap.Pair.To, []*Output{output})
 		if err != nil {
-			logger.Warnf("Could not construct cooperative claim transaction: %v", err)
-			output.Cooperative = false
-			claimTransactionId, claimFee, err = nursery.claimReverseSwap(reverseSwap, output, feeSatPerVbyte)
 			if err != nil {
 				handleError("Could not construct claim transaction: " + err.Error())
 				return
@@ -211,8 +211,4 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	}
 
 	nursery.sendReverseSwapUpdate(*reverseSwap)
-}
-
-func (nursery *Nursery) claimReverseSwap(reverseSwap *database.ReverseSwap, output boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
-	return nursery.createTransaction(reverseSwap.Pair.To, []boltz.OutputDetails{output}, feeSatPerVbyte)
 }

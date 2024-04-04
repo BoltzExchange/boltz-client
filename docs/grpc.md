@@ -45,6 +45,14 @@ Fetches information about a specific pair for a reverse swap.
 | ------- | -------- |
 | [`Pair`](#pair) | [`ReversePair`](#reversepair) |
 
+#### GetChainPair
+
+Fetches information about a specific pair for a reverse swap.
+
+| Request | Response |
+| ------- | -------- |
+| [`Pair`](#pair) | [`ChainPair`](#chainpair) |
+
 #### GetPairs
 
 Fetches all available pairs for submarine and reverse swaps.
@@ -116,6 +124,14 @@ Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is s
 | Request | Response |
 | ------- | -------- |
 | [`CreateReverseSwapRequest`](#createreverseswaprequest) | [`CreateReverseSwapResponse`](#createreverseswapresponse) |
+
+#### CreateChainSwap
+
+Creates a new chain swap from one chain to another. If `accept_zero_conf` is set to true in the request, the daemon will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
+
+| Request | Response |
+| ------- | -------- |
+| [`CreateChainSwapRequest`](#createchainswaprequest) | [`ChainSwapInfo`](#chainswapinfo) |
 
 #### CreateWallet
 
@@ -322,6 +338,115 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 
 
+#### ChainPair
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pair` | [`Pair`](#pair) |  |  |
+| `hash` | [`string`](#string) |  |  |
+| `rate` | [`float`](#float) |  |  |
+| `limits` | [`Limits`](#limits) |  |  |
+| `fees` | [`ChainPair.Fees`](#chainpair.fees) |  |  |
+
+
+
+
+
+#### ChainPair.Fees
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `percentage` | [`float`](#float) |  |  |
+| `miner_fees` | [`ChainPair.Fees.Miner`](#chainpair.fees.miner) |  |  |
+
+
+
+
+
+#### ChainPair.Fees.Miner
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `server` | [`uint64`](#uint64) |  |  |
+| `user` | [`ChainPair.Fees.User`](#chainpair.fees.user) |  |  |
+
+
+
+
+
+#### ChainPair.Fees.User
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `lockup` | [`uint64`](#uint64) |  |  |
+| `claim` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### ChainSwapData
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `currency` | [`Currency`](#currency) |  |  |
+| `private_key` | [`string`](#string) |  |  |
+| `their_public_key` | [`string`](#string) |  |  |
+| `amount` | [`int64`](#int64) |  |  |
+| `timeout_block_height` | [`uint32`](#uint32) |  |  |
+| `lockup_transaction_id` | [`string`](#string) |  |  |
+| `transaction_id` | [`string`](#string) |  |  |
+| `wallet` | [`string`](#string) |  |  |
+| `address` | [`string`](#string) |  |  |
+| `blinding_key` | [`string`](#string) | optional |  |
+| `lockup_address` | [`string`](#string) |  |  |
+
+
+
+
+
+#### ChainSwapInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
+| `state` | [`SwapState`](#swapstate) |  |  |
+| `error` | [`string`](#string) |  |  |
+| `status` | [`string`](#string) |  |  |
+| `preimage` | [`string`](#string) |  |  |
+| `is_auto` | [`bool`](#bool) |  |  |
+| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `service_fee_percent` | [`float`](#float) |  |  |
+| `onchain_fee` | [`uint64`](#uint64) | optional |  |
+| `created_at` | [`int64`](#int64) |  |  |
+| `entity` | [`string`](#string) |  |  |
+| `from_data` | [`ChainSwapData`](#chainswapdata) |  |  |
+| `to_data` | [`ChainSwapData`](#chainswapdata) |  |  |
+
+
+
+
+
 #### ChangeWalletPasswordRequest
 
 
@@ -377,6 +502,26 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `swap` | [`SwapInfo`](#swapinfo) |  |  |
 | `channel_creation` | [`ChannelCreationInfo`](#channelcreationinfo) |  |  |
+
+
+
+
+
+#### CreateChainSwapRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `amount` | [`uint64`](#uint64) |  | amount of satoshis to swap |
+| `pair` | [`Pair`](#pair) |  |  |
+| `claim_address` | [`string`](#string) | optional | address where funds will go if the swap succeeds |
+| `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. |
+| `from_wallet` | [`string`](#string) | optional | wallet from which the swap should be paid from |
+| `to_wallet` | [`string`](#string) | optional | wallet where the the funds should en up at |
+| `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
+| `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
 
 
 
@@ -609,6 +754,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `submarine` | [`SubmarinePair`](#submarinepair) | repeated |  |
 | `reverse` | [`ReversePair`](#reversepair) | repeated |  |
+| `chain` | [`ChainPair`](#chainpair) | repeated |  |
 
 
 
@@ -681,6 +827,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `swap` | [`SwapInfo`](#swapinfo) |  |  |
 | `channel_creation` | [`ChannelCreationInfo`](#channelcreationinfo) |  |  |
 | `reverse_swap` | [`ReverseSwapInfo`](#reverseswapinfo) |  |  |
+| `chain_swap` | [`ChainSwapInfo`](#chainswapinfo) |  |  |
 
 
 

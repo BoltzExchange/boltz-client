@@ -66,7 +66,7 @@ func (transaction *LiquidTransaction) FindVout(network *Network, addressToFind s
 		}
 	}
 
-	return 0, 0, errors.New("could not find lockup vout")
+	return 0, 0, errors.New("could not find vout")
 
 }
 

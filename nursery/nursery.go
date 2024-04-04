@@ -1,6 +1,7 @@
 package nursery
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -40,6 +41,7 @@ const retryInterval = 15
 type SwapUpdate struct {
 	Swap        *database.Swap
 	ReverseSwap *database.ReverseSwap
+	ChainSwap   *database.ChainSwap
 	IsFinal     bool
 }
 
@@ -170,9 +172,9 @@ func (nursery *Nursery) startSwapListener() {
 		for status := range nursery.boltzWs.Updates {
 			logger.Infof("Swap %s status update: %s", status.Id, status.Status)
 
-			swap, reverseSwap, err := nursery.database.QueryAnySwap(status.Id)
+			swap, reverseSwap, chainSwap, err := nursery.database.QueryAnySwap(status.Id)
 			if err != nil {
-				logger.Errorf("Could not query swap %s: %v", status.Id, status.Status)
+				logger.Errorf("Could not query swap %s: %v", status.Id, err)
 				continue
 			}
 			if status.Error != "" {
@@ -183,6 +185,8 @@ func (nursery *Nursery) startSwapListener() {
 				nursery.handleSwapStatus(swap, status.SwapStatusResponse)
 			} else if reverseSwap != nil {
 				nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
+			} else if chainSwap != nil {
+				nursery.handleChainSwapStatus(chainSwap, status.SwapStatusResponse)
 			}
 		}
 		nursery.waitGroup.Done()
@@ -260,4 +264,94 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []bol
 	logger.Info("Broadcast transaction with Boltz API")
 
 	return response.TransactionId, fee, nil
+}
+func (nursery *Nursery) claimOutputs(currency boltz.Currency, outputs []*Output) (transaction string, fee uint64, err error) {
+	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
+
+	if err != nil {
+		err = errors.New("Could not get fee estimation: " + err.Error())
+		return
+	}
+
+	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for claim transaction", feeSatPerVbyte))
+
+	populated, err := nursery.populateAddresses(outputs)
+	if err != nil {
+		err = errors.New("Could not populate output addresses: " + err.Error())
+		return
+	}
+
+	transaction, fee, err = nursery.createTransaction(currency, populated, feeSatPerVbyte)
+	if err != nil {
+		logger.Warnf("Could not construct cooperative claim transaction: %v", err)
+		for i := range populated {
+			populated[i].Cooperative = false
+		}
+		transaction, fee, err = nursery.createTransaction(currency, populated, feeSatPerVbyte)
+		if err != nil {
+			err = errors.New("Could not construct claim transaction: " + err.Error())
+			return
+		}
+	}
+	return
+}
+
+func (nursery *Nursery) refundOutputs(currency boltz.Currency, outputs []*Output) (transaction string, fee uint64, err error) {
+	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
+
+	if err != nil {
+		err = errors.New("Could not get fee estimation: " + err.Error())
+		return
+	}
+
+	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
+
+	populated, err := nursery.populateAddresses(outputs)
+	if err != nil {
+		err = errors.New("Could not populate output fee estimation: " + err.Error())
+		return
+	}
+
+	return nursery.createTransaction(currency, populated, feeSatPerVbyte)
+}
+
+func (nursery *Nursery) populateAddresses(outputs []*Output) ([]boltz.OutputDetails, error) {
+	addresses := make(map[int64]string)
+	var result []boltz.OutputDetails
+	for _, output := range outputs {
+		if output.Address == "" {
+			handleErr := func(err error) {
+				verb := "claim"
+				if output.IsRefund() {
+					verb = "refund"
+				}
+				logger.Warnf("swap %s can not be %sed automatically: %s", output.SwapId, verb, err)
+			}
+			if output.walletId == nil {
+				handleErr(errors.New("no address or wallet set"))
+				continue
+			}
+			walletId := *output.walletId
+			address, ok := addresses[walletId]
+			if !ok {
+				wallet, err := nursery.onchain.GetWalletById(walletId)
+				if err != nil {
+					handleErr(fmt.Errorf("wallet with id %d could not be found", walletId))
+					continue
+				}
+				address, err = wallet.NewAddress()
+				if err != nil {
+					handleErr(fmt.Errorf("could not get address from wallet %s", wallet.GetWalletInfo().Name))
+					continue
+				}
+				addresses[walletId] = address
+			}
+			output.Address = address
+		}
+		result = append(result, *output.OutputDetails)
+	}
+	if len(result) == 0 {
+		return nil, errors.New("all outputs invalid")
+	}
+	return result, nil
 }

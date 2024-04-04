@@ -3,7 +3,6 @@ package boltz
 import (
 	"errors"
 	"fmt"
-
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/txscript"
 )
@@ -37,6 +36,8 @@ type OutputDetails struct {
 	// taproot only
 	SwapTree    *SwapTree
 	Cooperative bool
+	// swap tree of server lockup transaction, required when cooperatively claiming a chain swap
+	RefundSwapTree *SwapTree
 
 	SwapId   string
 	SwapType SwapType
@@ -95,22 +96,48 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 			}
 
 			pubNonce := session.PublicNonce()
+			refundRequest := &RefundRequest{
+				Transaction: serialized,
+				PubNonce:    pubNonce[:],
+				Index:       i,
+			}
+			claimRequest := &ClaimRequest{
+				Transaction: serialized,
+				PubNonce:    pubNonce[:],
+				Index:       i,
+				Preimage:    output.Preimage,
+			}
 			var signature *PartialSignature
 			if output.SwapType == ReverseSwap {
-				signature, err = boltzApi.ClaimReverseSwap(ClaimReverseSwapRequest{
-					Id:          output.SwapId,
-					Transaction: serialized,
-					PubNonce:    pubNonce[:],
-					Index:       i,
-					Preimage:    output.Preimage,
-				})
+				signature, err = boltzApi.ClaimReverseSwap(output.SwapId, claimRequest)
+			} else if output.SwapType == NormalSwap {
+				signature, err = boltzApi.RefundSwap(output.SwapId, refundRequest)
 			} else {
-				signature, err = boltzApi.RefundSwap(RefundSwapRequest{
-					Id:          output.SwapId,
-					Transaction: serialized,
-					PubNonce:    pubNonce[:],
-					Index:       i,
-				})
+				signature, err = func() (*PartialSignature, error) {
+					if output.IsRefund() {
+						return boltzApi.RefundChainSwap(output.SwapId, refundRequest)
+					}
+					if output.RefundSwapTree == nil {
+						return nil, errors.New("RefundSwapTree is required for cooperatively claiming chain swap")
+					}
+					boltzSession, err := NewSigningSession(output.RefundSwapTree)
+					if err != nil {
+						return nil, fmt.Errorf("could not initialize signing session: %w", err)
+					}
+					details, err := boltzApi.GetChainSwapClaimDetails(output.SwapId)
+					if err != nil {
+						return nil, err
+					}
+					boltzSignature, err := boltzSession.Sign(details.TransactionHash, details.PubNonce)
+					if err != nil {
+						return nil, fmt.Errorf("could not sign transaction: %w", err)
+					}
+					return boltzApi.SendChainSwapClaimSignature(output.SwapId, &ChainSwapSigningRequest{
+						Preimage:  output.Preimage,
+						Signature: boltzSignature,
+						ToSign:    claimRequest,
+					})
+				}()
 			}
 			if err != nil {
 				return nil, 0, fmt.Errorf("could not get partial signature from boltz: %w", err)

@@ -38,7 +38,7 @@ func privateKey(t *testing.T, raw string) *btcec.PrivateKey {
 
 type testCase struct {
 	isLiquid           bool
-	isReverse          bool
+	swapType           SwapType
 	ourKey             string
 	boltzKey           string
 	preimageHash       string
@@ -57,6 +57,7 @@ func setup(t *testing.T, test *testCase) *SwapTree {
 	}
 	err := tree.Init(
 		test.isLiquid,
+		test.swapType == ReverseSwap,
 		privateKey(t, test.ourKey),
 		publicKey(t, test.boltzKey),
 	)
@@ -69,7 +70,7 @@ func TestSwapTree(t *testing.T) {
 	tests := []*testCase{
 		{
 			isLiquid:           false,
-			isReverse:          true,
+			swapType:           ReverseSwap,
 			ourKey:             "7886fd6464350f85c941bd80c824b1ad4f776b0aa1b4783a300b987d69966086",
 			boltzKey:           "0328baf0584489b39d218d0a59bbee01e93be6fba696b348a4033045f3cdc7dc37",
 			preimageHash:       "a1164fdb247b47931ed41fa1bd53391205406aa723adf4fda10b9ed013001016",
@@ -81,7 +82,7 @@ func TestSwapTree(t *testing.T) {
 		},
 		{
 			isLiquid:           false,
-			isReverse:          false,
+			swapType:           NormalSwap,
 			ourKey:             "265238cbdc33eafd2ab2c9bfc3b38fcd9b4d610c62973a85ea74662147eeed99",
 			boltzKey:           "020e9e82ede019c483ef12f0a05a2f602be53a10f72cce88d6975a24592cf9ce07",
 			preimageHash:       "8cc63191120acf891b9eff49136a92c421e833171ace1ee94a0838052f0c0f86",
@@ -93,7 +94,7 @@ func TestSwapTree(t *testing.T) {
 		},
 		{
 			isLiquid:           true,
-			isReverse:          true,
+			swapType:           ReverseSwap,
 			ourKey:             "fda57d14c8f0dcaad235b50f095b55bd0f70dd17af36ec62953b7c1a99fe4860",
 			boltzKey:           "020707580d72eeedc94b7429e783c227adef5b3e71a53f052e8054ae369f4b0aca",
 			preimageHash:       "2febe2cec440e9d6eab320e1a92801249ee8327733ee79aa23578157d4e49514",
@@ -110,7 +111,7 @@ func TestSwapTree(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			tree := setup(t, test)
 
-			require.NoError(t, tree.Check(test.isReverse, test.timeoutBlockHeight, decode(t, test.preimageHash)))
+			require.NoError(t, tree.Check(test.swapType, test.timeoutBlockHeight, decode(t, test.preimageHash)))
 
 			blindingKey := privateKey(t, test.blindingKey).PubKey()
 			require.NoError(t, tree.CheckAddress(test.address, MainNet, blindingKey))

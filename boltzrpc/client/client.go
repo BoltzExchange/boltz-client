@@ -33,6 +33,10 @@ func (boltz *Boltz) GetReversePair(pair *boltzrpc.Pair) (*boltzrpc.ReversePair, 
 	return boltz.Client.GetReversePair(boltz.Ctx, pair)
 }
 
+func (boltz *Boltz) GetChainPair(pair *boltzrpc.Pair) (*boltzrpc.ChainPair, error) {
+	return boltz.Client.GetChainPair(boltz.Ctx, pair)
+}
+
 func (boltz *Boltz) ListSwaps(request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
 	return boltz.Client.ListSwaps(boltz.Ctx, request)
 }
@@ -60,6 +64,11 @@ func (boltz *Boltz) CreateSwap(request *boltzrpc.CreateSwapRequest) (*boltzrpc.C
 func (boltz *Boltz) CreateReverseSwap(request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
 	return boltz.Client.CreateReverseSwap(boltz.Ctx, request)
 }
+
+func (boltz *Boltz) CreateChainSwap(request *boltzrpc.CreateChainSwapRequest) (*boltzrpc.ChainSwapInfo, error) {
+	return boltz.Client.CreateChainSwap(boltz.Ctx, request)
+}
+
 func (boltz *Boltz) GetWallet(name string) (*boltzrpc.Wallet, error) {
 	return boltz.Client.GetWallet(boltz.Ctx, &boltzrpc.GetWalletRequest{Name: &name})
 }
