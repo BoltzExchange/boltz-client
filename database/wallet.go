@@ -68,7 +68,7 @@ func parseWallet(rows *sql.Rows) (*Wallet, error) {
 func (d *Database) GetWalletByName(name string, entity *int64) (*Wallet, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	query := "SELECT * FROM wallets WHERE name = ?"
+	query := "SELECT * FROM wallets WHERE name = ? AND entityId IS NULL"
 	args := []any{name}
 	if entity != nil {
 		query = "SELECT * FROM wallets WHERE name = ? AND (entityId = ?)"

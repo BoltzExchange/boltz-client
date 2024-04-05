@@ -240,6 +240,8 @@ func (query *SwapQuery) ToWhereClause() (where string, values []any) {
 	if query.EntityId != nil {
 		conditions = append(conditions, "entityId = ?")
 		values = append(values, query.EntityId)
+	} else {
+		conditions = append(conditions, "entityId IS NULL")
 	}
 	if len(conditions) > 0 {
 		where = " WHERE " + strings.Join(conditions, " AND ")
