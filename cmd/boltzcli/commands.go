@@ -1922,3 +1922,94 @@ var stopCommand = &cli.Command{
 		return client.Stop()
 	},
 }
+
+var bakeMacaroonCommand = &cli.Command{
+	Name:  "bakemacaroon",
+	Usage: "Bakes a new macaroon",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "entity",
+			Usage: "name of the entity",
+		},
+		&cli.StringFlag{
+			Name:  "save",
+			Usage: "file to save to",
+		},
+	},
+	Action: requireNArgs(1, func(ctx *cli.Context) error {
+		client := getClient(ctx)
+		request := &boltzrpc.BakeMacaroonRequest{}
+		if entityName := ctx.String("entity"); entityName != "" {
+			entity, err := client.GetEntity(entityName)
+			if err != nil {
+				return err
+			}
+			request.EntityId = &entity.Id
+		}
+		args := ctx.Args()
+		for i := 0; i < args.Len(); i++ {
+			switch args.Get(i) {
+			case "read":
+				request.Permissions = append(request.Permissions, &boltzrpc.MacaroonPermissions{
+					Action: boltzrpc.MacaroonAction_READ,
+				})
+			case "write":
+				request.Permissions = append(request.Permissions, &boltzrpc.MacaroonPermissions{
+					Action: boltzrpc.MacaroonAction_WRITE,
+				})
+			}
+		}
+		response, err := client.BakeMacaroon(request)
+		if err != nil {
+			return err
+		}
+		fmt.Println(response.Macaroon)
+		if save := ctx.String("save"); save != "" {
+			decoded, _ := hex.DecodeString(response.Macaroon)
+			if err := os.WriteFile(save, decoded, 0666); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}),
+}
+
+var entityCommands = &cli.Command{
+	Name:     "entity",
+	Category: "Entity",
+	Usage:    "Manage the wallets used by the client",
+	Subcommands: []*cli.Command{
+		{
+			Name:      "create",
+			Usage:     "Create a new entity",
+			ArgsUsage: "name",
+			Description: "Creates a new wallet for the specified currency and unique name.\n" +
+				"Currency has to be BTC or LBTC (case insensitive).",
+			Action: requireNArgs(1, func(ctx *cli.Context) error {
+				client := getClient(ctx)
+
+				entity, err := client.CreateEntity(ctx.Args().First())
+				if err != nil {
+					return err
+				}
+				printJson(entity)
+				return nil
+			}),
+		},
+		{
+			Name:  "list",
+			Usage: "List all entities",
+			Action: func(ctx *cli.Context) error {
+				client := getClient(ctx)
+
+				response, err := client.ListEntities()
+				if err != nil {
+					return err
+				}
+				printJson(response)
+				return nil
+			},
+		},
+	},
+}

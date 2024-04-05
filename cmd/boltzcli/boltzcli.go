@@ -99,6 +99,8 @@ func main() {
 		autoSwapCommands,
 
 		walletCommands,
+		bakeMacaroonCommand,
+		entityCommands,
 
 		formatMacaroonCommand,
 		shellCompletionsCommand,
