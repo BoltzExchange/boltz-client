@@ -277,12 +277,12 @@ const refundableSwapsQuery = `
 SELECT swaps.*
 FROM chainSwaps swaps
          JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.fromCurrency
-WHERE (state = ? OR state = ? OR state = ?)
+WHERE state IN (?, ?, ?)
   AND data.timeoutBlockheight <= ?
   AND swaps.fromCurrency = ?
 `
 
-func (database *Database) QueryRefundableChainSwaps(currentBlockHeight uint32, currency boltz.Currency) ([]ChainSwap, error) {
+func (database *Database) QueryRefundableChainSwapsForBlockHeight(currentBlockHeight uint32, currency boltz.Currency) ([]ChainSwap, error) {
 	return database.queryChainSwaps(
 		refundableSwapsQuery,
 		boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, currentBlockHeight, currency,

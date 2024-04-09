@@ -280,7 +280,7 @@ func (database *Database) QueryNonSuccessfullSwaps(currency boltz.Currency) ([]S
 
 func (database *Database) QueryRefundableSwapsForBlockHeight(currentBlockHeight uint32, currency boltz.Currency) ([]Swap, error) {
 	return database.querySwaps(
-		"SELECT * FROM swaps WHERE (state = ? OR state = ? OR state = ?) AND timeoutBlockheight <= ? AND fromCurrency = ?",
+		"SELECT * FROM swaps WHERE state IN (?, ?, ?) AND timeoutBlockheight <= ? AND fromCurrency = ?",
 		boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, currentBlockHeight, currency,
 	)
 }
