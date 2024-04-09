@@ -3,6 +3,7 @@ package nursery
 import (
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"strconv"
 	"sync"
 	"time"
@@ -252,7 +253,7 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 }
 
 func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output, feeSatPerVbyte float64) (string, error) {
-	populated, err := nursery.populateAddresses(currency, outputs)
+	populated, err := nursery.populateOutputs(outputs)
 	if err != nil {
 		return "", errors.New("Could not populate output addresses: " + err.Error())
 	}
@@ -315,7 +316,7 @@ func (nursery *Nursery) refundOutputs(currency boltz.Currency, outputs []*Output
 	return nursery.createTransaction(currency, outputs, feeSatPerVbyte)
 }
 
-func (nursery *Nursery) populateAddresses(currency boltz.Currency, outputs []*Output) ([]boltz.OutputDetails, error) {
+func (nursery *Nursery) populateOutputs(outputs []*Output) ([]boltz.OutputDetails, error) {
 	addresses := make(map[int64]string)
 	var result []boltz.OutputDetails
 	for _, output := range outputs {
@@ -361,4 +362,30 @@ func (nursery *Nursery) populateAddresses(currency boltz.Currency, outputs []*Ou
 		return nil, errors.New("all outputs invalid")
 	}
 	return result, nil
+}
+
+type voutInfo struct {
+	transactionId  string
+	currency       boltz.Currency
+	address        string
+	blindingKey    *btcec.PrivateKey
+	expectedAmount uint64
+}
+
+func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
+	lockupTransaction, err := nursery.onchain.GetTransaction(info.currency, info.transactionId, info.blindingKey)
+	if err != nil {
+		return nil, 0, 0, errors.New("Could not decode lockup transaction: " + err.Error())
+	}
+
+	vout, value, err := lockupTransaction.FindVout(nursery.network, info.address)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	if info.expectedAmount != 0 && value < info.expectedAmount {
+		return nil, 0, 0, errors.New("locked up less onchain coins than expected")
+	}
+
+	return lockupTransaction, vout, value, nil
 }

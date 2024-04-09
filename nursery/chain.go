@@ -7,7 +7,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 func (nursery *Nursery) sendChainSwapUpdate(swap database.ChainSwap) {
@@ -80,32 +79,6 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 			return nil
 		},
 	}
-}
-
-type voutInfo struct {
-	transactionId  string
-	currency       boltz.Currency
-	address        string
-	blindingKey    *btcec.PrivateKey
-	expectedAmount uint64
-}
-
-func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
-	lockupTransaction, err := nursery.onchain.GetTransaction(info.currency, info.transactionId, info.blindingKey)
-	if err != nil {
-		return nil, 0, 0, errors.New("Could not decode lockup transaction: " + err.Error())
-	}
-
-	vout, value, err := lockupTransaction.FindVout(nursery.network, info.address)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-
-	if info.expectedAmount != 0 && value < info.expectedAmount {
-		return nil, 0, 0, errors.New("locked up less onchain coins than expected")
-	}
-
-	return lockupTransaction, vout, value, nil
 }
 
 func chainVoutInfo(data *database.ChainSwapData, checkAmount bool) voutInfo {
