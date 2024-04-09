@@ -230,7 +230,7 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 		return nil, handleError(err)
 	}
 
-	if err := server.nursery.RefundSwaps([]database.Swap{*swap}, nil, true); err != nil {
+	if err := server.nursery.RefundSwaps(swap.Pair.From, []database.Swap{*swap}, nil, true); err != nil {
 		return nil, handleError(err)
 	}
 
@@ -358,16 +358,15 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		createSwap.PreimageHash = preimageHash
 	}
 
+	sendFromInternal := request.GetSendFromInternal()
 	wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
 		Currency:      pair.From,
 		Id:            request.WalletId,
-		AllowReadonly: false,
+		AllowReadonly: !sendFromInternal,
 		EntityId:      macaroons.EntityFromContext(ctx),
 	})
-	if err != nil {
-		if request.SendFromInternal {
-			return nil, handleError(err)
-		}
+	if err != nil && sendFromInternal {
+		return nil, handleError(err)
 	}
 
 	response, err := server.boltz.CreateSwap(createSwap)
@@ -728,7 +727,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		return nil, handleError(err)
 	}
 
-	logger.Info("Creating chainSwap with preimage hash: " + hex.EncodeToString(preimageHash))
+	logger.Info("Creating Chain Swap with preimage hash: " + hex.EncodeToString(preimageHash))
 
 	createChainSwap.PreimageHash = preimageHash
 	if request.Amount == 0 {

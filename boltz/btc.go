@@ -99,7 +99,7 @@ func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int)
 	)
 }
 
-func constructBtcTransaction(network *Network, outputs []OutputDetails, fee uint64) (Transaction, error) {
+func constructBtcTransaction(network *Network, outputs []OutputDetails) (Transaction, error) {
 	transaction := wire.NewMsgTx(wire.TxVersion)
 
 	outValues := make(map[string]int64)
@@ -120,16 +120,12 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, fee uint
 
 		transaction.AddTxIn(input)
 
-		value := lockupTx.MsgTx().TxOut[output.Vout].Value
+		value := lockupTx.MsgTx().TxOut[output.Vout].Value - int64(output.Fee)
 		//nolint:gosimple
 		existingValue, _ := outValues[output.Address]
 		outValues[output.Address] = existingValue + value
 
 	}
-
-	outLen := uint64(len(outValues))
-	feePerOutput := fee / outLen
-	feeRemainder := fee % outLen
 
 	for rawAddress, value := range outValues {
 		outputAddress, err := btcutil.DecodeAddress(rawAddress, network.Btc)
@@ -143,12 +139,9 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, fee uint
 			return nil, err
 		}
 
-		// give the remainder to the first output
-		fee := feePerOutput + feeRemainder
-		feeRemainder = 0
 		transaction.AddTxOut(&wire.TxOut{
 			PkScript: outputScript,
-			Value:    value - int64(fee),
+			Value:    value,
 		})
 	}
 

@@ -723,7 +723,7 @@ func TestSwap(t *testing.T) {
 
 							refundAddress := cli("getnewaddress")
 							withStream := createFailedSwap(t, refundAddress)
-							withoutStream := createFailedSwap(t, "")
+							withoutStream := createFailedSwap(t, refundAddress)
 
 							withInfo := withStream(boltzrpc.SwapState_ERROR).Swap
 							withoutStream(boltzrpc.SwapState_ERROR)
@@ -762,8 +762,8 @@ func TestSwap(t *testing.T) {
 							checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
 						})
 
-						t.Run("Manual", func(t *testing.T) {
-							if tc.from == boltzrpc.Currency_LBTC {
+						if tc.from == boltzrpc.Currency_LBTC {
+							t.Run("Manual", func(t *testing.T) {
 								withoutWallet(t, client, func() {
 									stream := createFailedSwap(t, "")
 
@@ -801,8 +801,8 @@ func TestSwap(t *testing.T) {
 										requireCode(t, err, codes.FailedPrecondition)
 									})
 								})
-							}
-						})
+							})
+						}
 					})
 				})
 			}
