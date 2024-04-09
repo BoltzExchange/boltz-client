@@ -591,7 +591,7 @@ func (boltz *Boltz) GetChainSwapClaimDetails(swapId string) (*ChainSwapSigningDe
 	return &response, err
 }
 
-func (boltz *Boltz) SendChainSwapClaimSignature(swapId string, request *ChainSwapSigningRequest) (*PartialSignature, error) {
+func (boltz *Boltz) ExchangeChainSwapClaimSignature(swapId string, request *ChainSwapSigningRequest) (*PartialSignature, error) {
 	if boltz.DisablePartialSignatures {
 		return nil, ErrPartialSignaturesDisabled
 	}

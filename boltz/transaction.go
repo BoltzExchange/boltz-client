@@ -146,7 +146,7 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 					if err != nil {
 						return nil, fmt.Errorf("could not sign transaction: %w", err)
 					}
-					return boltzApi.SendChainSwapClaimSignature(output.SwapId, &ChainSwapSigningRequest{
+					return boltzApi.ExchangeChainSwapClaimSignature(output.SwapId, &ChainSwapSigningRequest{
 						Preimage:  output.Preimage,
 						Signature: boltzSignature,
 						ToSign:    claimRequest,
