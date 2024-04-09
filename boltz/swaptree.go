@@ -24,11 +24,10 @@ type SwapTree struct {
 	ClaimLeaf  TapLeaf
 	RefundLeaf TapLeaf
 
-	isLiquid     bool
-	ourKey       *btcec.PrivateKey
-	boltzKey     *btcec.PublicKey
-	claimPubKey  *btcec.PublicKey
-	refundPubKey *btcec.PublicKey
+	isLiquid bool
+	isClaim  bool
+	ourKey   *btcec.PrivateKey
+	boltzKey *btcec.PublicKey
 
 	aggregateKey  *musig2.AggregateKey
 	rootNode      txscript.TapNode
@@ -59,13 +58,7 @@ func (tree *SwapTree) Init(
 	boltzKey *btcec.PublicKey,
 ) error {
 	tree.isLiquid = isLiquid
-	if isClaim {
-		tree.claimPubKey = ourKey.PubKey()
-		tree.refundPubKey = boltzKey
-	} else {
-		tree.refundPubKey = ourKey.PubKey()
-		tree.claimPubKey = boltzKey
-	}
+	tree.isClaim = isClaim
 	tree.ourKey = ourKey
 	tree.boltzKey = boltzKey
 
@@ -187,6 +180,7 @@ func (tree *SwapTree) Check(
 		return err
 	}
 
+	claimPubKey := toXOnly(tree.claimPubKey())
 	claim := txscript.NewScriptBuilder()
 	if swapType == ReverseSwap || swapType == ChainSwap {
 		claim.AddOp(txscript.OP_SIZE)
@@ -195,13 +189,13 @@ func (tree *SwapTree) Check(
 		claim.AddOp(txscript.OP_HASH160)
 		claim.AddData(input.Ripemd160H(preimageHash))
 		claim.AddOp(txscript.OP_EQUALVERIFY)
-		claim.AddData(toXOnly(tree.claimPubKey))
+		claim.AddData(claimPubKey)
 		claim.AddOp(txscript.OP_CHECKSIG)
 	} else if swapType == NormalSwap {
 		claim.AddOp(txscript.OP_HASH160)
 		claim.AddData(input.Ripemd160H(preimageHash))
 		claim.AddOp(txscript.OP_EQUALVERIFY)
-		claim.AddData(toXOnly(tree.claimPubKey))
+		claim.AddData(claimPubKey)
 		claim.AddOp(txscript.OP_CHECKSIG)
 	}
 
@@ -210,7 +204,7 @@ func (tree *SwapTree) Check(
 	}
 
 	refund := txscript.NewScriptBuilder()
-	refund.AddData(toXOnly(tree.refundPubKey))
+	refund.AddData(toXOnly(tree.refundPubKey()))
 	refund.AddOp(txscript.OP_CHECKSIGVERIFY)
 	refund.AddInt64(int64(timeoutBlockHeight))
 	refund.AddOp(txscript.OP_CHECKLOCKTIMEVERIFY)
@@ -220,6 +214,20 @@ func (tree *SwapTree) Check(
 	}
 
 	return nil
+}
+
+func (tree *SwapTree) claimPubKey() *btcec.PublicKey {
+	if tree.isClaim {
+		return tree.ourKey.PubKey()
+	}
+	return tree.boltzKey
+}
+
+func (tree *SwapTree) refundPubKey() *btcec.PublicKey {
+	if tree.isClaim {
+		return tree.boltzKey
+	}
+	return tree.ourKey.PubKey()
 }
 
 func toXOnly(publicKey *btcec.PublicKey) []byte {
