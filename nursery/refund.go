@@ -1,10 +1,10 @@
 package nursery
 
 import (
+	"fmt"
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
-	"strconv"
 )
 
 func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
@@ -15,22 +15,22 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 			if nursery.stopped {
 				return
 			}
-			swaps, err := nursery.database.QueryRefundableSwapsForBlockHeight(newBlock.Height, currency)
+			swaps, err := nursery.database.QueryRefundableSwaps(currency)
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
 				continue
 			}
 
-			chainSwaps, err := nursery.database.QueryRefundableChainSwapsForBlockHeight(newBlock.Height, currency)
+			chainSwaps, err := nursery.database.QueryRefundableChainSwaps(currency)
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
 				continue
 			}
 
 			if len(swaps) > 0 || len(chainSwaps) > 0 {
-				logger.Info("Found " + strconv.Itoa(len(swaps)) + " Swaps to refund at height " + strconv.FormatUint(uint64(newBlock.Height), 10))
+				logger.Infof("Found %d Swaps to refund at height %d", len(swaps), newBlock.Height)
 
-				if err := nursery.RefundSwaps(currency, swaps, chainSwaps, false); err != nil {
+				if err := nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
 					logger.Error("Could not refund Swaps: " + err.Error())
 				}
 			}
@@ -38,7 +38,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 	}()
 }
 
-func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []database.Swap, chainSwaps []database.ChainSwap, cooperative bool) error {
+func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []database.Swap, chainSwaps []database.ChainSwap) error {
 	var outputs []*Output
 
 	for i := range swaps {
@@ -48,8 +48,12 @@ func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []database.Sw
 		outputs = append(outputs, nursery.getChainSwapRefundOutput(&chainSwaps[i]))
 	}
 
+	height, err := nursery.onchain.GetBlockHeight(currency)
+	if err != nil {
+		return fmt.Errorf("could not get block height: %w", err)
+	}
 	for _, output := range outputs {
-		output.Cooperative = cooperative
+		output.Cooperative = output.TimeoutBlockHeight > height
 	}
 
 	if len(outputs) == 0 {

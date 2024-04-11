@@ -200,6 +200,12 @@ func (database *Database) SetChainSwapLockupTransactionId(swapData *ChainSwapDat
 	return err
 }
 
+func (database *Database) SetChainSwapAddress(swapData *ChainSwapData, address string) error {
+	swapData.Address = address
+	_, err := database.Exec("UPDATE chainSwapsData SET address = ? WHERE id = ? AND currency = ?", address, swapData.Id, swapData.Currency)
+	return err
+}
+
 func (database *Database) SetChainSwapTransactionId(swapData *ChainSwapData, transactionId string) error {
 	swapData.Transactionid = transactionId
 	_, err := database.Exec("UPDATE chainSwapsData SET transactionId = ? WHERE id = ? AND currency = ?", transactionId, swapData.Id, swapData.Currency)
@@ -273,20 +279,28 @@ func (database *Database) queryChainSwapData(id string, currency boltz.Currency,
 	return data, nil
 }
 
-const refundableSwapsQuery = `
+const refundableChainSwapsQuery = `
 SELECT swaps.*
 FROM chainSwaps swaps
          JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.fromCurrency
-WHERE state IN (?, ?, ?)
-  AND data.timeoutBlockheight <= ?
-  AND swaps.fromCurrency = ?
+WHERE state != ?
+  AND data.lockupTransactionId != '' 
+  AND data.transactionId = ''
 `
 
-func (database *Database) QueryRefundableChainSwapsForBlockHeight(currentBlockHeight uint32, currency boltz.Currency) ([]ChainSwap, error) {
-	return database.queryChainSwaps(
-		refundableSwapsQuery,
-		boltzrpc.SwapState_PENDING, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, currentBlockHeight, currency,
-	)
+func (database *Database) QueryChainSwaps(args SwapQuery) ([]ChainSwap, error) {
+	where, values := args.ToWhereClause()
+	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where, values...)
+}
+
+func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency) ([]ChainSwap, error) {
+	values := []any{boltzrpc.SwapState_SUCCESSFUL}
+	query := refundableChainSwapsQuery
+	if currency != "" {
+		query += " AND swaps.fromCurrency = ?"
+		values = append(values, currency)
+	}
+	return database.queryChainSwaps(query, values...)
 }
 
 func (database *Database) parseChainSwap(rows *sql.Rows) (*ChainSwap, error) {

@@ -798,7 +798,7 @@ func TestSwap(t *testing.T) {
 										checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
 
 										_, err = client.RefundSwap(info.Id, refundAddress)
-										requireCode(t, err, codes.FailedPrecondition)
+										requireCode(t, err, codes.NotFound)
 									})
 								})
 							})
@@ -1178,7 +1178,7 @@ func TestChainSwap(t *testing.T) {
 								checkTxOutAddress(t, chain, from, info.FromData.TransactionId, refundAddress, true)
 
 								_, err = client.RefundSwap(info.Id, refundAddress)
-								requireCode(t, err, codes.FailedPrecondition)
+								requireCode(t, err, codes.NotFound)
 							})
 						})
 					})

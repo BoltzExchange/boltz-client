@@ -213,7 +213,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		logger.Infof("Chain Swap %s failed, trying to refund cooperatively", swap.Id)
-		if err := nursery.RefundSwaps(swap.Pair.From, nil, []database.ChainSwap{*swap}, true); err != nil {
+		if err := nursery.RefundSwaps(swap.Pair.From, nil, []database.ChainSwap{*swap}); err != nil {
 			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 			return
 		}
