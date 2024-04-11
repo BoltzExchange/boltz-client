@@ -1058,6 +1058,10 @@ func TestChainSwap(t *testing.T) {
 
 				to := parseCurrency(tc.to)
 				checkTxOutAddress(t, chain, to, info.ToData.TransactionId, info.ToData.Address, true)
+
+				response, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
+				require.NoError(t, err)
+				require.NotEmpty(t, response.ChainSwaps, 1)
 			})
 
 			t.Run("External", func(t *testing.T) {

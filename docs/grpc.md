@@ -63,7 +63,7 @@ Fetches all available pairs for submarine and reverse swaps.
 
 #### ListSwaps
 
-Returns a list of all swaps, reverse swaps and channel creations in the database.
+Returns a list of all swaps, reverse swaps, and chain swaps n the database.
 
 | Request | Response |
 | ------- | -------- |
@@ -71,7 +71,7 @@ Returns a list of all swaps, reverse swaps and channel creations in the database
 
 #### RefundSwap
 
-Refund a failed swap manually. This is only required when no refund address has been set or the daemon has no wallet for the currency.
+Refund a failed swap manually. This is only required when no refund address has been set or the the swap does not have an associated wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -518,8 +518,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  |  |
 | `claim_address` | [`string`](#string) | optional | address where funds will go if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. |
-| `from_wallet` | [`string`](#string) | optional | wallet from which the swap should be paid from |
-| `to_wallet` | [`string`](#string) | optional | wallet where the the funds should en up at |
+| `from_wallet` | [`string`](#string) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
+| `to_wallet` | [`string`](#string) | optional | wallet where the the funds will go if the swap succeeds. |
 | `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
 
@@ -977,6 +977,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `swaps` | [`SwapInfo`](#swapinfo) | repeated |  |
 | `channel_creations` | [`CombinedChannelSwapInfo`](#combinedchannelswapinfo) | repeated |  |
 | `reverse_swaps` | [`ReverseSwapInfo`](#reverseswapinfo) | repeated |  |
+| `chain_swaps` | [`ChainSwapInfo`](#chainswapinfo) | repeated |  |
 
 
 

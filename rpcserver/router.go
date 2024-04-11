@@ -218,6 +218,15 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(&reverseSwap))
 	}
 
+	chainSwaps, err := server.database.QueryChainSwaps(args)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, chainSwap := range chainSwaps {
+		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(&chainSwap))
+	}
+
 	return response, nil
 }
 

@@ -46,6 +46,9 @@ func (nursery *Nursery) PayReverseSwap(reverseSwap *database.ReverseSwap) error 
 				logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
 			}
 			logger.Errorf("Could not pay invoice %s: %v", reverseSwap.Invoice, err)
+			if nursery.stopped {
+				return
+			}
 			nursery.sendReverseSwapUpdate(*reverseSwap)
 		} else {
 			logger.Info("Paid invoice of Reverse Swap " + reverseSwap.Id + " with fee of " + utils.FormatMilliSat(int64(payment.FeeMsat)) + " satoshis")

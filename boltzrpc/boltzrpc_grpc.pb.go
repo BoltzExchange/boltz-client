@@ -72,10 +72,10 @@ type BoltzClient interface {
 	GetChainPair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ChainPair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
-	// Returns a list of all swaps, reverse swaps and channel creations in the database.
+	// Returns a list of all swaps, reverse swaps, and chain swaps n the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
-	// This is only required when no refund address has been set or the daemon has no wallet for the currency.
+	// This is only required when no refund address has been set or the the swap does not have an associated wallet.
 	RefundSwap(ctx context.Context, in *RefundSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
@@ -471,10 +471,10 @@ type BoltzServer interface {
 	GetChainPair(context.Context, *Pair) (*ChainPair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(context.Context, *empty.Empty) (*GetPairsResponse, error)
-	// Returns a list of all swaps, reverse swaps and channel creations in the database.
+	// Returns a list of all swaps, reverse swaps, and chain swaps n the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
-	// This is only required when no refund address has been set or the daemon has no wallet for the currency.
+	// This is only required when no refund address has been set or the the swap does not have an associated wallet.
 	RefundSwap(context.Context, *RefundSwapRequest) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
