@@ -736,15 +736,30 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		}
 	}
 
+	fromName := request.GetFromWallet()
 	fromWallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:     request.GetFromWallet(),
+		Name:     fromName,
 		Currency: pair.From,
+		EntityId: macaroons.EntityFromContext(ctx),
 	})
-
-	if err != nil {
-		if !request.GetExternalPay() {
+	externalPay := request.GetExternalPay()
+	if err != nil && !externalPay {
+		// the specified name was wrong
+		if fromName != "" {
 			return nil, handleError(err)
 		}
+		// no name was specified, which means there is no wallet available
+		externalPay = true
+	}
+
+	toName := request.GetToWallet()
+	toWallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
+		Name:     request.GetToWallet(),
+		Currency: pair.To,
+		EntityId: macaroons.EntityFromContext(ctx),
+	})
+	if err != nil && toName != "" {
+		return nil, handleError(err)
 	}
 
 	response, err := server.boltz.CreateChainSwap(createChainSwap)
