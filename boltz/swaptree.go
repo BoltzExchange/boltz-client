@@ -242,10 +242,6 @@ func checkScript(actual []byte, expected *txscript.ScriptBuilder) error {
 	}
 
 	if !bytes.Equal(actual, expectedScript) {
-		fmt.Println("expected")
-		fmt.Println(txscript.DisasmString(expectedScript))
-		fmt.Println("actual")
-		fmt.Println(txscript.DisasmString(actual))
 		return errors.New("invalid script")
 	}
 	return nil

@@ -891,18 +891,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		return nil, handleError(err)
 	}
 
-	/*
-		timeoutHours := boltz.BlocksToHours(response.TimeoutBlockHeight-blockHeight, pair.From)
-		ChainSwapResponse := &boltzrpc.CreateChainSwapResponse{
-			Id:                 chainSwap.Id,
-			Address:            response.Address,
-			ExpectedAmount:     int64(response.ExpectedAmount),
-			Bip21:              response.Bip21,
-			TimeoutBlockHeight: response.TimeoutBlockHeight,
-			TimeoutHours:       float32(timeoutHours),
-		}
-	*/
-
 	if !externalPay {
 		// TODO: custom block target?
 		feeSatPerVbyte, err := server.onchain.EstimateFee(pair.From, 2)
@@ -922,12 +910,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	if err := server.nursery.RegisterChainSwap(chainSwap); err != nil {
 		return nil, handleError(err)
 	}
-
-	/*
-		if err := server.nursery.RegisterSwap(chainSwap); err != nil {
-			return nil, handleError(err)
-		}
-	*/
 
 	return serializeChainSwap(&chainSwap), nil
 }

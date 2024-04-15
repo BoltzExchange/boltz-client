@@ -480,12 +480,12 @@ func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, 
 	return &response, err
 }
 
-func (boltz *Boltz) RefundSwap(id string, request *RefundRequest) (*PartialSignature, error) {
+func (boltz *Boltz) RefundSwap(swapId string, request *RefundRequest) (*PartialSignature, error) {
 	if boltz.DisablePartialSignatures {
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/refund", id), request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/refund", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -552,12 +552,12 @@ func (boltz *Boltz) CreateReverseSwap(request CreateReverseSwapRequest) (*Create
 	return &response, err
 }
 
-func (boltz *Boltz) ClaimReverseSwap(id string, request *ClaimRequest) (*PartialSignature, error) {
+func (boltz *Boltz) ClaimReverseSwap(swapId string, request *ClaimRequest) (*PartialSignature, error) {
 	if boltz.DisablePartialSignatures {
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/reverse/%s/claim", id), request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/reverse/%s/claim", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
