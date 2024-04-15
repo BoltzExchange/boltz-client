@@ -53,6 +53,19 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	return nil
 }
 
+func chainVoutInfo(data *database.ChainSwapData, checkAmount bool) voutInfo {
+	info := voutInfo{
+		transactionId: data.LockupTransactionId,
+		currency:      data.Currency,
+		address:       data.LockupAddress,
+		blindingKey:   data.BlindingKey,
+	}
+	if checkAmount {
+		info.expectedAmount = data.Amount
+	}
+	return info
+}
+
 func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Output {
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
@@ -79,19 +92,6 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 			return nil
 		},
 	}
-}
-
-func chainVoutInfo(data *database.ChainSwapData, checkAmount bool) voutInfo {
-	info := voutInfo{
-		transactionId: data.LockupTransactionId,
-		currency:      data.Currency,
-		address:       data.LockupAddress,
-		blindingKey:   data.BlindingKey,
-	}
-	if checkAmount {
-		info.expectedAmount = data.Amount
-	}
-	return info
 }
 
 func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Output {

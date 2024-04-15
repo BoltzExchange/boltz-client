@@ -1011,7 +1011,7 @@ func TestChainSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
 	boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
-	//initOnchain(cfg, boltz.Regtest)
+
 	chain := onchain.Onchain{
 		Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
 		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},

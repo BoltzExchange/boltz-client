@@ -41,7 +41,6 @@ func swapVoutInfo(swap *database.Swap) voutInfo {
 		currency:      swap.Pair.From,
 		address:       swap.Address,
 		blindingKey:   swap.BlindingKey,
-		//expectedAmount: swap.ExpectedAmount,
 	}
 }
 

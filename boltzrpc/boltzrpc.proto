@@ -531,7 +531,7 @@ message CreateReverseSwapResponse {
 }
 
 message CreateChainSwapRequest {
-    // amount of satoshis to swap
+    // amount of satoshis to swap. it will be the amount expected to be sent to the lockup address.
     uint64 amount = 1;
     Pair pair = 2;
     // address where funds will go if the swap succeeds

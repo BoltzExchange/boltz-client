@@ -267,7 +267,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 	if err != nil {
 		return "", fmt.Errorf("broadcast transaction: %v", err)
 	}
-	logger.Info("Broadcast transaction with Boltz API")
+	logger.Infof("Broadcast transaction: %s", response.TransactionId)
 
 	id := response.TransactionId
 
@@ -276,7 +276,6 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 			logger.Errorf("Could not set refund transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
 			continue
 		}
-		logger.Infof("Refunded %s Swap %s with transaction %s", output.SwapType, output.SwapId, id)
 	}
 
 	return id, nil
