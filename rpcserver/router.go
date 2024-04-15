@@ -785,12 +785,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	})
 	externalPay := request.GetExternalPay()
 	if err != nil && !externalPay {
-		// the specified name was wrong
-		if fromName != "" {
-			return nil, handleError(err)
-		}
-		// no name was specified, which means there is no wallet available
-		externalPay = true
+		return nil, handleError(err)
 	}
 
 	toName := request.GetToWallet()
