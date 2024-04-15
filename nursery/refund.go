@@ -28,7 +28,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 			}
 
 			if len(swaps) > 0 || len(chainSwaps) > 0 {
-				logger.Infof("Found %d Swaps to refund at height %d", len(swaps), newBlock.Height)
+				logger.Infof("Found %d Swaps to refund at height %d", len(swaps) + len(chainSwaps), newBlock.Height)
 
 				if err := nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
 					logger.Error("Could not refund Swaps: " + err.Error())
