@@ -1057,7 +1057,7 @@ func TestChainSwap(t *testing.T) {
 				info := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
 
 				to := parseCurrency(tc.to)
-				checkTxOutAddress(t, chain, to, info.ToData.TransactionId, info.ToData.Address, true)
+				checkTxOutAddress(t, chain, to, info.ToData.GetTransactionId(), info.ToData.GetAddress(), true)
 
 				response, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
 				require.NoError(t, err)
@@ -1074,13 +1074,16 @@ func TestChainSwap(t *testing.T) {
 				})
 				require.NoError(t, err)
 				require.NotEmpty(t, swap.Id)
+				require.NotEmpty(t, swap.ToData.Address)
 
 				stream := swapStream(t, client, swap.Id)
 				test.SendToAddress(fromCli, swap.FromData.LockupAddress, swap.FromData.Amount)
 				test.MineBlock()
 				stream(boltzrpc.SwapState_PENDING)
 				test.MineBlock()
+				test.MineBlock()
 				stream(boltzrpc.SwapState_SUCCESSFUL)
+				test.MineBlock()
 			})
 
 			t.Run("Refund", func(t *testing.T) {
@@ -1121,12 +1124,12 @@ func TestChainSwap(t *testing.T) {
 					from := parseCurrency(pair.From)
 
 					require.Equal(t, withInfo.FromData.TransactionId, withoutInfo.FromData.TransactionId)
-					refundFee, err := chain.GetTransactionFee(from, withInfo.FromData.TransactionId)
+					refundFee, err := chain.GetTransactionFee(from, withInfo.FromData.GetTransactionId())
 					require.NoError(t, err)
 
 					require.Equal(t, refundFee, *withInfo.OnchainFee+*withoutInfo.OnchainFee)
 
-					checkTxOutAddress(t, chain, from, withInfo.FromData.TransactionId, refundAddress, false)
+					checkTxOutAddress(t, chain, from, withInfo.FromData.GetTransactionId(), refundAddress, false)
 				})
 
 				t.Run("Cooperative", func(t *testing.T) {
@@ -1139,11 +1142,11 @@ func TestChainSwap(t *testing.T) {
 
 					from := parseCurrency(pair.From)
 
-					refundFee, err := chain.GetTransactionFee(from, info.FromData.TransactionId)
+					refundFee, err := chain.GetTransactionFee(from, info.FromData.GetTransactionId())
 					require.NoError(t, err)
 					require.Equal(t, refundFee, *info.OnchainFee)
 
-					checkTxOutAddress(t, chain, from, info.FromData.TransactionId, refundAddress, true)
+					checkTxOutAddress(t, chain, from, info.FromData.GetTransactionId(), refundAddress, true)
 				})
 
 				if tc.from == boltzrpc.Currency_LBTC {
@@ -1175,11 +1178,11 @@ func TestChainSwap(t *testing.T) {
 
 								from := parseCurrency(pair.From)
 
-								refundFee, err := chain.GetTransactionFee(from, info.FromData.TransactionId)
+								refundFee, err := chain.GetTransactionFee(from, info.FromData.GetTransactionId())
 								require.NoError(t, err)
 								assert.Equal(t, int(refundFee), int(*info.OnchainFee))
 
-								checkTxOutAddress(t, chain, from, info.FromData.TransactionId, refundAddress, true)
+								checkTxOutAddress(t, chain, from, info.FromData.GetTransactionId(), refundAddress, true)
 
 								_, err = client.RefundSwap(info.Id, refundAddress)
 								requireCode(t, err, codes.NotFound)

@@ -562,7 +562,7 @@ message ChainSwapInfo {
     float service_fee_percent = 10;
     optional uint64 onchain_fee = 11;
     int64 created_at = 12;
-    string entity = 13;
+    optional int64 entity_id = 13;
     ChainSwapData from_data = 14;
     ChainSwapData to_data = 15;
 }
@@ -574,10 +574,10 @@ message ChainSwapData {
     string their_public_key = 4;
     int64 amount = 6;
     uint32 timeout_block_height = 7;
-    string lockup_transaction_id = 8;
-    string transaction_id = 9;
-    string wallet = 11;
-    string address = 12;
+    optional string lockup_transaction_id = 8;
+    optional string transaction_id = 9;
+    optional int64 wallet_id = 20;
+    optional string address = 12;
     optional string blinding_key = 13;
     string lockup_address = 14;
 }

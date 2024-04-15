@@ -410,10 +410,10 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `their_public_key` | [`string`](#string) |  |  |
 | `amount` | [`int64`](#int64) |  |  |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
-| `lockup_transaction_id` | [`string`](#string) |  |  |
-| `transaction_id` | [`string`](#string) |  |  |
-| `wallet` | [`string`](#string) |  |  |
-| `address` | [`string`](#string) |  |  |
+| `lockup_transaction_id` | [`string`](#string) | optional |  |
+| `transaction_id` | [`string`](#string) | optional |  |
+| `wallet_id` | [`int64`](#int64) | optional |  |
+| `address` | [`string`](#string) | optional |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `lockup_address` | [`string`](#string) |  |  |
 
@@ -439,7 +439,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `service_fee_percent` | [`float`](#float) |  |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
-| `entity` | [`string`](#string) |  |  |
+| `entity_id` | [`int64`](#int64) | optional |  |
 | `from_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 | `to_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 

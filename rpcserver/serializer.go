@@ -134,6 +134,7 @@ func serializeChainSwap(chainSwap *database.ChainSwap) *boltzrpc.ChainSwapInfo {
 		OnchainFee: serializedchainSwap.OnchainFee,
 		FromData:   serializeChainSwapData(chainSwap.FromData),
 		ToData:     serializeChainSwapData(chainSwap.ToData),
+		EntityId:   chainSwap.EntityId,
 	}
 }
 
@@ -148,12 +149,13 @@ func serializeChainSwapData(chainSwap *database.ChainSwapData) *boltzrpc.ChainSw
 		Currency:            serializeCurrency(chainSwap.Currency),
 		PrivateKey:          serializedChainSwap.PrivateKey,
 		TimeoutBlockHeight:  serializedChainSwap.TimeoutBlockHeight,
-		Address:             serializedChainSwap.Address,
+		Address:             serializeOptionalString(serializedChainSwap.Address),
 		Amount:              int64(serializedChainSwap.Amount),
-		LockupTransactionId: serializedChainSwap.LockupTransactionId,
-		TransactionId:       serializedChainSwap.TransactionId,
+		LockupTransactionId: serializeOptionalString(serializedChainSwap.LockupTransactionId),
+		TransactionId:       serializeOptionalString(serializedChainSwap.TransactionId),
 		BlindingKey:         serializeOptionalString(serializedChainSwap.BlindingKey),
 		LockupAddress:       serializedChainSwap.LockupAddress,
+		WalletId:            serializedChainSwap.WalletId,
 	}
 }
 
