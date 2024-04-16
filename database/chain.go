@@ -282,10 +282,9 @@ func (database *Database) queryChainSwapData(id string, currency boltz.Currency,
 const refundableChainSwapsQuery = `
 SELECT swaps.*
 FROM chainSwaps swaps
-         JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.fromCurrency
-WHERE state != ?
-  AND data.lockupTransactionId != '' 
-  AND data.transactionId = ''
+         JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.fromCurrency AND data.currency = ?
+WHERE data.lockupTransactionId != '' AND data.transactionId == ''
+  AND (status IN (?, ?) OR data.timeoutBlockheight < ?)
 `
 
 func (database *Database) QueryChainSwaps(args SwapQuery) ([]ChainSwap, error) {
@@ -293,14 +292,10 @@ func (database *Database) QueryChainSwaps(args SwapQuery) ([]ChainSwap, error) {
 	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where, values...)
 }
 
-func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency) ([]ChainSwap, error) {
-	values := []any{boltzrpc.SwapState_SUCCESSFUL}
-	query := refundableChainSwapsQuery
-	if currency != "" {
-		query += " AND swaps.fromCurrency = ?"
-		values = append(values, currency)
-	}
-	return database.queryChainSwaps(query, values...)
+func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]ChainSwap, error) {
+	return database.queryChainSwaps(
+		refundableChainSwapsQuery, currency, boltz.SwapExpired.String(), boltz.TransactionLockupFailed.String(), currentBlockHeight,
+	)
 }
 
 func (database *Database) parseChainSwap(rows *sql.Rows) (*ChainSwap, error) {

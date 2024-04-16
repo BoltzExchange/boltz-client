@@ -21,7 +21,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 				continue
 			}
 
-			chainSwaps, err := nursery.database.QueryRefundableChainSwaps(currency)
+			chainSwaps, err := nursery.database.QueryRefundableChainSwaps(currency, newBlock.Height)
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
 				continue
