@@ -1064,6 +1064,29 @@ func TestChainSwap(t *testing.T) {
 				require.NotEmpty(t, response.ChainSwaps, 1)
 			})
 
+			t.Run("ZeroConf", func(t *testing.T) {
+				zeroConf := true
+				swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+					Amount:         100000,
+					Pair:           pair,
+					ToAddress:      &toAddress,
+					AcceptZeroConf: &zeroConf,
+				})
+				require.NoError(t, err)
+				require.NotEmpty(t, swap.Id)
+
+				stream := swapStream(t, client, swap.Id)
+				test.MineBlock()
+				info := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
+
+				to := parseCurrency(tc.to)
+				checkTxOutAddress(t, chain, to, info.ToData.GetTransactionId(), info.ToData.GetAddress(), true)
+
+				response, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
+				require.NoError(t, err)
+				require.NotEmpty(t, response.ChainSwaps)
+			})
+
 			t.Run("External", func(t *testing.T) {
 				externalPay := true
 				swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
@@ -1081,9 +1104,7 @@ func TestChainSwap(t *testing.T) {
 				test.MineBlock()
 				stream(boltzrpc.SwapState_PENDING)
 				test.MineBlock()
-				test.MineBlock()
 				stream(boltzrpc.SwapState_SUCCESSFUL)
-				test.MineBlock()
 			})
 
 			t.Run("Refund", func(t *testing.T) {

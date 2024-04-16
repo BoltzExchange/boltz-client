@@ -171,7 +171,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 
 	switch parsedStatus {
 	case boltz.TransactionServerConfirmed, boltz.TransactionServerMempoool:
-		if parsedStatus == boltz.TransactionServerMempoool && !swap.AcceptZeroConf {
+		if (parsedStatus == boltz.TransactionServerMempoool && !swap.AcceptZeroConf) || swap.ToData.Transactionid != "" {
 			break
 		}
 
