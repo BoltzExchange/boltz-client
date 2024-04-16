@@ -1039,13 +1039,13 @@ func TestChainSwap(t *testing.T) {
 			toCli := getCli(tc.to)
 
 			refundAddress := fromCli("getnewaddress")
-			claimAddress := toCli("getnewaddress")
+			toAddress := toCli("getnewaddress")
 
 			t.Run("Normal", func(t *testing.T) {
 				swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-					Amount:       100000,
-					Pair:         pair,
-					ClaimAddress: &claimAddress,
+					Amount:    100000,
+					Pair:      pair,
+					ToAddress: &toAddress,
 				})
 				require.NoError(t, err)
 				require.NotEmpty(t, swap.Id)
@@ -1067,10 +1067,10 @@ func TestChainSwap(t *testing.T) {
 			t.Run("External", func(t *testing.T) {
 				externalPay := true
 				swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-					Amount:       100000,
-					Pair:         pair,
-					ExternalPay:  &externalPay,
-					ClaimAddress: &claimAddress,
+					Amount:      100000,
+					Pair:        pair,
+					ExternalPay: &externalPay,
+					ToAddress:   &toAddress,
 				})
 				require.NoError(t, err)
 				require.NotEmpty(t, swap.Id)
@@ -1123,7 +1123,7 @@ func TestChainSwap(t *testing.T) {
 
 					from := parseCurrency(pair.From)
 
-					require.Equal(t, withInfo.FromData.TransactionId, withoutInfo.FromData.TransactionId)
+					require.Equal(t, withInfo.FromData.GetTransactionId(), withoutInfo.FromData.GetTransactionId())
 					refundFee, err := chain.GetTransactionFee(from, withInfo.FromData.GetTransactionId())
 					require.NoError(t, err)
 

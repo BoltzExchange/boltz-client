@@ -777,9 +777,8 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		}
 	}
 
-	fromName := request.GetFromWallet()
 	fromWallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:     fromName,
+		Id:       request.FromWalletId,
 		Currency: pair.From,
 		EntityId: macaroons.EntityFromContext(ctx),
 	})
@@ -788,13 +787,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		return nil, handleError(err)
 	}
 
-	toName := request.GetToWallet()
 	toWallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:     request.GetToWallet(),
+		Id:       request.ToWalletId,
 		Currency: pair.To,
 		EntityId: macaroons.EntityFromContext(ctx),
 	})
-	if err != nil && toName != "" {
+	if err != nil {
 		return nil, handleError(err)
 	}
 
@@ -811,6 +809,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		Error:             "",
 		Preimage:          preimage,
 		IsAuto:            isAuto,
+		AcceptZeroConf:    request.GetAcceptZeroConf(),
 		ServiceFeePercent: utils.Percentage(chainPair.Fees.Percentage),
 	}
 
@@ -828,7 +827,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 			swapData.Address = request.GetRefundAddress()
 		} else {
 			swapData.PrivateKey = claimPrivateKey
-			swapData.Address = request.GetClaimAddress()
+			swapData.Address = request.GetToAddress()
 		}
 
 		if swapData.Address != "" {
@@ -1064,6 +1063,7 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {
 	info := wal.GetWalletInfo()
 	result := &boltzrpc.Wallet{
+		Id:       info.Id,
 		Name:     info.Name,
 		Currency: serializeCurrency(info.Currency),
 		Readonly: info.Readonly,

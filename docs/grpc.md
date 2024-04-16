@@ -514,12 +514,12 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) |  | amount of satoshis to swap |
+| `amount` | [`uint64`](#uint64) |  | amount of satoshis to swap. it will be the amount expected to be sent to the lockup address. |
 | `pair` | [`Pair`](#pair) |  |  |
-| `claim_address` | [`string`](#string) | optional | address where funds will go if the swap succeeds |
+| `to_address` | [`string`](#string) | optional | address where funds will go if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. |
-| `from_wallet` | [`string`](#string) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
-| `to_wallet` | [`string`](#string) | optional | wallet where the the funds will go if the swap succeeds. |
+| `from_wallet_id` | [`int64`](#int64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
+| `to_wallet_id` | [`int64`](#int64) | optional | wallet where the the funds will go if the swap succeeds. |
 | `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
 

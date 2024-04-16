@@ -535,14 +535,14 @@ message CreateChainSwapRequest {
     uint64 amount = 1;
     Pair pair = 2;
     // address where funds will go if the swap succeeds
-    optional string claim_address = 3;
+    optional string to_address = 3;
     // address where the coins should go if the swap fails.
     optional string refund_address = 4;
     // Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true.
     // If the swap fails, funds will be refunded to this wallet aswell.
-    optional string from_wallet = 5;
+    optional int64 from_wallet_id = 5;
     // wallet where the the funds will go if the swap succeeds.
-    optional string to_wallet = 6;
+    optional int64 to_wallet_id = 6;
     // Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool.
     // Should only be used for smaller amounts as it involves trust in boltz.
     optional bool accept_zero_conf = 7;
