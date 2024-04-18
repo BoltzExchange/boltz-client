@@ -791,23 +791,32 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		}
 	}
 
-	fromWallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Id:       request.FromWalletId,
-		Currency: pair.From,
-		EntityId: macaroons.EntityFromContext(ctx),
-	})
 	externalPay := request.GetExternalPay()
-	if err != nil && !externalPay {
-		return nil, handleError(err)
+	if !externalPay && request.FromWalletId == nil {
+		return nil, handleError(errors.New("from wallet required"))
 	}
 
-	toWallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Id:       request.ToWalletId,
-		Currency: pair.To,
-		EntityId: macaroons.EntityFromContext(ctx),
-	})
-	if err != nil {
-		return nil, handleError(err)
+	var fromWallet, toWallet onchain.Wallet
+	if request.FromWalletId != nil {
+		fromWallet, err = server.onchain.GetAnyWallet(onchain.WalletChecker{
+			Id:       request.FromWalletId,
+			Currency: pair.From,
+			EntityId: macaroons.EntityFromContext(ctx),
+		})
+		if err != nil {
+			return nil, handleError(err)
+		}
+	}
+
+	if request.ToWalletId != nil {
+		toWallet, err = server.onchain.GetAnyWallet(onchain.WalletChecker{
+			Id:       request.ToWalletId,
+			Currency: pair.To,
+			EntityId: macaroons.EntityFromContext(ctx),
+		})
+		if err != nil {
+			return nil, handleError(err)
+		}
 	}
 
 	response, err := server.boltz.CreateChainSwap(createChainSwap)
