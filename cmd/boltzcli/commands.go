@@ -1110,7 +1110,7 @@ var unlockCommand = &cli.Command{
 
 var changePasswordCommand = &cli.Command{
 	Name:  "changepassword",
-	Usage: "Unlock the server",
+	Usage: "Change password for integrated wallets",
 	Action: func(ctx *cli.Context) error {
 		client := getClient(ctx)
 		var answers struct {
