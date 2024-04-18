@@ -916,15 +916,13 @@ var createChainSwapCommand = &cli.Command{
 	Category:  "Swaps",
 	Usage:     "Create a new chain swap",
 	ArgsUsage: "[amount]",
-	Description: "Creates a new swap (onchain -> lightning) specifying the amount in satoshis.\n" +
+	Description: "Creates a new chain swap (e.g. BTC -> L-BTC) specifying the amount in satoshis.\n" +
 		"If the --any-amount flag is specified, any amount within the displayed limits can be paid to the lockup address.\n" +
 		"\nExamples" +
 		"\nCreate a swap for 100000 satoshis that will be immediately paid by the clients wallet:" +
 		"\n> boltzcli createchainswap --from btc --to lbtc 100000" +
 		"\nCreate a swap for any amount of satoshis on liquid:" +
 		"\n> boltzcli createswap --any-amount --currency LBTC" +
-		"\nCreate a swap using an existing invoice:" +
-		"\n> boltzcli createswap --invoice lnbcrt1m1pja7adjpp59xdpx33l80wf8rsmqkwjyccdzccsedp9qgy9agf0k8m5g8ttrnzsdq8w3jhxaqcqp5xqzjcsp528qsd7mec4jml9zy302tmr0t995fe9uu80qwgg4zegerh3weyn8s9qyyssqpwecwyvndxh9ar0crgpe4crr93pr4g682u5sstzfk6e0g73s6urxm320j5yuamlszxnk5fzzrtx2hkxw8ehy6kntrx4cr4kcq6zc4uqqy7tcst",
 	Action: createChainSwap,
 	Flags: []cli.Flag{
 		jsonFlag,
