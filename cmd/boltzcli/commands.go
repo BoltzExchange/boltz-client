@@ -110,7 +110,7 @@ var stateFilterFlag = &cli.StringFlag{
 var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
 	Category: "Info",
-	Usage:    "Lists all swaps and reverse swaps",
+	Usage:    "Lists all swaps",
 	Action: func(ctx *cli.Context) error {
 		isAuto := ctx.Bool("auto")
 		return listSwaps(ctx, &isAuto)
@@ -123,7 +123,7 @@ var listSwapsCommand = &cli.Command{
 		stateFilterFlag,
 		&cli.BoolFlag{
 			Name:  "auto",
-			Usage: "Only show swaps by autoswapper",
+			Usage: "Only show swaps created by autoswap",
 		},
 	},
 }
@@ -367,7 +367,7 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 	return nil
 }
 
-var configDescription string = `View and edit configuration of the autoswapper.
+var configDescription string = `View and edit configuration of autoswap.
 By default, the whole config is shown, altough a certain key can be specified.
 A new value for the key can also be provided.
 The configuration file autoswap.toml is located inside the data directory of the daemon and can be edited manually too.`
@@ -375,11 +375,11 @@ The configuration file autoswap.toml is located inside the data directory of the
 var autoSwapCommands = &cli.Command{
 	Name:    "autoswap",
 	Aliases: []string{"auto"},
-	Usage:   "Manage the autoswapper",
+	Usage:   "Manage autoswap",
 	Description: "Autoswap keeps your lightning node balanced by automatically executing swaps.\n" +
 		"It regularly checks your nodes channels and creates swaps based on your configuration, which can be managed with the `config` command.\n" +
-		"You can also configure the autoswapper without starting it and see what it would do with the `recommendations` command.\n" +
-		"Once you are confident with the configuration, you can enable the autoswapper with the `enable` command.\n",
+		"You can also configure autoswap without starting it and see what it would do with the `recommendations` command.\n" +
+		"Once you are confident with the confiManage autoswapguration, you can enable autoswap with the `enable` command.\n",
 	Subcommands: []*cli.Command{
 		{
 			Name:   "status",
@@ -449,14 +449,14 @@ var autoSwapCommands = &cli.Command{
 		},
 		{
 			Name:  "enable",
-			Usage: "Enables the autoswapper",
+			Usage: "Enables autoswap",
 			Action: func(ctx *cli.Context) error {
 				return enableAutoSwap(ctx, true)
 			},
 		},
 		{
 			Name:   "disable",
-			Usage:  "Disables the autoswapper",
+			Usage:  "Disables autoswap",
 			Action: disableAutoSwap,
 		},
 	},
@@ -1105,7 +1105,7 @@ func createChainSwap(ctx *cli.Context) error {
 var refundSwapCommand = &cli.Command{
 	Name:      "refundswap",
 	Category:  "Swaps",
-	Usage:     "Refund a swap manually",
+	Usage:     "Refund a chain-to-lightning swap manually",
 	ArgsUsage: "id addresss",
 	Action:    requireNArgs(2, refundSwap),
 }

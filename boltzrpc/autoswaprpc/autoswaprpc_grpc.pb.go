@@ -34,19 +34,19 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AutoSwapClient interface {
 	//
-	//Returns a list of swaps which are currently recommended by the autoswapper. Also works when the autoswapper is not running.
+	//Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
 	GetSwapRecommendations(ctx context.Context, in *GetSwapRecommendationsRequest, opts ...grpc.CallOption) (*GetSwapRecommendationsResponse, error)
 	//
-	//Returns the current budget of the autoswapper and some relevant stats.
+	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
 	//
 	//Resets the configuration to default values.
 	ResetConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Config, error)
 	//
-	//Allows setting multiple json-encoded config values at once. The autoswapper will reload the configuration after this call.
+	//Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
 	SetConfig(ctx context.Context, in *Config, opts ...grpc.CallOption) (*Config, error)
 	//
-	//Allows setting a specific value in the configuration. The autoswapper will reload the configuration after this call.
+	//Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
 	SetConfigValue(ctx context.Context, in *SetConfigValueRequest, opts ...grpc.CallOption) (*Config, error)
 	//
 	//Returns the currently used configurationencoded as json.
@@ -133,19 +133,19 @@ func (c *autoSwapClient) ReloadConfig(ctx context.Context, in *emptypb.Empty, op
 // for forward compatibility
 type AutoSwapServer interface {
 	//
-	//Returns a list of swaps which are currently recommended by the autoswapper. Also works when the autoswapper is not running.
+	//Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
 	GetSwapRecommendations(context.Context, *GetSwapRecommendationsRequest) (*GetSwapRecommendationsResponse, error)
 	//
-	//Returns the current budget of the autoswapper and some relevant stats.
+	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	//
 	//Resets the configuration to default values.
 	ResetConfig(context.Context, *emptypb.Empty) (*Config, error)
 	//
-	//Allows setting multiple json-encoded config values at once. The autoswapper will reload the configuration after this call.
+	//Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
 	SetConfig(context.Context, *Config) (*Config, error)
 	//
-	//Allows setting a specific value in the configuration. The autoswapper will reload the configuration after this call.
+	//Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
 	SetConfigValue(context.Context, *SetConfigValueRequest) (*Config, error)
 	//
 	//Returns the currently used configurationencoded as json.
