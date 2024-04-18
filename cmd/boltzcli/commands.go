@@ -914,7 +914,7 @@ func createSwap(ctx *cli.Context) error {
 var createChainSwapCommand = &cli.Command{
 	Name:      "createchainswap",
 	Category:  "Swaps",
-	Usage:     "Create a new chain swap",
+	Usage:     "Create a new chain-to-chain swap",
 	ArgsUsage: "[amount]",
 	Description: "Creates a new chain swap (e.g. BTC -> L-BTC) specifying the amount in satoshis.\n" +
 		"If the --any-amount flag is specified, any amount within the displayed limits can be paid to the lockup address.\n" +
@@ -936,23 +936,23 @@ var createChainSwapCommand = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "from",
-			Usage: "Address to refund to in case the swap fails",
+			Usage: "Currency to swap from",
 		},
 		&cli.StringFlag{
 			Name:  "to",
-			Usage: "Address to refund to in case the swap fails",
+			Usage: "Currency to swap to",
 		},
 		&cli.StringFlag{
 			Name:  "from-wallet",
-			Usage: "Address to refund to in case the swap fails",
+			Usage: "Wallet to swap from",
 		},
 		&cli.StringFlag{
 			Name:  "to-wallet",
-			Usage: "Address to refund to in case the swap fails",
+			Usage: "Wallet to swap to",
 		},
 		&cli.StringFlag{
 			Name:  "to-address",
-			Usage: "Address to refund to in case the swap fails",
+			Usage: "Address to swap to",
 		},
 		&cli.StringFlag{
 			Name:  "refund-address",
