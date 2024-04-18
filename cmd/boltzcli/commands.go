@@ -954,13 +954,6 @@ var createChainSwapCommand = &cli.Command{
 	},
 }
 
-func optionalString(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
 func checkAddress(network *boltz.Network, address string) (boltzrpc.Currency, error) {
 	if err := boltz.ValidateAddress(network, address, boltz.CurrencyBtc); err == nil {
 		return boltzrpc.Currency_BTC, nil
