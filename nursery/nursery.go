@@ -253,12 +253,12 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 }
 
 func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output, feeSatPerVbyte float64) (string, error) {
-	populated, err := nursery.populateOutputs(outputs)
-	if err != nil {
-		return "", errors.New("Could not populate output addresses: " + err.Error())
+	valid, details := nursery.populateOutputs(outputs)
+	if len(valid) == 0 {
+		return "", errors.New("all outputs invalid")
 	}
 
-	transaction, fees, err := boltz.ConstructTransaction(nursery.network, currency, populated, feeSatPerVbyte, nursery.boltz)
+	transaction, fees, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
 	if err != nil {
 		return "", fmt.Errorf("construct transaction: %v", err)
 	}
@@ -271,9 +271,9 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 
 	id := response.TransactionId
 
-	for i, output := range outputs {
+	for i, output := range valid {
 		if err := output.setTransaction(id, fees[i]); err != nil {
-			logger.Errorf("Could not set refund transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
+			logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
 			continue
 		}
 	}
@@ -315,9 +315,8 @@ func (nursery *Nursery) refundOutputs(currency boltz.Currency, outputs []*Output
 	return nursery.createTransaction(currency, outputs, feeSatPerVbyte)
 }
 
-func (nursery *Nursery) populateOutputs(outputs []*Output) ([]boltz.OutputDetails, error) {
+func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
 	addresses := make(map[int64]string)
-	var result []boltz.OutputDetails
 	for _, output := range outputs {
 		handleErr := func(err error) {
 			verb := "claim"
@@ -349,18 +348,15 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) ([]boltz.OutputDetail
 			output.Address = address
 		}
 		var err error
-		details := output.OutputDetails
-		details.LockupTransaction, details.Vout, _, err = nursery.findVout(output.voutInfo)
+		output.LockupTransaction, output.Vout, _, err = nursery.findVout(output.voutInfo)
 		if err != nil {
 			handleErr(err)
 			continue
 		}
-		result = append(result, *details)
+		valid = append(valid, output)
+		details = append(details, *output.OutputDetails)
 	}
-	if len(result) == 0 {
-		return nil, errors.New("all outputs invalid")
-	}
-	return result, nil
+	return valid, details
 }
 
 type voutInfo struct {
