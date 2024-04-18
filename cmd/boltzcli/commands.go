@@ -379,7 +379,7 @@ var autoSwapCommands = &cli.Command{
 	Description: "Autoswap keeps your lightning node balanced by automatically executing swaps.\n" +
 		"It regularly checks your nodes channels and creates swaps based on your configuration, which can be managed with the `config` command.\n" +
 		"You can also configure autoswap without starting it and see what it would do with the `recommendations` command.\n" +
-		"Once you are confident with the confiManage autoswapguration, you can enable autoswap with the `enable` command.\n",
+		"Once you are confident with the configuration, you can enable autoswap with the `enable` command.\n",
 	Subcommands: []*cli.Command{
 		{
 			Name:   "status",
