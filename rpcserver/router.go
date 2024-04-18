@@ -792,10 +792,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	}
 
 	externalPay := request.GetExternalPay()
-	if !externalPay && request.FromWalletId == nil {
-		return nil, handleError(errors.New("from wallet required"))
-	}
-
 	var fromWallet, toWallet onchain.Wallet
 	if request.FromWalletId != nil {
 		fromWallet, err = server.onchain.GetAnyWallet(onchain.WalletChecker{
@@ -806,6 +802,8 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		if err != nil {
 			return nil, handleError(err)
 		}
+	} else if !externalPay {
+		return nil, handleError(errors.New("from wallet required if external pay is not specified"))
 	}
 
 	if request.ToWalletId != nil {
@@ -817,6 +815,8 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		if err != nil {
 			return nil, handleError(err)
 		}
+	} else if request.ToAddress == nil {
+		return nil, handleError(errors.New("to address or to wallet required"))
 	}
 
 	response, err := server.boltz.CreateChainSwap(createChainSwap)

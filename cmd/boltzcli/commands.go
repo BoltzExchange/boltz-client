@@ -915,14 +915,15 @@ var createChainSwapCommand = &cli.Command{
 	Name:      "createchainswap",
 	Category:  "Swaps",
 	Usage:     "Create a new chain-to-chain swap",
-	ArgsUsage: "[amount]",
+	ArgsUsage: "amount",
 	Description: "Creates a new chain swap (e.g. BTC -> L-BTC) specifying the amount in satoshis.\n" +
-		"If the --any-amount flag is specified, any amount within the displayed limits can be paid to the lockup address.\n" +
 		"\nExamples" +
-		"\nCreate a swap for 100000 satoshis that will be immediately paid by the clients wallet:" +
-		"\n> boltzcli createchainswap --from btc --to lbtc 100000" +
-		"\nCreate a swap for any amount of satoshis on liquid:" +
-		"\n> boltzcli createswap --any-amount --currency LBTC",
+		"\nCreate a chain swap for 100000 satoshis from the L-BTC wallet 'autoswap' to the BTC wallet 'cold':" +
+		"\n> boltzcli createchainswap --from-wallet autoswap --to-wallet cold 100000" +
+		"\nCreate a chain swap for 100000 satoshis from the L-BTC wallet 'autoswap' to a BTC address:" +
+		"\n> boltzcli createchainswap --from-wallet autoswap --to-address bcrt1q0akydfs98pjmqqplz0kvaa5hphg237vcvgaez2 100000" +
+		"\nCreate a chain swap for 100000 satoshis from BTC to the L-BTC wallet 'autoswap' which has to be paid manually:" +
+		"\n> boltzcli createchainswap --from-external LBTC --to-wallet autoswap 100000",
 	Action: createChainSwap,
 	Flags: []cli.Flag{
 		jsonFlag,
@@ -930,21 +931,13 @@ var createChainSwapCommand = &cli.Command{
 			Name:  "no-zero-conf",
 			Usage: "Disable zero-conf for this swap",
 		},
-		&cli.BoolFlag{
-			Name:  "external-pay",
-			Usage: "Dont pay the swap automatically from an internal wallet.",
-		},
 		&cli.StringFlag{
-			Name:  "from",
-			Usage: "Currency to swap from",
-		},
-		&cli.StringFlag{
-			Name:  "to",
-			Usage: "Currency to swap to",
+			Name:  "from-external",
+			Usage: "Currency to swap from. Has to be paid manually.",
 		},
 		&cli.StringFlag{
 			Name:  "from-wallet",
-			Usage: "Wallet to swap from",
+			Usage: "Wallet to swap from.",
 		},
 		&cli.StringFlag{
 			Name:  "to-wallet",
@@ -990,21 +983,16 @@ func createChainSwap(ctx *cli.Context) error {
 
 	pair := &boltzrpc.Pair{}
 	var err error
-	if from := ctx.String("from"); from != "" {
+	if from := ctx.String("from-external"); from != "" {
 		pair.From, err = parseCurrency(from)
 		if err != nil {
 			return err
 		}
 	}
-	if to := ctx.String("to"); to != "" {
-		pair.To, err = parseCurrency(to)
-		if err != nil {
-			return err
-		}
-	}
 
-	externalPay := ctx.Bool("external-pay")
 	acceptZeroConf := !ctx.Bool("no-zero-conf")
+	fromWallet := ctx.String("from-wallet")
+	externalPay := fromWallet == ""
 	request := &boltzrpc.CreateChainSwapRequest{
 		Amount:         uint64(amount),
 		Pair:           pair,
@@ -1034,7 +1022,7 @@ func createChainSwap(ctx *cli.Context) error {
 		request.RefundAddress = &refundAddress
 	}
 
-	if fromWallet := ctx.String("from-wallet"); fromWallet != "" {
+	if fromWallet != "" {
 		wallet, err := client.GetWallet(fromWallet)
 		if err != nil {
 			return err
