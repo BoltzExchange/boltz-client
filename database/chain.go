@@ -284,7 +284,7 @@ SELECT swaps.*
 FROM chainSwaps swaps
          JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.fromCurrency AND data.currency = ?
 WHERE data.lockupTransactionId != '' AND data.transactionId == ''
-  AND (status IN (?, ?) OR data.timeoutBlockheight < ?)
+  AND (status IN (?, ?) OR (state != ? AND data.timeoutBlockheight < ?))
 `
 
 func (database *Database) QueryChainSwaps(args SwapQuery) ([]ChainSwap, error) {
@@ -294,7 +294,9 @@ func (database *Database) QueryChainSwaps(args SwapQuery) ([]ChainSwap, error) {
 
 func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]ChainSwap, error) {
 	return database.queryChainSwaps(
-		refundableChainSwapsQuery, currency, boltz.SwapExpired.String(), boltz.TransactionLockupFailed.String(), currentBlockHeight,
+		refundableChainSwapsQuery, currency,
+		boltz.SwapExpired.String(), boltz.TransactionLockupFailed.String(),
+		boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
 	)
 }
 
