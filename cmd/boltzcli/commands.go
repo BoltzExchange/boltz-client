@@ -922,7 +922,7 @@ var createChainSwapCommand = &cli.Command{
 		"\nCreate a swap for 100000 satoshis that will be immediately paid by the clients wallet:" +
 		"\n> boltzcli createchainswap --from btc --to lbtc 100000" +
 		"\nCreate a swap for any amount of satoshis on liquid:" +
-		"\n> boltzcli createswap --any-amount --currency LBTC" +
+		"\n> boltzcli createswap --any-amount --currency LBTC",
 	Action: createChainSwap,
 	Flags: []cli.Flag{
 		jsonFlag,
