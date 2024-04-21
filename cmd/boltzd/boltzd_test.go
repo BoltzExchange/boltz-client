@@ -1140,6 +1140,7 @@ func TestChainSwap(t *testing.T) {
 					swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
 						Pair:          pair,
 						RefundAddress: &refundAddress,
+						ToAddress:     &toAddress,
 						Amount:        amount + 100,
 						ExternalPay:   &externalPay,
 					})

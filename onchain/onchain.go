@@ -178,6 +178,9 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (
 }
 
 func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, ourOutputBlindingKey *btcec.PrivateKey) (boltz.Transaction, error) {
+	if txId == "" {
+		return nil, errors.New("empty transaction id")
+	}
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return nil, err

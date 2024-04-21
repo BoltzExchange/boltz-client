@@ -176,7 +176,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		output := nursery.getChainSwapClaimOutput(swap)
-		_, err := nursery.claimOutputs(swap.Pair.To, []*Output{output})
+		_, err := nursery.createTransaction(swap.Pair.To, []*Output{output})
 		if err != nil {
 			handleError("Could not claim chain swap output: " + err.Error())
 			return

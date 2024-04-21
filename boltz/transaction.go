@@ -16,6 +16,7 @@ type Transaction interface {
 	Serialize() (string, error)
 	VSize() uint64
 	FindVout(network *Network, address string) (uint32, uint64, error)
+	VoutValue(vout uint32) (uint64, error)
 }
 
 type OutputDetails struct {
@@ -60,108 +61,148 @@ func NewTxFromHex(currency Currency, hexString string, ourOutputBlindingKey *btc
 	return NewBtcTxFromHex(hexString)
 }
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Boltz) (Transaction, []uint64, error) {
-	var construct func(*Network, []OutputDetails) (Transaction, error)
+type OutputResult struct {
+	Err error
+	Fee uint64
+}
+
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Boltz) (Transaction, []OutputResult, error) {
+	construct := constructBtcTransaction
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
-	} else if currency == CurrencyBtc {
-		construct = constructBtcTransaction
-	} else {
-		return nil, nil, fmt.Errorf("invalid pair: %v", currency)
+	}
+	results := make([]OutputResult, len(outputs))
+
+	getOutValues := func(fee uint64) map[string]uint64 {
+		outValues := make(map[string]uint64)
+
+		outLen := uint64(len(outputs))
+		feePerOutput := fee / outLen
+		feeRemainder := fee % outLen
+
+		for i := range outputs {
+			output := &outputs[i]
+			output.Fee = feePerOutput + feeRemainder
+			results[i].Fee = output.Fee
+			feeRemainder = 0
+
+			value, err := output.LockupTransaction.VoutValue(output.Vout)
+			if err != nil {
+				results[i].Err = err
+				continue
+			}
+
+			if value < output.Fee {
+				results[i].Err = fmt.Errorf("value than fee: %d < %d", value, output.Fee)
+				continue
+			}
+
+			outValues[output.Address] += value - output.Fee
+		}
+		return outValues
 	}
 
-	noFeeTransaction, err := construct(network, outputs)
-
+	noFeeTransaction, err := construct(network, outputs, getOutValues(0))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	fee := uint64(float64(noFeeTransaction.VSize()) * satPerVbyte)
 
-	outLen := uint64(len(outputs))
-	feePerOutput := fee / outLen
-	feeRemainder := fee % outLen
-
-	fees := make([]uint64, len(outputs))
-	for i := range outputs {
-		outputs[i].Fee = feePerOutput + feeRemainder
-		fees[i] = outputs[i].Fee
-		feeRemainder = 0
-	}
-
-	transaction, err := construct(network, outputs)
+	transaction, err := construct(network, outputs, getOutValues(fee))
 	if err != nil {
 		return nil, nil, err
 	}
 
+	var retry []OutputDetails
+
 	for i, output := range outputs {
 		if output.Cooperative {
-			if boltzApi == nil {
-				return nil, nil, errors.New("boltzApi is required for cooperative transactions")
-			}
-			session, err := NewSigningSession(outputs[i].SwapTree)
-			if err != nil {
-				return nil, nil, fmt.Errorf("could not initialize signing session: %w", err)
-			}
-
 			serialized, err := transaction.Serialize()
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not serialize transaction: %w", err)
 			}
 
-			pubNonce := session.PublicNonce()
-			refundRequest := &RefundRequest{
-				Transaction: serialized,
-				PubNonce:    pubNonce[:],
-				Index:       i,
-			}
-			claimRequest := &ClaimRequest{
-				Transaction: serialized,
-				PubNonce:    pubNonce[:],
-				Index:       i,
-				Preimage:    output.Preimage,
-			}
-			var signature *PartialSignature
-			if output.SwapType == ReverseSwap {
-				signature, err = boltzApi.ClaimReverseSwap(output.SwapId, claimRequest)
-			} else if output.SwapType == NormalSwap {
-				signature, err = boltzApi.RefundSwap(output.SwapId, refundRequest)
-			} else {
-				signature, err = func() (*PartialSignature, error) {
-					if output.IsRefund() {
-						return boltzApi.RefundChainSwap(output.SwapId, refundRequest)
-					}
-					if output.RefundSwapTree == nil {
-						return nil, errors.New("RefundSwapTree is required for cooperatively claiming chain swap")
-					}
-					boltzSession, err := NewSigningSession(output.RefundSwapTree)
-					if err != nil {
-						return nil, fmt.Errorf("could not initialize signing session: %w", err)
-					}
-					details, err := boltzApi.GetChainSwapClaimDetails(output.SwapId)
-					if err != nil {
-						return nil, err
-					}
-					boltzSignature, err := boltzSession.Sign(details.TransactionHash, details.PubNonce)
-					if err != nil {
-						return nil, fmt.Errorf("could not sign transaction: %w", err)
-					}
-					return boltzApi.ExchangeChainSwapClaimSignature(output.SwapId, &ChainSwapSigningRequest{
-						Preimage:  output.Preimage,
-						Signature: boltzSignature,
-						ToSign:    claimRequest,
-					})
-				}()
-			}
-			if err != nil {
-				return nil, nil, fmt.Errorf("could not get partial signature from boltz: %w", err)
-			}
+			err = func() error {
+				if boltzApi == nil {
+					return errors.New("boltzApi is required for cooperative transactions")
+				}
 
-			if err := session.Finalize(transaction, outputs, network, signature); err != nil {
-				return nil, nil, fmt.Errorf("could not finalize signing session: %w", err)
+				session, err := NewSigningSession(outputs[i].SwapTree)
+				if err != nil {
+					return fmt.Errorf("could not initialize signing session: %w", err)
+				}
+
+				pubNonce := session.PublicNonce()
+				refundRequest := &RefundRequest{
+					Transaction: serialized,
+					PubNonce:    pubNonce[:],
+					Index:       i,
+				}
+				claimRequest := &ClaimRequest{
+					Transaction: serialized,
+					PubNonce:    pubNonce[:],
+					Index:       i,
+					Preimage:    output.Preimage,
+				}
+				var signature *PartialSignature
+				if output.SwapType == ReverseSwap {
+					signature, err = boltzApi.ClaimReverseSwap(output.SwapId, claimRequest)
+				} else if output.SwapType == NormalSwap {
+					signature, err = boltzApi.RefundSwap(output.SwapId, refundRequest)
+				} else {
+					signature, err = func() (*PartialSignature, error) {
+						if output.IsRefund() {
+							return boltzApi.RefundChainSwap(output.SwapId, refundRequest)
+						}
+						if output.RefundSwapTree == nil {
+							return nil, errors.New("RefundSwapTree is required for cooperatively claiming chain swap")
+						}
+						boltzSession, err := NewSigningSession(output.RefundSwapTree)
+						if err != nil {
+							return nil, fmt.Errorf("could not initialize signing session: %w", err)
+						}
+						details, err := boltzApi.GetChainSwapClaimDetails(output.SwapId)
+						if err != nil {
+							return nil, err
+						}
+						boltzSignature, err := boltzSession.Sign(details.TransactionHash, details.PubNonce)
+						if err != nil {
+							return nil, fmt.Errorf("could not sign transaction: %w", err)
+						}
+						return boltzApi.ExchangeChainSwapClaimSignature(output.SwapId, &ChainSwapSigningRequest{
+							Preimage:  output.Preimage,
+							Signature: boltzSignature,
+							ToSign:    claimRequest,
+						})
+					}()
+				}
+				if err != nil {
+					return fmt.Errorf("could not get partial signature from boltz: %w", err)
+				}
+
+				if err := session.Finalize(transaction, outputs, network, signature); err != nil {
+					return fmt.Errorf("could not finalize signing session: %w", err)
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				if output.IsRefund() {
+					results[i].Err = err
+				} else {
+					nonCoop := outputs[i]
+					nonCoop.Cooperative = false
+					retry = append(retry, nonCoop)
+				}
 			}
 		}
 	}
 
-	return transaction, fees, err
+	if len(retry) > 0 {
+		return ConstructTransaction(network, currency, retry, satPerVbyte, boltzApi)
+	}
+
+	return transaction, results, err
 }

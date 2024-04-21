@@ -138,7 +138,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
 
 		output := nursery.getReverseSwapClaimOutput(reverseSwap)
-		_, err = nursery.claimOutputs(reverseSwap.Pair.To, []*Output{output})
+		_, err = nursery.createTransaction(reverseSwap.Pair.To, []*Output{output})
 		if err != nil {
 			handleError("Could not construct claim transaction: " + err.Error())
 			return
