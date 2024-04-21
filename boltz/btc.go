@@ -120,11 +120,13 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails) (Transac
 
 		transaction.AddTxIn(input)
 
-		value := lockupTx.MsgTx().TxOut[output.Vout].Value - int64(output.Fee)
+		value := lockupTx.MsgTx().TxOut[output.Vout].Value
+		if value < int64(output.Fee) {
+			return nil, fmt.Errorf("output value for swap %s less than fee: %d < %d", output.SwapId, value, output.Fee)
+		}
 		//nolint:gosimple
 		existingValue, _ := outValues[output.Address]
-		outValues[output.Address] = existingValue + value
-
+		outValues[output.Address] = existingValue + value - int64(output.Fee)
 	}
 
 	for rawAddress, value := range outValues {

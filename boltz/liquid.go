@@ -162,9 +162,11 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails) (Tran
 	outValues := make(map[string]uint64)
 	var totalFee uint64
 	for i, input := range ownedInputs {
+		if input.Value < outputs[i].Fee {
+			return nil, fmt.Errorf("input value for swap %s less than fee: %d < %d", outputs[i].SwapId, input.Value, outputs[i].Fee)
+		}
 		address := outputs[i].Address
-		//nolint:gosimple
-		existingValue, _ := outValues[address]
+		existingValue := outValues[address]
 		outValues[address] = existingValue + input.Value - outputs[i].Fee
 		totalFee += outputs[i].Fee
 	}
