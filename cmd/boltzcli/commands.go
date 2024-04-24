@@ -933,19 +933,19 @@ var createChainSwapCommand = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "from-external",
-			Usage: "Currency to swap from. Has to be paid manually.",
+			Usage: "Currency to swap from; swap has to be funded externally",
 		},
 		&cli.StringFlag{
 			Name:  "from-wallet",
-			Usage: "Wallet to swap from.",
+			Usage: "Internal wallet to fund the swap from",
 		},
 		&cli.StringFlag{
 			Name:  "to-wallet",
-			Usage: "Wallet to swap to",
+			Usage: "Internal wallet to swap to",
 		},
 		&cli.StringFlag{
 			Name:  "to-address",
-			Usage: "Address to swap to",
+			Usage: "External address to swap to",
 		},
 		&cli.StringFlag{
 			Name:  "refund-address",
