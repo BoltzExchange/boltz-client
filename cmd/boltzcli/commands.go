@@ -1086,7 +1086,7 @@ func createChainSwap(ctx *cli.Context) error {
 var refundSwapCommand = &cli.Command{
 	Name:      "refundswap",
 	Category:  "Swaps",
-	Usage:     "Refund a chain-to-lightning swap manually",
+	Usage:     "Refund a chain-to-x swap manually",
 	ArgsUsage: "id addresss",
 	Action:    requireNArgs(2, refundSwap),
 }
