@@ -79,11 +79,6 @@ var liquidFlag = &cli.BoolFlag{
 	Usage: "Shorthand for --currency LBTC",
 }
 
-var walletFlag = &cli.StringFlag{
-	Name:  "wallet",
-	Usage: "Which wallet to use",
-}
-
 var currencyFlag = &cli.StringFlag{
 	Name:  "currency",
 	Usage: "Currency to use",
@@ -810,10 +805,13 @@ var createSwapCommand = &cli.Command{
 		jsonFlag,
 		currencyFlag,
 		liquidFlag,
-		walletFlag,
+		&cli.StringFlag{
+			Name:  "to-wallet",
+			Usage: "Internal wallet to swap to",
+		},
 		&cli.BoolFlag{
-			Name:  "internal-send",
-			Usage: "Whether to automatically send the specified amount from the daemon wallet.",
+			Name:  "external-pay",
+			Usage: "Whether the swap should be paid externally",
 		},
 		&cli.BoolFlag{
 			Name:  "any-amount",
@@ -833,9 +831,12 @@ var createSwapCommand = &cli.Command{
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	var amount int64
+
+	externalPay := ctx.Bool("external-pay")
 	if ctx.Args().First() != "" {
 		amount = parseInt64(ctx.Args().First(), "amount")
 	} else if !ctx.Bool("any-amount") {
+		externalPay = true
 		return cli.ShowSubcommandHelp(ctx)
 	}
 
@@ -849,7 +850,6 @@ func createSwap(ctx *cli.Context) error {
 		To:   boltzrpc.Currency_BTC,
 	}
 
-	internalSend := ctx.Bool("internal-send")
 	json := ctx.Bool("json")
 
 	submarinePair, err := client.GetSubmarinePair(pair)
@@ -871,7 +871,7 @@ func createSwap(ctx *cli.Context) error {
 
 	invoice := ctx.String("invoice")
 	refundAddress := ctx.String("refund")
-	walletId, err := getWalletId(ctx, ctx.String("wallet"))
+	walletId, err := getWalletId(ctx, ctx.String("to-wallet"))
 	if err != nil {
 		return err
 	}
@@ -879,7 +879,7 @@ func createSwap(ctx *cli.Context) error {
 		Amount:           amount,
 		Pair:             pair,
 		RefundAddress:    &refundAddress,
-		SendFromInternal: internalSend,
+		SendFromInternal: !externalPay,
 		WalletId:         walletId,
 		Invoice:          &invoice,
 	})
@@ -892,7 +892,7 @@ func createSwap(ctx *cli.Context) error {
 		return nil
 	}
 
-	if !internalSend || amount == 0 {
+	if externalPay {
 		var amountString string
 		if amount == 0 {
 			amountString = fmt.Sprintf("between %d and %d satoshis", submarinePair.Limits.Minimal, submarinePair.Limits.Maximal)
@@ -1121,7 +1121,10 @@ var createReverseSwapCommand = &cli.Command{
 		jsonFlag,
 		currencyFlag,
 		liquidFlag,
-		walletFlag,
+		&cli.StringFlag{
+			Name:  "from-wallet",
+			Usage: "Internal wallet to fund the swap from",
+		},
 		&cli.BoolFlag{
 			Name:  "no-zero-conf",
 			Usage: "Disable zero-conf for this swap",
@@ -1205,7 +1208,7 @@ func createReverseSwap(ctx *cli.Context) error {
 	}
 
 	returnImmediately := true
-	walletId, err := getWalletId(ctx, ctx.String("wallet"))
+	walletId, err := getWalletId(ctx, ctx.String("from-wallet"))
 	if err != nil {
 		return err
 	}
