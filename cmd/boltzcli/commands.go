@@ -86,7 +86,6 @@ var walletFlag = &cli.StringFlag{
 
 var currencyFlag = &cli.StringFlag{
 	Name:  "currency",
-	Value: "BTC",
 	Usage: "Currency to use",
 }
 
@@ -836,7 +835,7 @@ func createSwap(ctx *cli.Context) error {
 	var amount int64
 	if ctx.Args().First() != "" {
 		amount = parseInt64(ctx.Args().First(), "amount")
-	} else if !ctx.Bool("any-amount") && ctx.String("invcoie") != "" {
+	} else if !ctx.Bool("any-amount") {
 		return cli.ShowSubcommandHelp(ctx)
 	}
 
@@ -1138,6 +1137,9 @@ var createReverseSwapCommand = &cli.Command{
 }
 
 func parseCurrency(currency string) (boltzrpc.Currency, error) {
+	if currency == "" {
+		return boltzrpc.Currency_BTC, errors.New("currency is required, allowed values: BTC, LBTC")
+	}
 	upper := strings.ToUpper(currency)
 	if upper == "LBTC" || upper == "L-BTC" {
 		return boltzrpc.Currency_LBTC, nil
