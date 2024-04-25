@@ -16,7 +16,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 7
+const latestSchemaVersion = 8
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -427,6 +427,51 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}
+
+	case 7:
+		migration := `
+		CREATE TABLE chainSwaps
+		(
+    		id                VARCHAR PRIMARY KEY,
+    		fromCurrency      VARCHAR,
+    		toCurrency        VARCHAR,
+    		state             INT,
+    		error             VARCHAR,
+    		status            VARCHAR,
+    		acceptZeroConf    BOOLEAN,
+    		preimage          VARCHAR,
+    		isAuto            BOOLEAN DEFAULT 0,
+    		serviceFee        INT,
+    		serviceFeePercent REAL,
+    		onchainFee        INT,
+    		createdAt         INT,
+    		entityId          INT REFERENCES entities (id)
+		);
+
+		CREATE TABLE chainSwapsData
+		(
+    		id                  VARCHAR,
+    		currency            VARCHAR,
+    		privateKey          VARCHAR,
+    		theirPublicKey      VARCHAR,
+    		tree                JSON,
+    		amount              INTEGER,
+    		timeoutBlockheight  INTEGER,
+    		lockupTransactionId VARCHAR,
+    		transactionId       VARCHAR,
+    		address             VARCHAR,
+    		lockupAddress       VARCHAR,
+    		blindingKey         VARCHAR,
+    		walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
+
+    		PRIMARY KEY (id, currency)
+		);
+		`
+
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+
 	case latestSchemaVersion:
 		logger.Info("database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 		return nil
