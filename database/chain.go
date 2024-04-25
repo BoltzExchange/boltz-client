@@ -292,6 +292,11 @@ func (database *Database) QueryChainSwaps(args SwapQuery) ([]ChainSwap, error) {
 	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where, values...)
 }
 
+func (database *Database) QueryPendingChainSwaps() ([]ChainSwap, error) {
+	state := boltzrpc.SwapState_PENDING
+	return database.QueryChainSwaps(SwapQuery{State: &state})
+}
+
 func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]ChainSwap, error) {
 	return database.queryChainSwaps(
 		refundableChainSwapsQuery, currency,

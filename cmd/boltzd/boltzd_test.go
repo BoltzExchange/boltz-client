@@ -1026,6 +1026,34 @@ func TestChainSwap(t *testing.T) {
 		{"Liquid", boltzrpc.Currency_LBTC, boltzrpc.Currency_BTC},
 	}
 
+	t.Run("Recovery", func(t *testing.T) {
+		client, _, stop := setup(t, cfg, "")
+
+		externalPay := true
+		to := test.LiquidCli("getnewaddress")
+		swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+			Amount:      100000,
+			Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
+			ExternalPay: &externalPay,
+			ToAddress:   &to,
+		})
+		require.NoError(t, err)
+		stream := swapStream(t, client, swap.Id)
+		stream(boltzrpc.SwapState_PENDING)
+		stop()
+
+		test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+		test.MineBlock()
+
+		client, _, stop = setup(t, cfg, "")
+		defer stop()
+
+		stream = swapStream(t, client, "")
+		update := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
+		require.Equal(t, swap.Id, update.Id)
+		checkTxOutAddress(t, chain, boltz.CurrencyLiquid, update.ToData.GetTransactionId(), update.ToData.GetAddress(), true)
+	})
+
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			pair := &boltzrpc.Pair{

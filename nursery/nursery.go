@@ -153,12 +153,20 @@ func (nursery *Nursery) recoverPending() error {
 		return err
 	}
 
+	chainSwaps, err := nursery.database.QueryPendingChainSwaps()
+	if err != nil {
+		return err
+	}
+
 	var swapIds []string
 	for _, swap := range swaps {
 		swapIds = append(swapIds, swap.Id)
 	}
 	for _, reverseSwap := range reverseSwaps {
 		swapIds = append(swapIds, reverseSwap.Id)
+	}
+	for _, chainSwap := range chainSwaps {
+		swapIds = append(swapIds, chainSwap.Id)
 	}
 
 	return nursery.boltzWs.Subscribe(swapIds)
