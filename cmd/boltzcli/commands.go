@@ -1072,9 +1072,14 @@ func createChainSwap(ctx *cli.Context) error {
 			amountString = utils.Satoshis(int(amount))
 		}
 
+		height := info.BlockHeights.Btc
+		if pair.From == boltzrpc.Currency_LBTC {
+			height = info.BlockHeights.GetLiquid()
+		}
+		timeoutHours := boltz.BlocksToHours(swap.FromData.TimeoutBlockHeight-height, utils.ParseCurrency(&pair.From))
 		fmt.Printf(
 			"Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
-			amountString, swap.FromData.LockupAddress, float64(3), swap.FromData.TimeoutBlockHeight,
+			amountString, swap.FromData.LockupAddress, timeoutHours, swap.FromData.TimeoutBlockHeight,
 		)
 		fmt.Println()
 	}
