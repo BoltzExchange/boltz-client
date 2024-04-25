@@ -835,8 +835,9 @@ func createSwap(ctx *cli.Context) error {
 	externalPay := ctx.Bool("external-pay")
 	if ctx.Args().First() != "" {
 		amount = parseInt64(ctx.Args().First(), "amount")
-	} else if !ctx.Bool("any-amount") {
+	} else if ctx.Bool("any-amount") {
 		externalPay = true
+	} else {
 		return cli.ShowSubcommandHelp(ctx)
 	}
 
