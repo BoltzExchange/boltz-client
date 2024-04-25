@@ -1098,7 +1098,11 @@ func refundSwap(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Refund Transaction: " + swap.Swap.RefundTransactionId)
+	tx := swap.ChainSwap.GetFromData().GetTransactionId()
+	if tx == "" {
+		tx = swap.Swap.GetRefundTransactionId()
+	}
+	fmt.Println("Refund Transaction: " + tx)
 	return nil
 }
 
