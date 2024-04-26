@@ -69,11 +69,12 @@ func (server *routedBoltzServer) queryRefundableSwaps() (
 	heights = &boltzrpc.BlockHeights{}
 	heights.Btc, err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
 	if err != nil {
+		err = fmt.Errorf("failed to get block height for btc: %w", err)
 		return
 	}
 	liquidHeight, err := server.onchain.GetBlockHeight(boltz.CurrencyLiquid)
 	if err != nil {
-		logger.Infof("Failed to get block height for liquid: %v", err)
+		logger.Warnf("Failed to get block height for liquid: %v", err)
 	} else {
 		heights.Liquid = &liquidHeight
 	}
@@ -125,7 +126,7 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 
 	blockHeights, refundableSwaps, refundableChainSwaps, err := server.queryRefundableSwaps()
 	if err != nil {
-		return nil, handleError(fmt.Errorf("Failed to get block height for btc: %v", err))
+		return nil, handleError(err)
 	}
 
 	var refundableSwapIds []string
