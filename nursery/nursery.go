@@ -274,6 +274,12 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 	}
 
 	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
+	for _, output := range valid {
+		result := results[output.SwapId]
+		if result.Err != nil {
+			logger.Errorf("Could not spend output for %s swap %s: %s", output.SwapType, output.SwapId, result.Err)
+		}
+	}
 	if err != nil {
 		return "", fmt.Errorf("construct transaction: %v", err)
 	}
@@ -286,9 +292,9 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 
 	id := response.TransactionId
 
-	for i, result := range results {
+	for _, output := range valid {
+		result := results[output.SwapId]
 		if result.Err == nil {
-			output := valid[i]
 			if err := output.setTransaction(id, result.Fee); err != nil {
 				logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
 				continue
