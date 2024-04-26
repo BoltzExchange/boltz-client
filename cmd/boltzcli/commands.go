@@ -324,9 +324,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 						fmt.Printf("Invoice: %s\n", swap.Invoice)
 					}
 				case boltz.TransactionMempool:
-					fmt.Printf("Lockup Transaction ID: %s\n", swap.LockupTransactionId)
+					fmt.Printf("Lockup transaction ID: %s\n", swap.LockupTransactionId)
 				case boltz.InvoiceSettled:
-					fmt.Printf("Claim Transaction ID: %s\n", swap.ClaimTransactionId)
+					fmt.Printf("Claim transaction ID: %s\n", swap.ClaimTransactionId)
 					fmt.Printf("Paid %dmsat routing fee, %dsat onchain fee and %dsat service fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
 					return nil
 				}
@@ -346,9 +346,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				case boltz.SwapCreated:
 					fmt.Printf("Swap ID: %s\n", swap.Id)
 				case boltz.TransactionMempool:
-					fmt.Printf("User Transaction ID: %s\nAmount: %dsat\n", swap.FromData.GetLockupTransactionId(), swap.FromData.Amount)
+					fmt.Printf("User transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.From, swap.FromData.GetLockupTransactionId(), swap.FromData.Amount)
 				case boltz.TransactionServerMempoool:
-					fmt.Printf("Server Transaction ID: %s\nAmount: %dsat\n", swap.ToData.GetLockupTransactionId(), swap.ToData.Amount)
+					fmt.Printf("Server transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.To, swap.ToData.GetLockupTransactionId(), swap.ToData.Amount)
 				case boltz.TransactionClaimed:
 					fmt.Printf("Paid %dsat onchain fee and %dsat service fee\n", *swap.OnchainFee, *swap.ServiceFee)
 					return nil
@@ -1108,7 +1108,7 @@ func refundSwap(ctx *cli.Context) error {
 	if tx == "" {
 		tx = swap.Swap.GetRefundTransactionId()
 	}
-	fmt.Println("Refund Transaction: " + tx)
+	fmt.Println("Refund transaction ID: " + tx)
 	return nil
 }
 
