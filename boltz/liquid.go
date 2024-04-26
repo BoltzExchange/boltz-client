@@ -70,6 +70,14 @@ func (transaction *LiquidTransaction) FindVout(network *Network, addressToFind s
 
 }
 
+func (transaction *LiquidTransaction) VoutValue(vout uint32) (uint64, error) {
+	result, err := confidential.UnblindOutputWithKey(transaction.Outputs[vout], transaction.OurOutputBlindingKey.Serialize())
+	if err != nil {
+		return 0, err
+	}
+	return result.Value, nil
+}
+
 func (transaction *LiquidTransaction) VSize() uint64 {
 	witnessSize := transaction.SerializeSize(true, true) - transaction.SerializeSize(false, true)
 	return uint64(transaction.SerializeSize(false, true)) + uint64(math.Ceil(float64(witnessSize)/4))
@@ -107,7 +115,7 @@ func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outp
 	return hash[:]
 }
 
-func constructLiquidTransaction(network *Network, outputs []OutputDetails) (Transaction, error) {
+func constructLiquidTransaction(network *Network, outputs []OutputDetails, outValues map[string]uint64) (Transaction, error) {
 	p, err := psetv2.New(nil, nil, nil)
 	if err != nil {
 		return nil, err
@@ -118,6 +126,7 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails) (Tran
 	}
 
 	var inPrivateBlindingKeys [][]byte
+	var totalFee uint64
 
 	for i, output := range outputs {
 		lockupTx := output.LockupTransaction.(*LiquidTransaction)
@@ -150,6 +159,8 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails) (Tran
 			}
 			inPrivateBlindingKeys = append(inPrivateBlindingKeys, lockupTx.OurOutputBlindingKey.Serialize())
 		}
+
+		totalFee += output.Fee
 	}
 
 	zkpGenerator := confidential.NewZKPGeneratorFromBlindingKeys(inPrivateBlindingKeys, nil)
@@ -157,16 +168,6 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails) (Tran
 	ownedInputs, err := zkpGenerator.UnblindInputs(p, nil)
 	if err != nil {
 		return nil, errors.New("Failed to unblind inputs: " + err.Error())
-	}
-
-	outValues := make(map[string]uint64)
-	var totalFee uint64
-	for i, input := range ownedInputs {
-		address := outputs[i].Address
-		//nolint:gosimple
-		existingValue, _ := outValues[address]
-		outValues[address] = existingValue + input.Value - outputs[i].Fee
-		totalFee += outputs[i].Fee
 	}
 
 	btcAsset := network.Liquid.AssetID

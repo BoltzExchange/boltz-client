@@ -1395,7 +1395,7 @@ Submarine Pair
 ### Methods
 #### GetSwapRecommendations
 
-Returns a list of swaps which are currently recommended by the autoswapper. Also works when the autoswapper is not running.
+Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
 
 | Request | Response |
 | ------- | -------- |
@@ -1403,7 +1403,7 @@ Returns a list of swaps which are currently recommended by the autoswapper. Also
 
 #### GetStatus
 
-Returns the current budget of the autoswapper and some relevant stats.
+Returns the current budget of autoswap and some relevant stats.
 
 | Request | Response |
 | ------- | -------- |
@@ -1419,7 +1419,7 @@ Resets the configuration to default values.
 
 #### SetConfig
 
-Allows setting multiple json-encoded config values at once. The autoswapper will reload the configuration after this call.
+Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
@@ -1427,7 +1427,7 @@ Allows setting multiple json-encoded config values at once. The autoswapper will
 
 #### SetConfigValue
 
-Allows setting a specific value in the configuration. The autoswapper will reload the configuration after this call.
+Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |

@@ -24,3 +24,11 @@ func ParsePair(grpcPair *boltzrpc.Pair) (pair boltz.Pair) {
 		To:   ParseCurrency(&grpcPair.To),
 	}
 }
+
+func SerializeCurrency(currency boltz.Currency) boltzrpc.Currency {
+	if currency == boltz.CurrencyBtc {
+		return boltzrpc.Currency_BTC
+	} else {
+		return boltzrpc.Currency_LBTC
+	}
+}

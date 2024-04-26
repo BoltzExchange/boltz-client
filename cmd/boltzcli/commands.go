@@ -79,14 +79,8 @@ var liquidFlag = &cli.BoolFlag{
 	Usage: "Shorthand for --currency LBTC",
 }
 
-var walletFlag = &cli.StringFlag{
-	Name:  "wallet",
-	Usage: "Which wallet to use",
-}
-
 var currencyFlag = &cli.StringFlag{
 	Name:  "currency",
-	Value: "BTC",
 	Usage: "Currency to use",
 }
 
@@ -110,7 +104,7 @@ var stateFilterFlag = &cli.StringFlag{
 var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
 	Category: "Info",
-	Usage:    "Lists all swaps and reverse swaps",
+	Usage:    "Lists all swaps",
 	Action: func(ctx *cli.Context) error {
 		isAuto := ctx.Bool("auto")
 		return listSwaps(ctx, &isAuto)
@@ -123,7 +117,7 @@ var listSwapsCommand = &cli.Command{
 		stateFilterFlag,
 		&cli.BoolFlag{
 			Name:  "auto",
-			Usage: "Only show swaps by autoswapper",
+			Usage: "Only show swaps created by autoswap",
 		},
 	},
 }
@@ -172,7 +166,7 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 		headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 		columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-		if len(list.Swaps) == 0 && len(list.ReverseSwaps) == 0 {
+		if len(list.Swaps) == 0 && len(list.ReverseSwaps) == 0 && len(list.ChainSwaps) == 0 {
 			fmt.Println("No swaps found")
 			return nil
 		}
@@ -206,6 +200,22 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 			if _, err := yellowBold.Println("Reverse Swaps"); err != nil {
 				return err
 			}
+			tbl.Print()
+			fmt.Println()
+		}
+
+		if len(list.ChainSwaps) > 0 {
+			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+
+			for _, swap := range list.ChainSwaps {
+				tbl.AddRow(swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.FromData.Amount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
+			}
+
+			if _, err := yellowBold.Println("Chain Swaps"); err != nil {
+				return err
+			}
+
 			tbl.Print()
 		}
 	}
@@ -314,10 +324,33 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 						fmt.Printf("Invoice: %s\n", swap.Invoice)
 					}
 				case boltz.TransactionMempool:
-					fmt.Printf("Lockup Transaction ID: %s\n", swap.LockupTransactionId)
+					fmt.Printf("Lockup transaction ID: %s\n", swap.LockupTransactionId)
 				case boltz.InvoiceSettled:
-					fmt.Printf("Claim Transaction ID: %s\n", swap.ClaimTransactionId)
+					fmt.Printf("Claim transaction ID: %s\n", swap.ClaimTransactionId)
 					fmt.Printf("Paid %dmsat routing fee, %dsat onchain fee and %dsat service fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
+					return nil
+				}
+			} else if info.ChainSwap != nil {
+				swap := info.ChainSwap
+				yellowBold.Printf("Swap Status: %s\n", swap.Status)
+
+				switch swap.State {
+				case boltzrpc.SwapState_ERROR:
+					fmt.Printf("Error: %s\n", swap.Error)
+				case boltzrpc.SwapState_REFUNDED:
+					fmt.Println("Swap was refunded")
+				}
+
+				status := boltz.ParseEvent(swap.Status)
+				switch status {
+				case boltz.SwapCreated:
+					fmt.Printf("Swap ID: %s\n", swap.Id)
+				case boltz.TransactionMempool:
+					fmt.Printf("User transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.From, swap.FromData.GetLockupTransactionId(), swap.FromData.Amount)
+				case boltz.TransactionServerMempoool:
+					fmt.Printf("Server transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.To, swap.ToData.GetLockupTransactionId(), swap.ToData.Amount)
+				case boltz.TransactionClaimed:
+					fmt.Printf("Paid %dsat onchain fee and %dsat service fee\n", *swap.OnchainFee, *swap.ServiceFee)
 					return nil
 				}
 			}
@@ -328,7 +361,7 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 	return nil
 }
 
-var configDescription string = `View and edit configuration of the autoswapper.
+var configDescription string = `View and edit configuration of autoswap.
 By default, the whole config is shown, altough a certain key can be specified.
 A new value for the key can also be provided.
 The configuration file autoswap.toml is located inside the data directory of the daemon and can be edited manually too.`
@@ -336,11 +369,11 @@ The configuration file autoswap.toml is located inside the data directory of the
 var autoSwapCommands = &cli.Command{
 	Name:    "autoswap",
 	Aliases: []string{"auto"},
-	Usage:   "Manage the autoswapper",
+	Usage:   "Manage autoswap",
 	Description: "Autoswap keeps your lightning node balanced by automatically executing swaps.\n" +
 		"It regularly checks your nodes channels and creates swaps based on your configuration, which can be managed with the `config` command.\n" +
-		"You can also configure the autoswapper without starting it and see what it would do with the `recommendations` command.\n" +
-		"Once you are confident with the configuration, you can enable the autoswapper with the `enable` command.\n",
+		"You can also configure autoswap without starting it and see what it would do with the `recommendations` command.\n" +
+		"Once you are confident with the configuration, you can enable autoswap with the `enable` command.\n",
 	Subcommands: []*cli.Command{
 		{
 			Name:   "status",
@@ -410,14 +443,14 @@ var autoSwapCommands = &cli.Command{
 		},
 		{
 			Name:  "enable",
-			Usage: "Enables the autoswapper",
+			Usage: "Enables autoswap",
 			Action: func(ctx *cli.Context) error {
 				return enableAutoSwap(ctx, true)
 			},
 		},
 		{
 			Name:   "disable",
-			Usage:  "Disables the autoswapper",
+			Usage:  "Disables autoswap",
 			Action: disableAutoSwap,
 		},
 	},
@@ -756,9 +789,9 @@ func disableAutoSwap(ctx *cli.Context) error {
 var createSwapCommand = &cli.Command{
 	Name:      "createswap",
 	Category:  "Swaps",
-	Usage:     "Create a new swap",
+	Usage:     "Create a new chain-to-lightning swap",
 	ArgsUsage: "[amount]",
-	Description: "Creates a new swap (onchain -> lightning) specifying the amount in satoshis.\n" +
+	Description: "Creates a new swap (e.g. BTC -> Lightning) specifying the amount in satoshis.\n" +
 		"If the --any-amount flag is specified, any amount within the displayed limits can be paid to the lockup address.\n" +
 		"\nExamples\n" +
 		"Create a swap for 100000 satoshis that will be immediately paid by the clients wallet:\n" +
@@ -772,10 +805,13 @@ var createSwapCommand = &cli.Command{
 		jsonFlag,
 		currencyFlag,
 		liquidFlag,
-		walletFlag,
+		&cli.StringFlag{
+			Name:  "to-wallet",
+			Usage: "Internal wallet to swap to",
+		},
 		&cli.BoolFlag{
-			Name:  "internal-send",
-			Usage: "Whether to automatically send the specified amount from the daemon wallet.",
+			Name:  "external-pay",
+			Usage: "Whether the swap should be paid externally",
 		},
 		&cli.BoolFlag{
 			Name:  "any-amount",
@@ -795,9 +831,13 @@ var createSwapCommand = &cli.Command{
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	var amount int64
+
+	externalPay := ctx.Bool("external-pay")
 	if ctx.Args().First() != "" {
 		amount = parseInt64(ctx.Args().First(), "amount")
-	} else if !ctx.Bool("any-amount") && ctx.String("invcoie") != "" {
+	} else if ctx.Bool("any-amount") {
+		externalPay = true
+	} else {
 		return cli.ShowSubcommandHelp(ctx)
 	}
 
@@ -811,7 +851,6 @@ func createSwap(ctx *cli.Context) error {
 		To:   boltzrpc.Currency_BTC,
 	}
 
-	internalSend := ctx.Bool("internal-send")
 	json := ctx.Bool("json")
 
 	submarinePair, err := client.GetSubmarinePair(pair)
@@ -833,7 +872,7 @@ func createSwap(ctx *cli.Context) error {
 
 	invoice := ctx.String("invoice")
 	refundAddress := ctx.String("refund")
-	walletId, err := getWalletId(ctx)
+	walletId, err := getWalletId(ctx, ctx.String("to-wallet"))
 	if err != nil {
 		return err
 	}
@@ -841,7 +880,7 @@ func createSwap(ctx *cli.Context) error {
 		Amount:           amount,
 		Pair:             pair,
 		RefundAddress:    &refundAddress,
-		SendFromInternal: internalSend,
+		SendFromInternal: !externalPay,
 		WalletId:         walletId,
 		Invoice:          &invoice,
 	})
@@ -854,7 +893,7 @@ func createSwap(ctx *cli.Context) error {
 		return nil
 	}
 
-	if !internalSend || amount == 0 {
+	if externalPay {
 		var amountString string
 		if amount == 0 {
 			amountString = fmt.Sprintf("between %d and %d satoshis", submarinePair.Limits.Minimal, submarinePair.Limits.Maximal)
@@ -872,10 +911,187 @@ func createSwap(ctx *cli.Context) error {
 	return swapInfoStream(ctx, swap.Id, false)
 }
 
+var createChainSwapCommand = &cli.Command{
+	Name:      "createchainswap",
+	Category:  "Swaps",
+	Usage:     "Create a new chain-to-chain swap",
+	ArgsUsage: "amount",
+	Description: "Creates a new chain swap (e.g. BTC -> L-BTC) specifying the amount in satoshis.\n" +
+		"\nExamples" +
+		"\nCreate a chain swap for 100000 satoshis from the L-BTC wallet 'autoswap' to the BTC wallet 'cold':" +
+		"\n> boltzcli createchainswap --from-wallet autoswap --to-wallet cold 100000" +
+		"\nCreate a chain swap for 100000 satoshis from the L-BTC wallet 'autoswap' to a BTC address:" +
+		"\n> boltzcli createchainswap --from-wallet autoswap --to-address bcrt1q0akydfs98pjmqqplz0kvaa5hphg237vcvgaez2 100000" +
+		"\nCreate a chain swap for 100000 satoshis from BTC to the L-BTC wallet 'autoswap' which has to be paid manually:" +
+		"\n> boltzcli createchainswap --from-external LBTC --to-wallet autoswap 100000",
+	Action: createChainSwap,
+	Flags: []cli.Flag{
+		jsonFlag,
+		&cli.BoolFlag{
+			Name:  "no-zero-conf",
+			Usage: "Disable zero-conf for this swap",
+		},
+		&cli.StringFlag{
+			Name:  "from-external",
+			Usage: "Currency to swap from; swap has to be funded externally",
+		},
+		&cli.StringFlag{
+			Name:  "from-wallet",
+			Usage: "Internal wallet to fund the swap from",
+		},
+		&cli.StringFlag{
+			Name:  "to-wallet",
+			Usage: "Internal wallet to swap to",
+		},
+		&cli.StringFlag{
+			Name:  "to-address",
+			Usage: "External address to swap to",
+		},
+		&cli.StringFlag{
+			Name:  "refund-address",
+			Usage: "Address to refund to in case the swap fails",
+		},
+	},
+}
+
+func checkAddress(network *boltz.Network, address string) (boltzrpc.Currency, error) {
+	if err := boltz.ValidateAddress(network, address, boltz.CurrencyBtc); err == nil {
+		return boltzrpc.Currency_BTC, nil
+	}
+	if err := boltz.ValidateAddress(network, address, boltz.CurrencyLiquid); err == nil {
+		return boltzrpc.Currency_LBTC, nil
+	}
+	return boltzrpc.Currency_BTC, fmt.Errorf("invalid address: %s", address)
+
+}
+
+func createChainSwap(ctx *cli.Context) error {
+	client := getClient(ctx)
+	var amount int64
+	if ctx.Args().First() != "" {
+		amount = parseInt64(ctx.Args().First(), "amount")
+	} else if !ctx.Bool("any-amount") {
+		return cli.ShowSubcommandHelp(ctx)
+	}
+
+	pair := &boltzrpc.Pair{}
+	var err error
+	if from := ctx.String("from-external"); from != "" {
+		pair.From, err = parseCurrency(from)
+		if err != nil {
+			return err
+		}
+	}
+
+	acceptZeroConf := !ctx.Bool("no-zero-conf")
+	fromWallet := ctx.String("from-wallet")
+	externalPay := fromWallet == ""
+	request := &boltzrpc.CreateChainSwapRequest{
+		Amount:         uint64(amount),
+		Pair:           pair,
+		ExternalPay:    &externalPay,
+		AcceptZeroConf: &acceptZeroConf,
+	}
+
+	info, err := client.GetInfo()
+	if err != nil {
+		return err
+	}
+	network, _ := boltz.ParseChain(info.Network)
+
+	if toAddress := ctx.String("to-address"); toAddress != "" {
+		pair.To, err = checkAddress(network, toAddress)
+		if err != nil {
+			return err
+		}
+		request.ToAddress = &toAddress
+	}
+
+	if refundAddress := ctx.String("refund-address"); refundAddress != "" {
+		pair.From, err = checkAddress(network, refundAddress)
+		if err != nil {
+			return err
+		}
+		request.RefundAddress = &refundAddress
+	}
+
+	if fromWallet != "" {
+		wallet, err := client.GetWallet(fromWallet)
+		if err != nil {
+			return err
+		}
+		pair.From = wallet.Currency
+		request.FromWalletId = &wallet.Id
+	}
+
+	if toWallet := ctx.String("to-wallet"); toWallet != "" {
+		wallet, err := client.GetWallet(toWallet)
+		if err != nil {
+			return err
+		}
+		pair.To = wallet.Currency
+		request.ToWalletId = &wallet.Id
+	}
+
+	request.FromWalletId, err = getWalletId(ctx, ctx.String("from-wallet"))
+	if err != nil {
+		return err
+	}
+
+	chainPair, err := client.GetChainPair(pair)
+	if err != nil {
+		return err
+	}
+
+	json := ctx.Bool("json")
+	if !json {
+		fmt.Println("The fees for this service are:")
+		fmt.Println("  - Service fee: " + formatPercentageFee(chainPair.Fees.Percentage) + "%")
+		fmt.Println("  - Miner fee: " + utils.Satoshis(int(chainPair.Fees.MinerFees.Server)))
+		fmt.Println()
+
+		if !prompt("Do you want to continue?") {
+			return nil
+		}
+	}
+
+	swap, err := client.CreateChainSwap(request)
+	if err != nil {
+		return err
+	}
+
+	if json {
+		printJson(swap)
+		return nil
+	}
+
+	if externalPay {
+		var amountString string
+		if amount == 0 {
+			amountString = fmt.Sprintf("between %d and %d satoshis", chainPair.Limits.Minimal, chainPair.Limits.Maximal)
+		} else {
+			amountString = utils.Satoshis(int(amount))
+		}
+
+		height := info.BlockHeights.Btc
+		if pair.From == boltzrpc.Currency_LBTC {
+			height = info.BlockHeights.GetLiquid()
+		}
+		timeoutHours := boltz.BlocksToHours(swap.FromData.TimeoutBlockHeight-height, utils.ParseCurrency(&pair.From))
+		fmt.Printf(
+			"Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
+			amountString, swap.FromData.LockupAddress, timeoutHours, swap.FromData.TimeoutBlockHeight,
+		)
+		fmt.Println()
+	}
+
+	return swapInfoStream(ctx, swap.Id, false)
+}
+
 var refundSwapCommand = &cli.Command{
 	Name:      "refundswap",
 	Category:  "Swaps",
-	Usage:     "Refund a swap manually",
+	Usage:     "Refund a chain-to-x swap manually",
 	ArgsUsage: "id addresss",
 	Action:    requireNArgs(2, refundSwap),
 }
@@ -888,16 +1104,20 @@ func refundSwap(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Refund Transaction: " + swap.Swap.RefundTransactionId)
+	tx := swap.ChainSwap.GetFromData().GetTransactionId()
+	if tx == "" {
+		tx = swap.Swap.GetRefundTransactionId()
+	}
+	fmt.Println("Refund transaction ID: " + tx)
 	return nil
 }
 
 var createReverseSwapCommand = &cli.Command{
 	Name:      "createreverseswap",
 	Category:  "Swaps",
-	Usage:     "Create a new reverse swap",
+	Usage:     "Create a new lightning-to-chain swap",
 	ArgsUsage: "amount [address]",
-	Description: "Creates a new reverse swap (lightning -> onchain) for `amount` satoshis, optionally specifying the destination address.\n" +
+	Description: "Creates a new reverse swap (e.g. Lightning -> BTC) for `amount` satoshis, optionally specifying the destination address.\n" +
 		"If no address is specified, it will be generated by the clients wallet.\n" +
 		"\nExamples\n" +
 		"create a reverse swap for 100000 satoshis that will be sent to the clients btc wallet:\n" +
@@ -911,7 +1131,10 @@ var createReverseSwapCommand = &cli.Command{
 		jsonFlag,
 		currencyFlag,
 		liquidFlag,
-		walletFlag,
+		&cli.StringFlag{
+			Name:  "from-wallet",
+			Usage: "Internal wallet to fund the swap from",
+		},
 		&cli.BoolFlag{
 			Name:  "no-zero-conf",
 			Usage: "Disable zero-conf for this swap",
@@ -927,6 +1150,9 @@ var createReverseSwapCommand = &cli.Command{
 }
 
 func parseCurrency(currency string) (boltzrpc.Currency, error) {
+	if currency == "" {
+		return boltzrpc.Currency_BTC, errors.New("currency is required, allowed values: BTC, LBTC")
+	}
 	upper := strings.ToUpper(currency)
 	if upper == "LBTC" || upper == "L-BTC" {
 		return boltzrpc.Currency_LBTC, nil
@@ -943,8 +1169,8 @@ func getCurrency(ctx *cli.Context) (boltzrpc.Currency, error) {
 	return parseCurrency(ctx.String("currency"))
 }
 
-func getWalletId(ctx *cli.Context) (*int64, error) {
-	if name := ctx.String("wallet"); name != "" {
+func getWalletId(ctx *cli.Context, name string) (*int64, error) {
+	if name != "" {
 		client := getClient(ctx)
 		wallet, err := client.GetWallet(name)
 		if err != nil {
@@ -992,7 +1218,7 @@ func createReverseSwap(ctx *cli.Context) error {
 	}
 
 	returnImmediately := true
-	walletId, err := getWalletId(ctx)
+	walletId, err := getWalletId(ctx, ctx.String("from-wallet"))
 	if err != nil {
 		return err
 	}

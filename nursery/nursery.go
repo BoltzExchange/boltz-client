@@ -153,12 +153,20 @@ func (nursery *Nursery) recoverPending() error {
 		return err
 	}
 
+	chainSwaps, err := nursery.database.QueryPendingChainSwaps()
+	if err != nil {
+		return err
+	}
+
 	var swapIds []string
 	for _, swap := range swaps {
 		swapIds = append(swapIds, swap.Id)
 	}
 	for _, reverseSwap := range reverseSwaps {
 		swapIds = append(swapIds, reverseSwap.Id)
+	}
+	for _, chainSwap := range chainSwaps {
+		swapIds = append(swapIds, chainSwap.Id)
 	}
 
 	return nursery.boltzWs.Subscribe(swapIds)
@@ -252,13 +260,26 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output, feeSatPerVbyte float64) (string, error) {
-	populated, err := nursery.populateOutputs(outputs)
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (string, error) {
+	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
 	if err != nil {
-		return "", errors.New("Could not populate output addresses: " + err.Error())
+		return "", errors.New("Could not get fee estimation: " + err.Error())
 	}
 
-	transaction, fees, err := boltz.ConstructTransaction(nursery.network, currency, populated, feeSatPerVbyte, nursery.boltz)
+	logger.Infof("Using fee of %v sat/vbyte for transaction", feeSatPerVbyte)
+
+	valid, details := nursery.populateOutputs(outputs)
+	if len(valid) == 0 {
+		return "", errors.New("all outputs invalid")
+	}
+
+	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
+	for _, output := range valid {
+		result := results[output.SwapId]
+		if result.Err != nil {
+			logger.Errorf("Could not spend output for %s swap %s: %s", output.SwapType, output.SwapId, result.Err)
+		}
+	}
 	if err != nil {
 		return "", fmt.Errorf("construct transaction: %v", err)
 	}
@@ -271,53 +292,21 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 
 	id := response.TransactionId
 
-	for i, output := range outputs {
-		if err := output.setTransaction(id, fees[i]); err != nil {
-			logger.Errorf("Could not set refund transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
-			continue
+	for _, output := range valid {
+		result := results[output.SwapId]
+		if result.Err == nil {
+			if err := output.setTransaction(id, result.Fee); err != nil {
+				logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
+				continue
+			}
 		}
 	}
 
 	return id, nil
 }
-func (nursery *Nursery) claimOutputs(currency boltz.Currency, outputs []*Output) (transaction string, err error) {
-	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
 
-	if err != nil {
-		return "", errors.New("Could not get fee estimation: " + err.Error())
-	}
-
-	transaction, err = nursery.createTransaction(currency, outputs, feeSatPerVbyte)
-	if err != nil {
-		logger.Warnf("Could not construct cooperative claim transaction: %v", err)
-		for i := range outputs {
-			outputs[i].Cooperative = false
-		}
-		transaction, err = nursery.createTransaction(currency, outputs, feeSatPerVbyte)
-		if err != nil {
-			return "", errors.New("Could not construct claim transaction: " + err.Error())
-		}
-	}
-
-	return
-}
-
-func (nursery *Nursery) refundOutputs(currency boltz.Currency, outputs []*Output) (transaction string, err error) {
-	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
-
-	if err != nil {
-		err = errors.New("Could not get fee estimation: " + err.Error())
-		return
-	}
-
-	logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for refund transaction", feeSatPerVbyte))
-
-	return nursery.createTransaction(currency, outputs, feeSatPerVbyte)
-}
-
-func (nursery *Nursery) populateOutputs(outputs []*Output) ([]boltz.OutputDetails, error) {
+func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
 	addresses := make(map[int64]string)
-	var result []boltz.OutputDetails
 	for _, output := range outputs {
 		handleErr := func(err error) {
 			verb := "claim"
@@ -349,18 +338,15 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) ([]boltz.OutputDetail
 			output.Address = address
 		}
 		var err error
-		details := output.OutputDetails
-		details.LockupTransaction, details.Vout, _, err = nursery.findVout(output.voutInfo)
+		output.LockupTransaction, output.Vout, _, err = nursery.findVout(output.voutInfo)
 		if err != nil {
 			handleErr(err)
 			continue
 		}
-		result = append(result, *details)
+		valid = append(valid, output)
+		details = append(details, *output.OutputDetails)
 	}
-	if len(result) == 0 {
-		return nil, errors.New("all outputs invalid")
-	}
-	return result, nil
+	return valid, details
 }
 
 type voutInfo struct {

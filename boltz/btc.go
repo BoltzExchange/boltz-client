@@ -66,6 +66,10 @@ func (transaction *BtcTransaction) FindVout(network *Network, addressToFind stri
 	return 0, 0, errors.New("Could not find address in transaction")
 }
 
+func (transaction *BtcTransaction) VoutValue(vout uint32) (uint64, error) {
+	return uint64(transaction.MsgTx().TxOut[vout].Value), nil
+}
+
 func getPrevoutFetcher(tx *wire.MsgTx, outputs []OutputDetails) txscript.PrevOutputFetcher {
 	previous := make(map[wire.OutPoint]*wire.TxOut)
 	for i, input := range tx.TxIn {
@@ -99,10 +103,8 @@ func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int)
 	)
 }
 
-func constructBtcTransaction(network *Network, outputs []OutputDetails) (Transaction, error) {
+func constructBtcTransaction(network *Network, outputs []OutputDetails, outValues map[string]uint64) (Transaction, error) {
 	transaction := wire.NewMsgTx(wire.TxVersion)
-
-	outValues := make(map[string]int64)
 
 	for _, output := range outputs {
 		// Set the highest timeout block height as locktime
@@ -119,12 +121,6 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails) (Transac
 		input.Sequence = 0
 
 		transaction.AddTxIn(input)
-
-		value := lockupTx.MsgTx().TxOut[output.Vout].Value - int64(output.Fee)
-		//nolint:gosimple
-		existingValue, _ := outValues[output.Address]
-		outValues[output.Address] = existingValue + value
-
 	}
 
 	for rawAddress, value := range outValues {
@@ -141,7 +137,7 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails) (Transac
 
 		transaction.AddTxOut(&wire.TxOut{
 			PkScript: outputScript,
-			Value:    value,
+			Value:    int64(value),
 		})
 	}
 

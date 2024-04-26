@@ -16,6 +16,7 @@ type Transaction interface {
 	Serialize() (string, error)
 	VSize() uint64
 	FindVout(network *Network, address string) (uint32, uint64, error)
+	VoutValue(vout uint32) (uint64, error)
 }
 
 type OutputDetails struct {
@@ -60,53 +61,79 @@ func NewTxFromHex(currency Currency, hexString string, ourOutputBlindingKey *btc
 	return NewBtcTxFromHex(hexString)
 }
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Boltz) (Transaction, []uint64, error) {
-	var construct func(*Network, []OutputDetails) (Transaction, error)
+type OutputResult struct {
+	Err error
+	Fee uint64
+}
+
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Boltz) (Transaction, map[string]OutputResult, error) {
+	construct := constructBtcTransaction
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
-	} else if currency == CurrencyBtc {
-		construct = constructBtcTransaction
-	} else {
-		return nil, nil, fmt.Errorf("invalid pair: %v", currency)
+	}
+	results := make(map[string]OutputResult, len(outputs))
+
+	getOutValues := func(fee uint64) map[string]uint64 {
+		outValues := make(map[string]uint64)
+
+		outLen := uint64(len(outputs))
+		feePerOutput := fee / outLen
+		feeRemainder := fee % outLen
+
+		for i := range outputs {
+			output := &outputs[i]
+			output.Fee = feePerOutput + feeRemainder
+			feeRemainder = 0
+
+			value, err := output.LockupTransaction.VoutValue(output.Vout)
+			if err == nil {
+				if value < output.Fee {
+					err = fmt.Errorf("value less than fee: %d < %d", value, output.Fee)
+				}
+			}
+
+			if err != nil {
+				results[output.SwapId] = OutputResult{Err: err}
+				continue
+			}
+
+			results[output.SwapId] = OutputResult{Fee: output.Fee}
+			outValues[output.Address] += value - output.Fee
+		}
+		return outValues
 	}
 
-	noFeeTransaction, err := construct(network, outputs)
-
+	noFeeTransaction, err := construct(network, outputs, getOutValues(0))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	fee := uint64(float64(noFeeTransaction.VSize()) * satPerVbyte)
 
-	outLen := uint64(len(outputs))
-	feePerOutput := fee / outLen
-	feeRemainder := fee % outLen
-
-	fees := make([]uint64, len(outputs))
-	for i := range outputs {
-		outputs[i].Fee = feePerOutput + feeRemainder
-		fees[i] = outputs[i].Fee
-		feeRemainder = 0
-	}
-
-	transaction, err := construct(network, outputs)
+	transaction, err := construct(network, outputs, getOutValues(fee))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for i, output := range outputs {
-		if output.Cooperative {
-			if boltzApi == nil {
-				return nil, nil, errors.New("boltzApi is required for cooperative transactions")
-			}
-			session, err := NewSigningSession(outputs[i].SwapTree)
-			if err != nil {
-				return nil, nil, fmt.Errorf("could not initialize signing session: %w", err)
-			}
+	var valid []OutputDetails
 
+	for i, output := range outputs {
+		err = func() error {
+			if output.Cooperative {
+				return nil
+			}
 			serialized, err := transaction.Serialize()
 			if err != nil {
-				return nil, nil, fmt.Errorf("could not serialize transaction: %w", err)
+				return fmt.Errorf("could not serialize transaction: %w", err)
+			}
+
+			if boltzApi == nil {
+				return errors.New("boltzApi is required for cooperative transactions")
+			}
+
+			session, err := NewSigningSession(outputs[i].SwapTree)
+			if err != nil {
+				return fmt.Errorf("could not initialize signing session: %w", err)
 			}
 
 			pubNonce := session.PublicNonce()
@@ -154,14 +181,42 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 				}()
 			}
 			if err != nil {
-				return nil, nil, fmt.Errorf("could not get partial signature from boltz: %w", err)
+				return fmt.Errorf("could not get partial signature from boltz: %w", err)
 			}
 
 			if err := session.Finalize(transaction, outputs, network, signature); err != nil {
-				return nil, nil, fmt.Errorf("could not finalize signing session: %w", err)
+				return fmt.Errorf("could not finalize signing session: %w", err)
 			}
+
+			return nil
+		}()
+		if err != nil {
+			if output.IsRefund() {
+				results[output.SwapId] = OutputResult{Err: err}
+			} else {
+				nonCoop := outputs[i]
+				nonCoop.Cooperative = false
+				valid = append(valid, nonCoop)
+			}
+		} else {
+			valid = append(valid, output)
 		}
 	}
 
-	return transaction, fees, err
+	if len(valid) == 0 {
+		return nil, results, fmt.Errorf("all outputs invalid")
+	}
+
+	if len(valid) < len(outputs) {
+		transaction, newResults, err := ConstructTransaction(network, currency, valid, satPerVbyte, boltzApi)
+		if err != nil {
+			return nil, nil, err
+		}
+		for id, result := range newResults {
+			results[id] = result
+		}
+		return transaction, results, nil
+	}
+
+	return transaction, results, err
 }
