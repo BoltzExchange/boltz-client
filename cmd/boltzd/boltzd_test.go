@@ -872,6 +872,8 @@ func TestReverseSwap(t *testing.T) {
 						request.AcceptZeroConf = false
 						swap, err := client.CreateReverseSwap(request)
 						require.NoError(t, err)
+						next := swapStream(t, client, swap.Id)
+						next(boltzrpc.SwapState_PENDING)
 						stop()
 
 						test.MineBlock()

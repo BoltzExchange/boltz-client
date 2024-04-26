@@ -116,10 +116,11 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 	}
 
 	var valid []OutputDetails
+	reconstruct := false
 
 	for i, output := range outputs {
 		err = func() error {
-			if output.Cooperative {
+			if !output.Cooperative {
 				return nil
 			}
 			serialized, err := transaction.Serialize()
@@ -193,10 +194,12 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 		if err != nil {
 			if output.IsRefund() {
 				results[output.SwapId] = OutputResult{Err: err}
+				reconstruct = true
 			} else {
 				nonCoop := outputs[i]
 				nonCoop.Cooperative = false
 				valid = append(valid, nonCoop)
+				reconstruct = true
 			}
 		} else {
 			valid = append(valid, output)
@@ -207,7 +210,7 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 		return nil, results, fmt.Errorf("all outputs invalid")
 	}
 
-	if len(valid) < len(outputs) {
+	if reconstruct {
 		transaction, newResults, err := ConstructTransaction(network, currency, valid, satPerVbyte, boltzApi)
 		if err != nil {
 			return nil, nil, err
