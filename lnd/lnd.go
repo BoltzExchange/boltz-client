@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -363,55 +362,6 @@ func (lnd *LND) NewAddress() (string, error) {
 	return response.Address, err
 }
 
-func (lnd *LND) EstimateFee(confTarget int32) (float64, error) {
-	response, err := lnd.walletKit.EstimateFee(lnd.ctx, &walletrpc.EstimateFeeRequest{
-		ConfTarget: confTarget,
-	})
-	if err != nil {
-		return 0, err
-	}
-	return math.Max(math.Round(float64(response.SatPerKw)/1000), 2), nil
-}
-
-func (lnd *LND) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-	client, err := lnd.chainNotifier.RegisterBlockEpochNtfn(lnd.ctx, &chainrpc.BlockEpoch{})
-
-	if err != nil {
-		return err
-	}
-
-	logger.Info("Connected to LND block epoch stream")
-
-	errChannel := make(chan error)
-	recv := true
-
-	go func() {
-		for {
-			block, err := client.Recv()
-			if !recv {
-				return
-			}
-			if err != nil {
-				errChannel <- err
-				return
-			}
-
-			channel <- &onchain.BlockEpoch{
-				Height: block.Height,
-			}
-		}
-	}()
-
-	for {
-		select {
-		case err := <-errChannel:
-			return err
-		case <-stop:
-			recv = false
-			return nil
-		}
-	}
-}
 func (lnd *LND) GetBalance() (*onchain.Balance, error) {
 	response, err := lnd.client.WalletBalance(lnd.ctx, &lnrpc.WalletBalanceRequest{})
 	if err != nil {

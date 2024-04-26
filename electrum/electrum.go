@@ -71,3 +71,11 @@ func (c *Client) EstimateFee(confTarget int32) (float64, error) {
 	fee, err := c.client.GetFee(c.ctx, uint32(confTarget))
 	return float64(fee), err
 }
+
+func (c *Client) GetRawTransaction(txId string) (string, error) {
+	return c.client.GetRawTransaction(c.ctx, txId)
+}
+
+func (c *Client) BroadcastTransaction(txHex string) (string, error) {
+	return c.client.BroadcastTransaction(c.ctx, txHex)
+}

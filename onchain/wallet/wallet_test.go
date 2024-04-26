@@ -43,12 +43,6 @@ func TestSend(t *testing.T) {
 	test.MineBlock()
 }
 
-func TestFee(t *testing.T) {
-	fee, err := wallet.EstimateFee(1)
-	require.NoError(t, err)
-	require.NotZero(t, fee)
-}
-
 func TestBlockStream(t *testing.T) {
 	blocks := make(chan *onchain.BlockEpoch)
 	stop := make(chan bool)

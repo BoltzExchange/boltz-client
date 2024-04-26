@@ -58,6 +58,12 @@ func loadConfig(t *testing.T) *config.Config {
 	return cfg
 }
 
+func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
+	chain, err := initOnchain(cfg, boltz.Regtest)
+	require.NoError(t, err)
+	return chain
+}
+
 var walletName = "regtest"
 var password = "password"
 var walletInfo = &boltzrpc.WalletInfo{Currency: boltzrpc.Currency_LBTC, Name: walletName}
@@ -462,7 +468,7 @@ func TestGetPairs(t *testing.T) {
 	require.Len(t, info.Reverse, 2)
 }
 
-func checkTxOutAddress(t *testing.T, chain onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
+func checkTxOutAddress(t *testing.T, chain *onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
 	transaction, err := chain.GetTransaction(currency, txId, nil)
 	require.NoError(t, err)
 
@@ -531,12 +537,7 @@ func TestSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
 	cfg.Node = "LND"
-
-	boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
-	chain := onchain.Onchain{
-		Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
-		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
-	}
+	chain := getOnchain(t, cfg)
 
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
 		invoice, err := zpay32.Decode(swap.Invoice, &chaincfg.RegressionNetParams)
@@ -848,10 +849,7 @@ func TestReverseSwap(t *testing.T) {
 					cfg.Boltz.DisablePartialSignatures = tc.disablePartials
 					client, _, stop := setup(t, cfg, "")
 					cfg.Node = node
-					chain := onchain.Onchain{
-						Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc)},
-						Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid)},
-					}
+					chain := getOnchain(t, cfg)
 
 					pair := &boltzrpc.Pair{
 						From: boltzrpc.Currency_BTC,
@@ -1018,12 +1016,7 @@ func TestReverseSwap(t *testing.T) {
 func TestChainSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
-	boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
-
-	chain := onchain.Onchain{
-		Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
-		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
-	}
+	chain := getOnchain(t, cfg)
 
 	tests := []struct {
 		desc string

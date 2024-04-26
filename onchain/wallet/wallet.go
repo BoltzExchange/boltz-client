@@ -637,20 +637,6 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	return sendTx.TxHash, nil
 }
 
-func (wallet *Wallet) EstimateFee(confTarget int32) (float64, error) {
-	var output Json
-	var estimates struct {
-		Fees []float64 `json:"fees"`
-	}
-	if err := withOutput(C.GA_get_fee_estimates(wallet.session, &output), output, &estimates); err != nil {
-		return 0, err
-	}
-	if confTarget > 24 {
-		confTarget = 24
-	}
-	return estimates.Fees[confTarget] / 1000, nil
-}
-
 func (wallet *Wallet) GetBlockHeight() (uint32, error) {
 	// this is not perfect because it is zero until the first block is received, but there is no proper get_blockheight call
 	if wallet.blockHeight == 0 {

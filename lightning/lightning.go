@@ -70,7 +70,6 @@ type PayInvoiceResponse struct {
 }
 
 type LightningNode interface {
-	onchain.BlockListener
 	onchain.Wallet
 
 	Connect() error

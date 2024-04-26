@@ -162,7 +162,7 @@ func setBoltzEndpoint(boltzCfg *boltz.Boltz, network *boltz.Network) {
 }
 
 func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, error) {
-	onchain := &onchain.Onchain{
+	chain := &onchain.Onchain{
 		Btc: &onchain.Currency{
 			Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc),
 		},
@@ -172,11 +172,7 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		Network: network,
 	}
 
-	onchain.Init()
-
-	if cfg.Lightning != nil {
-		onchain.AddWallet(cfg.Lightning)
-	}
+	chain.Init()
 
 	if !wallet.Initialized() {
 		err := wallet.Init(wallet.Config{
@@ -195,8 +191,8 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		if err != nil {
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
-		onchain.Btc.Fees = client
-		onchain.Btc.Listener = client
+		chain.Btc.Blocks = client
+		chain.Btc.Tx = client
 	}
 	if cfg.ElectrumLiquidUrl != "" {
 		logger.Info("Using configured Electrum Liquid RPC: " + cfg.ElectrumLiquidUrl)
@@ -204,8 +200,8 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		if err != nil {
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
-		onchain.Liquid.Fees = client
-		onchain.Liquid.Listener = client
+		chain.Liquid.Blocks = client
+		chain.Liquid.Tx = client
 	}
 	if network == boltz.MainNet {
 		cfg.MempoolApi = "https://mempool.space/api"
@@ -217,17 +213,23 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 
 	if cfg.MempoolApi != "" {
 		logger.Info("mempool.space API: " + cfg.MempoolApi)
-		mempoolBtc := mempool.InitClient(cfg.MempoolApi)
-		onchain.Btc.Fees = mempoolBtc
-		onchain.Btc.Listener = mempoolBtc
+		client := mempool.InitClient(cfg.MempoolApi)
+		chain.Btc.Blocks = client
+		chain.Btc.Tx = client
 	}
 
 	if cfg.MempoolLiquidApi != "" {
 		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
-		mempoolLiquid := mempool.InitClient(cfg.MempoolLiquidApi)
-		onchain.Liquid.Fees = mempoolLiquid
-		onchain.Liquid.Listener = mempoolLiquid
+		client := mempool.InitClient(cfg.MempoolLiquidApi)
+		chain.Liquid.Blocks = client
+		chain.Liquid.Tx = client
 	}
 
-	return onchain, nil
+	// use boltz in regtest to avoid situations where electrum doesnt know about the tx yet
+	if network == boltz.Regtest {
+		chain.Btc.Tx = onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc)
+		chain.Liquid.Tx = onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid)
+	}
+
+	return chain, nil
 }

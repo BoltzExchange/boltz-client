@@ -447,26 +447,18 @@ func (boltz *Boltz) GetTransaction(transactionId string, currency Currency) (str
 	return response.Hex, err
 }
 
-func (boltz *Boltz) BroadcastTransaction(transaction Transaction) (*BroadcastTransactionResponse, error) {
+func (boltz *Boltz) BroadcastTransaction(currency Currency, txHex string) (string, error) {
 	var response BroadcastTransactionResponse
-	currency := CurrencyBtc
-	if _, ok := transaction.(*LiquidTransaction); ok {
-		currency = CurrencyLiquid
-	}
-	transactionHex, err := transaction.Serialize()
-	if err != nil {
-		return nil, fmt.Errorf("could not serialize transaction: %v", err)
-	}
-	err = boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
+	err := boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
 		Currency:       string(currency),
-		TransactionHex: transactionHex,
+		TransactionHex: txHex,
 	}, &response)
 
 	if response.Error != "" {
-		return nil, Error(errors.New(response.Error))
+		return "", Error(errors.New(response.Error))
 	}
 
-	return &response, err
+	return response.TransactionId, err
 }
 
 func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, error) {

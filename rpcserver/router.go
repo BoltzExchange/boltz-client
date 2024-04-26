@@ -1278,7 +1278,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			}
 		}
 		server.lightning.SetupWallet(nodeWallet.Id)
-
+		server.onchain.AddWallet(server.lightning)
 	}
 
 	credentials, err := server.decryptWalletCredentials(password)
