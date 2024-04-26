@@ -39,13 +39,13 @@ service Boltz {
     rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
 
     /*
-    Returns a list of all swaps, reverse swaps, and chain swaps n the database.
+    Returns a list of all swaps, reverse swaps, and chain swaps in the database.
     */
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
 
     /*
     Refund a failed swap manually.
-    This is only required when no refund address has been set or the the swap does not have an associated wallet.
+    This is only required when no refund address has been set or the swap does not have an associated wallet.
     */
     rpc RefundSwap (RefundSwapRequest) returns (GetSwapInfoResponse);
 
@@ -380,10 +380,6 @@ message ReversePair {
 }
 
 message ChainPair {
-    Pair pair = 1;
-    string hash = 2;
-    float rate = 3;
-    Limits limits = 4;
     message Fees {
         message User {
             uint64 lockup = 1;
@@ -396,6 +392,11 @@ message ChainPair {
         float percentage = 1;
         Miner miner_fees = 2;
     }
+
+    Pair pair = 1;
+    string hash = 2;
+    float rate = 3;
+    Limits limits = 4;
     Fees fees = 5;
 }
 
@@ -531,20 +532,20 @@ message CreateReverseSwapResponse {
 }
 
 message CreateChainSwapRequest {
-    // amount of satoshis to swap. it will be the amount expected to be sent to the lockup address.
+    // Amount of satoshis to swap. It is the amount expected to be sent to the lockup address.
     uint64 amount = 1;
     Pair pair = 2;
-    // address where funds will go if the swap succeeds
+    // Address where funds will be swept to if the swap succeeds
     optional string to_address = 3;
-    // address where the coins should go if the swap fails.
+    // Address where the coins should be refunded to if the swap fails.
     optional string refund_address = 4;
     // Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true.
     // If the swap fails, funds will be refunded to this wallet aswell.
     optional int64 from_wallet_id = 5;
-    // wallet where the the funds will go if the swap succeeds.
+    // Wallet where the the funds will go if the swap succeeds.
     optional int64 to_wallet_id = 6;
     // Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool.
-    // Should only be used for smaller amounts as it involves trust in boltz.
+    // Should only be used for smaller amounts as it involves trust in Boltz.
     optional bool accept_zero_conf = 7;
     // If set, the daemon will not pay the swap from an internal wallet.
     optional bool external_pay = 8;

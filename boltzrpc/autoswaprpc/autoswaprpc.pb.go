@@ -8,9 +8,9 @@ package autoswaprpc
 
 import (
 	boltzrpc "github.com/BoltzExchange/boltz-client/boltzrpc"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -829,7 +829,7 @@ var file_autoswaprpc_autoswaprpc_proto_goTypes = []interface{}{
 	(*boltzrpc.LightningChannel)(nil),      // 9: boltzrpc.LightningChannel
 	(*boltzrpc.SwapStats)(nil),             // 10: boltzrpc.SwapStats
 	(boltzrpc.Currency)(0),                 // 11: boltzrpc.Currency
-	(*emptypb.Empty)(nil),                  // 12: google.protobuf.Empty
+	(*empty.Empty)(nil),                    // 12: google.protobuf.Empty
 }
 var file_autoswaprpc_autoswaprpc_proto_depIdxs = []int32{
 	9,  // 0: autoswaprpc.SwapRecommendation.channel:type_name -> boltzrpc.LightningChannel

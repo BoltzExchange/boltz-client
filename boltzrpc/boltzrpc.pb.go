@@ -7,9 +7,9 @@
 package boltzrpc
 
 import (
+	empty "github.com/golang/protobuf/ptypes/empty"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -2875,20 +2875,20 @@ type CreateChainSwapRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// amount of satoshis to swap. it will be the amount expected to be sent to the lockup address.
+	// Amount of satoshis to swap. It is the amount expected to be sent to the lockup address.
 	Amount uint64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	Pair   *Pair  `protobuf:"bytes,2,opt,name=pair,proto3" json:"pair,omitempty"`
-	// address where funds will go if the swap succeeds
+	// Address where funds will be swept to if the swap succeeds
 	ToAddress *string `protobuf:"bytes,3,opt,name=to_address,json=toAddress,proto3,oneof" json:"to_address,omitempty"`
-	// address where the coins should go if the swap fails.
+	// Address where the coins should be refunded to if the swap fails.
 	RefundAddress *string `protobuf:"bytes,4,opt,name=refund_address,json=refundAddress,proto3,oneof" json:"refund_address,omitempty"`
 	// Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true.
 	// If the swap fails, funds will be refunded to this wallet aswell.
 	FromWalletId *int64 `protobuf:"varint,5,opt,name=from_wallet_id,json=fromWalletId,proto3,oneof" json:"from_wallet_id,omitempty"`
-	// wallet where the the funds will go if the swap succeeds.
+	// Wallet where the the funds will go if the swap succeeds.
 	ToWalletId *int64 `protobuf:"varint,6,opt,name=to_wallet_id,json=toWalletId,proto3,oneof" json:"to_wallet_id,omitempty"`
 	// Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool.
-	// Should only be used for smaller amounts as it involves trust in boltz.
+	// Should only be used for smaller amounts as it involves trust in Boltz.
 	AcceptZeroConf *bool `protobuf:"varint,7,opt,name=accept_zero_conf,json=acceptZeroConf,proto3,oneof" json:"accept_zero_conf,omitempty"`
 	// If set, the daemon will not pay the swap from an internal wallet.
 	ExternalPay *bool `protobuf:"varint,8,opt,name=external_pay,json=externalPay,proto3,oneof" json:"external_pay,omitempty"`
@@ -5970,7 +5970,7 @@ var file_boltzrpc_proto_goTypes = []interface{}{
 	(*ChainPair_Fees)(nil),               // 71: boltzrpc.ChainPair.Fees
 	(*ChainPair_Fees_User)(nil),          // 72: boltzrpc.ChainPair.Fees.User
 	(*ChainPair_Fees_Miner)(nil),         // 73: boltzrpc.ChainPair.Fees.Miner
-	(*emptypb.Empty)(nil),                // 74: google.protobuf.Empty
+	(*empty.Empty)(nil),                  // 74: google.protobuf.Empty
 }
 var file_boltzrpc_proto_depIdxs = []int32{
 	7,  // 0: boltzrpc.ListEntitiesResponse.entities:type_name -> boltzrpc.Entity

@@ -8,10 +8,10 @@ package autoswaprpc
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -41,7 +41,7 @@ type AutoSwapClient interface {
 	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
 	//
 	//Resets the configuration to default values.
-	ResetConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Config, error)
+	ResetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error)
 	//
 	//Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
 	SetConfig(ctx context.Context, in *Config, opts ...grpc.CallOption) (*Config, error)
@@ -54,7 +54,7 @@ type AutoSwapClient interface {
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
 	//Reloads the configuration from disk.
-	ReloadConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Config, error)
+	ReloadConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error)
 }
 
 type autoSwapClient struct {
@@ -83,7 +83,7 @@ func (c *autoSwapClient) GetStatus(ctx context.Context, in *GetStatusRequest, op
 	return out, nil
 }
 
-func (c *autoSwapClient) ResetConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Config, error) {
+func (c *autoSwapClient) ResetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error) {
 	out := new(Config)
 	err := c.cc.Invoke(ctx, AutoSwap_ResetConfig_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -119,7 +119,7 @@ func (c *autoSwapClient) GetConfig(ctx context.Context, in *GetConfigRequest, op
 	return out, nil
 }
 
-func (c *autoSwapClient) ReloadConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Config, error) {
+func (c *autoSwapClient) ReloadConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error) {
 	out := new(Config)
 	err := c.cc.Invoke(ctx, AutoSwap_ReloadConfig_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -140,7 +140,7 @@ type AutoSwapServer interface {
 	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	//
 	//Resets the configuration to default values.
-	ResetConfig(context.Context, *emptypb.Empty) (*Config, error)
+	ResetConfig(context.Context, *empty.Empty) (*Config, error)
 	//
 	//Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
 	SetConfig(context.Context, *Config) (*Config, error)
@@ -153,7 +153,7 @@ type AutoSwapServer interface {
 	GetConfig(context.Context, *GetConfigRequest) (*Config, error)
 	//
 	//Reloads the configuration from disk.
-	ReloadConfig(context.Context, *emptypb.Empty) (*Config, error)
+	ReloadConfig(context.Context, *empty.Empty) (*Config, error)
 	mustEmbedUnimplementedAutoSwapServer()
 }
 
@@ -167,7 +167,7 @@ func (UnimplementedAutoSwapServer) GetSwapRecommendations(context.Context, *GetS
 func (UnimplementedAutoSwapServer) GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
-func (UnimplementedAutoSwapServer) ResetConfig(context.Context, *emptypb.Empty) (*Config, error) {
+func (UnimplementedAutoSwapServer) ResetConfig(context.Context, *empty.Empty) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetConfig not implemented")
 }
 func (UnimplementedAutoSwapServer) SetConfig(context.Context, *Config) (*Config, error) {
@@ -179,7 +179,7 @@ func (UnimplementedAutoSwapServer) SetConfigValue(context.Context, *SetConfigVal
 func (UnimplementedAutoSwapServer) GetConfig(context.Context, *GetConfigRequest) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
-func (UnimplementedAutoSwapServer) ReloadConfig(context.Context, *emptypb.Empty) (*Config, error) {
+func (UnimplementedAutoSwapServer) ReloadConfig(context.Context, *empty.Empty) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReloadConfig not implemented")
 }
 func (UnimplementedAutoSwapServer) mustEmbedUnimplementedAutoSwapServer() {}
@@ -232,7 +232,7 @@ func _AutoSwap_GetStatus_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _AutoSwap_ResetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func _AutoSwap_ResetConfig_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: AutoSwap_ResetConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoSwapServer).ResetConfig(ctx, req.(*emptypb.Empty))
+		return srv.(AutoSwapServer).ResetConfig(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -304,7 +304,7 @@ func _AutoSwap_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _AutoSwap_ReloadConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func _AutoSwap_ReloadConfig_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: AutoSwap_ReloadConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoSwapServer).ReloadConfig(ctx, req.(*emptypb.Empty))
+		return srv.(AutoSwapServer).ReloadConfig(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
