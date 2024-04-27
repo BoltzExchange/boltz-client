@@ -1148,6 +1148,7 @@ func TestChainSwap(t *testing.T) {
 
 				stream := swapStream(t, client, swap.Id)
 				test.SendToAddress(fromCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+				stream(boltzrpc.SwapState_PENDING)
 				test.MineBlock()
 				stream(boltzrpc.SwapState_PENDING)
 				test.MineBlock()
