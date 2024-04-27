@@ -45,6 +45,14 @@ Fetches information about a specific pair for a reverse swap.
 | ------- | -------- |
 | [`Pair`](#pair) | [`ReversePair`](#reversepair) |
 
+#### GetChainPair
+
+Fetches information about a specific pair for a chain swap.
+
+| Request | Response |
+| ------- | -------- |
+| [`Pair`](#pair) | [`ChainPair`](#chainpair) |
+
 #### GetPairs
 
 Fetches all available pairs for submarine and reverse swaps.
@@ -55,7 +63,7 @@ Fetches all available pairs for submarine and reverse swaps.
 
 #### ListSwaps
 
-Returns a list of all swaps, reverse swaps and channel creations in the database.
+Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 
 | Request | Response |
 | ------- | -------- |
@@ -63,7 +71,7 @@ Returns a list of all swaps, reverse swaps and channel creations in the database
 
 #### RefundSwap
 
-Refund a failed swap manually. This is only required when no refund address has been set or the daemon has no wallet for the currency.
+Refund a failed swap manually. This is only required when no refund address has been set or the swap does not have an associated wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -116,6 +124,14 @@ Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is s
 | Request | Response |
 | ------- | -------- |
 | [`CreateReverseSwapRequest`](#createreverseswaprequest) | [`CreateReverseSwapResponse`](#createreverseswapresponse) |
+
+#### CreateChainSwap
+
+Creates a new chain swap from one chain to another. If `accept_zero_conf` is set to true in the request, the daemon will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
+
+| Request | Response |
+| ------- | -------- |
+| [`CreateChainSwapRequest`](#createchainswaprequest) | [`ChainSwapInfo`](#chainswapinfo) |
 
 #### CreateWallet
 
@@ -322,6 +338,115 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 
 
+#### ChainPair
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pair` | [`Pair`](#pair) |  |  |
+| `hash` | [`string`](#string) |  |  |
+| `rate` | [`float`](#float) |  |  |
+| `limits` | [`Limits`](#limits) |  |  |
+| `fees` | [`ChainPair.Fees`](#chainpair.fees) |  |  |
+
+
+
+
+
+#### ChainPair.Fees
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `percentage` | [`float`](#float) |  |  |
+| `miner_fees` | [`ChainPair.Fees.Miner`](#chainpair.fees.miner) |  |  |
+
+
+
+
+
+#### ChainPair.Fees.Miner
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `server` | [`uint64`](#uint64) |  |  |
+| `user` | [`ChainPair.Fees.User`](#chainpair.fees.user) |  |  |
+
+
+
+
+
+#### ChainPair.Fees.User
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `lockup` | [`uint64`](#uint64) |  |  |
+| `claim` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### ChainSwapData
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `currency` | [`Currency`](#currency) |  |  |
+| `private_key` | [`string`](#string) |  |  |
+| `their_public_key` | [`string`](#string) |  |  |
+| `amount` | [`int64`](#int64) |  |  |
+| `timeout_block_height` | [`uint32`](#uint32) |  |  |
+| `lockup_transaction_id` | [`string`](#string) | optional |  |
+| `transaction_id` | [`string`](#string) | optional |  |
+| `wallet_id` | [`int64`](#int64) | optional |  |
+| `address` | [`string`](#string) | optional |  |
+| `blinding_key` | [`string`](#string) | optional |  |
+| `lockup_address` | [`string`](#string) |  |  |
+
+
+
+
+
+#### ChainSwapInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
+| `state` | [`SwapState`](#swapstate) |  |  |
+| `error` | [`string`](#string) |  |  |
+| `status` | [`string`](#string) |  |  |
+| `preimage` | [`string`](#string) |  |  |
+| `is_auto` | [`bool`](#bool) |  |  |
+| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `service_fee_percent` | [`float`](#float) |  |  |
+| `onchain_fee` | [`uint64`](#uint64) | optional |  |
+| `created_at` | [`int64`](#int64) |  |  |
+| `entity_id` | [`int64`](#int64) | optional |  |
+| `from_data` | [`ChainSwapData`](#chainswapdata) |  |  |
+| `to_data` | [`ChainSwapData`](#chainswapdata) |  |  |
+
+
+
+
+
 #### ChangeWalletPasswordRequest
 
 
@@ -377,6 +502,26 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `swap` | [`SwapInfo`](#swapinfo) |  |  |
 | `channel_creation` | [`ChannelCreationInfo`](#channelcreationinfo) |  |  |
+
+
+
+
+
+#### CreateChainSwapRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `amount` | [`uint64`](#uint64) |  | Amount of satoshis to swap. It is the amount expected to be sent to the lockup address. |
+| `pair` | [`Pair`](#pair) |  |  |
+| `to_address` | [`string`](#string) | optional | Address where funds will be swept to if the swap succeeds |
+| `refund_address` | [`string`](#string) | optional | Address where the coins should be refunded to if the swap fails. |
+| `from_wallet_id` | [`int64`](#int64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
+| `to_wallet_id` | [`int64`](#int64) | optional | Wallet where the the funds will go if the swap succeeds. |
+| `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in Boltz. |
+| `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
 
 
 
@@ -609,6 +754,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `submarine` | [`SubmarinePair`](#submarinepair) | repeated |  |
 | `reverse` | [`ReversePair`](#reversepair) | repeated |  |
+| `chain` | [`ChainPair`](#chainpair) | repeated |  |
 
 
 
@@ -681,6 +827,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `swap` | [`SwapInfo`](#swapinfo) |  |  |
 | `channel_creation` | [`ChannelCreationInfo`](#channelcreationinfo) |  |  |
 | `reverse_swap` | [`ReverseSwapInfo`](#reverseswapinfo) |  |  |
+| `chain_swap` | [`ChainSwapInfo`](#chainswapinfo) |  |  |
 
 
 
@@ -830,6 +977,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `swaps` | [`SwapInfo`](#swapinfo) | repeated |  |
 | `channel_creations` | [`CombinedChannelSwapInfo`](#combinedchannelswapinfo) | repeated |  |
 | `reverse_swaps` | [`ReverseSwapInfo`](#reverseswapinfo) | repeated |  |
+| `chain_swaps` | [`ChainSwapInfo`](#chainswapinfo) | repeated |  |
 
 
 
@@ -1247,7 +1395,7 @@ Submarine Pair
 ### Methods
 #### GetSwapRecommendations
 
-Returns a list of swaps which are currently recommended by the autoswapper. Also works when the autoswapper is not running.
+Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
 
 | Request | Response |
 | ------- | -------- |
@@ -1255,7 +1403,7 @@ Returns a list of swaps which are currently recommended by the autoswapper. Also
 
 #### GetStatus
 
-Returns the current budget of the autoswapper and some relevant stats.
+Returns the current budget of autoswap and some relevant stats.
 
 | Request | Response |
 | ------- | -------- |
@@ -1271,7 +1419,7 @@ Resets the configuration to default values.
 
 #### SetConfig
 
-Allows setting multiple json-encoded config values at once. The autoswapper will reload the configuration after this call.
+Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
@@ -1279,7 +1427,7 @@ Allows setting multiple json-encoded config values at once. The autoswapper will
 
 #### SetConfigValue
 
-Allows setting a specific value in the configuration. The autoswapper will reload the configuration after this call.
+Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |

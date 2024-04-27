@@ -21,6 +21,9 @@ const (
 	TransactionConfirmed
 	TransactionLockupFailed
 	TransactionClaimPending
+
+	TransactionServerMempoool
+	TransactionServerConfirmed
 )
 
 var swapUpdateEventStrings = map[string]SwapUpdateEvent{
@@ -35,13 +38,15 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 
 	"channel.created": ChannelCreated,
 
-	"transaction.failed":        TransactionFailed,
-	"transaction.mempool":       TransactionMempool,
-	"transaction.claimed":       TransactionClaimed,
-	"transaction.refunded":      TransactionRefunded,
-	"transaction.confirmed":     TransactionConfirmed,
-	"transaction.lockupFailed":  TransactionLockupFailed,
-	"transaction.claim.pending": TransactionClaimPending,
+	"transaction.failed":           TransactionFailed,
+	"transaction.mempool":          TransactionMempool,
+	"transaction.claimed":          TransactionClaimed,
+	"transaction.refunded":         TransactionRefunded,
+	"transaction.confirmed":        TransactionConfirmed,
+	"transaction.lockupFailed":     TransactionLockupFailed,
+	"transaction.claim.pending":    TransactionClaimPending,
+	"transaction.server.mempool":   TransactionServerMempoool,
+	"transaction.server.confirmed": TransactionServerConfirmed,
 }
 
 var CompletedStatus = []string{

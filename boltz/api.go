@@ -22,7 +22,10 @@ type SwapType string
 const (
 	NormalSwap  SwapType = "submarine"
 	ReverseSwap SwapType = "reverse"
+	ChainSwap   SwapType = "chain"
 )
+
+var ErrPartialSignaturesDisabled = errors.New("partial signatures are disabled")
 
 func ParseSwapType(swapType string) (SwapType, error) {
 	switch strings.ToLower(swapType) {
@@ -91,6 +94,28 @@ type ReversePair struct {
 
 type ReversePairs map[Currency]map[Currency]ReversePair
 
+type ChainPair struct {
+	Hash   string  `json:"hash"`
+	Rate   float64 `json:"rate"`
+	Limits struct {
+		Minimal               uint64 `json:"minimal"`
+		Maximal               uint64 `json:"maximal"`
+		MaximalZeroConfAmount uint64 `json:"maximalZeroConfAmount"`
+	} `json:"limits"`
+	Fees struct {
+		Percentage float64 `json:"percentage"`
+		MinerFees  struct {
+			Server uint64 `json:"server"`
+			User   struct {
+				Claim  uint64 `json:"claim"`
+				Lockup uint64 `json:"lockup"`
+			} `json:"user"`
+		} `json:"minerFees"`
+	} `json:"fees"`
+}
+
+type ChainPairs map[Currency]map[Currency]ChainPair
+
 type symbolMinerFees struct {
 	Normal  uint64 `json:"normal"`
 	Reverse struct {
@@ -147,6 +172,20 @@ type GetSwapTransactionResponse struct {
 	Error string `json:"error"`
 }
 
+type ChainSwapTransaction struct {
+	Transaction struct {
+		Id  string `json:"id"`
+		Hex string `json:"hex"`
+	} `json:"transaction"`
+}
+
+type GetChainSwapTransactionsResponse struct {
+	UserLock   *ChainSwapTransaction `json:"userLock"`
+	ServerLock *ChainSwapTransaction `json:"serverLock"`
+
+	Error string `json:"error"`
+}
+
 type GetTransactionRequest struct {
 	Currency      string `json:"currency"`
 	TransactionId string `json:"transactionId"`
@@ -197,8 +236,7 @@ type CreateSwapResponse struct {
 	Error string `json:"error"`
 }
 
-type RefundSwapRequest struct {
-	Id          string    `json:"id"`
+type RefundRequest struct {
 	PubNonce    HexString `json:"pubNonce"`
 	Transaction string    `json:"transaction"`
 	Index       int       `json:"index"`
@@ -209,6 +247,22 @@ type SwapClaimDetails struct {
 	TransactionHash HexString `json:"transactionHash"`
 	Preimage        HexString `json:"preimage"`
 	PublicKey       HexString `json:"publicKey"`
+
+	Error string `json:"error"`
+}
+
+type ChainSwapSigningDetails struct {
+	PubNonce        HexString `json:"pubNonce"`
+	TransactionHash HexString `json:"transactionHash"`
+	PublicKey       HexString `json:"publicKey"`
+
+	Error string `json:"error"`
+}
+
+type ChainSwapSigningRequest struct {
+	Preimage  HexString         `json:"preimage"`
+	Signature *PartialSignature `json:"signature"`
+	ToSign    *ClaimRequest     `json:"toSign"`
 
 	Error string `json:"error"`
 }
@@ -251,12 +305,41 @@ type CreateReverseSwapResponse struct {
 
 	Error string `json:"error"`
 }
-type ClaimReverseSwapRequest struct {
-	Id          string    `json:"id"`
+type ClaimRequest struct {
 	Preimage    HexString `json:"preimage"`
 	PubNonce    HexString `json:"pubNonce"`
 	Transaction string    `json:"transaction"`
 	Index       int       `json:"index"`
+}
+
+type ChainRequest struct {
+	From             Currency  `json:"from"`
+	To               Currency  `json:"to"`
+	PreimageHash     HexString `json:"preimageHash"`
+	ClaimPublicKey   HexString `json:"claimPublicKey,omitempty"`
+	RefundPublicKey  HexString `json:"refundPublicKey,omitempty"`
+	UserLockAmount   uint64    `json:"userLockAmount,omitempty"`
+	ServerLockAmount uint64    `json:"serverLockAmount,omitempty"`
+	PairHash         string    `json:"pairHash,omitempty"`
+	ReferralId       string    `json:"referralId,omitempty"`
+}
+
+type ChainResponse struct {
+	Id            string         `json:"id"`
+	ClaimDetails  *ChainSwapData `json:"claimDetails,omitempty"`
+	LockupDetails *ChainSwapData `json:"lockupDetails,omitempty"`
+
+	Error string `json:"error"`
+}
+
+type ChainSwapData struct {
+	SwapTree           *SerializedTree `json:"swapTree,omitempty"`
+	LockupAddress      string          `json:"lockupAddress"`
+	ServerPublicKey    HexString       `json:"serverPublicKey,omitempty"`
+	TimeoutBlockHeight uint32          `json:"timeoutBlockHeight"`
+	Amount             uint64          `json:"amount"`
+	BlindingKey        HexString       `json:"blindingKey,omitempty"`
+	Bip21              string          `json:"bip21,omitempty"`
 }
 
 type PartialSignature struct {
@@ -303,6 +386,12 @@ func (boltz *Boltz) GetReversePairs() (response ReversePairs, err error) {
 	return response, err
 }
 
+func (boltz *Boltz) GetChainPairs() (response ChainPairs, err error) {
+	err = boltz.sendGetRequest("/v2/swap/chain", &response)
+
+	return response, err
+}
+
 func (boltz *Boltz) GetNodes() (Nodes, error) {
 	var response Nodes
 	err := boltz.sendGetRequest("/v2/nodes", &response)
@@ -326,6 +415,18 @@ func (boltz *Boltz) GetSwapTransaction(id string) (*GetSwapTransactionResponse, 
 	err := boltz.sendPostRequest("/getswaptransaction", GetSwapTransactionRequest{
 		Id: id,
 	}, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) GetChainSwapTransactions(id string) (*GetChainSwapTransactionsResponse, error) {
+	var response GetChainSwapTransactionsResponse
+	path := fmt.Sprintf("/v2/swap/chain/%s/transactions", id)
+	err := boltz.sendGetRequest(path, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -379,12 +480,12 @@ func (boltz *Boltz) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, 
 	return &response, err
 }
 
-func (boltz *Boltz) RefundSwap(request RefundSwapRequest) (*PartialSignature, error) {
+func (boltz *Boltz) RefundSwap(swapId string, request *RefundRequest) (*PartialSignature, error) {
 	if boltz.DisablePartialSignatures {
-		return nil, errors.New("partial signatures are disabled")
+		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest("/v2/swap/submarine/refund", request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/refund", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -406,7 +507,7 @@ func (boltz *Boltz) GetInvoiceAmount(swapId string) (*GetInvoiceAmountResponse, 
 
 func (boltz *Boltz) GetSwapClaimDetails(swapId string) (*SwapClaimDetails, error) {
 	if boltz.DisablePartialSignatures {
-		return nil, errors.New("partial signatures are disabled")
+		return nil, ErrPartialSignaturesDisabled
 	}
 	var response SwapClaimDetails
 	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/submarine/%s/claim", swapId), &response)
@@ -451,12 +552,65 @@ func (boltz *Boltz) CreateReverseSwap(request CreateReverseSwapRequest) (*Create
 	return &response, err
 }
 
-func (boltz *Boltz) ClaimReverseSwap(request ClaimReverseSwapRequest) (*PartialSignature, error) {
+func (boltz *Boltz) ClaimReverseSwap(swapId string, request *ClaimRequest) (*PartialSignature, error) {
 	if boltz.DisablePartialSignatures {
-		return nil, errors.New("partial signatures are disabled")
+		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest("/v2/swap/reverse/claim", request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/reverse/%s/claim", swapId), request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) CreateChainSwap(request ChainRequest) (*ChainResponse, error) {
+	var response ChainResponse
+	err := boltz.sendPostRequest("/v2/swap/chain", request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) GetChainSwapClaimDetails(swapId string) (*ChainSwapSigningDetails, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, ErrPartialSignaturesDisabled
+	}
+	var response ChainSwapSigningDetails
+	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/chain/%s/claim", swapId), &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) ExchangeChainSwapClaimSignature(swapId string, request *ChainSwapSigningRequest) (*PartialSignature, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, ErrPartialSignaturesDisabled
+	}
+	var response PartialSignature
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/claim", swapId), request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Boltz) RefundChainSwap(swapId string, request *RefundRequest) (*PartialSignature, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, ErrPartialSignaturesDisabled
+	}
+	var response PartialSignature
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/refund", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))

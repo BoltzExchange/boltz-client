@@ -73,10 +73,13 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 		return nil, nil, err
 	}
 	if balance.Confirmed == 0 {
-		if currency == boltz.CurrencyBtc {
-			BtcCli("sendtoaddress " + addr + " 1")
-		} else {
-			LiquidCli("sendtoaddress " + addr + " 1")
+		// gdk takes a bit to sync, so make sure we have plenty of utxos available
+		for i := 0; i < 10; i++ {
+			if currency == boltz.CurrencyBtc {
+				SendToAddress(BtcCli, addr, 10000000)
+			} else {
+				SendToAddress(LiquidCli, addr, 10000000)
+			}
 		}
 		MineBlock()
 		ticker := time.NewTicker(1 * time.Second)

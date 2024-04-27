@@ -73,6 +73,10 @@ var (
 			Entity: "info",
 			Action: "read",
 		}},
+		"/boltzrpc.Boltz/GetChainPair": {{
+			Entity: "info",
+			Action: "read",
+		}},
 		"/boltzrpc.Boltz/GetPairs": {{
 			Entity: "info",
 			Action: "read",
@@ -94,6 +98,10 @@ var (
 			Action: "write",
 		}},
 		"/boltzrpc.Boltz/CreateSwap": {{
+			Entity: "swap",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/CreateChainSwap": {{
 			Entity: "swap",
 			Action: "write",
 		}},

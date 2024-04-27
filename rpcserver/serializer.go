@@ -116,6 +116,49 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 	}
 }
 
+func serializeChainSwap(chainSwap *database.ChainSwap) *boltzrpc.ChainSwapInfo {
+	if chainSwap == nil {
+		return nil
+	}
+	serializedchainSwap := chainSwap.Serialize()
+
+	return &boltzrpc.ChainSwapInfo{
+		Id:         serializedchainSwap.Id,
+		Pair:       serializePair(chainSwap.Pair),
+		State:      chainSwap.State,
+		Error:      serializedchainSwap.Error,
+		Status:     serializedchainSwap.Status,
+		Preimage:   serializedchainSwap.Preimage,
+		CreatedAt:  serializeTime(chainSwap.CreatedAt),
+		ServiceFee: serializedchainSwap.ServiceFee,
+		OnchainFee: serializedchainSwap.OnchainFee,
+		FromData:   serializeChainSwapData(chainSwap.FromData),
+		ToData:     serializeChainSwapData(chainSwap.ToData),
+		EntityId:   chainSwap.EntityId,
+	}
+}
+
+func serializeChainSwapData(chainSwap *database.ChainSwapData) *boltzrpc.ChainSwapData {
+	if chainSwap == nil {
+		return nil
+	}
+	serializedChainSwap := chainSwap.Serialize()
+
+	return &boltzrpc.ChainSwapData{
+		Id:                  serializedChainSwap.Id,
+		Currency:            serializeCurrency(chainSwap.Currency),
+		PrivateKey:          serializedChainSwap.PrivateKey,
+		TimeoutBlockHeight:  serializedChainSwap.TimeoutBlockHeight,
+		Address:             serializeOptionalString(serializedChainSwap.Address),
+		Amount:              int64(serializedChainSwap.Amount),
+		LockupTransactionId: serializeOptionalString(serializedChainSwap.LockupTransactionId),
+		TransactionId:       serializeOptionalString(serializedChainSwap.TransactionId),
+		BlindingKey:         serializeOptionalString(serializedChainSwap.BlindingKey),
+		LockupAddress:       serializedChainSwap.LockupAddress,
+		WalletId:            serializedChainSwap.WalletId,
+	}
+}
+
 func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair) *boltzrpc.SubmarinePair {
 	return &boltzrpc.SubmarinePair{
 		Pair: serializePair(pair),
@@ -143,6 +186,28 @@ func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *bolt
 			MinerFees: &boltzrpc.ReversePair_Fees_MinerFees{
 				Lockup: reversePair.Fees.MinerFees.Lockup,
 				Claim:  reversePair.Fees.MinerFees.Claim,
+			},
+		},
+		Limits: &boltzrpc.Limits{
+			Minimal: reversePair.Limits.Minimal,
+			Maximal: reversePair.Limits.Maximal,
+		},
+	}
+}
+
+func serializeChainPair(pair boltz.Pair, reversePair *boltz.ChainPair) *boltzrpc.ChainPair {
+	return &boltzrpc.ChainPair{
+		Pair: serializePair(pair),
+		Hash: reversePair.Hash,
+		Rate: float32(reversePair.Rate),
+		Fees: &boltzrpc.ChainPair_Fees{
+			Percentage: float32(reversePair.Fees.Percentage),
+			MinerFees: &boltzrpc.ChainPair_Fees_Miner{
+				Server: reversePair.Fees.MinerFees.Server,
+				User: &boltzrpc.ChainPair_Fees_User{
+					Lockup: reversePair.Fees.MinerFees.User.Lockup,
+					Claim:  reversePair.Fees.MinerFees.User.Claim,
+				},
 			},
 		},
 		Limits: &boltzrpc.Limits{

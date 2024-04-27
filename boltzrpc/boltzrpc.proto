@@ -29,18 +29,23 @@ service Boltz {
     rpc GetReversePair (Pair) returns (ReversePair);
 
     /*
+    Fetches information about a specific pair for a chain swap.
+    */
+    rpc GetChainPair (Pair) returns (ChainPair);
+
+    /*
     Fetches all available pairs for submarine and reverse swaps.
     */
     rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
 
     /*
-    Returns a list of all swaps, reverse swaps and channel creations in the database.
+    Returns a list of all swaps, reverse swaps, and chain swaps in the database.
     */
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
 
     /*
-    Refund a failed swap manually. 
-    This is only required when no refund address has been set or the daemon has no wallet for the currency.
+    Refund a failed swap manually.
+    This is only required when no refund address has been set or the swap does not have an associated wallet.
     */
     rpc RefundSwap (RefundSwapRequest) returns (GetSwapInfoResponse);
 
@@ -79,6 +84,12 @@ service Boltz {
     will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
     */
     rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
+
+    /*
+    Creates a new chain swap from one chain to another. If `accept_zero_conf` is set to true in the request, the daemon
+    will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
+    */
+    rpc CreateChainSwap (CreateChainSwapRequest) returns (ChainSwapInfo);
 
     /*
     Creates a new liquid wallet and returns the mnemonic.
@@ -368,9 +379,31 @@ message ReversePair {
     Fees fees = 5;
 }
 
+message ChainPair {
+    message Fees {
+        message User {
+            uint64 lockup = 1;
+            uint64 claim = 2;
+        }
+        message Miner {
+            uint64 server = 1;
+            User user = 2;
+        }
+        float percentage = 1;
+        Miner miner_fees = 2;
+    }
+
+    Pair pair = 1;
+    string hash = 2;
+    float rate = 3;
+    Limits limits = 4;
+    Fees fees = 5;
+}
+
 message GetPairsResponse {
     repeated SubmarinePair submarine = 1;
     repeated ReversePair reverse = 2;
+    repeated ChainPair chain = 3;
 }
 
 message MinerFees {
@@ -400,6 +433,7 @@ message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
     repeated CombinedChannelSwapInfo channel_creations = 2;
     repeated ReverseSwapInfo reverse_swaps = 3;
+    repeated ChainSwapInfo chain_swaps = 4;
 }
 message RefundSwapRequest {
     string id = 1;
@@ -412,8 +446,8 @@ message GetSwapInfoRequest {
 message GetSwapInfoResponse {
     SwapInfo swap = 1;
     ChannelCreationInfo channel_creation = 2;
-
     ReverseSwapInfo reverse_swap = 3;
+    ChainSwapInfo chain_swap = 4;
 }
 
 message DepositRequest {
@@ -495,6 +529,58 @@ message CreateReverseSwapResponse {
     optional string claim_transaction_id = 4;
     // Invoice to be paid. Only populated when `external_pay` is set to true
     optional string invoice = 5;
+}
+
+message CreateChainSwapRequest {
+    // Amount of satoshis to swap. It is the amount expected to be sent to the lockup address.
+    uint64 amount = 1;
+    Pair pair = 2;
+    // Address where funds will be swept to if the swap succeeds
+    optional string to_address = 3;
+    // Address where the coins should be refunded to if the swap fails.
+    optional string refund_address = 4;
+    // Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true.
+    // If the swap fails, funds will be refunded to this wallet aswell.
+    optional int64 from_wallet_id = 5;
+    // Wallet where the the funds will go if the swap succeeds.
+    optional int64 to_wallet_id = 6;
+    // Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool.
+    // Should only be used for smaller amounts as it involves trust in Boltz.
+    optional bool accept_zero_conf = 7;
+    // If set, the daemon will not pay the swap from an internal wallet.
+    optional bool external_pay = 8;
+}
+
+message ChainSwapInfo {
+    string id = 1;
+    Pair pair = 2;
+    SwapState state = 3;
+    string error = 4;
+    string status = 5;
+    string preimage = 6;
+    bool is_auto = 8;
+    optional uint64 service_fee = 9;
+    float service_fee_percent = 10;
+    optional uint64 onchain_fee = 11;
+    int64 created_at = 12;
+    optional int64 entity_id = 13;
+    ChainSwapData from_data = 14;
+    ChainSwapData to_data = 15;
+}
+
+message ChainSwapData {
+    string id = 1;
+    Currency currency = 2;
+    string private_key = 3;
+    string their_public_key = 4;
+    int64 amount = 6;
+    uint32 timeout_block_height = 7;
+    optional string lockup_transaction_id = 8;
+    optional string transaction_id = 9;
+    optional int64 wallet_id = 20;
+    optional string address = 12;
+    optional string blinding_key = 13;
+    string lockup_address = 14;
 }
 
 message ChannelId {

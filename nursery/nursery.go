@@ -1,7 +1,9 @@
 package nursery
 
 import (
+	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"strconv"
 	"sync"
 	"time"
@@ -40,6 +42,7 @@ const retryInterval = 15
 type SwapUpdate struct {
 	Swap        *database.Swap
 	ReverseSwap *database.ReverseSwap
+	ChainSwap   *database.ChainSwap
 	IsFinal     bool
 }
 
@@ -150,12 +153,20 @@ func (nursery *Nursery) recoverPending() error {
 		return err
 	}
 
+	chainSwaps, err := nursery.database.QueryPendingChainSwaps()
+	if err != nil {
+		return err
+	}
+
 	var swapIds []string
 	for _, swap := range swaps {
 		swapIds = append(swapIds, swap.Id)
 	}
 	for _, reverseSwap := range reverseSwaps {
 		swapIds = append(swapIds, reverseSwap.Id)
+	}
+	for _, chainSwap := range chainSwaps {
+		swapIds = append(swapIds, chainSwap.Id)
 	}
 
 	return nursery.boltzWs.Subscribe(swapIds)
@@ -170,9 +181,9 @@ func (nursery *Nursery) startSwapListener() {
 		for status := range nursery.boltzWs.Updates {
 			logger.Infof("Swap %s status update: %s", status.Id, status.Status)
 
-			swap, reverseSwap, err := nursery.database.QueryAnySwap(status.Id)
+			swap, reverseSwap, chainSwap, err := nursery.database.QueryAnySwap(status.Id)
 			if err != nil {
-				logger.Errorf("Could not query swap %s: %v", status.Id, status.Status)
+				logger.Errorf("Could not query swap %s: %v", status.Id, err)
 				continue
 			}
 			if status.Error != "" {
@@ -183,6 +194,8 @@ func (nursery *Nursery) startSwapListener() {
 				nursery.handleSwapStatus(swap, status.SwapStatusResponse)
 			} else if reverseSwap != nil {
 				nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
+			} else if chainSwap != nil {
+				nursery.handleChainSwapStatus(chainSwap, status.SwapStatusResponse)
 			}
 		}
 		nursery.waitGroup.Done()
@@ -247,17 +260,117 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []boltz.OutputDetails, feeSatPerVbyte float64) (string, uint64, error) {
-	transaction, fee, err := boltz.ConstructTransaction(nursery.network, currency, outputs, feeSatPerVbyte, nursery.boltz)
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (string, error) {
+	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
 	if err != nil {
-		return "", 0, fmt.Errorf("construct transaction: %v", err)
+		return "", errors.New("Could not get fee estimation: " + err.Error())
+	}
+
+	logger.Infof("Using fee of %v sat/vbyte for transaction", feeSatPerVbyte)
+
+	valid, details := nursery.populateOutputs(outputs)
+	if len(valid) == 0 {
+		return "", errors.New("all outputs invalid")
+	}
+
+	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
+	for _, output := range valid {
+		result := results[output.SwapId]
+		if result.Err != nil {
+			logger.Errorf("Could not spend output for %s swap %s: %s", output.SwapType, output.SwapId, result.Err)
+		}
+	}
+	if err != nil {
+		return "", fmt.Errorf("construct transaction: %v", err)
 	}
 
 	response, err := nursery.boltz.BroadcastTransaction(transaction)
 	if err != nil {
-		return "", 0, fmt.Errorf("broadcast transaction: %v", err)
+		return "", fmt.Errorf("broadcast transaction: %v", err)
 	}
-	logger.Info("Broadcast transaction with Boltz API")
+	logger.Infof("Broadcast transaction: %s", response.TransactionId)
 
-	return response.TransactionId, fee, nil
+	id := response.TransactionId
+
+	for _, output := range valid {
+		result := results[output.SwapId]
+		if result.Err == nil {
+			if err := output.setTransaction(id, result.Fee); err != nil {
+				logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
+				continue
+			}
+		}
+	}
+
+	return id, nil
+}
+
+func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
+	addresses := make(map[int64]string)
+	for _, output := range outputs {
+		handleErr := func(err error) {
+			verb := "claim"
+			if output.IsRefund() {
+				verb = "refund"
+			}
+			logger.Warnf("swap %s can not be %sed automatically: %s", output.SwapId, verb, err)
+		}
+		if output.Address == "" {
+			if output.walletId == nil {
+				handleErr(errors.New("no address or wallet set"))
+				continue
+			}
+			walletId := *output.walletId
+			address, ok := addresses[walletId]
+			if !ok {
+				wallet, err := nursery.onchain.GetWalletById(walletId)
+				if err != nil {
+					handleErr(fmt.Errorf("wallet with id %d could not be found", walletId))
+					continue
+				}
+				address, err = wallet.NewAddress()
+				if err != nil {
+					handleErr(fmt.Errorf("could not get address from wallet %s", wallet.GetWalletInfo().Name))
+					continue
+				}
+				addresses[walletId] = address
+			}
+			output.Address = address
+		}
+		var err error
+		output.LockupTransaction, output.Vout, _, err = nursery.findVout(output.voutInfo)
+		if err != nil {
+			handleErr(err)
+			continue
+		}
+		valid = append(valid, output)
+		details = append(details, *output.OutputDetails)
+	}
+	return valid, details
+}
+
+type voutInfo struct {
+	transactionId  string
+	currency       boltz.Currency
+	address        string
+	blindingKey    *btcec.PrivateKey
+	expectedAmount uint64
+}
+
+func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
+	lockupTransaction, err := nursery.onchain.GetTransaction(info.currency, info.transactionId, info.blindingKey)
+	if err != nil {
+		return nil, 0, 0, errors.New("Could not decode lockup transaction: " + err.Error())
+	}
+
+	vout, value, err := lockupTransaction.FindVout(nursery.network, info.address)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	if info.expectedAmount != 0 && value < info.expectedAmount {
+		return nil, 0, 0, errors.New("locked up less onchain coins than expected")
+	}
+
+	return lockupTransaction, vout, value, nil
 }

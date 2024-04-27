@@ -24,6 +24,7 @@ const (
 	Boltz_GetServiceInfo_FullMethodName       = "/boltzrpc.Boltz/GetServiceInfo"
 	Boltz_GetSubmarinePair_FullMethodName     = "/boltzrpc.Boltz/GetSubmarinePair"
 	Boltz_GetReversePair_FullMethodName       = "/boltzrpc.Boltz/GetReversePair"
+	Boltz_GetChainPair_FullMethodName         = "/boltzrpc.Boltz/GetChainPair"
 	Boltz_GetPairs_FullMethodName             = "/boltzrpc.Boltz/GetPairs"
 	Boltz_ListSwaps_FullMethodName            = "/boltzrpc.Boltz/ListSwaps"
 	Boltz_RefundSwap_FullMethodName           = "/boltzrpc.Boltz/RefundSwap"
@@ -33,6 +34,7 @@ const (
 	Boltz_CreateSwap_FullMethodName           = "/boltzrpc.Boltz/CreateSwap"
 	Boltz_CreateChannel_FullMethodName        = "/boltzrpc.Boltz/CreateChannel"
 	Boltz_CreateReverseSwap_FullMethodName    = "/boltzrpc.Boltz/CreateReverseSwap"
+	Boltz_CreateChainSwap_FullMethodName      = "/boltzrpc.Boltz/CreateChainSwap"
 	Boltz_CreateWallet_FullMethodName         = "/boltzrpc.Boltz/CreateWallet"
 	Boltz_ImportWallet_FullMethodName         = "/boltzrpc.Boltz/ImportWallet"
 	Boltz_SetSubaccount_FullMethodName        = "/boltzrpc.Boltz/SetSubaccount"
@@ -66,12 +68,14 @@ type BoltzClient interface {
 	GetSubmarinePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*SubmarinePair, error)
 	// Fetches information about a specific pair for a reverse swap.
 	GetReversePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ReversePair, error)
+	// Fetches information about a specific pair for a chain swap.
+	GetChainPair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ChainPair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
-	// Returns a list of all swaps, reverse swaps and channel creations in the database.
+	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
-	// This is only required when no refund address has been set or the daemon has no wallet for the currency.
+	// This is only required when no refund address has been set or the swap does not have an associated wallet.
 	RefundSwap(ctx context.Context, in *RefundSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(ctx context.Context, in *GetSwapInfoRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
@@ -95,6 +99,9 @@ type BoltzClient interface {
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error)
+	// Creates a new chain swap from one chain to another. If `accept_zero_conf` is set to true in the request, the daemon
+	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
+	CreateChainSwap(ctx context.Context, in *CreateChainSwapRequest, opts ...grpc.CallOption) (*ChainSwapInfo, error)
 	// Creates a new liquid wallet and returns the mnemonic.
 	CreateWallet(ctx context.Context, in *CreateWalletRequest, opts ...grpc.CallOption) (*WalletCredentials, error)
 	// Imports an existing wallet.
@@ -171,6 +178,15 @@ func (c *boltzClient) GetSubmarinePair(ctx context.Context, in *Pair, opts ...gr
 func (c *boltzClient) GetReversePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ReversePair, error) {
 	out := new(ReversePair)
 	err := c.cc.Invoke(ctx, Boltz_GetReversePair_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetChainPair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ChainPair, error) {
+	out := new(ChainPair)
+	err := c.cc.Invoke(ctx, Boltz_GetChainPair_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -277,6 +293,15 @@ func (c *boltzClient) CreateChannel(ctx context.Context, in *CreateChannelReques
 func (c *boltzClient) CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error) {
 	out := new(CreateReverseSwapResponse)
 	err := c.cc.Invoke(ctx, Boltz_CreateReverseSwap_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) CreateChainSwap(ctx context.Context, in *CreateChainSwapRequest, opts ...grpc.CallOption) (*ChainSwapInfo, error) {
+	out := new(ChainSwapInfo)
+	err := c.cc.Invoke(ctx, Boltz_CreateChainSwap_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -442,12 +467,14 @@ type BoltzServer interface {
 	GetSubmarinePair(context.Context, *Pair) (*SubmarinePair, error)
 	// Fetches information about a specific pair for a reverse swap.
 	GetReversePair(context.Context, *Pair) (*ReversePair, error)
+	// Fetches information about a specific pair for a chain swap.
+	GetChainPair(context.Context, *Pair) (*ChainPair, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(context.Context, *empty.Empty) (*GetPairsResponse, error)
-	// Returns a list of all swaps, reverse swaps and channel creations in the database.
+	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
-	// This is only required when no refund address has been set or the daemon has no wallet for the currency.
+	// This is only required when no refund address has been set or the swap does not have an associated wallet.
 	RefundSwap(context.Context, *RefundSwapRequest) (*GetSwapInfoResponse, error)
 	// Gets all available information about a swap from the database.
 	GetSwapInfo(context.Context, *GetSwapInfoRequest) (*GetSwapInfoResponse, error)
@@ -471,6 +498,9 @@ type BoltzServer interface {
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error)
+	// Creates a new chain swap from one chain to another. If `accept_zero_conf` is set to true in the request, the daemon
+	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
+	CreateChainSwap(context.Context, *CreateChainSwapRequest) (*ChainSwapInfo, error)
 	// Creates a new liquid wallet and returns the mnemonic.
 	CreateWallet(context.Context, *CreateWalletRequest) (*WalletCredentials, error)
 	// Imports an existing wallet.
@@ -525,6 +555,9 @@ func (UnimplementedBoltzServer) GetSubmarinePair(context.Context, *Pair) (*Subma
 func (UnimplementedBoltzServer) GetReversePair(context.Context, *Pair) (*ReversePair, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReversePair not implemented")
 }
+func (UnimplementedBoltzServer) GetChainPair(context.Context, *Pair) (*ChainPair, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetChainPair not implemented")
+}
 func (UnimplementedBoltzServer) GetPairs(context.Context, *empty.Empty) (*GetPairsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPairs not implemented")
 }
@@ -551,6 +584,9 @@ func (UnimplementedBoltzServer) CreateChannel(context.Context, *CreateChannelReq
 }
 func (UnimplementedBoltzServer) CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateReverseSwap not implemented")
+}
+func (UnimplementedBoltzServer) CreateChainSwap(context.Context, *CreateChainSwapRequest) (*ChainSwapInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateChainSwap not implemented")
 }
 func (UnimplementedBoltzServer) CreateWallet(context.Context, *CreateWalletRequest) (*WalletCredentials, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateWallet not implemented")
@@ -681,6 +717,24 @@ func _Boltz_GetReversePair_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).GetReversePair(ctx, req.(*Pair))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetChainPair_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Pair)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetChainPair(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetChainPair_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetChainPair(ctx, req.(*Pair))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -846,6 +900,24 @@ func _Boltz_CreateReverseSwap_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).CreateReverseSwap(ctx, req.(*CreateReverseSwapRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_CreateChainSwap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateChainSwapRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).CreateChainSwap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_CreateChainSwap_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).CreateChainSwap(ctx, req.(*CreateChainSwapRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1162,6 +1234,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Boltz_GetReversePair_Handler,
 		},
 		{
+			MethodName: "GetChainPair",
+			Handler:    _Boltz_GetChainPair_Handler,
+		},
+		{
 			MethodName: "GetPairs",
 			Handler:    _Boltz_GetPairs_Handler,
 		},
@@ -1192,6 +1268,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateReverseSwap",
 			Handler:    _Boltz_CreateReverseSwap_Handler,
+		},
+		{
+			MethodName: "CreateChainSwap",
+			Handler:    _Boltz_CreateChainSwap_Handler,
 		},
 		{
 			MethodName: "CreateWallet",
