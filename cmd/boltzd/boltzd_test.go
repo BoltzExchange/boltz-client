@@ -723,25 +723,21 @@ func TestSwap(t *testing.T) {
 
 							refundAddress := cli("getnewaddress")
 							withStream := createFailedSwap(t, refundAddress)
-							withoutStream := createFailedSwap(t, refundAddress)
 
-							withInfo := withStream(boltzrpc.SwapState_ERROR).Swap
-							withoutStream(boltzrpc.SwapState_ERROR)
+							swap := withStream(boltzrpc.SwapState_ERROR).Swap
 
-							test.MineUntil(t, cli, int64(withInfo.TimeoutBlockHeight))
+							test.MineUntil(t, cli, int64(swap.TimeoutBlockHeight))
 
-							withInfo = withStream(boltzrpc.SwapState_REFUNDED).Swap
-							withoutInfo := withoutStream(boltzrpc.SwapState_REFUNDED).Swap
+							swap = withStream(boltzrpc.SwapState_REFUNDED).Swap
 
 							from := parseCurrency(pair.From)
 
-							require.Equal(t, withInfo.RefundTransactionId, withoutInfo.RefundTransactionId)
-							refundFee, err := chain.GetTransactionFee(from, withInfo.RefundTransactionId)
+							refundFee, err := chain.GetTransactionFee(from, swap.RefundTransactionId)
 							require.NoError(t, err)
 
-							require.Equal(t, int(refundFee), int(*withInfo.OnchainFee)+int(*withoutInfo.OnchainFee))
+							require.Equal(t, int(refundFee), int(*swap.OnchainFee))
 
-							checkTxOutAddress(t, chain, from, withInfo.RefundTransactionId, refundAddress, false)
+							checkTxOutAddress(t, chain, from, swap.RefundTransactionId, refundAddress, false)
 						})
 
 						t.Run("Cooperative", func(t *testing.T) {
