@@ -3,12 +3,12 @@
 package wallet_test
 
 import (
-	"fmt"
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	onchainWallet "github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/test"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -33,8 +33,13 @@ func TestBalance(t *testing.T) {
 }
 func TestSend(t *testing.T) {
 	txid, err := wallet.SendToAddress(test.BtcCli("getnewaddress"), 10000, 1)
-	fmt.Println(txid)
 	require.NoError(t, err)
+	rawTx := test.BtcCli("getrawtransaction " + txid)
+	tx, err := boltz.NewBtcTxFromHex(rawTx)
+	require.NoError(t, err)
+	for _, txIn := range tx.MsgTx().TxIn {
+		require.Equalf(t, wire.MaxTxInSequenceNum-1, txIn.Sequence, "rbf should be disabled")
+	}
 	test.MineBlock()
 }
 

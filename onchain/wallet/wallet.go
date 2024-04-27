@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/wire"
 	"strings"
 	"time"
 	"unsafe"
@@ -572,10 +573,17 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	var handler AuthHandler
 
 	var outputs struct {
-		Unspent any `json:"unspent_outputs"`
+		Unspent map[string][]map[string]any `json:"unspent_outputs"`
 	}
 	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, &handler), handler, &outputs); err != nil {
 		return "", err
+	}
+
+	// disable RBF
+	for _, outputs := range outputs.Unspent {
+		for _, output := range outputs {
+			output["sequence"] = wire.MaxTxInSequenceNum - 1
+		}
 	}
 
 	asset := ""
