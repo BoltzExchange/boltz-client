@@ -15,8 +15,8 @@ func (p Percentage) Ratio() float64 {
 	return float64(p / 100)
 }
 
-func (p Percentage) Calculate(value float64) float64 {
-	return value * p.Ratio()
+func (p Percentage) Calculate(value uint64) uint64 {
+	return uint64(float64(value) * p.Ratio())
 }
 
 func (p *Percentage) UnmarshalJSON(text []byte) error {

@@ -284,7 +284,7 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 	var err error
 	if recommendation.Type == boltz.ReverseSwap {
 		err = swapper.ExecuteReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-			Amount:         int64(recommendation.Amount),
+			Amount:         recommendation.Amount,
 			Address:        address,
 			AcceptZeroConf: swapper.cfg.AcceptZeroConf,
 			Pair:           pair,
@@ -293,7 +293,7 @@ func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address 
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
 		err = swapper.ExecuteSwap(&boltzrpc.CreateSwapRequest{
-			Amount: int64(recommendation.Amount),
+			Amount: recommendation.Amount,
 			Pair:   pair,
 			//ChanIds:          chanIds,
 			SendFromInternal: true,

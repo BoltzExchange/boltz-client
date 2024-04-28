@@ -56,7 +56,7 @@ func (b Balance) Get(capacity uint64) uint64 {
 	if b.IsAbsolute() {
 		return b.Absolute
 	}
-	return uint64(b.Relative.Calculate(float64(capacity)))
+	return b.Relative.Calculate(capacity)
 }
 
 func (b Balance) String() string {

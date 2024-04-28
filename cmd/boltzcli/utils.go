@@ -60,8 +60,8 @@ func optionalInt[V constraints.Integer](value *V) string {
 	return strconv.Itoa(int(*value))
 }
 
-func parseInt64(value string, name string) int64 {
-	parsed, err := strconv.ParseInt(value, 10, 64)
+func parseUint64(value string, name string) uint64 {
+	parsed, err := strconv.ParseUint(value, 10, 64)
 
 	if err != nil {
 		fmt.Println("Could not parse " + name + ": " + err.Error())
@@ -69,10 +69,6 @@ func parseInt64(value string, name string) int64 {
 	}
 
 	return parsed
-}
-
-func formatPercentageFee(percentageFee float32) string {
-	return strconv.FormatFloat(float64(percentageFee), 'f', 1, 32)
 }
 
 func requireNArgs(n int, action cli.ActionFunc) cli.ActionFunc {

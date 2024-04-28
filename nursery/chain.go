@@ -191,7 +191,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		serviceFee := uint64(swap.ServiceFeePercent.Calculate(float64(swap.FromData.Amount)))
+		serviceFee := swap.ServiceFeePercent.Calculate(swap.FromData.Amount)
 
 		logger.Infof("Chain Swap service fee: %dsat onchain fee: %dsat", serviceFee, *swap.OnchainFee)
 

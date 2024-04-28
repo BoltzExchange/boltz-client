@@ -828,13 +828,25 @@ var createSwapCommand = &cli.Command{
 	},
 }
 
+func printDeposit(amount uint64, address string, hours float32, blockHeight uint64, limits *boltzrpc.Limits) {
+	var amountString string
+	if amount == 0 {
+		amountString = fmt.Sprintf("between %d and %d satoshis", limits.Minimal, limits.Maximal)
+	} else {
+		amountString = utils.Satoshis(amount)
+	}
+
+	fmt.Printf("Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
+		amountString, address, hours, blockHeight)
+}
+
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
-	var amount int64
+	var amount uint64
 
 	externalPay := ctx.Bool("external-pay")
 	if ctx.Args().First() != "" {
-		amount = parseInt64(ctx.Args().First(), "amount")
+		amount = parseUint64(ctx.Args().First(), "amount")
 	} else if ctx.Bool("any-amount") {
 		externalPay = true
 	} else {
@@ -853,17 +865,13 @@ func createSwap(ctx *cli.Context) error {
 
 	json := ctx.Bool("json")
 
-	submarinePair, err := client.GetSubmarinePair(pair)
+	pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
 	if err != nil {
 		return err
 	}
 
 	if !json {
-		fmt.Println("You will receive your deposit via lightning.")
-		fmt.Println("The fees for this service are:")
-		fmt.Println("  - Service fee: " + formatPercentageFee(submarinePair.Fees.Percentage) + "%")
-		fmt.Println("  - Miner fee: " + utils.Satoshis(int(submarinePair.Fees.MinerFees)))
-		fmt.Println()
+		printFees(pairInfo)
 
 		if !prompt("Do you want to continue?") {
 			return nil
@@ -894,17 +902,7 @@ func createSwap(ctx *cli.Context) error {
 	}
 
 	if externalPay {
-		var amountString string
-		if amount == 0 {
-			amountString = fmt.Sprintf("between %d and %d satoshis", submarinePair.Limits.Minimal, submarinePair.Limits.Maximal)
-		} else {
-			amountString = utils.Satoshis(int(amount))
-		}
-
-		fmt.Printf(
-			"Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
-			amountString, swap.Address, swap.TimeoutHours, swap.TimeoutBlockHeight,
-		)
+		printDeposit(amount, swap.Address, swap.TimeoutHours, uint64(swap.TimeoutBlockHeight), pairInfo.Limits)
 		fmt.Println()
 	}
 
@@ -965,11 +963,18 @@ func checkAddress(network *boltz.Network, address string) (boltzrpc.Currency, er
 
 }
 
+func printFees(info *boltzrpc.PairInfo) {
+	fmt.Println("The fees for this service are:")
+	fmt.Printf("  - Service fee: %.1f%%\n", info.Fees.Percentage)
+	fmt.Printf("  - Miner fee: %s\n", utils.Satoshis(info.Fees.MinerFees))
+	fmt.Println()
+}
+
 func createChainSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
-	var amount int64
+	var amount uint64
 	if ctx.Args().First() != "" {
-		amount = parseInt64(ctx.Args().First(), "amount")
+		amount = parseUint64(ctx.Args().First(), "amount")
 	} else if !ctx.Bool("any-amount") {
 		return cli.ShowSubcommandHelp(ctx)
 	}
@@ -1038,18 +1043,14 @@ func createChainSwap(ctx *cli.Context) error {
 		return err
 	}
 
-	chainPair, err := client.GetChainPair(pair)
+	pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
 	if err != nil {
 		return err
 	}
 
 	json := ctx.Bool("json")
 	if !json {
-		fmt.Println("The fees for this service are:")
-		fmt.Println("  - Service fee: " + formatPercentageFee(chainPair.Fees.Percentage) + "%")
-		fmt.Println("  - Miner fee: " + utils.Satoshis(int(chainPair.Fees.MinerFees.Server)))
-		fmt.Println()
-
+		printFees(pairInfo)
 		if !prompt("Do you want to continue?") {
 			return nil
 		}
@@ -1066,22 +1067,13 @@ func createChainSwap(ctx *cli.Context) error {
 	}
 
 	if externalPay {
-		var amountString string
-		if amount == 0 {
-			amountString = fmt.Sprintf("between %d and %d satoshis", chainPair.Limits.Minimal, chainPair.Limits.Maximal)
-		} else {
-			amountString = utils.Satoshis(int(amount))
-		}
-
 		height := info.BlockHeights.Btc
 		if pair.From == boltzrpc.Currency_LBTC {
 			height = info.BlockHeights.GetLiquid()
 		}
-		timeoutHours := boltz.BlocksToHours(swap.FromData.TimeoutBlockHeight-height, utils.ParseCurrency(&pair.From))
-		fmt.Printf(
-			"Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
-			amountString, swap.FromData.LockupAddress, timeoutHours, swap.FromData.TimeoutBlockHeight,
-		)
+		timeout := swap.FromData.TimeoutBlockHeight
+		timeoutHours := boltz.BlocksToHours(timeout-height, utils.ParseCurrency(&pair.From))
+		printDeposit(amount, swap.FromData.LockupAddress, float32(timeoutHours), uint64(timeout), pairInfo.Limits)
 		fmt.Println()
 	}
 
@@ -1196,20 +1188,17 @@ func createReverseSwap(ctx *cli.Context) error {
 		To:   currency,
 	}
 
-	amount := parseInt64(ctx.Args().First(), "amount")
+	amount := parseUint64(ctx.Args().First(), "amount")
 	json := ctx.Bool("json")
 
 	if !json {
-		reversePair, err := client.GetReversePair(pair)
+		pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_REVERSE, pair)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("You will receive the withdrawal to the specified onchain address")
-		fmt.Println("The fees for this service are:")
-		fmt.Println("  - Service fee: " + formatPercentageFee(reversePair.Fees.Percentage) + "%")
-		fmt.Println("  - Boltz lockup fee: " + utils.Satoshis(int(reversePair.Fees.MinerFees.Lockup)))
-		fmt.Println("  - Claim fee: " + utils.Satoshis(int(reversePair.Fees.MinerFees.Claim)))
+		printFees(pairInfo)
 		fmt.Println()
 
 		if !prompt("Do you want to continue?") {

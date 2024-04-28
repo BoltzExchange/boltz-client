@@ -8,10 +8,10 @@ package boltzrpc
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,9 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Boltz_GetInfo_FullMethodName              = "/boltzrpc.Boltz/GetInfo"
 	Boltz_GetServiceInfo_FullMethodName       = "/boltzrpc.Boltz/GetServiceInfo"
-	Boltz_GetSubmarinePair_FullMethodName     = "/boltzrpc.Boltz/GetSubmarinePair"
-	Boltz_GetReversePair_FullMethodName       = "/boltzrpc.Boltz/GetReversePair"
-	Boltz_GetChainPair_FullMethodName         = "/boltzrpc.Boltz/GetChainPair"
+	Boltz_GetPairInfo_FullMethodName          = "/boltzrpc.Boltz/GetPairInfo"
 	Boltz_GetPairs_FullMethodName             = "/boltzrpc.Boltz/GetPairs"
 	Boltz_ListSwaps_FullMethodName            = "/boltzrpc.Boltz/ListSwaps"
 	Boltz_RefundSwap_FullMethodName           = "/boltzrpc.Boltz/RefundSwap"
@@ -64,14 +62,10 @@ type BoltzClient interface {
 	//
 	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetServiceInfo(ctx context.Context, in *GetServiceInfoRequest, opts ...grpc.CallOption) (*GetServiceInfoResponse, error)
-	// Fetches information about a specific pair for a submarine swap.
-	GetSubmarinePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*SubmarinePair, error)
-	// Fetches information about a specific pair for a reverse swap.
-	GetReversePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ReversePair, error)
 	// Fetches information about a specific pair for a chain swap.
-	GetChainPair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ChainPair, error)
+	GetPairInfo(ctx context.Context, in *GetPairInfoRequest, opts ...grpc.CallOption) (*PairInfo, error)
 	// Fetches all available pairs for submarine and reverse swaps.
-	GetPairs(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
+	GetPairs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
 	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
@@ -119,13 +113,13 @@ type BoltzClient interface {
 	// Removes a wallet.
 	RemoveWallet(ctx context.Context, in *RemoveWalletRequest, opts ...grpc.CallOption) (*RemoveWalletResponse, error)
 	// Gracefully stops the daemon.
-	Stop(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
+	Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Unlocks the server. This will be required on startup if there are any encrypted wallets.
-	Unlock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	Unlock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Check if the password is correct.
 	VerifyWalletPassword(ctx context.Context, in *VerifyWalletPasswordRequest, opts ...grpc.CallOption) (*VerifyWalletPasswordResponse, error)
 	// Changes the password for wallet encryption.
-	ChangeWalletPassword(ctx context.Context, in *ChangeWalletPasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ChangeWalletPassword(ctx context.Context, in *ChangeWalletPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Creates a new entity which can be used to bake restricted macaroons.
 	CreateEntity(ctx context.Context, in *CreateEntityRequest, opts ...grpc.CallOption) (*Entity, error)
 	// Returns all entities.
@@ -166,34 +160,16 @@ func (c *boltzClient) GetServiceInfo(ctx context.Context, in *GetServiceInfoRequ
 	return out, nil
 }
 
-func (c *boltzClient) GetSubmarinePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*SubmarinePair, error) {
-	out := new(SubmarinePair)
-	err := c.cc.Invoke(ctx, Boltz_GetSubmarinePair_FullMethodName, in, out, opts...)
+func (c *boltzClient) GetPairInfo(ctx context.Context, in *GetPairInfoRequest, opts ...grpc.CallOption) (*PairInfo, error) {
+	out := new(PairInfo)
+	err := c.cc.Invoke(ctx, Boltz_GetPairInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *boltzClient) GetReversePair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ReversePair, error) {
-	out := new(ReversePair)
-	err := c.cc.Invoke(ctx, Boltz_GetReversePair_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *boltzClient) GetChainPair(ctx context.Context, in *Pair, opts ...grpc.CallOption) (*ChainPair, error) {
-	out := new(ChainPair)
-	err := c.cc.Invoke(ctx, Boltz_GetChainPair_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *boltzClient) GetPairs(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error) {
+func (c *boltzClient) GetPairs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error) {
 	out := new(GetPairsResponse)
 	err := c.cc.Invoke(ctx, Boltz_GetPairs_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -380,8 +356,8 @@ func (c *boltzClient) RemoveWallet(ctx context.Context, in *RemoveWalletRequest,
 	return out, nil
 }
 
-func (c *boltzClient) Stop(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *boltzClient) Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Boltz_Stop_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -389,8 +365,8 @@ func (c *boltzClient) Stop(ctx context.Context, in *empty.Empty, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *boltzClient) Unlock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *boltzClient) Unlock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Boltz_Unlock_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -407,8 +383,8 @@ func (c *boltzClient) VerifyWalletPassword(ctx context.Context, in *VerifyWallet
 	return out, nil
 }
 
-func (c *boltzClient) ChangeWalletPassword(ctx context.Context, in *ChangeWalletPasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *boltzClient) ChangeWalletPassword(ctx context.Context, in *ChangeWalletPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Boltz_ChangeWalletPassword_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -463,14 +439,10 @@ type BoltzServer interface {
 	//
 	// Fetches the latest limits and fees from the Boltz backend API it is connected to.
 	GetServiceInfo(context.Context, *GetServiceInfoRequest) (*GetServiceInfoResponse, error)
-	// Fetches information about a specific pair for a submarine swap.
-	GetSubmarinePair(context.Context, *Pair) (*SubmarinePair, error)
-	// Fetches information about a specific pair for a reverse swap.
-	GetReversePair(context.Context, *Pair) (*ReversePair, error)
 	// Fetches information about a specific pair for a chain swap.
-	GetChainPair(context.Context, *Pair) (*ChainPair, error)
+	GetPairInfo(context.Context, *GetPairInfoRequest) (*PairInfo, error)
 	// Fetches all available pairs for submarine and reverse swaps.
-	GetPairs(context.Context, *empty.Empty) (*GetPairsResponse, error)
+	GetPairs(context.Context, *emptypb.Empty) (*GetPairsResponse, error)
 	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
 	// Refund a failed swap manually.
@@ -518,13 +490,13 @@ type BoltzServer interface {
 	// Removes a wallet.
 	RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error)
 	// Gracefully stops the daemon.
-	Stop(context.Context, *empty.Empty) (*empty.Empty, error)
+	Stop(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// Unlocks the server. This will be required on startup if there are any encrypted wallets.
-	Unlock(context.Context, *UnlockRequest) (*empty.Empty, error)
+	Unlock(context.Context, *UnlockRequest) (*emptypb.Empty, error)
 	// Check if the password is correct.
 	VerifyWalletPassword(context.Context, *VerifyWalletPasswordRequest) (*VerifyWalletPasswordResponse, error)
 	// Changes the password for wallet encryption.
-	ChangeWalletPassword(context.Context, *ChangeWalletPasswordRequest) (*empty.Empty, error)
+	ChangeWalletPassword(context.Context, *ChangeWalletPasswordRequest) (*emptypb.Empty, error)
 	// Creates a new entity which can be used to bake restricted macaroons.
 	CreateEntity(context.Context, *CreateEntityRequest) (*Entity, error)
 	// Returns all entities.
@@ -549,16 +521,10 @@ func (UnimplementedBoltzServer) GetInfo(context.Context, *GetInfoRequest) (*GetI
 func (UnimplementedBoltzServer) GetServiceInfo(context.Context, *GetServiceInfoRequest) (*GetServiceInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServiceInfo not implemented")
 }
-func (UnimplementedBoltzServer) GetSubmarinePair(context.Context, *Pair) (*SubmarinePair, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSubmarinePair not implemented")
+func (UnimplementedBoltzServer) GetPairInfo(context.Context, *GetPairInfoRequest) (*PairInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPairInfo not implemented")
 }
-func (UnimplementedBoltzServer) GetReversePair(context.Context, *Pair) (*ReversePair, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetReversePair not implemented")
-}
-func (UnimplementedBoltzServer) GetChainPair(context.Context, *Pair) (*ChainPair, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetChainPair not implemented")
-}
-func (UnimplementedBoltzServer) GetPairs(context.Context, *empty.Empty) (*GetPairsResponse, error) {
+func (UnimplementedBoltzServer) GetPairs(context.Context, *emptypb.Empty) (*GetPairsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPairs not implemented")
 }
 func (UnimplementedBoltzServer) ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error) {
@@ -612,16 +578,16 @@ func (UnimplementedBoltzServer) GetWalletCredentials(context.Context, *GetWallet
 func (UnimplementedBoltzServer) RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveWallet not implemented")
 }
-func (UnimplementedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Empty, error) {
+func (UnimplementedBoltzServer) Stop(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
-func (UnimplementedBoltzServer) Unlock(context.Context, *UnlockRequest) (*empty.Empty, error) {
+func (UnimplementedBoltzServer) Unlock(context.Context, *UnlockRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Unlock not implemented")
 }
 func (UnimplementedBoltzServer) VerifyWalletPassword(context.Context, *VerifyWalletPasswordRequest) (*VerifyWalletPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyWalletPassword not implemented")
 }
-func (UnimplementedBoltzServer) ChangeWalletPassword(context.Context, *ChangeWalletPasswordRequest) (*empty.Empty, error) {
+func (UnimplementedBoltzServer) ChangeWalletPassword(context.Context, *ChangeWalletPasswordRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeWalletPassword not implemented")
 }
 func (UnimplementedBoltzServer) CreateEntity(context.Context, *CreateEntityRequest) (*Entity, error) {
@@ -685,62 +651,26 @@ func _Boltz_GetServiceInfo_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Boltz_GetSubmarinePair_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Pair)
+func _Boltz_GetPairInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPairInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BoltzServer).GetSubmarinePair(ctx, in)
+		return srv.(BoltzServer).GetPairInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Boltz_GetSubmarinePair_FullMethodName,
+		FullMethod: Boltz_GetPairInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetSubmarinePair(ctx, req.(*Pair))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Boltz_GetReversePair_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Pair)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BoltzServer).GetReversePair(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Boltz_GetReversePair_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetReversePair(ctx, req.(*Pair))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Boltz_GetChainPair_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Pair)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BoltzServer).GetChainPair(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Boltz_GetChainPair_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetChainPair(ctx, req.(*Pair))
+		return srv.(BoltzServer).GetPairInfo(ctx, req.(*GetPairInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Boltz_GetPairs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -752,7 +682,7 @@ func _Boltz_GetPairs_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: Boltz_GetPairs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetPairs(ctx, req.(*empty.Empty))
+		return srv.(BoltzServer).GetPairs(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1067,7 +997,7 @@ func _Boltz_RemoveWallet_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _Boltz_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1079,7 +1009,7 @@ func _Boltz_Stop_Handler(srv interface{}, ctx context.Context, dec func(interfac
 		FullMethod: Boltz_Stop_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).Stop(ctx, req.(*empty.Empty))
+		return srv.(BoltzServer).Stop(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1226,16 +1156,8 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Boltz_GetServiceInfo_Handler,
 		},
 		{
-			MethodName: "GetSubmarinePair",
-			Handler:    _Boltz_GetSubmarinePair_Handler,
-		},
-		{
-			MethodName: "GetReversePair",
-			Handler:    _Boltz_GetReversePair_Handler,
-		},
-		{
-			MethodName: "GetChainPair",
-			Handler:    _Boltz_GetChainPair_Handler,
+			MethodName: "GetPairInfo",
+			Handler:    _Boltz_GetPairInfo_Handler,
 		},
 		{
 			MethodName: "GetPairs",

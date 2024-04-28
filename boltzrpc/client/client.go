@@ -25,16 +25,8 @@ func (boltz *Boltz) GetPairs() (*boltzrpc.GetPairsResponse, error) {
 	return boltz.Client.GetPairs(boltz.Ctx, &empty.Empty{})
 }
 
-func (boltz *Boltz) GetSubmarinePair(pair *boltzrpc.Pair) (*boltzrpc.SubmarinePair, error) {
-	return boltz.Client.GetSubmarinePair(boltz.Ctx, pair)
-}
-
-func (boltz *Boltz) GetReversePair(pair *boltzrpc.Pair) (*boltzrpc.ReversePair, error) {
-	return boltz.Client.GetReversePair(boltz.Ctx, pair)
-}
-
-func (boltz *Boltz) GetChainPair(pair *boltzrpc.Pair) (*boltzrpc.ChainPair, error) {
-	return boltz.Client.GetChainPair(boltz.Ctx, pair)
+func (boltz *Boltz) GetPairInfo(swapType boltzrpc.SwapType, pair *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
+	return boltz.Client.GetPairInfo(boltz.Ctx, &boltzrpc.GetPairInfoRequest{Pair: pair, Type: swapType})
 }
 
 func (boltz *Boltz) ListSwaps(request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {

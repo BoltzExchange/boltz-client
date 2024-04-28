@@ -173,7 +173,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		}
 
 		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
-		serviceFee := uint64(reverseSwap.ServiceFeePercent.Calculate(float64(invoiceAmount)))
+		serviceFee := reverseSwap.ServiceFeePercent.Calculate(invoiceAmount)
 		boltzOnchainFee := invoiceAmount - reverseSwap.OnchainAmount - serviceFee
 
 		logger.Infof("Reverse Swap service fee: %dsat; boltz onchain fee: %dsat", serviceFee, boltzOnchainFee)
