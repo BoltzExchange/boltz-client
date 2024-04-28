@@ -709,7 +709,7 @@ func TestSwap(t *testing.T) {
 							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Pair:          pair,
 								RefundAddress: &refundAddress,
-								Amount:        int64(amount + 100),
+								Amount:        amount + 100,
 							})
 							require.NoError(t, err)
 
@@ -806,6 +806,35 @@ func TestSwap(t *testing.T) {
 		})
 	}
 
+}
+
+func TestEstimateFee(t *testing.T) {
+	client, _, stop := setup(t, nil, "")
+	defer stop()
+
+	tests := []struct {
+		desc     string
+		amount   uint64
+		pair     *boltzrpc.Pair
+		swapType boltzrpc.SwapType
+	}{
+		{"Submarine", 0, &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_BTC}, boltzrpc.SwapType_SUBMARINE},
+		{"Reverse", 100000000, &boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC}, boltzrpc.SwapType_REVERSE},
+		{"Chain", 100000, &boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC}, boltzrpc.SwapType_CHAIN},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			fee, err := client.GetFeeEstimation(boltzrpc.SwapType_SUBMARINE, tc.pair, tc.amount)
+			require.NoError(t, err)
+			require.LessOrEqual(t, fee.AdjustedAmount, fee.Limits.Maximal)
+			if tc.amount != 0 {
+				require.NotZero(t, fee.TotalFee)
+				require.NotZero(t, fee.AdjustedAmount)
+				require.Equal(t, fee.Fees.MinerFees+uint64(fee.Fees.Percentage/100*float32(fee.AdjustedAmount)), fee.TotalFee)
+			}
+		})
+	}
 }
 
 func TestReverseSwap(t *testing.T) {
@@ -1367,7 +1396,7 @@ func TestAutoSwap(t *testing.T) {
 					return
 				}
 
-				response, err := to.CreateInvoice(int64(amount), nil, 100000, "Testt")
+				response, err := to.CreateInvoice(amount, nil, 100000, "Testt")
 				require.NoError(t, err)
 				_, err = from.PayInvoice(response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
 				require.NoError(t, err)

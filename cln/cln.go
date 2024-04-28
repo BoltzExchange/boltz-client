@@ -172,13 +172,13 @@ func (c *Cln) SanityCheck() (string, error) {
 	return info.Version, nil
 }
 
-func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
+func (c *Cln) CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
 	request := &protos.InvoiceRequest{
 		// wtf is this
 		AmountMsat: &protos.AmountOrAny{
 			Value: &protos.AmountOrAny_Amount{
 				Amount: &protos.Amount{
-					Msat: uint64(value) * 1000,
+					Msat: value * 1000,
 				},
 			},
 		},

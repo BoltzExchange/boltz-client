@@ -34,6 +34,11 @@ service Boltz {
     rpc GetChainPair (Pair) returns (ChainPair);
 
     /*
+
+     */
+    rpc GetFeeEstimation (GetFeeEstimationRequest) returns (FeeEstimation);
+
+    /*
     Fetches all available pairs for submarine and reverse swaps.
     */
     rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
@@ -270,6 +275,25 @@ message SwapInfo {
     optional int64 wallet_id = 20;
 }
 
+enum SwapType {
+    SUBMARINE = 0;
+    REVERSE = 1;
+    CHAIN = 2;
+}
+
+message GetFeeEstimationRequest {
+    SwapType type = 1;
+    Pair pair = 2;
+    optional uint64 amount = 3;
+}
+
+message FeeEstimation {
+    SwapFees fees = 1;
+    Limits limits = 2;
+    uint64 total_fee = 3;
+    uint64 adjusted_amount = 4;
+}
+
 /*
 Channel creations are an optional extension to a submarine swap in the data types of boltz-client.
 */
@@ -349,17 +373,18 @@ message Limits {
     uint64 maximal_zero_conf_amount = 3;
 }
 
+message SwapFees {
+    float percentage = 1;
+    uint64 miner_fees = 2;
+}
+
 // Submarine Pair
 message SubmarinePair {
     Pair pair = 1;
     string hash = 2;
     float rate = 3;
     Limits limits = 4;
-    message Fees {
-      float percentage = 1;
-      uint64 miner_fees = 2;
-    }
-    Fees fees = 5;
+    SwapFees fees = 5;
 }
 
 // Reverse Pair
@@ -368,36 +393,22 @@ message ReversePair {
     string hash = 2;
     float rate = 3;
     Limits limits = 4;
-    message Fees {
-      float percentage = 1;
-      message MinerFees {
-        uint64 lockup = 1;
-        uint64 claim = 2;
-      }
-      MinerFees miner_fees = 2;
-    }
-    Fees fees = 5;
+    SwapFees fees = 5;
 }
 
 message ChainPair {
-    message Fees {
-        message User {
-            uint64 lockup = 1;
-            uint64 claim = 2;
-        }
-        message Miner {
-            uint64 server = 1;
-            User user = 2;
-        }
-        float percentage = 1;
-        Miner miner_fees = 2;
-    }
-
     Pair pair = 1;
     string hash = 2;
     float rate = 3;
     Limits limits = 4;
-    Fees fees = 5;
+    SwapFees fees = 5;
+}
+
+message PairInfo {
+
+    SubmarinePair submarine = 1;
+    ReversePair reverse = 2;
+    ChainPair chain = 3;
 }
 
 message GetPairsResponse {
@@ -464,7 +475,7 @@ message DepositResponse {
 }
 
 message CreateSwapRequest {
-    int64 amount = 1;
+    uint64 amount = 1;
     Pair pair = 2;
     // not yet supported
     // repeated string chan_ids = 3;
@@ -502,7 +513,7 @@ message CreateChannelRequest {
 
 message CreateReverseSwapRequest {
     // amount of satoshis to swap
-    int64 amount = 1;
+    uint64 amount = 1;
     // If no value is set, the daemon will query a new address from the lightning node
     string address = 2;
     // Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool.

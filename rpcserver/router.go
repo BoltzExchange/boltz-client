@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/build"
@@ -179,6 +178,75 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 
 	return response, nil
 
+}
+
+func (server *routedBoltzServer) getPairInfo(ctx context.Context, swapType boltzrpc.SwapType, pair *boltzrpc.Pair) (*boltzrpc.Limits, *boltzrpc.SwapFees, error) {
+	switch swapType {
+	case boltzrpc.SwapType_SUBMARINE:
+		submarinePair, err := server.GetSubmarinePair(ctx, pair)
+		if err != nil {
+			return nil, nil, err
+		}
+		return submarinePair.Limits, submarinePair.Fees, nil
+	case boltzrpc.SwapType_REVERSE:
+		reversePair, err := server.GetReversePair(ctx, pair)
+		if err != nil {
+			return nil, nil, err
+		}
+		return reversePair.Limits, reversePair.Fees, nil
+	case boltzrpc.SwapType_CHAIN:
+		chainPair, err := server.GetChainPair(ctx, pair)
+		if err != nil {
+			return nil, nil, err
+		}
+		return chainPair.Limits, chainPair.Fees, nil
+	default:
+		return nil, nil, fmt.Errorf("invalid swap type: %v", swapType)
+	}
+}
+
+func (server *routedBoltzServer) GetFeeEstimation(ctx context.Context, request *boltzrpc.GetFeeEstimationRequest) (*boltzrpc.FeeEstimation, error) {
+	var limits *boltzrpc.Limits
+	var fees *boltzrpc.SwapFees
+	if request.Type == boltzrpc.SwapType_SUBMARINE {
+		submarinePair, err := server.GetSubmarinePair(ctx, request.Pair)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		limits = submarinePair.Limits
+		fees = submarinePair.Fees
+	} else if request.Type == boltzrpc.SwapType_REVERSE {
+		reversePair, err := server.GetReversePair(ctx, request.Pair)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		limits = reversePair.Limits
+		fees = reversePair.Fees
+	} else if request.Type == boltzrpc.SwapType_CHAIN {
+		chainPair, err := server.GetChainPair(ctx, request.Pair)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		limits = chainPair.Limits
+		fees = chainPair.Fees
+	}
+
+	if limits == nil || fees == nil {
+		return nil, handleError(errors.New("pair not found"))
+	}
+
+	estimate := &boltzrpc.FeeEstimation{Fees: fees, Limits: limits}
+	if amount := request.GetAmount(); amount != 0 {
+		if amount < limits.Minimal {
+			return nil, handleError(status.Errorf(codes.InvalidArgument, "amount below limit: %d < %d", amount, limits.Minimal))
+		}
+		if amount > limits.Maximal {
+			amount = limits.Maximal
+		}
+		estimate.AdjustedAmount = amount
+		estimate.TotalFee = utils.Percentage(fees.Percentage).Calculate(amount) + fees.MinerFees
+	}
+	return estimate, nil
 }
 
 func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
@@ -361,7 +429,7 @@ func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.
 
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
-	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
+	logger.Infof("Creating Swap for %d sats", request.Amount)
 
 	privateKey, publicKey, err := newKeys()
 	if err != nil {
@@ -543,7 +611,7 @@ func (server *routedBoltzServer) lightningAvailable(ctx context.Context) bool {
 }
 
 func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
-	logger.Info("Creating Reverse Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
+	logger.Infof("Creating Reverse Swap for %d sats", request.Amount)
 
 	externalPay := request.GetExternalPay()
 	if !server.lightningAvailable(ctx) {

@@ -25,6 +25,10 @@ func (boltz *Boltz) GetPairs() (*boltzrpc.GetPairsResponse, error) {
 	return boltz.Client.GetPairs(boltz.Ctx, &empty.Empty{})
 }
 
+func (boltz *Boltz) GetFeeEstimation(swapType boltzrpc.SwapType, pair *boltzrpc.Pair, amount uint64) (*boltzrpc.FeeEstimation, error) {
+	return boltz.Client.GetFeeEstimation(boltz.Ctx, &boltzrpc.GetFeeEstimationRequest{Amount: &amount, Pair: pair, Type: swapType})
+}
+
 func (boltz *Boltz) GetSubmarinePair(pair *boltzrpc.Pair) (*boltzrpc.SubmarinePair, error) {
 	return boltz.Client.GetSubmarinePair(boltz.Ctx, pair)
 }

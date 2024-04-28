@@ -210,10 +210,10 @@ func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 	return results, nil
 }
 
-func (lnd *LND) CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
+func (lnd *LND) CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
 	request := &lnrpc.Invoice{
 		Memo:      memo,
-		Value:     value,
+		Value:     int64(value),
 		Expiry:    expiry,
 		RPreimage: preimage,
 	}

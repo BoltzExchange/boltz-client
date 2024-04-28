@@ -81,7 +81,7 @@ type LightningNode interface {
 	//SendPayment(invoice string, feeLimit uint64, timeout int32) (<-chan *PaymentUpdate, error)
 	//PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32) (int64, error)
 	PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, channelIds []ChanId) (*PayInvoiceResponse, error)
-	CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*AddInvoiceResponse, error)
+	CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*AddInvoiceResponse, error)
 
 	NewAddress() (string, error)
 

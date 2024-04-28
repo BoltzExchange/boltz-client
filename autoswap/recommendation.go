@@ -7,7 +7,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/lightning"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/utils"
 )
 
 type rawRecommendation struct {
@@ -39,21 +38,21 @@ func (recommendation *SwapRecommendation) Dismissed() bool {
 }
 
 func (recommendation rawRecommendation) estimateFee(pair *PairInfo) uint64 {
-	serviceFee := utils.Percentage(pair.PercentageFee).Calculate(float64(recommendation.Amount))
-	return uint64(serviceFee) + pair.OnchainFee
+	serviceFee := pair.PercentageFee.Calculate(recommendation.Amount)
+	return serviceFee + pair.OnchainFee
 }
 
 func (recommendation rawRecommendation) Check(pair *PairInfo, cfg *Config) *SwapRecommendation {
 	var dismissedReasons []string
 
-	if recommendation.Amount < uint64(pair.MinAmount) {
+	if recommendation.Amount < pair.MinAmount {
 		dismissedReasons = append(dismissedReasons, ReasonAmountBelowMin)
 	}
 	recommendation.Amount = uint64(math.Min(float64(recommendation.Amount), float64(pair.MaxAmount)))
 
-	maxFee := cfg.maxFeePercent.Calculate(float64(recommendation.Amount))
+	maxFee := cfg.maxFeePercent.Calculate(recommendation.Amount)
 	fee := recommendation.estimateFee(pair)
-	if float64(fee) > maxFee {
+	if fee > maxFee {
 		dismissedReasons = append(dismissedReasons, ReasonMaxFeePercent)
 	}
 

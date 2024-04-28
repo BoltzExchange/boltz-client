@@ -164,7 +164,7 @@ func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair)
 		Pair: serializePair(pair),
 		Hash: submarinePair.Hash,
 		Rate: float32(submarinePair.Rate),
-		Fees: &boltzrpc.SubmarinePair_Fees{
+		Fees: &boltzrpc.SwapFees{
 			Percentage: float32(submarinePair.Fees.Percentage),
 			MinerFees:  submarinePair.Fees.MinerFees,
 		},
@@ -177,16 +177,14 @@ func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair)
 }
 
 func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *boltzrpc.ReversePair {
+	miner := reversePair.Fees.MinerFees
 	return &boltzrpc.ReversePair{
 		Pair: serializePair(pair),
 		Hash: reversePair.Hash,
 		Rate: float32(reversePair.Rate),
-		Fees: &boltzrpc.ReversePair_Fees{
+		Fees: &boltzrpc.SwapFees{
 			Percentage: float32(reversePair.Fees.Percentage),
-			MinerFees: &boltzrpc.ReversePair_Fees_MinerFees{
-				Lockup: reversePair.Fees.MinerFees.Lockup,
-				Claim:  reversePair.Fees.MinerFees.Claim,
-			},
+			MinerFees:  miner.Claim + miner.Lockup,
 		},
 		Limits: &boltzrpc.Limits{
 			Minimal: reversePair.Limits.Minimal,
@@ -196,19 +194,14 @@ func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *bolt
 }
 
 func serializeChainPair(pair boltz.Pair, reversePair *boltz.ChainPair) *boltzrpc.ChainPair {
+	miner := reversePair.Fees.MinerFees
 	return &boltzrpc.ChainPair{
 		Pair: serializePair(pair),
 		Hash: reversePair.Hash,
 		Rate: float32(reversePair.Rate),
-		Fees: &boltzrpc.ChainPair_Fees{
+		Fees: &boltzrpc.SwapFees{
 			Percentage: float32(reversePair.Fees.Percentage),
-			MinerFees: &boltzrpc.ChainPair_Fees_Miner{
-				Server: reversePair.Fees.MinerFees.Server,
-				User: &boltzrpc.ChainPair_Fees_User{
-					Lockup: reversePair.Fees.MinerFees.User.Lockup,
-					Claim:  reversePair.Fees.MinerFees.User.Claim,
-				},
-			},
+			MinerFees:  miner.Server + miner.User.Claim + miner.User.Lockup,
 		},
 		Limits: &boltzrpc.Limits{
 			Minimal: reversePair.Limits.Minimal,

@@ -53,6 +53,14 @@ Fetches information about a specific pair for a chain swap.
 | ------- | -------- |
 | [`Pair`](#pair) | [`ChainPair`](#chainpair) |
 
+#### GetFeeEstimation
+
+
+
+| Request | Response |
+| ------- | -------- |
+| [`GetFeeEstimationRequest`](#getfeeestimationrequest) | [`FeeEstimation`](#feeestimation) |
+
 #### GetPairs
 
 Fetches all available pairs for submarine and reverse swaps.
@@ -349,49 +357,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `hash` | [`string`](#string) |  |  |
 | `rate` | [`float`](#float) |  |  |
 | `limits` | [`Limits`](#limits) |  |  |
-| `fees` | [`ChainPair.Fees`](#chainpair.fees) |  |  |
-
-
-
-
-
-#### ChainPair.Fees
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `percentage` | [`float`](#float) |  |  |
-| `miner_fees` | [`ChainPair.Fees.Miner`](#chainpair.fees.miner) |  |  |
-
-
-
-
-
-#### ChainPair.Fees.Miner
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `server` | [`uint64`](#uint64) |  |  |
-| `user` | [`ChainPair.Fees.User`](#chainpair.fees.user) |  |  |
-
-
-
-
-
-#### ChainPair.Fees.User
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `lockup` | [`uint64`](#uint64) |  |  |
-| `claim` | [`uint64`](#uint64) |  |  |
+| `fees` | [`SwapFees`](#swapfees) |  |  |
 
 
 
@@ -562,7 +528,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`int64`](#int64) |  | amount of satoshis to swap |
+| `amount` | [`uint64`](#uint64) |  | amount of satoshis to swap |
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new address from the lightning node |
 | `accept_zero_conf` | [`bool`](#bool) |  | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
 | `pair` | [`Pair`](#pair) |  |  |
@@ -599,7 +565,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`int64`](#int64) |  |  |
+| `amount` | [`uint64`](#uint64) |  |  |
 | `pair` | [`Pair`](#pair) |  | not yet supported repeated string chan_ids = 3; |
 | `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
@@ -685,6 +651,22 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### FeeEstimation
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fees` | [`SwapFees`](#swapfees) |  |  |
+| `limits` | [`Limits`](#limits) |  |  |
+| `total_fee` | [`uint64`](#uint64) |  |  |
+| `adjusted_amount` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
 #### Fees
 
 
@@ -707,6 +689,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) |  |  |
+
+
+
+
+
+#### GetFeeEstimationRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [`SwapType`](#swaptype) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
+| `amount` | [`uint64`](#uint64) | optional |  |
 
 
 
@@ -1024,6 +1021,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### PairInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `submarine` | [`SubmarinePair`](#submarinepair) |  |  |
+| `reverse` | [`ReversePair`](#reversepair) |  |  |
+| `chain` | [`ChainPair`](#chainpair) |  |  |
+
+
+
+
+
 #### RefundSwapRequest
 
 
@@ -1070,35 +1082,7 @@ Reverse Pair
 | `hash` | [`string`](#string) |  |  |
 | `rate` | [`float`](#float) |  |  |
 | `limits` | [`Limits`](#limits) |  |  |
-| `fees` | [`ReversePair.Fees`](#reversepair.fees) |  |  |
-
-
-
-
-
-#### ReversePair.Fees
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `percentage` | [`float`](#float) |  |  |
-| `miner_fees` | [`ReversePair.Fees.MinerFees`](#reversepair.fees.minerfees) |  |  |
-
-
-
-
-
-#### ReversePair.Fees.MinerFees
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `lockup` | [`uint64`](#uint64) |  |  |
-| `claim` | [`uint64`](#uint64) |  |  |
+| `fees` | [`SwapFees`](#swapfees) |  |  |
 
 
 
@@ -1177,13 +1161,13 @@ Submarine Pair
 | `hash` | [`string`](#string) |  |  |
 | `rate` | [`float`](#float) |  |  |
 | `limits` | [`Limits`](#limits) |  |  |
-| `fees` | [`SubmarinePair.Fees`](#submarinepair.fees) |  |  |
+| `fees` | [`SwapFees`](#swapfees) |  |  |
 
 
 
 
 
-#### SubmarinePair.Fees
+#### SwapFees
 
 
 
@@ -1382,6 +1366,17 @@ Submarine Pair
 | SERVER_ERROR | 3 | Unknown server error. Check the status field of the message for more information |
 | REFUNDED | 4 | Client refunded locked coins after the HTLC timed out |
 | ABANDONED | 5 | Client noticed that the HTLC timed out but didn't find any outputs to refund |
+
+
+
+#### SwapType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SUBMARINE | 0 |  |
+| REVERSE | 1 |  |
+| CHAIN | 2 |  |
 
 
 

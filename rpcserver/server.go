@@ -101,7 +101,7 @@ func (server *RpcServer) Init(
 						MaxAmount: pair.Limits.Maximal,
 					},
 					PercentageFee: utils.Percentage(pair.Fees.Percentage),
-					OnchainFee:    pair.Fees.MinerFees.Claim + pair.Fees.MinerFees.Lockup,
+					OnchainFee:    pair.Fees.MinerFees,
 				}, nil
 			}
 
