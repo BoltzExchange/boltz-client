@@ -65,15 +65,7 @@ var (
 			Entity: "info",
 			Action: "read",
 		}},
-		"/boltzrpc.Boltz/GetSubmarinePair": {{
-			Entity: "info",
-			Action: "read",
-		}},
-		"/boltzrpc.Boltz/GetReversePair": {{
-			Entity: "info",
-			Action: "read",
-		}},
-		"/boltzrpc.Boltz/GetChainPair": {{
+		"/boltzrpc.Boltz/GetPairInfo": {{
 			Entity: "info",
 			Action: "read",
 		}},
