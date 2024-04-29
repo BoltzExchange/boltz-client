@@ -51,6 +51,7 @@ func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
 	cfg, err := config.LoadConfig(dataDir)
 	require.NoError(t, err)
+	cfg.LogLevel = "debug"
 	cfg.Database.Path = t.TempDir() + "/boltz.db"
 	cfg.Node = "cln"
 	cfg.Node = "lnd"
@@ -700,7 +701,7 @@ func TestSwap(t *testing.T) {
 					t.Run("Refund", func(t *testing.T) {
 						cli := tc.cli
 
-						submarinePair, err := client.GetSubmarinePair(pair)
+						submarinePair, err := client.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
 
 						require.NoError(t, err)
 
@@ -709,7 +710,7 @@ func TestSwap(t *testing.T) {
 							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Pair:          pair,
 								RefundAddress: &refundAddress,
-								Amount:        int64(amount + 100),
+								Amount:        amount + 100,
 							})
 							require.NoError(t, err)
 
@@ -1157,12 +1158,12 @@ func TestChainSwap(t *testing.T) {
 			})
 
 			t.Run("Refund", func(t *testing.T) {
-				submarinePair, err := client.GetChainPair(pair)
+				chainPair, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
 
 				require.NoError(t, err)
 
 				createFailed := func(t *testing.T, refundAddress string) nextFunc {
-					amount := submarinePair.Limits.Minimal + 100
+					amount := chainPair.Limits.Minimal + 100
 					externalPay := true
 					swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
 						Pair:          pair,
@@ -1367,7 +1368,7 @@ func TestAutoSwap(t *testing.T) {
 					return
 				}
 
-				response, err := to.CreateInvoice(int64(amount), nil, 100000, "Testt")
+				response, err := to.CreateInvoice(amount, nil, 100000, "Testt")
 				require.NoError(t, err)
 				_, err = from.PayInvoice(response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
 				require.NoError(t, err)

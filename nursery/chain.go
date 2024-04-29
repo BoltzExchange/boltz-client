@@ -183,6 +183,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 	}
 
+	logger.Debugf("Updating status of Chain Swap %s to %s", swap.Id, parsedStatus)
+
 	err := nursery.database.UpdateChainSwapStatus(swap, parsedStatus)
 
 	if err != nil {
@@ -191,7 +193,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		serviceFee := uint64(swap.ServiceFeePercent.Calculate(float64(swap.FromData.Amount)))
+		serviceFee := swap.ServiceFeePercent.Calculate(swap.FromData.Amount)
 
 		logger.Infof("Chain Swap service fee: %dsat onchain fee: %dsat", serviceFee, *swap.OnchainFee)
 

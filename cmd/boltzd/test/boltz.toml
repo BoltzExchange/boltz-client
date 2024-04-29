@@ -68,9 +68,3 @@ adminMacaroonPath = ""
 
 # Path to the read only macaroon for the gRPC and REST interface
 readOnlyMacaroonPath = ""
-
-[SWAP]
-#autoSwap = true
-#channelImbalanceThreshhold = 1
-#acceptZeroConf = true
-#liquidAddress = "el1qq2490pg57wqtnh3ttmp2d9uxs3wg5aa3usjxv2nrvcycz2utscm69e652lwjcrynemeds7v5ltnwgq4hwrv6q65dnqkf9fayn"

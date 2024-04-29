@@ -159,12 +159,11 @@ func serializeChainSwapData(chainSwap *database.ChainSwapData) *boltzrpc.ChainSw
 	}
 }
 
-func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair) *boltzrpc.SubmarinePair {
-	return &boltzrpc.SubmarinePair{
+func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair) *boltzrpc.PairInfo {
+	return &boltzrpc.PairInfo{
 		Pair: serializePair(pair),
 		Hash: submarinePair.Hash,
-		Rate: float32(submarinePair.Rate),
-		Fees: &boltzrpc.SubmarinePair_Fees{
+		Fees: &boltzrpc.SwapFees{
 			Percentage: float32(submarinePair.Fees.Percentage),
 			MinerFees:  submarinePair.Fees.MinerFees,
 		},
@@ -176,17 +175,14 @@ func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair)
 	}
 }
 
-func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *boltzrpc.ReversePair {
-	return &boltzrpc.ReversePair{
+func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *boltzrpc.PairInfo {
+	miner := reversePair.Fees.MinerFees
+	return &boltzrpc.PairInfo{
 		Pair: serializePair(pair),
 		Hash: reversePair.Hash,
-		Rate: float32(reversePair.Rate),
-		Fees: &boltzrpc.ReversePair_Fees{
+		Fees: &boltzrpc.SwapFees{
 			Percentage: float32(reversePair.Fees.Percentage),
-			MinerFees: &boltzrpc.ReversePair_Fees_MinerFees{
-				Lockup: reversePair.Fees.MinerFees.Lockup,
-				Claim:  reversePair.Fees.MinerFees.Claim,
-			},
+			MinerFees:  miner.Claim + miner.Lockup,
 		},
 		Limits: &boltzrpc.Limits{
 			Minimal: reversePair.Limits.Minimal,
@@ -195,24 +191,18 @@ func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *bolt
 	}
 }
 
-func serializeChainPair(pair boltz.Pair, reversePair *boltz.ChainPair) *boltzrpc.ChainPair {
-	return &boltzrpc.ChainPair{
+func serializeChainPair(pair boltz.Pair, chainPair *boltz.ChainPair) *boltzrpc.PairInfo {
+	miner := chainPair.Fees.MinerFees
+	return &boltzrpc.PairInfo{
 		Pair: serializePair(pair),
-		Hash: reversePair.Hash,
-		Rate: float32(reversePair.Rate),
-		Fees: &boltzrpc.ChainPair_Fees{
-			Percentage: float32(reversePair.Fees.Percentage),
-			MinerFees: &boltzrpc.ChainPair_Fees_Miner{
-				Server: reversePair.Fees.MinerFees.Server,
-				User: &boltzrpc.ChainPair_Fees_User{
-					Lockup: reversePair.Fees.MinerFees.User.Lockup,
-					Claim:  reversePair.Fees.MinerFees.User.Claim,
-				},
-			},
+		Hash: chainPair.Hash,
+		Fees: &boltzrpc.SwapFees{
+			Percentage: float32(chainPair.Fees.Percentage),
+			MinerFees:  miner.Server + miner.User.Claim + miner.User.Lockup,
 		},
 		Limits: &boltzrpc.Limits{
-			Minimal: reversePair.Limits.Minimal,
-			Maximal: reversePair.Limits.Maximal,
+			Minimal: chainPair.Limits.Minimal,
+			Maximal: chainPair.Limits.Maximal,
 		},
 	}
 }

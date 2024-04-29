@@ -207,7 +207,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 		invoice, err := nursery.lightning.CreateInvoice(
-			int64(swapRates.InvoiceAmount),
+			swapRates.InvoiceAmount,
 			swap.Preimage,
 			boltz.CalculateInvoiceExpiry(swap.TimoutBlockHeight-blockHeight, swap.Pair.From),
 			utils.GetSwapMemo(string(swap.Pair.From)),
@@ -280,7 +280,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			return
 		}
 		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
-		serviceFee := uint64(swap.ServiceFeePercent.Calculate(float64(swap.ExpectedAmount)))
+		serviceFee := swap.ServiceFeePercent.Calculate(swap.ExpectedAmount)
 		boltzOnchainFee := swap.ExpectedAmount - invoiceAmount - serviceFee
 
 		logger.Infof("Swap service fee: %dsat onchain fee: %dsat", serviceFee, boltzOnchainFee)

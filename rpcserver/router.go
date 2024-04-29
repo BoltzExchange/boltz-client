@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/build"
@@ -179,6 +178,31 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 
 	return response, nil
 
+}
+
+func (server *routedBoltzServer) GetPairInfo(_ context.Context, request *boltzrpc.GetPairInfoRequest) (*boltzrpc.PairInfo, error) {
+	pair := utils.ParsePair(request.Pair)
+	if request.Type == boltzrpc.SwapType_SUBMARINE {
+		submarinePair, err := server.getSubmarinePair(request.Pair)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		return serializeSubmarinePair(pair, submarinePair), nil
+	} else if request.Type == boltzrpc.SwapType_REVERSE {
+		reversePair, err := server.getReversePair(request.Pair)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		return serializeReversePair(pair, reversePair), nil
+	} else if request.Type == boltzrpc.SwapType_CHAIN {
+		chainPair, err := server.getChainPair(request.Pair)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		return serializeChainPair(pair, chainPair), nil
+	}
+
+	return nil, handleError(errors.New("invalid swap type"))
 }
 
 func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
@@ -361,7 +385,7 @@ func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.
 
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
-	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
+	logger.Infof("Creating Swap for %d sats", request.Amount)
 
 	privateKey, publicKey, err := newKeys()
 	if err != nil {
@@ -370,7 +394,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	pair := utils.ParsePair(request.Pair)
 
-	submarinePair, err := server.GetSubmarinePair(context.Background(), request.Pair)
+	submarinePair, err := server.getSubmarinePair(request.Pair)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +567,7 @@ func (server *routedBoltzServer) lightningAvailable(ctx context.Context) bool {
 }
 
 func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
-	logger.Info("Creating Reverse Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
+	logger.Infof("Creating Reverse Swap for %d sats", request.Amount)
 
 	externalPay := request.GetExternalPay()
 	if !server.lightningAvailable(ctx) {
@@ -607,7 +631,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, handleError(err)
 	}
 
-	reversePair, err := server.GetReversePair(context.Background(), request.Pair)
+	reversePair, err := server.getReversePair(request.Pair)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -763,7 +787,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	pair := utils.ParsePair(request.Pair)
 
-	chainPair, err := server.GetChainPair(ctx, request.Pair)
+	chainPair, err := server.getChainPair(request.Pair)
 	if err != nil {
 		return nil, err
 	}
@@ -1372,46 +1396,31 @@ func findPair[T any](pair boltz.Pair, nested map[boltz.Currency]map[boltz.Curren
 	return &result, nil
 }
 
-func (server *routedBoltzServer) GetSubmarinePair(ctx context.Context, request *boltzrpc.Pair) (*boltzrpc.SubmarinePair, error) {
+func (server *routedBoltzServer) getSubmarinePair(request *boltzrpc.Pair) (*boltz.SubmarinePair, error) {
 	pairsResponse, err := server.boltz.GetSubmarinePairs()
 	if err != nil {
 		return nil, handleError(err)
 	}
 	pair := utils.ParsePair(request)
-	submarinePair, err := findPair(pair, pairsResponse)
-	if err != nil {
-		return nil, handleError(err)
-	}
-
-	return serializeSubmarinePair(pair, submarinePair), nil
+	return findPair(pair, pairsResponse)
 }
 
-func (server *routedBoltzServer) GetReversePair(ctx context.Context, request *boltzrpc.Pair) (*boltzrpc.ReversePair, error) {
+func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltz.ReversePair, error) {
 	pairsResponse, err := server.boltz.GetReversePairs()
 	if err != nil {
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	reversePair, err := findPair(pair, pairsResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return serializeReversePair(pair, reversePair), nil
+	return findPair(pair, pairsResponse)
 }
 
-func (server *routedBoltzServer) GetChainPair(_ context.Context, request *boltzrpc.Pair) (*boltzrpc.ChainPair, error) {
+func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltz.ChainPair, error) {
 	pairsResponse, err := server.boltz.GetChainPairs()
 	if err != nil {
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	chainPair, err := findPair(pair, pairsResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return serializeChainPair(pair, chainPair), nil
+	return findPair(pair, pairsResponse)
 }
 
 func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltzrpc.GetPairsResponse, error) {

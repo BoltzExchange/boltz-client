@@ -76,9 +76,8 @@ func (server *RpcServer) Init(
 
 	swapper := &autoswap.AutoSwapper{
 		GetPairInfo: func(pair *boltzrpc.Pair, swapType boltz.SwapType) (*autoswap.PairInfo, error) {
-			ctx := context.Background()
 			if swapType == boltz.NormalSwap {
-				pair, err := routedServer.GetSubmarinePair(ctx, pair)
+				pair, err := routedServer.getSubmarinePair(pair)
 				if err != nil {
 					return nil, err
 				}
@@ -91,7 +90,7 @@ func (server *RpcServer) Init(
 					OnchainFee:    pair.Fees.MinerFees,
 				}, nil
 			} else if swapType == boltz.ReverseSwap {
-				pair, err := routedServer.GetReversePair(ctx, pair)
+				pair, err := routedServer.getReversePair(pair)
 				if err != nil {
 					return nil, err
 				}
