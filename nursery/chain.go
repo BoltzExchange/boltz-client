@@ -183,6 +183,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 	}
 
+	logger.Debugf("Updating status of Chain Swap %s to %s", swap.Id, parsedStatus)
+
 	err := nursery.database.UpdateChainSwapStatus(swap, parsedStatus)
 
 	if err != nil {
