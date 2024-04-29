@@ -828,18 +828,6 @@ var createSwapCommand = &cli.Command{
 	},
 }
 
-func printDeposit(amount uint64, address string, hours float32, blockHeight uint64, limits *boltzrpc.Limits) {
-	var amountString string
-	if amount == 0 {
-		amountString = fmt.Sprintf("between %d and %d satoshis", limits.Minimal, limits.Maximal)
-	} else {
-		amountString = utils.Satoshis(amount)
-	}
-
-	fmt.Printf("Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
-		amountString, address, hours, blockHeight)
-}
-
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	var amount uint64
@@ -961,13 +949,6 @@ func checkAddress(network *boltz.Network, address string) (boltzrpc.Currency, er
 	}
 	return boltzrpc.Currency_BTC, fmt.Errorf("invalid address: %s", address)
 
-}
-
-func printFees(info *boltzrpc.PairInfo) {
-	fmt.Println("The fees for this service are:")
-	fmt.Printf("  - Service fee: %.1f%%\n", info.Fees.Percentage)
-	fmt.Printf("  - Miner fee: %s\n", utils.Satoshis(info.Fees.MinerFees))
-	fmt.Println()
 }
 
 func createChainSwap(ctx *cli.Context) error {
@@ -1199,7 +1180,6 @@ func createReverseSwap(ctx *cli.Context) error {
 
 		fmt.Println("You will receive the withdrawal to the specified onchain address")
 		printFees(pairInfo)
-		fmt.Println()
 
 		if !prompt("Do you want to continue?") {
 			return nil

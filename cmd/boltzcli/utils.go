@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"os"
 	"regexp"
 	"strconv"
@@ -85,4 +87,22 @@ func checkName(name string) error {
 		return errors.New("wallet name must only contain alphabetic characters and numbers")
 	}
 	return nil
+}
+func printFees(info *boltzrpc.PairInfo) {
+	fmt.Println("The fees for this service are:")
+	fmt.Printf("  - Service fee: %.1f%%\n", info.Fees.Percentage)
+	fmt.Printf("  - Miner fee: %s\n", utils.Satoshis(info.Fees.MinerFees))
+	fmt.Println()
+}
+
+func printDeposit(amount uint64, address string, hours float32, blockHeight uint64, limits *boltzrpc.Limits) {
+	var amountString string
+	if amount == 0 {
+		amountString = fmt.Sprintf("between %d and %d satoshis", limits.Minimal, limits.Maximal)
+	} else {
+		amountString = utils.Satoshis(amount)
+	}
+
+	fmt.Printf("Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
+		amountString, address, hours, blockHeight)
 }
