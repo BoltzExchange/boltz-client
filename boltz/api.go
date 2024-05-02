@@ -281,14 +281,16 @@ type SetInvoiceResponse struct {
 }
 
 type CreateReverseSwapRequest struct {
-	From           Currency  `json:"from"`
-	To             Currency  `json:"to"`
-	PreimageHash   HexString `json:"preimageHash"`
-	ClaimPublicKey HexString `json:"claimPublicKey"`
-	InvoiceAmount  uint64    `json:"invoiceAmount,omitempty"`
-	OnchainAmount  uint64    `json:"onchainAmount,omitempty"`
-	PairHash       string    `json:"pairHash,omitempty"`
-	ReferralId     string    `json:"referralId"`
+	From             Currency  `json:"from"`
+	To               Currency  `json:"to"`
+	PreimageHash     HexString `json:"preimageHash"`
+	ClaimPublicKey   HexString `json:"claimPublicKey"`
+	InvoiceAmount    uint64    `json:"invoiceAmount,omitempty"`
+	OnchainAmount    uint64    `json:"onchainAmount,omitempty"`
+	PairHash         string    `json:"pairHash,omitempty"`
+	ReferralId       string    `json:"referralId"`
+	Address          string    `json:"address,omitempty"`
+	AddressSignature HexString `json:"addressSignature,omitempty"`
 
 	Error string `json:"error"`
 }
@@ -603,6 +605,24 @@ func (boltz *Boltz) RefundChainSwap(swapId string, request *RefundRequest) (*Par
 	}
 	var response PartialSignature
 	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/refund", swapId), request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+type ReverseBip21 struct {
+	Bip21     string    `json:"bip21"`
+	Signature HexString `json:"signature"`
+
+	Error string `json:"error"`
+}
+
+func (boltz *Boltz) GetReverseSwapBip21(invoice string) (*ReverseBip21, error) {
+	var response ReverseBip21
+	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/reverse/%s/bip21", invoice), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))

@@ -333,7 +333,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `currency` | [`Currency`](#currency) |  |  |
 | `private_key` | [`string`](#string) |  |  |
 | `their_public_key` | [`string`](#string) |  |  |
-| `amount` | [`int64`](#int64) |  |  |
+| `amount` | [`uint64`](#uint64) |  |  |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) | optional |  |
 | `transaction_id` | [`string`](#string) | optional |  |
@@ -544,7 +544,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `address` | [`string`](#string) |  |  |
-| `expected_amount` | [`int64`](#int64) |  |  |
+| `expected_amount` | [`uint64`](#uint64) |  |  |
 | `bip21` | [`string`](#string) |  |  |
 | `tx_id` | [`string`](#string) |  | lockup transaction id. Only populated when `send_from_internal` was specified in the request |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
@@ -1107,7 +1107,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `redeem_script` | [`string`](#string) |  |  |
 | `invoice` | [`string`](#string) |  |  |
 | `lockup_address` | [`string`](#string) |  |  |
-| `expected_amount` | [`int64`](#int64) |  |  |
+| `expected_amount` | [`uint64`](#uint64) |  |  |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `refund_transaction_id` | [`string`](#string) |  | If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the `lockup_address` back to the configured wallet or the address specified in the `refund_address` field. |
