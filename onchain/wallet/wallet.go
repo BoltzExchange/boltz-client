@@ -579,7 +579,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", err
 	}
 
-	// disable RBF
+	// Disable RBF
 	for _, outputs := range outputs.Unspent {
 		for _, output := range outputs {
 			output["sequence"] = wire.MaxTxInSequenceNum - 1
