@@ -116,13 +116,13 @@ func (nursery *Nursery) Stop() {
 	nursery.stopped = true
 	nursery.stop.Send(true)
 	logger.Debugf("Sent stop signal to block listener")
+	nursery.boltzWs.Close()
+	nursery.waitGroup.Wait()
 	for id := range nursery.eventListeners {
 		nursery.removeSwapListener(id)
 	}
 	nursery.globalListener.Close()
 	logger.Debugf("Closed all event listeners")
-	nursery.boltzWs.Close()
-	nursery.waitGroup.Wait()
 }
 
 func (nursery *Nursery) registerSwap(id string) error {
