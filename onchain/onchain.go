@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/logger"
@@ -164,12 +165,22 @@ func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, our
 	if err != nil {
 		return nil, err
 	}
-	hex, err := chain.Tx.GetRawTransaction(txId)
-	if err != nil {
-		return nil, err
+	retry := 5
+	for {
+		// Check if the transaction is in the mempool
+		hex, err := chain.Tx.GetRawTransaction(txId)
+		if err != nil {
+			if retry == 0 {
+				return nil, err
+			}
+			retry--
+			retryInterval := 10 * time.Second
+			logger.Debugf("Transaction %s not found yet, retrying in %s", txId, retryInterval)
+			<-time.After(retryInterval)
+		} else {
+			return boltz.NewTxFromHex(currency, hex, ourOutputBlindingKey)
+		}
 	}
-
-	return boltz.NewTxFromHex(currency, hex, ourOutputBlindingKey)
 }
 
 func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) (uint64, error) {
