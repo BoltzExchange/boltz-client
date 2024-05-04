@@ -72,7 +72,7 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *Output {
 }
 
 func (nursery *Nursery) RegisterSwap(swap database.Swap) error {
-	if err := nursery.registerSwap(swap.Id); err != nil {
+	if err := nursery.registerSwaps([]string{swap.Id}); err != nil {
 		return err
 	}
 	nursery.sendSwapUpdate(swap)

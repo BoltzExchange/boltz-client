@@ -21,11 +21,11 @@ func (nursery *Nursery) sendChainSwapUpdate(swap database.ChainSwap) {
 	})
 }
 
-func (nursery *Nursery) RegisterChainSwap(swap database.ChainSwap) error {
-	if err := nursery.registerSwap(swap.Id); err != nil {
+func (nursery *Nursery) RegisterChainSwap(chainSwap database.ChainSwap) error {
+	if err := nursery.registerSwaps([]string{chainSwap.Id}); err != nil {
 		return err
 	}
-	nursery.sendChainSwapUpdate(swap)
+	nursery.sendChainSwapUpdate(chainSwap)
 	return nil
 }
 

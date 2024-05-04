@@ -22,7 +22,7 @@ func (nursery *Nursery) sendReverseSwapUpdate(reverseSwap database.ReverseSwap) 
 }
 
 func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) error {
-	if err := nursery.registerSwap(reverseSwap.Id); err != nil {
+	if err := nursery.registerSwaps([]string{reverseSwap.Id}); err != nil {
 		return err
 	}
 	nursery.sendReverseSwapUpdate(reverseSwap)

@@ -125,17 +125,19 @@ func (nursery *Nursery) Stop() {
 	logger.Debugf("Closed all event listeners")
 }
 
-func (nursery *Nursery) registerSwap(id string) error {
-	logger.Infof("Listening to events of Swap %s", id)
+func (nursery *Nursery) registerSwaps(swapIds []string) error {
+	logger.Infof("Listening to events of Swaps: %v", swapIds)
 	nursery.eventListenersLock.Lock()
 	defer nursery.eventListenersLock.Unlock()
 
-	if err := nursery.boltzWs.Subscribe([]string{id}); err != nil {
+	if err := nursery.boltzWs.Subscribe(swapIds); err != nil {
 		return err
 	}
 
-	updates := make(chan SwapUpdate)
-	nursery.eventListeners[id] = utils.ForwardChannel(updates, 0, true)
+	for _, id := range swapIds {
+		updates := make(chan SwapUpdate)
+		nursery.eventListeners[id] = utils.ForwardChannel(updates, 0, true)
+	}
 
 	return nil
 }
@@ -169,7 +171,7 @@ func (nursery *Nursery) recoverPending() error {
 		swapIds = append(swapIds, chainSwap.Id)
 	}
 
-	return nursery.boltzWs.Subscribe(swapIds)
+	return nursery.registerSwaps(swapIds)
 }
 
 func (nursery *Nursery) startSwapListener() {
