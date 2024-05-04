@@ -207,6 +207,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			return
 		}
 	} else if parsedStatus.IsFailedStatus() {
+		logger.Infof("Chain Swap %s failed", swap.Id)
+
 		if swap.State == boltzrpc.SwapState_PENDING {
 			if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
 				handleError("Could not update state of Swap " + swap.Id + ": " + err.Error())
@@ -214,11 +216,13 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			}
 		}
 
-		logger.Infof("Chain Swap %s failed, trying to refund cooperatively", swap.Id)
-		if err := nursery.RefundSwaps(swap.Pair.From, nil, []database.ChainSwap{*swap}); err != nil {
-			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
-			return
+		if swap.FromData.LockupTransactionId != "" {
+			if err := nursery.RefundSwaps(swap.Pair.From, nil, []database.ChainSwap{*swap}); err != nil {
+				handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
+				return
+			}
 		}
+
 		return
 	}
 	nursery.sendChainSwapUpdate(*swap)
