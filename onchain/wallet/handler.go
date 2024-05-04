@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"github.com/BoltzExchange/boltz-client/logger"
+	"sync"
 )
 
 // #include "gdk.h"
@@ -16,6 +17,7 @@ var (
 type handlerFunc = func(map[string]any)
 
 var handlers = make(map[string]handlerFunc)
+var handlerLock = sync.Mutex{}
 
 // this has to be in a seperate file to avoid c redefition issues
 //
@@ -38,9 +40,13 @@ func go_notification_handler(details Json) {
 }
 
 func registerHandler(notification Notification, handler handlerFunc) {
+	handlerLock.Lock()
+	defer handlerLock.Unlock()
 	handlers[string(notification)] = handler
 }
 
 func removeHandler(notification Notification) {
+	handlerLock.Lock()
+	defer handlerLock.Unlock()
 	delete(handlers, string(notification))
 }
