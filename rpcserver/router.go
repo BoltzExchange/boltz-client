@@ -71,29 +71,25 @@ func (server *routedBoltzServer) queryRefundableSwaps() (
 		err = fmt.Errorf("failed to get block height for btc: %w", err)
 		return
 	}
+	swaps, chainSwaps, err = server.database.QueryAllRefundableSwaps(boltz.CurrencyBtc, heights.Btc)
+	if err != nil {
+		return
+	}
+
 	liquidHeight, err := server.onchain.GetBlockHeight(boltz.CurrencyLiquid)
 	if err != nil {
 		logger.Warnf("Failed to get block height for liquid: %v", err)
 	} else {
 		heights.Liquid = &liquidHeight
+		liquidSwaps, liquidChainSwaps, liquidErr := server.database.QueryAllRefundableSwaps(boltz.CurrencyLiquid, liquidHeight)
+		if liquidErr != nil {
+			err = liquidErr
+			return
+		}
+		swaps = append(swaps, liquidSwaps...)
+		chainSwaps = append(chainSwaps, liquidChainSwaps...)
 	}
 
-	swaps, err = server.database.QueryRefundableSwaps("")
-	if err != nil {
-		return
-	}
-
-	refundableChainSwaps, err := server.database.QueryRefundableChainSwaps(boltz.CurrencyBtc, heights.Btc)
-	if err != nil {
-		return
-	}
-	chainSwaps = append(chainSwaps, refundableChainSwaps...)
-
-	refundableChainSwaps, err = server.database.QueryRefundableChainSwaps(boltz.CurrencyLiquid, liquidHeight)
-	if err != nil {
-		return
-	}
-	chainSwaps = append(chainSwaps, refundableChainSwaps...)
 	return
 }
 
