@@ -225,7 +225,7 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		chain.Liquid.Tx = client
 	}
 
-	// use boltz in regtest to avoid situations where electrum doesnt know about the tx yet
+	// Use the Boltz API in regtest to avoid situations where electrum doesnt know about the tx yet
 	if network == boltz.Regtest {
 		chain.Btc.Tx = onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc)
 		chain.Liquid.Tx = onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid)
