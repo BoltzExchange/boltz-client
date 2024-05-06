@@ -1,6 +1,7 @@
 package database
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"errors"
@@ -114,6 +115,11 @@ func (reverseSwap *ReverseSwap) InitTree() error {
 		reverseSwap.PrivateKey,
 		reverseSwap.RefundPubKey,
 	)
+}
+
+func (reverseSwap *ReverseSwap) PreimageHash() []byte {
+	hash := sha256.Sum256(reverseSwap.Preimage)
+	return hash[:]
 }
 
 func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {

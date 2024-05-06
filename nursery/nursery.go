@@ -168,6 +168,10 @@ func (nursery *Nursery) recoverPending() error {
 		swapIds = append(swapIds, swap.Id)
 	}
 	for _, reverseSwap := range reverseSwaps {
+		if err := nursery.payReverseSwap(&reverseSwap); err != nil {
+			logger.Errorf("Could not initiate reverse swap payment %s: %v", reverseSwap.Id, err)
+			continue
+		}
 		swapIds = append(swapIds, reverseSwap.Id)
 	}
 	for _, chainSwap := range chainSwaps {

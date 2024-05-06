@@ -728,17 +728,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	rpcResponse := &boltzrpc.CreateReverseSwapResponse{
 		Id:            reverseSwap.Id,
 		LockupAddress: response.LockupAddress,
-	}
-
-	if externalPay {
-		rpcResponse.Invoice = &reverseSwap.Invoice
-	} else {
-		if err := server.nursery.PayReverseSwap(&reverseSwap); err != nil {
-			if dbErr := server.database.UpdateReverseSwapState(&reverseSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
-				return nil, handleError(dbErr)
-			}
-			return nil, handleError(err)
-		}
+		Invoice:       &reverseSwap.Invoice,
 	}
 
 	if !returnImmediately && request.AcceptZeroConf {
