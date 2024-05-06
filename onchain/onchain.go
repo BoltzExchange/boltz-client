@@ -1,6 +1,7 @@
 package onchain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -41,7 +42,7 @@ type WalletChecker struct {
 }
 
 type BlockProvider interface {
-	RegisterBlockListener(channel chan<- *BlockEpoch, stop <-chan bool) error
+	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
 	EstimateFee(confTarget int32) (float64, error)
 }

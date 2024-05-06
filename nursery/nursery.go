@@ -1,6 +1,7 @@
 package nursery
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -18,6 +19,9 @@ import (
 )
 
 type Nursery struct {
+	ctx    context.Context
+	cancel func()
+
 	network *boltz.Network
 
 	lightning lightning.LightningNode
@@ -31,12 +35,9 @@ type Nursery struct {
 	eventListenersLock sync.RWMutex
 	globalListener     swapListener
 	waitGroup          sync.WaitGroup
-	stop               *utils.ChannelForwarder[bool]
 
 	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
 	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
-
-	stopped bool
 }
 
 const retryInterval = 15 * time.Second
@@ -90,6 +91,7 @@ func (nursery *Nursery) Init(
 	boltzClient *boltz.Boltz,
 	database *database.Database,
 ) error {
+	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())
 	nursery.network = network
 	nursery.lightning = lightning
 	nursery.boltz = boltzClient
@@ -97,7 +99,6 @@ func (nursery *Nursery) Init(
 	nursery.onchain = chain
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
-	nursery.stop = utils.ForwardChannel(make(chan bool), 0, false)
 	nursery.boltzWs = boltz.NewBoltzWebsocket(boltzClient.URL)
 
 	logger.Info("Starting nursery")
@@ -115,9 +116,7 @@ func (nursery *Nursery) Init(
 }
 
 func (nursery *Nursery) Stop() {
-	nursery.stopped = true
-	nursery.stop.Send(true)
-	logger.Debugf("Sent stop signal to block listener")
+	nursery.cancel()
 	if err := nursery.boltzWs.Close(); err != nil {
 		logger.Errorf("Could not close boltz websocket: %v", err)
 	}
@@ -226,7 +225,6 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.Ch
 
 	logger.Infof("Connecting to block %s epoch stream", currency)
 	blocks := make(chan *onchain.BlockEpoch)
-	stop := nursery.stop.Get()
 	blockNotifier := utils.ForwardChannel(blocks, 0, false)
 
 	nursery.waitGroup.Add(1)
@@ -237,23 +235,20 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.Ch
 			nursery.waitGroup.Done()
 			logger.Debugf("Closed block listener for %s", currency)
 		}()
-		for !nursery.stopped {
-			err := provider.RegisterBlockListener(blocks, stop)
-			if nursery.stopped {
-				return
-			}
-			if err != nil {
+		for {
+			err := provider.RegisterBlockListener(nursery.ctx, blocks)
+			if err != nil && nursery.ctx.Err() == nil {
 				logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
 				logger.Infof("Retrying connection in %s", retryInterval)
 			}
 			select {
-			case <-stop:
+			case <-nursery.ctx.Done():
 				return
 			case <-time.After(retryInterval):
 			}
-
 		}
 	}()
+
 	return blockNotifier
 }
 

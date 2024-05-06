@@ -206,7 +206,7 @@ func (c *Cln) CreateInvoice(value uint64, preimage []byte, expiry int64, memo st
 	}, nil
 }
 
-func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
+func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 	retry := uint32(timeoutSeconds)
 
 	var exclude []string
@@ -224,7 +224,7 @@ func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, cha
 		}
 	}
 
-	res, err := c.Client.Pay(context.Background(), &protos.PayRequest{
+	res, err := c.Client.Pay(ctx, &protos.PayRequest{
 		Bolt11:   invoice,
 		RetryFor: &retry,
 		Maxfee: &protos.Amount{

@@ -96,11 +96,9 @@ type Subaccount struct {
 
 type Wallet struct {
 	onchain.WalletInfo
-	subaccount         *uint64
-	session            Session
-	connected          bool
-	blockHeight        uint32
-	blockHeightChannel chan uint32
+	subaccount *uint64
+	session    Session
+	connected  bool
 }
 
 type Config struct {
@@ -250,22 +248,6 @@ func (wallet *Wallet) Connect() error {
 	if wallet.connected {
 		return nil
 	}
-
-	wallet.blockHeightChannel = make(chan uint32)
-
-	registerHandler(blockNotification, func(data map[string]any) {
-		blockHeight, ok := data["block_height"].(float64)
-		if ok {
-			wallet.blockHeight = uint32(blockHeight)
-			select {
-			case wallet.blockHeightChannel <- wallet.blockHeight:
-				logger.Debugf("Sent block height update: %d", int(blockHeight))
-			default:
-			}
-		} else {
-			logger.Warnf("Could not parse block height from data: %v", data)
-		}
-	})
 
 	if err := toErr(C.GA_create_session(&wallet.session)); err != nil {
 		return err
@@ -485,9 +467,6 @@ func (wallet *Wallet) Remove() error {
 	wallet.connected = false
 	wallet.session = nil
 
-	removeHandler(blockNotification)
-	close(wallet.blockHeightChannel)
-	wallet.blockHeight = 0
 	return nil
 }
 
@@ -635,33 +614,6 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", errors.New(sendTx.Error)
 	}
 	return sendTx.TxHash, nil
-}
-
-func (wallet *Wallet) GetBlockHeight() (uint32, error) {
-	// this is not perfect because it is zero until the first block is received, but there is no proper get_blockheight call
-	if wallet.blockHeight == 0 {
-		return 0, errors.New("block height not available yet. wait for first block")
-	}
-	return wallet.blockHeight, nil
-}
-
-func (wallet *Wallet) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-	if !wallet.connected {
-		return errors.New("wallet not connected")
-	}
-	for {
-		select {
-		case height, ok := <-wallet.blockHeightChannel:
-			if !ok {
-				return errors.New("wallet was removed")
-			}
-			channel <- &onchain.BlockEpoch{
-				Height: height,
-			}
-		case <-stop:
-			return nil
-		}
-	}
 }
 
 func (wallet *Wallet) Ready() bool {

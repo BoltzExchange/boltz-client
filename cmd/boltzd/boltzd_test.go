@@ -963,7 +963,7 @@ func TestReverseSwap(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, swap.Invoice)
 
-		_, err = lnd.PayInvoice(*swap.Invoice, 10000, 30, nil)
+		_, err = lnd.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
 		stream, _ := swapStream(t, client, swap.Id)
@@ -1001,7 +1001,7 @@ func TestReverseSwap(t *testing.T) {
 
 		stream, _ := swapStream(t, client, swap.Id)
 
-		_, err = cfg.Lightning.PayInvoice(*swap.Invoice, 10000, 30, nil)
+		_, err = cfg.Lightning.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
 		stream(boltzrpc.SwapState_PENDING)
@@ -1358,7 +1358,7 @@ func TestAutoSwap(t *testing.T) {
 
 				response, err := to.CreateInvoice(amount, nil, 100000, "Testt")
 				require.NoError(t, err)
-				_, err = from.PayInvoice(response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
+				_, err = from.PayInvoice(context.Background(), response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
 				require.NoError(t, err)
 
 				time.Sleep(1000 * time.Millisecond)

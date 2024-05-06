@@ -51,6 +51,7 @@ type LND struct {
 	DataDir     string `long:"lnd.datadir" description:"Path to the data directory of the LND node"`
 
 	ctx           context.Context
+	metadata      metadata.MD
 	regtest       bool
 	client        lnrpc.LightningClient
 	router        routerrpc.RouterClient
@@ -59,6 +60,10 @@ type LND struct {
 	chainNotifier chainrpc.ChainNotifierClient
 
 	walletInfo onchain.WalletInfo
+}
+
+func (lnd *LND) withParentCtx(ctx context.Context) context.Context {
+	return metadata.NewOutgoingContext(ctx, lnd.metadata)
 }
 
 func (lnd *LND) GetWalletInfo() onchain.WalletInfo {
@@ -112,8 +117,8 @@ func (lnd *LND) Connect() error {
 			return errors.New(fmt.Sprint("could not read LND macaroon: ", err))
 		}
 
-		macaroon := metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
-		lnd.ctx = metadata.NewOutgoingContext(context.Background(), macaroon)
+		lnd.metadata = metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
+		lnd.ctx = lnd.withParentCtx(context.Background())
 	}
 
 	return nil
@@ -292,7 +297,7 @@ func (lnd *LND) GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error) {
 	})
 }
 
-func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
+func (lnd *LND) PayInvoice(ctx context.Context, invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 	var outgoungIds []uint64
 	for _, chanId := range chanIds {
 		if chanId != 0 {
@@ -300,7 +305,7 @@ func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, c
 		}
 	}
 
-	client, err := lnd.router.SendPaymentV2(lnd.ctx, &routerrpc.SendPaymentRequest{
+	client, err := lnd.router.SendPaymentV2(lnd.withParentCtx(ctx), &routerrpc.SendPaymentRequest{
 		PaymentRequest:    invoice,
 		TimeoutSeconds:    int32(timeoutSeconds),
 		FeeLimitSat:       int64(feeLimit),

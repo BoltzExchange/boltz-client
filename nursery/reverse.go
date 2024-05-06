@@ -39,17 +39,24 @@ func (nursery *Nursery) PayReverseSwap(reverseSwap *database.ReverseSwap) error 
 		return fmt.Errorf("no lightning node available to pay invoice")
 	}
 
+	nursery.waitGroup.Add(1)
 	go func() {
-		payment, err := nursery.lightning.PayInvoice(reverseSwap.Invoice, feeLimit, 30, reverseSwap.ChanIds)
+		defer nursery.waitGroup.Done()
+		payment, err := nursery.lightning.PayInvoice(nursery.ctx, reverseSwap.Invoice, feeLimit, 30, reverseSwap.ChanIds)
 		if err != nil {
-			if dbErr := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
-				logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
+			if nursery.ctx.Err() == nil {
+				if dbErr := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+					logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
+					return
+				}
+				reverseSwap, err := nursery.database.QueryReverseSwap(reverseSwap.Id)
+				if err != nil {
+					logger.Error("Could not query Reverse Swap: " + err.Error())
+					return
+				}
+				logger.Errorf("Could not pay invoice %s: %v", reverseSwap.Invoice, err)
+				nursery.sendReverseSwapUpdate(*reverseSwap)
 			}
-			logger.Errorf("Could not pay invoice %s: %v", reverseSwap.Invoice, err)
-			if nursery.stopped {
-				return
-			}
-			nursery.sendReverseSwapUpdate(*reverseSwap)
 		} else {
 			logger.Info("Paid invoice of Reverse Swap " + reverseSwap.Id + " with fee of " + utils.FormatMilliSat(int64(payment.FeeMsat)) + " satoshis")
 		}

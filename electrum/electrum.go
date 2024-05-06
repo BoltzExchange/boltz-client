@@ -48,16 +48,16 @@ func NewClient(url string, ssl bool) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
-	results, err := c.client.SubscribeHeaders(ctx)
+func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
+	connectCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	results, err := c.client.SubscribeHeaders(connectCtx)
 	cancel()
 	if err != nil {
 		return err
 	}
 	for {
 		select {
-		case <-stop:
+		case <-ctx.Done():
 			return nil
 		case result := <-results:
 			c.blockHeight = uint32(result.Height)

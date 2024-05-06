@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -115,7 +116,7 @@ func (c *Client) BroadcastTransaction(txHex string) (string, error) {
 	return string(id), nil
 }
 
-func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
+func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
 	ws, err := url.Parse(c.apiv1)
 	if err != nil {
 		return err
@@ -158,7 +159,7 @@ func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop 
 					logger.Error("Could not ping mempool websocket: " + err.Error())
 					return
 				}
-			case <-stop:
+			case <-ctx.Done():
 				closed = true
 				if err := conn.Close(); err != nil {
 					logger.Error("Could not close mempool websocket: " + err.Error())

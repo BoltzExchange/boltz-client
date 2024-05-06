@@ -43,26 +43,6 @@ func TestSend(t *testing.T) {
 	test.MineBlock()
 }
 
-func TestBlockStream(t *testing.T) {
-	blocks := make(chan *onchain.BlockEpoch)
-	stop := make(chan bool)
-	go func() {
-		err := wallet.RegisterBlockListener(blocks, stop)
-		require.NoError(t, err)
-		close(blocks)
-	}()
-	test.MineBlock()
-	block := <-blocks
-	stop <- true
-	_, ok := <-blocks
-	require.False(t, ok)
-	require.NotEqual(t, 0, block.Height)
-
-	height, err := wallet.GetBlockHeight()
-	require.NoError(t, err)
-	require.Equal(t, block.Height, height)
-}
-
 func TestReal(t *testing.T) {
 	subaccounts, err := wallet.GetSubaccounts(true)
 	require.NoError(t, err)
