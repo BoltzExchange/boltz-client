@@ -847,8 +847,8 @@ func TestReverseSwap(t *testing.T) {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
 					cfg.Boltz.DisablePartialSignatures = tc.disablePartials
-					client, _, stop := setup(t, cfg, "")
 					cfg.Node = node
+					client, _, stop := setup(t, cfg, "")
 					chain := getOnchain(t, cfg)
 
 					pair := &boltzrpc.Pair{
