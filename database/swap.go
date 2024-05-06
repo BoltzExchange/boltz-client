@@ -278,14 +278,19 @@ func (database *Database) QueryNonSuccessfullSwaps(currency boltz.Currency) ([]S
 	)
 }
 
-func (database *Database) QueryRefundableSwaps(currency boltz.Currency) ([]Swap, error) {
-	values := []any{boltzrpc.SwapState_SUCCESSFUL}
-	query := "SELECT * FROM swaps WHERE state != ? AND lockupTransactionId != '' AND refundTransactionId = ''"
-	if currency != "" {
-		values = append(values, currency)
-		query += " AND fromCurrency = ?"
-	}
-	return database.querySwaps(query, values...)
+const refundableSwapsQuery = `
+SELECT * FROM swaps
+WHERE fromCurrency = ?
+  AND swaps.lockupTransactionId != ''
+  AND swaps.refundTransactionId == ''
+  AND (state IN (?, ?) OR (state != ? AND swaps.timeoutBlockheight < ?))
+`
+
+func (database *Database) QueryRefundableSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]Swap, error) {
+	return database.querySwaps(
+		refundableSwapsQuery, currency,
+		boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
+	)
 }
 
 const insertSwapStatement = `

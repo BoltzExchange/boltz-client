@@ -346,6 +346,18 @@ func (database *Database) QueryAnySwap(id string) (*Swap, *ReverseSwap, *ChainSw
 	return nil, nil, nil, fmt.Errorf("could not find any type of Swap with ID %s", id)
 }
 
+func (database *Database) QueryAllRefundableSwaps(currency boltz.Currency, currentHeight uint32) ([]Swap, []ChainSwap, error) {
+	swaps, err := database.QueryRefundableSwaps(currency, currentHeight)
+	if err != nil {
+		return nil, nil, err
+	}
+	chainSwaps, err := database.QueryRefundableChainSwaps(currency, currentHeight)
+	if err != nil {
+		return nil, nil, err
+	}
+	return swaps, chainSwaps, nil
+}
+
 func (database *Database) createTables() error {
 	_, err := database.Exec(createTables)
 	return err
