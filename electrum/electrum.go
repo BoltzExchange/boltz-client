@@ -49,7 +49,9 @@ func NewClient(url string, ssl bool) (*Client, error) {
 }
 
 func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-	results, err := c.client.SubscribeHeaders(c.ctx)
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	results, err := c.client.SubscribeHeaders(ctx)
+	cancel()
 	if err != nil {
 		return err
 	}
