@@ -146,9 +146,9 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (
 
 	var minFee float64
 	if chain == onchain.Liquid {
-		minFee = 0.11
+		minFee = 0.1
 	} else if chain == onchain.Btc {
-		minFee = 1.1
+		minFee = 1
 	}
 
 	fee, err := chain.Blocks.EstimateFee(confTarget)

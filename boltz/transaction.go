@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/txscript"
+	"math"
 )
 
 const sigHashType = txscript.SigHashDefault
@@ -117,7 +118,7 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 		return nil, nil, err
 	}
 
-	fee := uint64(float64(noFeeTransaction.VSize()) * satPerVbyte)
+	fee := uint64(math.Ceil(float64(noFeeTransaction.VSize()) * satPerVbyte))
 
 	transaction, err := construct(network, outputs, getOutValues(fee))
 	if err != nil {
