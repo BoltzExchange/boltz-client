@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"runtime"
@@ -55,6 +57,8 @@ type Config struct {
 	ElectrumSSL            bool   `long:"electrum-ssl" description:"whether the electrum server uses ssl"`
 	ElectrumLiquidUrl      string `long:"electrum-liquid" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
 	ElectrumLiquiLiquidSSL bool   `long:"electrum-liquid-ssl" description:"whether the electrum server uses ssl"`
+
+	Proxy string `long:"proxy" description:"Proxy URL to use for all boltz api requests"`
 
 	Help *helpOptions `group:"Help Options"`
 }
@@ -145,6 +149,18 @@ func LoadConfig(dataDir string) (*Config, error) {
 	}
 
 	fmt.Println("Using data dir: " + cfg.DataDir)
+
+	if cfg.Proxy != "" {
+		proxy, err := url.Parse(cfg.Proxy)
+		if err != nil {
+			return nil, fmt.Errorf("invalid proxy URL: %v", err)
+		}
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.Proxy = http.ProxyURL(proxy)
+		cfg.Boltz.Client = http.Client{
+			Transport: transport,
+		}
+	}
 
 	if strings.EqualFold(cfg.Node, "CLN") && cfg.Cln.DataDir == "" {
 		cfg.Cln.DataDir = "~/.lightning"

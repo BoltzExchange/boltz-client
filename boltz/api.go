@@ -12,7 +12,8 @@ import (
 )
 
 type Boltz struct {
-	URL string `long:"boltz.url" description:"URL endpoint of the Boltz API"`
+	URL    string      `long:"boltz.url" description:"URL endpoint of the Boltz API"`
+	Client http.Client `json:"-"`
 
 	DisablePartialSignatures bool
 }
@@ -612,7 +613,7 @@ func (boltz *Boltz) RefundChainSwap(swapId string, request *RefundRequest) (*Par
 }
 
 func (boltz *Boltz) sendGetRequest(endpoint string, response interface{}) error {
-	res, err := http.Get(boltz.URL + endpoint)
+	res, err := boltz.Client.Get(boltz.URL + endpoint)
 
 	if err != nil {
 		return err
@@ -628,7 +629,7 @@ func (boltz *Boltz) sendPostRequest(endpoint string, requestBody interface{}, re
 		return err
 	}
 
-	res, err := http.Post(boltz.URL+endpoint, "application/json", bytes.NewBuffer(rawBody))
+	res, err := boltz.Client.Post(boltz.URL+endpoint, "application/json", bytes.NewBuffer(rawBody))
 
 	if err != nil {
 		return err
