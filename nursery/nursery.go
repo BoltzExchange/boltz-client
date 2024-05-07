@@ -1,10 +1,10 @@
 package nursery
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"strconv"
 	"sync"
 	"time"
 
@@ -19,6 +19,9 @@ import (
 )
 
 type Nursery struct {
+	ctx    context.Context
+	cancel func()
+
 	network *boltz.Network
 
 	lightning lightning.LightningNode
@@ -32,12 +35,12 @@ type Nursery struct {
 	eventListenersLock sync.RWMutex
 	globalListener     swapListener
 	waitGroup          sync.WaitGroup
-	stop               *utils.ChannelForwarder[bool]
 
-	stopped bool
+	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
+	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
 }
 
-const retryInterval = 15
+const retryInterval = 15 * time.Second
 
 type SwapUpdate struct {
 	Swap        *database.Swap
@@ -88,6 +91,7 @@ func (nursery *Nursery) Init(
 	boltzClient *boltz.Boltz,
 	database *database.Database,
 ) error {
+	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())
 	nursery.network = network
 	nursery.lightning = lightning
 	nursery.boltz = boltzClient
@@ -95,7 +99,6 @@ func (nursery *Nursery) Init(
 	nursery.onchain = chain
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
-	nursery.stop = utils.ForwardChannel(make(chan bool), 0, false)
 	nursery.boltzWs = boltz.NewBoltzWebsocket(boltzClient.URL)
 
 	logger.Info("Starting nursery")
@@ -104,8 +107,8 @@ func (nursery *Nursery) Init(
 		return fmt.Errorf("could not connect to boltz websocket: %v", err)
 	}
 
-	nursery.startBlockListener(boltz.CurrencyBtc)
-	nursery.startBlockListener(boltz.CurrencyLiquid)
+	nursery.BtcBlocks = nursery.startBlockListener(boltz.CurrencyBtc)
+	nursery.LiquidBlocks = nursery.startBlockListener(boltz.CurrencyLiquid)
 
 	nursery.startSwapListener()
 
@@ -113,16 +116,17 @@ func (nursery *Nursery) Init(
 }
 
 func (nursery *Nursery) Stop() {
-	nursery.stopped = true
-	nursery.stop.Send(true)
-	logger.Debugf("Sent stop signal to block listener")
-	nursery.boltzWs.Close()
+	nursery.cancel()
+	if err := nursery.boltzWs.Close(); err != nil {
+		logger.Errorf("Could not close boltz websocket: %v", err)
+	}
 	nursery.waitGroup.Wait()
 	for id := range nursery.eventListeners {
 		nursery.removeSwapListener(id)
 	}
 	nursery.globalListener.Close()
 	logger.Debugf("Closed all event listeners")
+	nursery.onchain.Shutdown()
 }
 
 func (nursery *Nursery) registerSwaps(swapIds []string) error {
@@ -165,6 +169,10 @@ func (nursery *Nursery) recoverPending() error {
 		swapIds = append(swapIds, swap.Id)
 	}
 	for _, reverseSwap := range reverseSwaps {
+		if err := nursery.payReverseSwap(&reverseSwap); err != nil {
+			logger.Errorf("Could not initiate reverse swap payment %s: %v", reverseSwap.Id, err)
+			continue
+		}
 		swapIds = append(swapIds, reverseSwap.Id)
 	}
 	for _, chainSwap := range chainSwaps {
@@ -213,48 +221,39 @@ func (nursery *Nursery) removeSwapListener(id string) {
 	}
 }
 
-func (nursery *Nursery) registerBlockListener(currency boltz.Currency) chan *onchain.BlockEpoch {
+func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
+	provider := nursery.onchain.GetBlockProvider(currency)
+	if provider == nil {
+		logger.Warnf("no block listener for %s", currency)
+		return nil
+	}
+
 	logger.Infof("Connecting to block %s epoch stream", currency)
-	blockNotifier := make(chan *onchain.BlockEpoch)
-	stop := nursery.stop.Get()
+	blocks := make(chan *onchain.BlockEpoch)
+	blockNotifier := utils.ForwardChannel(blocks, 0, false)
 
 	nursery.waitGroup.Add(1)
 
 	go func() {
 		defer func() {
-			close(blockNotifier)
-			nursery.stop.Remove(stop)
+			blockNotifier.Close()
 			nursery.waitGroup.Done()
 			logger.Debugf("Closed block listener for %s", currency)
 		}()
-		for !nursery.stopped {
-			listener := nursery.onchain.GetBlockListener(currency)
-			if listener == nil {
-				logger.Warnf("no block listener for %s", currency)
-				onWalletChange := nursery.onchain.OnWalletChange.Get()
-				select {
-				case <-stop:
-					return
-				case <-onWalletChange:
-				}
-				nursery.onchain.OnWalletChange.Remove(onWalletChange)
-			} else {
-				err := listener.RegisterBlockListener(blockNotifier, stop)
-				if err != nil {
-					logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
-					logger.Infof("Retrying connection in " + strconv.Itoa(retryInterval) + " seconds")
-				}
-				if nursery.stopped {
-					return
-				}
-				select {
-				case <-stop:
-					return
-				case <-time.After(retryInterval * time.Second):
-				}
+		for {
+			err := provider.RegisterBlockListener(nursery.ctx, blocks)
+			if err != nil && nursery.ctx.Err() == nil {
+				logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
+				logger.Infof("Retrying connection in %s", retryInterval)
+			}
+			select {
+			case <-nursery.ctx.Done():
+				return
+			case <-time.After(retryInterval):
 			}
 		}
 	}()
+
 	return blockNotifier
 }
 
@@ -286,13 +285,11 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 		return "", fmt.Errorf("construct transaction: %v", err)
 	}
 
-	response, err := nursery.boltz.BroadcastTransaction(transaction)
+	id, err := nursery.onchain.BroadcastTransaction(transaction)
 	if err != nil {
 		return "", fmt.Errorf("broadcast transaction: %v", err)
 	}
-	logger.Infof("Broadcast transaction: %s", response.TransactionId)
-
-	id := response.TransactionId
+	logger.Infof("Broadcast transaction: %s", id)
 
 	for _, output := range valid {
 		result := results[output.SwapId]

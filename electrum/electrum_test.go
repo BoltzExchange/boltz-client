@@ -3,6 +3,7 @@
 package electrum
 
 import (
+	"context"
 	"testing"
 
 	"github.com/BoltzExchange/boltz-client/onchain"
@@ -21,9 +22,9 @@ func client(t *testing.T) *Client {
 func TestBlockStream(t *testing.T) {
 	client := client(t)
 	blocks := make(chan *onchain.BlockEpoch)
-	stop := make(chan bool)
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		err := client.RegisterBlockListener(blocks, stop)
+		err := client.RegisterBlockListener(ctx, blocks)
 		require.NoError(t, err)
 		close(blocks)
 	}()
@@ -32,7 +33,7 @@ func TestBlockStream(t *testing.T) {
 	test.MineBlock()
 	block = <-blocks
 	require.NotZero(t, block.Height)
-	stop <- true
+	cancel()
 	_, ok := <-blocks
 	require.False(t, ok)
 

@@ -58,6 +58,12 @@ func loadConfig(t *testing.T) *config.Config {
 	return cfg
 }
 
+func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
+	chain, err := initOnchain(cfg, boltz.Regtest)
+	require.NoError(t, err)
+	return chain
+}
+
 var walletName = "regtest"
 var password = "password"
 var walletInfo = &boltzrpc.WalletInfo{Currency: boltzrpc.Currency_LBTC, Name: walletName}
@@ -462,7 +468,7 @@ func TestGetPairs(t *testing.T) {
 	require.Len(t, info.Reverse, 2)
 }
 
-func checkTxOutAddress(t *testing.T, chain onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
+func checkTxOutAddress(t *testing.T, chain *onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
 	transaction, err := chain.GetTransaction(currency, txId, nil)
 	require.NoError(t, err)
 
@@ -531,12 +537,7 @@ func TestSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
 	cfg.Node = "LND"
-
-	boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
-	chain := onchain.Onchain{
-		Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
-		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
-	}
+	chain := getOnchain(t, cfg)
 
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
 		invoice, err := zpay32.Decode(swap.Invoice, &chaincfg.RegressionNetParams)
@@ -846,12 +847,9 @@ func TestReverseSwap(t *testing.T) {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
 					cfg.Boltz.DisablePartialSignatures = tc.disablePartials
-					client, _, stop := setup(t, cfg, "")
 					cfg.Node = node
-					chain := onchain.Onchain{
-						Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc)},
-						Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid)},
-					}
+					client, _, stop := setup(t, cfg, "")
+					chain := getOnchain(t, cfg)
 
 					pair := &boltzrpc.Pair{
 						From: boltzrpc.Currency_BTC,
@@ -965,7 +963,7 @@ func TestReverseSwap(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, swap.Invoice)
 
-		_, err = lnd.PayInvoice(*swap.Invoice, 10000, 30, nil)
+		_, err = lnd.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
 		stream, _ := swapStream(t, client, swap.Id)
@@ -1003,7 +1001,7 @@ func TestReverseSwap(t *testing.T) {
 
 		stream, _ := swapStream(t, client, swap.Id)
 
-		_, err = cfg.Lightning.PayInvoice(*swap.Invoice, 10000, 30, nil)
+		_, err = cfg.Lightning.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
 		stream(boltzrpc.SwapState_PENDING)
@@ -1018,12 +1016,7 @@ func TestReverseSwap(t *testing.T) {
 func TestChainSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
-	boltzClient := &boltz.Boltz{URL: cfg.Boltz.URL}
-
-	chain := onchain.Onchain{
-		Btc:    &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyBtc)},
-		Liquid: &onchain.Currency{Tx: onchain.NewBoltzTxProvider(boltzClient, boltz.CurrencyLiquid)},
-	}
+	chain := getOnchain(t, cfg)
 
 	tests := []struct {
 		desc string
@@ -1365,7 +1358,7 @@ func TestAutoSwap(t *testing.T) {
 
 				response, err := to.CreateInvoice(amount, nil, 100000, "Testt")
 				require.NoError(t, err)
-				_, err = from.PayInvoice(response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
+				_, err = from.PayInvoice(context.Background(), response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
 				require.NoError(t, err)
 
 				time.Sleep(1000 * time.Millisecond)

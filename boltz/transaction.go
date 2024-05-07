@@ -61,6 +61,15 @@ func NewTxFromHex(currency Currency, hexString string, ourOutputBlindingKey *btc
 	return NewBtcTxFromHex(hexString)
 }
 
+func TransactionCurrency(transaction Transaction) Currency {
+	switch transaction.(type) {
+	case *LiquidTransaction:
+		return CurrencyLiquid
+	default:
+		return CurrencyBtc
+	}
+}
+
 type OutputResult struct {
 	Err error
 	Fee uint64

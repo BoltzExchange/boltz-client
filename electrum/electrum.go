@@ -48,14 +48,14 @@ func NewClient(url string, ssl bool) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-	results, err := c.client.SubscribeHeaders(c.ctx)
+func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
+	results, err := c.client.SubscribeHeaders(ctx)
 	if err != nil {
 		return err
 	}
 	for {
 		select {
-		case <-stop:
+		case <-ctx.Done():
 			return nil
 		case result := <-results:
 			c.blockHeight = uint32(result.Height)
@@ -70,4 +70,16 @@ func (c *Client) GetBlockHeight() (uint32, error) {
 func (c *Client) EstimateFee(confTarget int32) (float64, error) {
 	fee, err := c.client.GetFee(c.ctx, uint32(confTarget))
 	return float64(fee), err
+}
+
+func (c *Client) GetRawTransaction(txId string) (string, error) {
+	return c.client.GetRawTransaction(c.ctx, txId)
+}
+
+func (c *Client) BroadcastTransaction(txHex string) (string, error) {
+	return c.client.BroadcastTransaction(c.ctx, txHex)
+}
+
+func (c *Client) Shutdown() {
+	c.client.Shutdown()
 }

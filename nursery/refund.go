@@ -5,16 +5,15 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/utils"
 )
 
-func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
+func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
 	blockNotifier := nursery.registerBlockListener(currency)
 
 	go func() {
-		for newBlock := range blockNotifier {
-			if nursery.stopped {
-				return
-			}
+		for newBlock := range blockNotifier.Get() {
 			swaps, chainSwaps, err := nursery.database.QueryAllRefundableSwaps(currency, newBlock.Height)
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
@@ -30,6 +29,8 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) {
 			}
 		}
 	}()
+
+	return blockNotifier
 }
 
 func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []database.Swap, chainSwaps []database.ChainSwap) error {

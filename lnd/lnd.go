@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -52,6 +51,7 @@ type LND struct {
 	DataDir     string `long:"lnd.datadir" description:"Path to the data directory of the LND node"`
 
 	ctx           context.Context
+	metadata      metadata.MD
 	regtest       bool
 	client        lnrpc.LightningClient
 	router        routerrpc.RouterClient
@@ -60,6 +60,10 @@ type LND struct {
 	chainNotifier chainrpc.ChainNotifierClient
 
 	walletInfo onchain.WalletInfo
+}
+
+func (lnd *LND) withParentCtx(ctx context.Context) context.Context {
+	return metadata.NewOutgoingContext(ctx, lnd.metadata)
 }
 
 func (lnd *LND) GetWalletInfo() onchain.WalletInfo {
@@ -113,8 +117,8 @@ func (lnd *LND) Connect() error {
 			return errors.New(fmt.Sprint("could not read LND macaroon: ", err))
 		}
 
-		macaroon := metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
-		lnd.ctx = metadata.NewOutgoingContext(context.Background(), macaroon)
+		lnd.metadata = metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
+		lnd.ctx = lnd.withParentCtx(context.Background())
 	}
 
 	return nil
@@ -293,7 +297,7 @@ func (lnd *LND) GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error) {
 	})
 }
 
-func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
+func (lnd *LND) PayInvoice(ctx context.Context, invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 	var outgoungIds []uint64
 	for _, chanId := range chanIds {
 		if chanId != 0 {
@@ -301,7 +305,7 @@ func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, c
 		}
 	}
 
-	client, err := lnd.router.SendPaymentV2(lnd.ctx, &routerrpc.SendPaymentRequest{
+	client, err := lnd.router.SendPaymentV2(lnd.withParentCtx(ctx), &routerrpc.SendPaymentRequest{
 		PaymentRequest:    invoice,
 		TimeoutSeconds:    int32(timeoutSeconds),
 		FeeLimitSat:       int64(feeLimit),
@@ -332,7 +336,7 @@ func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, c
 func (lnd *LND) PaymentStatus(paymentHash []byte) (*lightning.PaymentStatus, error) {
 	client, err := lnd.router.TrackPaymentV2(lnd.ctx, &routerrpc.TrackPaymentRequest{
 		PaymentHash:       paymentHash,
-		NoInflightUpdates: true,
+		NoInflightUpdates: false,
 	})
 	if err != nil {
 		return nil, err
@@ -363,55 +367,6 @@ func (lnd *LND) NewAddress() (string, error) {
 	return response.Address, err
 }
 
-func (lnd *LND) EstimateFee(confTarget int32) (float64, error) {
-	response, err := lnd.walletKit.EstimateFee(lnd.ctx, &walletrpc.EstimateFeeRequest{
-		ConfTarget: confTarget,
-	})
-	if err != nil {
-		return 0, err
-	}
-	return math.Max(math.Round(float64(response.SatPerKw)/1000), 2), nil
-}
-
-func (lnd *LND) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-	client, err := lnd.chainNotifier.RegisterBlockEpochNtfn(lnd.ctx, &chainrpc.BlockEpoch{})
-
-	if err != nil {
-		return err
-	}
-
-	logger.Info("Connected to LND block epoch stream")
-
-	errChannel := make(chan error)
-	recv := true
-
-	go func() {
-		for {
-			block, err := client.Recv()
-			if !recv {
-				return
-			}
-			if err != nil {
-				errChannel <- err
-				return
-			}
-
-			channel <- &onchain.BlockEpoch{
-				Height: block.Height,
-			}
-		}
-	}()
-
-	for {
-		select {
-		case err := <-errChannel:
-			return err
-		case <-stop:
-			recv = false
-			return nil
-		}
-	}
-}
 func (lnd *LND) GetBalance() (*onchain.Balance, error) {
 	response, err := lnd.client.WalletBalance(lnd.ctx, &lnrpc.WalletBalanceRequest{})
 	if err != nil {

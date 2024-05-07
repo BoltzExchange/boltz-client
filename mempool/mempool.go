@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,7 +84,7 @@ func (c *Client) EstimateFee(confTarget int32) (float64, error) {
 	return fees.HalfHourFee, nil
 }
 
-func (c *Client) GetTxHex(txId string) (string, error) {
+func (c *Client) GetRawTransaction(txId string) (string, error) {
 	res, err := http.Get(c.api + "/tx/" + txId + "/hex")
 	if err != nil {
 		return "", err
@@ -99,7 +100,23 @@ func (c *Client) GetTxHex(txId string) (string, error) {
 	return string(hex), nil
 }
 
-func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
+func (c *Client) BroadcastTransaction(txHex string) (string, error) {
+	res, err := http.Post(c.api+"/tx", "text/plain", strings.NewReader(txHex))
+	if err != nil {
+		return "", err
+	}
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("could not post tx, failed with code %d", res.StatusCode)
+	}
+
+	id, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(id), nil
+}
+
+func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
 	ws, err := url.Parse(c.apiv1)
 	if err != nil {
 		return err
@@ -142,7 +159,7 @@ func (c *Client) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop 
 					logger.Error("Could not ping mempool websocket: " + err.Error())
 					return
 				}
-			case <-stop:
+			case <-ctx.Done():
 				closed = true
 				if err := conn.Close(); err != nil {
 					logger.Error("Could not close mempool websocket: " + err.Error())
@@ -196,4 +213,8 @@ func (c *Client) GetBlockHeight() (uint32, error) {
 		return 0, err
 	}
 	return uint32(height), nil
+}
+
+func (c *Client) Shutdown() {
+
 }

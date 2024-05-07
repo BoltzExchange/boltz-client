@@ -1,10 +1,12 @@
 package onchain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
 	"slices"
+	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/logger"
@@ -39,17 +41,16 @@ type WalletChecker struct {
 	EntityId      *int64
 }
 
-type BlockListener interface {
-	RegisterBlockListener(channel chan<- *BlockEpoch, stop <-chan bool) error
+type BlockProvider interface {
+	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
-}
-
-type FeeProvider interface {
 	EstimateFee(confTarget int32) (float64, error)
+	Shutdown()
 }
 
 type TxProvider interface {
-	GetTxHex(txId string) (string, error)
+	GetRawTransaction(txId string) (string, error)
+	BroadcastTransaction(txHex string) (string, error)
 }
 
 type AddressProvider interface {
@@ -57,8 +58,6 @@ type AddressProvider interface {
 }
 
 type Wallet interface {
-	FeeProvider
-	BlockListener
 	NewAddress() (string, error)
 	SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error)
 	Ready() bool
@@ -67,9 +66,8 @@ type Wallet interface {
 }
 
 type Currency struct {
-	Listener BlockListener
-	Fees     FeeProvider
-	Tx       TxProvider
+	Blocks BlockProvider
+	Tx     TxProvider
 }
 
 type Onchain struct {
@@ -153,28 +151,12 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (
 		minFee = 1.1
 	}
 
-	if chain.Fees != nil {
-		fee, err := chain.Fees.EstimateFee(confTarget)
-		if err == nil {
-			return math.Max(minFee, fee), nil
-		}
-		logger.Warn("Fee provider failed. Falling back to wallet fee estimation: " + err.Error())
-	}
-	wallet, err := onchain.GetAnyWallet(WalletChecker{Currency: currency})
-	if err == nil {
-		var fee float64
-		fee, err = wallet.EstimateFee(confTarget)
-		if err == nil {
-			return math.Max(minFee, fee), err
-		}
-	} else {
-		err = fmt.Errorf("no fee provider for %s", currency)
-	}
+	fee, err := chain.Blocks.EstimateFee(confTarget)
 	if err != nil && currency == boltz.CurrencyLiquid {
 		logger.Warnf("Could not get fee for liquid, falling back to hardcoded min fee: %s", err.Error())
 		return minFee, nil
 	}
-	return 0, err
+	return math.Max(minFee, fee), err
 }
 
 func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, ourOutputBlindingKey *btcec.PrivateKey) (boltz.Transaction, error) {
@@ -185,12 +167,22 @@ func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, our
 	if err != nil {
 		return nil, err
 	}
-	hex, err := chain.Tx.GetTxHex(txId)
-	if err != nil {
-		return nil, err
+	retry := 5
+	for {
+		// Check if the transaction is in the mempool
+		hex, err := chain.Tx.GetRawTransaction(txId)
+		if err != nil {
+			if retry == 0 {
+				return nil, err
+			}
+			retry--
+			retryInterval := 10 * time.Second
+			logger.Debugf("Transaction %s not found yet, retrying in %s", txId, retryInterval)
+			<-time.After(retryInterval)
+		} else {
+			return boltz.NewTxFromHex(currency, hex, ourOutputBlindingKey)
+		}
 	}
-
-	return boltz.NewTxFromHex(currency, hex, ourOutputBlindingKey)
 }
 
 func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) (uint64, error) {
@@ -230,24 +222,38 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 	return 0, fmt.Errorf("unknown transaction type")
 }
 
-func (onchain *Onchain) GetBlockListener(currency boltz.Currency) BlockListener {
-	wallet, err := onchain.GetAnyWallet(WalletChecker{Currency: currency, AllowReadonly: true})
-	if err == nil {
-		return wallet
-	}
-
+func (onchain *Onchain) GetBlockProvider(currency boltz.Currency) BlockProvider {
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return nil
 	}
 
-	return chain.Listener
+	return chain.Blocks
 }
 
 func (onchain *Onchain) GetBlockHeight(currency boltz.Currency) (uint32, error) {
-	listener := onchain.GetBlockListener(currency)
+	listener := onchain.GetBlockProvider(currency)
 	if listener != nil {
 		return listener.GetBlockHeight()
 	}
 	return 0, fmt.Errorf("no block listener for currency %s", currency)
+}
+
+func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (string, error) {
+	chain, err := onchain.GetCurrency(boltz.TransactionCurrency(transaction))
+	if err != nil {
+		return "", err
+	}
+
+	serialized, err := transaction.Serialize()
+	if err != nil {
+		return "", err
+	}
+
+	return chain.Tx.BroadcastTransaction(serialized)
+}
+
+func (onchain *Onchain) Shutdown() {
+	onchain.Btc.Blocks.Shutdown()
+	onchain.Liquid.Blocks.Shutdown()
 }

@@ -206,7 +206,7 @@ func (c *Cln) CreateInvoice(value uint64, preimage []byte, expiry int64, memo st
 	}, nil
 }
 
-func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
+func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 	retry := uint32(timeoutSeconds)
 
 	var exclude []string
@@ -224,7 +224,7 @@ func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, cha
 		}
 	}
 
-	res, err := c.Client.Pay(context.Background(), &protos.PayRequest{
+	res, err := c.Client.Pay(ctx, &protos.PayRequest{
 		Bolt11:   invoice,
 		RetryFor: &retry,
 		Maxfee: &protos.Amount{
@@ -307,43 +307,6 @@ func (c *Cln) PaymentStatus(paymentHash []byte) (*lightning.PaymentStatus, error
 	}, nil
 }
 
-func (c *Cln) RegisterBlockListener(channel chan<- *onchain.BlockEpoch, stop <-chan bool) error {
-	info, err := c.GetInfo()
-	if err != nil {
-		return err
-	}
-	blockheight := info.BlockHeight
-	var interval time.Duration
-	if info.Network != "regtest" {
-		interval = 1 * time.Minute
-	} else {
-		interval = 1 * time.Second
-	}
-	ticker := time.NewTicker(interval)
-
-	for range ticker.C {
-		select {
-		case <-ticker.C:
-			// FIXME: wait for new block with rpc: see https://github.com/ElementsProject/lightning/issues/6735
-			info, err := c.GetInfo()
-			if err != nil {
-				return err
-			}
-
-			if info.BlockHeight > blockheight {
-				blockheight = info.BlockHeight
-				channel <- &onchain.BlockEpoch{
-					Height: blockheight,
-				}
-			}
-		case <-stop:
-			return nil
-		}
-	}
-
-	return err
-}
-
 func (c *Cln) GetBalance() (*onchain.Balance, error) {
 	response, err := c.Client.ListFunds(context.Background(), &protos.ListfundsRequest{})
 	if err != nil {
@@ -386,20 +349,6 @@ func (c *Cln) SendToAddress(address string, amount uint64, satPerVbyte float64) 
 
 	return hex.EncodeToString(response.GetTxid()), nil
 
-}
-
-func (c *Cln) EstimateFee(confTarget int32) (float64, error) {
-	response, err := c.Client.Feerates(context.Background(), &protos.FeeratesRequest{})
-	if err != nil {
-		return 0, err
-	}
-
-	for _, estimate := range response.Perkb.Estimates {
-		if *estimate.Blockcount >= uint32(confTarget) {
-			return float64(*estimate.Feerate) / 1000, nil
-		}
-	}
-	return 0, errors.New("could not find fee estimate")
 }
 
 func encodeOptionalBytes(data []byte) string {

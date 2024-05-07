@@ -13,6 +13,10 @@ func NewBoltzTxProvider(boltz *boltz.Boltz, currency boltz.Currency) TxProvider 
 	return &boltzTxProvider{boltz, currency}
 }
 
-func (boltz boltzTxProvider) GetTxHex(txId string) (string, error) {
-	return boltz.GetTransaction(txId, boltz.currency)
+func (txProvider boltzTxProvider) GetRawTransaction(txId string) (string, error) {
+	return txProvider.GetTransaction(txId, txProvider.currency)
+}
+
+func (txProvider boltzTxProvider) BroadcastTransaction(txHex string) (string, error) {
+	return txProvider.Boltz.BroadcastTransaction(txProvider.currency, txHex)
 }

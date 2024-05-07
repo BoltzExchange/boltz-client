@@ -1,6 +1,7 @@
 package lightning
 
 import (
+	"context"
 	"github.com/BoltzExchange/boltz-client/onchain"
 )
 
@@ -70,7 +71,6 @@ type PayInvoiceResponse struct {
 }
 
 type LightningNode interface {
-	onchain.BlockListener
 	onchain.Wallet
 
 	Connect() error
@@ -80,7 +80,7 @@ type LightningNode interface {
 
 	//SendPayment(invoice string, feeLimit uint64, timeout int32) (<-chan *PaymentUpdate, error)
 	//PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32) (int64, error)
-	PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint, channelIds []ChanId) (*PayInvoiceResponse, error)
+	PayInvoice(ctx context.Context, invoice string, feeLimit uint, timeoutSeconds uint, channelIds []ChanId) (*PayInvoiceResponse, error)
 	CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*AddInvoiceResponse, error)
 
 	NewAddress() (string, error)
