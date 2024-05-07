@@ -543,16 +543,16 @@ func TestSwap(t *testing.T) {
 		invoice, err := zpay32.Decode(swap.Invoice, &chaincfg.RegressionNetParams)
 		require.NoError(t, err)
 
-		excpectedFees := swap.ExpectedAmount - int64(invoice.MilliSat.ToSatoshis())
+		excpectedFees := swap.ExpectedAmount - uint64(invoice.MilliSat.ToSatoshis())
 		actualFees := *swap.OnchainFee + *swap.ServiceFee
 		if swap.WalletId != nil {
 			lockupFee, err := chain.GetTransactionFee(parseCurrency(swap.Pair.From), swap.LockupTransactionId)
 			require.NoError(t, err)
 
-			excpectedFees += int64(lockupFee)
+			excpectedFees += lockupFee
 		}
 
-		require.Equal(t, excpectedFees, int64(actualFees))
+		require.Equal(t, excpectedFees, actualFees)
 	}
 
 	t.Run("Recovery", func(t *testing.T) {
@@ -725,7 +725,7 @@ func TestSwap(t *testing.T) {
 							require.NoError(t, err)
 
 							stream, _ := swapStream(t, client, swap.Id)
-							test.SendToAddress(cli, swap.Address, int64(amount))
+							test.SendToAddress(cli, swap.Address, amount)
 							return stream
 						}
 
@@ -1175,7 +1175,7 @@ func TestChainSwap(t *testing.T) {
 					})
 					require.NoError(t, err)
 
-					test.SendToAddress(fromCli, swap.FromData.LockupAddress, int64(amount))
+					test.SendToAddress(fromCli, swap.FromData.LockupAddress, amount)
 					return swapStream(t, client, swap.Id)
 				}
 
@@ -1577,6 +1577,38 @@ func TestUnlock(t *testing.T) {
 
 	_, err = client.CreateWallet(second, password)
 	require.NoError(t, err)
+}
+
+func TestMagicRoutingHints(t *testing.T) {
+	client, _, stop := setup(t, nil, "")
+	defer stop()
+
+	addr := test.BtcCli("getnewaddress")
+	pair := &boltzrpc.Pair{
+		From: boltzrpc.Currency_BTC,
+		To:   boltzrpc.Currency_BTC,
+	}
+	externalPay := true
+	var amount uint64 = 100000
+	reverseSwap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+		Amount:      amount,
+		Address:     addr,
+		Pair:        pair,
+		ExternalPay: &externalPay,
+	})
+	require.NoError(t, err)
+
+	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+		Pair:             pair,
+		Invoice:          reverseSwap.Invoice,
+		SendFromInternal: true,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, swap.Bip21)
+	require.NotEmpty(t, swap.TxId)
+	require.NotZero(t, swap.ExpectedAmount)
+	require.Equal(t, addr, swap.Address)
+	require.Empty(t, swap.Id)
 }
 
 func TestCreateWalletWithPassword(t *testing.T) {

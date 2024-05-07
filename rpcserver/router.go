@@ -9,8 +9,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec/v2/schnorr"
+	"github.com/btcsuite/btcd/btcutil"
 	"math"
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/build"
@@ -379,6 +383,48 @@ func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.
 	}, nil
 }
 
+func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, invoice string) (*boltzrpc.CreateSwapResponse, error) {
+	if pubKey := boltz.FindMagicRoutingHint(decoded); pubKey != nil {
+		logger.Infof("Found magic routing hint in invoice %s", invoice)
+		reverseBip21, err := server.boltz.GetReverseSwapBip21(invoice)
+		var boltzErr boltz.Error
+		if err != nil && !errors.As(err, &boltzErr) {
+			return nil, fmt.Errorf("could not get reverse swap bip21: %w", err)
+		}
+
+		parsed, err := url.Parse(reverseBip21.Bip21)
+		if err != nil {
+			return nil, err
+		}
+
+		signature, err := schnorr.ParseSignature(reverseBip21.Signature)
+		if err != nil {
+			return nil, err
+		}
+
+		address := parsed.Opaque
+		addressHash := sha256.Sum256([]byte(address))
+		if !signature.Verify(addressHash[:], pubKey) {
+			return nil, errors.New("invalid reverse swap bip21 signature")
+		}
+
+		amount, err := strconv.ParseFloat(parsed.Query().Get("amount"), 64)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse bip21 amount: %w", err)
+		}
+		if amount > decoded.MilliSat.ToBTC() {
+			return nil, errors.New("bip21 amount is higher than invoice amount")
+		}
+
+		return &boltzrpc.CreateSwapResponse{
+			Address:        address,
+			ExpectedAmount: uint64(amount * btcutil.SatoshiPerBitcoin),
+			Bip21:          reverseBip21.Bip21,
+		}, nil
+	}
+	return nil, nil
+}
+
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Infof("Creating Swap for %d sats", request.Amount)
@@ -402,15 +448,20 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		RefundPublicKey: publicKey.SerializeCompressed(),
 		ReferralId:      referralId,
 	}
+	var swapResponse *boltzrpc.CreateSwapResponse
 
 	var preimage, preimageHash []byte
-	if request.GetInvoice() != "" {
-		invoice, err := zpay32.Decode(request.GetInvoice(), server.network.Btc)
+	if invoice := request.GetInvoice(); invoice != "" {
+		decoded, err := zpay32.Decode(invoice, server.network.Btc)
 		if err != nil {
 			return nil, handleError(fmt.Errorf("invalid invoice: %w", err))
 		}
-		preimageHash = invoice.PaymentHash[:]
-		createSwap.Invoice = request.GetInvoice()
+		swapResponse, err = server.checkMagicRoutingHint(decoded, invoice)
+		if err != nil {
+			return nil, handleError(err)
+		}
+		preimageHash = decoded.PaymentHash[:]
+		createSwap.Invoice = invoice
 	} else if !server.lightningAvailable(ctx) {
 		return nil, handleError(errors.New("invoice is required in standalone mode"))
 	} else if request.Amount != 0 {
@@ -445,90 +496,99 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		return nil, handleError(err)
 	}
 
-	response, err := server.boltz.CreateSwap(createSwap)
+	if swapResponse == nil {
 
-	if err != nil {
-		return nil, handleError(errors.New("boltz error: " + err.Error()))
-	}
+		response, err := server.boltz.CreateSwap(createSwap)
 
-	swap := database.Swap{
-		Id:                  response.Id,
-		Pair:                pair,
-		State:               boltzrpc.SwapState_PENDING,
-		Error:               "",
-		PrivateKey:          privateKey,
-		Preimage:            preimage,
-		Invoice:             createSwap.Invoice,
-		Address:             response.Address,
-		ExpectedAmount:      response.ExpectedAmount,
-		TimoutBlockHeight:   response.TimeoutBlockHeight,
-		SwapTree:            response.SwapTree.Deserialize(),
-		LockupTransactionId: "",
-		RefundTransactionId: "",
-		RefundAddress:       request.GetRefundAddress(),
-		IsAuto:              isAuto,
-		ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
-		EntityId:            macaroons.EntityFromContext(ctx),
-	}
+		if err != nil {
+			return nil, handleError(errors.New("boltz error: " + err.Error()))
+		}
 
-	if request.SendFromInternal {
-		id := wallet.GetWalletInfo().Id
-		swap.WalletId = &id
-	}
+		swap := database.Swap{
+			Id:                  response.Id,
+			Pair:                pair,
+			State:               boltzrpc.SwapState_PENDING,
+			Error:               "",
+			PrivateKey:          privateKey,
+			Preimage:            preimage,
+			Invoice:             createSwap.Invoice,
+			Address:             response.Address,
+			ExpectedAmount:      response.ExpectedAmount,
+			TimoutBlockHeight:   response.TimeoutBlockHeight,
+			SwapTree:            response.SwapTree.Deserialize(),
+			LockupTransactionId: "",
+			RefundTransactionId: "",
+			RefundAddress:       request.GetRefundAddress(),
+			IsAuto:              isAuto,
+			ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
+			EntityId:            macaroons.EntityFromContext(ctx),
+		}
 
-	swap.ClaimPubKey, err = btcec.ParsePubKey([]byte(response.ClaimPublicKey))
-	if err != nil {
-		return nil, handleError(err)
-	}
+		if request.SendFromInternal {
+			id := wallet.GetWalletInfo().Id
+			swap.WalletId = &id
+		}
 
-	// for _, chanId := range request.ChanIds {
-	// 	parsed, err := lightning.NewChanIdFromString(chanId)
-	// 	if err != nil {
-	// 		return nil, handleError(errors.New("invalid channel id: " + err.Error()))
-	// 	}
-	// 	swap.ChanIds = append(swap.ChanIds, parsed)
-	// }
-
-	if pair.From == boltz.CurrencyLiquid {
-		swap.BlindingKey, _ = btcec.PrivKeyFromBytes(response.BlindingKey)
-
+		swap.ClaimPubKey, err = btcec.ParsePubKey([]byte(response.ClaimPublicKey))
 		if err != nil {
 			return nil, handleError(err)
 		}
-	}
 
-	if err := swap.InitTree(); err != nil {
-		return nil, handleError(err)
-	}
+		// for _, chanId := range request.ChanIds {
+		// 	parsed, err := lightning.NewChanIdFromString(chanId)
+		// 	if err != nil {
+		// 		return nil, handleError(errors.New("invalid channel id: " + err.Error()))
+		// 	}
+		// 	swap.ChanIds = append(swap.ChanIds, parsed)
+		// }
 
-	if err := swap.SwapTree.Check(boltz.NormalSwap, swap.TimoutBlockHeight, preimageHash); err != nil {
-		return nil, handleError(err)
-	}
+		if pair.From == boltz.CurrencyLiquid {
+			swap.BlindingKey, _ = btcec.PrivKeyFromBytes(response.BlindingKey)
 
-	if err := swap.SwapTree.CheckAddress(response.Address, server.network, swap.BlindingPubKey()); err != nil {
-		return nil, handleError(err)
-	}
+			if err != nil {
+				return nil, handleError(err)
+			}
+		}
 
-	logger.Info("Verified redeem script and address of Swap " + swap.Id)
+		if err := swap.InitTree(); err != nil {
+			return nil, handleError(err)
+		}
 
-	err = server.database.CreateSwap(swap)
-	if err != nil {
-		return nil, handleError(err)
-	}
+		if err := swap.SwapTree.Check(boltz.NormalSwap, swap.TimoutBlockHeight, preimageHash); err != nil {
+			return nil, handleError(err)
+		}
 
-	blockHeight, err := server.onchain.GetBlockHeight(pair.From)
-	if err != nil {
-		return nil, handleError(err)
-	}
+		if err := swap.SwapTree.CheckAddress(response.Address, server.network, swap.BlindingPubKey()); err != nil {
+			return nil, handleError(err)
+		}
 
-	timeoutHours := boltz.BlocksToHours(response.TimeoutBlockHeight-blockHeight, pair.From)
-	swapResponse := &boltzrpc.CreateSwapResponse{
-		Id:                 swap.Id,
-		Address:            response.Address,
-		ExpectedAmount:     int64(response.ExpectedAmount),
-		Bip21:              response.Bip21,
-		TimeoutBlockHeight: response.TimeoutBlockHeight,
-		TimeoutHours:       float32(timeoutHours),
+		logger.Info("Verified redeem script and address of Swap " + swap.Id)
+
+		err = server.database.CreateSwap(swap)
+		if err != nil {
+			return nil, handleError(err)
+		}
+
+		blockHeight, err := server.onchain.GetBlockHeight(pair.From)
+		if err != nil {
+			return nil, handleError(err)
+		}
+
+		timeoutHours := boltz.BlocksToHours(response.TimeoutBlockHeight-blockHeight, pair.From)
+		swapResponse = &boltzrpc.CreateSwapResponse{
+			Id:                 swap.Id,
+			Address:            response.Address,
+			ExpectedAmount:     response.ExpectedAmount,
+			Bip21:              response.Bip21,
+			TimeoutBlockHeight: response.TimeoutBlockHeight,
+			TimeoutHours:       float32(timeoutHours),
+		}
+
+		logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
+
+		if err := server.nursery.RegisterSwap(swap); err != nil {
+			return nil, handleError(err)
+		}
 	}
 
 	if request.SendFromInternal {
@@ -537,18 +597,12 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, handleError(err)
 		}
-		logger.Infof("Paying swap %s with fee of %f sat/vbyte", swap.Id, feeSatPerVbyte)
-		txId, err := wallet.SendToAddress(response.Address, response.ExpectedAmount, feeSatPerVbyte)
+		logger.Infof("Paying swap %s with fee of %f sat/vbyte", swapResponse.Id, feeSatPerVbyte)
+		txId, err := wallet.SendToAddress(swapResponse.Address, swapResponse.ExpectedAmount, feeSatPerVbyte)
 		if err != nil {
 			return nil, handleError(err)
 		}
 		swapResponse.TxId = txId
-	}
-
-	logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
-
-	if err := server.nursery.RegisterSwap(swap); err != nil {
-		return nil, handleError(err)
 	}
 
 	return swapResponse, nil
@@ -632,15 +686,27 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, handleError(err)
 	}
 
-	response, err := server.boltz.CreateReverseSwap(boltz.CreateReverseSwapRequest{
+	createRequest := boltz.CreateReverseSwapRequest{
 		From:           pair.From,
 		To:             pair.To,
 		PairHash:       reversePair.Hash,
-		InvoiceAmount:  uint64(request.Amount),
+		InvoiceAmount:  request.Amount,
 		PreimageHash:   preimageHash,
 		ClaimPublicKey: publicKey.SerializeCompressed(),
 		ReferralId:     referralId,
-	})
+	}
+
+	if request.Address != "" {
+		addressHash := sha256.Sum256([]byte(request.Address))
+		signature, err := schnorr.Sign(privateKey, addressHash[:])
+		if err != nil {
+			return nil, handleError(err)
+		}
+		createRequest.AddressSignature = signature.Serialize()
+		createRequest.Address = request.Address
+	}
+
+	response, err := server.boltz.CreateReverseSwap(createRequest)
 	if err != nil {
 		return nil, handleError(err)
 	}

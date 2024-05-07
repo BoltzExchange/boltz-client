@@ -241,7 +241,7 @@ message SwapInfo {
     string redeem_script = 7;
     string invoice = 8;
     string lockup_address = 9;
-    int64 expected_amount = 10;
+    uint64 expected_amount = 10;
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     /*
@@ -443,7 +443,7 @@ message CreateSwapRequest {
 message CreateSwapResponse {
     string id = 1;
     string address = 2;
-    int64 expected_amount = 3;
+    uint64 expected_amount = 3;
     string bip21 = 4;
     // lockup transaction id. Only populated when `send_from_internal` was specified in the request
     string tx_id = 5;
@@ -535,7 +535,7 @@ message ChainSwapData {
     Currency currency = 2;
     string private_key = 3;
     string their_public_key = 4;
-    int64 amount = 6;
+    uint64 amount = 6;
     uint32 timeout_block_height = 7;
     optional string lockup_transaction_id = 8;
     optional string transaction_id = 9;
