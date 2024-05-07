@@ -336,7 +336,7 @@ func (lnd *LND) PayInvoice(ctx context.Context, invoice string, feeLimit uint, t
 func (lnd *LND) PaymentStatus(paymentHash []byte) (*lightning.PaymentStatus, error) {
 	client, err := lnd.router.TrackPaymentV2(lnd.ctx, &routerrpc.TrackPaymentRequest{
 		PaymentHash:       paymentHash,
-		NoInflightUpdates: true,
+		NoInflightUpdates: false,
 	})
 	if err != nil {
 		return nil, err
