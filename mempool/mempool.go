@@ -214,3 +214,7 @@ func (c *Client) GetBlockHeight() (uint32, error) {
 	}
 	return uint32(height), nil
 }
+
+func (c *Client) Shutdown() {
+
+}

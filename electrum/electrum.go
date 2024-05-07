@@ -49,9 +49,7 @@ func NewClient(url string, ssl bool) (*Client, error) {
 }
 
 func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
-	connectCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	results, err := c.client.SubscribeHeaders(connectCtx)
-	cancel()
+	results, err := c.client.SubscribeHeaders(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,4 +78,8 @@ func (c *Client) GetRawTransaction(txId string) (string, error) {
 
 func (c *Client) BroadcastTransaction(txHex string) (string, error) {
 	return c.client.BroadcastTransaction(c.ctx, txHex)
+}
+
+func (c *Client) Shutdown() {
+	c.client.Shutdown()
 }

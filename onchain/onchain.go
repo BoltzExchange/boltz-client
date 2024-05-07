@@ -45,6 +45,7 @@ type BlockProvider interface {
 	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
 	EstimateFee(confTarget int32) (float64, error)
+	Shutdown()
 }
 
 type TxProvider interface {
@@ -250,4 +251,9 @@ func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (str
 	}
 
 	return chain.Tx.BroadcastTransaction(serialized)
+}
+
+func (onchain *Onchain) Shutdown() {
+	onchain.Btc.Blocks.Shutdown()
+	onchain.Liquid.Blocks.Shutdown()
 }

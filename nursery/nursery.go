@@ -126,6 +126,7 @@ func (nursery *Nursery) Stop() {
 	}
 	nursery.globalListener.Close()
 	logger.Debugf("Closed all event listeners")
+	nursery.onchain.Shutdown()
 }
 
 func (nursery *Nursery) registerSwaps(swapIds []string) error {
