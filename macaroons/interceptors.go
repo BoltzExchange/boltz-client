@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"strconv"
 	"strings"
@@ -68,9 +70,10 @@ func (service *Service) validateRequest(ctx context.Context, fullMethod string) 
 
 	info, err := service.ValidateMacaroon(macBytes, requiredPermissions)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
+	var entity string
 	for _, caveat := range info.Conditions() {
 		cond, arg, err := checkers.ParseCaveat(caveat)
 		if err != nil {
@@ -80,35 +83,22 @@ func (service *Service) validateRequest(ctx context.Context, fullMethod string) 
 			split := strings.Split(arg, " ")
 			if split[0] == string(entityContextKey) {
 				if split[1] != "" {
-					entity, err := strconv.ParseInt(split[1], 10, 64)
-					if err != nil {
-						return nil, err
-					}
-					ctx = addEntityToContext(ctx, entity)
+					entity = split[1]
+					break
 				}
 			}
 		}
 	}
 
-	if entity := md.Get("entity"); len(entity) > 0 {
-		if len(entity) != 1 {
-			return nil, fmt.Errorf("expected 1 entity, got %s", entity)
+	if param := md.Get(string(entityContextKey)); len(param) > 0 {
+		if len(param) != 1 {
+			return nil, fmt.Errorf("expected 1 entity, got %s", param)
 		}
-		if ctx.Value(entityContextKey) != nil {
-			return nil, errors.New("entity restriction already set by macaroon")
+		if entity != "" {
+			return nil, status.Error(codes.InvalidArgument, "entity restriction already set by macaroon")
 		}
-		entity, err := strconv.ParseInt(entity[0], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		ctx = addEntityToContext(ctx, entity)
+		entity = param[0]
 	}
 
-	if entityId := EntityFromContext(ctx); entityId != nil {
-		if _, err := service.Database.GetEntity(*entityId); err != nil {
-			return nil, fmt.Errorf("invalid entity %d: %w", *entityId, err)
-		}
-	}
-
-	return ctx, err
+	return service.addEntityToContext(ctx, entity)
 }

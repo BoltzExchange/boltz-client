@@ -25,7 +25,7 @@ type ChainSwap struct {
 	ServiceFeePercent utils.Percentage
 	OnchainFee        *uint64
 	CreatedAt         time.Time
-	EntityId          *int64
+	EntityId          Id
 	FromData          *ChainSwapData
 	ToData            *ChainSwapData
 }
@@ -42,7 +42,7 @@ type ChainSwapData struct {
 	LockupTransactionId string
 	Transactionid       string
 	RefundTransactionId string
-	WalletId            *int64
+	WalletId            *Id
 	Address             string
 	LockupAddress       string
 }
@@ -61,7 +61,7 @@ type ChainSwapSerialized struct {
 	ServiceFeePercent utils.Percentage
 	OnchainFee        *uint64
 	CreatedAt         int64
-	EntityId          *int64
+	EntityId          Id
 }
 
 type ChainSwapDataSerialized struct {
@@ -75,7 +75,7 @@ type ChainSwapDataSerialized struct {
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	TransactionId       string
-	WalletId            *int64
+	WalletId            *Id
 	Address             string
 	LockupAddress       string
 }

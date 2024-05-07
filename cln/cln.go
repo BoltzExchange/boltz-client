@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/logger"
 
 	"github.com/BoltzExchange/boltz-client/cln/protos"
@@ -95,13 +94,8 @@ func (c *Cln) GetWalletInfo() onchain.WalletInfo {
 	return c.walletInfo
 }
 
-func (c *Cln) SetupWallet(id int64) {
-	c.walletInfo = onchain.WalletInfo{
-		Id:       id,
-		Readonly: false,
-		Name:     c.Name(),
-		Currency: boltz.CurrencyBtc,
-	}
+func (c *Cln) SetupWallet(info onchain.WalletInfo) {
+	c.walletInfo = info
 }
 
 func (c *Cln) NodeType() lightning.LightningNodeType {

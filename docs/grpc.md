@@ -364,7 +364,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `service_fee_percent` | [`float`](#float) |  |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
-| `entity_id` | [`int64`](#int64) | optional |  |
+| `entity_id` | [`int64`](#int64) |  |  |
 | `from_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 | `to_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 
@@ -659,7 +659,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
 | `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
 | `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
-| `entity_id` | [`int64`](#int64) | optional | the currently authenticated entity |
+| `entity` | [`Entity`](#entity) | optional | the currently authenticated entity |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -1042,6 +1042,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |
 | `external_pay` | [`bool`](#bool) |  |  |
+| `entity_id` | [`int64`](#int64) |  |  |
 
 
 
@@ -1118,6 +1119,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `wallet_id` | [`int64`](#int64) | optional | internal wallet which was used to pay the swap |
+| `entity_id` | [`int64`](#int64) |  |  |
 
 
 
@@ -1191,6 +1193,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `currency` | [`Currency`](#currency) |  |  |
 | `readonly` | [`bool`](#bool) |  |  |
 | `balance` | [`Balance`](#balance) |  |  |
+| `entity_id` | [`int64`](#int64) |  |  |
 
 
 

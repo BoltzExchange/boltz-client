@@ -9,6 +9,19 @@ type Entity struct {
 	Name string
 }
 
+const DefaultEntityId Id = 1
+const DefaultEntityName string = "default"
+
+func (d *Database) CreateDefaultEntity() error {
+	defaultEntity, _ := d.GetEntity(DefaultEntityId)
+	if defaultEntity == nil {
+		if err := d.CreateEntity(&Entity{Id: DefaultEntityId, Name: DefaultEntityName}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (d *Database) CreateEntity(entity *Entity) error {
 	query := "INSERT INTO entities (name) VALUES (?) RETURNING id"
 	row := d.QueryRow(query, entity.Name)

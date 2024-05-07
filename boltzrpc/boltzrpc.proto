@@ -258,6 +258,7 @@ message SwapInfo {
     optional uint64 onchain_fee = 18;
     // internal wallet which was used to pay the swap
     optional int64 wallet_id = 20;
+    int64 entity_id = 21;
 }
 
 enum SwapType {
@@ -322,6 +323,7 @@ message ReverseSwapInfo {
     optional uint64 onchain_fee = 19;
     optional uint64 routing_fee_msat = 20;
     bool external_pay = 21;
+    int64 entity_id = 22;
 }
 
 message BlockHeights {
@@ -342,7 +344,7 @@ message GetInfoResponse {
     // swaps that need a manual interaction to refund
     repeated string refundable_swaps = 12;
     // the currently authenticated entity
-    optional int64 entity_id = 13;
+    optional Entity entity = 13;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -525,7 +527,7 @@ message ChainSwapInfo {
     float service_fee_percent = 10;
     optional uint64 onchain_fee = 11;
     int64 created_at = 12;
-    optional int64 entity_id = 13;
+    int64 entity_id = 13;
     ChainSwapData from_data = 14;
     ChainSwapData to_data = 15;
 }
@@ -644,6 +646,7 @@ message Wallet {
     Currency currency = 3;
     bool readonly = 4;
     Balance balance = 5;
+    int64 entity_id = 6;
 }
 
 message Wallets {

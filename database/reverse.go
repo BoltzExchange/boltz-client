@@ -43,8 +43,8 @@ type ReverseSwap struct {
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
-	WalletId            *int64
-	EntityId            *int64
+	WalletId            *Id
+	EntityId            Id
 }
 
 type ReverseSwapSerialized struct {
@@ -73,8 +73,8 @@ type ReverseSwapSerialized struct {
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
-	WalletId            *int64
-	EntityId            *int64
+	WalletId            *Id
+	EntityId            Id
 }
 
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {

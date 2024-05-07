@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
@@ -74,13 +73,8 @@ func (lnd *LND) Name() string {
 	return "LND"
 }
 
-func (lnd *LND) SetupWallet(id int64) {
-	lnd.walletInfo = onchain.WalletInfo{
-		Id:       id,
-		Readonly: false,
-		Name:     lnd.Name(),
-		Currency: boltz.CurrencyBtc,
-	}
+func (lnd *LND) SetupWallet(info onchain.WalletInfo) {
+	lnd.walletInfo = info
 }
 
 func (lnd *LND) Ready() bool {

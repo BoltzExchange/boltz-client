@@ -30,7 +30,7 @@ type WalletInfo struct {
 	Name     string
 	Currency boltz.Currency
 	Readonly bool
-	EntityId *int64
+	EntityId int64
 }
 
 type WalletChecker struct {
@@ -109,9 +109,7 @@ func (walletChecker *WalletChecker) Allowed(wallet Wallet) bool {
 	currency := info.Currency == walletChecker.Currency || walletChecker.Currency == ""
 	name := info.Name == walletChecker.Name || walletChecker.Name == ""
 	readonly := !info.Readonly || walletChecker.AllowReadonly
-	// either both are nil or both have the same value
-	entityId := info.EntityId == walletChecker.EntityId ||
-		(info.EntityId != nil && walletChecker.EntityId != nil && *info.EntityId == *walletChecker.EntityId)
+	entityId := walletChecker.EntityId == nil || info.EntityId == *walletChecker.EntityId
 	return wallet.Ready() && id && currency && name && readonly && entityId
 }
 

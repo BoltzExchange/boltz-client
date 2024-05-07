@@ -10,7 +10,6 @@ import (
 type Wallet struct {
 	*onchainWallet.Credentials
 	NodePubkey *string
-	EntityId   *int64
 }
 
 func (d *Database) CreateWallet(wallet *Wallet) error {

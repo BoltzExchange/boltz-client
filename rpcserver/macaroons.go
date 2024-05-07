@@ -48,13 +48,13 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	}
 	logger.Info("Generating new Macaroons")
 
-	err := writeMacaroon(service, "", macaroons.AdminPermissions(), server.AdminMacaroonPath)
+	err := writeMacaroon(service, nil, macaroons.AdminPermissions(), server.AdminMacaroonPath)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = writeMacaroon(service, "", macaroons.ReadPermissions, server.ReadonlyMacaroonPath)
+	err = writeMacaroon(service, nil, macaroons.ReadPermissions, server.ReadonlyMacaroonPath)
 
 	if err != nil {
 		return nil, err
@@ -63,8 +63,8 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	return &service, nil
 }
 
-func writeMacaroon(service macaroons.Service, entity string, permissions []bakery.Op, path string) error {
-	macaroon, err := service.NewMacaroon(nil, permissions...)
+func writeMacaroon(service macaroons.Service, entityId *database.Id, permissions []bakery.Op, path string) error {
+	macaroon, err := service.NewMacaroon(entityId, permissions...)
 
 	if err != nil {
 		return err

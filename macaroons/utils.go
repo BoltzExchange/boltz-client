@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"github.com/BoltzExchange/boltz-client/database"
 	"io"
 )
 
@@ -40,14 +41,16 @@ func addRootKeyIdToContext(ctx context.Context, value interface{}) context.Conte
 	return context.WithValue(ctx, rootKeyIDContextKey, value)
 }
 
-func EntityFromContext(ctx context.Context) *int64 {
-	entity, ok := ctx.Value(entityContextKey).(int64)
-	if ok {
-		return &entity
+func EntityIdFromContext(ctx context.Context) *database.Id {
+	if entity := ctx.Value(entityContextKey); entity != nil {
+		return &EntityFromContext(ctx).Id
 	}
 	return nil
 }
 
-func addEntityToContext(ctx context.Context, value int64) context.Context {
-	return context.WithValue(ctx, entityContextKey, value)
+func EntityFromContext(ctx context.Context) *database.Entity {
+	if value := ctx.Value(entityContextKey); value != nil {
+		return value.(*database.Entity)
+	}
+	return nil
 }

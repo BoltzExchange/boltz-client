@@ -40,8 +40,8 @@ type Swap struct {
 	ServiceFee          *uint64
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
-	WalletId            *int64
-	EntityId            *int64
+	WalletId            *Id
+	EntityId            Id
 }
 
 type SwapSerialized struct {
@@ -68,8 +68,8 @@ type SwapSerialized struct {
 	ServiceFee          *uint64
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
-	WalletId            *int64
-	EntityId            *int64
+	WalletId            *Id
+	EntityId            Id
 }
 
 func (swap *Swap) BlindingPubKey() *btcec.PublicKey {
