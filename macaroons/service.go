@@ -54,7 +54,7 @@ func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []
 	return authChecker.Allow(context.Background(), requiredPermissions...)
 }
 
-func (service *Service) addEntityToContext(ctx context.Context, raw string) (context.Context, error) {
+func (service *Service) AddEntityToContext(ctx context.Context, raw string) (context.Context, error) {
 	id := database.DefaultEntityId
 	if raw != "" {
 		var err error
