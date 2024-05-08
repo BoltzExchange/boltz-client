@@ -33,7 +33,7 @@ func NewClient(url string, ssl bool) (*Client, error) {
 
 	// Making sure connection is not closed with timed "client.ping" call
 	go func() {
-		for {
+		for !c.client.IsShutdown() {
 			if err := c.client.Ping(ctx); err != nil {
 				logger.Errorf("failed to ping electrum server: %s", err)
 			}
