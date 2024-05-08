@@ -58,6 +58,7 @@ func getSwapper(t *testing.T, cfg *SerializedConfig) *AutoSwapper {
 func randomId() string {
 	return fmt.Sprint(rand2.Uint32())
 }
+
 func fakeSwap(swap database.Swap) database.Swap {
 	swap.EntityId = database.DefaultEntityId
 	swap.Id = randomId()
