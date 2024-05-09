@@ -2,7 +2,7 @@ package autoswap
 
 import (
 	"fmt"
-	rand2 "golang.org/x/exp/rand"
+	"golang.org/x/exp/rand"
 	"testing"
 	"time"
 
@@ -56,7 +56,7 @@ func getSwapper(t *testing.T, cfg *SerializedConfig) *AutoSwapper {
 }
 
 func randomId() string {
-	return fmt.Sprint(rand2.Uint32())
+	return fmt.Sprint(rand.Uint32())
 }
 
 func fakeSwap(swap database.Swap) database.Swap {
