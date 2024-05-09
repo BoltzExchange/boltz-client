@@ -146,15 +146,6 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			break
 		}
 
-		feeSatPerVbyte, err := nursery.getFeeEstimation(reverseSwap.Pair.To)
-
-		if err != nil {
-			handleError("Could not get fee estimation: " + err.Error())
-			return
-		}
-
-		logger.Info(fmt.Sprintf("Using fee of %v sat/vbyte for claim transaction", feeSatPerVbyte))
-
 		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
 
 		output := nursery.getReverseSwapClaimOutput(reverseSwap)

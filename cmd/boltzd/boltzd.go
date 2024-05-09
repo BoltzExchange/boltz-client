@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -51,41 +53,60 @@ func main() {
 	Start(cfg)
 }
 
-func Init(cfg *config.Config) {
+func initLightning(cfg *config.Config) (lightning.LightningNode, error) {
+	if cfg.Standalone {
+		if cfg.Network == "" {
+			logger.Fatal("Standalone mode requires a lightning node to be set")
+		}
+		return nil, nil
+	}
+	var node lightning.LightningNode
 
+	isClnConfigured := cfg.Cln.RootCert != ""
+	isLndConfigured := cfg.LND.Macaroon != ""
+
+	if strings.EqualFold(cfg.Node, "CLN") {
+		node = cfg.Cln
+	} else if strings.EqualFold(cfg.Node, "LND") {
+		node = cfg.LND
+	} else if isClnConfigured && isLndConfigured {
+		logger.Fatal("Both CLN and LND are configured. Set --node to specify which node to use.")
+	} else if isClnConfigured {
+		node = cfg.Cln
+	} else if isLndConfigured {
+		node = cfg.LND
+	} else {
+		logger.Fatal("No lightning node configured. Set either CLN or LND.")
+	}
+
+	info, err := connectLightning(node)
+	if err != nil {
+		return nil, fmt.Errorf("could not connect to lightning node: %v", err)
+	}
+
+	if node == cfg.Cln {
+		checkClnVersion(info)
+	} else if node == cfg.LND {
+		checkLndVersion(info)
+	}
+
+	logger.Info(fmt.Sprintf("Connected to lightning node %v (%v): %v", cfg.Node, info.Version, info.Pubkey))
+
+	cfg.Network = info.Network
+
+	return node, nil
+}
+
+func Init(cfg *config.Config) {
 	err := cfg.Database.Connect()
 
 	if err != nil {
 		logger.Fatal("Could not connect to database: " + err.Error())
 	}
 
-	if !cfg.Standalone {
-		setLightningNode(cfg)
-
-		if err = cfg.Lightning.Connect(); err != nil {
-			logger.Fatal("Could not initialize lightning client: " + err.Error())
-		}
-
-		info := connectLightning(cfg.Lightning)
-
-		if cfg.Lightning == cfg.Cln {
-			checkClnVersion(info)
-		} else if cfg.Lightning == cfg.LND {
-			checkLndVersion(info)
-		}
-
-		logger.Info(fmt.Sprintf("Connected to lightning node %v (%v): %v", cfg.Node, info.Version, info.Pubkey))
-
-		cfg.Network = info.Network
-
-		waitForLightningSynced(cfg.Lightning)
-
-		if err := lightning.ConnectBoltz(cfg.Lightning, cfg.Boltz); err != nil {
-			logger.Warn("Could not connect to to boltz node: " + err.Error())
-		}
-
-	} else if cfg.Network == "" {
-		logger.Fatal("Network must be set when no lightning node is configured")
+	lightningNode, err := initLightning(cfg)
+	if err != nil {
+		logger.Fatal("Could not initialize lightning client: " + err.Error())
 	}
 
 	network, err := boltz.ParseChain(cfg.Network)
@@ -96,18 +117,31 @@ func Init(cfg *config.Config) {
 
 	logger.Info("Parsed chain: " + network.Name)
 
-	setBoltzEndpoint(cfg.Boltz, network)
-
-	checkBoltzVersion(cfg.Boltz)
-
-	onchain, err := initOnchain(cfg, network)
+	chain, err := initOnchain(cfg, network)
 	if err != nil {
 		logger.Fatalf("could not init onchain: %v", err)
 	}
 
 	autoSwapConfPath := path.Join(cfg.DataDir, "autoswap.toml")
 
-	err = cfg.RPC.Init(network, cfg.Lightning, cfg.Boltz, cfg.Database, onchain, autoSwapConfPath)
+	boltzApi, err := initBoltz(cfg, network)
+	if err != nil {
+		logger.Fatalf("could not init Boltz API: %v", err)
+	}
+
+	// Use the Boltz API in regtest to avoid situations where electrum does not know about the tx yet
+	if network == boltz.Regtest {
+		chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
+		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	}
+
+	if lightningNode != nil {
+		if err := lightning.ConnectBoltz(lightningNode, boltzApi); err != nil {
+			logger.Warn("Could not connect to to boltz node: " + err.Error())
+		}
+	}
+
+	err = cfg.RPC.Init(network, lightningNode, boltzApi, cfg.Database, chain, autoSwapConfPath)
 
 	if err != nil {
 		logger.Fatalf("Could not initialize Server: %v", err)
@@ -124,51 +158,44 @@ func Start(cfg *config.Config) {
 	}
 }
 
-func setLightningNode(cfg *config.Config) {
-	isClnConfigured := cfg.Cln.RootCert != ""
-	isLndConfigured := cfg.LND.Macaroon != ""
-
-	if strings.EqualFold(cfg.Node, "CLN") {
-		cfg.Lightning = cfg.Cln
-	} else if strings.EqualFold(cfg.Node, "LND") {
-		cfg.Lightning = cfg.LND
-	} else if isClnConfigured && isLndConfigured {
-		logger.Fatal("Both CLN and LND are configured. Set --node to specify which node to use.")
-	} else if isClnConfigured {
-		cfg.Lightning = cfg.Cln
-	} else if isLndConfigured {
-		cfg.Lightning = cfg.LND
+func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
+	boltzUrl := cfg.Boltz.URL
+	if boltzUrl == "" {
+		switch network {
+		case boltz.MainNet:
+			boltzUrl = "https://api.boltz.exchange"
+		case boltz.TestNet:
+			boltzUrl = "https://api.testnet.boltz.exchange"
+		case boltz.Regtest:
+			boltzUrl = "http://127.0.0.1:9001"
+		}
+		logger.Infof("Using default Boltz endpoint for network %s: %s", network.Name, boltzUrl)
 	} else {
-		logger.Fatal("No lightning node configured. Set either CLN or LND.")
-	}
-}
-
-func setBoltzEndpoint(boltzCfg *boltz.Boltz, network *boltz.Network) {
-	if boltzCfg.URL != "" {
-		logger.Info("Using configured Boltz endpoint: " + boltzCfg.URL)
-		return
+		logger.Info("Using configured Boltz endpoint: " + boltzUrl)
 	}
 
-	switch network {
-	case boltz.MainNet:
-		boltzCfg.URL = "https://api.boltz.exchange"
-	case boltz.TestNet:
-		boltzCfg.URL = "https://testnet.boltz.exchange/api"
-	case boltz.Regtest:
-		boltzCfg.URL = "http://127.0.0.1:9001"
+	boltzApi := &boltz.Api{URL: boltzUrl}
+	if cfg.Proxy != "" {
+		proxy, err := url.Parse(cfg.Proxy)
+		if err != nil {
+			return nil, fmt.Errorf("invalid proxy URL: %v", err)
+		}
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.Proxy = http.ProxyURL(proxy)
+		boltzApi.Client = http.Client{
+			Transport: transport,
+		}
 	}
 
-	logger.Info("Using default Boltz endpoint for network " + network.Name + ": " + boltzCfg.URL)
+	checkBoltzVersion(boltzApi)
+
+	return boltzApi, nil
 }
 
 func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, error) {
 	chain := &onchain.Onchain{
-		Btc: &onchain.Currency{
-			Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc),
-		},
-		Liquid: &onchain.Currency{
-			Tx: onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid),
-		},
+		Btc:     &onchain.Currency{},
+		Liquid:  &onchain.Currency{},
 		Network: network,
 	}
 
@@ -223,12 +250,6 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		client := mempool.InitClient(cfg.MempoolLiquidApi)
 		chain.Liquid.Blocks = client
 		chain.Liquid.Tx = client
-	}
-
-	// Use the Boltz API in regtest to avoid situations where electrum does not know about the tx yet
-	if network == boltz.Regtest {
-		chain.Btc.Tx = onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyBtc)
-		chain.Liquid.Tx = onchain.NewBoltzTxProvider(cfg.Boltz, boltz.CurrencyLiquid)
 	}
 
 	return chain, nil

@@ -27,8 +27,8 @@ type Nursery struct {
 	lightning lightning.LightningNode
 
 	onchain  *onchain.Onchain
-	boltz    *boltz.Boltz
-	boltzWs  *boltz.BoltzWebsocket
+	boltz    *boltz.Api
+	boltzWs  *boltz.Websocket
 	database *database.Database
 
 	eventListeners     map[string]swapListener
@@ -88,7 +88,7 @@ func (nursery *Nursery) Init(
 	network *boltz.Network,
 	lightning lightning.LightningNode,
 	chain *onchain.Onchain,
-	boltzClient *boltz.Boltz,
+	boltzClient *boltz.Api,
 	database *database.Database,
 ) error {
 	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())

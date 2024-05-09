@@ -34,7 +34,7 @@ func searchUri(network string, uris []string) string {
 	return ""
 }
 
-func ConnectBoltz(lightning LightningNode, boltz *boltz.Boltz) error {
+func ConnectBoltz(lightning LightningNode, boltz *boltz.Api) error {
 	nodes, err := boltz.GetNodes()
 	if err != nil {
 		return err

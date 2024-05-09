@@ -29,6 +29,7 @@ require (
 	github.com/rs/cors v1.10.1
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
+	github.com/vektra/mockery v1.1.2
 	github.com/vulpemventures/go-elements v0.5.3
 	golang.org/x/crypto v0.21.0
 	golang.org/x/exp v0.0.0-20221111094246-ab4555d3164f

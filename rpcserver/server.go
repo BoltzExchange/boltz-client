@@ -53,7 +53,7 @@ type RpcServer struct {
 func (server *RpcServer) Init(
 	network *boltz.Network,
 	lightning lightning.LightningNode,
-	boltzApi *boltz.Boltz,
+	boltzApi *boltz.Api,
 	database *database.Database,
 	onchain *onchain.Onchain,
 	autoSwapConfigPath string,

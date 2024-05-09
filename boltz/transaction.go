@@ -76,7 +76,7 @@ type OutputResult struct {
 	Fee uint64
 }
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Boltz) (Transaction, map[string]OutputResult, error) {
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Api) (Transaction, map[string]OutputResult, error) {
 	construct := constructBtcTransaction
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction

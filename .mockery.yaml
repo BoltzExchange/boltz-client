@@ -1,0 +1,15 @@
+with-expecter: True
+filename: "{{ .InterfaceName }}_mock.go"
+packages:
+  github.com/BoltzExchange/boltz-client/onchain:
+    interfaces:
+      # select the interfaces you want mocked
+      Wallet:
+      TxProvider:
+  github.com/BoltzExchange/boltz-client/autoswap:
+    config:
+      dir: autoswap
+      inpackage: True
+    interfaces:
+      # select the interfaces you want mocked
+      RpcProvider:

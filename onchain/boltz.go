@@ -5,11 +5,11 @@ import (
 )
 
 type boltzTxProvider struct {
-	*boltz.Boltz
+	*boltz.Api
 	currency boltz.Currency
 }
 
-func NewBoltzTxProvider(boltz *boltz.Boltz, currency boltz.Currency) TxProvider {
+func NewBoltzTxProvider(boltz *boltz.Api, currency boltz.Currency) TxProvider {
 	return &boltzTxProvider{boltz, currency}
 }
 
@@ -18,5 +18,5 @@ func (txProvider boltzTxProvider) GetRawTransaction(txId string) (string, error)
 }
 
 func (txProvider boltzTxProvider) BroadcastTransaction(txHex string) (string, error) {
-	return txProvider.Boltz.BroadcastTransaction(txProvider.currency, txHex)
+	return txProvider.Api.BroadcastTransaction(txProvider.currency, txHex)
 }
