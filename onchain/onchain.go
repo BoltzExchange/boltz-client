@@ -53,6 +53,7 @@ type BlockProvider interface {
 type TxProvider interface {
 	GetRawTransaction(txId string) (string, error)
 	BroadcastTransaction(txHex string) (string, error)
+	IsTransactionConfirmed(txId string) (bool, error)
 }
 
 type AddressProvider interface {
@@ -251,6 +252,15 @@ func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (str
 	}
 
 	return chain.Tx.BroadcastTransaction(serialized)
+}
+
+func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId string) (bool, error) {
+	chain, err := onchain.GetCurrency(currency)
+	if err != nil {
+		return false, err
+	}
+
+	return chain.Tx.IsTransactionConfirmed(txId)
 }
 
 func (onchain *Onchain) Shutdown() {

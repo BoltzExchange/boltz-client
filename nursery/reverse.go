@@ -98,11 +98,12 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 		},
 		walletId: reverseSwap.WalletId,
 		voutInfo: voutInfo{
-			transactionId:  reverseSwap.LockupTransactionId,
-			currency:       reverseSwap.Pair.To,
-			address:        lockupAddress,
-			blindingKey:    reverseSwap.BlindingKey,
-			expectedAmount: reverseSwap.OnchainAmount,
+			transactionId:    reverseSwap.LockupTransactionId,
+			currency:         reverseSwap.Pair.To,
+			address:          lockupAddress,
+			blindingKey:      reverseSwap.BlindingKey,
+			expectedAmount:   reverseSwap.OnchainAmount,
+			requireConfirmed: true,
 		},
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, transactionId, fee); err != nil {

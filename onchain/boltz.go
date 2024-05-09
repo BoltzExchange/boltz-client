@@ -20,3 +20,7 @@ func (txProvider boltzTxProvider) GetRawTransaction(txId string) (string, error)
 func (txProvider boltzTxProvider) BroadcastTransaction(txHex string) (string, error) {
 	return txProvider.Api.BroadcastTransaction(txProvider.currency, txHex)
 }
+
+func (txProvider boltzTxProvider) IsTransactionConfirmed(txId string) (bool, error) {
+	return true, nil
+}

@@ -215,6 +215,27 @@ func (c *Client) GetBlockHeight() (uint32, error) {
 	return uint32(height), nil
 }
 
-func (c *Client) Shutdown() {
-
+type transaction struct {
+	Status struct {
+		Confirmed bool
+	}
 }
+
+func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
+	res, err := http.Get(c.api + "/tx/" + txId)
+	if err != nil {
+		return false, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("could not tx %s, failed with status: %d", txId, res.StatusCode)
+	}
+
+	var transaction transaction
+	if err := json.NewDecoder(res.Body).Decode(&transaction); err != nil {
+		return false, err
+	}
+
+	return transaction.Status.Confirmed, nil
+}
+
+func (c *Client) Shutdown() {}

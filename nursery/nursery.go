@@ -349,11 +349,12 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 }
 
 type voutInfo struct {
-	transactionId  string
-	currency       boltz.Currency
-	address        string
-	blindingKey    *btcec.PrivateKey
-	expectedAmount uint64
+	transactionId    string
+	currency         boltz.Currency
+	address          string
+	blindingKey      *btcec.PrivateKey
+	expectedAmount   uint64
+	requireConfirmed bool
 }
 
 func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
@@ -369,6 +370,15 @@ func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint
 
 	if info.expectedAmount != 0 && value < info.expectedAmount {
 		return nil, 0, 0, errors.New("locked up less onchain coins than expected")
+	}
+	if info.requireConfirmed {
+		confirmed, err := nursery.onchain.IsTransactionConfirmed(info.currency, info.transactionId)
+		if err != nil {
+			return nil, 0, 0, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
+		}
+		if !confirmed {
+			return nil, 0, 0, errors.New("lockup transaction not confirmed")
+		}
 	}
 
 	return lockupTransaction, vout, value, nil

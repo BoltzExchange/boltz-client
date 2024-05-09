@@ -66,7 +66,9 @@ func getBoltz(t *testing.T, cfg *config.Config) *boltz.Api {
 	return boltzApi
 }
 
-func maliciousTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
+type txMocker func(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider
+
+func lessValueTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
 	txMock := onchainmock.NewMockTxProvider(t)
 	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(func(txId string) (string, error) {
 		raw, err := original.GetRawTransaction(txId)
@@ -78,6 +80,13 @@ func maliciousTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock
 		}
 		return transaction.Serialize()
 	})
+	return txMock
+}
+
+func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
+	txMock := onchainmock.NewMockTxProvider(t)
+	txMock.EXPECT().IsTransactionConfirmed(mock.Anything).Return(false, nil)
+	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
 	return txMock
 }
 
@@ -989,24 +998,37 @@ func TestReverseSwap(t *testing.T) {
 		})
 	}
 
-	t.Run("WrongTransactions", func(t *testing.T) {
+	t.Run("Invalid", func(t *testing.T) {
 		cfg := loadConfig(t)
 		chain := getOnchain(t, cfg)
-		chain.Btc.Tx = maliciousTxProvider(t, chain.Btc.Tx)
+		originalTx := chain.Btc.Tx
 
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 		defer stop()
 
-		immediately := true
-		swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-			Amount:            100000,
-			AcceptZeroConf:    true,
-			ReturnImmediately: &immediately,
-		})
-		require.NoError(t, err)
+		tests := []struct {
+			desc     string
+			txMocker txMocker
+		}{
+			{"LessValue", lessValueTxProvider},
+			{"Unconfirmed", unconfirmedTxProvider},
+		}
 
-		stream, _ := swapStream(t, client, swap.Id)
-		stream(boltzrpc.SwapState_ERROR)
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				chain.Btc.Tx = tc.txMocker(t, originalTx)
+				swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+					Amount:         100000,
+					AcceptZeroConf: false,
+				})
+				require.NoError(t, err)
+
+				_, statusStream := swapStream(t, client, swap.Id)
+				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+				test.MineBlock()
+				statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionMempool)
+			})
+		}
 	})
 
 	t.Run("Standalone", func(t *testing.T) {
@@ -1141,23 +1163,36 @@ func TestChainSwap(t *testing.T) {
 		checkTxOutAddress(t, chain, boltz.CurrencyLiquid, update.ToData.GetTransactionId(), update.ToData.GetAddress(), true)
 	})
 
-	t.Run("WrongTransactions", func(t *testing.T) {
+	t.Run("Invalid", func(t *testing.T) {
 		cfg := loadConfig(t)
 		chain := getOnchain(t, cfg)
-		chain.Btc.Tx = maliciousTxProvider(t, chain.Btc.Tx)
+		originalTx := chain.Btc.Tx
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 		defer stop()
 
-		swap, err := client.CreateChainSwap(request(t, client, &boltzrpc.Pair{
-			From: boltzrpc.Currency_LBTC,
-			To:   boltzrpc.Currency_BTC,
-		}))
-		require.NoError(t, err)
+		tests := []struct {
+			desc     string
+			txMocker txMocker
+		}{
+			{"LessValue", lessValueTxProvider},
+			{"Unconfirmed", unconfirmedTxProvider},
+		}
 
-		_, statusStream := swapStream(t, client, swap.Id)
-		statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
-		test.MineBlock()
-		statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerMempoool)
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				chain.Btc.Tx = tc.txMocker(t, originalTx)
+				swap, err := client.CreateChainSwap(request(t, client, &boltzrpc.Pair{
+					From: boltzrpc.Currency_LBTC,
+					To:   boltzrpc.Currency_BTC,
+				}))
+				require.NoError(t, err)
+
+				_, statusStream := swapStream(t, client, swap.Id)
+				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
+				test.MineBlock()
+				statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerMempoool)
+			})
+		}
 	})
 
 	for _, tc := range tests {
@@ -1785,4 +1820,201 @@ func TestChangePassword(t *testing.T) {
 
 	_, err = client.GetWalletCredentials(walletName, password)
 	require.NoError(t, err)
+}
+
+func TestInit(t *testing.T) {
+	type args struct {
+		cfg *config.Config
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Init(tt.args.cfg)
+		})
+	}
+}
+
+func TestStart(t *testing.T) {
+	type args struct {
+		cfg *config.Config
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Start(tt.args.cfg)
+		})
+	}
+}
+
+func Test_checkBoltzVersion(t *testing.T) {
+	type args struct {
+		boltz *boltz.Api
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			checkBoltzVersion(tt.args.boltz)
+		})
+	}
+}
+
+func Test_checkClnVersion(t *testing.T) {
+	type args struct {
+		info *lightning.LightningInfo
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			checkClnVersion(tt.args.info)
+		})
+	}
+}
+
+func Test_checkLndVersion(t *testing.T) {
+	type args struct {
+		info *lightning.LightningInfo
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			checkLndVersion(tt.args.info)
+		})
+	}
+}
+
+func Test_connectLightning(t *testing.T) {
+	type args struct {
+		lightning lightning.LightningNode
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *lightning.LightningInfo
+		wantErr assert.ErrorAssertionFunc
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := connectLightning(tt.args.lightning)
+			if !tt.wantErr(t, err, fmt.Sprintf("connectLightning(%v)", tt.args.lightning)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "connectLightning(%v)", tt.args.lightning)
+		})
+	}
+}
+
+func Test_initBoltz(t *testing.T) {
+	type args struct {
+		cfg     *config.Config
+		network *boltz.Network
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *boltz.Api
+		wantErr assert.ErrorAssertionFunc
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := initBoltz(tt.args.cfg, tt.args.network)
+			if !tt.wantErr(t, err, fmt.Sprintf("initBoltz(%v, %v)", tt.args.cfg, tt.args.network)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "initBoltz(%v, %v)", tt.args.cfg, tt.args.network)
+		})
+	}
+}
+
+func Test_initLightning(t *testing.T) {
+	type args struct {
+		cfg *config.Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    lightning.LightningNode
+		wantErr assert.ErrorAssertionFunc
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := initLightning(tt.args.cfg)
+			if !tt.wantErr(t, err, fmt.Sprintf("initLightning(%v)", tt.args.cfg)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "initLightning(%v)", tt.args.cfg)
+		})
+	}
+}
+
+func Test_initOnchain(t *testing.T) {
+	type args struct {
+		cfg     *config.Config
+		network *boltz.Network
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *onchain.Onchain
+		wantErr assert.ErrorAssertionFunc
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := initOnchain(tt.args.cfg, tt.args.network)
+			if !tt.wantErr(t, err, fmt.Sprintf("initOnchain(%v, %v)", tt.args.cfg, tt.args.network)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "initOnchain(%v, %v)", tt.args.cfg, tt.args.network)
+		})
+	}
+}
+
+func Test_waitForLightningSynced(t *testing.T) {
+	type args struct {
+		lightning lightning.LightningNode
+	}
+	tests := []struct {
+		name string
+		args args
+		want *lightning.LightningInfo
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, waitForLightningSynced(tt.args.lightning), "waitForLightningSynced(%v)", tt.args.lightning)
+		})
+	}
 }
