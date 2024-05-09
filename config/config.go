@@ -58,7 +58,7 @@ type Config struct {
 	ElectrumLiquidUrl      string `long:"electrum-liquid" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
 	ElectrumLiquiLiquidSSL bool   `long:"electrum-liquid-ssl" description:"whether the electrum server uses ssl"`
 
-	Proxy string `long:"proxy" description:"Proxy URL to use for all boltz api requests"`
+	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
 	Help *helpOptions `group:"Help Options"`
 }
