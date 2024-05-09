@@ -58,7 +58,7 @@ func (service *Service) AddEntityToContext(ctx context.Context, raw string) (con
 	id := database.DefaultEntityId
 	if raw != "" {
 		var err error
-		id, err = strconv.ParseInt(raw, 10, 64)
+		id, err = strconv.ParseUint(raw, 10, 64)
 		if err != nil {
 			return nil, err
 		}

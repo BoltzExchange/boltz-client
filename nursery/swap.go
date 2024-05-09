@@ -29,7 +29,7 @@ func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
 
 type Output struct {
 	*boltz.OutputDetails
-	walletId *int64
+	walletId *database.Id
 	voutInfo voutInfo
 
 	setTransaction func(transactionId string, fee uint64) error

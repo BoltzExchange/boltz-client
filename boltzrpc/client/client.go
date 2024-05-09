@@ -65,7 +65,7 @@ func (boltz *Boltz) GetWallet(name string) (*boltzrpc.Wallet, error) {
 	return boltz.Client.GetWallet(boltz.Ctx, &boltzrpc.GetWalletRequest{Name: &name})
 }
 
-func (boltz *Boltz) GetWalletById(id int64) (*boltzrpc.Wallet, error) {
+func (boltz *Boltz) GetWalletById(id uint64) (*boltzrpc.Wallet, error) {
 	return boltz.Client.GetWallet(boltz.Ctx, &boltzrpc.GetWalletRequest{Id: &id})
 }
 

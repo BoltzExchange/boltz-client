@@ -5,12 +5,12 @@ import (
 )
 
 type Entity struct {
-	Id   int64
+	Id   Id
 	Name string
 }
 
 const DefaultEntityId Id = 1
-const DefaultEntityName string = "default"
+const DefaultEntityName string = "admin"
 
 func (d *Database) CreateDefaultEntity() error {
 	defaultEntity, _ := d.GetEntity(DefaultEntityId)
@@ -28,7 +28,7 @@ func (d *Database) CreateEntity(entity *Entity) error {
 	return row.Scan(&entity.Id)
 }
 
-func (d *Database) GetEntity(id int64) (*Entity, error) {
+func (d *Database) GetEntity(id Id) (*Entity, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	query := "SELECT * FROM entities WHERE id = ?"

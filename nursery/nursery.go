@@ -305,7 +305,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 }
 
 func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
-	addresses := make(map[int64]string)
+	addresses := make(map[database.Id]string)
 	for _, output := range outputs {
 		handleErr := func(err error) {
 			verb := "claim"

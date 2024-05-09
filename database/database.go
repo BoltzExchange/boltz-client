@@ -244,7 +244,7 @@ func (transaction *Transaction) Rollback(cause error) error {
 	return cause
 }
 
-type Id = int64
+type Id = uint64
 
 type SwapQuery struct {
 	From     *boltz.Currency

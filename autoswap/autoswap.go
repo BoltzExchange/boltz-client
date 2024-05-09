@@ -41,7 +41,7 @@ type AutoSwapper struct {
 	stop       chan bool
 	configPath string
 	err        error
-	walletId   *int64
+	walletId   *database.Id
 
 	ExecuteSwap        func(request *boltzrpc.CreateSwapRequest) error
 	ExecuteReverseSwap func(request *boltzrpc.CreateReverseSwapRequest) error
