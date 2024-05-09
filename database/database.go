@@ -146,7 +146,7 @@ CREATE TABLE wallets
     mnemonic       VARCHAR,
     subaccount     INT,
     salt           VARCHAR,
-    entityId       INT REFERENCES entities (id),
+    entityId       INT NOT NULL REFERENCES entities (id),
 
     UNIQUE (name, entityId, nodePubkey),
     UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
@@ -244,13 +244,15 @@ func (transaction *Transaction) Rollback(cause error) error {
 	return cause
 }
 
+type Id = uint64
+
 type SwapQuery struct {
 	From     *boltz.Currency
 	To       *boltz.Currency
 	State    *boltzrpc.SwapState
 	IsAuto   *bool
 	Since    time.Time
-	EntityId *int64
+	EntityId *Id
 }
 
 func (query *SwapQuery) ToWhereClause() (where string, values []any) {
@@ -296,7 +298,17 @@ func (database *Database) Connect() error {
 
 		database.db = db
 
-		return database.migrate()
+		if err := database.migrate(); err != nil {
+			return err
+		}
+
+		if _, err := database.Exec("PRAGMA foreign_keys = ON"); err != nil {
+			return err
+		}
+
+		if err := database.CreateDefaultEntity(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

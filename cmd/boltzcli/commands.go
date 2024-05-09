@@ -1142,7 +1142,7 @@ func getCurrency(ctx *cli.Context) (boltzrpc.Currency, error) {
 	return parseCurrency(ctx.String("currency"))
 }
 
-func getWalletId(ctx *cli.Context, name string) (*int64, error) {
+func getWalletId(ctx *cli.Context, name string) (*uint64, error) {
 	if name != "" {
 		client := getClient(ctx)
 		wallet, err := client.GetWallet(name)

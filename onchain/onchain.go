@@ -15,6 +15,8 @@ import (
 	"github.com/vulpemventures/go-elements/confidential"
 )
 
+type Id = uint64
+
 type BlockEpoch struct {
 	Height uint32
 }
@@ -26,19 +28,19 @@ type Balance struct {
 }
 
 type WalletInfo struct {
-	Id       int64
+	Id       Id
 	Name     string
 	Currency boltz.Currency
 	Readonly bool
-	EntityId *int64
+	EntityId Id
 }
 
 type WalletChecker struct {
-	Id            *int64
+	Id            *Id
 	Name          string
 	Currency      boltz.Currency
 	AllowReadonly bool
-	EntityId      *int64
+	EntityId      *Id
 }
 
 type BlockProvider interface {
@@ -87,7 +89,7 @@ func (onchain *Onchain) AddWallet(wallet Wallet) {
 	onchain.OnWalletChange.Send(onchain.Wallets)
 }
 
-func (onchain *Onchain) RemoveWallet(id int64) {
+func (onchain *Onchain) RemoveWallet(id Id) {
 	onchain.Wallets = slices.DeleteFunc(onchain.Wallets, func(current Wallet) bool {
 		return current.GetWalletInfo().Id == id
 	})
@@ -109,9 +111,7 @@ func (walletChecker *WalletChecker) Allowed(wallet Wallet) bool {
 	currency := info.Currency == walletChecker.Currency || walletChecker.Currency == ""
 	name := info.Name == walletChecker.Name || walletChecker.Name == ""
 	readonly := !info.Readonly || walletChecker.AllowReadonly
-	// either both are nil or both have the same value
-	entityId := info.EntityId == walletChecker.EntityId ||
-		(info.EntityId != nil && walletChecker.EntityId != nil && *info.EntityId == *walletChecker.EntityId)
+	entityId := walletChecker.EntityId == nil || info.EntityId == *walletChecker.EntityId
 	return wallet.Ready() && id && currency && name && readonly && entityId
 }
 
@@ -134,7 +134,7 @@ func (onchain *Onchain) GetWallets(checker WalletChecker) []Wallet {
 	return wallets
 }
 
-func (onchain *Onchain) GetWalletById(id int64) (wallet Wallet, err error) {
+func (onchain *Onchain) GetWalletById(id Id) (wallet Wallet, err error) {
 	return onchain.GetAnyWallet(WalletChecker{Id: &id})
 }
 

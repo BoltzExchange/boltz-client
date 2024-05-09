@@ -257,7 +257,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `entity_id` | [`int64`](#int64) | optional |  |
+| `entity_id` | [`uint64`](#uint64) | optional |  |
 | `permissions` | [`MacaroonPermissions`](#macaroonpermissions) | repeated |  |
 
 
@@ -337,7 +337,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) | optional |  |
 | `transaction_id` | [`string`](#string) | optional |  |
-| `wallet_id` | [`int64`](#int64) | optional |  |
+| `wallet_id` | [`uint64`](#uint64) | optional |  |
 | `address` | [`string`](#string) | optional |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `lockup_address` | [`string`](#string) |  |  |
@@ -364,7 +364,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `service_fee_percent` | [`float`](#float) |  |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
-| `entity_id` | [`int64`](#int64) | optional |  |
+| `entity_id` | [`uint64`](#uint64) |  |  |
 | `from_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 | `to_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 
@@ -443,8 +443,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  |  |
 | `to_address` | [`string`](#string) | optional | Address where funds will be swept to if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | Address where the coins should be refunded to if the swap fails. |
-| `from_wallet_id` | [`int64`](#int64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
-| `to_wallet_id` | [`int64`](#int64) | optional | Wallet where the the funds will go if the swap succeeds. |
+| `from_wallet_id` | [`uint64`](#uint64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
+| `to_wallet_id` | [`uint64`](#uint64) | optional | Wallet where the the funds will go if the swap succeeds. |
 | `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in Boltz. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
 
@@ -492,7 +492,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `accept_zero_conf` | [`bool`](#bool) |  | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
 | `pair` | [`Pair`](#pair) |  |  |
 | `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style. |
-| `wallet_id` | [`int64`](#int64) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
+| `wallet_id` | [`uint64`](#uint64) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
 | `return_immediately` | [`bool`](#bool) | optional | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true. |
 
@@ -528,7 +528,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  | not yet supported repeated string chan_ids = 3; |
 | `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
-| `wallet_id` | [`int64`](#int64) | optional | wallet to pay swap from. only used if `send_from_internal` is set to true |
+| `wallet_id` | [`uint64`](#uint64) | optional | wallet to pay swap from. only used if `send_from_internal` is set to true |
 | `invoice` | [`string`](#string) | optional | invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node |
 
 
@@ -603,7 +603,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [`int64`](#int64) |  |  |
+| `id` | [`uint64`](#uint64) |  |  |
 | `name` | [`string`](#string) |  |  |
 
 
@@ -659,7 +659,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
 | `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
 | `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
-| `entity_id` | [`int64`](#int64) | optional | the currently authenticated entity |
+| `entity` | [`Entity`](#entity) | optional | the currently authenticated entity |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -794,7 +794,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) | optional |  |
-| `id` | [`int64`](#int64) | optional |  |
+| `id` | [`uint64`](#uint64) | optional |  |
 
 
 
@@ -1042,6 +1042,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |
 | `external_pay` | [`bool`](#bool) |  |  |
+| `entity_id` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1117,7 +1118,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
-| `wallet_id` | [`int64`](#int64) | optional | internal wallet which was used to pay the swap |
+| `wallet_id` | [`uint64`](#uint64) | optional | internal wallet which was used to pay the swap |
+| `entity_id` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1186,11 +1188,12 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [`int64`](#int64) |  |  |
+| `id` | [`uint64`](#uint64) |  |  |
 | `name` | [`string`](#string) |  |  |
 | `currency` | [`Currency`](#currency) |  |  |
 | `readonly` | [`bool`](#bool) |  |  |
 | `balance` | [`Balance`](#balance) |  |  |
+| `entity_id` | [`uint64`](#uint64) |  |  |
 
 
 

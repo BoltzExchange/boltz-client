@@ -109,11 +109,19 @@ func (server *RpcServer) Init(
 	}
 	if lightning != nil {
 		swapper.ExecuteSwap = func(request *boltzrpc.CreateSwapRequest) error {
-			_, err := routedServer.createSwap(context.Background(), true, request)
+			ctx, err := routedServer.macaroon.AddEntityToContext(context.Background(), "")
+			if err != nil {
+				return err
+			}
+			_, err = routedServer.createSwap(ctx, true, request)
 			return err
 		}
 		swapper.ExecuteReverseSwap = func(request *boltzrpc.CreateReverseSwapRequest) error {
-			_, err := routedServer.createReverseSwap(context.Background(), true, request)
+			ctx, err := routedServer.macaroon.AddEntityToContext(context.Background(), "")
+			if err != nil {
+				return err
+			}
+			_, err = routedServer.createReverseSwap(ctx, true, request)
 			return err
 		}
 		swapper.ListChannels = routedServer.lightning.ListChannels

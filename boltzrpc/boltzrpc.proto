@@ -179,7 +179,7 @@ message GetEntityRequest {
 }
 
 message Entity {
-    int64 id = 1;
+    uint64 id = 1;
     string name = 2;
 }
 
@@ -193,7 +193,7 @@ message MacaroonPermissions {
 }
 
 message BakeMacaroonRequest {
-    optional int64 entity_id = 1;
+    optional uint64 entity_id = 1;
     repeated MacaroonPermissions permissions = 2;
 }
 message BakeMacaroonResponse {
@@ -257,7 +257,8 @@ message SwapInfo {
     optional uint64 service_fee = 17;
     optional uint64 onchain_fee = 18;
     // internal wallet which was used to pay the swap
-    optional int64 wallet_id = 20;
+    optional uint64 wallet_id = 20;
+    uint64 entity_id = 21;
 }
 
 enum SwapType {
@@ -322,6 +323,7 @@ message ReverseSwapInfo {
     optional uint64 onchain_fee = 19;
     optional uint64 routing_fee_msat = 20;
     bool external_pay = 21;
+    uint64 entity_id = 22;
 }
 
 message BlockHeights {
@@ -342,7 +344,7 @@ message GetInfoResponse {
     // swaps that need a manual interaction to refund
     repeated string refundable_swaps = 12;
     // the currently authenticated entity
-    optional int64 entity_id = 13;
+    optional Entity entity = 13;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -436,7 +438,7 @@ message CreateSwapRequest {
     // address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise.
     optional string refund_address = 5;
     // wallet to pay swap from. only used if `send_from_internal` is set to true
-    optional int64 wallet_id = 6;
+    optional uint64 wallet_id = 6;
     // invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node
     optional string invoice = 7;
 }
@@ -474,7 +476,7 @@ message CreateReverseSwapRequest {
     // a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style.
     repeated string chan_ids = 5;
     // wallet from which the onchain address should be generated - only considered if `address` is not set
-    optional int64 wallet_id = 6;
+    optional uint64 wallet_id = 6;
     // Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed.
     // It will always return immediately if `accept_zero_conf` is not set.
     optional bool return_immediately = 7;
@@ -503,9 +505,9 @@ message CreateChainSwapRequest {
     optional string refund_address = 4;
     // Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true.
     // If the swap fails, funds will be refunded to this wallet aswell.
-    optional int64 from_wallet_id = 5;
+    optional uint64 from_wallet_id = 5;
     // Wallet where the the funds will go if the swap succeeds.
-    optional int64 to_wallet_id = 6;
+    optional uint64 to_wallet_id = 6;
     // Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool.
     // Should only be used for smaller amounts as it involves trust in Boltz.
     optional bool accept_zero_conf = 7;
@@ -525,7 +527,7 @@ message ChainSwapInfo {
     float service_fee_percent = 10;
     optional uint64 onchain_fee = 11;
     int64 created_at = 12;
-    optional int64 entity_id = 13;
+    uint64 entity_id = 13;
     ChainSwapData from_data = 14;
     ChainSwapData to_data = 15;
 }
@@ -539,7 +541,7 @@ message ChainSwapData {
     uint32 timeout_block_height = 7;
     optional string lockup_transaction_id = 8;
     optional string transaction_id = 9;
-    optional int64 wallet_id = 20;
+    optional uint64 wallet_id = 20;
     optional string address = 12;
     optional string blinding_key = 13;
     string lockup_address = 14;
@@ -625,7 +627,7 @@ message GetWalletsRequest {
 
 message GetWalletRequest {
     optional string name = 1;
-    optional int64 id = 2;
+    optional uint64 id = 2;
 }
 
 message GetWalletCredentialsRequest {
@@ -639,11 +641,12 @@ message RemoveWalletRequest {
 
 
 message Wallet {
-    int64 id = 1;
+    uint64 id = 1;
     string name = 2;
     Currency currency = 3;
     bool readonly = 4;
     Balance balance = 5;
+    uint64 entity_id = 6;
 }
 
 message Wallets {

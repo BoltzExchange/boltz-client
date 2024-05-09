@@ -10,7 +10,6 @@ import (
 type Wallet struct {
 	*onchainWallet.Credentials
 	NodePubkey *string
-	EntityId   *int64
 }
 
 func (d *Database) CreateWallet(wallet *Wallet) error {
@@ -65,7 +64,7 @@ func parseWallet(rows *sql.Rows) (*Wallet, error) {
 	return wallet, nil
 }
 
-func (d *Database) GetWalletByName(name string, entity *int64) (*Wallet, error) {
+func (d *Database) GetWalletByName(name string, entity *Id) (*Wallet, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	query := "SELECT * FROM wallets WHERE name = ?"
@@ -125,7 +124,7 @@ func (d *Database) QueryWalletCredentials() ([]*onchainWallet.Credentials, error
 	return credentials, nil
 }
 
-func (d *Database) DeleteWallet(id int64) error {
+func (d *Database) DeleteWallet(id Id) error {
 	query := "DELETE FROM wallets WHERE id = ?"
 	result, err := d.Exec(query, id)
 	if err != nil {
@@ -137,7 +136,7 @@ func (d *Database) DeleteWallet(id int64) error {
 	return nil
 }
 
-func (d *Database) SetWalletSubaccount(id int64, subaccount uint64) error {
+func (d *Database) SetWalletSubaccount(id Id, subaccount uint64) error {
 	query := "UPDATE wallets SET subaccount = ? WHERE id = ?"
 	_, err := d.Exec(query, subaccount, id)
 	return err

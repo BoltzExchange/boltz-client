@@ -32,7 +32,7 @@ func (connection *Connection) SetMacaroon(macaroon string) {
 	connection.Ctx = metadata.NewOutgoingContext(context.Background(), md)
 }
 
-func (connection *Connection) SetEntity(entity int64) {
+func (connection *Connection) SetEntity(entity any) {
 	md, _ := metadata.FromOutgoingContext(connection.Ctx)
 	md.Set("entity", fmt.Sprint(entity))
 	connection.Ctx = metadata.NewOutgoingContext(context.Background(), md)

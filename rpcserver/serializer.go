@@ -80,6 +80,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 		ServiceFee:          serializedSwap.ServiceFee,
 		OnchainFee:          serializedSwap.OnchainFee,
 		WalletId:            serializedSwap.WalletId,
+		EntityId:            serializedSwap.EntityId,
 	}
 
 	return serialized
@@ -113,6 +114,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		OnchainFee:          serializedReverseSwap.OnchainFee,
 		RoutingFeeMsat:      serializedReverseSwap.RoutingFeeMsat,
 		ExternalPay:         serializedReverseSwap.ExternalPay,
+		EntityId:            serializedReverseSwap.EntityId,
 	}
 }
 
@@ -250,6 +252,9 @@ func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.Li
 }
 
 func serializeEntity(entity *database.Entity) *boltzrpc.Entity {
+	if entity == nil {
+		return nil
+	}
 	return &boltzrpc.Entity{
 		Id:   entity.Id,
 		Name: entity.Name,
