@@ -91,6 +91,9 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 
 			return nil
 		},
+		setError: func(err error) {
+			nursery.handleChainSwapError(swap, err)
+		},
 	}
 }
 
@@ -124,7 +127,18 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 
 			return nil
 		},
+		func(err error) {
+			nursery.handleChainSwapError(swap, err)
+		},
 	}
+}
+
+func (nursery *Nursery) handleChainSwapError(swap *database.ChainSwap, err error) {
+	if dbErr := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+		logger.Errorf("Could not update Chain Swap state: %s", dbErr)
+	}
+	logger.Errorf("Chain Swap %s error: %s", swap.Id, err)
+	nursery.sendChainSwapUpdate(*swap)
 }
 
 func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status boltz.SwapStatusResponse) {
@@ -136,11 +150,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 	}
 
 	handleError := func(err string) {
-		if dbErr := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_ERROR, err); dbErr != nil {
-			logger.Errorf("Could not update Chain Swap state: %s", dbErr)
-		}
-		logger.Errorf("Chain Swap %s error: %s", swap.Id, err)
-		nursery.sendChainSwapUpdate(*swap)
+		nursery.handleChainSwapError(swap, errors.New(err))
 	}
 
 	if swap.FromData.LockupTransactionId == "" || swap.ToData.LockupTransactionId == "" {
@@ -176,9 +186,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		output := nursery.getChainSwapClaimOutput(swap)
-		_, err := nursery.createTransaction(swap.Pair.To, []*Output{output})
-		if err != nil {
-			handleError("Could not claim chain swap output: " + err.Error())
+		if err := nursery.createTransaction(swap.Pair.To, []*Output{output}); err != nil {
+			logger.Infof("Could not claim chain swap output: " + err.Error())
 			return
 		}
 	}

@@ -111,7 +111,18 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 			}
 			return nil
 		},
+		setError: func(err error) {
+			nursery.handleReverseSwapError(reverseSwap, err)
+		},
 	}
+}
+
+func (nursery *Nursery) handleReverseSwapError(reverseSwap *database.ReverseSwap, err error) {
+	if dbErr := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+		logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
+	}
+	logger.Errorf("Reverse Swap %s error: %s", reverseSwap.Id, err)
+	nursery.sendReverseSwapUpdate(*reverseSwap)
 }
 
 // TODO: fail swap after "transaction.failed" event
@@ -124,11 +135,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	}
 
 	handleError := func(err string) {
-		if dbErr := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_ERROR, err); dbErr != nil {
-			logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
-		}
-		logger.Error(err)
-		nursery.sendReverseSwapUpdate(*reverseSwap)
+		nursery.handleReverseSwapError(reverseSwap, fmt.Errorf(err))
 	}
 
 	switch parsedStatus {
@@ -150,9 +157,9 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
 
 		output := nursery.getReverseSwapClaimOutput(reverseSwap)
-		_, err = nursery.createTransaction(reverseSwap.Pair.To, []*Output{output})
-		if err != nil {
-			handleError("Could not construct claim transaction: " + err.Error())
+
+		if err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output}); err != nil {
+			logger.Info("Could not claim: " + err.Error())
 			return
 		}
 	}

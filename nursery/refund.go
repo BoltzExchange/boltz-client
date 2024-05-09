@@ -55,11 +55,5 @@ func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []database.Sw
 		logger.Info("Did not find any outputs to refund")
 		return nil
 	}
-	refundTransactionId, err := nursery.createTransaction(currency, outputs)
-	if err != nil {
-		return err
-	}
-
-	logger.Infof("Constructed refund transaction for %d swaps: %s", len(outputs), refundTransactionId)
-	return nil
+	return nursery.createTransaction(currency, outputs)
 }

@@ -56,7 +56,7 @@ func loadConfig(t *testing.T) *config.Config {
 	require.NoError(t, err)
 	cfg.LogLevel = "debug"
 	cfg.Database.Path = t.TempDir() + "/boltz.db"
-	cfg.Node = "cln"
+	cfg.Node = "lnd"
 	return cfg
 }
 
@@ -246,7 +246,6 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) (streamFunc, s
 		for {
 			select {
 			case update, ok := <-updates:
-				fmt.Println(update)
 				if ok {
 					currentStatus := update.Swap.GetStatus() + update.ReverseSwap.GetStatus() + update.ChainSwap.GetStatus()
 
@@ -657,6 +656,8 @@ func TestSwap(t *testing.T) {
 
 		t.Run("Valid", func(t *testing.T) {
 			node := cfg.LND
+			_, err := connectLightning(node)
+			require.NoError(t, err)
 			invoice, err := node.CreateInvoice(100000, nil, 0, "test")
 			require.NoError(t, err)
 			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
@@ -726,7 +727,7 @@ func TestSwap(t *testing.T) {
 						From: tc.from,
 						To:   boltzrpc.Currency_BTC,
 					}
-					client, _, stop := setup(t, setupOptions{cfg: cfg})
+					client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
 					defer stop()
 
 					t.Run("Normal", func(t *testing.T) {
@@ -787,6 +788,9 @@ func TestSwap(t *testing.T) {
 
 						t.Run("Script", func(t *testing.T) {
 							boltzApi.DisablePartialSignatures = true
+							t.Cleanup(func() {
+								boltzApi.DisablePartialSignatures = false
+							})
 
 							refundAddress := cli("getnewaddress")
 							withStream := createFailedSwap(t, refundAddress)
@@ -808,8 +812,6 @@ func TestSwap(t *testing.T) {
 						})
 
 						t.Run("Cooperative", func(t *testing.T) {
-							boltzApi.DisablePartialSignatures = true
-
 							refundAddress := cli("getnewaddress")
 							stream := createFailedSwap(t, refundAddress)
 
@@ -1009,9 +1011,10 @@ func TestReverseSwap(t *testing.T) {
 		tests := []struct {
 			desc     string
 			txMocker txMocker
+			error    string
 		}{
-			{"LessValue", lessValueTxProvider},
-			{"Unconfirmed", unconfirmedTxProvider},
+			{"LessValue", lessValueTxProvider, "locked up less"},
+			{"Unconfirmed", unconfirmedTxProvider, "not confirmed"},
 		}
 
 		for _, tc := range tests {
@@ -1026,7 +1029,8 @@ func TestReverseSwap(t *testing.T) {
 				_, statusStream := swapStream(t, client, swap.Id)
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
 				test.MineBlock()
-				statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionMempool)
+				info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionMempool)
+				require.Contains(t, info.ReverseSwap.Error, tc.error)
 			})
 		}
 	})
@@ -1106,7 +1110,6 @@ func TestReverseSwap(t *testing.T) {
 
 func TestChainSwap(t *testing.T) {
 	cfg := loadConfig(t)
-	boltzApi := getBoltz(t, cfg)
 	chain := getOnchain(t, cfg)
 
 	tests := []struct {
@@ -1138,7 +1141,7 @@ func TestChainSwap(t *testing.T) {
 	}
 
 	t.Run("Recovery", func(t *testing.T) {
-		client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi, chain: chain})
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 
 		externalPay := true
 		to := test.LiquidCli("getnewaddress")
@@ -1173,9 +1176,10 @@ func TestChainSwap(t *testing.T) {
 		tests := []struct {
 			desc     string
 			txMocker txMocker
+			error    string
 		}{
-			{"LessValue", lessValueTxProvider},
-			{"Unconfirmed", unconfirmedTxProvider},
+			{"LessValue", lessValueTxProvider, "locked up less"},
+			{"Unconfirmed", unconfirmedTxProvider, "not confirmed"},
 		}
 
 		for _, tc := range tests {
@@ -1190,7 +1194,8 @@ func TestChainSwap(t *testing.T) {
 				_, statusStream := swapStream(t, client, swap.Id)
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
 				test.MineBlock()
-				statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerMempoool)
+				info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerMempoool)
+				require.Contains(t, info.ChainSwap.Error, tc.error)
 			})
 		}
 	})
@@ -1201,7 +1206,8 @@ func TestChainSwap(t *testing.T) {
 				From: tc.from,
 				To:   tc.to,
 			}
-			client, _, stop := setup(t, setupOptions{cfg: cfg})
+			boltzApi := getBoltz(t, cfg)
+			client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
 			defer stop()
 
 			fromCli := getCli(tc.from)
