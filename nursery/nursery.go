@@ -99,7 +99,7 @@ func (nursery *Nursery) Init(
 	nursery.onchain = chain
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
-	nursery.boltzWs = boltz.NewBoltzWebsocket(boltzClient.URL)
+	nursery.boltzWs = boltzClient.NewWebsocket()
 
 	logger.Info("Starting nursery")
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -26,6 +27,7 @@ type BoltzWebsocket struct {
 	subscriptions chan bool
 	conn          *websocket.Conn
 	closed        bool
+	dialer        *websocket.Dialer
 }
 
 type wsResponse struct {
@@ -35,14 +37,20 @@ type wsResponse struct {
 	Args    []any  `json:"args"`
 }
 
-func NewBoltzWebsocket(apiUrl string) *BoltzWebsocket {
-	ws := &BoltzWebsocket{
-		apiUrl:        apiUrl,
-		subscriptions: make(chan bool),
-		Updates:       make(chan SwapUpdate),
+func (boltz *Boltz) NewWebsocket() *BoltzWebsocket {
+	httpTransport, ok := boltz.Client.Transport.(*http.Transport)
+
+	dialer := *websocket.DefaultDialer
+	if ok {
+		dialer.Proxy = httpTransport.Proxy
 	}
 
-	return ws
+	return &BoltzWebsocket{
+		apiUrl:        boltz.URL,
+		subscriptions: make(chan bool),
+		dialer:        &dialer,
+		Updates:       make(chan SwapUpdate),
+	}
 }
 
 func (boltz *BoltzWebsocket) SendJson(data any) error {
@@ -69,7 +77,7 @@ func (boltz *BoltzWebsocket) Connect() error {
 		wsUrl.Scheme = "ws"
 	}
 
-	conn, _, err := websocket.DefaultDialer.Dial(wsUrl.String(), nil)
+	conn, _, err := boltz.dialer.Dial(wsUrl.String(), nil)
 	boltz.conn = conn
 	if err != nil {
 		return fmt.Errorf("could not connect to boltz ws at %s: %w", wsUrl, err)
