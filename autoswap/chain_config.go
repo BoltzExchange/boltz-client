@@ -25,7 +25,11 @@ type ChainConfig struct {
 }
 
 func withChainBase(config *SerializedChainConfig) *SerializedChainConfig {
-	return merge(&SerializedChainConfig{MaxFeePercent: 1}, config)
+	return merge(&SerializedChainConfig{
+		MaxFeePercent:  1,
+		Budget:         100000,
+		BudgetInterval: 7 * 60 * 60 * 24,
+	}, config)
 }
 
 func NewChainConfig(serialized *SerializedChainConfig) *ChainConfig {

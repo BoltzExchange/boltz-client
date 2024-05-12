@@ -329,7 +329,7 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 				}
 				address, err = wallet.NewAddress()
 				if err != nil {
-					handleErr(fmt.Errorf("could not get address from wallet %s", wallet.GetWalletInfo().Name))
+					handleErr(fmt.Errorf("could not get address from wallet %s: %w", wallet.GetWalletInfo().Name, err))
 					continue
 				}
 				addresses[walletId] = address

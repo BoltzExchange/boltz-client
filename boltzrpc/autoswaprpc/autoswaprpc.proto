@@ -67,6 +67,7 @@ message Budget {
   int64 remaining = 2;
   int64 start_date = 3;
   int64 end_date = 4;
+  optional boltzrpc.SwapStats stats = 5;
 }
 
 message GetRecommendationsResponse {
@@ -79,9 +80,8 @@ message GetStatusRequest {}
 message Status {
   bool running = 1;
   optional string error = 2;
-  optional boltzrpc.SwapStats stats = 3;
-  optional Budget budget = 4;
-  string description = 5;
+  optional Budget budget = 3;
+  string description = 4;
 }
 
 message GetStatusResponse {
@@ -116,7 +116,9 @@ message ChainConfig {
   string to_address = 4;
   uint64 from_threshold = 5;
   float max_fee_percent = 6;
-  optional string entity = 7;
+  uint64 budget = 7;
+  uint64 budget_interval = 8;
+  optional string entity = 9;
 }
 
 message LightningConfig {

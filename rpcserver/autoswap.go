@@ -69,6 +69,19 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, requ
 	return response, nil
 }
 
+func serializeBudget(budget *autoswap.Budget) *autoswaprpc.Budget {
+	if budget == nil {
+		return nil
+	}
+	return &autoswaprpc.Budget{
+		Total:     budget.Total,
+		StartDate: serializeTime(budget.StartDate),
+		EndDate:   serializeTime(budget.EndDate),
+		Remaining: budget.Amount,
+		Stats:     budget.Stats,
+	}
+}
+
 func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprpc.GetStatusRequest) (*autoswaprpc.GetStatusResponse, error) {
 	response := &autoswaprpc.GetStatusResponse{
 		Error: serializeOptionalString(server.swapper.Error()),
@@ -77,45 +90,32 @@ func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprp
 		lnSwapper := server.swapper.GetLnSwapper()
 		if lnSwapper != nil {
 			cfg := lnSwapper.GetConfig()
-			status := &autoswaprpc.Status{
-				Running:     lnSwapper.Running(),
-				Error:       serializeOptionalString(lnSwapper.Error()),
-				Description: cfg.Description(),
-			}
-
 			budget, err := lnSwapper.GetCurrentBudget(false)
 			if err != nil {
 				return nil, err
 			}
-
-			if budget != nil {
-				status.Budget = &autoswaprpc.Budget{
-					Total:     budget.Total,
-					StartDate: serializeTime(budget.StartDate),
-					EndDate:   serializeTime(budget.EndDate),
-					Remaining: budget.Amount,
-				}
-
-				auto := true
-				status.Stats, err = server.database.QueryStats(database.SwapQuery{Since: budget.StartDate, IsAuto: &auto}, false)
-				if err != nil {
-					return nil, err
-				}
+			response.Lightning = &autoswaprpc.Status{
+				Running:     lnSwapper.Running(),
+				Error:       serializeOptionalString(lnSwapper.Error()),
+				Description: cfg.Description(),
+				Budget:      serializeBudget(budget),
 			}
-			response.Lightning = status
 		}
 	}
 
 	chainSwapper := server.swapper.GetChainSwapper(requireEntity(ctx))
 	if chainSwapper != nil {
 		cfg := chainSwapper.GetConfig()
-		status := &autoswaprpc.Status{
+		budget, err := chainSwapper.GetCurrentBudget(false)
+		if err != nil {
+			return nil, err
+		}
+		response.Chain = &autoswaprpc.Status{
 			Running:     chainSwapper.Running(),
 			Error:       serializeOptionalString(chainSwapper.Error()),
 			Description: cfg.Description(),
+			Budget:      serializeBudget(budget),
 		}
-
-		response.Chain = status
 	}
 
 	return response, nil

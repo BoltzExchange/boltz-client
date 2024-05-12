@@ -38,13 +38,13 @@ type LightningConfig struct {
 
 	walletId *database.Id
 
-	maxFeePercent utils.Percentage
-	currency      boltz.Currency
-	swapType      boltz.SwapType
-	maxBalance    Balance
-	minBalance    Balance
-	strategy      Strategy
-	description   string
+	maxFeePercent  utils.Percentage
+	currency       boltz.Currency
+	swapType       boltz.SwapType
+	maxBalance     Balance
+	minBalance     Balance
+	strategy       Strategy
+	description    string
 }
 
 func NewConfig(serialized *SerializedLnConfig) *LightningConfig {

@@ -119,8 +119,8 @@ func (swapData *ChainSwapData) Serialize() ChainSwapDataSerialized {
 
 const insertChainSwap = `
 		INSERT INTO chainSwaps
-		(id, fromCurrency, toCurrency, state, error, status, acceptZeroConf, preimage, isAuto, serviceFee, serviceFeePercent, onchainFee, createdAt, entityId)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		(id, fromCurrency, toCurrency, state, error, status, acceptZeroConf, preimage, isAuto, serviceFee, serviceFeePercent, onchainFee, createdAt, entityId, createdAt)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateChainSwap(swap ChainSwap) error {
@@ -145,6 +145,7 @@ func (database *Database) CreateChainSwap(swap ChainSwap) error {
 		serialized.OnchainFee,
 		serialized.CreatedAt,
 		serialized.EntityId,
+		FormatTime(swap.CreatedAt),
 	)
 	if err != nil {
 		return tx.Rollback(err)

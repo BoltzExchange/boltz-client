@@ -70,17 +70,28 @@ func TestChainSwapper(t *testing.T) {
 		balance := &onchain.Balance{Total: 1000, Confirmed: 1000, Unconfirmed: 0}
 		fromWallet.EXPECT().GetBalance().Return(balance, nil)
 
+		expectedAmount := uint64(750)
+
 		recommendation, err := chainSwapper.GetRecommendation()
 		require.NoError(t, err)
 		require.NotNil(t, recommendation)
 		require.NotZero(t, recommendation.FeeEstimate)
-		require.Equal(t, 750, int(recommendation.Amount))
+		require.Equal(t, expectedAmount, recommendation.Amount)
 
-		pairInfo.Fees.MinerFees = 1000
+		fake := fakeSwaps{chainSwaps: []database.ChainSwap{
+			{},
+		}}
+		fake.create(t, chainSwapper.database)
+
+		pairInfo.Fees.MinerFees = 1000000
+		pairInfo.Limits.Minimal = 2 * expectedAmount
 		recommendation, err = chainSwapper.GetRecommendation()
 		require.NoError(t, err)
-		require.NotNil(t, recommendation)
-		require.NotEmpty(t, recommendation.DismissedReasons)
+		require.Contains(t, recommendation.DismissedReasons, ReasonBudgetExceeded)
+		require.Contains(t, recommendation.DismissedReasons, ReasonMaxFeePercent)
+		require.Contains(t, recommendation.DismissedReasons, ReasonAmountBelowMin)
+		require.Contains(t, recommendation.DismissedReasons, ReasonPendingSwap)
+		require.Equal(t, expectedAmount, recommendation.Amount)
 
 		balance.Total = 100
 		balance.Confirmed = 100

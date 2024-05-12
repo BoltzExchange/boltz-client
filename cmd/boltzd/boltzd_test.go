@@ -1338,6 +1338,10 @@ func TestAutoSwap(t *testing.T) {
 		test.MineBlock()
 		stream(boltzrpc.SwapState_SUCCESSFUL)
 
+		recommendations, err = autoSwap.GetRecommendations(true)
+		require.NoError(t, err)
+		require.Len(t, recommendations.Chain, 0)
+
 		_, write, _ := createEntity(t, admin, "test")
 		entity := client.NewAutoSwapClient(admin.Connection)
 		entity.SetMacaroon(write)
@@ -1485,12 +1489,12 @@ func TestAutoSwap(t *testing.T) {
 				stream(boltzrpc.SwapState_SUCCESSFUL)
 
 				status, err := autoSwap.GetStatus()
-				stats := status.Lightning
+				budget := status.Lightning.Budget
 				require.NoError(t, err)
-				require.Equal(t, 1, int(stats.Stats.Count))
-				require.Less(t, stats.Budget.Remaining, int64(stats.Budget.Total))
-				require.NotZero(t, stats.Stats.TotalFees)
-				require.NotZero(t, stats.Stats.TotalAmount)
+				require.Equal(t, 1, int(budget.Stats.Count))
+				require.Less(t, budget.Remaining, int64(budget.Total))
+				require.NotZero(t, budget.Stats.TotalFees)
+				require.NotZero(t, budget.Stats.TotalAmount)
 			})
 
 		})
