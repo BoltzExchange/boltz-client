@@ -56,7 +56,7 @@ func main() {
 func initLightning(cfg *config.Config) (lightning.LightningNode, error) {
 	if cfg.Standalone {
 		if cfg.Network == "" {
-			logger.Fatal("Standalone mode requires a lightning node to be set")
+			logger.Fatal("Standalone mode requires a network to be set")
 		}
 		return nil, nil
 	}
@@ -76,7 +76,7 @@ func initLightning(cfg *config.Config) (lightning.LightningNode, error) {
 	} else if isLndConfigured {
 		node = cfg.LND
 	} else {
-		logger.Fatal("No lightning node configured. Set either CLN or LND.")
+		logger.Fatal("No lightning node configured. Configure either CLN or LND.")
 	}
 
 	info, err := connectLightning(node)
