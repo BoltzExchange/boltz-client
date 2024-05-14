@@ -206,6 +206,12 @@ func (database *Database) SetChainSwapAddress(swapData *ChainSwapData, address s
 	return err
 }
 
+func (database *Database) SetChainSwapWallet(swapData *ChainSwapData, walletId Id) error {
+	swapData.WalletId = &walletId
+	_, err := database.Exec("UPDATE chainSwapsData SET walletId = ? WHERE id = ? AND currency = ?", walletId, swapData.Id, swapData.Currency)
+	return err
+}
+
 func (database *Database) SetChainSwapTransactionId(swapData *ChainSwapData, transactionId string) error {
 	swapData.Transactionid = transactionId
 	_, err := database.Exec("UPDATE chainSwapsData SET transactionId = ? WHERE id = ? AND currency = ?", transactionId, swapData.Id, swapData.Currency)
