@@ -1141,6 +1141,7 @@ func TestChainSwap(t *testing.T) {
 	}
 
 	t.Run("Recovery", func(t *testing.T) {
+		cfg := loadConfig(t)
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 
 		externalPay := true
@@ -1206,6 +1207,7 @@ func TestChainSwap(t *testing.T) {
 				From: tc.from,
 				To:   tc.to,
 			}
+			cfg := loadConfig(t)
 			boltzApi := getBoltz(t, cfg)
 			client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
 			defer stop()
