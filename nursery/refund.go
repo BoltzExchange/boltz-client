@@ -12,7 +12,9 @@ import (
 func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
 	blockNotifier := nursery.registerBlockListener(currency)
 
+	nursery.waitGroup.Add(1)
 	go func() {
+		defer nursery.waitGroup.Done()
 		for newBlock := range blockNotifier.Get() {
 			swaps, chainSwaps, err := nursery.database.QueryAllRefundableSwaps(currency, newBlock.Height)
 			if err != nil {

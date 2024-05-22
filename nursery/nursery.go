@@ -232,12 +232,9 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.Ch
 	blocks := make(chan *onchain.BlockEpoch)
 	blockNotifier := utils.ForwardChannel(blocks, 0, false)
 
-	nursery.waitGroup.Add(1)
-
 	go func() {
 		defer func() {
 			blockNotifier.Close()
-			nursery.waitGroup.Done()
 			logger.Debugf("Closed block listener for %s", currency)
 		}()
 		for {
