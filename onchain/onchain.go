@@ -264,6 +264,7 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 }
 
 func (onchain *Onchain) Shutdown() {
+	onchain.OnWalletChange.Close()
 	onchain.Btc.Blocks.Shutdown()
 	onchain.Liquid.Blocks.Shutdown()
 }
