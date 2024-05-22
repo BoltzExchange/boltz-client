@@ -13,7 +13,9 @@ import (
 
 func getTestDb(t *testing.T) *database.Database {
 	db := &database.Database{
-		Path: ":memory:",
+		// its important to use a shared cache here since the sql driver can open up multiple connections
+		// which would otherwise cause the memory db to disappear
+		Path: "file:" + t.TempDir() + "?mode=memory&cache=shared",
 	}
 	require.NoError(t, db.Connect())
 	return db
