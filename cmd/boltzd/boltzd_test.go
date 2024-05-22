@@ -1107,8 +1107,15 @@ func TestReverseSwap(t *testing.T) {
 	})
 
 }
+func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
+	wallets, err := client.GetWallets(&currency, false)
+	require.NoError(t, err)
+	require.NotEmpty(t, wallets.Wallets)
+	return wallets.Wallets[0].Id
+}
 
 func TestChainSwap(t *testing.T) {
+
 	cfg := loadConfig(t)
 	chain := getOnchain(t, cfg)
 
@@ -1119,25 +1126,6 @@ func TestChainSwap(t *testing.T) {
 	}{
 		{"BTC", boltzrpc.Currency_BTC, boltzrpc.Currency_LBTC},
 		{"Liquid", boltzrpc.Currency_LBTC, boltzrpc.Currency_BTC},
-	}
-
-	request := func(t *testing.T, client client.Boltz, pair *boltzrpc.Pair) *boltzrpc.CreateChainSwapRequest {
-		wallets, err := client.GetWallets(&pair.From, false)
-		require.NoError(t, err)
-		require.NotEmpty(t, wallets.Wallets)
-		fromWalletId := wallets.Wallets[0].Id
-
-		wallets, err = client.GetWallets(&pair.To, true)
-		require.NoError(t, err)
-		require.NotEmpty(t, wallets.Wallets)
-		toWalletId := wallets.Wallets[0].Id
-
-		return &boltzrpc.CreateChainSwapRequest{
-			Amount:       100000,
-			Pair:         pair,
-			FromWalletId: &fromWalletId,
-			ToWalletId:   &toWalletId,
-		}
 	}
 
 	t.Run("Recovery", func(t *testing.T) {
@@ -1186,11 +1174,24 @@ func TestChainSwap(t *testing.T) {
 		for _, tc := range tests {
 			t.Run(tc.desc, func(t *testing.T) {
 				chain.Btc.Tx = tc.txMocker(t, originalTx)
-				swap, err := client.CreateChainSwap(request(t, client, &boltzrpc.Pair{
-					From: boltzrpc.Currency_LBTC,
-					To:   boltzrpc.Currency_BTC,
-				}))
+
+				externalPay := true
+				toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
+				swap, err := client.CreateChainSwap(
+					&boltzrpc.CreateChainSwapRequest{
+						Amount:      100000,
+						ExternalPay: &externalPay,
+						ToWalletId:  &toWalletId,
+						Pair: &boltzrpc.Pair{
+							From: boltzrpc.Currency_LBTC,
+							To:   boltzrpc.Currency_BTC,
+						},
+					},
+				)
 				require.NoError(t, err)
+
+				test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+				test.MineBlock()
 
 				_, statusStream := swapStream(t, client, swap.Id)
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
@@ -1218,15 +1219,8 @@ func TestChainSwap(t *testing.T) {
 			refundAddress := fromCli("getnewaddress")
 			toAddress := toCli("getnewaddress")
 
-			wallets, err := client.GetWallets(&tc.from, false)
-			require.NoError(t, err)
-			require.NotEmpty(t, wallets.Wallets)
-			fromWalletId := wallets.Wallets[0].Id
-
-			wallets, err = client.GetWallets(&tc.to, false)
-			require.NoError(t, err)
-			require.NotEmpty(t, wallets.Wallets)
-			toWalletId := wallets.Wallets[0].Id
+			fromWalletId := walletId(t, client, tc.from)
+			toWalletId := walletId(t, client, tc.to)
 
 			checkSwap := func(t *testing.T, id string) {
 				response, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
