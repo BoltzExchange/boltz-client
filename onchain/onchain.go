@@ -254,6 +254,7 @@ func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (str
 }
 
 func (onchain *Onchain) Shutdown() {
+	onchain.OnWalletChange.Close()
 	onchain.Btc.Blocks.Shutdown()
 	onchain.Liquid.Blocks.Shutdown()
 }
