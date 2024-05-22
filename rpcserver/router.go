@@ -111,7 +111,7 @@ func handleError(err error) error {
 }
 
 func (server *routedBoltzServer) queryRefundableSwaps() (
-	heights *boltzrpc.BlockHeights, swaps []database.Swap, chainSwaps []database.ChainSwap, err error,
+	heights *boltzrpc.BlockHeights, swaps []*database.Swap, chainSwaps []*database.ChainSwap, err error,
 ) {
 	heights = &boltzrpc.BlockHeights{}
 	heights.Btc, err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
@@ -290,7 +290,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, swap := range swaps {
-		response.Swaps = append(response.Swaps, serializeSwap(&swap))
+		response.Swaps = append(response.Swaps, serializeSwap(swap))
 	}
 
 	// Reverse Swaps
@@ -301,7 +301,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, reverseSwap := range reverseSwaps {
-		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(&reverseSwap))
+		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(reverseSwap))
 	}
 
 	chainSwaps, err := server.database.QueryChainSwaps(args)
@@ -310,15 +310,15 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, chainSwap := range chainSwaps {
-		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(&chainSwap))
+		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(chainSwap))
 	}
 
 	return response, nil
 }
 
 func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzrpc.RefundSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
-	var swaps []database.Swap
-	var chainSwaps []database.ChainSwap
+	var swaps []*database.Swap
+	var chainSwaps []*database.ChainSwap
 	var currency boltz.Currency
 
 	_, refundableSwaps, refundableChainSwaps, err := server.queryRefundableSwaps()
@@ -328,7 +328,7 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 
 	for _, swap := range refundableSwaps {
 		if swap.Id == request.Id {
-			if err := server.database.SetSwapRefundRefundAddress(&swap, request.Address); err != nil {
+			if err := server.database.SetSwapRefundRefundAddress(swap, request.Address); err != nil {
 				return nil, handleError(err)
 			}
 			currency = swap.Pair.From

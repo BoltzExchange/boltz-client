@@ -289,17 +289,17 @@ WHERE data.lockupTransactionId != ''
   AND (state IN (?, ?) OR (state != ? AND data.timeoutBlockheight < ?))
 `
 
-func (database *Database) QueryChainSwaps(args SwapQuery) ([]ChainSwap, error) {
+func (database *Database) QueryChainSwaps(args SwapQuery) ([]*ChainSwap, error) {
 	where, values := args.ToWhereClause()
 	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where, values...)
 }
 
-func (database *Database) QueryPendingChainSwaps() ([]ChainSwap, error) {
+func (database *Database) QueryPendingChainSwaps() ([]*ChainSwap, error) {
 	state := boltzrpc.SwapState_PENDING
 	return database.QueryChainSwaps(SwapQuery{State: &state})
 }
 
-func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]ChainSwap, error) {
+func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]*ChainSwap, error) {
 	return database.queryChainSwaps(
 		refundableChainSwapsQuery, currency,
 		boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
@@ -377,7 +377,7 @@ func (swapData *ChainSwapData) BlindingPubKey() *btcec.PublicKey {
 	return swapData.BlindingKey.PubKey()
 }
 
-func (database *Database) queryChainSwaps(query string, args ...any) (swaps []ChainSwap, err error) {
+func (database *Database) queryChainSwaps(query string, args ...any) (swaps []*ChainSwap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
 	rows, err := database.Query(query, args...)
@@ -395,7 +395,7 @@ func (database *Database) queryChainSwaps(query string, args ...any) (swaps []Ch
 			return nil, err
 		}
 
-		swaps = append(swaps, *swap)
+		swaps = append(swaps, swap)
 	}
 
 	return swaps, err

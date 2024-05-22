@@ -217,7 +217,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		if swap.FromData.LockupTransactionId != "" {
-			if err := nursery.RefundSwaps(swap.Pair.From, nil, []database.ChainSwap{*swap}); err != nil {
+			if err := nursery.RefundSwaps(swap.Pair.From, nil, []*database.ChainSwap{swap}); err != nil {
 				handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 				return
 			}
