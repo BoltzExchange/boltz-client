@@ -13,7 +13,7 @@ import (
 
 func getTestDb(t *testing.T) *database.Database {
 	db := &database.Database{
-		// its important to use a shared cache here since the sql driver can open up multiple connections
+		// it's important to use a shared cache here since the SQL driver can open up multiple connections
 		// which would otherwise cause the memory db to disappear
 		Path: "file:" + t.TempDir() + "?mode=memory&cache=shared",
 	}
