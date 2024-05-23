@@ -22,8 +22,8 @@ func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {
 }
 
 func DefaultLightningConfig() *SerializedLnConfig {
-	// we cant include values like currency in the base config
-	// since we couldnt know wether the user didnt set the currency at all or set it to BTC
+	// we can't include values like currency in the base config
+	// since we couldn't know wether the user didn't set the currency at all or set it to BTC
 	return withLightningBase(&SerializedLnConfig{
 		MaxBalancePercent: 75,
 		MinBalancePercent: 25,

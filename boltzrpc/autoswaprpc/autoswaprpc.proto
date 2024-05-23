@@ -19,12 +19,12 @@ service AutoSwap {
   rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
 
   /*
-  Partially updates the onchain configuration. The autoswapper will reload the configuration after this call.
+  Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
   */
   rpc UpdateLightningConfig(UpdateLightningConfigRequest) returns (Config);
 
   /*
-  Updates the lightning configuration completely or partially. Autoswap will reload the configuration after this call.
+  Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
   */
   rpc UpdateChainConfig(UpdateChainConfigRequest) returns (Config);
 
@@ -75,8 +75,6 @@ message GetRecommendationsResponse {
 }
 
 message GetStatusRequest {}
-message GetLightningStatusRequest {}
-message GetChainStatusRequest {}
 
 message Status {
   bool running = 1;
