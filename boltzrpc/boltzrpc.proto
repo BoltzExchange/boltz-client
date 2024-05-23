@@ -84,7 +84,7 @@ service Boltz {
     /*
     Creates a new liquid wallet and returns the mnemonic.
      */
-    rpc CreateWallet (CreateWalletRequest) returns (WalletCredentials);
+    rpc CreateWallet (CreateWalletRequest) returns (CreateWalletResponse);
 
     /*
     Imports an existing wallet.
@@ -99,7 +99,7 @@ service Boltz {
     /*
     Returns all subaccounts for a given wallet. Not supported for readonly wallets.
      */
-    rpc GetSubaccounts (WalletInfo) returns (GetSubaccountsResponse);
+    rpc GetSubaccounts (GetSubaccountsRequest) returns (GetSubaccountsResponse);
 
     /*
     Returns all available wallets.
@@ -587,31 +587,36 @@ message WalletCredentials {
     optional uint64 subaccount = 4;
 }
 
-message WalletInfo {
+message WalletParams {
     string name = 1;
     Currency currency = 2;
-}
-
-message ImportWalletRequest {
-    WalletCredentials credentials = 1;
-    WalletInfo info = 2;
     // the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used.
     optional string password = 3;
 }
 
+message ImportWalletRequest {
+    WalletCredentials credentials = 1;
+    WalletParams params = 2;
+}
+
 message CreateWalletRequest {
-    WalletInfo info = 1;
-    // the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used.
-    optional string password = 2;
+    WalletParams params = 2;
+}
+
+message CreateWalletResponse {
+    string mnemonic = 1;
+    Wallet wallet = 2;
 }
 
 message SetSubaccountRequest {
-    string name = 1;
+    uint64 wallet_id = 1;
     // The subaccount to use. If not set, a new one will be created.
     optional uint64 subaccount = 2;
 }
 
-message GetSubaccountsRequest {}
+message GetSubaccountsRequest {
+    uint64 wallet_id = 1;
+}
 
 message GetSubaccountsResponse {
     optional uint64 current = 1;
@@ -631,12 +636,12 @@ message GetWalletRequest {
 }
 
 message GetWalletCredentialsRequest {
-    string name = 1;
+    uint64 id = 1;
     optional string password = 2;
 }
 
 message RemoveWalletRequest {
-    string name = 1;
+    uint64 id = 1;
 }
 
 

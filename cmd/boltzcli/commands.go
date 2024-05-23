@@ -627,7 +627,7 @@ func autoSwapSetup(ctx *cli.Context) error {
 			return checkWalletName(ctx, ans.(string))
 		}))
 
-		info := &boltzrpc.WalletInfo{
+		info := &boltzrpc.WalletParams{
 			Name:     config.Wallet,
 			Currency: config.Currency,
 		}
@@ -1229,7 +1229,7 @@ var walletCommands = &cli.Command{
 			Description: "Creates a new wallet for the specified currency and unique name.\n" +
 				"Currency has to be BTC or LBTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
-				info, err := walletInfo(ctx)
+				info, err := walletParams(ctx)
 				if err != nil {
 					return err
 				}
@@ -1244,7 +1244,7 @@ var walletCommands = &cli.Command{
 				"You can either choose to import a full mnemonic to give the daemon full control over the wallet or import a readonly wallet using a xpub or core descriptor.\n" +
 				"Currency has to be BTC ot LBTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
-				info, err := walletInfo(ctx)
+				info, err := walletParams(ctx)
 				if err != nil {
 					return err
 				}
@@ -1270,8 +1270,11 @@ var walletCommands = &cli.Command{
 			Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
 			ArgsUsage:   "name",
 			Action: requireNArgs(1, func(ctx *cli.Context) error {
-				walletInfo := &boltzrpc.WalletInfo{Name: ctx.Args().First()}
-				return selectSubaccount(ctx, walletInfo)
+				walletId, err := getWalletId(ctx, ctx.Args().First())
+				if err != nil {
+					return err
+				}
+				return selectSubaccount(ctx, *walletId)
 			}),
 		},
 		{
@@ -1341,7 +1344,7 @@ var verifyPasswordCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		if password == "" {
+		if password == nil {
 			fmt.Println("No password set")
 		} else {
 			fmt.Println("Correct")
@@ -1350,19 +1353,19 @@ var verifyPasswordCommand = &cli.Command{
 	},
 }
 
-func askPassword(ctx *cli.Context, askNew bool) (string, error) {
+func askPassword(ctx *cli.Context, askNew bool) (*string, error) {
 	client := getClient(ctx)
 	hasPassword, err := client.HasPassword()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if !hasPassword {
 		if askNew {
 			if !prompt("Do you want to provide a wallet password to encrypt your wallet, which will be required on startup?") {
-				return "", nil
+				return nil, nil
 			}
 		} else {
-			return "", nil
+			return nil, nil
 		}
 	}
 	prompt := survey.Password{Message: "Please enter your wallet password:"}
@@ -1380,7 +1383,7 @@ func askPassword(ctx *cli.Context, askNew bool) (string, error) {
 		return nil
 	})
 	if err := survey.AskOne(&prompt, &password, validator); err != nil {
-		return "", err
+		return nil, err
 	}
 	if !hasPassword {
 		prompt := survey.Password{Message: "Retype your new wallet password:"}
@@ -1391,10 +1394,10 @@ func askPassword(ctx *cli.Context, askNew bool) (string, error) {
 			return nil
 		})
 		if err := survey.AskOne(&prompt, &password, validator); err != nil {
-			return "", err
+			return nil, err
 		}
 	}
-	return password, nil
+	return &password, nil
 }
 
 func printSubaccount(info *boltzrpc.Subaccount) {
@@ -1404,12 +1407,12 @@ func printSubaccount(info *boltzrpc.Subaccount) {
 	fmt.Printf("Balance: %s (%s unconfirmed)\n", utils.Satoshis(balance.Total), utils.Satoshis(balance.Unconfirmed))
 }
 
-func walletInfo(ctx *cli.Context) (*boltzrpc.WalletInfo, error) {
+func walletParams(ctx *cli.Context) (*boltzrpc.WalletParams, error) {
 	currency, err := parseCurrency(ctx.Args().Get(1))
 	if err != nil {
 		return nil, err
 	}
-	return &boltzrpc.WalletInfo{
+	return &boltzrpc.WalletParams{
 		Name:     ctx.Args().Get(0),
 		Currency: currency,
 	}, nil
@@ -1426,15 +1429,15 @@ func checkWalletName(ctx *cli.Context, name string) error {
 	return nil
 }
 
-func importWallet(ctx *cli.Context, info *boltzrpc.WalletInfo, readonly bool) error {
+func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool) (err error) {
 	client := getClient(ctx)
-	if err := checkWalletName(ctx, info.Name); err != nil {
+	if err := checkWalletName(ctx, params.Name); err != nil {
 		return err
 	}
 
 	mnemonic := ""
 	importType := "mnemonic"
-	if info.Currency == boltzrpc.Currency_BTC && readonly {
+	if params.Currency == boltzrpc.Currency_BTC && readonly {
 		prompt := &survey.Select{
 			Message: "Which import type do you want to use?",
 			Options: []string{"mnemonic", "xpub", "core descriptor"},
@@ -1461,12 +1464,12 @@ func importWallet(ctx *cli.Context, info *boltzrpc.WalletInfo, readonly bool) er
 		credentials.CoreDescriptor = &mnemonic
 	}
 
-	password, err := askPassword(ctx, true)
+	params.Password, err = askPassword(ctx, true)
 	if err != nil {
 		return err
 	}
 
-	wallet, err := client.ImportWallet(info, credentials, password)
+	wallet, err := client.ImportWallet(params, credentials)
 	if err != nil {
 		return err
 	}
@@ -1474,19 +1477,19 @@ func importWallet(ctx *cli.Context, info *boltzrpc.WalletInfo, readonly bool) er
 	fmt.Println("Successfully imported wallet!")
 
 	if !wallet.Readonly {
-		return selectSubaccount(ctx, info)
+		return selectSubaccount(ctx, wallet.Id)
 	}
 	return nil
 }
 
-func selectSubaccount(ctx *cli.Context, walletInfo *boltzrpc.WalletInfo) error {
+func selectSubaccount(ctx *cli.Context, walletId uint64) error {
 	client := getClient(ctx)
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " Fetching subaccounts..."
 	s.Start()
 
-	subaccounts, err := client.GetSubaccounts(walletInfo)
+	subaccounts, err := client.GetSubaccounts(walletId)
 	s.Stop()
 	if err != nil {
 		return err
@@ -1527,7 +1530,7 @@ func selectSubaccount(ctx *cli.Context, walletInfo *boltzrpc.WalletInfo) error {
 		subaccount = &parsed
 	}
 
-	response, err := client.SetSubaccount(walletInfo.Name, subaccount)
+	response, err := client.SetSubaccount(walletId, subaccount)
 	if err != nil {
 		return err
 	}
@@ -1541,29 +1544,33 @@ func removeWallet(ctx *cli.Context) error {
 		return nil
 	}
 	client := getClient(ctx)
-	_, err := client.RemoveWallet(ctx.Args().First())
+	walletId, err := getWalletId(ctx, ctx.Args().First())
+	if err != nil {
+		return err
+	}
+	_, err = client.RemoveWallet(*walletId)
 	return err
 }
 
-func createWallet(ctx *cli.Context, info *boltzrpc.WalletInfo) error {
+func createWallet(ctx *cli.Context, params *boltzrpc.WalletParams) (err error) {
 	client := getClient(ctx)
 
-	if err := checkWalletName(ctx, info.Name); err != nil {
+	if err := checkWalletName(ctx, params.Name); err != nil {
 		return err
 	}
 
-	password, err := askPassword(ctx, true)
+	params.Password, err = askPassword(ctx, true)
 	if err != nil {
 		return err
 	}
 
-	credentials, err := client.CreateWallet(info, password)
+	credentials, err := client.CreateWallet(params)
 	if err != nil {
 		return err
 	}
 	fmt.Println("New wallet created!")
 	fmt.Println()
-	fmt.Println("Mnemonic:\n" + *credentials.Mnemonic)
+	fmt.Println("Mnemonic:\n" + credentials.Mnemonic)
 	fmt.Println()
 	fmt.Println("We highly recommend to import the mnemonic shown above into an external wallet like Blockstream Green (https://blockstream.com/green)." +
 		"This serves as backup and allows you to view transactions and control your funds.")
@@ -1577,7 +1584,11 @@ func showCredentials(ctx *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		response, err := client.GetWalletCredentials(ctx.Args().First(), password)
+		walletId, err := getWalletId(ctx, ctx.Args().First())
+		if err != nil {
+			return err
+		}
+		response, err := client.GetWalletCredentials(*walletId, password)
 		if err != nil {
 			return err
 		}

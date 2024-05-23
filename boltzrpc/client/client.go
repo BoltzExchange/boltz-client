@@ -73,31 +73,30 @@ func (boltz *Boltz) GetWallets(currency *boltzrpc.Currency, includeReadonly bool
 	return boltz.Client.GetWallets(boltz.Ctx, &boltzrpc.GetWalletsRequest{Currency: currency, IncludeReadonly: &includeReadonly})
 }
 
-func (boltz *Boltz) ImportWallet(info *boltzrpc.WalletInfo, credentials *boltzrpc.WalletCredentials, password string) (*boltzrpc.Wallet, error) {
-	return boltz.Client.ImportWallet(boltz.Ctx, &boltzrpc.ImportWalletRequest{Info: info, Credentials: credentials, Password: &password})
+func (boltz *Boltz) ImportWallet(params *boltzrpc.WalletParams, credentials *boltzrpc.WalletCredentials) (*boltzrpc.Wallet, error) {
+	return boltz.Client.ImportWallet(boltz.Ctx, &boltzrpc.ImportWalletRequest{Params: params, Credentials: credentials})
 }
 
-func (boltz *Boltz) SetSubaccount(name string, subaccount *uint64) (*boltzrpc.Subaccount, error) {
-	return boltz.Client.SetSubaccount(boltz.Ctx, &boltzrpc.SetSubaccountRequest{Subaccount: subaccount, Name: name})
+func (boltz *Boltz) SetSubaccount(walletId uint64, subaccount *uint64) (*boltzrpc.Subaccount, error) {
+	return boltz.Client.SetSubaccount(boltz.Ctx, &boltzrpc.SetSubaccountRequest{Subaccount: subaccount, WalletId: walletId})
 }
 
-func (boltz *Boltz) GetSubaccounts(info *boltzrpc.WalletInfo) (*boltzrpc.GetSubaccountsResponse, error) {
-	return boltz.Client.GetSubaccounts(boltz.Ctx, info)
+func (boltz *Boltz) GetSubaccounts(walletId uint64) (*boltzrpc.GetSubaccountsResponse, error) {
+	return boltz.Client.GetSubaccounts(boltz.Ctx, &boltzrpc.GetSubaccountsRequest{WalletId: walletId})
 }
 
-func (boltz *Boltz) CreateWallet(info *boltzrpc.WalletInfo, password string) (*boltzrpc.WalletCredentials, error) {
+func (boltz *Boltz) CreateWallet(params *boltzrpc.WalletParams) (*boltzrpc.CreateWalletResponse, error) {
 	return boltz.Client.CreateWallet(boltz.Ctx, &boltzrpc.CreateWalletRequest{
-		Info:     info,
-		Password: &password,
+		Params: params,
 	})
 }
 
-func (boltz *Boltz) GetWalletCredentials(name string, password string) (*boltzrpc.WalletCredentials, error) {
-	return boltz.Client.GetWalletCredentials(boltz.Ctx, &boltzrpc.GetWalletCredentialsRequest{Name: name, Password: &password})
+func (boltz *Boltz) GetWalletCredentials(id uint64, password *string) (*boltzrpc.WalletCredentials, error) {
+	return boltz.Client.GetWalletCredentials(boltz.Ctx, &boltzrpc.GetWalletCredentialsRequest{Id: id, Password: password})
 }
 
-func (boltz *Boltz) RemoveWallet(name string) (*boltzrpc.RemoveWalletResponse, error) {
-	return boltz.Client.RemoveWallet(boltz.Ctx, &boltzrpc.RemoveWalletRequest{Name: name})
+func (boltz *Boltz) RemoveWallet(id uint64) (*boltzrpc.RemoveWalletResponse, error) {
+	return boltz.Client.RemoveWallet(boltz.Ctx, &boltzrpc.RemoveWalletRequest{Id: id})
 }
 
 func (boltz *Boltz) Stop() error {

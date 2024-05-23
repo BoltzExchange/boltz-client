@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 
 	onchainWallet "github.com/BoltzExchange/boltz-client/onchain/wallet"
@@ -44,7 +43,7 @@ func (d *Database) UpdateWalletCredentials(credentials *onchainWallet.Credential
 	return err
 }
 
-func parseWallet(rows *sql.Rows) (*Wallet, error) {
+func parseWallet(rows row) (*Wallet, error) {
 	wallet := &Wallet{Credentials: &onchainWallet.Credentials{}}
 	err := rows.Scan(
 		&wallet.Id,
@@ -64,25 +63,18 @@ func parseWallet(rows *sql.Rows) (*Wallet, error) {
 	return wallet, nil
 }
 
-func (d *Database) GetWalletByName(name string, entity *Id) (*Wallet, error) {
+func (d *Database) GetWallet(id Id) (*Wallet, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	query := "SELECT * FROM wallets WHERE name = ?"
-	args := []any{name}
-	if entity != nil {
-		query = "SELECT * FROM wallets WHERE name = ? AND (entityId = ?)"
-		args = append(args, entity)
-	}
-	rows, err := d.Query(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query wallets: %w", err)
-	}
+	row := d.QueryRow("SELECT * FROM wallets WHERE id = ?", id)
+	return parseWallet(row)
+}
 
-	defer rows.Close()
-	if rows.Next() {
-		return parseWallet(rows)
-	}
-	return nil, fmt.Errorf("wallet with name %s not found for entity %v", name, entity)
+func (d *Database) GetWalletByName(name string, entity Id) (*Wallet, error) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	row := d.QueryRow("SELECT * FROM wallets WHERE name = ? AND entityId = ?", name, entity)
+	return parseWallet(row)
 }
 
 func (d *Database) GetNodeWallet(nodePubkey string) (*Wallet, error) {

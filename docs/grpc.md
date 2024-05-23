@@ -123,7 +123,7 @@ Creates a new liquid wallet and returns the mnemonic.
 
 | Request | Response |
 | ------- | -------- |
-| [`CreateWalletRequest`](#createwalletrequest) | [`WalletCredentials`](#walletcredentials) |
+| [`CreateWalletRequest`](#createwalletrequest) | [`CreateWalletResponse`](#createwalletresponse) |
 
 #### ImportWallet
 
@@ -147,7 +147,7 @@ Returns all subaccounts for a given wallet. Not supported for readonly wallets.
 
 | Request | Response |
 | ------- | -------- |
-| [`WalletInfo`](#walletinfo) | [`GetSubaccountsResponse`](#getsubaccountsresponse) |
+| [`GetSubaccountsRequest`](#getsubaccountsrequest) | [`GetSubaccountsResponse`](#getsubaccountsresponse) |
 
 #### GetWallets
 
@@ -561,8 +561,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `info` | [`WalletInfo`](#walletinfo) |  |  |
-| `password` | [`string`](#string) | optional | the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used. |
+| `params` | [`WalletParams`](#walletparams) |  |  |
+
+
+
+
+
+#### CreateWalletResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mnemonic` | [`string`](#string) |  |  |
+| `wallet` | [`Wallet`](#wallet) |  |  |
 
 
 
@@ -726,6 +739,11 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `wallet_id` | [`uint64`](#uint64) |  |  |
+
+
 
 
 
@@ -779,7 +797,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `name` | [`string`](#string) |  |  |
+| `id` | [`uint64`](#uint64) |  |  |
 | `password` | [`string`](#string) | optional |  |
 
 
@@ -822,8 +840,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `credentials` | [`WalletCredentials`](#walletcredentials) |  |  |
-| `info` | [`WalletInfo`](#walletinfo) |  |  |
-| `password` | [`string`](#string) | optional | the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used. |
+| `params` | [`WalletParams`](#walletparams) |  |  |
 
 
 
@@ -1000,7 +1017,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `name` | [`string`](#string) |  |  |
+| `id` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1055,7 +1072,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `name` | [`string`](#string) |  |  |
+| `wallet_id` | [`uint64`](#uint64) |  |  |
 | `subaccount` | [`uint64`](#uint64) | optional | The subaccount to use. If not set, a new one will be created. |
 
 
@@ -1215,7 +1232,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### WalletInfo
+#### WalletParams
 
 
 
@@ -1224,6 +1241,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) |  |  |
 | `currency` | [`Currency`](#currency) |  |  |
+| `password` | [`string`](#string) | optional | the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used. |
 
 
 
