@@ -17,7 +17,7 @@ FROM (SELECT serviceFee, onchainFee, expectedAmount, isAuto, createdAt, 'submari
       UNION ALL
       SELECT serviceFee, onchainFee, data.amount, isAuto, createdAt, 'chain' type, entityId
       FROM chainSwaps
-      JOIN chainSwapsData data ON chainSwaps.id =data.id AND data.currency = chainSwaps.fromCurrency
+      JOIN chainSwapsData data ON chainSwaps.id = data.id AND data.currency = chainSwaps.fromCurrency
       ) stats 
 `
 
