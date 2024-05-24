@@ -48,7 +48,7 @@ type routedBoltzServer struct {
 
 	onchain   *onchain.Onchain
 	lightning lightning.LightningNode
-	boltz     *boltz.Boltz
+	boltz     *boltz.Api
 	nursery   *nursery.Nursery
 	database  *database.Database
 	swapper   *autoswap.AutoSwapper

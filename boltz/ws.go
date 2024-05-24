@@ -20,7 +20,7 @@ type SwapUpdate struct {
 	Id                 string `json:"id"`
 }
 
-type BoltzWebsocket struct {
+type Websocket struct {
 	Updates chan SwapUpdate
 
 	apiUrl        string
@@ -37,7 +37,7 @@ type wsResponse struct {
 	Args    []any  `json:"args"`
 }
 
-func (boltz *Boltz) NewWebsocket() *BoltzWebsocket {
+func (boltz *Api) NewWebsocket() *Websocket {
 	httpTransport, ok := boltz.Client.Transport.(*http.Transport)
 
 	dialer := *websocket.DefaultDialer
@@ -45,7 +45,7 @@ func (boltz *Boltz) NewWebsocket() *BoltzWebsocket {
 		dialer.Proxy = httpTransport.Proxy
 	}
 
-	return &BoltzWebsocket{
+	return &Websocket{
 		apiUrl:        boltz.URL,
 		subscriptions: make(chan bool),
 		dialer:        &dialer,
@@ -53,7 +53,7 @@ func (boltz *Boltz) NewWebsocket() *BoltzWebsocket {
 	}
 }
 
-func (boltz *BoltzWebsocket) SendJson(data any) error {
+func (boltz *Websocket) SendJson(data any) error {
 	send, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (boltz *BoltzWebsocket) SendJson(data any) error {
 	return boltz.conn.WriteMessage(websocket.TextMessage, send)
 }
 
-func (boltz *BoltzWebsocket) Connect() error {
+func (boltz *Websocket) Connect() error {
 	if boltz.closed {
 		return errors.New("websocket is closed")
 	}
@@ -150,7 +150,7 @@ func (boltz *BoltzWebsocket) Connect() error {
 	return nil
 }
 
-func (boltz *BoltzWebsocket) Subscribe(swapIds []string) error {
+func (boltz *Websocket) Subscribe(swapIds []string) error {
 	if len(swapIds) == 0 {
 		return nil
 	}
@@ -169,7 +169,7 @@ func (boltz *BoltzWebsocket) Subscribe(swapIds []string) error {
 	}
 }
 
-func (boltz *BoltzWebsocket) Close() error {
+func (boltz *Websocket) Close() error {
 	boltz.closed = true
 	return boltz.conn.Close()
 }

@@ -7,8 +7,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/stretchr/testify/mock"
+	"google.golang.org/grpc"
 	"net"
 	"os"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -20,9 +25,8 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
-	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/lightningnetwork/lnd/zpay32"
@@ -36,7 +40,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
@@ -53,14 +56,49 @@ func loadConfig(t *testing.T) *config.Config {
 	require.NoError(t, err)
 	cfg.LogLevel = "debug"
 	cfg.Database.Path = t.TempDir() + "/boltz.db"
-	cfg.Node = "cln"
 	cfg.Node = "lnd"
 	return cfg
+}
+
+func getBoltz(t *testing.T, cfg *config.Config) *boltz.Api {
+	boltzApi, err := initBoltz(cfg, boltz.Regtest)
+	require.NoError(t, err)
+	return boltzApi
+}
+
+type txMocker func(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider
+
+func lessValueTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
+	txMock := onchainmock.NewMockTxProvider(t)
+	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(func(txId string) (string, error) {
+		raw, err := original.GetRawTransaction(txId)
+		require.NoError(t, err)
+		transaction, err := boltz.NewBtcTxFromHex(raw)
+		require.NoError(t, err)
+		for _, out := range transaction.MsgTx().TxOut {
+			out.Value -= 1
+		}
+		return transaction.Serialize()
+	})
+	return txMock
+}
+
+func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
+	txMock := onchainmock.NewMockTxProvider(t)
+	txMock.EXPECT().IsTransactionConfirmed(mock.Anything).Return(false, nil)
+	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
+	return txMock
 }
 
 func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
 	chain, err := initOnchain(cfg, boltz.Regtest)
 	require.NoError(t, err)
+
+	boltzApi := getBoltz(t, cfg)
+
+	chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
+	chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+
 	return chain
 }
 
@@ -69,10 +107,23 @@ var password = "password"
 var walletInfo = &boltzrpc.WalletInfo{Currency: boltzrpc.Currency_LBTC, Name: walletName}
 var credentials *wallet.Credentials
 
-func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, client.AutoSwap, func()) {
+type setupOptions struct {
+	cfg      *config.Config
+	password string
+	chain    *onchain.Onchain
+	boltzApi *boltz.Api
+	node     string
+}
+
+func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, func()) {
+	cfg := options.cfg
 	if cfg == nil {
 		cfg = loadConfig(t)
 	}
+	if options.node != "" {
+		cfg.Node = options.node
+	}
+	cfg.RPC.NoTls = true
 
 	if cfg.Node == "" || cfg.Node == "Standalone" {
 		cfg.Standalone = true
@@ -80,11 +131,7 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 
 	logger.Init("", cfg.LogLevel)
 
-	cfg.RPC.NoTls = true
-	cfg.RPC.NoMacaroons = false
-
 	var err error
-
 	if credentials == nil {
 		var wallet *wallet.Wallet
 		wallet, credentials, err = test.InitTestWallet(parseCurrency(walletInfo.Currency), false)
@@ -95,8 +142,9 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 	}
 
 	require.NoError(t, cfg.Database.Connect())
+
 	encrytpedCredentials := credentials
-	if password != "" {
+	if options.password != "" {
 		encrytpedCredentials, err = credentials.Encrypt(password)
 		require.NoError(t, err)
 	}
@@ -106,8 +154,20 @@ func setup(t *testing.T, cfg *config.Config, password string) (client.Boltz, cli
 		Credentials: encrytpedCredentials,
 	}))
 
-	Init(cfg)
+	lightningNode, err := initLightning(cfg)
+	require.NoError(t, err)
 
+	if options.chain == nil {
+		options.chain = getOnchain(t, cfg)
+	}
+	if options.boltzApi == nil {
+		options.boltzApi = getBoltz(t, cfg)
+	}
+
+	autoSwapConfPath := path.Join(t.TempDir(), "autoswap.toml")
+
+	err = cfg.RPC.Init(boltz.Regtest, lightningNode, options.boltzApi, cfg.Database, options.chain, autoSwapConfPath)
+	require.NoError(t, err)
 	server := cfg.RPC.Grpc
 
 	lis := bufconn.Listen(1024 * 1024)
@@ -189,14 +249,11 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) (streamFunc, s
 				if ok {
 					currentStatus := update.Swap.GetStatus() + update.ReverseSwap.GetStatus() + update.ChainSwap.GetStatus()
 
-					// skip initial swap.created
-					if currentStatus != boltz.SwapCreated.String() {
-						if status != boltz.SwapCreated && status.String() != currentStatus {
-							continue
-						}
-						if state == update.Swap.GetState() || state == update.ReverseSwap.GetState() || state == update.ChainSwap.GetState() {
-							return update
-						}
+					if status != boltz.SwapCreated && status.String() != currentStatus {
+						continue
+					}
+					if state == update.Swap.GetState() || state == update.ReverseSwap.GetState() || state == update.ChainSwap.GetState() {
+						return update
 					}
 				} else {
 					require.Fail(t, fmt.Sprintf("update stream for swap %s stopped before state %s", swapId, state))
@@ -235,9 +292,7 @@ func TestGetInfo(t *testing.T) {
 	for _, node := range nodes {
 		node := node
 		t.Run(node, func(t *testing.T) {
-			cfg := loadConfig(t)
-			cfg.Node = node
-			client, _, stop := setup(t, cfg, "")
+			client, _, stop := setup(t, setupOptions{node: node})
 			defer stop()
 
 			info, err := client.GetInfo()
@@ -258,7 +313,7 @@ func TestMacaroons(t *testing.T) {
 		{Action: boltzrpc.MacaroonAction_READ},
 	}
 
-	admin, _, stop := setup(t, nil, "")
+	admin, _, stop := setup(t, setupOptions{})
 	defer stop()
 	conn := admin.Connection
 
@@ -419,7 +474,7 @@ func TestMacaroons(t *testing.T) {
 }
 
 func TestGetSwapInfoStream(t *testing.T) {
-	client, _, stop := setup(t, nil, "")
+	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
 	stream, err := client.GetSwapInfoStream("")
@@ -459,8 +514,7 @@ func TestGetSwapInfoStream(t *testing.T) {
 }
 
 func TestGetPairs(t *testing.T) {
-	cfg := loadConfig(t)
-	client, _, stop := setup(t, cfg, "")
+	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
 	info, err := client.GetPairs()
@@ -537,8 +591,6 @@ func TestSwap(t *testing.T) {
 	nodes := []string{"CLN", "LND"}
 
 	cfg := loadConfig(t)
-	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
-	cfg.Node = "LND"
 	chain := getOnchain(t, cfg)
 
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
@@ -558,7 +610,7 @@ func TestSwap(t *testing.T) {
 	}
 
 	t.Run("Recovery", func(t *testing.T) {
-		client, _, stop := setup(t, cfg, "")
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 			Amount: 100000,
 			Pair:   pairBtc,
@@ -570,7 +622,7 @@ func TestSwap(t *testing.T) {
 		test.SendToAddress(test.BtcCli, swap.Address, swap.ExpectedAmount)
 		test.MineBlock()
 
-		client, _, stop = setup(t, cfg, "")
+		client, _, stop = setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
 		ticker := time.NewTicker(100 * time.Millisecond)
@@ -591,7 +643,7 @@ func TestSwap(t *testing.T) {
 	})
 
 	t.Run("Invoice", func(t *testing.T) {
-		client, _, stop := setup(t, cfg, "")
+		client, _, stop := setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
 		t.Run("Invalid", func(t *testing.T) {
@@ -604,6 +656,8 @@ func TestSwap(t *testing.T) {
 
 		t.Run("Valid", func(t *testing.T) {
 			node := cfg.LND
+			_, err := connectLightning(node)
+			require.NoError(t, err)
 			invoice, err := node.CreateInvoice(100000, nil, 0, "test")
 			require.NoError(t, err)
 			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
@@ -628,10 +682,9 @@ func TestSwap(t *testing.T) {
 	t.Run("Standalone", func(t *testing.T) {
 		cfg := loadConfig(t)
 		cfg.Standalone = true
-		client, _, stop := setup(t, cfg, "")
+		client, _, stop := setup(t, setupOptions{cfg: cfg})
 		node := cfg.LND
-		require.NoError(t, node.Connect())
-		_, err := node.GetInfo()
+		_, err := connectLightning(node)
 		require.NoError(t, err)
 		defer stop()
 
@@ -668,11 +721,13 @@ func TestSwap(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
+					boltzApi := getBoltz(t, cfg)
+					cfg.Node = "LND"
 					pair := &boltzrpc.Pair{
 						From: tc.from,
 						To:   boltzrpc.Currency_BTC,
 					}
-					client, _, stop := setup(t, cfg, "")
+					client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
 					defer stop()
 
 					t.Run("Normal", func(t *testing.T) {
@@ -732,7 +787,10 @@ func TestSwap(t *testing.T) {
 						}
 
 						t.Run("Script", func(t *testing.T) {
-							cfg.Boltz.DisablePartialSignatures = true
+							boltzApi.DisablePartialSignatures = true
+							t.Cleanup(func() {
+								boltzApi.DisablePartialSignatures = false
+							})
 
 							refundAddress := cli("getnewaddress")
 							withStream := createFailedSwap(t, refundAddress)
@@ -754,8 +812,6 @@ func TestSwap(t *testing.T) {
 						})
 
 						t.Run("Cooperative", func(t *testing.T) {
-							cfg.Boltz.DisablePartialSignatures = false
-
 							refundAddress := cli("getnewaddress")
 							stream := createFailedSwap(t, refundAddress)
 
@@ -848,10 +904,11 @@ func TestReverseSwap(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
-					cfg.Boltz.DisablePartialSignatures = tc.disablePartials
+					boltzApi := getBoltz(t, cfg)
+					boltzApi.DisablePartialSignatures = tc.disablePartials
 					cfg.Node = node
-					client, _, stop := setup(t, cfg, "")
 					chain := getOnchain(t, cfg)
+					client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi, chain: chain})
 
 					pair := &boltzrpc.Pair{
 						From: boltzrpc.Currency_BTC,
@@ -878,13 +935,13 @@ func TestReverseSwap(t *testing.T) {
 						request.AcceptZeroConf = false
 						swap, err := client.CreateReverseSwap(request)
 						require.NoError(t, err)
-						stream, _ := swapStream(t, client, swap.Id)
-						stream(boltzrpc.SwapState_PENDING)
+						_, statusStream := swapStream(t, client, swap.Id)
+						statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
 						stop()
 
 						test.MineBlock()
 
-						client, _, stop = setup(t, cfg, "")
+						client, _, stop = setup(t, setupOptions{cfg: cfg})
 
 						ticker := time.NewTicker(100 * time.Millisecond)
 						timeout := time.After(3 * time.Second)
@@ -906,14 +963,14 @@ func TestReverseSwap(t *testing.T) {
 							info, err = client.GetSwapInfo(swap.Id)
 							require.NoError(t, err)
 						} else {
-							stream, _ := swapStream(t, client, swap.Id)
-							stream(boltzrpc.SwapState_PENDING)
+							_, statusStream := swapStream(t, client, swap.Id)
+							statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
 
 							if !tc.zeroConf {
 								test.MineBlock()
 							}
 
-							info = stream(boltzrpc.SwapState_SUCCESSFUL)
+							info = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
 						}
 
 					}
@@ -943,20 +1000,56 @@ func TestReverseSwap(t *testing.T) {
 		})
 	}
 
+	t.Run("Invalid", func(t *testing.T) {
+		cfg := loadConfig(t)
+		chain := getOnchain(t, cfg)
+		originalTx := chain.Btc.Tx
+
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+		defer stop()
+
+		tests := []struct {
+			desc     string
+			txMocker txMocker
+			error    string
+		}{
+			{"LessValue", lessValueTxProvider, "locked up less"},
+			{"Unconfirmed", unconfirmedTxProvider, "not confirmed"},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				chain.Btc.Tx = tc.txMocker(t, originalTx)
+				swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+					Amount:         100000,
+					AcceptZeroConf: false,
+				})
+				require.NoError(t, err)
+
+				_, statusStream := swapStream(t, client, swap.Id)
+				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+				test.MineBlock()
+				info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionMempool)
+				require.Contains(t, info.ReverseSwap.Error, tc.error)
+			})
+		}
+	})
+
 	t.Run("Standalone", func(t *testing.T) {
 		cfg := loadConfig(t)
 		cfg.Standalone = true
 		lnd := cfg.LND
-		connectLightning(lnd)
+		_, err := connectLightning(lnd)
+		require.NoError(t, err)
 
-		client, _, stop := setup(t, cfg, "")
+		client, _, stop := setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
 		request := &boltzrpc.CreateReverseSwapRequest{
 			Amount:         100000,
 			AcceptZeroConf: true,
 		}
-		_, err := client.CreateReverseSwap(request)
+		_, err = client.CreateReverseSwap(request)
 		// theres no btc wallet
 		require.Error(t, err)
 
@@ -978,7 +1071,7 @@ func TestReverseSwap(t *testing.T) {
 
 	t.Run("ExternalPay", func(t *testing.T) {
 		cfg := loadConfig(t)
-		client, _, stop := setup(t, cfg, "")
+		client, _, stop := setup(t, setupOptions{cfg: cfg, node: "lnd"})
 		defer stop()
 
 		externalPay := true
@@ -1003,7 +1096,7 @@ func TestReverseSwap(t *testing.T) {
 
 		stream, _ := swapStream(t, client, swap.Id)
 
-		_, err = cfg.Lightning.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
+		_, err = cfg.LND.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
 		stream(boltzrpc.SwapState_PENDING)
@@ -1014,10 +1107,16 @@ func TestReverseSwap(t *testing.T) {
 	})
 
 }
+func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
+	wallets, err := client.GetWallets(&currency, false)
+	require.NoError(t, err)
+	require.NotEmpty(t, wallets.Wallets)
+	return wallets.Wallets[0].Id
+}
 
 func TestChainSwap(t *testing.T) {
+
 	cfg := loadConfig(t)
-	setBoltzEndpoint(cfg.Boltz, boltz.Regtest)
 	chain := getOnchain(t, cfg)
 
 	tests := []struct {
@@ -1030,7 +1129,8 @@ func TestChainSwap(t *testing.T) {
 	}
 
 	t.Run("Recovery", func(t *testing.T) {
-		client, _, stop := setup(t, cfg, "")
+		cfg := loadConfig(t)
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 
 		externalPay := true
 		to := test.LiquidCli("getnewaddress")
@@ -1046,7 +1146,7 @@ func TestChainSwap(t *testing.T) {
 		test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, swap.FromData.Amount)
 		test.MineBlock()
 
-		client, _, stop = setup(t, cfg, "")
+		client, _, stop = setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
 		stream, _ := swapStream(t, client, "")
@@ -1055,13 +1155,62 @@ func TestChainSwap(t *testing.T) {
 		checkTxOutAddress(t, chain, boltz.CurrencyLiquid, update.ToData.GetTransactionId(), update.ToData.GetAddress(), true)
 	})
 
+	t.Run("Invalid", func(t *testing.T) {
+		cfg := loadConfig(t)
+		chain := getOnchain(t, cfg)
+		originalTx := chain.Btc.Tx
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+		defer stop()
+
+		tests := []struct {
+			desc     string
+			txMocker txMocker
+			error    string
+		}{
+			{"LessValue", lessValueTxProvider, "locked up less"},
+			{"Unconfirmed", unconfirmedTxProvider, "not confirmed"},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				chain.Btc.Tx = tc.txMocker(t, originalTx)
+
+				externalPay := true
+				toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
+				swap, err := client.CreateChainSwap(
+					&boltzrpc.CreateChainSwapRequest{
+						Amount:      100000,
+						ExternalPay: &externalPay,
+						ToWalletId:  &toWalletId,
+						Pair: &boltzrpc.Pair{
+							From: boltzrpc.Currency_LBTC,
+							To:   boltzrpc.Currency_BTC,
+						},
+					},
+				)
+				require.NoError(t, err)
+
+				test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+				test.MineBlock()
+
+				_, statusStream := swapStream(t, client, swap.Id)
+				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
+				test.MineBlock()
+				info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerMempoool)
+				require.Contains(t, info.ChainSwap.Error, tc.error)
+			})
+		}
+	})
+
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			pair := &boltzrpc.Pair{
 				From: tc.from,
 				To:   tc.to,
 			}
-			client, _, stop := setup(t, cfg, "")
+			cfg := loadConfig(t)
+			boltzApi := getBoltz(t, cfg)
+			client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
 			defer stop()
 
 			fromCli := getCli(tc.from)
@@ -1070,15 +1219,8 @@ func TestChainSwap(t *testing.T) {
 			refundAddress := fromCli("getnewaddress")
 			toAddress := toCli("getnewaddress")
 
-			wallets, err := client.GetWallets(&tc.from, false)
-			require.NoError(t, err)
-			require.NotEmpty(t, wallets.Wallets)
-			fromWalletId := wallets.Wallets[0].Id
-
-			wallets, err = client.GetWallets(&tc.to, false)
-			require.NoError(t, err)
-			require.NotEmpty(t, wallets.Wallets)
-			toWalletId := wallets.Wallets[0].Id
+			fromWalletId := walletId(t, client, tc.from)
+			toWalletId := walletId(t, client, tc.to)
 
 			checkSwap := func(t *testing.T, id string) {
 				response, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
@@ -1182,7 +1324,7 @@ func TestChainSwap(t *testing.T) {
 				}
 
 				t.Run("Script", func(t *testing.T) {
-					cfg.Boltz.DisablePartialSignatures = true
+					boltzApi.DisablePartialSignatures = true
 
 					stream, statusStream := createFailed(t, refundAddress)
 					info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).ChainSwap
@@ -1198,7 +1340,7 @@ func TestChainSwap(t *testing.T) {
 				})
 
 				t.Run("Cooperative", func(t *testing.T) {
-					cfg.Boltz.DisablePartialSignatures = false
+					boltzApi.DisablePartialSignatures = false
 
 					_, statusStream := createFailed(t, refundAddress)
 					info := statusStream(boltzrpc.SwapState_REFUNDED, boltz.TransactionLockupFailed).ChainSwap
@@ -1262,8 +1404,10 @@ func TestAutoSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	cfg.Node = "cln"
 
-	require.NoError(t, cfg.Cln.Connect())
-	require.NoError(t, cfg.LND.Connect())
+	_, err := connectLightning(cfg.Cln)
+	require.NoError(t, err)
+	_, err = connectLightning(cfg.LND)
+	require.NoError(t, err)
 
 	var us, them lightning.LightningNode
 	if strings.EqualFold(cfg.Node, "lnd") {
@@ -1274,7 +1418,7 @@ func TestAutoSwap(t *testing.T) {
 		them = cfg.LND
 	}
 
-	client, autoSwap, stop := setup(t, cfg, "")
+	client, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
 	tests := []struct {
@@ -1460,7 +1604,7 @@ func TestAutoSwap(t *testing.T) {
 					time.Sleep(1000 * time.Millisecond)
 
 					t.Run("Recommendations", func(t *testing.T) {
-						_, autoSwap, stop := setup(t, cfg, "")
+						_, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
 						defer stop()
 						recommendations, err := autoSwap.GetSwapRecommendations()
 						require.NoError(t, err)
@@ -1472,7 +1616,7 @@ func TestAutoSwap(t *testing.T) {
 					})
 
 					t.Run("Auto", func(t *testing.T) {
-						client, _, stop := setup(t, cfg, "")
+						client, _, stop := setup(t, setupOptions{cfg: cfg})
 						defer stop()
 
 						time.Sleep(500 * time.Millisecond)
@@ -1506,7 +1650,7 @@ func TestAutoSwap(t *testing.T) {
 
 func TestWallet(t *testing.T) {
 	cfg := loadConfig(t)
-	client, _, stop := setup(t, cfg, "")
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
 	// the main setup function already created a wallet
@@ -1551,9 +1695,8 @@ func TestWallet(t *testing.T) {
 }
 
 func TestUnlock(t *testing.T) {
-	cfg := loadConfig(t)
 	password := "password"
-	client, _, stop := setup(t, cfg, password)
+	client, _, stop := setup(t, setupOptions{password: password})
 	defer stop()
 
 	_, err := client.GetInfo()
@@ -1582,7 +1725,7 @@ func TestUnlock(t *testing.T) {
 }
 
 func TestMagicRoutingHints(t *testing.T) {
-	client, _, stop := setup(t, nil, "")
+	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
 	addr := test.BtcCli("getnewaddress")
@@ -1615,7 +1758,7 @@ func TestMagicRoutingHints(t *testing.T) {
 
 func TestCreateWalletWithPassword(t *testing.T) {
 	cfg := loadConfig(t)
-	client, _, stop := setup(t, cfg, "")
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
 	_, err := client.GetWalletCredentials(walletName, "")
@@ -1639,7 +1782,7 @@ func TestCreateWalletWithPassword(t *testing.T) {
 
 func TestImportDuplicateCredentials(t *testing.T) {
 	cfg := loadConfig(t)
-	client, _, stop := setup(t, cfg, "")
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
 	credentials, err := client.GetWalletCredentials(walletName, "")
@@ -1653,7 +1796,7 @@ func TestImportDuplicateCredentials(t *testing.T) {
 
 func TestChangePassword(t *testing.T) {
 	cfg := loadConfig(t)
-	client, _, stop := setup(t, cfg, "")
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
 	_, err := client.GetWalletCredentials(walletName, "")

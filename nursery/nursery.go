@@ -27,8 +27,8 @@ type Nursery struct {
 	lightning lightning.LightningNode
 
 	onchain  *onchain.Onchain
-	boltz    *boltz.Boltz
-	boltzWs  *boltz.BoltzWebsocket
+	boltz    *boltz.Api
+	boltzWs  *boltz.Websocket
 	database *database.Database
 
 	eventListeners     map[string]swapListener
@@ -88,7 +88,7 @@ func (nursery *Nursery) Init(
 	network *boltz.Network,
 	lightning lightning.LightningNode,
 	chain *onchain.Onchain,
-	boltzClient *boltz.Boltz,
+	boltzClient *boltz.Api,
 	database *database.Database,
 ) error {
 	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())
@@ -232,12 +232,9 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.Ch
 	blocks := make(chan *onchain.BlockEpoch)
 	blockNotifier := utils.ForwardChannel(blocks, 0, false)
 
-	nursery.waitGroup.Add(1)
-
 	go func() {
 		defer func() {
 			blockNotifier.Close()
-			nursery.waitGroup.Done()
 			logger.Debugf("Closed block listener for %s", currency)
 		}()
 		for {
@@ -261,37 +258,43 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (string, error) {
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) error {
+	outputs, details := nursery.populateOutputs(outputs)
+	if len(details) == 0 {
+		return errors.New("all outputs invalid")
+	}
+
+	results := make(boltz.Results)
+
+	handleErr := func(err error) error {
+		for _, output := range outputs {
+			results.SetErr(output.SwapId, err)
+			if err := results[output.SwapId].Err; err != nil {
+				output.setError(results[output.SwapId].Err)
+			}
+		}
+		return err
+	}
+
 	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
 	if err != nil {
-		return "", errors.New("Could not get fee estimation: " + err.Error())
+		return handleErr(fmt.Errorf("could not get fee estimation: %w", err))
 	}
 
 	logger.Infof("Using fee of %v sat/vbyte for transaction", feeSatPerVbyte)
 
-	valid, details := nursery.populateOutputs(outputs)
-	if len(valid) == 0 {
-		return "", errors.New("all outputs invalid")
-	}
-
 	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
-	for _, output := range valid {
-		result := results[output.SwapId]
-		if result.Err != nil {
-			logger.Errorf("Could not spend output for %s swap %s: %s", output.SwapType, output.SwapId, result.Err)
-		}
-	}
 	if err != nil {
-		return "", fmt.Errorf("construct transaction: %v", err)
+		return handleErr(fmt.Errorf("construct: %w", err))
 	}
 
 	id, err := nursery.onchain.BroadcastTransaction(transaction)
 	if err != nil {
-		return "", fmt.Errorf("broadcast transaction: %v", err)
+		return handleErr(fmt.Errorf("broadcast: %w", err))
 	}
 	logger.Infof("Broadcast transaction: %s", id)
 
-	for _, output := range valid {
+	for _, output := range outputs {
 		result := results[output.SwapId]
 		if result.Err == nil {
 			if err := output.setTransaction(id, result.Fee); err != nil {
@@ -301,7 +304,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 		}
 	}
 
-	return id, nil
+	return handleErr(nil)
 }
 
 func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
@@ -313,6 +316,7 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 				verb = "refund"
 			}
 			logger.Warnf("swap %s can not be %sed automatically: %s", output.SwapId, verb, err)
+			output.setError(err)
 		}
 		if output.Address == "" {
 			if output.walletId == nil {
@@ -345,15 +349,16 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 		valid = append(valid, output)
 		details = append(details, *output.OutputDetails)
 	}
-	return valid, details
+	return
 }
 
 type voutInfo struct {
-	transactionId  string
-	currency       boltz.Currency
-	address        string
-	blindingKey    *btcec.PrivateKey
-	expectedAmount uint64
+	transactionId    string
+	currency         boltz.Currency
+	address          string
+	blindingKey      *btcec.PrivateKey
+	expectedAmount   uint64
+	requireConfirmed bool
 }
 
 func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
@@ -369,6 +374,15 @@ func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint
 
 	if info.expectedAmount != 0 && value < info.expectedAmount {
 		return nil, 0, 0, errors.New("locked up less onchain coins than expected")
+	}
+	if info.requireConfirmed {
+		confirmed, err := nursery.onchain.IsTransactionConfirmed(info.currency, info.transactionId)
+		if err != nil {
+			return nil, 0, 0, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
+		}
+		if !confirmed {
+			return nil, 0, 0, errors.New("lockup transaction not confirmed")
+		}
 	}
 
 	return lockupTransaction, vout, value, nil

@@ -12,7 +12,9 @@ import (
 func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
 	blockNotifier := nursery.registerBlockListener(currency)
 
+	nursery.waitGroup.Add(1)
 	go func() {
+		defer nursery.waitGroup.Done()
 		for newBlock := range blockNotifier.Get() {
 			swaps, chainSwaps, err := nursery.database.QueryAllRefundableSwaps(currency, newBlock.Height)
 			if err != nil {
@@ -55,11 +57,5 @@ func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []database.Sw
 		logger.Info("Did not find any outputs to refund")
 		return nil
 	}
-	refundTransactionId, err := nursery.createTransaction(currency, outputs)
-	if err != nil {
-		return err
-	}
-
-	logger.Infof("Constructed refund transaction for %d swaps: %s", len(outputs), refundTransactionId)
-	return nil
+	return nursery.createTransaction(currency, outputs)
 }

@@ -76,12 +76,20 @@ type OutputResult struct {
 	Fee uint64
 }
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Boltz) (Transaction, map[string]OutputResult, error) {
+type Results map[string]OutputResult
+
+func (results Results) SetErr(id string, err error) {
+	if results[id].Err == nil {
+		results[id] = OutputResult{Err: err}
+	}
+}
+
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Api) (Transaction, Results, error) {
 	construct := constructBtcTransaction
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
 	}
-	results := make(map[string]OutputResult, len(outputs))
+	results := make(Results, len(outputs))
 
 	getOutValues := func(fee uint64) map[string]uint64 {
 		outValues := make(map[string]uint64)
@@ -96,14 +104,12 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 			feeRemainder = 0
 
 			value, err := output.LockupTransaction.VoutValue(output.Vout)
-			if err == nil {
-				if value < output.Fee {
-					err = fmt.Errorf("value less than fee: %d < %d", value, output.Fee)
-				}
-			}
-
 			if err != nil {
-				results[output.SwapId] = OutputResult{Err: err}
+				results.SetErr(output.SwapId, err)
+				continue
+			}
+			if value < output.Fee {
+				results.SetErr(output.SwapId, fmt.Errorf("value less than fee: %d < %d", value, output.Fee))
 				continue
 			}
 

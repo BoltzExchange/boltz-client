@@ -33,6 +33,7 @@ type Output struct {
 	voutInfo voutInfo
 
 	setTransaction func(transactionId string, fee uint64) error
+	setError       func(err error)
 }
 
 func swapVoutInfo(swap *database.Swap) voutInfo {
@@ -67,6 +68,9 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *Output {
 			nursery.sendSwapUpdate(*swap)
 
 			return nil
+		},
+		setError: func(err error) {
+			nursery.handleSwapError(swap, err)
 		},
 	}
 }
@@ -114,6 +118,14 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 	return nil
 }
 
+func (nursery *Nursery) handleSwapError(swap *database.Swap, err error) {
+	if dbErr := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+		logger.Error("Could not update swap state: " + dbErr.Error())
+	}
+	logger.Errorf("Swap %s error: %v", swap.Id, err)
+	nursery.sendSwapUpdate(*swap)
+}
+
 func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapStatusResponse) {
 	parsedStatus := boltz.ParseEvent(status.Status)
 
@@ -123,11 +135,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 	}
 
 	handleError := func(err string) {
-		if dbErr := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_ERROR, err); dbErr != nil {
-			logger.Error("Could not update swap state: " + dbErr.Error())
-		}
-		logger.Error(err)
-		nursery.sendSwapUpdate(*swap)
+		nursery.handleSwapError(swap, errors.New(err))
 	}
 
 	if parsedStatus != boltz.InvoiceSet && swap.LockupTransactionId == "" {

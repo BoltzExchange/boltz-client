@@ -2,8 +2,6 @@ package config
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"runtime"
@@ -12,7 +10,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/build"
 	"github.com/BoltzExchange/boltz-client/cln"
 	"github.com/BoltzExchange/boltz-client/database"
@@ -27,6 +24,10 @@ type helpOptions struct {
 	ShowVersion bool `short:"v" long:"version" description:"Display version and exit"`
 }
 
+type boltzOptions struct {
+	URL string `long:"boltz.url" description:"Boltz API URL"`
+}
+
 type Config struct {
 	DataDir string `short:"d" long:"datadir" description:"Data directory of boltz-client"`
 
@@ -37,9 +38,9 @@ type Config struct {
 
 	Network string `long:"network" description:"Network to use (mainnet, testnet, regtest)"`
 
-	Boltz *boltz.Boltz `group:"Boltz Options"`
-	LND   *lnd.LND     `group:"LND Options"`
-	Cln   *cln.Cln     `group:"Cln Options"`
+	Boltz *boltzOptions `group:"Boltz Options"`
+	LND   *lnd.LND      `group:"LND Options"`
+	Cln   *cln.Cln      `group:"Cln Options"`
 
 	Node string `long:"node" description:"Lightning node to use (cln or lnd)"`
 
@@ -74,9 +75,7 @@ func LoadConfig(dataDir string) (*Config, error) {
 
 		Network: "mainnet",
 
-		Boltz: &boltz.Boltz{
-			URL: "",
-		},
+		Boltz: &boltzOptions{},
 
 		LND: &lnd.LND{
 			Host:        "127.0.0.1",
@@ -149,18 +148,6 @@ func LoadConfig(dataDir string) (*Config, error) {
 	}
 
 	fmt.Println("Using data dir: " + cfg.DataDir)
-
-	if cfg.Proxy != "" {
-		proxy, err := url.Parse(cfg.Proxy)
-		if err != nil {
-			return nil, fmt.Errorf("invalid proxy URL: %v", err)
-		}
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.Proxy = http.ProxyURL(proxy)
-		cfg.Boltz.Client = http.Client{
-			Transport: transport,
-		}
-	}
 
 	if strings.EqualFold(cfg.Node, "CLN") && cfg.Cln.DataDir == "" {
 		cfg.Cln.DataDir = "~/.lightning"

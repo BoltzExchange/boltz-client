@@ -100,6 +100,10 @@ deps:
 # Utils
 #
 
+mockery:
+	@$(call print, "Generating mocks")
+	mockery
+
 fmt:
 	@$(call print, "Formatting source")
 	gofmt -l -s -w .

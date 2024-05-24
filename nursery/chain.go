@@ -31,7 +31,7 @@ func (nursery *Nursery) RegisterChainSwap(chainSwap database.ChainSwap) error {
 
 func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, data *database.ChainSwapData, transactionId string) error {
 	data.LockupTransactionId = transactionId
-	_, _, _, err := nursery.findVout(chainVoutInfo(data, false))
+	_, _, _, err := nursery.findVout(chainVoutInfo(data))
 	if err != nil {
 		return fmt.Errorf("could not find lockup vout: %s", err)
 	}
@@ -53,20 +53,20 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	return nil
 }
 
-func chainVoutInfo(data *database.ChainSwapData, checkAmount bool) voutInfo {
+func chainVoutInfo(data *database.ChainSwapData) voutInfo {
 	info := voutInfo{
 		transactionId: data.LockupTransactionId,
 		currency:      data.Currency,
 		address:       data.LockupAddress,
 		blindingKey:   data.BlindingKey,
 	}
-	if checkAmount {
-		info.expectedAmount = data.Amount
-	}
 	return info
 }
 
 func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Output {
+	info := chainVoutInfo(swap.ToData)
+	info.requireConfirmed = !swap.AcceptZeroConf
+	info.expectedAmount = swap.ToData.Amount
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
 			SwapId:         swap.Id,
@@ -79,7 +79,7 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 			Address:        swap.ToData.Address,
 		},
 		walletId: swap.ToData.WalletId,
-		voutInfo: chainVoutInfo(swap.ToData, true),
+		voutInfo: info,
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.ToData, transactionId); err != nil {
 				return fmt.Errorf("Could not set lockup transaction in database: %w", err)
@@ -90,6 +90,9 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 			}
 
 			return nil
+		},
+		setError: func(err error) {
+			nursery.handleChainSwapError(swap, err)
 		},
 	}
 }
@@ -106,7 +109,7 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 			Address:            swap.FromData.Address,
 		},
 		swap.FromData.WalletId,
-		chainVoutInfo(swap.FromData, false),
+		chainVoutInfo(swap.FromData),
 		func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.FromData, transactionId); err != nil {
 				return fmt.Errorf("could not set refund transaction id in database: %s", err)
@@ -124,7 +127,18 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 
 			return nil
 		},
+		func(err error) {
+			nursery.handleChainSwapError(swap, err)
+		},
 	}
+}
+
+func (nursery *Nursery) handleChainSwapError(swap *database.ChainSwap, err error) {
+	if dbErr := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+		logger.Errorf("Could not update Chain Swap state: %s", dbErr)
+	}
+	logger.Errorf("Chain Swap %s error: %s", swap.Id, err)
+	nursery.sendChainSwapUpdate(*swap)
 }
 
 func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status boltz.SwapStatusResponse) {
@@ -136,11 +150,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 	}
 
 	handleError := func(err string) {
-		if dbErr := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_ERROR, err); dbErr != nil {
-			logger.Errorf("Could not update Chain Swap state: %s", dbErr)
-		}
-		logger.Errorf("Chain Swap %s error: %s", swap.Id, err)
-		nursery.sendChainSwapUpdate(*swap)
+		nursery.handleChainSwapError(swap, errors.New(err))
 	}
 
 	if swap.FromData.LockupTransactionId == "" || swap.ToData.LockupTransactionId == "" {
@@ -176,9 +186,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		output := nursery.getChainSwapClaimOutput(swap)
-		_, err := nursery.createTransaction(swap.Pair.To, []*Output{output})
-		if err != nil {
-			handleError("Could not claim chain swap output: " + err.Error())
+		if err := nursery.createTransaction(swap.Pair.To, []*Output{output}); err != nil {
+			logger.Infof("Could not claim chain swap output: " + err.Error())
 			return
 		}
 	}

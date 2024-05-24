@@ -12,27 +12,16 @@ const retryInterval = 15
 
 var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
 
-func connectLightning(lightning lightning.LightningNode) *lightning.LightningInfo {
+func connectLightning(lightning lightning.LightningNode) (*lightning.LightningInfo, error) {
 	err := lightning.Connect()
-
 	if err != nil {
-		logger.Fatal("Could not connect to lightning node: " + err.Error())
+		return nil, err
 	}
 
-	info, err := lightning.GetInfo()
-
-	if err != nil {
-		logger.Warn("Could not connect to lightning node: " + err.Error())
-		logger.Info(retryMessage)
-		time.Sleep(retryInterval * time.Second)
-
-		return connectLightning(lightning)
-	} else {
-		return info
-	}
+	return waitForLightningSynced(lightning), nil
 }
 
-func waitForLightningSynced(lightning lightning.LightningNode) {
+func waitForLightningSynced(lightning lightning.LightningNode) *lightning.LightningInfo {
 	info, err := lightning.GetInfo()
 
 	if err == nil {
@@ -41,13 +30,14 @@ func waitForLightningSynced(lightning lightning.LightningNode) {
 			logger.Info(retryMessage)
 			time.Sleep(retryInterval * time.Second)
 
-			waitForLightningSynced(lightning)
+			return waitForLightningSynced(lightning)
 		}
+		return info
 	} else {
 		logger.Error("Could not get lightning info: " + err.Error())
 		logger.Info(retryMessage)
 		time.Sleep(retryInterval * time.Second)
 
-		waitForLightningSynced(lightning)
+		return waitForLightningSynced(lightning)
 	}
 }

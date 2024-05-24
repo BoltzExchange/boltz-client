@@ -83,3 +83,11 @@ func (c *Client) BroadcastTransaction(txHex string) (string, error) {
 func (c *Client) Shutdown() {
 	c.client.Shutdown()
 }
+
+func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
+	transaction, err := c.client.GetTransaction(c.ctx, txId)
+	if err != nil {
+		return false, err
+	}
+	return transaction.Confirmations > 0, nil
+}
