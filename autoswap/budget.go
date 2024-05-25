@@ -2,6 +2,8 @@ package autoswap
 
 import (
 	"errors"
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/database"
@@ -11,29 +13,43 @@ type Budget struct {
 	database.BudgetInterval
 	Amount int64
 	Total  uint64
+	Stats  *boltzrpc.SwapStats
 }
 
-func (swapper *LightningSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
-	budgetInterval, err := swapper.database.QueryCurrentBudgetInterval()
+type BudgetConfig interface {
+	GetBudgetInterval() uint64
+	GetBudget() uint64
+}
+
+func (c *common) GetCurrentBudget(
+	createIfMissing bool,
+	cfg BudgetConfig,
+	entityId database.Id,
+) (*Budget, error) {
+	budgetDuration := time.Duration(cfg.GetBudgetInterval()) * time.Second
+	totalBudget := cfg.GetBudget()
+
+	currentInterval, err := c.database.QueryCurrentBudgetInterval(string(c.swapperType), entityId)
 	if err != nil {
 		return nil, errors.New("Could not get budget period: " + err.Error())
 	}
 
 	now := time.Now()
-	if budgetInterval == nil || now.After(budgetInterval.EndDate) {
+	if currentInterval == nil || now.After(currentInterval.EndDate) {
 		if createIfMissing {
-			budgetDuration := time.Duration(swapper.cfg.BudgetInterval) * time.Second
-			if budgetInterval == nil {
-				budgetInterval = &database.BudgetInterval{
+			if currentInterval == nil {
+				currentInterval = &database.BudgetInterval{
 					StartDate: now,
 					EndDate:   now.Add(budgetDuration),
+					Name:      string(c.swapperType),
+					EntityId:  entityId,
 				}
 			}
-			for now.After(budgetInterval.EndDate) {
-				budgetInterval.StartDate = budgetInterval.EndDate
-				budgetInterval.EndDate = budgetInterval.EndDate.Add(budgetDuration)
+			for now.After(currentInterval.EndDate) {
+				currentInterval.StartDate = currentInterval.EndDate
+				currentInterval.EndDate = currentInterval.EndDate.Add(budgetDuration)
 			}
-			if err := swapper.database.CreateBudget(*budgetInterval); err != nil {
+			if err := c.database.CreateBudget(*currentInterval); err != nil {
 				return nil, errors.New("Could not create budget period: " + err.Error())
 			}
 		} else {
@@ -42,19 +58,27 @@ func (swapper *LightningSwapper) GetCurrentBudget(createIfMissing bool) (*Budget
 	}
 
 	isAuto := true
-	stats, err := swapper.database.QueryStats(database.SwapQuery{
-		Since:  budgetInterval.StartDate,
-		IsAuto: &isAuto,
-	}, false)
+	var swapTypes []boltz.SwapType
+	if c.swapperType == Lightning {
+		swapTypes = []boltz.SwapType{boltz.NormalSwap, boltz.ReverseSwap}
+	} else {
+		swapTypes = []boltz.SwapType{boltz.ChainSwap}
+	}
+	stats, err := c.database.QueryStats(database.SwapQuery{
+		Since:    currentInterval.StartDate,
+		IsAuto:   &isAuto,
+		EntityId: &entityId,
+	}, swapTypes)
 	if err != nil {
 		return nil, errors.New("Could not get past fees: " + err.Error())
 	}
 
-	budget := int64(swapper.cfg.Budget) - int64(stats.TotalFees)
+	budget := int64(totalBudget) - int64(stats.TotalFees)
 
 	return &Budget{
-		BudgetInterval: *budgetInterval,
+		BudgetInterval: *currentInterval,
 		Amount:         budget,
-		Total:          swapper.cfg.Budget,
+		Total:          totalBudget,
+		Stats:          stats,
 	}, nil
 }

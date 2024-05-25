@@ -152,6 +152,14 @@ func (swapper *LightningSwapper) GetSwapRecommendations() ([]*LightningRecommend
 	return swapper.validateRecommendations(recommendations, budget.Amount)
 }
 
+func (swapper *LightningSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
+	return swapper.common.GetCurrentBudget(
+		createIfMissing,
+		swapper.cfg,
+		database.DefaultEntityId,
+	)
+}
+
 func (swapper *LightningSwapper) execute(recommendation *LightningRecommendation) error {
 	var chanIds []string
 	if chanId := recommendation.Channel.GetId(); chanId != 0 {

@@ -1382,6 +1382,7 @@ Reloads the configuration from disk.
 | `remaining` | [`int64`](#int64) |  |  |
 | `start_date` | [`int64`](#int64) |  |  |
 | `end_date` | [`int64`](#int64) |  |  |
+| `stats` | [`boltzrpc.SwapStats`](#boltzrpc.swapstats) | optional |  |
 
 
 
@@ -1400,6 +1401,8 @@ Reloads the configuration from disk.
 | `to_address` | [`string`](#string) |  |  |
 | `from_threshold` | [`uint64`](#uint64) |  |  |
 | `max_fee_percent` | [`float`](#float) |  |  |
+| `budget` | [`uint64`](#uint64) |  |  |
+| `budget_interval` | [`uint64`](#uint64) |  |  |
 | `entity` | [`string`](#string) | optional |  |
 
 
@@ -1591,7 +1594,6 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `running` | [`bool`](#bool) |  |  |
 | `error` | [`string`](#string) | optional |  |
-| `stats` | [`boltzrpc.SwapStats`](#boltzrpc.swapstats) | optional |  |
 | `budget` | [`Budget`](#budget) | optional |  |
 | `description` | [`string`](#string) |  |  |
 

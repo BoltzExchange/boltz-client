@@ -22,10 +22,11 @@ import (
 var ErrorNotConfigured = errors.New("autoswap not configured")
 
 type common struct {
-	onchain  *onchain.Onchain
-	database *database.Database
-	stop     chan bool
-	err      error
+	onchain     *onchain.Onchain
+	database    *database.Database
+	stop        chan bool
+	err         error
+	swapperType SwapperType
 }
 
 type RpcProvider interface {
@@ -89,8 +90,9 @@ func (swapper *AutoSwapper) UpdateLightningConfig(request *autoswaprpc.UpdateLig
 		swapper.lnSwapper = &LightningSwapper{
 			rpc: swapper.Rpc,
 			common: common{
-				onchain:  swapper.onchain,
-				database: swapper.database,
+				onchain:     swapper.onchain,
+				database:    swapper.database,
+				swapperType: Lightning,
 			},
 		}
 		base = DefaultLightningConfig()
@@ -135,8 +137,9 @@ func (swapper *AutoSwapper) UpdateChainConfig(request *autoswaprpc.UpdateChainCo
 			chainSwapper = &ChainSwapper{
 				rpc: swapper.Rpc,
 				common: common{
-					onchain:  swapper.onchain,
-					database: swapper.database,
+					onchain:     swapper.onchain,
+					database:    swapper.database,
+					swapperType: Chain,
 				},
 			}
 			base = &SerializedChainConfig{}
@@ -308,7 +311,7 @@ func (c *common) Error() string {
 
 func (c *common) Stop() {
 	if c.stop != nil {
-		logger.Info("Stopping auto swapper")
+		logger.Infof("Stopping %s auto swapper", c.swapperType)
 		c.stop <- true
 		c.stop = nil
 		c.err = nil

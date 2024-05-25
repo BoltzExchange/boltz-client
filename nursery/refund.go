@@ -35,14 +35,14 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 	return blockNotifier
 }
 
-func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []database.Swap, chainSwaps []database.ChainSwap) error {
+func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []*database.Swap, chainSwaps []*database.ChainSwap) error {
 	var outputs []*Output
 
 	for i := range swaps {
-		outputs = append(outputs, nursery.getRefundOutput(&swaps[i]))
+		outputs = append(outputs, nursery.getRefundOutput(swaps[i]))
 	}
 	for i := range chainSwaps {
-		outputs = append(outputs, nursery.getChainSwapRefundOutput(&chainSwaps[i]))
+		outputs = append(outputs, nursery.getChainSwapRefundOutput(chainSwaps[i]))
 	}
 
 	height, err := nursery.onchain.GetBlockHeight(currency)

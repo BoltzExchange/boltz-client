@@ -3,8 +3,8 @@ package autoswap
 import (
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 )
 
@@ -29,15 +29,6 @@ func (swapper *ChainSwapper) setConfig(cfg *ChainConfig) {
 	}
 }
 
-func (cfg *ChainConfig) getRecommendation(balance *onchain.Balance, pairInfo *boltzrpc.PairInfo) *ChainRecommendation {
-	if balance.Confirmed > cfg.FromThreshold {
-		amount := balance.Confirmed - (cfg.FromThreshold / 2)
-		checked := check(amount, checkParams{Pair: pairInfo, MaxFeePercent: cfg.maxFeePercent})
-		return &checked
-	}
-	return nil
-}
-
 func (swapper *ChainSwapper) GetRecommendation() (*ChainRecommendation, error) {
 	balance, err := swapper.cfg.fromWallet.GetBalance()
 	if err != nil {
@@ -49,7 +40,31 @@ func (swapper *ChainSwapper) GetRecommendation() (*ChainRecommendation, error) {
 		return nil, fmt.Errorf("could not get pair info: %w", err)
 	}
 
-	return swapper.cfg.getRecommendation(balance, pairInfo), nil
+	budget, err := swapper.GetCurrentBudget(true)
+	if err != nil {
+		return nil, fmt.Errorf("could not get current budget: %w", err)
+	}
+
+	cfg := swapper.cfg
+	if balance.Confirmed > cfg.FromThreshold {
+		amount := balance.Confirmed - (cfg.FromThreshold / 2)
+
+		checked := check(amount, checkParams{Pair: pairInfo, MaxFeePercent: cfg.maxFeePercent, Budget: &budget.Amount})
+
+		state := boltzrpc.SwapState_PENDING
+		pendingSwaps, err := swapper.database.QueryChainSwaps(database.SwapQuery{
+			State:    &state,
+			EntityId: swapper.cfg.entityId(),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("could not query pending swaps: %w", err)
+		}
+		if len(pendingSwaps) > 0 {
+			checked.Dismiss(ReasonPendingSwap)
+		}
+		return &checked, nil
+	}
+	return nil, nil
 }
 
 func (swapper *ChainSwapper) GetConfig() *ChainConfig {
@@ -89,6 +104,14 @@ func (swapper *ChainSwapper) Restart() {
 			swapper.Start()
 		}
 	}
+}
+
+func (swapper *ChainSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
+	return swapper.common.GetCurrentBudget(
+		createIfMissing,
+		swapper.cfg,
+		swapper.cfg.entity.Id,
+	)
 }
 
 func (swapper *ChainSwapper) Start() {

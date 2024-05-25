@@ -70,23 +70,53 @@ func TestChainSwapper(t *testing.T) {
 		balance := &onchain.Balance{Total: 1000, Confirmed: 1000, Unconfirmed: 0}
 		fromWallet.EXPECT().GetBalance().Return(balance, nil)
 
-		recommendation, err := chainSwapper.GetRecommendation()
-		require.NoError(t, err)
-		require.NotNil(t, recommendation)
-		require.NotZero(t, recommendation.FeeEstimate)
-		require.Equal(t, 750, int(recommendation.Amount))
+		expectedAmount := uint64(750)
 
-		pairInfo.Fees.MinerFees = 1000
-		recommendation, err = chainSwapper.GetRecommendation()
-		require.NoError(t, err)
-		require.NotNil(t, recommendation)
-		require.NotEmpty(t, recommendation.DismissedReasons)
+		t.Run("Valid", func(t *testing.T) {
 
-		balance.Total = 100
-		balance.Confirmed = 100
-		recommendation, err = chainSwapper.GetRecommendation()
-		require.NoError(t, err)
-		require.Nil(t, recommendation)
+			entity := &database.Entity{Name: "test"}
+			require.NoError(t, chainSwapper.database.CreateEntity(entity))
+			fake := fakeSwaps{chainSwaps: []database.ChainSwap{
+				{
+					EntityId: entity.Id,
+				},
+			}}
+			fake.create(t, chainSwapper.database)
+
+			recommendation, err := chainSwapper.GetRecommendation()
+			require.NoError(t, err)
+			require.NotZero(t, recommendation.FeeEstimate)
+			require.Empty(t, recommendation.DismissedReasons)
+			require.Equal(t, expectedAmount, recommendation.Amount)
+		})
+
+		t.Run("Dismissed", func(t *testing.T) {
+			fake := fakeSwaps{chainSwaps: []database.ChainSwap{
+				{
+					EntityId: chainSwapper.cfg.entity.Id,
+				},
+			}}
+			fake.create(t, chainSwapper.database)
+
+			pairInfo.Fees.MinerFees = 1000000
+			pairInfo.Limits.Minimal = 2 * expectedAmount
+			recommendation, err := chainSwapper.GetRecommendation()
+			require.NoError(t, err)
+			require.Contains(t, recommendation.DismissedReasons, ReasonBudgetExceeded)
+			require.Contains(t, recommendation.DismissedReasons, ReasonMaxFeePercent)
+			require.Contains(t, recommendation.DismissedReasons, ReasonAmountBelowMin)
+			require.Contains(t, recommendation.DismissedReasons, ReasonPendingSwap)
+			require.Equal(t, expectedAmount, recommendation.Amount)
+		})
+
+		t.Run("NoBalance", func(t *testing.T) {
+			balance.Total = 100
+			balance.Confirmed = 100
+			recommendation, err := chainSwapper.GetRecommendation()
+			require.NoError(t, err)
+			require.Nil(t, recommendation)
+		})
+
 	})
 
 	t.Run("Execute", func(t *testing.T) {

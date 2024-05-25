@@ -559,15 +559,17 @@ func printStatus(prefix string, status *autoswaprpc.Status) {
 		fmt.Printf("%s\n", status.Description)
 	}
 	if status.Budget != nil {
+		budget := status.Budget
+		stats := budget.Stats
 		yellowBold.Println("\nBudget")
-		fmt.Printf(" - From %s until %s\n", parseDate(status.Budget.StartDate), parseDate(status.Budget.EndDate))
-		fmt.Println(" - Total: " + utils.Satoshis(status.Budget.Total))
-		fmt.Println(" - Remaining: " + utils.Satoshis(status.Budget.Remaining))
+		fmt.Printf(" - From %s until %s\n", parseDate(budget.StartDate), parseDate(budget.EndDate))
+		fmt.Println(" - Total: " + utils.Satoshis(budget.Total))
+		fmt.Println(" - Remaining: " + utils.Satoshis(budget.Remaining))
 
 		yellowBold.Println("Stats")
-		fmt.Println(" - Swaps: " + strconv.Itoa(int(status.Stats.Count)))
-		fmt.Println(" - Amount: " + utils.Satoshis(status.Stats.TotalAmount) + " (avg " + utils.Satoshis(status.Stats.AvgAmount) + ")")
-		fmt.Println(" - Fees: " + utils.Satoshis(status.Stats.TotalFees) + " (avg " + utils.Satoshis(status.Stats.AvgFees) + ")")
+		fmt.Println(" - Swaps: " + strconv.Itoa(int(stats.Count)))
+		fmt.Println(" - Amount: " + utils.Satoshis(stats.TotalAmount) + " (avg " + utils.Satoshis(stats.AvgAmount) + ")")
+		fmt.Println(" - Fees: " + utils.Satoshis(stats.TotalFees) + " (avg " + utils.Satoshis(stats.AvgFees) + ")")
 	}
 }
 
@@ -749,30 +751,13 @@ func autoSwapSetup(ctx *cli.Context) error {
 		}
 	}
 
-	budgetDuration := float64(config.BudgetInterval) / (24 * time.Hour).Seconds()
-	qs = append(
-		qs,
-		&survey.Question{
-			Name: "BudgetInterval",
-			Prompt: &survey.Input{
-				Message: "In which interval should the fee budget of the auto swapper be reset? (days)",
-				Default: fmt.Sprint(budgetDuration),
-			},
-		},
-		&survey.Question{
-			Name: "Budget",
-			Prompt: &survey.Input{
-				Message: "How many sats do you want to spend max on fees per budget interval?",
-				Default: fmt.Sprint(config.Budget),
-			},
-		},
-	)
+	qs = append(qs, askBudget(config.BudgetInterval, config.Budget)...)
 
 	if err := survey.Ask(qs, config); err != nil {
 		return err
 	}
 
-	config.BudgetInterval = config.BudgetInterval * 24 * uint64(time.Hour.Seconds())
+	config.BudgetInterval *= 24 * uint64(time.Hour.Seconds())
 
 	_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: config})
 	if err != nil {
@@ -874,11 +859,13 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 			Validate: survey.Required,
 		},
 	}
+	questions = append(questions, askBudget(uint64((time.Hour*24*7).Seconds()), 100000)...)
 
 	if err := survey.Ask(questions, config); err != nil {
 		return err
 	}
 
+	config.BudgetInterval *= 24 * uint64(time.Hour.Seconds())
 	_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: config})
 	if err != nil {
 		return err
@@ -1579,6 +1566,26 @@ func askPassword(ctx *cli.Context, askNew bool) (*string, error) {
 		}
 	}
 	return &password, nil
+}
+
+func askBudget(defaultDuration uint64, defaultBudget uint64) []*survey.Question {
+	defaultDurationDays := fmt.Sprint(float64(defaultDuration) / (24 * time.Hour).Seconds())
+	return []*survey.Question{
+		{
+			Name: "BudgetInterval",
+			Prompt: &survey.Input{
+				Message: "In which interval should the fee budget of the auto swapper be reset? (days)",
+				Default: defaultDurationDays,
+			},
+		},
+		{
+			Name: "Budget",
+			Prompt: &survey.Input{
+				Message: "How many sats do you want to spend max on fees per budget interval?",
+				Default: fmt.Sprint(defaultBudget),
+			},
+		},
+	}
 }
 
 func printSubaccount(info *boltzrpc.Subaccount) {
