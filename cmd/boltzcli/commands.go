@@ -806,8 +806,8 @@ var createSwapCommand = &cli.Command{
 		currencyFlag,
 		liquidFlag,
 		&cli.StringFlag{
-			Name:  "to-wallet",
-			Usage: "Internal wallet to swap to",
+			Name:  "from-wallet",
+			Usage: "Internal wallet to fund the swap from",
 		},
 		&cli.BoolFlag{
 			Name:  "external-pay",
@@ -868,7 +868,7 @@ func createSwap(ctx *cli.Context) error {
 
 	invoice := ctx.String("invoice")
 	refundAddress := ctx.String("refund")
-	walletId, err := getWalletId(ctx, ctx.String("to-wallet"))
+	walletId, err := getWalletId(ctx, ctx.String("from-wallet"))
 	if err != nil {
 		return err
 	}
@@ -1105,8 +1105,8 @@ var createReverseSwapCommand = &cli.Command{
 		currencyFlag,
 		liquidFlag,
 		&cli.StringFlag{
-			Name:  "from-wallet",
-			Usage: "Internal wallet to fund the swap from",
+			Name:  "to-wallet",
+			Usage: "Internal wallet to swap to",
 		},
 		&cli.BoolFlag{
 			Name:  "no-zero-conf",
@@ -1187,7 +1187,7 @@ func createReverseSwap(ctx *cli.Context) error {
 	}
 
 	returnImmediately := true
-	walletId, err := getWalletId(ctx, ctx.String("from-wallet"))
+	walletId, err := getWalletId(ctx, ctx.String("to-wallet"))
 	if err != nil {
 		return err
 	}
