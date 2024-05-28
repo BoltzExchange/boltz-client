@@ -486,11 +486,10 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 	}
 
 	sendFromInternal := request.GetSendFromInternal()
-	wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
+	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
 		Currency:      pair.From,
 		Id:            request.WalletId,
 		AllowReadonly: !sendFromInternal,
-		EntityId:      macaroons.EntityIdFromContext(ctx),
 	})
 	if err != nil && sendFromInternal {
 		return nil, handleError(err)
@@ -657,11 +656,10 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 			return nil, handleError(fmt.Errorf("Invalid claim address %s: %w", claimAddress, err))
 		}
 	} else {
-		wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
+		wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
 			Currency:      pair.To,
 			Id:            request.WalletId,
 			AllowReadonly: true,
-			EntityId:      macaroons.EntityIdFromContext(ctx),
 		})
 		if err != nil {
 			return nil, handleError(err)
@@ -881,10 +879,9 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	externalPay := request.GetExternalPay()
 	var fromWallet, toWallet onchain.Wallet
 	if request.FromWalletId != nil {
-		fromWallet, err = server.onchain.GetAnyWallet(onchain.WalletChecker{
+		fromWallet, err = server.getWallet(ctx, onchain.WalletChecker{
 			Id:       request.FromWalletId,
 			Currency: pair.From,
-			EntityId: &entityId,
 		})
 		if err != nil {
 			return nil, handleError(err)
@@ -894,10 +891,9 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	}
 
 	if request.ToWalletId != nil {
-		toWallet, err = server.onchain.GetAnyWallet(onchain.WalletChecker{
+		toWallet, err = server.getWallet(ctx, onchain.WalletChecker{
 			Id:       request.ToWalletId,
 			Currency: pair.To,
-			EntityId: macaroons.EntityIdFromContext(ctx),
 		})
 		if err != nil {
 			return nil, handleError(err)
@@ -1066,14 +1062,14 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 }
 
 func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *boltzrpc.ImportWalletRequest) (*boltzrpc.Wallet, error) {
-	if err := checkName(request.Info.Name); err != nil {
+	if err := checkName(request.Params.Name); err != nil {
 		return nil, handleError(err)
 	}
 
-	currency := utils.ParseCurrency(&request.Info.Currency)
+	currency := utils.ParseCurrency(&request.Params.Currency)
 	credentials := &wallet.Credentials{
 		WalletInfo: onchain.WalletInfo{
-			Name:     request.Info.Name,
+			Name:     request.Params.Name,
 			Currency: currency,
 			EntityId: server.requireEntity(ctx),
 		},
@@ -1083,14 +1079,14 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 		Subaccount:     request.Credentials.Subaccount,
 	}
 
-	if err := server.importWallet(ctx, credentials, request.GetPassword()); err != nil {
+	if err := server.importWallet(ctx, credentials, request.Params.GetPassword()); err != nil {
 		return nil, handleError(err)
 	}
-	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Name: &request.Info.Name})
+	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Id: &credentials.Id})
 }
 
 func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *boltzrpc.SetSubaccountRequest) (*boltzrpc.Subaccount, error) {
-	wallet, err := server.getOwnWallet(ctx, request.Name, false)
+	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -1115,8 +1111,8 @@ func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *bol
 	return serializewalletSubaccount(*subaccount, balance), nil
 }
 
-func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *boltzrpc.WalletInfo) (*boltzrpc.GetSubaccountsResponse, error) {
-	wallet, err := server.getOwnWallet(ctx, request.Name, false)
+func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *boltzrpc.GetSubaccountsRequest) (*boltzrpc.GetSubaccountsResponse, error) {
+	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -1141,34 +1137,32 @@ func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *bo
 	return response, nil
 }
 
-func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *boltzrpc.CreateWalletRequest) (*boltzrpc.WalletCredentials, error) {
+func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *boltzrpc.CreateWalletRequest) (*boltzrpc.CreateWalletResponse, error) {
 	mnemonic, err := wallet.GenerateMnemonic()
 	if err != nil {
 		return nil, handleError(errors.New("could not generate new mnemonic: " + err.Error()))
 	}
 
-	credentials := &boltzrpc.WalletCredentials{
-		Mnemonic: &mnemonic,
-	}
-
-	if _, err := server.ImportWallet(ctx, &boltzrpc.ImportWalletRequest{
-		Info: request.Info,
+	created, err := server.ImportWallet(ctx, &boltzrpc.ImportWalletRequest{
+		Params: request.Params,
 		Credentials: &boltzrpc.WalletCredentials{
 			Mnemonic: &mnemonic,
 		},
-		Password: request.Password,
-	}); err != nil {
-		return nil, err
+	})
+	if err != nil {
+		return nil, handleError(err)
 	}
 
-	response, err := server.SetSubaccount(ctx, &boltzrpc.SetSubaccountRequest{
-		Name: request.Info.Name,
+	_, err = server.SetSubaccount(ctx, &boltzrpc.SetSubaccountRequest{
+		WalletId: created.Id,
 	})
 	if err != nil {
 		return nil, err
 	}
-	credentials.Subaccount = &response.Pointer
-	return credentials, nil
+	return &boltzrpc.CreateWalletResponse{
+		Mnemonic: mnemonic,
+		Wallet:   created,
+	}, nil
 }
 
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {
@@ -1192,14 +1186,13 @@ func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.
 }
 
 func (server *routedBoltzServer) GetWallet(ctx context.Context, request *boltzrpc.GetWalletRequest) (*boltzrpc.Wallet, error) {
-	wallet, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:          request.GetName(),
+	wallet, err := server.getWallet(ctx, onchain.WalletChecker{
 		Id:            request.Id,
+		Name:          request.Name,
 		AllowReadonly: true,
-		EntityId:      macaroons.EntityIdFromContext(ctx),
 	})
 	if err != nil {
-		return nil, handleError(status.Error(codes.NotFound, err.Error()))
+		return nil, handleError(err)
 	}
 
 	return server.serializeWallet(wallet)
@@ -1222,10 +1215,37 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 	return &response, nil
 }
 
-func (server *routedBoltzServer) GetWalletCredentials(ctx context.Context, request *boltzrpc.GetWalletCredentialsRequest) (*boltzrpc.WalletCredentials, error) {
-	creds, err := server.database.GetWalletByName(request.Name, macaroons.EntityIdFromContext(ctx))
+func (server *routedBoltzServer) getWallet(ctx context.Context, checker onchain.WalletChecker) (onchain.Wallet, error) {
+	if checker.Id == nil {
+		id := server.requireEntity(ctx)
+		checker.EntityId = &id
+		if checker.Name == nil {
+			return nil, status.Errorf(codes.InvalidArgument, "id or name required")
+		}
+	}
+	return server.getAnyWallet(ctx, checker)
+}
+
+func (server *routedBoltzServer) getAnyWallet(ctx context.Context, checker onchain.WalletChecker) (onchain.Wallet, error) {
+	if checker.EntityId == nil {
+		checker.EntityId = macaroons.EntityIdFromContext(ctx)
+	}
+	found, err := server.onchain.GetAnyWallet(checker)
 	if err != nil {
-		return nil, handleError(fmt.Errorf("could not read credentials for wallet %s: %w", request.Name, err))
+		return nil, status.Errorf(codes.NotFound, "wallet not found: %v", err)
+	}
+	return found, nil
+}
+
+func (server *routedBoltzServer) GetWalletCredentials(ctx context.Context, request *boltzrpc.GetWalletCredentialsRequest) (*boltzrpc.WalletCredentials, error) {
+	wallet, err := server.getWallet(ctx, onchain.WalletChecker{Id: &request.Id})
+	if err != nil {
+		return nil, handleError(err)
+	}
+	info := wallet.GetWalletInfo()
+	creds, err := server.database.GetWallet(request.Id)
+	if err != nil {
+		return nil, handleError(fmt.Errorf("could not read credentials for wallet %s: %w", info.Name, err))
 	}
 	if creds.NodePubkey != nil {
 		return nil, handleError(errors.New("cant get credentials for node wallet"))
@@ -1241,18 +1261,20 @@ func (server *routedBoltzServer) GetWalletCredentials(ctx context.Context, reque
 }
 
 func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *boltzrpc.RemoveWalletRequest) (*boltzrpc.RemoveWalletResponse, error) {
-	cfg, err := server.swapper.GetConfig()
-	if err == nil {
-		if cfg.Wallet == request.Name {
-			return nil, handleError(fmt.Errorf(
-				"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet.",
-				request.Name,
-			))
-		}
-	}
-	wallet, err := server.getOwnWallet(ctx, request.Name, true)
+	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{
+		Id:            &request.Id,
+		AllowReadonly: true,
+	})
 	if err != nil {
 		return nil, handleError(err)
+	}
+	cfg, err := server.swapper.GetConfig()
+	if err == nil {
+		if cfg.Wallet == wallet.GetWalletInfo().Name {
+			return nil, handleError(errors.New(
+				"wallet is used in autoswap, configure a different wallet in autoswap before removing this wallet",
+			))
+		}
 	}
 	if err := wallet.Remove(); err != nil {
 		return nil, handleError(err)
@@ -1263,7 +1285,7 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 	}
 	server.onchain.RemoveWallet(id)
 
-	logger.Debugf("Removed wallet %s", request.Name)
+	logger.Debugf("Removed wallet %v", wallet)
 
 	return &boltzrpc.RemoveWalletResponse{}, nil
 }
@@ -1439,18 +1461,14 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 	}
 }
 
-func (server *routedBoltzServer) getOwnWallet(ctx context.Context, name string, readonly bool) (*wallet.Wallet, error) {
-	existing, err := server.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:          name,
-		AllowReadonly: readonly,
-		EntityId:      macaroons.EntityIdFromContext(ctx),
-	})
+func (server *routedBoltzServer) getOwnWallet(ctx context.Context, checker onchain.WalletChecker) (*wallet.Wallet, error) {
+	existing, err := server.getWallet(ctx, checker)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("wallet %s not found: %v", name, err))
+		return nil, err
 	}
 	wallet, ok := existing.(*wallet.Wallet)
 	if !ok {
-		return nil, fmt.Errorf("wallet %s can not be modified", name)
+		return nil, fmt.Errorf("wallet %s can not be modified", existing.GetWalletInfo().Name)
 	}
 	return wallet, nil
 }

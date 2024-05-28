@@ -333,7 +333,7 @@ func (swapper *AutoSwapper) Start() error {
 	}
 	normalSwaps := cfg.swapType == "" || cfg.swapType == boltz.NormalSwap
 	wallet, err := swapper.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:          cfg.Wallet,
+		Name:          &cfg.Wallet,
 		Currency:      cfg.currency,
 		AllowReadonly: !normalSwaps,
 	})
