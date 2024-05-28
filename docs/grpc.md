@@ -1241,7 +1241,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `name` | [`string`](#string) |  |  |
 | `currency` | [`Currency`](#currency) |  |  |
-| `password` | [`string`](#string) | optional | the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used. |
+| `password` | [`string`](#string) | optional | the password to encrypt the wallet with. If there are existing encrypted wallets, the same password has to be used. |
 
 
 

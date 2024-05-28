@@ -3641,7 +3641,7 @@ type WalletParams struct {
 
 	Name     string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Currency Currency `protobuf:"varint,2,opt,name=currency,proto3,enum=boltzrpc.Currency" json:"currency,omitempty"`
-	// the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used.
+	// the password to encrypt the wallet with. If there are existing encrypted wallets, the same password has to be used.
 	Password *string `protobuf:"bytes,3,opt,name=password,proto3,oneof" json:"password,omitempty"`
 }
 

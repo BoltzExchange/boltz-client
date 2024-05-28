@@ -590,7 +590,7 @@ message WalletCredentials {
 message WalletParams {
     string name = 1;
     Currency currency = 2;
-    // the password to encrypt the wallet with. If there are existing ecnrypted wallets, the same password will have to be used.
+    // the password to encrypt the wallet with. If there are existing encrypted wallets, the same password has to be used.
     optional string password = 3;
 }
 
