@@ -403,14 +403,25 @@ var autoSwapCommands = &cli.Command{
 			Flags: []cli.Flag{jsonFlag, fromFilterFlag, toFilterFlag, stateFilterFlag, pendingFilterFlag},
 		},
 		{
-			Name:   "setup",
-			Usage:  "Setup autoswap interactively",
-			Action: autoSwapSetup,
+			Name:  "setup",
+			Usage: "Setup autoswap interactively",
+			Action: func(context *cli.Context) error {
+				return autoSwapSetup(context, nil)
+			},
 			Subcommands: []*cli.Command{
 				{
-					Name:   "chain",
-					Usage:  "Setup chain configuration interactively",
-					Action: autoSwapChainSetup,
+					Name:  "ln",
+					Usage: "Setup lightning configuration interactively",
+					Action: func(context *cli.Context) error {
+						return autoSwapSetup(context, &lightning)
+					},
+				},
+				{
+					Name:  "chain",
+					Usage: "Setup chain configuration interactively",
+					Action: func(context *cli.Context) error {
+						return autoSwapSetup(context, &chain)
+					},
 				},
 			},
 		},
@@ -500,13 +511,13 @@ var autoSwapCommands = &cli.Command{
 				{
 					Name: "ln",
 					Action: func(ctx *cli.Context) error {
-						return enableAutoSwap(ctx, true, lightning)
+						return enableAutoSwap(ctx, true, &lightning)
 					},
 				},
 				{
 					Name: "chain",
 					Action: func(ctx *cli.Context) error {
-						return enableAutoSwap(ctx, true, chain)
+						return enableAutoSwap(ctx, true, &chain)
 					},
 				},
 			},
@@ -641,23 +652,21 @@ func printConfig(ctx *cli.Context, autoSwapType *autoswap.SwapperType, key strin
 	return nil
 }
 
-func askCurrency(message string, defaultValue *boltzrpc.Currency) (result boltzrpc.Currency, err error) {
-	prompt := &survey.Select{
-		Message: message,
-		Options: []string{"LBTC", "BTC"},
+func autoSwapSetup(ctx *cli.Context, swapper *autoswap.SwapperType) error {
+	if swapper == nil || *swapper == lightning {
+		if err := autoSwapLightningSetup(ctx); err != nil {
+			return err
+		}
 	}
-	if defaultValue != nil {
-		prompt.Default = fmt.Sprint(*defaultValue)
+	if (swapper != nil && *swapper == chain) || (swapper == nil && prompt("Do you want to setup chain configuration aswell?")) {
+		if err := autoSwapChainSetup(ctx); err != nil {
+			return err
+		}
 	}
-
-	var currency string
-	if err = survey.AskOne(prompt, &currency); err != nil {
-		return
-	}
-	return parseCurrency(currency)
+	return enableAutoSwap(ctx, false, swapper)
 }
 
-func autoSwapSetup(ctx *cli.Context) error {
+func autoSwapLightningSetup(ctx *cli.Context) error {
 	autoSwap := getAutoSwapClient(ctx)
 
 	_, err := autoSwap.GetConfig()
@@ -671,11 +680,6 @@ func autoSwapSetup(ctx *cli.Context) error {
 		return err
 	}
 	config := entireConfig.Lightning[0]
-
-	config.Currency, err = askCurrency("Which currency should autoswaps be performed on?", &config.Currency)
-	if err != nil {
-		return err
-	}
 
 	prompt := &survey.Select{
 		Message: "Which type of swaps should be executed?",
@@ -700,10 +704,12 @@ func autoSwapSetup(ctx *cli.Context) error {
 	}
 
 	readonly := config.SwapType != "reverse"
-	config.Wallet, err = askForWallet(ctx, fmt.Sprintf("Select %s wallet", config.Currency), config.Currency, readonly)
+	wallet, err := askForWallet(ctx, "Select wallet which should be used for swaps", nil, readonly)
 	if err != nil {
 		return err
 	}
+	config.Wallet = wallet.Name
+	config.Currency = wallet.Currency
 
 	var balanceType string
 	prompt = &survey.Select{
@@ -764,57 +770,73 @@ func autoSwapSetup(ctx *cli.Context) error {
 		return err
 	}
 
+	fmt.Println()
 	fmt.Println("Config was saved successfully!")
-
-	return enableAutoSwap(ctx, false, lightning)
+	return nil
 }
 
-func askForWallet(ctx *cli.Context, message string, currency boltzrpc.Currency, allowReadonly bool) (result string, err error) {
+func askForWallet(ctx *cli.Context, message string, currency *boltzrpc.Currency, allowReadonly bool) (result *boltzrpc.Wallet, err error) {
 	client := getClient(ctx)
 
-	wallets, err := client.GetWallets(&currency, allowReadonly)
+	wallets, err := client.GetWallets(currency, allowReadonly)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	createNew := "Create New"
 	importExisting := "Import Existing"
-	var options []string
-	for _, wallet := range wallets.Wallets {
-		options = append(options, wallet.Name)
-	}
-	options = append(options, createNew)
-	options = append(options, importExisting)
 
-	prompt := &survey.Select{
-		Message: message,
-		Options: options,
+	prompt := &survey.Select{Message: message}
+
+	var walletsByName = make(map[string]*boltzrpc.Wallet)
+	for _, wallet := range wallets.Wallets {
+		prompt.Options = append(prompt.Options, wallet.Name)
+		if wallet.Currency == boltzrpc.Currency_LBTC {
+			prompt.Default = wallet.Name
+		}
+		walletsByName[wallet.Name] = wallet
 	}
+	prompt.Options = append(prompt.Options, createNew)
+	prompt.Options = append(prompt.Options, importExisting)
 
 	var choice string
 	if err := survey.AskOne(prompt, &choice); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if choice != createNew && choice != importExisting {
-		result = choice
+		result = walletsByName[choice]
 	} else {
+		info := &boltzrpc.WalletParams{}
+		if currency == nil {
+			prompt := &survey.Select{
+				Message: message,
+				Options: []string{"LBTC", "BTC"},
+				Default: "LBTC",
+			}
+			var currency string
+			if err = survey.AskOne(prompt, &currency); err != nil {
+				return
+			}
+			info.Currency, err = parseCurrency(currency)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			info.Currency = *currency
+		}
 		input := &survey.Input{
 			Message: "Enter a name for the new wallet",
 			Default: "autoswap",
 		}
-		err = survey.AskOne(input, &result, survey.WithValidator(func(ans interface{}) error {
+		err = survey.AskOne(input, &info.Name, survey.WithValidator(func(ans interface{}) error {
 			return checkWalletName(ctx, ans.(string))
 		}))
 
-		info := &boltzrpc.WalletParams{
-			Name:     result,
-			Currency: currency,
-		}
 		if choice == createNew {
-			err = createWallet(ctx, info)
+			result, err = createWallet(ctx, info)
 		} else if choice == importExisting {
-			err = importWallet(ctx, info, allowReadonly)
+			result, err = importWallet(ctx, info, allowReadonly)
 		}
 	}
 	return result, err
@@ -828,33 +850,28 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 		config = &autoswaprpc.ChainConfig{}
 	}
 
-	fromCurrency, err := askCurrency("Which currency should autoswaps be performed on?", nil)
+	fromWallet, err := askForWallet(ctx, "Select source wallet", nil, false)
 	if err != nil {
 		return err
 	}
+	config.FromWallet = fromWallet.Name
 
-	config.FromWallet, err = askForWallet(ctx, "Select source wallet", fromCurrency, false)
-	if err != nil {
-		return err
-	}
-
-	var toCurrency boltzrpc.Currency
-	if fromCurrency == boltzrpc.Currency_LBTC {
-		toCurrency = boltzrpc.Currency_BTC
-	} else {
+	toCurrency := boltzrpc.Currency_BTC
+	if fromWallet.Currency == boltzrpc.Currency_BTC {
 		toCurrency = boltzrpc.Currency_LBTC
 	}
 
-	config.ToWallet, err = askForWallet(ctx, "Select target wallet", toCurrency, true)
+	toWallet, err := askForWallet(ctx, "Select target wallet", &toCurrency, true)
 	if err != nil {
 		return err
 	}
+	config.ToWallet = toWallet.Name
 
 	questions := []*survey.Question{
 		{
 			Name: "FromThreshold",
 			Prompt: &survey.Input{
-				Message: "What is the minimum amount of sats you want to keep in your wallet (sat)?",
+				Message: "What is the maximum amount of sats you want to accumulate before a chain swap is started?",
 			},
 			Validate: survey.Required,
 		},
@@ -871,9 +888,9 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 		return err
 	}
 
+	fmt.Println()
 	fmt.Println("Config was saved successfully!")
-
-	return enableAutoSwap(ctx, false, chain)
+	return nil
 }
 
 var lightning = autoswap.Lightning
@@ -908,13 +925,13 @@ func autoSwapConfig(ctx *cli.Context, swapper *autoswap.SwapperType) (err error)
 	return printConfig(ctx, swapper, key, ctx.Bool("json"), false)
 }
 
-func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper autoswap.SwapperType) error {
+func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper *autoswap.SwapperType) error {
 	client := getAutoSwapClient(ctx)
 
 	if showConfig {
 		fmt.Println("Enabling autoswap with the following config:")
 		fmt.Println()
-		if err := printConfig(ctx, &swapper, "", false, true); err != nil {
+		if err := printConfig(ctx, swapper, "", false, true); err != nil {
 			return err
 		}
 	}
@@ -924,17 +941,9 @@ func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper autoswap.SwapperT
 		return err
 	}
 
-	if swapper == lightning {
-		if len(recommendations.Lightning) > 0 {
-			fmt.Println("Based on above config the following swaps will be performed immediately:")
-			printJson(recommendations)
-		}
-	}
-	if swapper == chain {
-		if len(recommendations.Chain) > 0 {
-			fmt.Println("Based on above config the following swaps will be performed immediately:")
-			printJson(recommendations)
-		}
+	if len(recommendations.Lightning) > 0 || len(recommendations.Chain) > 0 {
+		fmt.Println("Based on above config the following swaps will be performed immediately:")
+		printJson(recommendations)
 	}
 
 	fmt.Println()
@@ -942,8 +951,15 @@ func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper autoswap.SwapperT
 		return nil
 	}
 
-	if _, err := client.SetConfigValue(swapper, "enabled", true); err != nil {
-		return err
+	if swapper == nil || *swapper == lightning {
+		if _, err := client.SetConfigValue(lightning, "enabled", true); err != nil {
+			return err
+		}
+	}
+	if swapper == nil || *swapper == chain {
+		if _, err := client.SetConfigValue(chain, "enabled", true); err != nil {
+			return err
+		}
 	}
 	return autoSwapStatus(ctx)
 }
@@ -1401,7 +1417,8 @@ var walletCommands = &cli.Command{
 				if err != nil {
 					return err
 				}
-				return createWallet(ctx, info)
+				_, err = createWallet(ctx, info)
+				return err
 			}),
 		},
 		{
@@ -1416,7 +1433,8 @@ var walletCommands = &cli.Command{
 				if err != nil {
 					return err
 				}
-				return importWallet(ctx, info, true)
+				_, err = importWallet(ctx, info, true)
+				return err
 			}),
 		},
 		{
@@ -1617,10 +1635,10 @@ func checkWalletName(ctx *cli.Context, name string) error {
 	return nil
 }
 
-func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool) (err error) {
+func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool) (wallet *boltzrpc.Wallet, err error) {
 	client := getClient(ctx)
 	if err := checkWalletName(ctx, params.Name); err != nil {
-		return err
+		return nil, err
 	}
 
 	mnemonic := ""
@@ -1632,7 +1650,7 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 			Default: "mnemonic",
 		}
 		if err := survey.AskOne(prompt, &importType); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -1640,7 +1658,7 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 		Message: fmt.Sprintf("Please type your %s", importType),
 	}
 	if err := survey.AskOne(prompt, &mnemonic, survey.WithValidator(survey.Required)); err != nil {
-		return err
+		return nil, err
 	}
 
 	credentials := &boltzrpc.WalletCredentials{}
@@ -1654,20 +1672,20 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 
 	params.Password, err = askPassword(ctx, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	wallet, err := client.ImportWallet(params, credentials)
+	wallet, err = client.ImportWallet(params, credentials)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("Successfully imported wallet!")
 
 	if !wallet.Readonly {
-		return selectSubaccount(ctx, wallet.Id)
+		return wallet, selectSubaccount(ctx, wallet.Id)
 	}
-	return nil
+	return wallet, nil
 }
 
 func selectSubaccount(ctx *cli.Context, walletId uint64) error {
@@ -1740,21 +1758,21 @@ func removeWallet(ctx *cli.Context) error {
 	return err
 }
 
-func createWallet(ctx *cli.Context, params *boltzrpc.WalletParams) (err error) {
+func createWallet(ctx *cli.Context, params *boltzrpc.WalletParams) (wallet *boltzrpc.Wallet, err error) {
 	client := getClient(ctx)
 
 	if err := checkWalletName(ctx, params.Name); err != nil {
-		return err
+		return nil, err
 	}
 
 	params.Password, err = askPassword(ctx, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	credentials, err := client.CreateWallet(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Println("New wallet created!")
 	fmt.Println()
@@ -1762,7 +1780,7 @@ func createWallet(ctx *cli.Context, params *boltzrpc.WalletParams) (err error) {
 	fmt.Println()
 	fmt.Println("We highly recommend to import the mnemonic shown above into an external wallet like Blockstream Green (https://blockstream.com/green)." +
 		"This serves as backup and allows you to view transactions and control your funds.")
-	return nil
+	return credentials.Wallet, nil
 }
 
 func showCredentials(ctx *cli.Context) error {
