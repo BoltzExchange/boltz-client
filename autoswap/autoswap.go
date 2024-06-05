@@ -3,7 +3,6 @@ package autoswap
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -18,8 +17,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
 )
-
-var ErrorNotConfigured = errors.New("autoswap not configured")
 
 type common struct {
 	onchain     *onchain.Onchain
@@ -117,17 +114,14 @@ func (swapper *AutoSwapper) UpdateLightningConfig(request *autoswaprpc.UpdateLig
 	return swapper.saveConfig()
 }
 
-func (swapper *AutoSwapper) UpdateChainConfig(request *autoswaprpc.UpdateChainConfigRequest, entity *database.Entity) error {
-	entityId := database.DefaultEntityId
-	var entityName *string
-	if entity != nil {
-		entityId = entity.Id
-		entityName = &entity.Name
-	}
+func (swapper *AutoSwapper) UpdateChainConfig(request *autoswaprpc.UpdateChainConfigRequest, entity database.Entity) error {
+	chainSwapper, ok := swapper.chainSwappers[entity.Id]
 	if request.GetReset_() {
-		delete(swapper.chainSwappers, entityId)
+		if ok {
+			chainSwapper.Stop()
+			delete(swapper.chainSwappers, entity.Id)
+		}
 	} else {
-		chainSwapper, ok := swapper.chainSwappers[entityId]
 		config := request.Config
 		var base *SerializedChainConfig
 		if !ok {
@@ -151,16 +145,18 @@ func (swapper *AutoSwapper) UpdateChainConfig(request *autoswaprpc.UpdateChainCo
 			return err
 		}
 		config = updated.(*SerializedChainConfig)
-		config.Entity = entityName
+		if entity.Name != database.DefaultEntityName {
+			config.Entity = &entity.Name
+		}
 
-		cfg := NewChainConfig(config)
-		if err := cfg.Init(swapper.database, swapper.onchain); err != nil {
+		cfg := NewChainConfig(config, swapper.database, swapper.onchain)
+		if err := cfg.Init(); err != nil {
 			return fmt.Errorf("invalid config: %w", err)
 		}
 
 		chainSwapper.setConfig(cfg)
 
-		swapper.chainSwappers[entityId] = chainSwapper
+		swapper.chainSwappers[entity.Id] = chainSwapper
 	}
 	return swapper.saveConfig()
 }
@@ -191,10 +187,7 @@ func (swapper *AutoSwapper) LoadConfig() error {
 	}
 
 	handleErr := func(err error) error {
-		// only set error if we dont have a config yet
-		if swapper.cfg == nil {
-			swapper.err = err
-		}
+		swapper.err = err
 		return err
 	}
 
@@ -202,25 +195,34 @@ func (swapper *AutoSwapper) LoadConfig() error {
 		return handleErr(err)
 	}
 
+	for entity, chainSwapper := range swapper.chainSwappers {
+		chainSwapper.Stop()
+		delete(swapper.chainSwappers, entity)
+	}
+
+	if swapper.lnSwapper != nil {
+		swapper.lnSwapper.Stop()
+		swapper.lnSwapper = nil
+	}
+
 	request := &autoswaprpc.UpdateLightningConfigRequest{}
 	if len(serialized.Lightning) > 0 {
 		request.Config = serialized.Lightning[0]
-	}
-	if err := swapper.UpdateLightningConfig(request); err != nil {
-		return handleErr(fmt.Errorf("could not update lightning config: %v", err))
+		if err := swapper.UpdateLightningConfig(request); err != nil {
+			return handleErr(fmt.Errorf("could not update lightning config: %v", err))
+		}
 	}
 
 	for _, chainConfig := range serialized.Chain {
-		name := database.DefaultEntityName
+		entity := &database.DefaultEntity
 		if chainConfig.Entity != nil {
-			name = *chainConfig.Entity
-		}
-		entity, err := swapper.database.GetEntityByName(name)
-		if err != nil {
-			return handleErr(fmt.Errorf("could not get entity %s: %v", *chainConfig.Entity, err))
+			entity, err = swapper.database.GetEntityByName(*chainConfig.Entity)
+			if err != nil {
+				return handleErr(fmt.Errorf("could not get entity %s: %v", *chainConfig.Entity, err))
+			}
 		}
 		request := &autoswaprpc.UpdateChainConfigRequest{Config: chainConfig}
-		if err := swapper.UpdateChainConfig(request, entity); err != nil {
+		if err := swapper.UpdateChainConfig(request, *entity); err != nil {
 			return handleErr(fmt.Errorf("could not update chain config: %v", err))
 		}
 	}
@@ -252,16 +254,6 @@ func (swapper *AutoSwapper) saveConfig() error {
 	return os.WriteFile(swapper.configPath, buf.Bytes(), 0666)
 }
 
-func (swapper *AutoSwapper) RequireConfig() error {
-	if swapper.cfg == nil {
-		if swapper.err != nil {
-			return fmt.Errorf("%w: %w", ErrorNotConfigured, swapper.err)
-		}
-		return ErrorNotConfigured
-	}
-	return nil
-}
-
 func (swapper *AutoSwapper) WalletUsed(id database.Id) bool {
 	if swapper.lnSwapper != nil {
 		used := swapper.lnSwapper.cfg.walletId
@@ -277,14 +269,14 @@ func (swapper *AutoSwapper) WalletUsed(id database.Id) bool {
 	return false
 }
 
-func (swapper *AutoSwapper) GetConfig(entityId database.Id) *Config {
+func (swapper *AutoSwapper) GetConfig(entityId *database.Id) *Config {
 	scoped := &Config{}
 	for entity, chainSwapper := range swapper.chainSwappers {
-		if entityId == entity {
+		if entityId == nil || *entityId == entity {
 			scoped.Chain = append(scoped.Chain, chainSwapper.cfg.SerializedChainConfig)
 		}
 	}
-	if entityId == database.DefaultEntityId && swapper.lnSwapper != nil {
+	if swapper.lnSwapper != nil && (entityId == nil || *entityId == database.DefaultEntityId) {
 		scoped.Lightning = []*SerializedLnConfig{swapper.lnSwapper.cfg.SerializedLnConfig}
 	}
 	return scoped

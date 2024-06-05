@@ -22,6 +22,9 @@ type ChainConfig struct {
 	toWallet      onchain.Wallet
 	pair          boltz.Pair
 	description   string
+
+	db    *database.Database
+	chain *onchain.Onchain
 }
 
 func withChainBase(config *SerializedChainConfig) *SerializedChainConfig {
@@ -32,8 +35,8 @@ func withChainBase(config *SerializedChainConfig) *SerializedChainConfig {
 	}, config)
 }
 
-func NewChainConfig(serialized *SerializedChainConfig) *ChainConfig {
-	return &ChainConfig{SerializedChainConfig: withChainBase(serialized)}
+func NewChainConfig(serialized *SerializedChainConfig, db *database.Database, chain *onchain.Onchain) *ChainConfig {
+	return &ChainConfig{SerializedChainConfig: withChainBase(serialized), db: db, chain: chain}
 }
 
 func (cfg *ChainConfig) Request(amount uint64) *boltzrpc.CreateChainSwapRequest {
@@ -56,30 +59,24 @@ func (cfg *ChainConfig) Description() string {
 	return cfg.description
 }
 
-func (cfg *ChainConfig) entityId() *database.Id {
-	if cfg.entity != nil {
-		return &cfg.entity.Id
+func (cfg *ChainConfig) Init() (err error) {
+	if cfg.Entity == nil {
+		cfg.entity = &database.DefaultEntity
+	} else {
+		cfg.entity, err = cfg.db.GetEntityByName(cfg.GetEntity())
+		if err != nil {
+			return fmt.Errorf("could not get entity: %w", err)
+		}
 	}
-	return nil
-}
-
-func (cfg *ChainConfig) Init(database *database.Database, chain *onchain.Onchain) (err error) {
 	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
 	if cfg.FromThreshold == 0 {
 		return errors.New("FromThreshold must be set")
 	}
 
-	if cfg.Entity != nil {
-		cfg.entity, err = database.GetEntityByName(*cfg.Entity)
-		if err != nil {
-			return fmt.Errorf("entity %s does not exist: %w", *cfg.Entity, err)
-		}
-	}
-
-	cfg.fromWallet, err = chain.GetAnyWallet(onchain.WalletChecker{
+	cfg.fromWallet, err = cfg.chain.GetAnyWallet(onchain.WalletChecker{
 		Name:          &cfg.FromWallet,
 		AllowReadonly: false,
-		EntityId:      cfg.entityId(),
+		EntityId:      &cfg.entity.Id,
 	})
 	if err != nil {
 		return fmt.Errorf("could not get from wallet: %w", err)
@@ -91,9 +88,9 @@ func (cfg *ChainConfig) Init(database *database.Database, chain *onchain.Onchain
 	cfg.description = fmt.Sprintf("From wallet %s (%s) to ", fromInfo.Name, fromInfo.Currency)
 
 	if cfg.ToAddress != "" {
-		err := boltz.ValidateAddress(chain.Network, cfg.ToAddress, boltz.CurrencyBtc)
+		err := boltz.ValidateAddress(cfg.chain.Network, cfg.ToAddress, boltz.CurrencyBtc)
 		if err != nil {
-			err := boltz.ValidateAddress(chain.Network, cfg.ToAddress, boltz.CurrencyLiquid)
+			err := boltz.ValidateAddress(cfg.chain.Network, cfg.ToAddress, boltz.CurrencyLiquid)
 			if err != nil {
 				return fmt.Errorf("configured ToAddress %s is not a valid BTC or Liquid address: %w", cfg.ToAddress, err)
 			} else {
@@ -104,10 +101,10 @@ func (cfg *ChainConfig) Init(database *database.Database, chain *onchain.Onchain
 		}
 		cfg.description += fmt.Sprintf("static %s address %s", cfg.pair.To, cfg.ToAddress)
 	} else if cfg.ToWallet != "" {
-		cfg.toWallet, err = chain.GetAnyWallet(onchain.WalletChecker{
+		cfg.toWallet, err = cfg.chain.GetAnyWallet(onchain.WalletChecker{
 			Name:          &cfg.ToWallet,
 			AllowReadonly: true,
-			EntityId:      cfg.entityId(),
+			EntityId:      &cfg.entity.Id,
 		})
 		if err != nil {
 			return fmt.Errorf("could not get to wallet: %w", err)

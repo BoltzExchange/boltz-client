@@ -422,7 +422,7 @@ func TestMacaroons(t *testing.T) {
 		cfg, err := adminAuto.GetLightningConfig()
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
-		cfg, err = entityAuto.GetLightningConfig()
+		_, err = entityAuto.GetLightningConfig()
 		require.Error(t, err)
 	})
 
@@ -1481,10 +1481,8 @@ func TestAutoSwap(t *testing.T) {
 		entity := client.NewAutoSwapClient(admin.Connection)
 		entity.SetMacaroon(write)
 
-		config, err := entity.GetConfig()
-		require.NoError(t, err)
-		require.Empty(t, config.Chain)
-		require.Empty(t, config.Lightning)
+		_, err = entity.GetConfig()
+		require.Error(t, err)
 	})
 
 	t.Run("Lightning", func(t *testing.T) {

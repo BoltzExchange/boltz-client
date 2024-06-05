@@ -2,6 +2,7 @@ package rpcserver
 
 import (
 	"context"
+	"errors"
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
@@ -24,11 +25,18 @@ func (server *routedAutoSwapServer) lnSwapper(ctx context.Context) *autoswap.Lig
 }
 
 func (server *routedAutoSwapServer) chainSwapper(ctx context.Context) *autoswap.ChainSwapper {
-	return server.swapper.GetChainSwapper(requireEntity(ctx))
+	return server.swapper.GetChainSwapper(requireEntityId(ctx))
+}
+
+func (server *routedAutoSwapServer) requireSwapper(ctx context.Context) error {
+	if server.lnSwapper(ctx) == nil && server.chainSwapper(ctx) == nil {
+		return errors.New("autoswap not configured")
+	}
+	return nil
 }
 
 func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, request *autoswaprpc.GetRecommendationsRequest) (*autoswaprpc.GetRecommendationsResponse, error) {
-	if err := server.swapper.RequireConfig(); err != nil {
+	if err := server.requireSwapper(ctx); err != nil {
 		return nil, err
 	}
 	response := &autoswaprpc.GetRecommendationsResponse{}
@@ -83,28 +91,27 @@ func serializeBudget(budget *autoswap.Budget) *autoswaprpc.Budget {
 }
 
 func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprpc.GetStatusRequest) (*autoswaprpc.GetStatusResponse, error) {
+	if err := server.requireSwapper(ctx); err != nil {
+		return nil, err
+	}
 	response := &autoswaprpc.GetStatusResponse{
 		Error: serializeOptionalString(server.swapper.Error()),
 	}
-	if isAdmin(ctx) {
-		lnSwapper := server.swapper.GetLnSwapper()
-		if lnSwapper != nil {
-			cfg := lnSwapper.GetConfig()
-			budget, err := lnSwapper.GetCurrentBudget(false)
-			if err != nil {
-				return nil, err
-			}
-			response.Lightning = &autoswaprpc.Status{
-				Running:     lnSwapper.Running(),
-				Error:       serializeOptionalString(lnSwapper.Error()),
-				Description: cfg.Description(),
-				Budget:      serializeBudget(budget),
-			}
+	if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
+		cfg := lnSwapper.GetConfig()
+		budget, err := lnSwapper.GetCurrentBudget(false)
+		if err != nil {
+			return nil, err
+		}
+		response.Lightning = &autoswaprpc.Status{
+			Running:     lnSwapper.Running(),
+			Error:       serializeOptionalString(lnSwapper.Error()),
+			Description: cfg.Description(),
+			Budget:      serializeBudget(budget),
 		}
 	}
 
-	chainSwapper := server.swapper.GetChainSwapper(requireEntity(ctx))
-	if chainSwapper != nil {
+	if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
 		cfg := chainSwapper.GetConfig()
 		budget, err := chainSwapper.GetCurrentBudget(false)
 		if err != nil {
@@ -122,7 +129,10 @@ func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprp
 }
 
 func (server *routedAutoSwapServer) GetConfig(ctx context.Context, _ *autoswaprpc.GetConfigRequest) (*autoswaprpc.Config, error) {
-	return server.swapper.GetConfig(requireEntity(ctx)), nil
+	if err := server.requireSwapper(ctx); err != nil {
+		return nil, err
+	}
+	return server.swapper.GetConfig(macaroons.EntityIdFromContext(ctx)), nil
 }
 
 func (server *routedAutoSwapServer) ReloadConfig(ctx context.Context, _ *empty.Empty) (*autoswaprpc.Config, error) {
@@ -142,7 +152,7 @@ func (server *routedAutoSwapServer) UpdateLightningConfig(ctx context.Context, r
 }
 
 func (server *routedAutoSwapServer) UpdateChainConfig(ctx context.Context, request *autoswaprpc.UpdateChainConfigRequest) (*autoswaprpc.Config, error) {
-	if err := server.swapper.UpdateChainConfig(request, macaroons.EntityFromContext(ctx)); err != nil {
+	if err := server.swapper.UpdateChainConfig(request, requireEntity(ctx)); err != nil {
 		return nil, handleError(err)
 	}
 

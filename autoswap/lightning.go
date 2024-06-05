@@ -21,8 +21,8 @@ type LightningSwapper struct {
 }
 
 func (swapper *LightningSwapper) setConfig(cfg *LightningConfig) {
-	logger.Debugf("Setting auto swap config: %+v", cfg)
-	message := fmt.Sprintf("Using %v strategy to recommend swaps", cfg.description)
+	logger.Debugf("Setting lightning autoswap config: %+v", cfg)
+	message := fmt.Sprintf("Lightning autoswap: %v", cfg.description)
 	if cfg.swapType != "" {
 		message += " of type " + string(cfg.swapType)
 	}

@@ -18,8 +18,8 @@ type ChainSwapper struct {
 }
 
 func (swapper *ChainSwapper) setConfig(cfg *ChainConfig) {
-	logger.Debugf("Setting auto chainswap config: %+v", cfg)
-	logger.Info(cfg.description)
+	logger.Debugf("Setting chain autoswap config: %+v", cfg)
+	logger.Infof("Chain autoswap (%s): %s", cfg.entity.Name, cfg.description)
 
 	swapper.cfg = cfg
 	if cfg.Enabled {
@@ -54,7 +54,7 @@ func (swapper *ChainSwapper) GetRecommendation() (*ChainRecommendation, error) {
 		state := boltzrpc.SwapState_PENDING
 		pendingSwaps, err := swapper.database.QueryChainSwaps(database.SwapQuery{
 			State:    &state,
-			EntityId: swapper.cfg.entityId(),
+			EntityId: &swapper.cfg.entity.Id,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("could not query pending swaps: %w", err)
@@ -98,7 +98,7 @@ func (swapper *ChainSwapper) execute(recommendation *ChainRecommendation) error 
 func (swapper *ChainSwapper) Restart() {
 	if swapper.cfg.Enabled {
 		swapper.Stop()
-		if err := swapper.cfg.Init(swapper.database, swapper.onchain); err != nil {
+		if err := swapper.cfg.Init(); err != nil {
 			swapper.err = fmt.Errorf("chain config has become invalid: %w", err)
 		} else {
 			swapper.Start()

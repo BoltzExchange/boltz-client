@@ -54,7 +54,7 @@ func TestChainSwapper(t *testing.T) {
 		swapper, mockProvider := getSwapper(t)
 		swapper.onchain.AddWallet(fromWallet)
 
-		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: config}, &database.DefaultEntity)
+		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: config}, database.DefaultEntity)
 		require.NoError(t, err)
 
 		return swapper, swapper.GetChainSwapper(database.DefaultEntityId), mockProvider, fromWallet
@@ -76,12 +76,11 @@ func TestChainSwapper(t *testing.T) {
 
 			entity := &database.Entity{Name: "test"}
 			require.NoError(t, chainSwapper.database.CreateEntity(entity))
-			fake := fakeSwaps{chainSwaps: []database.ChainSwap{
+			fakeSwaps{chainSwaps: []database.ChainSwap{
 				{
 					EntityId: entity.Id,
 				},
-			}}
-			fake.create(t, chainSwapper.database)
+			}}.create(t, chainSwapper.database)
 
 			recommendation, err := chainSwapper.GetRecommendation()
 			require.NoError(t, err)
@@ -91,12 +90,11 @@ func TestChainSwapper(t *testing.T) {
 		})
 
 		t.Run("Dismissed", func(t *testing.T) {
-			fake := fakeSwaps{chainSwaps: []database.ChainSwap{
+			fakeSwaps{chainSwaps: []database.ChainSwap{
 				{
 					EntityId: chainSwapper.cfg.entity.Id,
 				},
-			}}
-			fake.create(t, chainSwapper.database)
+			}}.create(t, chainSwapper.database)
 
 			pairInfo.Fees.MinerFees = 1000000
 			pairInfo.Limits.Minimal = 2 * expectedAmount
@@ -157,7 +155,7 @@ func TestChainSwapper(t *testing.T) {
 		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{
 			Config:    &autoswaprpc.ChainConfig{Enabled: true},
 			FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"enabled"}},
-		}, &database.DefaultEntity)
+		}, database.DefaultEntity)
 		require.NoError(t, err)
 
 		require.True(t, chainSwapper.cfg.Enabled)

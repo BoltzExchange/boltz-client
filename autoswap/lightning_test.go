@@ -71,7 +71,7 @@ func entityId(existing database.Id) database.Id {
 	return existing
 }
 
-func (f *fakeSwaps) create(t *testing.T, db *database.Database) {
+func (f fakeSwaps) create(t *testing.T, db *database.Database) {
 	for _, swap := range f.swaps {
 		swap.EntityId = entityId(swap.EntityId)
 		swap.Id = randomId()

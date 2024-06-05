@@ -211,12 +211,12 @@ func TestChainConfig(t *testing.T) {
 			name: "Entity/NoWallets",
 			config: &SerializedChainConfig{
 				FromThreshold: 100,
-				Entity:        &entityName,
 				FromWallet:    btcWallet.Name,
 				ToWallet:      liquidWallet.Name,
 			},
-			wallets: []onchain.WalletInfo{btcWallet, liquidWallet},
-			err:     true,
+			setEntity: true,
+			wallets:   []onchain.WalletInfo{btcWallet, liquidWallet},
+			err:       true,
 		},
 		{
 			name: "Entity/Valid",
@@ -298,9 +298,9 @@ func TestChainConfig(t *testing.T) {
 				chain.AddWallet(mockedWallet(t, info))
 			}
 
-			chainConfig := NewChainConfig(tc.config)
+			chainConfig := NewChainConfig(tc.config, db, chain)
 			require.NotNil(t, chainConfig)
-			err = chainConfig.Init(db, chain)
+			err = chainConfig.Init()
 			if tc.err {
 				require.Error(t, err)
 			} else {
@@ -308,9 +308,7 @@ func TestChainConfig(t *testing.T) {
 				require.NotEqual(t, chainConfig.pair.From, chainConfig.pair.To)
 				require.NotEmpty(t, chainConfig.description)
 				require.NotZero(t, chainConfig.maxFeePercent)
-				if tc.config.Entity != nil {
-					require.NotNil(t, chainConfig.entity)
-				}
+				require.NotNil(t, chainConfig.entity)
 			}
 		})
 	}
