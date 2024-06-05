@@ -786,9 +786,15 @@ func askForWallet(ctx *cli.Context, message string, currency *boltzrpc.Currency,
 	createNew := "Create New"
 	importExisting := "Import Existing"
 
-	prompt := &survey.Select{Message: message}
-
 	var walletsByName = make(map[string]*boltzrpc.Wallet)
+	prompt := &survey.Select{Message: message, Description: func(value string, index int) string {
+		wallet, ok := walletsByName[value]
+		if ok {
+			return fmt.Sprint(wallet.Currency)
+		}
+		return ""
+	}}
+
 	for _, wallet := range wallets.Wallets {
 		prompt.Options = append(prompt.Options, wallet.Name)
 		if wallet.Currency == boltzrpc.Currency_LBTC {
