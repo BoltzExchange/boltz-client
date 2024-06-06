@@ -658,7 +658,7 @@ func autoSwapSetup(ctx *cli.Context, swapper *autoswap.SwapperType) error {
 			return err
 		}
 	}
-	if (swapper != nil && *swapper == chain) || (swapper == nil && prompt("Do you want to setup chain configuration aswell?")) {
+	if (swapper != nil && *swapper == chain) || (swapper == nil && prompt("Do you want to setup chain swaps as well?")) {
 		if err := autoSwapChainSetup(ctx); err != nil {
 			return err
 		}

@@ -443,7 +443,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  |  |
 | `to_address` | [`string`](#string) | optional | Address where funds will be swept to if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | Address where the coins should be refunded to if the swap fails. |
-| `from_wallet_id` | [`uint64`](#uint64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
+| `from_wallet_id` | [`uint64`](#uint64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet as well. |
 | `to_wallet_id` | [`uint64`](#uint64) | optional | Wallet where the the funds will go if the swap succeeds. |
 | `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in Boltz. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |

@@ -2890,7 +2890,7 @@ type CreateChainSwapRequest struct {
 	// Address where the coins should be refunded to if the swap fails.
 	RefundAddress *string `protobuf:"bytes,4,opt,name=refund_address,json=refundAddress,proto3,oneof" json:"refund_address,omitempty"`
 	// Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true.
-	// If the swap fails, funds will be refunded to this wallet aswell.
+	// If the swap fails, funds will be refunded to this wallet as well.
 	FromWalletId *uint64 `protobuf:"varint,5,opt,name=from_wallet_id,json=fromWalletId,proto3,oneof" json:"from_wallet_id,omitempty"`
 	// Wallet where the the funds will go if the swap succeeds.
 	ToWalletId *uint64 `protobuf:"varint,6,opt,name=to_wallet_id,json=toWalletId,proto3,oneof" json:"to_wallet_id,omitempty"`

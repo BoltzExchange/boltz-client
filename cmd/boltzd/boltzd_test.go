@@ -1746,7 +1746,7 @@ func TestCreateWalletWithPassword(t *testing.T) {
 	_, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
-	// after creating one with a password, the first one will be encrypted aswell
+	// after creating one with a password, the first one will be encrypted as well
 	secondParams := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_BTC, Password: &password}
 	secondWallet, err := client.CreateWallet(secondParams)
 	require.NoError(t, err)
@@ -1769,7 +1769,7 @@ func TestImportDuplicateCredentials(t *testing.T) {
 	credentials, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
-	// after creating one with a password, the first one will be encrypted aswell
+	// after creating one with a password, the first one will be encrypted as well
 	second := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_BTC}
 	_, err = client.ImportWallet(second, credentials)
 	require.Error(t, err)
