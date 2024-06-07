@@ -850,11 +850,15 @@ func askForWallet(ctx *cli.Context, message string, currency *boltzrpc.Currency,
 
 func autoSwapChainSetup(ctx *cli.Context) error {
 	autoSwap := getAutoSwapClient(ctx)
+	client := getClient(ctx)
 
-	config, err := autoSwap.GetChainConfig()
-	if err != nil {
-		config = &autoswaprpc.ChainConfig{}
+	_, err := autoSwap.GetChainConfig()
+	if err == nil {
+		if !prompt("You already have an autoswap configuration. Do you want to reset it?") {
+			return nil
+		}
 	}
+	config := &autoswaprpc.ChainConfig{}
 
 	fromWallet, err := askForWallet(ctx, "Select source wallet", nil, false)
 	if err != nil {
@@ -873,13 +877,32 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 	}
 	config.ToWallet = toWallet.Name
 
+	pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, &boltzrpc.Pair{
+		From: fromWallet.Currency,
+		To:   toWallet.Currency,
+	})
+	if err != nil {
+		return err
+	}
+
 	questions := []*survey.Question{
 		{
 			Name: "FromThreshold",
 			Prompt: &survey.Input{
 				Message: "What is the maximum amount of sats you want to accumulate before a chain swap is started?",
 			},
-			Validate: survey.Required,
+			Validate: survey.ComposeValidators(survey.Required, func(ans interface{}) error {
+				num, err := strconv.ParseUint(ans.(string), 10, 64)
+				if err != nil {
+					return errors.New("not a valid number")
+				}
+
+				if num < pairInfo.Limits.Minimal {
+					return fmt.Errorf("must be at least %d", pairInfo.Limits.Minimal)
+				}
+
+				return nil
+			}),
 		},
 	}
 	questions = append(questions, askBudget(uint64((time.Hour*24*7).Seconds()), 100000)...)
