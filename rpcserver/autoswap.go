@@ -94,21 +94,19 @@ func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprp
 	if err := server.requireSwapper(ctx); err != nil {
 		return nil, err
 	}
-	response := &autoswaprpc.GetStatusResponse{
-		Error: serializeOptionalString(server.swapper.Error()),
-	}
+	ln := &autoswaprpc.Status{Running: false}
+	chain := &autoswaprpc.Status{Running: false}
+
 	if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
 		cfg := lnSwapper.GetConfig()
 		budget, err := lnSwapper.GetCurrentBudget(false)
 		if err != nil {
 			return nil, err
 		}
-		response.Lightning = &autoswaprpc.Status{
-			Running:     lnSwapper.Running(),
-			Error:       serializeOptionalString(lnSwapper.Error()),
-			Description: cfg.Description(),
-			Budget:      serializeBudget(budget),
-		}
+		ln.Running = lnSwapper.Running()
+		ln.Error = serializeOptionalString(lnSwapper.Error())
+		ln.Description = cfg.Description()
+		ln.Budget = serializeBudget(budget)
 	}
 
 	if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
@@ -117,15 +115,17 @@ func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprp
 		if err != nil {
 			return nil, err
 		}
-		response.Chain = &autoswaprpc.Status{
-			Running:     chainSwapper.Running(),
-			Error:       serializeOptionalString(chainSwapper.Error()),
-			Description: cfg.Description(),
-			Budget:      serializeBudget(budget),
-		}
+		chain.Running = chainSwapper.Running()
+		chain.Error = serializeOptionalString(chainSwapper.Error())
+		chain.Description = cfg.Description()
+		chain.Budget = serializeBudget(budget)
 	}
 
-	return response, nil
+	return &autoswaprpc.GetStatusResponse{
+		Error:     serializeOptionalString(server.swapper.Error()),
+		Lightning: ln,
+		Chain:     chain,
+	}, nil
 }
 
 func (server *routedAutoSwapServer) GetConfig(ctx context.Context, _ *autoswaprpc.GetConfigRequest) (*autoswaprpc.Config, error) {
