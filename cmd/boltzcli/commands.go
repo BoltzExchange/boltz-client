@@ -1155,17 +1155,6 @@ var createChainSwapCommand = &cli.Command{
 	},
 }
 
-func checkAddress(network *boltz.Network, address string) (boltzrpc.Currency, error) {
-	if err := boltz.ValidateAddress(network, address, boltz.CurrencyBtc); err == nil {
-		return boltzrpc.Currency_BTC, nil
-	}
-	if err := boltz.ValidateAddress(network, address, boltz.CurrencyLiquid); err == nil {
-		return boltzrpc.Currency_LBTC, nil
-	}
-	return boltzrpc.Currency_BTC, fmt.Errorf("invalid address: %s", address)
-
-}
-
 func createChainSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	var amount uint64
@@ -1201,18 +1190,20 @@ func createChainSwap(ctx *cli.Context) error {
 	network, _ := boltz.ParseChain(info.Network)
 
 	if toAddress := ctx.String("to-address"); toAddress != "" {
-		pair.To, err = checkAddress(network, toAddress)
+		to, err := boltz.GetAddressCurrency(network, toAddress)
 		if err != nil {
 			return err
 		}
+		pair.To = utils.SerializeCurrency(to)
 		request.ToAddress = &toAddress
 	}
 
 	if refundAddress := ctx.String("refund-address"); refundAddress != "" {
-		pair.From, err = checkAddress(network, refundAddress)
+		from, err := boltz.GetAddressCurrency(network, refundAddress)
 		if err != nil {
 			return err
 		}
+		pair.From = utils.SerializeCurrency(from)
 		request.RefundAddress = &refundAddress
 	}
 

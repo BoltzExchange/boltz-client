@@ -71,16 +71,9 @@ func (cfg *ChainConfig) Init() (err error) {
 	cfg.description = fmt.Sprintf("From wallet %s (%s) to ", fromInfo.Name, fromInfo.Currency)
 
 	if cfg.ToAddress != "" {
-		err := boltz.ValidateAddress(cfg.chain.Network, cfg.ToAddress, boltz.CurrencyBtc)
+		cfg.pair.To, err = boltz.GetAddressCurrency(cfg.chain.Network, cfg.ToAddress)
 		if err != nil {
-			err := boltz.ValidateAddress(cfg.chain.Network, cfg.ToAddress, boltz.CurrencyLiquid)
-			if err != nil {
-				return fmt.Errorf("configured ToAddress %s is not a valid BTC or Liquid address: %w", cfg.ToAddress, err)
-			} else {
-				cfg.pair.To = boltz.CurrencyLiquid
-			}
-		} else {
-			cfg.pair.To = boltz.CurrencyBtc
+			return fmt.Errorf("configured ToAddress %s is not a valid BTC or Liquid address: %w", cfg.ToAddress, err)
 		}
 		cfg.description += fmt.Sprintf("static %s address %s", cfg.pair.To, cfg.ToAddress)
 	} else if cfg.ToWallet != "" {
