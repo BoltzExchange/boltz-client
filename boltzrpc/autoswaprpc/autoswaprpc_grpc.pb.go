@@ -39,10 +39,10 @@ type AutoSwapClient interface {
 	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
 	//
-	//Partially updates the onchain configuration. The autoswapper will reload the configuration after this call.
+	//Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateLightningConfig(ctx context.Context, in *UpdateLightningConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
-	//Updates the lightning configuration completely or partially. Autoswap will reload the configuration after this call.
+	//Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateChainConfig(ctx context.Context, in *UpdateChainConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
 	//Returns the currently used configurationencoded as json.
@@ -126,10 +126,10 @@ type AutoSwapServer interface {
 	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	//
-	//Partially updates the onchain configuration. The autoswapper will reload the configuration after this call.
+	//Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateLightningConfig(context.Context, *UpdateLightningConfigRequest) (*Config, error)
 	//
-	//Updates the lightning configuration completely or partially. Autoswap will reload the configuration after this call.
+	//Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateChainConfig(context.Context, *UpdateChainConfigRequest) (*Config, error)
 	//
 	//Returns the currently used configurationencoded as json.

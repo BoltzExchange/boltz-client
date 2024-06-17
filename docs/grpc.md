@@ -1336,7 +1336,7 @@ Returns the current budget of autoswap and some relevant stats.
 
 #### UpdateLightningConfig
 
-Partially updates the onchain configuration. The autoswapper will reload the configuration after this call.
+Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
@@ -1344,7 +1344,7 @@ Partially updates the onchain configuration. The autoswapper will reload the con
 
 #### UpdateChainConfig
 
-Updates the lightning configuration completely or partially. Autoswap will reload the configuration after this call.
+Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
@@ -1399,7 +1399,7 @@ Reloads the configuration from disk.
 | `from_wallet` | [`string`](#string) |  |  |
 | `to_wallet` | [`string`](#string) |  |  |
 | `to_address` | [`string`](#string) |  |  |
-| `from_threshold` | [`uint64`](#uint64) |  |  |
+| `max_balance` | [`uint64`](#uint64) |  |  |
 | `max_fee_percent` | [`float`](#float) |  |  |
 | `budget` | [`uint64`](#uint64) |  |  |
 | `budget_interval` | [`uint64`](#uint64) |  |  |
@@ -1438,49 +1438,7 @@ Reloads the configuration from disk.
 
 
 
-#### GetChainRecommendationsResponse
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `swaps` | [`ChainRecommendation`](#chainrecommendation) | repeated |  |
-
-
-
-
-
-#### GetChainStatusRequest
-
-
-
-
-
-
-
 #### GetConfigRequest
-
-
-
-
-
-
-
-#### GetLightningRecommendationsResponse
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `swaps` | [`LightningRecommendation`](#lightningrecommendation) | repeated |  |
-
-
-
-
-
-#### GetLightningStatusRequest
 
 
 

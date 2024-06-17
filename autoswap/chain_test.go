@@ -42,7 +42,7 @@ func TestChainSwapper(t *testing.T) {
 	setup := func(t *testing.T) (*AutoSwapper, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
 		name := database.DefaultEntityName
 		config := &SerializedChainConfig{
-			FromThreshold: 500,
+			MaxBalance:    500,
 			FromWallet:    "test",
 			ToAddress:     "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
 			MaxFeePercent: 10,

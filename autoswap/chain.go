@@ -46,8 +46,8 @@ func (swapper *ChainSwapper) GetRecommendation() (*ChainRecommendation, error) {
 	}
 
 	cfg := swapper.cfg
-	if balance.Confirmed > cfg.FromThreshold {
-		amount := balance.Confirmed - (cfg.FromThreshold / 2)
+	if balance.Confirmed > cfg.MaxBalance {
+		amount := balance.Confirmed - (cfg.MaxBalance / 2)
 
 		checked := check(amount, checkParams{Pair: pairInfo, MaxFeePercent: cfg.maxFeePercent, Budget: &budget.Amount})
 

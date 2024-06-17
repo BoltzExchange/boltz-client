@@ -887,7 +887,7 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 
 	questions := []*survey.Question{
 		{
-			Name: "FromThreshold",
+			Name: "MaxBalance",
 			Prompt: &survey.Input{
 				Message: "What is the maximum amount of sats you want to accumulate before a chain swap is started?",
 			},

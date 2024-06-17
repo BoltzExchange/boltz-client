@@ -1438,7 +1438,7 @@ func TestAutoSwap(t *testing.T) {
 		}
 		fromWallet, err := admin.GetWallet(cfg.FromWallet)
 		require.NoError(t, err)
-		cfg.FromThreshold = fromWallet.Balance.Confirmed - 1000
+		cfg.MaxBalance = fromWallet.Balance.Confirmed - 1000
 
 		_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: cfg})
 		require.NoError(t, err)

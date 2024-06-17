@@ -52,8 +52,8 @@ func (cfg *ChainConfig) Init() (err error) {
 		}
 	}
 	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
-	if cfg.FromThreshold == 0 {
-		return errors.New("FromThreshold must be set")
+	if cfg.MaxBalance == 0 {
+		return errors.New("MaxBalance must be set")
 	}
 
 	cfg.fromWallet, err = cfg.chain.GetAnyWallet(onchain.WalletChecker{
