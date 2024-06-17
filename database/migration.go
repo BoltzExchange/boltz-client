@@ -490,8 +490,16 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 
 	case 9:
 		migration := `
-		ALTER TABLE autobudget ADD COLUMN name VARCHAR NOT NULL DEFAULT 'lightning';
-		ALTER TABLE autobudget ADD COLUMN entityId INT REFERENCES entities (id);
+		DROP TABLE autobudget;
+		CREATE TABLE autobudget
+		(
+			startDate INTEGER NOT NULL,
+			endDate   INTEGER NOT NULL,
+			name      VARCHAR NOT NULL,
+			entityId  INT REFERENCES entities (id),
+
+			PRIMARY KEY (startDate, name, entityId)
+		);
 `
 		if _, err := tx.Exec(migration); err != nil {
 			return err

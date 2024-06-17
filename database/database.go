@@ -137,7 +137,7 @@ CREATE TABLE autobudget
     name      VARCHAR NOT NULL,
     entityId  INT REFERENCES entities (id),
 
-	PRIMARY KEY (startDate, name, entityId)
+    PRIMARY KEY (startDate, name, entityId)
 );
 CREATE TABLE wallets
 (
