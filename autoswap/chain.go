@@ -90,7 +90,8 @@ func (swapper *ChainSwapper) execute(recommendation *ChainRecommendation) error 
 			toWalletId := swapper.cfg.toWallet.GetWalletInfo().Id
 			request.ToWalletId = &toWalletId
 		}
-		return swapper.rpc.CreateAutoChainSwap(swapper.cfg.entity, swapper.cfg.Request(recommendation.Amount))
+
+		return swapper.rpc.CreateAutoChainSwap(swapper.cfg.entity, request)
 	}
 	return nil
 }

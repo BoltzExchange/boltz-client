@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/onchain"
@@ -37,22 +36,6 @@ func withChainBase(config *SerializedChainConfig) *SerializedChainConfig {
 
 func NewChainConfig(serialized *SerializedChainConfig, db *database.Database, chain *onchain.Onchain) *ChainConfig {
 	return &ChainConfig{SerializedChainConfig: withChainBase(serialized), db: db, chain: chain}
-}
-
-func (cfg *ChainConfig) Request(amount uint64) *boltzrpc.CreateChainSwapRequest {
-	fromWalletId := cfg.fromWallet.GetWalletInfo().Id
-	request := &boltzrpc.CreateChainSwapRequest{
-		Amount:       amount,
-		Pair:         utils.SerializePair(cfg.pair),
-		FromWalletId: &fromWalletId,
-	}
-	if cfg.ToAddress != "" {
-		request.ToAddress = &cfg.ToAddress
-	} else {
-		toWalletId := cfg.toWallet.GetWalletInfo().Id
-		request.ToWalletId = &toWalletId
-	}
-	return request
 }
 
 func (cfg *ChainConfig) Description() string {
