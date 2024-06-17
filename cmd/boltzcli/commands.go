@@ -897,8 +897,10 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 					return errors.New("not a valid number")
 				}
 
-				if num < pairInfo.Limits.Minimal {
-					return fmt.Errorf("must be at least %d", pairInfo.Limits.Minimal)
+				// has to be double the minimal swap amount since we target half of the max balance
+				limit := pairInfo.Limits.Minimal * 2
+				if num < limit {
+					return fmt.Errorf("must be at least %d", limit)
 				}
 
 				return nil
