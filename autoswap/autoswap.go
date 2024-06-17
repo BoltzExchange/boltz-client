@@ -106,7 +106,7 @@ func (swapper *AutoSwapper) UpdateLightningConfig(request *autoswaprpc.UpdateLig
 		config = updated.(*SerializedLnConfig)
 	}
 
-	cfg := NewConfig(config)
+	cfg := NewLightningConfig(config)
 	if err := cfg.Init(swapper.onchain); err != nil {
 		return fmt.Errorf("invalid config: %w", err)
 	}

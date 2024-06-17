@@ -564,7 +564,7 @@ func TestStrategies(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := NewConfig(tc.config)
+			cfg := NewLightningConfig(tc.config)
 			require.NoError(t, cfg.Init(nil))
 			if tc.channels == nil {
 				tc.channels = channels

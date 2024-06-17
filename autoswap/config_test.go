@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetPair(t *testing.T) {
-	cfg := NewConfig(DefaultLightningConfig())
+	cfg := NewLightningConfig(DefaultLightningConfig())
 
 	pair := cfg.GetPair(boltz.NormalSwap)
 	require.Equal(t, boltzrpc.Currency_LBTC, pair.From)
@@ -154,7 +154,7 @@ func TestLightningConfig(t *testing.T) {
 			for _, wallet := range tc.wallets {
 				chain.AddWallet(mockedWallet(t, wallet))
 			}
-			cfg := NewConfig(tc.cfg)
+			cfg := NewLightningConfig(tc.cfg)
 			err := cfg.Init(chain)
 			if tc.err {
 				require.Error(t, err)

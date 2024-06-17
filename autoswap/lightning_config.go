@@ -38,16 +38,16 @@ type LightningConfig struct {
 
 	walletId *database.Id
 
-	maxFeePercent  utils.Percentage
-	currency       boltz.Currency
-	swapType       boltz.SwapType
-	maxBalance     Balance
-	minBalance     Balance
-	strategy       Strategy
-	description    string
+	maxFeePercent utils.Percentage
+	currency      boltz.Currency
+	swapType      boltz.SwapType
+	maxBalance    Balance
+	minBalance    Balance
+	strategy      Strategy
+	description   string
 }
 
-func NewConfig(serialized *SerializedLnConfig) *LightningConfig {
+func NewLightningConfig(serialized *SerializedLnConfig) *LightningConfig {
 	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized)}
 }
 

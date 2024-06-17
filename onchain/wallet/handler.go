@@ -11,8 +11,8 @@ import "C"
 type Notification string
 
 var (
-	blockNotification       Notification = "block"
-	transactionNotification Notification = "transaction"
+	// TODO: use subaccount notifications to wait for wallet sync on startup?
+	blockNotification Notification = "block"
 )
 
 type handlerFunc = func(map[string]any)
