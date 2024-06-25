@@ -35,10 +35,13 @@ type LightningClient interface {
 
 var (
 	paymentStatusFromGrpc = map[lnrpc.Payment_PaymentStatus]lightning.PaymentState{
+		lnrpc.Payment_INITIATED: lightning.PaymentPending,
 		lnrpc.Payment_IN_FLIGHT: lightning.PaymentPending,
 		lnrpc.Payment_SUCCEEDED: lightning.PaymentSucceeded,
 		lnrpc.Payment_FAILED:    lightning.PaymentFailed,
-		lnrpc.Payment_UNKNOWN:   lightning.PaymentFailed,
+		// Ignore the UNKNOWN status in the linter but keep using it for compatibility with older LND versions
+		//nolint:all
+		lnrpc.Payment_UNKNOWN: lightning.PaymentFailed,
 	}
 )
 

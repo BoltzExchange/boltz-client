@@ -139,8 +139,7 @@ func (swapper *AutoSwapper) LoadConfig() error {
 func (swapper *AutoSwapper) saveConfig() error {
 	buf := new(bytes.Buffer)
 	marshaler := protojson.MarshalOptions{
-		EmitUnpopulated:   true,
-		EmitDefaultValues: true,
+		EmitUnpopulated: true,
 	}
 	marshalled, _ := marshaler.Marshal(swapper.cfg.SerializedConfig)
 	var asJson any

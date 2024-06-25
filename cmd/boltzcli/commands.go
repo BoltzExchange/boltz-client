@@ -514,7 +514,7 @@ func printConfig(client client.AutoSwap, key string, asJson, hideZero bool) erro
 		return err
 	}
 
-	marshal := protojson.MarshalOptions{EmitDefaultValues: !hideZero, Indent: "   "}
+	marshal := protojson.MarshalOptions{EmitUnpopulated: !hideZero, Indent: "   "}
 	marshalled, err := marshal.Marshal(config)
 	if err != nil {
 		return err
