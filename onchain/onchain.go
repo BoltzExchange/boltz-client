@@ -260,7 +260,21 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 		return false, err
 	}
 
-	return chain.Tx.IsTransactionConfirmed(txId)
+	retry := 5
+	for {
+		confirmed, err := chain.Tx.IsTransactionConfirmed(txId)
+		if err != nil || !confirmed {
+			if retry == 0 {
+				return false, err
+			}
+			retry--
+			retryInterval := 10 * time.Second
+			logger.Debugf("Transaction %s not confirmed yet, retrying in %s", txId, retryInterval)
+			<-time.After(retryInterval)
+		} else {
+			return confirmed, nil
+		}
+	}
 }
 
 func (onchain *Onchain) Shutdown() {
