@@ -10,8 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func getShared(t *testing.T) shared {
+	return shared{database: getTestDb(t), onchain: getOnchain()}
+}
+
 func TestGetPair(t *testing.T) {
-	cfg := NewLightningConfig(DefaultLightningConfig())
+	cfg := NewLightningConfig(DefaultLightningConfig(), getShared(t))
 
 	pair := cfg.GetPair(boltz.NormalSwap)
 	require.Equal(t, boltzrpc.Currency_LBTC, pair.From)
@@ -150,12 +154,12 @@ func TestLightningConfig(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			chain := getOnchain()
+			shared := getShared(t)
 			for _, wallet := range tc.wallets {
-				chain.AddWallet(mockedWallet(t, wallet))
+				shared.onchain.AddWallet(mockedWallet(t, wallet))
 			}
-			cfg := NewLightningConfig(tc.cfg)
-			err := cfg.Init(chain)
+			cfg := NewLightningConfig(tc.cfg, shared)
+			err := cfg.Init()
 			if tc.err {
 				require.Error(t, err)
 			} else {
@@ -285,20 +289,19 @@ func TestChainConfig(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			db := getTestDb(t)
-			chain := getOnchain()
+			shared := getShared(t)
 			entity := &database.Entity{Name: entityName}
-			err := db.CreateEntity(entity)
+			err := shared.database.CreateEntity(entity)
 			require.NoError(t, err)
 
 			for _, info := range tc.wallets {
 				if tc.setEntity {
 					info.EntityId = entity.Id
 				}
-				chain.AddWallet(mockedWallet(t, info))
+				shared.onchain.AddWallet(mockedWallet(t, info))
 			}
 
-			chainConfig := NewChainConfig(tc.config, db, chain)
+			chainConfig := NewChainConfig(tc.config, shared)
 			require.NotNil(t, chainConfig)
 			err = chainConfig.Init()
 			if tc.err {

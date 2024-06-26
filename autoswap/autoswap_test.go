@@ -40,10 +40,10 @@ func getOnchain() *onchain.Onchain {
 	return chain
 }
 
-func getSwapper(t *testing.T) (*AutoSwapper, *MockRpcProvider) {
+func getSwapper(t *testing.T) (*AutoSwap, *MockRpcProvider) {
 	mockProvider := NewMockRpcProvider(t)
-	swapper := &AutoSwapper{Rpc: mockProvider}
-	swapper.Init(getTestDb(t), getOnchain(), t.TempDir()+"/autoswap.toml")
+	swapper := &AutoSwap{}
+	swapper.Init(getTestDb(t), getOnchain(), t.TempDir()+"/autoswap.toml", mockProvider)
 	return swapper, mockProvider
 }
 

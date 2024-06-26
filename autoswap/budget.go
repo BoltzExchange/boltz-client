@@ -16,20 +16,21 @@ type Budget struct {
 	Stats  *boltzrpc.SwapStats
 }
 
-type BudgetConfig interface {
+type budgetConfig interface {
 	GetBudgetInterval() uint64
 	GetBudget() uint64
 }
 
-func (c *common) GetCurrentBudget(
+func (c *shared) GetCurrentBudget(
 	createIfMissing bool,
-	cfg BudgetConfig,
+	swapperType SwapperType,
+	cfg budgetConfig,
 	entityId database.Id,
 ) (*Budget, error) {
 	budgetDuration := time.Duration(cfg.GetBudgetInterval()) * time.Second
 	totalBudget := cfg.GetBudget()
 
-	currentInterval, err := c.database.QueryCurrentBudgetInterval(string(c.swapperType), entityId)
+	currentInterval, err := c.database.QueryCurrentBudgetInterval(string(swapperType), entityId)
 	if err != nil {
 		return nil, errors.New("Could not get budget period: " + err.Error())
 	}
@@ -41,7 +42,7 @@ func (c *common) GetCurrentBudget(
 				currentInterval = &database.BudgetInterval{
 					StartDate: now,
 					EndDate:   now.Add(budgetDuration),
-					Name:      string(c.swapperType),
+					Name:      string(swapperType),
 					EntityId:  entityId,
 				}
 			}
@@ -59,7 +60,7 @@ func (c *common) GetCurrentBudget(
 
 	isAuto := true
 	var swapTypes []boltz.SwapType
-	if c.swapperType == Lightning {
+	if swapperType == Lightning {
 		swapTypes = []boltz.SwapType{boltz.NormalSwap, boltz.ReverseSwap}
 	} else {
 		swapTypes = []boltz.SwapType{boltz.ChainSwap}

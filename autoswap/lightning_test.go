@@ -327,23 +327,27 @@ func TestBudget(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := getTestDb(t)
 
-			c := common{database: db, swapperType: tc.swapperType}
+			c := shared{database: db}
+			var swapperType SwapperType
 			get := func(createIfMissing bool) (*Budget, error) {
-				var cfg BudgetConfig
+				var cfg budgetConfig
 				if tc.swapperType == Lightning {
 					cfg = &SerializedLnConfig{
 						Budget:         tc.budget,
 						BudgetInterval: uint64(tc.interval.Seconds()),
 					}
+					swapperType = Lightning
 				} else {
 					cfg = &SerializedChainConfig{
 						Budget:         tc.budget,
 						BudgetInterval: uint64(tc.interval.Seconds()),
 					}
+					swapperType = Chain
 				}
 
 				return c.GetCurrentBudget(
 					createIfMissing,
+					swapperType,
 					cfg,
 					database.DefaultEntityId,
 				)
@@ -373,7 +377,7 @@ func TestBudget(t *testing.T) {
 
 	t.Run("Missing", func(t *testing.T) {
 		swapper, _ := getLnSwapper(t, &SerializedLnConfig{})
-		budget, err := swapper.GetCurrentBudget(false)
+		budget, err := swapper.cfg.GetCurrentBudget(false)
 		require.NoError(t, err)
 		require.Nil(t, budget)
 	})
@@ -564,8 +568,8 @@ func TestStrategies(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := NewLightningConfig(tc.config)
-			require.NoError(t, cfg.Init(nil))
+			cfg := NewLightningConfig(tc.config, shared{onchain: getOnchain()})
+			require.NoError(t, cfg.Init())
 			if tc.channels == nil {
 				tc.channels = channels
 			}
@@ -651,7 +655,7 @@ func TestDismissedChannels(t *testing.T) {
 
 			tc.fakeSwaps.create(t, db)
 
-			dismissed, err := swapper.getDismissedChannels()
+			dismissed, err := swapper.cfg.getDismissedChannels()
 			require.NoError(t, err)
 			require.Equal(t, tc.dismissed, dismissed)
 		})
@@ -732,7 +736,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			pairInfo := newPairInfo()
 			ln.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
 
-			validated, err := swapper.validateRecommendations([]*lightningRecommendation{tc.recommendation}, int64(tc.config.Budget))
+			validated, err := swapper.cfg.validateRecommendations([]*lightningRecommendation{tc.recommendation}, int64(tc.config.Budget))
 			require.NoError(t, err)
 			require.Equal(t, tc.outcome, validated[0].DismissedReasons)
 		})

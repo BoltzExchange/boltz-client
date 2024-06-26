@@ -73,10 +73,8 @@ func (server *RpcServer) Init(
 		locked: true,
 	}
 
-	swapper := &autoswap.AutoSwapper{
-		Rpc: routedServer,
-	}
-	swapper.Init(database, onchain, autoSwapConfigPath)
+	swapper := &autoswap.AutoSwap{}
+	swapper.Init(database, onchain, autoSwapConfigPath, routedServer)
 	routedServer.swapper = swapper
 
 	routedAutoSwapServer := &routedAutoSwapServer{

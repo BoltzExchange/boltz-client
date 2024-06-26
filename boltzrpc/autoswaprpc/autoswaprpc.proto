@@ -87,7 +87,6 @@ message Status {
 message GetStatusResponse {
   optional Status lightning = 1;
   optional Status chain = 2;
-  optional string error = 3;
 }
 
 message GetConfigRequest {}

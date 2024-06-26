@@ -39,7 +39,7 @@ func newPairInfo() *boltzrpc.PairInfo {
 }
 
 func TestChainSwapper(t *testing.T) {
-	setup := func(t *testing.T) (*AutoSwapper, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
+	setup := func(t *testing.T) (*AutoSwap, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
 		name := database.DefaultEntityName
 		config := &SerializedChainConfig{
 			MaxBalance:    500,
@@ -64,6 +64,7 @@ func TestChainSwapper(t *testing.T) {
 
 	t.Run("GetRecommendation", func(t *testing.T) {
 		_, chainSwapper, rpcMock, fromWallet := setup(t)
+		chainConfig := chainSwapper.cfg
 		pairInfo := newPairInfo()
 		rpcMock.EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(pairInfo, nil)
 
@@ -82,7 +83,7 @@ func TestChainSwapper(t *testing.T) {
 				},
 			}}.create(t, chainSwapper.database)
 
-			recommendation, err := chainSwapper.GetRecommendation()
+			recommendation, err := chainConfig.GetRecommendation()
 			require.NoError(t, err)
 			require.NotZero(t, recommendation.FeeEstimate)
 			require.Empty(t, recommendation.DismissedReasons)
@@ -92,13 +93,13 @@ func TestChainSwapper(t *testing.T) {
 		t.Run("Dismissed", func(t *testing.T) {
 			fakeSwaps{chainSwaps: []database.ChainSwap{
 				{
-					EntityId: chainSwapper.cfg.entity.Id,
+					EntityId: chainConfig.entity.Id,
 				},
 			}}.create(t, chainSwapper.database)
 
 			pairInfo.Fees.MinerFees = 1000000
 			pairInfo.Limits.Minimal = 2 * expectedAmount
-			recommendation, err := chainSwapper.GetRecommendation()
+			recommendation, err := chainConfig.GetRecommendation()
 			require.NoError(t, err)
 			require.Contains(t, recommendation.DismissedReasons, ReasonBudgetExceeded)
 			require.Contains(t, recommendation.DismissedReasons, ReasonMaxFeePercent)
@@ -110,7 +111,7 @@ func TestChainSwapper(t *testing.T) {
 		t.Run("NoBalance", func(t *testing.T) {
 			balance.Total = 100
 			balance.Confirmed = 100
-			recommendation, err := chainSwapper.GetRecommendation()
+			recommendation, err := chainConfig.GetRecommendation()
 			require.NoError(t, err)
 			require.Nil(t, recommendation)
 		})
@@ -130,9 +131,9 @@ func TestChainSwapper(t *testing.T) {
 			return nil
 		}).Once()
 
-		require.NoError(t, chainSwapper.execute(&ChainRecommendation{Amount: amount}))
-		require.NoError(t, chainSwapper.execute(nil))
-		require.NoError(t, chainSwapper.execute(&ChainRecommendation{Amount: amount, DismissedReasons: []string{ReasonBudgetExceeded}}))
+		require.NoError(t, chainSwapper.cfg.execute(&ChainRecommendation{Amount: amount}))
+		require.NoError(t, chainSwapper.cfg.execute(nil))
+		require.NoError(t, chainSwapper.cfg.execute(&ChainRecommendation{Amount: amount, DismissedReasons: []string{ReasonBudgetExceeded}}))
 	})
 
 	t.Run("Start", func(t *testing.T) {
@@ -150,7 +151,7 @@ func TestChainSwapper(t *testing.T) {
 		rpcMock.EXPECT().GetBlockUpdates(fromWallet.GetWalletInfo().Currency).Return(blockUpdates, func() {
 			cleaned = true
 			close(blockUpdates)
-		}).Once()
+		})
 
 		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{
 			Config:    &autoswaprpc.ChainConfig{Enabled: true},

@@ -3,7 +3,10 @@ package autoswap
 import (
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"slices"
 	"time"
 
@@ -13,39 +16,184 @@ import (
 	"github.com/BoltzExchange/boltz-client/logger"
 )
 
-type LightningSwapper struct {
-	common
-	rpc RpcProvider
+type LightningSwapper = swapper[*LightningConfig]
 
-	cfg *LightningConfig
+type SerializedLnConfig = autoswaprpc.LightningConfig
+
+type LightningConfig struct {
+	*SerializedLnConfig
+	shared
+
+	maxFeePercent utils.Percentage
+	currency      boltz.Currency
+	swapType      boltz.SwapType
+	maxBalance    Balance
+	minBalance    Balance
+	strategy      Strategy
+	description   string
+	walletId      *database.Id
 }
 
-func (swapper *LightningSwapper) setConfig(cfg *LightningConfig) {
-	logger.Debugf("Setting lightning autoswap config: %+v", cfg)
-	message := fmt.Sprintf("Lightning autoswap: %v", cfg.description)
-	if cfg.swapType != "" {
-		message += " of type " + string(cfg.swapType)
-	}
-	message += " for currency " + string(cfg.currency)
+func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
+	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared}
+}
 
-	logger.Info(message)
-	swapper.cfg = cfg
-	if cfg.Enabled {
-		swapper.start()
+func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {
+	return merge(&SerializedLnConfig{
+		FailureBackoff:      24 * 60 * 60,
+		MaxFeePercent:       1,
+		ChannelPollInterval: 30,
+		Budget:              100000,
+		BudgetInterval:      7 * 60 * 60 * 24,
+	}, config)
+}
+
+func DefaultLightningConfig() *SerializedLnConfig {
+	// we can't include values like currency in the base config
+	// since we couldn't know wether the user didn't set the currency at all or set it to BTC
+	return withLightningBase(&SerializedLnConfig{
+		MaxBalancePercent: 75,
+		MinBalancePercent: 25,
+		Currency:          boltzrpc.Currency_LBTC,
+	})
+}
+
+func (cfg *LightningConfig) Init() error {
+	var err error
+	cfg.swapType, err = boltz.ParseSwapType(cfg.SwapType)
+	if err != nil {
+		return fmt.Errorf("invalid swap type: %w", err)
+	}
+
+	cfg.currency = utils.ParseCurrency(&cfg.Currency)
+	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
+	cfg.maxBalance = Balance{Absolute: cfg.MaxBalance}
+	cfg.minBalance = Balance{Absolute: cfg.MinBalance}
+
+	// Only consider relative values if absolute values are not set
+	if cfg.MaxBalance == 0 && cfg.MinBalance == 0 {
+		cfg.maxBalance.Relative = utils.Percentage(cfg.MaxBalancePercent)
+		cfg.minBalance.Relative = utils.Percentage(cfg.MinBalancePercent)
+	}
+
+	if cfg.minBalance.IsZero() && cfg.maxBalance.IsZero() {
+		return errors.New("no balance threshold set")
+	}
+
+	if !cfg.maxBalance.IsZero() && !cfg.minBalance.IsZero() {
+		if cfg.minBalance.Get(100) > cfg.maxBalance.Get(100) {
+			return errors.New("min balance must be smaller than max balance")
+		}
+	}
+
+	if cfg.PerChannel {
+		if cfg.minBalance.IsAbsolute() {
+			return errors.New("absolute balance threshold not supported for per channel rebalancing")
+		}
+		if cfg.AllowNormalSwaps() {
+			return errors.New("per channel rebalancing only supported for reverse swaps")
+		}
+		cfg.strategy = cfg.perChannelStrategy
+		cfg.description = "per channel"
 	} else {
-		swapper.Stop()
+		cfg.strategy = cfg.totalBalanceStrategy
+		cfg.description = "total balance"
 	}
+
+	if cfg.minBalance.IsZero() {
+		if cfg.AllowNormalSwaps() {
+			return errors.New("min balance must be set for normal swaps")
+		}
+		cfg.description += fmt.Sprintf(" (max %s)", cfg.maxBalance)
+	} else if cfg.maxBalance.IsZero() {
+		if cfg.AllowReverseSwaps() {
+			return errors.New("max balance must be set for reverse swaps")
+		}
+		cfg.description += fmt.Sprintf(" (min %s)", cfg.minBalance)
+	} else {
+		cfg.description += fmt.Sprintf(" (min %s, max %s)", cfg.minBalance, cfg.maxBalance)
+	}
+
+	if cfg.swapType != "" {
+		cfg.description += " of type " + string(cfg.swapType)
+	}
+	cfg.description += " for currency " + string(cfg.currency)
+
+	if cfg.Enabled {
+		return cfg.InitWallet()
+	}
+
+	return nil
 }
 
-func (swapper *LightningSwapper) getDismissedChannels() (DismissedChannels, error) {
+func (cfg *LightningConfig) InitWallet() (err error) {
+	if cfg.onchain == nil {
+		return errors.New("can not initialize wallet without onchain")
+	}
+	var wallet onchain.Wallet
+	if cfg.Wallet != "" {
+		wallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
+			Name:          &cfg.Wallet,
+			Currency:      cfg.currency,
+			AllowReadonly: !cfg.AllowNormalSwaps(),
+		})
+		if err != nil {
+			err = fmt.Errorf("could not find from wallet: %s", err)
+		} else {
+			id := wallet.GetWalletInfo().Id
+			cfg.walletId = &id
+		}
+	} else if cfg.AllowNormalSwaps() {
+		err = errors.New("wallet name must be set for normal swaps")
+	} else if cfg.StaticAddress != "" {
+		if err = boltz.ValidateAddress(cfg.onchain.Network, cfg.StaticAddress, cfg.currency); err != nil {
+			err = fmt.Errorf("invalid static address %s: %w", cfg.StaticAddress, err)
+		}
+	} else {
+		err = errors.New("static address or wallet must be set")
+	}
+	return err
+}
+
+func (cfg *LightningConfig) Description() string {
+	return cfg.description
+}
+
+func (cfg *LightningConfig) GetPair(swapType boltz.SwapType) *boltzrpc.Pair {
+	currency := cfg.SerializedLnConfig.Currency
+	result := &boltzrpc.Pair{}
+	switch swapType {
+	case boltz.NormalSwap:
+		result.From = currency
+		result.To = boltzrpc.Currency_BTC
+	case boltz.ReverseSwap:
+		result.From = boltzrpc.Currency_BTC
+		result.To = currency
+	}
+	return result
+}
+
+func (cfg *LightningConfig) Allowed(swapType boltz.SwapType) bool {
+	return cfg.swapType == swapType || cfg.swapType == ""
+}
+
+func (cfg *LightningConfig) AllowNormalSwaps() bool {
+	return cfg.Allowed(boltz.NormalSwap)
+}
+
+func (cfg *LightningConfig) AllowReverseSwaps() bool {
+	return cfg.Allowed(boltz.ReverseSwap)
+}
+
+func (cfg *LightningConfig) getDismissedChannels() (DismissedChannels, error) {
 	reasons := make(DismissedChannels)
 
-	swaps, err := swapper.database.QueryPendingSwaps()
+	swaps, err := cfg.database.QueryPendingSwaps()
 	if err != nil {
 		return nil, errors.New("Could not query pending swaps: " + err.Error())
 	}
 
-	reverseSwaps, err := swapper.database.QueryPendingReverseSwaps()
+	reverseSwaps, err := cfg.database.QueryPendingReverseSwaps()
 	if err != nil {
 		return nil, errors.New("Could not query pending reverse swaps: " + err.Error())
 	}
@@ -57,13 +205,13 @@ func (swapper *LightningSwapper) getDismissedChannels() (DismissedChannels, erro
 		reasons.addChannels(swap.ChanIds, ReasonPendingSwap)
 	}
 
-	since := time.Now().Add(time.Duration(-swapper.cfg.FailureBackoff) * time.Second)
-	failedSwaps, err := swapper.database.QueryFailedSwaps(since)
+	since := time.Now().Add(time.Duration(-cfg.FailureBackoff) * time.Second)
+	failedSwaps, err := cfg.database.QueryFailedSwaps(since)
 	if err != nil {
 		return nil, errors.New("Could not query failed swaps: " + err.Error())
 	}
 
-	failedReverseSwaps, err := swapper.database.QueryFailedReverseSwaps(since)
+	failedReverseSwaps, err := cfg.database.QueryFailedReverseSwaps(since)
 	if err != nil {
 		return nil, errors.New("Could not query failed reverse swaps: " + err.Error())
 	}
@@ -89,11 +237,11 @@ type LightningRecommendation struct {
 	Channel *lightning.LightningChannel
 }
 
-func (swapper *LightningSwapper) validateRecommendations(
+func (cfg *LightningConfig) validateRecommendations(
 	recommendations []*lightningRecommendation,
 	budget int64,
 ) ([]*LightningRecommendation, error) {
-	dismissedChannels, err := swapper.getDismissedChannels()
+	dismissedChannels, err := cfg.getDismissedChannels()
 	if err != nil {
 		return nil, err
 	}
@@ -111,14 +259,14 @@ func (swapper *LightningSwapper) validateRecommendations(
 		if recommendation.Type == boltz.ReverseSwap {
 			swapType = boltzrpc.SwapType_REVERSE
 		}
-		pairInfo, err := swapper.rpc.GetAutoSwapPairInfo(swapType, swapper.cfg.GetPair(recommendation.Type))
+		pairInfo, err := cfg.rpc.GetAutoSwapPairInfo(swapType, cfg.GetPair(recommendation.Type))
 		if err != nil {
 			logger.Warn("Could not get pair info: " + err.Error())
 			continue
 		}
 
 		params := checkParams{
-			MaxFeePercent:    swapper.cfg.maxFeePercent,
+			MaxFeePercent:    cfg.maxFeePercent,
 			Budget:           &budget,
 			Pair:             pairInfo,
 			DismissedReasons: dismissedChannels[recommendation.Channel.GetId()],
@@ -134,112 +282,91 @@ func (swapper *LightningSwapper) validateRecommendations(
 	return checked, nil
 }
 
-func (swapper *LightningSwapper) GetSwapRecommendations() ([]*LightningRecommendation, error) {
-	channels, err := swapper.rpc.GetLightningChannels()
+func (cfg *LightningConfig) GetSwapRecommendations() ([]*LightningRecommendation, error) {
+	channels, err := cfg.rpc.GetLightningChannels()
 	if err != nil {
 		return nil, err
 	}
 
-	recommendations := swapper.cfg.strategy(channels)
+	recommendations := cfg.strategy(channels)
 
-	budget, err := swapper.GetCurrentBudget(true)
+	budget, err := cfg.GetCurrentBudget(true)
 	if err != nil {
 		return nil, errors.New("Could not get budget: " + err.Error())
 	}
 
 	logger.Debugf("Current autoswap budget: %+v", *budget)
 
-	return swapper.validateRecommendations(recommendations, budget.Amount)
+	return cfg.validateRecommendations(recommendations, budget.Amount)
 }
 
-func (swapper *LightningSwapper) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
-	return swapper.common.GetCurrentBudget(
+func (cfg *LightningConfig) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
+	return cfg.shared.GetCurrentBudget(
 		createIfMissing,
-		swapper.cfg,
+		Lightning,
+		cfg,
 		database.DefaultEntityId,
 	)
 }
 
-func (swapper *LightningSwapper) execute(recommendation *LightningRecommendation) error {
+func (cfg *LightningConfig) execute(recommendation *LightningRecommendation) error {
 	var chanIds []string
 	if chanId := recommendation.Channel.GetId(); chanId != 0 {
 		chanIds = append(chanIds, chanId.ToCln())
 	}
-	pair := swapper.cfg.GetPair(recommendation.Type)
+	pair := cfg.GetPair(recommendation.Type)
 	var err error
 	if recommendation.Type == boltz.ReverseSwap {
-		err = swapper.rpc.CreateAutoReverseSwap(&database.DefaultEntity, &boltzrpc.CreateReverseSwapRequest{
+		err = cfg.rpc.CreateAutoReverseSwap(&database.DefaultEntity, &boltzrpc.CreateReverseSwapRequest{
 			Amount:         recommendation.Amount,
-			Address:        swapper.cfg.StaticAddress,
-			AcceptZeroConf: swapper.cfg.AcceptZeroConf,
+			Address:        cfg.StaticAddress,
+			AcceptZeroConf: cfg.AcceptZeroConf,
 			Pair:           pair,
 			ChanIds:        chanIds,
-			WalletId:       swapper.cfg.walletId,
+			WalletId:       cfg.walletId,
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
-		err = swapper.rpc.CreateAutoSwap(&database.DefaultEntity, &boltzrpc.CreateSwapRequest{
+		err = cfg.rpc.CreateAutoSwap(&database.DefaultEntity, &boltzrpc.CreateSwapRequest{
 			Amount: recommendation.Amount,
 			Pair:   pair,
 			//ChanIds:          chanIds,
 			SendFromInternal: true,
-			WalletId:         swapper.cfg.walletId,
+			WalletId:         cfg.walletId,
 		})
 	}
 	return err
 }
 
-func (swapper *LightningSwapper) Restart() {
-	swapper.Stop()
-	if swapper.cfg.Enabled {
-		if err := swapper.cfg.InitWallet(swapper.onchain); err != nil {
-			logger.Errorf("Autoswap wallet configuration has become invalid: %s", err)
-			return
+func (cfg *LightningConfig) run(stop <-chan bool) {
+	ticker := time.NewTicker(time.Duration(cfg.ChannelPollInterval) * time.Second)
+
+	for {
+		recommendations, err := cfg.GetSwapRecommendations()
+		if err != nil {
+			logger.Warn("Could not fetch swap recommendations: " + err.Error())
 		}
-		swapper.start()
-	}
-}
+		if len(recommendations) > 0 {
+			logger.Infof("Got %v swap recommendations", len(recommendations))
+			for _, recommendation := range recommendations {
+				if recommendation.Dismissed() {
+					logger.Infof("Skipping swap recommendation %v because of %v", recommendation, recommendation.DismissedReasons)
+					continue
+				}
 
-func (swapper *LightningSwapper) start() {
-	swapper.Stop()
+				logger.Infof("Executing Swap recommendation: %+v", recommendation)
 
-	logger.Info("Starting auto swapper")
-
-	swapper.stop = make(chan bool)
-	go func() {
-		ticker := time.NewTicker(time.Duration(swapper.cfg.ChannelPollInterval) * time.Second)
-
-		for {
-			recommendations, err := swapper.GetSwapRecommendations()
-			if err != nil {
-				logger.Warn("Could not fetch swap recommendations: " + err.Error())
-			}
-			if len(recommendations) > 0 {
-				logger.Infof("Got %v swap recommendations", len(recommendations))
-				for _, recommendation := range recommendations {
-					if recommendation.Dismissed() {
-						logger.Infof("Skipping swap recommendation %v because of %v", recommendation, recommendation.DismissedReasons)
-						continue
-					}
-
-					logger.Infof("Executing Swap recommendation: %+v", recommendation)
-
-					err := swapper.execute(recommendation)
-					if err != nil {
-						logger.Error("Could not act on swap recommendation : " + err.Error())
-					}
+				err := cfg.execute(recommendation)
+				if err != nil {
+					logger.Error("Could not act on swap recommendation : " + err.Error())
 				}
 			}
-			// wait for ticker after executing so that it runs immediately upon startup
-			select {
-			case <-ticker.C:
-				continue
-			case <-swapper.stop:
-				return
-			}
 		}
-	}()
-}
-
-func (swapper *LightningSwapper) GetConfig() *LightningConfig {
-	return swapper.cfg
+		// wait for ticker after executing so that it runs immediately upon startup
+		select {
+		case <-ticker.C:
+			continue
+		case <-stop:
+			return
+		}
+	}
 }

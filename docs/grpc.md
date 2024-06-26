@@ -1490,7 +1490,6 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `lightning` | [`Status`](#status) | optional |  |
 | `chain` | [`Status`](#status) | optional |  |
-| `error` | [`string`](#string) | optional |  |
 
 
 

@@ -51,7 +51,7 @@ type routedBoltzServer struct {
 	boltz     *boltz.Api
 	nursery   *nursery.Nursery
 	database  *database.Database
-	swapper   *autoswap.AutoSwapper
+	swapper   *autoswap.AutoSwap
 	macaroon  *macaroons.Service
 
 	stop   chan bool

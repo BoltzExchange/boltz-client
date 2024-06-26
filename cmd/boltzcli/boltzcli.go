@@ -37,7 +37,7 @@ func main() {
 			if strings.Contains(msg, "connection refused") {
 				conn := getConnection(context)
 				fmt.Printf("could not connect to boltzd. make sure it is running at %s:%d and try again\n", conn.Host, conn.Port)
-			} else if strings.Contains(msg, "autoswap not configured") {
+			} else if strings.Contains(msg, "autoswap") {
 				fmt.Println(msg)
 				fmt.Println("run autoswap setup to reset or initialize autoswap")
 			} else {
