@@ -262,8 +262,7 @@ func (database *Database) QuerySwaps(args SwapQuery) ([]*Swap, error) {
 }
 
 func (database *Database) QueryPendingSwaps() ([]*Swap, error) {
-	state := boltzrpc.SwapState_PENDING
-	return database.QuerySwaps(SwapQuery{State: &state})
+	return database.QuerySwaps(PendingSwapQuery)
 }
 
 const refundableSwapsQuery = `

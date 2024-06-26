@@ -1219,6 +1219,95 @@ func TestReverseSwap(t *testing.T) {
 		test.MineBlock()
 	})
 
+	t.Run("ManualClaim", func(t *testing.T) {
+		cfg := loadConfig(t)
+		chain := getOnchain(t, cfg)
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+		defer stop()
+
+		createClaimable := func(t *testing.T) (*boltzrpc.ReverseSwapInfo, streamFunc, streamStatusFunc) {
+			returnImmediately := false
+
+			response, err := client.CreateWallet(&boltzrpc.WalletParams{
+				Currency: boltzrpc.Currency_BTC,
+				Name:     "temp",
+			})
+			require.NoError(t, err)
+			swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+				Amount:            100000,
+				ReturnImmediately: &returnImmediately,
+				WalletId:          &response.Wallet.Id,
+			})
+			require.NoError(t, err)
+
+			stream, statusStream := swapStream(t, client, swap.Id)
+			statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+
+			_, err = client.RemoveWallet(response.Wallet.Id)
+			require.NoError(t, err)
+
+			test.MineBlock()
+
+			info, err := client.GetInfo()
+			require.NoError(t, err)
+			require.Len(t, info.ClaimableSwaps, 1)
+			require.Equal(t, info.ClaimableSwaps[0], swap.Id)
+
+			return stream(boltzrpc.SwapState_ERROR).ReverseSwap, stream, statusStream
+		}
+
+		t.Run("Address", func(t *testing.T) {
+			info, _, _ := createClaimable(t)
+
+			destination := &boltzrpc.ClaimSwapsRequest_Address{}
+			request := &boltzrpc.ClaimSwapsRequest{SwapIds: []string{info.Id}, Destination: destination}
+			t.Run("Invalid", func(t *testing.T) {
+				destination.Address = "invalid"
+				_, err := client.ClaimSwaps(request)
+				requireCode(t, err, codes.InvalidArgument)
+
+				_, err = client.ClaimSwaps(&boltzrpc.ClaimSwapsRequest{SwapIds: []string{"invalid"}})
+				requireCode(t, err, codes.NotFound)
+			})
+
+			t.Run("Valid", func(t *testing.T) {
+				destination.Address = test.BtcCli("getnewaddress")
+				response, err := client.ClaimSwaps(request)
+				require.NoError(t, err)
+
+				checkTxOutAddress(t, chain, boltz.CurrencyBtc, response.TransactionId, destination.Address, true)
+
+				_, err = client.ClaimSwaps(request)
+				requireCode(t, err, codes.NotFound)
+			})
+		})
+		t.Run("Wallet", func(t *testing.T) {
+			info, _, _ := createClaimable(t)
+
+			destination := &boltzrpc.ClaimSwapsRequest_WalletId{}
+			request := &boltzrpc.ClaimSwapsRequest{SwapIds: []string{info.Id}, Destination: destination}
+
+			t.Run("Invalid", func(t *testing.T) {
+				destination.WalletId = 234213412341234
+				_, err := client.ClaimSwaps(request)
+				requireCode(t, err, codes.NotFound)
+			})
+
+			t.Run("Valid", func(t *testing.T) {
+				destination.WalletId = walletId(t, client, boltzrpc.Currency_BTC)
+				_, err := client.ClaimSwaps(request)
+				require.NoError(t, err)
+
+				fromWallet, err := client.GetWalletById(destination.WalletId)
+				require.NoError(t, err)
+				require.NotZero(t, fromWallet.Balance.Unconfirmed)
+
+				_, err = client.ClaimSwaps(request)
+				requireCode(t, err, codes.NotFound)
+			})
+		})
+	})
+
 }
 
 func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
@@ -1573,6 +1662,99 @@ func TestChainSwap(t *testing.T) {
 					})
 				}
 			})
+
+			if tc.to == boltzrpc.Currency_BTC {
+				t.Run("Manual", func(t *testing.T) {
+					createClaimable := func(t *testing.T) (*boltzrpc.ChainSwapInfo, streamFunc, streamStatusFunc) {
+						response, err := client.CreateWallet(&boltzrpc.WalletParams{
+							Currency: tc.to,
+							Name:     "temp",
+						})
+						require.NoError(t, err)
+						externalPay := true
+						swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+							Pair:        pair,
+							ExternalPay: &externalPay,
+							ToWalletId:  &response.Wallet.Id,
+							Amount:      100000,
+						})
+						require.NoError(t, err)
+
+						test.SendToAddress(fromCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+						test.MineBlock()
+
+						_, err = client.RemoveWallet(response.Wallet.Id)
+						require.NoError(t, err)
+
+						stream, statusStream := swapStream(t, client, swap.Id)
+						statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
+
+						test.MineBlock()
+
+						info, err := client.GetInfo()
+						require.NoError(t, err)
+						require.Len(t, info.ClaimableSwaps, 1)
+						require.Equal(t, info.ClaimableSwaps[0], swap.Id)
+
+						return stream(boltzrpc.SwapState_ERROR).ChainSwap, stream, statusStream
+					}
+
+					t.Run("Address", func(t *testing.T) {
+						info, _, _ := createClaimable(t)
+
+						destination := &boltzrpc.ClaimSwapsRequest_Address{}
+						request := &boltzrpc.ClaimSwapsRequest{SwapIds: []string{info.Id}, Destination: destination}
+						t.Run("Invalid", func(t *testing.T) {
+							destination.Address = "invalid"
+							_, err := client.ClaimSwaps(request)
+							requireCode(t, err, codes.InvalidArgument)
+
+							_, err = client.ClaimSwaps(&boltzrpc.ClaimSwapsRequest{SwapIds: []string{"invalid"}})
+							requireCode(t, err, codes.NotFound)
+						})
+
+						t.Run("Valid", func(t *testing.T) {
+							destination.Address = toAddress
+							response, err := client.ClaimSwaps(request)
+							require.NoError(t, err)
+
+							checkTxOutAddress(t, chain, parseCurrency(pair.To), response.TransactionId, toAddress, true)
+							checkSwap(t, info.Id)
+
+							_, err = client.ClaimSwaps(request)
+							requireCode(t, err, codes.NotFound)
+						})
+					})
+					t.Run("Wallet", func(t *testing.T) {
+						info, stream, _ := createClaimable(t)
+
+						destination := &boltzrpc.ClaimSwapsRequest_WalletId{}
+						request := &boltzrpc.ClaimSwapsRequest{SwapIds: []string{info.Id}, Destination: destination}
+
+						t.Run("Invalid", func(t *testing.T) {
+							destination.WalletId = 234213412341234
+							_, err := client.ClaimSwaps(request)
+							requireCode(t, err, codes.NotFound)
+						})
+
+						t.Run("Valid", func(t *testing.T) {
+							destination.WalletId = toWalletId
+							_, err := client.ClaimSwaps(request)
+							require.NoError(t, err)
+
+							info = stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
+							checkSwap(t, info.Id)
+
+							fromWallet, err := client.GetWalletById(toWalletId)
+							require.NoError(t, err)
+							require.NotZero(t, fromWallet.Balance.Unconfirmed)
+
+							_, err = client.ClaimSwaps(request)
+							requireCode(t, err, codes.NotFound)
+						})
+					})
+				})
+			}
 		})
 	}
 }

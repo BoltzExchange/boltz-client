@@ -35,9 +35,15 @@ service Boltz {
 
     /*
     Refund a failed swap manually.
-    This is only required when no refund address has been set or the swap does not have an associated wallet.
+    This is only required when no refund address has been set and the swap does not have an associated wallet.
     */
     rpc RefundSwap (RefundSwapRequest) returns (GetSwapInfoResponse);
+
+    /*
+    Claim swaps manually.
+    This is only required when no claim address has been set and the swap does not have an associated wallet.
+    */
+    rpc ClaimSwaps (ClaimSwapsRequest) returns (ClaimSwapsResponse);
 
     /*
     Gets all available information about a swap from the database.
@@ -346,6 +352,8 @@ message GetInfoResponse {
     repeated string refundable_swaps = 12;
     // the currently authenticated tenant
     optional Tenant tenant = 13;
+    // swaps that need a manual interaction to claim
+    repeated string claimable_swaps = 14;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -400,12 +408,25 @@ message ListSwapsResponse {
     repeated ReverseSwapInfo reverse_swaps = 3;
     repeated ChainSwapInfo chain_swaps = 4;
 }
+
 message RefundSwapRequest {
     string id = 1;
     oneof destination {
         string address = 2;
         uint64 wallet_id = 3;
     }
+}
+
+message ClaimSwapsRequest {
+    repeated string swap_ids = 1;
+    oneof destination {
+        string address = 2;
+        uint64 wallet_id = 3;
+    }
+}
+
+message ClaimSwapsResponse {
+    string transaction_id = 1;
 }
 
 message GetSwapInfoRequest {

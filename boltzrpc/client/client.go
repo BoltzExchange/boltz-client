@@ -53,6 +53,10 @@ func (boltz *Boltz) RefundSwap(request *boltzrpc.RefundSwapRequest) (*boltzrpc.G
 	return boltz.Client.RefundSwap(boltz.Ctx, request)
 }
 
+func (boltz *Boltz) ClaimSwaps(request *boltzrpc.ClaimSwapsRequest) (*boltzrpc.ClaimSwapsResponse, error) {
+	return boltz.Client.ClaimSwaps(boltz.Ctx, request)
+}
+
 func (boltz *Boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error) {
 	return boltz.Client.GetSwapInfo(boltz.Ctx, &boltzrpc.GetSwapInfoRequest{
 		Id: id,
