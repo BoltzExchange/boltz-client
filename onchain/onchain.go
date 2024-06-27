@@ -261,6 +261,9 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 	}
 
 	retry := 5
+	if onchain.Network == boltz.Regtest {
+		retry = 0
+	}
 	for {
 		confirmed, err := chain.Tx.IsTransactionConfirmed(txId)
 		if err != nil || !confirmed {
