@@ -229,6 +229,9 @@ func (database *Database) UpdateChainSwapState(chainSwap *ChainSwap, state boltz
 	chainSwap.Error = error
 
 	_, err := database.Exec("UPDATE chainSwaps SET state = ?, error = ? WHERE id = ?", state, error, chainSwap.Id)
+	if err != nil {
+		return fmt.Errorf("could not update Chain swap %s state: %w", chainSwap.Id, err)
+	}
 	return err
 }
 

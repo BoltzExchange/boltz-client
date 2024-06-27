@@ -345,7 +345,10 @@ func (database *Database) UpdateSwapState(swap *Swap, state boltzrpc.SwapState, 
 	swap.Error = error
 
 	_, err := database.Exec("UPDATE swaps SET state = ?, error = ? WHERE id = ?", state, error, swap.Id)
-	return err
+	if err != nil {
+		return fmt.Errorf("could not update state of Swap %s: %w", swap.Id, err)
+	}
+	return nil
 }
 
 func (database *Database) UpdateSwapStatus(swap *Swap, status boltz.SwapUpdateEvent) error {
