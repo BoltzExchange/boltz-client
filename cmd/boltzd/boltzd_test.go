@@ -811,7 +811,7 @@ func TestSwap(t *testing.T) {
 							checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
 						})
 
-						if tc.from == boltzrpc.Currency_LBTC {
+						if tc.from == boltzrpc.Currency_BTC {
 							t.Run("Manual", func(t *testing.T) {
 								setup := func(t *testing.T) *boltzrpc.SwapInfo {
 									_, statusStream := createFailed(t, "")
@@ -1372,7 +1372,7 @@ func TestChainSwap(t *testing.T) {
 					checkTxOutAddress(t, chain, from, info.FromData.GetTransactionId(), refundAddress, true)
 				})
 
-				if tc.from == boltzrpc.Currency_LBTC {
+				if tc.from == boltzrpc.Currency_BTC {
 
 					t.Run("Manual", func(t *testing.T) {
 						setup := func(t *testing.T) (*boltzrpc.ChainSwapInfo, streamStatusFunc) {
