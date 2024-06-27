@@ -70,8 +70,9 @@ func (server *RpcServer) Init(
 		database:  database,
 		onchain:   onchain,
 
-		stop:   server.Stop,
-		locked: true,
+		stop:    server.Stop,
+		locked:  true,
+		syncing: false,
 	}
 
 	swapper := &autoswap.AutoSwapper{
