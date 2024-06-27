@@ -716,21 +716,35 @@ func TestSwap(t *testing.T) {
 					defer stop()
 
 					t.Run("Normal", func(t *testing.T) {
-						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-							Amount:           100000,
-							Pair:             pair,
-							SendFromInternal: true,
+						t.Run("EnoughBalance", func(t *testing.T) {
+
+							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Amount:           100000,
+								Pair:             pair,
+								SendFromInternal: true,
+							})
+							require.NoError(t, err)
+							require.NotEmpty(t, swap.TxId)
+							require.NotZero(t, swap.TimeoutHours)
+							require.NotZero(t, swap.TimeoutBlockHeight)
+
+							stream, _ := swapStream(t, client, swap.Id)
+							test.MineBlock()
+
+							info := stream(boltzrpc.SwapState_SUCCESSFUL)
+							checkSwap(t, info.Swap)
 						})
-						require.NoError(t, err)
-						require.NotEmpty(t, swap.TxId)
-						require.NotZero(t, swap.TimeoutHours)
-						require.NotZero(t, swap.TimeoutBlockHeight)
 
-						stream, _ := swapStream(t, client, swap.Id)
-						test.MineBlock()
-
-						info := stream(boltzrpc.SwapState_SUCCESSFUL)
-						checkSwap(t, info.Swap)
+						t.Run("NoBalance", func(t *testing.T) {
+							emptyWalletId := emptyWallet(t, client, tc.from)
+							_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Amount:           100000,
+								Pair:             pair,
+								SendFromInternal: true,
+								WalletId:         &emptyWalletId,
+							})
+							require.Error(t, err)
+						})
 					})
 					t.Run("Deposit", func(t *testing.T) {
 						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
@@ -1090,11 +1104,25 @@ func TestReverseSwap(t *testing.T) {
 	})
 
 }
+
 func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
 	wallets, err := client.GetWallets(&currency, false)
 	require.NoError(t, err)
 	require.NotEmpty(t, wallets.Wallets)
 	return wallets.Wallets[0].Id
+}
+
+func emptyWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
+	response, err := client.CreateWallet(&boltzrpc.WalletParams{
+		Currency: currency,
+		Name:     "empty",
+	})
+	if err != nil {
+		existing, err := client.GetWallet("empty")
+		require.NoError(t, err)
+		return existing.Id
+	}
+	return response.Wallet.Id
 }
 
 func TestChainSwap(t *testing.T) {
@@ -1229,33 +1257,46 @@ func TestChainSwap(t *testing.T) {
 			}
 
 			t.Run("InternalWallets", func(t *testing.T) {
-				toWallet, err := client.GetWalletById(toWalletId)
-				require.NoError(t, err)
-				prev := toWallet.Balance.Total
-
-				zeroConf := true
-				swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-					Amount:         100000,
-					Pair:           pair,
-					ToWalletId:     &toWalletId,
-					FromWalletId:   &fromWalletId,
-					AcceptZeroConf: &zeroConf,
-				})
-				require.NoError(t, err)
-				require.NotEmpty(t, swap.Id)
-
-				stream, _ := swapStream(t, client, swap.Id)
-				test.MineBlock()
-				stream(boltzrpc.SwapState_SUCCESSFUL)
-
-				// gdk takes too long to sync
-				if tc.to == boltzrpc.Currency_BTC {
-					toWallet, err = client.GetWalletById(toWalletId)
+				t.Run("EnoughBalance", func(t *testing.T) {
+					toWallet, err := client.GetWalletById(toWalletId)
 					require.NoError(t, err)
-					require.Greater(t, toWallet.Balance.Total, prev)
-				}
+					prev := toWallet.Balance.Total
 
-				checkSwap(t, swap.Id)
+					zeroConf := true
+					swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+						Amount:         100000,
+						Pair:           pair,
+						ToWalletId:     &toWalletId,
+						FromWalletId:   &fromWalletId,
+						AcceptZeroConf: &zeroConf,
+					})
+					require.NoError(t, err)
+					require.NotEmpty(t, swap.Id)
+
+					stream, _ := swapStream(t, client, swap.Id)
+					test.MineBlock()
+					stream(boltzrpc.SwapState_SUCCESSFUL)
+
+					// gdk takes too long to sync
+					if tc.to == boltzrpc.Currency_BTC {
+						toWallet, err = client.GetWalletById(toWalletId)
+						require.NoError(t, err)
+						require.Greater(t, toWallet.Balance.Total, prev)
+					}
+
+					checkSwap(t, swap.Id)
+				})
+
+				t.Run("NoBalance", func(t *testing.T) {
+					emptyWalletId := emptyWallet(t, client, tc.from)
+					_, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+						Amount:       100000,
+						Pair:         pair,
+						ToWalletId:   &toWalletId,
+						FromWalletId: &emptyWalletId,
+					})
+					require.Error(t, err)
+				})
 			})
 
 			t.Run("External", func(t *testing.T) {
