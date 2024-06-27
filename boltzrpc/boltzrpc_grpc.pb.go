@@ -25,6 +25,7 @@ const (
 	Boltz_GetPairInfo_FullMethodName          = "/boltzrpc.Boltz/GetPairInfo"
 	Boltz_GetPairs_FullMethodName             = "/boltzrpc.Boltz/GetPairs"
 	Boltz_ListSwaps_FullMethodName            = "/boltzrpc.Boltz/ListSwaps"
+	Boltz_AbandonSwap_FullMethodName          = "/boltzrpc.Boltz/AbandonSwap"
 	Boltz_RefundSwap_FullMethodName           = "/boltzrpc.Boltz/RefundSwap"
 	Boltz_GetSwapInfo_FullMethodName          = "/boltzrpc.Boltz/GetSwapInfo"
 	Boltz_GetSwapInfoStream_FullMethodName    = "/boltzrpc.Boltz/GetSwapInfoStream"
@@ -68,6 +69,8 @@ type BoltzClient interface {
 	GetPairs(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
 	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
+	// Abandons a swap, deleting it from the database.
+	AbandonSwap(ctx context.Context, in *AbandonSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
 	// Refund a failed swap manually.
 	// This is only required when no refund address has been set or the swap does not have an associated wallet.
 	RefundSwap(ctx context.Context, in *RefundSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error)
@@ -181,6 +184,15 @@ func (c *boltzClient) GetPairs(ctx context.Context, in *empty.Empty, opts ...grp
 func (c *boltzClient) ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error) {
 	out := new(ListSwapsResponse)
 	err := c.cc.Invoke(ctx, Boltz_ListSwaps_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) AbandonSwap(ctx context.Context, in *AbandonSwapRequest, opts ...grpc.CallOption) (*GetSwapInfoResponse, error) {
+	out := new(GetSwapInfoResponse)
+	err := c.cc.Invoke(ctx, Boltz_AbandonSwap_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -445,6 +457,8 @@ type BoltzServer interface {
 	GetPairs(context.Context, *empty.Empty) (*GetPairsResponse, error)
 	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
+	// Abandons a swap, deleting it from the database.
+	AbandonSwap(context.Context, *AbandonSwapRequest) (*GetSwapInfoResponse, error)
 	// Refund a failed swap manually.
 	// This is only required when no refund address has been set or the swap does not have an associated wallet.
 	RefundSwap(context.Context, *RefundSwapRequest) (*GetSwapInfoResponse, error)
@@ -529,6 +543,9 @@ func (UnimplementedBoltzServer) GetPairs(context.Context, *empty.Empty) (*GetPai
 }
 func (UnimplementedBoltzServer) ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSwaps not implemented")
+}
+func (UnimplementedBoltzServer) AbandonSwap(context.Context, *AbandonSwapRequest) (*GetSwapInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbandonSwap not implemented")
 }
 func (UnimplementedBoltzServer) RefundSwap(context.Context, *RefundSwapRequest) (*GetSwapInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefundSwap not implemented")
@@ -701,6 +718,24 @@ func _Boltz_ListSwaps_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).ListSwaps(ctx, req.(*ListSwapsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_AbandonSwap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AbandonSwapRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).AbandonSwap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_AbandonSwap_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).AbandonSwap(ctx, req.(*AbandonSwapRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1166,6 +1201,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListSwaps",
 			Handler:    _Boltz_ListSwaps_Handler,
+		},
+		{
+			MethodName: "AbandonSwap",
+			Handler:    _Boltz_AbandonSwap_Handler,
 		},
 		{
 			MethodName: "RefundSwap",

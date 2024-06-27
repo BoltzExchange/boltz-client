@@ -53,6 +53,14 @@ Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 | ------- | -------- |
 | [`ListSwapsRequest`](#listswapsrequest) | [`ListSwapsResponse`](#listswapsresponse) |
 
+#### AbandonSwap
+
+Abandons a swap, deleting it from the database.
+
+| Request | Response |
+| ------- | -------- |
+| [`AbandonSwapRequest`](#abandonswaprequest) | [`GetSwapInfoResponse`](#getswapinforesponse) |
+
 #### RefundSwap
 
 Refund a failed swap manually. This is only required when no refund address has been set or the swap does not have an associated wallet.
@@ -249,6 +257,19 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 
 ### Messages
+
+#### AbandonSwapRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+
+
+
+
 
 #### BakeMacaroonRequest
 

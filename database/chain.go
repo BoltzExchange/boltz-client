@@ -266,8 +266,6 @@ func (database *Database) QueryChainSwap(id string) (swap *ChainSwap, err error)
 }
 
 func (database *Database) queryChainSwapData(id string, currency boltz.Currency, isClaim bool) (data *ChainSwapData, err error) {
-	database.lock.RLock()
-	defer database.lock.RUnlock()
 	rows, err := database.Query("SELECT * FROM chainSwapsData WHERE id = ? AND currency = ?", id, currency)
 
 	if err != nil {

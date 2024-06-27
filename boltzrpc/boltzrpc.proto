@@ -34,6 +34,11 @@ service Boltz {
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
 
     /*
+    Abandons a swap, deleting it from the database.
+     */
+    rpc AbandonSwap (AbandonSwapRequest) returns (GetSwapInfoResponse);
+
+    /*
     Refund a failed swap manually.
     This is only required when no refund address has been set or the swap does not have an associated wallet.
     */
@@ -399,6 +404,11 @@ message ListSwapsResponse {
     repeated ReverseSwapInfo reverse_swaps = 3;
     repeated ChainSwapInfo chain_swaps = 4;
 }
+
+message AbandonSwapRequest {
+    string id = 1;
+}
+
 message RefundSwapRequest {
     string id = 1;
     oneof destination {

@@ -617,6 +617,51 @@ var pairBtc = &boltzrpc.Pair{
 	To:   boltzrpc.Currency_BTC,
 }
 
+func TestAbandonSwap(t *testing.T) {
+	client, _, stop := setup(t, setupOptions{})
+	defer stop()
+
+	t.Run("Chain", func(t *testing.T) {
+		external := true
+		chainSwap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+			Amount: 100000,
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_BTC,
+				To:   boltzrpc.Currency_LBTC,
+			},
+			ExternalPay: &external,
+			ToWalletId:  &testWallet.Id,
+		})
+		require.NoError(t, err)
+
+		response, err := client.AbandonSwap(chainSwap.Id)
+		require.NoError(t, err)
+		require.Equal(t, boltzrpc.SwapState_ABANDONED, response.ChainSwap.State)
+	})
+
+	t.Run("Normal", func(t *testing.T) {
+		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+			Amount: 100000,
+			Pair:   pairBtc,
+		})
+		require.NoError(t, err)
+
+		response, err := client.AbandonSwap(swap.Id)
+		require.NoError(t, err)
+		require.Equal(t, boltzrpc.SwapState_ABANDONED, response.Swap.State)
+	})
+
+	t.Run("Reverse", func(t *testing.T) {
+		reverseSwap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
+		require.NoError(t, err)
+
+		response, err := client.AbandonSwap(reverseSwap.Id)
+		require.NoError(t, err)
+		require.Equal(t, boltzrpc.SwapState_ABANDONED, response.ReverseSwap.State)
+	})
+
+}
+
 func TestSwap(t *testing.T) {
 	nodes := []string{"CLN", "LND"}
 

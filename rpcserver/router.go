@@ -320,10 +320,36 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 
 var ErrInvalidAddress = status.Errorf(codes.InvalidArgument, "invalid address")
 
+func (server *routedBoltzServer) AbandonSwap(ctx context.Context, request *boltzrpc.AbandonSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
+	swap, reverseSwap, chainSwap, err := server.database.QueryAnySwap(request.Id)
+	if err != nil {
+		return nil, handleError(errors.New("could not find Swap with ID " + request.Id))
+	}
+	if swap != nil {
+		err = server.database.UpdateSwapState(swap, boltzrpc.SwapState_ABANDONED, "")
+	}
+	if reverseSwap != nil {
+		err = server.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_ABANDONED, "")
+	}
+	if chainSwap != nil {
+		err = server.database.UpdateChainSwapState(chainSwap, boltzrpc.SwapState_ABANDONED, "")
+	}
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return server.GetSwapInfo(ctx, &boltzrpc.GetSwapInfoRequest{Id: request.Id})
+}
+
 func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzrpc.RefundSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
 	var swaps []*database.Swap
 	var chainSwaps []*database.ChainSwap
 	var currency boltz.Currency
+
+	_, err := server.GetSwapInfo(ctx, &boltzrpc.GetSwapInfoRequest{Id: request.Id})
+	if err != nil {
+		return nil, handleError(err)
+	}
 
 	_, refundableSwaps, refundableChainSwaps, err := server.queryRefundableSwaps()
 	if err != nil {
@@ -389,10 +415,25 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 	return server.GetSwapInfo(ctx, &boltzrpc.GetSwapInfoRequest{Id: request.Id})
 }
 
-func (server *routedBoltzServer) GetSwapInfo(_ context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
+func (server *routedBoltzServer) GetSwapInfo(ctx context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
 	swap, reverseSwap, chainSwap, err := server.database.QueryAnySwap(request.Id)
 	if err != nil {
 		return nil, handleError(errors.New("could not find Swap with ID " + request.Id))
+	}
+	if entityId := macaroons.EntityIdFromContext(ctx); entityId != nil {
+		var swapEntity database.Id
+		if swap != nil {
+			swapEntity = swap.EntityId
+		}
+		if reverseSwap != nil {
+			swapEntity = reverseSwap.EntityId
+		}
+		if chainSwap != nil {
+			swapEntity = chainSwap.EntityId
+		}
+		if swapEntity != *entityId {
+			return nil, handleError(errors.New("swap does not belong to entity"))
+		}
 	}
 	return &boltzrpc.GetSwapInfoResponse{
 		Swap:        serializeSwap(swap),

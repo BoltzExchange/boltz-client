@@ -211,7 +211,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
-	rows, err := database.Query("SELECT * FROM swaps WHERE id = '" + id + "'")
+	rows, err := database.Query("SELECT * FROM swaps WHERE id = ?", id)
 
 	if err != nil {
 		return swap, err

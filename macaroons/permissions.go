@@ -97,6 +97,10 @@ var (
 			Entity: "swap",
 			Action: "write",
 		}},
+		"/boltzrpc.Boltz/AbandonSwap": {{
+			Entity: "swap",
+			Action: "write",
+		}},
 		"/boltzrpc.Boltz/RefundSwap": {{
 			Entity: "swap",
 			Action: "write",
