@@ -19,7 +19,7 @@ type handlerFunc = func(map[string]any)
 var handlers = make(map[Notification]handlerFunc)
 var handlerLock = sync.Mutex{}
 
-// this has to be in a seperate file to avoid c redefition issues
+// this has to be in a separate file to avoid c redefinition issues
 //
 //export go_notification_handler
 func go_notification_handler(details Json) {

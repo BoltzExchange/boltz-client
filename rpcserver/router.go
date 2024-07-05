@@ -1390,10 +1390,10 @@ func (server *routedBoltzServer) unlock(password string) error {
 		defer func() {
 			server.syncing = false
 		}()
-		wg := sync.WaitGroup{}
+		var wg sync.WaitGroup
+                wg.Add(len(credentials))
 		for _, creds := range credentials {
 			creds := creds
-			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				wallet, err := wallet.Login(creds)
