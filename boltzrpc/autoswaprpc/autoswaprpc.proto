@@ -19,12 +19,14 @@ service AutoSwap {
   rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
 
   /*
-  Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
+  Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
+
   */
   rpc UpdateLightningConfig(UpdateLightningConfigRequest) returns (Config);
 
   /*
-  Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
+  Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
+
   */
   rpc UpdateChainConfig(UpdateChainConfigRequest) returns (Config);
 
