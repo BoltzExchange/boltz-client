@@ -216,7 +216,7 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 		case <-timeout:
 			require.Fail(t, "timed out while waiting for daemon to sync")
 		}
-		if err == nil {
+		if err == nil || strings.Contains(err.Error(), "locked") {
 			break
 		}
 	}

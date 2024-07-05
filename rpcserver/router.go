@@ -1391,7 +1391,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			server.syncing = false
 		}()
 		var wg sync.WaitGroup
-                wg.Add(len(credentials))
+		wg.Add(len(credentials))
 		for _, creds := range credentials {
 			creds := creds
 			go func() {
@@ -1439,11 +1439,12 @@ func (server *routedBoltzServer) ChangeWalletPassword(_ context.Context, request
 	return &empty.Empty{}, nil
 }
 
-var errLocked = errors.New("boltzd is locked, use \"unlock\" to enable full RPC access")
+var errLocked = status.Error(codes.FailedPrecondition, "boltzd is locked, use \"unlock\" to enable full RPC access")
+var errSyncing = status.Error(codes.FailedPrecondition, "boltzd is syncing its wallets, please wait")
 
 func (server *routedBoltzServer) requestAllowed(fullMethod string) error {
 	if server.syncing {
-		return handleError(errors.New("boltzd is syncing its wallets, please wait"))
+		return handleError(errSyncing)
 	}
 	if server.locked && !strings.Contains(fullMethod, "Unlock") {
 		return handleError(errLocked)
