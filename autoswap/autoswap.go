@@ -231,8 +231,7 @@ func (autoSwap *AutoSwap) LoadConfig() error {
 func (autoSwap *AutoSwap) saveConfig() error {
 	buf := new(bytes.Buffer)
 	marshaler := protojson.MarshalOptions{
-		EmitUnpopulated:   true,
-		EmitDefaultValues: true,
+		EmitUnpopulated: true,
 	}
 
 	cfg := &Config{}

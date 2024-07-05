@@ -626,7 +626,7 @@ func printConfig(ctx *cli.Context, autoSwapType *autoswap.SwapperType, key strin
 		return err
 	}
 
-	marshal := protojson.MarshalOptions{EmitDefaultValues: !hideZero, Indent: "   "}
+	marshal := protojson.MarshalOptions{EmitUnpopulated: !hideZero, Indent: "   "}
 	marshalled, err := marshal.Marshal(message)
 	if err != nil {
 		return err

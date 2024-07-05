@@ -629,23 +629,24 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 		logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
 
+		if request.SendFromInternal {
+			swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount)
+			if err != nil {
+				if dbErr := server.database.UpdateSwapState(&swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+					logger.Errorf(dbErr.Error())
+				}
+				return nil, handleError(err)
+			}
+		}
+
 		if err := server.nursery.RegisterSwap(swap); err != nil {
 			return nil, handleError(err)
 		}
-	}
-
-	if request.SendFromInternal {
-		// TODO: custom block target?
-		feeSatPerVbyte, err := server.onchain.EstimateFee(pair.From, 2)
+	} else if request.SendFromInternal {
+		swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount)
 		if err != nil {
 			return nil, handleError(err)
 		}
-		logger.Infof("Paying swap %s with fee of %f sat/vbyte", swapResponse.Id, feeSatPerVbyte)
-		txId, err := wallet.SendToAddress(swapResponse.Address, swapResponse.ExpectedAmount, feeSatPerVbyte)
-		if err != nil {
-			return nil, handleError(err)
-		}
-		swapResponse.TxId = txId
 	}
 
 	return swapResponse, nil
@@ -1040,21 +1041,18 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		return nil, handleError(err)
 	}
 
+	logger.Infof("Created new chain swap %s: %s", chainSwap.Id, marshalJson(chainSwap.Serialize()))
+
 	if !externalPay {
-		// TODO: custom block target?
-		feeSatPerVbyte, err := server.onchain.EstimateFee(pair.From, 2)
-		if err != nil {
-			return nil, handleError(err)
-		}
-		logger.Infof("Paying Chain Swap %s with fee of %f sat/vbyte", chainSwap.Id, feeSatPerVbyte)
 		from := chainSwap.FromData
-		from.LockupTransactionId, err = fromWallet.SendToAddress(from.LockupAddress, from.Amount, feeSatPerVbyte)
+		from.LockupTransactionId, err = server.sendToAddress(fromWallet, from.LockupAddress, from.Amount)
 		if err != nil {
+			if dbErr := server.database.UpdateChainSwapState(&chainSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+				logger.Error(dbErr.Error())
+			}
 			return nil, handleError(err)
 		}
 	}
-
-	logger.Infof("Created new chain swap %s: %s", chainSwap.Id, marshalJson(chainSwap.Serialize()))
 
 	if err := server.nursery.RegisterChainSwap(chainSwap); err != nil {
 		return nil, handleError(err)
@@ -1705,6 +1703,16 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 			Minimal: pair.Limits.Minimal,
 			Maximal: pair.Limits.Maximal,
 		}, nil
+}
+
+func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64) (string, error) {
+	// TODO: custom block target?
+	feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency, 2)
+	if err != nil {
+		return "", err
+	}
+	logger.Infof("Using fee of %f sat/vbyte", feeSatPerVbyte)
+	return wallet.SendToAddress(address, amount, feeSatPerVbyte)
 }
 
 func calculateDepositLimit(limit uint64, fees *boltzrpc.Fees, isMin bool) uint64 {

@@ -116,7 +116,7 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 			}
 
 			if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_REFUNDED, ""); err != nil {
-				return fmt.Errorf("could not update state: %s", err)
+				return err
 			}
 
 			if err := nursery.database.AddChainSwapOnchainFee(swap, fee); err != nil {
@@ -135,7 +135,7 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 
 func (nursery *Nursery) handleChainSwapError(swap *database.ChainSwap, err error) {
 	if dbErr := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
-		logger.Errorf("Could not update Chain Swap state: %s", dbErr)
+		logger.Errorf(dbErr.Error())
 	}
 	logger.Errorf("Chain Swap %s error: %s", swap.Id, err)
 	nursery.sendChainSwapUpdate(*swap)
@@ -212,7 +212,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
-			handleError("Could not update state of Swap " + swap.Id + ": " + err.Error())
+			handleError(err.Error())
 			return
 		}
 	} else if parsedStatus.IsFailedStatus() {
@@ -220,7 +220,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 
 		if swap.State == boltzrpc.SwapState_PENDING {
 			if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
-				handleError("Could not update state of Swap " + swap.Id + ": " + err.Error())
+				handleError(err.Error())
 				return
 			}
 		}
