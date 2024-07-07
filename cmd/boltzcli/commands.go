@@ -940,17 +940,6 @@ var createChainSwapCommand = &cli.Command{
 	},
 }
 
-func checkAddress(network *boltz.Network, address string) (boltzrpc.Currency, error) {
-	if err := boltz.ValidateAddress(network, address, boltz.CurrencyBtc); err == nil {
-		return boltzrpc.Currency_BTC, nil
-	}
-	if err := boltz.ValidateAddress(network, address, boltz.CurrencyLiquid); err == nil {
-		return boltzrpc.Currency_LBTC, nil
-	}
-	return boltzrpc.Currency_BTC, fmt.Errorf("invalid address: %s", address)
-
-}
-
 func createChainSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	var amount uint64
@@ -986,18 +975,20 @@ func createChainSwap(ctx *cli.Context) error {
 	network, _ := boltz.ParseChain(info.Network)
 
 	if toAddress := ctx.String("to-address"); toAddress != "" {
-		pair.To, err = checkAddress(network, toAddress)
+		to, err := boltz.GetAddressCurrency(network, toAddress)
 		if err != nil {
 			return err
 		}
+		pair.To = utils.SerializeCurrency(to)
 		request.ToAddress = &toAddress
 	}
 
 	if refundAddress := ctx.String("refund-address"); refundAddress != "" {
-		pair.From, err = checkAddress(network, refundAddress)
+		from, err := boltz.GetAddressCurrency(network, refundAddress)
 		if err != nil {
 			return err
 		}
+		pair.From = utils.SerializeCurrency(from)
 		request.RefundAddress = &refundAddress
 	}
 
@@ -1064,16 +1055,23 @@ func createChainSwap(ctx *cli.Context) error {
 var refundSwapCommand = &cli.Command{
 	Name:      "refundswap",
 	Category:  "Swaps",
-	Usage:     "Refund a chain-to-x swap manually",
-	ArgsUsage: "id addresss",
+	Usage:     "Refund a chain-to-x swap manually to an onchain address or internal wallet",
+	ArgsUsage: "id address|wallet",
 	Action:    requireNArgs(2, refundSwap),
 }
 
 func refundSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	id := ctx.Args().First()
-	address := ctx.Args().Get(1)
-	swap, err := client.RefundSwap(id, address)
+	destination := ctx.Args().Get(1)
+	request := &boltzrpc.RefundSwapRequest{Id: id}
+	walletId, err := getWalletId(ctx, destination)
+	if err == nil {
+		request.Destination = &boltzrpc.RefundSwapRequest_WalletId{WalletId: *walletId}
+	} else {
+		request.Destination = &boltzrpc.RefundSwapRequest_Address{Address: destination}
+	}
+	swap, err := client.RefundSwap(request)
 	if err != nil {
 		return err
 	}

@@ -237,7 +237,7 @@ func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap,
 	return reverseSwap, err
 }
 
-func (database *Database) queryReverseSwaps(query string, values ...any) (swaps []ReverseSwap, err error) {
+func (database *Database) queryReverseSwaps(query string, values ...any) (swaps []*ReverseSwap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
 	rows, err := database.Query(query, values...)
@@ -255,23 +255,23 @@ func (database *Database) queryReverseSwaps(query string, values ...any) (swaps 
 			return nil, err
 		}
 
-		swaps = append(swaps, *swap)
+		swaps = append(swaps, swap)
 	}
 
 	return swaps, err
 }
 
-func (database *Database) QueryReverseSwaps(args SwapQuery) ([]ReverseSwap, error) {
+func (database *Database) QueryReverseSwaps(args SwapQuery) ([]*ReverseSwap, error) {
 	where, values := args.ToWhereClause()
 	return database.queryReverseSwaps("SELECT * FROM reverseSwaps"+where, values...)
 }
 
-func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
+func (database *Database) QueryPendingReverseSwaps() ([]*ReverseSwap, error) {
 	state := boltzrpc.SwapState_PENDING
 	return database.QueryReverseSwaps(SwapQuery{State: &state})
 }
 
-func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]ReverseSwap, error) {
+func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]*ReverseSwap, error) {
 	state := boltzrpc.SwapState_ERROR
 	return database.QueryReverseSwaps(SwapQuery{State: &state, Since: since})
 }

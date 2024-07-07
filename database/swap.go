@@ -232,7 +232,7 @@ func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
 	return swap, err
 }
 
-func (database *Database) querySwaps(query string, args ...any) (swaps []Swap, err error) {
+func (database *Database) querySwaps(query string, args ...any) (swaps []*Swap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
 	rows, err := database.Query(query, args...)
@@ -250,28 +250,28 @@ func (database *Database) querySwaps(query string, args ...any) (swaps []Swap, e
 			return nil, err
 		}
 
-		swaps = append(swaps, *swap)
+		swaps = append(swaps, swap)
 	}
 
 	return swaps, err
 }
 
-func (database *Database) QuerySwaps(args SwapQuery) ([]Swap, error) {
+func (database *Database) QuerySwaps(args SwapQuery) ([]*Swap, error) {
 	where, values := args.ToWhereClause()
 	return database.querySwaps("SELECT * FROM swaps"+where, values...)
 }
 
-func (database *Database) QueryPendingSwaps() ([]Swap, error) {
+func (database *Database) QueryPendingSwaps() ([]*Swap, error) {
 	state := boltzrpc.SwapState_PENDING
 	return database.QuerySwaps(SwapQuery{State: &state})
 }
 
-func (database *Database) QueryFailedSwaps(since time.Time) ([]Swap, error) {
+func (database *Database) QueryFailedSwaps(since time.Time) ([]*Swap, error) {
 	state := boltzrpc.SwapState_ERROR
 	return database.QuerySwaps(SwapQuery{State: &state, Since: since})
 }
 
-func (database *Database) QueryNonSuccessfullSwaps(currency boltz.Currency) ([]Swap, error) {
+func (database *Database) QueryNonSuccessfullSwaps(currency boltz.Currency) ([]*Swap, error) {
 	return database.querySwaps(
 		"SELECT * FROM swaps WHERE (state = ? OR state = ?) AND fromCurrency = ?",
 		boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, currency,
@@ -286,7 +286,7 @@ WHERE fromCurrency = ?
   AND (state IN (?, ?) OR (state != ? AND swaps.timeoutBlockheight < ?))
 `
 
-func (database *Database) QueryRefundableSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]Swap, error) {
+func (database *Database) QueryRefundableSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]*Swap, error) {
 	return database.querySwaps(
 		refundableSwapsQuery, currency,
 		boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
@@ -388,10 +388,17 @@ func (database *Database) SetSwapRefundTransactionId(swap *Swap, refundTransacti
 	return err
 }
 
-func (database *Database) SetSwapRefundRefundAddress(swap *Swap, refundAddress string) error {
+func (database *Database) SetSwapRefundAddress(swap *Swap, refundAddress string) error {
 	swap.RefundAddress = refundAddress
 
-	_, err := database.Exec("UPDATE swaps SET refundAddress = ?  WHERE id = ?", refundAddress, swap.Id)
+	_, err := database.Exec("UPDATE swaps SET refundAddress = ? WHERE id = ?", refundAddress, swap.Id)
+	return err
+}
+
+func (database *Database) SetSwapRefundWallet(swap *Swap, walletId Id) error {
+	swap.WalletId = &walletId
+
+	_, err := database.Exec("UPDATE swaps SET walletId = ? WHERE id = ?", walletId, swap.Id)
 	return err
 }
 

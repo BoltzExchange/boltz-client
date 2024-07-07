@@ -67,7 +67,7 @@ func handleError(err error) error {
 }
 
 func (server *routedBoltzServer) queryRefundableSwaps() (
-	heights *boltzrpc.BlockHeights, swaps []database.Swap, chainSwaps []database.ChainSwap, err error,
+	heights *boltzrpc.BlockHeights, swaps []*database.Swap, chainSwaps []*database.ChainSwap, err error,
 ) {
 	heights = &boltzrpc.BlockHeights{}
 	heights.Btc, err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
@@ -246,7 +246,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, swap := range swaps {
-		response.Swaps = append(response.Swaps, serializeSwap(&swap))
+		response.Swaps = append(response.Swaps, serializeSwap(swap))
 	}
 
 	// Reverse Swaps
@@ -257,7 +257,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, reverseSwap := range reverseSwaps {
-		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(&reverseSwap))
+		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(reverseSwap))
 	}
 
 	chainSwaps, err := server.database.QueryChainSwaps(args)
@@ -266,15 +266,17 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, chainSwap := range chainSwaps {
-		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(&chainSwap))
+		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(chainSwap))
 	}
 
 	return response, nil
 }
 
+var ErrInvalidAddress = status.Errorf(codes.InvalidArgument, "invalid address")
+
 func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzrpc.RefundSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
-	var swaps []database.Swap
-	var chainSwaps []database.ChainSwap
+	var swaps []*database.Swap
+	var chainSwaps []*database.ChainSwap
 	var currency boltz.Currency
 
 	_, refundableSwaps, refundableChainSwaps, err := server.queryRefundableSwaps()
@@ -282,22 +284,31 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 		return nil, handleError(err)
 	}
 
+	var setAddress func(address string) error
+	var setWallet func(walletId uint64) error
+
 	for _, swap := range refundableSwaps {
 		if swap.Id == request.Id {
-			if err := server.database.SetSwapRefundRefundAddress(&swap, request.Address); err != nil {
-				return nil, handleError(err)
-			}
 			currency = swap.Pair.From
+			setAddress = func(address string) error {
+				return server.database.SetSwapRefundAddress(swap, address)
+			}
+			setWallet = func(walletId uint64) error {
+				return server.database.SetSwapRefundWallet(swap, walletId)
+			}
 			swaps = append(swaps, swap)
 		}
 	}
 
 	for _, chainSwap := range refundableChainSwaps {
 		if chainSwap.Id == request.Id {
-			if err := server.database.SetChainSwapAddress(chainSwap.FromData, request.Address); err != nil {
-				return nil, handleError(err)
-			}
 			currency = chainSwap.Pair.From
+			setAddress = func(address string) error {
+				return server.database.SetChainSwapAddress(chainSwap.FromData, address)
+			}
+			setWallet = func(walletId uint64) error {
+				return server.database.SetChainSwapWallet(chainSwap.FromData, walletId)
+			}
 			chainSwaps = append(chainSwaps, chainSwap)
 		}
 	}
@@ -306,8 +317,23 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 		return nil, handleError(status.Errorf(codes.NotFound, "no refundable swap with id %s found", request.Id))
 	}
 
-	if err := boltz.ValidateAddress(server.network, request.Address, currency); err != nil {
-		return nil, handleError(status.Errorf(codes.InvalidArgument, "invalid address"))
+	if destination, ok := request.Destination.(*boltzrpc.RefundSwapRequest_Address); ok {
+		if err := boltz.ValidateAddress(server.network, destination.Address, currency); err != nil {
+			return nil, handleError(ErrInvalidAddress)
+		}
+		err = setAddress(destination.Address)
+	}
+
+	if destination, ok := request.Destination.(*boltzrpc.RefundSwapRequest_WalletId); ok {
+		_, err = server.getWallet(ctx, onchain.WalletChecker{Id: &destination.WalletId, AllowReadonly: true})
+		if err != nil {
+			return nil, handleError(err)
+		}
+		err = setWallet(destination.WalletId)
+	}
+
+	if err != nil {
+		return nil, handleError(err)
 	}
 
 	if err := server.nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
