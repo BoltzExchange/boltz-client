@@ -388,14 +388,14 @@ func (database *Database) SetSwapRefundTransactionId(swap *Swap, refundTransacti
 func (database *Database) SetSwapRefundAddress(swap *Swap, refundAddress string) error {
 	swap.RefundAddress = refundAddress
 
-	_, err := database.Exec("UPDATE swaps SET refundAddress = ?  WHERE id = ?", refundAddress, swap.Id)
+	_, err := database.Exec("UPDATE swaps SET refundAddress = ? WHERE id = ?", refundAddress, swap.Id)
 	return err
 }
 
 func (database *Database) SetSwapRefundWallet(swap *Swap, walletId Id) error {
 	swap.WalletId = &walletId
 
-	_, err := database.Exec("UPDATE swaps SET walletId = ?  WHERE id = ?", walletId, swap.Id)
+	_, err := database.Exec("UPDATE swaps SET walletId = ? WHERE id = ?", walletId, swap.Id)
 	return err
 }
 
