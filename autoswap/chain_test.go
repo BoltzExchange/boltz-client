@@ -29,7 +29,7 @@ func newPairInfo() *boltzrpc.PairInfo {
 	return &boltzrpc.PairInfo{
 		Limits: &boltzrpc.Limits{
 			Minimal: 100,
-			Maximal: 1000,
+			Maximal: 10000,
 		},
 		Fees: &boltzrpc.SwapFees{
 			Percentage: 1,
@@ -68,10 +68,10 @@ func TestChainSwapper(t *testing.T) {
 		pairInfo := newPairInfo()
 		rpcMock.EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(pairInfo, nil)
 
-		balance := &onchain.Balance{Total: 1000, Confirmed: 1000, Unconfirmed: 0}
+		balance := &onchain.Balance{Total: 20000, Confirmed: 20000, Unconfirmed: 0}
 		fromWallet.EXPECT().GetBalance().Return(balance, nil)
 
-		expectedAmount := uint64(750)
+		expectedAmount := balance.Confirmed - 10000
 
 		t.Run("Valid", func(t *testing.T) {
 

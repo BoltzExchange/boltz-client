@@ -126,7 +126,8 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 	}
 
 	if balance.Confirmed > cfg.MaxBalance {
-		amount := balance.Confirmed - (cfg.MaxBalance / 2)
+		// TODO: properly sweep wallet
+		amount := balance.Confirmed - 10000
 
 		checked := check(amount, checkParams{Pair: pairInfo, MaxFeePercent: cfg.maxFeePercent, Budget: &budget.Amount})
 
