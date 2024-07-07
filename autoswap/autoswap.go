@@ -310,7 +310,7 @@ func (c *swapper[T]) setConfig(cfg T) error {
 	logger.Debugf("Setting %s autoswap config: %+v", c.swapperType, cfg)
 	c.cfg = cfg
 	c.start()
-	return nil
+	return c.err
 }
 
 func (c *swapper[T]) Stop() {
@@ -324,9 +324,9 @@ func (c *swapper[T]) Stop() {
 
 func (c *swapper[T]) start() {
 	c.Stop()
-	if err := c.cfg.Init(); err != nil {
-		logger.Errorf("Autoswap wallet configuration has become invalid: %s", err)
-		c.err = err
+	c.err = c.cfg.Init()
+	if c.err != nil {
+		logger.Errorf("Autoswap wallet configuration has become invalid: %s", c.err)
 		return
 	}
 	if c.cfg.GetEnabled() {

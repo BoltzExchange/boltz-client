@@ -51,7 +51,7 @@ func (cfg *LightningConfig) totalBalanceStrategy(channels []*lightning.Lightning
 		total.Capacity += channel.Capacity
 	}
 
-	logger.Debugf("Total local channel balance: %d", total.LocalSat)
+	logger.Debugf("Total channel balances %+v", total)
 
 	recommendation := cfg.channelRecommendation(&total)
 	if recommendation != nil {
