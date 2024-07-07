@@ -705,8 +705,10 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 		config.SwapType = ""
 	} else if config.SwapType == "reverse" {
 		allowNormal = false
+		config.OutboundBalancePercent = 0
 	} else if config.SwapType == "normal" {
 		allowReverse = false
+		config.InboundBalancePercent = 0
 	}
 
 	readonly := config.SwapType != "reverse"
