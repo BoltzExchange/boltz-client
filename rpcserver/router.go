@@ -1304,7 +1304,7 @@ func (server *routedBoltzServer) getAnyWallet(ctx context.Context, checker oncha
 	}
 	found, err := server.onchain.GetAnyWallet(checker)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "wallet not found: %v", err)
+		return nil, status.Errorf(codes.NotFound, err.Error())
 	}
 	return found, nil
 }
