@@ -126,10 +126,10 @@ message LightningConfig {
     bool enabled = 1;
     uint64 channel_poll_interval = 2;
     string static_address = 3;
-    uint64 max_balance = 4;
-    uint64 min_balance = 5;
-    float max_balance_percent = 6;
-    float min_balance_percent = 7;
+    uint64 outbound_balance = 4;
+    uint64 inbound_balance = 5;
+    float outbound_balance_percent = 6;
+    float inbound_balance_percent = 7;
     float max_fee_percent = 8;
     bool accept_zero_conf = 9;
     uint64 failure_backoff = 10;

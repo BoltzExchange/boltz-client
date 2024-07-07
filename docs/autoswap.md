@@ -16,13 +16,13 @@ Autoswap can either rebalance individual channels or only look at the total bala
 
 ### Thresholds
 
-Autoswap will create normal swaps when the local balance goes below the minimum balance and reverse swaps when it exceeds the max balance. These thresholds can be set as absolute amounts of sats (`maxBalance` and `minBalance`) or as percentage of total channel capacity (`maxBalancePercent` and `minBalancePercent`).
+Autoswap will create normal swaps when the outbound balance goes below the minimum balance and reverse swaps when it exceeds the max balance. These thresholds can be set as absolute amounts of sats (`maxBalance` and `minBalance`) or as percentage of total channel capacity (`maxBalancePercent` and `minBalancePercent`).
 
 The balance target will always be the average of the two thresholds.
 
 Example:
 Total channel balance: 100000sat
-Local balance: 80000sat
+Outbound balance: 80000sat
 Min/Max thresholds: 25%/75%
 In this situation, a reverse swap for 30000sats will be created since the target balance is 50000sat (50% of 100000sat).
 
@@ -48,12 +48,12 @@ channelPollInterval = "30"
 currency = "LBTC"
 enabled = true
 failureBackoff = "86400"
-maxBalance = "0"
-maxBalancePercent = 75.0
+inboundBalance = "0"
+inboundBalancePercent = 25.0
 maxFeePercent = 1.0
 maxSwapAmount = "0"
-minBalance = "0"
-minBalancePercent = 25.0
+outboundBalance = "0"
+outboundBalancePercent = 25.0
 perChannel = false
 staticAddress = ""
 swapType = "reverse"

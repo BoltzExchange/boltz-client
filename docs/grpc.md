@@ -863,8 +863,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`ChannelId`](#channelid) |  |  |
 | `capacity` | [`uint64`](#uint64) |  |  |
-| `local_sat` | [`uint64`](#uint64) |  |  |
-| `remote_sat` | [`uint64`](#uint64) |  |  |
+| `outbound_sat` | [`uint64`](#uint64) |  |  |
+| `inbound_sat` | [`uint64`](#uint64) |  |  |
 | `peer_id` | [`string`](#string) |  |  |
 
 
@@ -1336,7 +1336,7 @@ Returns the current budget of autoswap and some relevant stats.
 
 #### UpdateLightningConfig
 
-Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
+Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
@@ -1344,7 +1344,7 @@ Updates the chain configuration entirely or partially. Autoswap will reload the 
 
 #### UpdateChainConfig
 
-Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
+Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
@@ -1505,10 +1505,10 @@ Reloads the configuration from disk.
 | `enabled` | [`bool`](#bool) |  |  |
 | `channel_poll_interval` | [`uint64`](#uint64) |  |  |
 | `static_address` | [`string`](#string) |  |  |
-| `max_balance` | [`uint64`](#uint64) |  |  |
-| `min_balance` | [`uint64`](#uint64) |  |  |
-| `max_balance_percent` | [`float`](#float) |  |  |
-| `min_balance_percent` | [`float`](#float) |  |  |
+| `outbound_balance` | [`uint64`](#uint64) |  |  |
+| `inbound_balance` | [`uint64`](#uint64) |  |  |
+| `outbound_balance_percent` | [`float`](#float) |  |  |
+| `inbound_balance_percent` | [`float`](#float) |  |  |
 | `max_fee_percent` | [`float`](#float) |  |  |
 | `accept_zero_conf` | [`bool`](#bool) |  |  |
 | `failure_backoff` | [`uint64`](#uint64) |  |  |

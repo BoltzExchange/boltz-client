@@ -27,8 +27,8 @@ type LightningConfig struct {
 	maxFeePercent utils.Percentage
 	currency      boltz.Currency
 	swapType      boltz.SwapType
-	maxBalance    Balance
-	minBalance    Balance
+	outboundBalance  Balance
+	inboundBalance Balance
 	strategy      Strategy
 	description   string
 	walletId      *database.Id
@@ -52,9 +52,9 @@ func DefaultLightningConfig() *SerializedLnConfig {
 	// we can't include values like currency in the base config
 	// since we couldn't know wether the user didn't set the currency at all or set it to BTC
 	return withLightningBase(&SerializedLnConfig{
-		MaxBalancePercent: 75,
-		MinBalancePercent: 25,
-		Currency:          boltzrpc.Currency_LBTC,
+		OutboundBalancePercent:  25,
+		InboundBalancePercent: 25,
+		Currency:             boltzrpc.Currency_LBTC,
 	})
 }
 
@@ -67,27 +67,24 @@ func (cfg *LightningConfig) Init() error {
 
 	cfg.currency = utils.ParseCurrency(&cfg.Currency)
 	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
-	cfg.maxBalance = Balance{Absolute: cfg.MaxBalance}
-	cfg.minBalance = Balance{Absolute: cfg.MinBalance}
+	cfg.outboundBalance = Balance{Absolute: cfg.OutboundBalance}
+	cfg.inboundBalance = Balance{Absolute: cfg.InboundBalance}
 
 	// Only consider relative values if absolute values are not set
-	if cfg.MaxBalance == 0 && cfg.MinBalance == 0 {
-		cfg.maxBalance.Relative = utils.Percentage(cfg.MaxBalancePercent)
-		cfg.minBalance.Relative = utils.Percentage(cfg.MinBalancePercent)
-	}
-
-	if cfg.minBalance.IsZero() && cfg.maxBalance.IsZero() {
-		return errors.New("no balance threshold set")
-	}
-
-	if !cfg.maxBalance.IsZero() && !cfg.minBalance.IsZero() {
-		if cfg.minBalance.Get(100) > cfg.maxBalance.Get(100) {
-			return errors.New("min balance must be smaller than max balance")
+	if cfg.InboundBalance == 0 && cfg.OutboundBalance == 0 {
+		cfg.outboundBalance.Relative = utils.Percentage(cfg.OutboundBalancePercent)
+		cfg.inboundBalance.Relative = utils.Percentage(cfg.InboundBalancePercent)
+		if cfg.OutboundBalancePercent+cfg.InboundBalancePercent >= 100 {
+			return errors.New("sum of balance percentages must be smaller than 100")
 		}
 	}
 
+	if cfg.inboundBalance.IsZero() && cfg.outboundBalance.IsZero() {
+		return errors.New("no balance threshold set")
+	}
+
 	if cfg.PerChannel {
-		if cfg.minBalance.IsAbsolute() {
+		if cfg.inboundBalance.IsAbsolute() {
 			return errors.New("absolute balance threshold not supported for per channel rebalancing")
 		}
 		if cfg.AllowNormalSwaps() {
@@ -100,18 +97,18 @@ func (cfg *LightningConfig) Init() error {
 		cfg.description = "total balance"
 	}
 
-	if cfg.minBalance.IsZero() {
+	if cfg.outboundBalance.IsZero() {
 		if cfg.AllowNormalSwaps() {
-			return errors.New("min balance must be set for normal swaps")
+			return errors.New("outbound balance must be set for normal swaps")
 		}
-		cfg.description += fmt.Sprintf(" (max %s)", cfg.maxBalance)
-	} else if cfg.maxBalance.IsZero() {
+		cfg.description += fmt.Sprintf(" (inbound %s)", cfg.inboundBalance)
+	} else if cfg.inboundBalance.IsZero() {
 		if cfg.AllowReverseSwaps() {
-			return errors.New("max balance must be set for reverse swaps")
+			return errors.New("inbound balance must be set for reverse swaps")
 		}
-		cfg.description += fmt.Sprintf(" (min %s)", cfg.minBalance)
+		cfg.description += fmt.Sprintf(" (outbound %s)", cfg.outboundBalance)
 	} else {
-		cfg.description += fmt.Sprintf(" (min %s, max %s)", cfg.minBalance, cfg.maxBalance)
+		cfg.description += fmt.Sprintf(" (outbound %s, inbound %s)", cfg.outboundBalance, cfg.inboundBalance)
 	}
 
 	if cfg.swapType != "" {
@@ -138,7 +135,7 @@ func (cfg *LightningConfig) InitWallet() (err error) {
 			AllowReadonly: !cfg.AllowNormalSwaps(),
 		})
 		if err != nil {
-			err = fmt.Errorf("could not find from wallet: %s", err)
+			err = fmt.Errorf("could not find wallet: %s", err)
 		} else {
 			id := wallet.GetWalletInfo().Id
 			cfg.walletId = &id

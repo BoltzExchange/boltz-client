@@ -1572,6 +1572,8 @@ func TestAutoSwap(t *testing.T) {
 		t.Run("CantRemoveWallet", func(t *testing.T) {
 			_, err := autoSwap.SetLightningConfigValue("wallet", walletName)
 			require.NoError(t, err)
+			_, err = autoSwap.SetLightningConfigValue("enabled", true)
+			require.NoError(t, err)
 			_, err = admin.RemoveWallet(testWallet.Id)
 			require.Error(t, err)
 		})
@@ -1595,10 +1597,10 @@ func TestAutoSwap(t *testing.T) {
 				channel := getChannel(from, info.Pubkey)
 				require.NotNil(t, channel)
 
-				if channel.RemoteSat < channel.Capacity/2 {
-					amount = amount + (channel.Capacity/2-channel.RemoteSat)/1000
+				if channel.InboundSat < channel.Capacity/2 {
+					amount = amount + (channel.Capacity/2-channel.InboundSat)/1000
 				}
-				if channel.LocalSat < amount {
+				if channel.OutboundSat < amount {
 					return
 				}
 
@@ -1612,16 +1614,16 @@ func TestAutoSwap(t *testing.T) {
 
 			channels, err := us.ListChannels()
 			require.NoError(t, err)
-			var localBalance uint64
+			var inboundBalance uint64
 			for _, channel := range channels {
-				localBalance += channel.LocalSat
+				inboundBalance += channel.InboundSat
 			}
 
 			swapCfg := autoswap.DefaultLightningConfig()
 			swapCfg.AcceptZeroConf = true
 			swapCfg.MaxFeePercent = 10
 			swapCfg.Currency = boltzrpc.Currency_BTC
-			swapCfg.MaxBalance = localBalance + 100
+			swapCfg.InboundBalance = inboundBalance - 100
 			swapCfg.SwapType = "reverse"
 			swapCfg.Wallet = strings.ToUpper(cfg.Node)
 
@@ -1632,8 +1634,8 @@ func TestAutoSwap(t *testing.T) {
 			require.NoError(t, err)
 			require.Zero(t, recommendations.Lightning)
 
-			swapCfg.MaxBalance = localBalance - 100
-			swapCfg.MinBalance = localBalance / 2
+			swapCfg.InboundBalance = inboundBalance + 100
+			swapCfg.OutboundBalance = inboundBalance / 2
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)

@@ -35,8 +35,8 @@ func TestGetPair(t *testing.T) {
 func TestLightningConfig(t *testing.T) {
 	enabled := func(cfg *SerializedLnConfig) *SerializedLnConfig {
 		cfg.Enabled = true
-		cfg.MaxBalancePercent = 75
-		cfg.MinBalancePercent = 25
+		cfg.InboundBalancePercent = 25
+		cfg.OutboundBalancePercent = 25
 		return cfg
 	}
 	tt := []struct {
@@ -47,43 +47,34 @@ func TestLightningConfig(t *testing.T) {
 	}{
 		{name: "Default", cfg: DefaultLightningConfig(), err: false},
 		{
-			name: "MissingMax",
+			name: "MissingInbound",
 			cfg: &SerializedLnConfig{
-				MinBalancePercent: 25,
+				OutboundBalancePercent: 25,
 			},
 			err: true,
 		},
 		{
 			name: "ValidReverse",
 			cfg: &SerializedLnConfig{
-				MaxBalancePercent: 75,
-				SwapType:          "reverse",
+				InboundBalancePercent: 25,
+				SwapType:             "reverse",
 			},
 			err: false,
 		},
 		{
-			name: "MinGreaterMax/Percent",
+			name: "TooMuchBalance/Percent",
 			cfg: &SerializedLnConfig{
-				MinBalancePercent: 75,
-				MaxBalancePercent: 25,
-			},
-			err: true,
-		},
-
-		{
-			name: "MinGreaterMax/Abs",
-			cfg: &SerializedLnConfig{
-				MinBalance: 10000,
-				MaxBalance: 5000,
+				OutboundBalancePercent:  75,
+				InboundBalancePercent: 75,
 			},
 			err: true,
 		},
 		{
 			name: "PerChannel/SubmarineForbidden",
 			cfg: &SerializedLnConfig{
-				MinBalance: 10000,
-				PerChannel: true,
-				SwapType:   "submarine",
+				OutboundBalance: 10000,
+				PerChannel:   true,
+				SwapType:     "submarine",
 			},
 			err: true,
 		},

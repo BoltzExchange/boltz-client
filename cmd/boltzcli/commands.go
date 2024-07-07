@@ -687,9 +687,9 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 		Description: func(value string, index int) string {
 			switch value {
 			case "reverse":
-				return "keeps your local balance below set threshold, supports read-only wallet"
+				return "keeps your inbound balance above set threshold, supports read-only wallet"
 			case "normal":
-				return "keeps your local balance above set threshold"
+				return "keeps your outbound balance above set threshold"
 			case "both":
 				return "maintain a balanced channel between two thresholds"
 			}
@@ -699,8 +699,14 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 	if err := survey.AskOne(prompt, &config.SwapType); err != nil {
 		return err
 	}
+	allowReverse := true
+	allowNormal := true
 	if config.SwapType == "both" {
 		config.SwapType = ""
+	} else if config.SwapType == "reverse" {
+		allowNormal = false
+	} else if config.SwapType == "normal" {
+		allowReverse = false
 	}
 
 	readonly := config.SwapType != "reverse"
@@ -722,35 +728,35 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 
 	qs := []*survey.Question{}
 	if balanceType == "sats" {
-		if config.SwapType == "" || config.SwapType == "normal" {
+		if allowNormal {
 			qs = append(qs, &survey.Question{
-				Name:     "minBalance",
-				Prompt:   &survey.Input{Message: "What is the minimum amount of sats you want to keep in your channels?"},
+				Name:     "outboundBalance",
+				Prompt:   &survey.Input{Message: "What is the minimum amount of sats you want to keep as your outbound balance?"},
 				Validate: survey.Required,
 			})
 		}
-		if config.SwapType == "" || config.SwapType == "reverse" {
+		if allowReverse {
 			qs = append(qs, &survey.Question{
-				Name:     "maxBalance",
-				Prompt:   &survey.Input{Message: "What is the maximum amount of sats you want to keep in your channels?"},
+				Name:     "inboundBalance",
+				Prompt:   &survey.Input{Message: "What is the minimum amount of sats you want to keep as your inbound balance?"},
 				Validate: survey.Required,
 			})
 		}
 	} else {
-		if config.SwapType == "" || config.SwapType == "normal" {
+		if allowNormal {
 			qs = append(qs, &survey.Question{
-				Name: "minBalancePercent",
-				Prompt: &survey.Input{Message: "What is the minimum percentage of total capacity you want to keep in your channels?",
-					Default: fmt.Sprint(config.MinBalancePercent),
+				Name: "outboundBalancePercent",
+				Prompt: &survey.Input{Message: "What is the minimum percentage of total capacity you want to keep as your outbound balance?",
+					Default: fmt.Sprint(config.OutboundBalancePercent),
 				},
 				Validate: survey.Required,
 			})
 		}
-		if config.SwapType == "" || config.SwapType == "reverse" {
+		if allowReverse {
 			qs = append(qs, &survey.Question{
-				Name: "maxBalancePercent",
-				Prompt: &survey.Input{Message: "What is the maximum percentage of total capacity you want to keep in your channels?",
-					Default: fmt.Sprint(config.MaxBalancePercent),
+				Name: "inboundBalancePercent",
+				Prompt: &survey.Input{Message: "What is the minimum percentage of total capacity you want to keep as your inbound balance?",
+					Default: fmt.Sprint(config.InboundBalancePercent),
 				},
 				Validate: survey.Required,
 			})

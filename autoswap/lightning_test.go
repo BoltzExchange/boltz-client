@@ -18,9 +18,9 @@ import (
 
 func getLnSwapper(t *testing.T, cfg *SerializedLnConfig) (*LightningSwapper, *MockRpcProvider) {
 	swapper, mockProvider := getSwapper(t)
-	if cfg.MaxBalancePercent == 0 && cfg.MinBalancePercent == 0 {
-		cfg.MinBalancePercent = 25
-		cfg.MaxBalancePercent = 75
+	if cfg.InboundBalancePercent == 0 && cfg.OutboundBalancePercent == 0 {
+		cfg.OutboundBalancePercent = 25
+		cfg.InboundBalancePercent = 25
 	}
 	require.NoError(t, swapper.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: cfg}))
 	return swapper.lnSwapper, mockProvider
@@ -46,14 +46,14 @@ func TestSetLnConfig(t *testing.T) {
 
 	err = swapper.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{
 		Config: &SerializedLnConfig{
-			MaxFeePercent:     10,
-			MaxBalancePercent: defaults.MaxBalancePercent - 10,
+			MaxFeePercent:        10,
+			InboundBalancePercent: defaults.InboundBalancePercent - 10,
 		},
-		FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"max_balance_percent"}},
+		FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"inbound_balance_percent"}},
 	})
 	require.NoError(t, err)
 	require.Equal(t, defaults.MaxFeePercent, lnSwapper.cfg.MaxFeePercent)
-	require.NotEqual(t, defaults.MaxBalancePercent, lnSwapper.cfg.MaxBalancePercent)
+	require.NotEqual(t, defaults.InboundBalancePercent, lnSwapper.cfg.InboundBalancePercent)
 	require.False(t, lnSwapper.Running())
 	require.Empty(t, lnSwapper.Error())
 }
@@ -396,20 +396,20 @@ func TestStrategies(t *testing.T) {
 
 	channels := []*lightning.LightningChannel{
 		{
-			LocalSat:  100,
-			RemoteSat: 100,
+			OutboundSat:  100,
+			InboundSat: 100,
 			Capacity:  200,
 			Id:        1,
 		},
 		{
-			LocalSat:  50,
-			RemoteSat: 150,
+			OutboundSat:  50,
+			InboundSat: 150,
 			Capacity:  200,
 			Id:        2,
 		},
 		{
-			LocalSat:  500,
-			RemoteSat: 100,
+			OutboundSat:  500,
+			InboundSat: 100,
 			Capacity:  600,
 			Id:        3,
 		},
@@ -426,10 +426,10 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "PerChannel/Low",
 			config: &SerializedLnConfig{
-				PerChannel:        true,
-				MaxBalancePercent: 60,
-				MinBalancePercent: 40,
-				SwapType:          "reverse",
+				PerChannel:           true,
+				InboundBalancePercent: 40,
+				OutboundBalancePercent:  40,
+				SwapType:             "reverse",
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 200, channels[2]),
@@ -438,17 +438,17 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "PerChannel/High",
 			config: &SerializedLnConfig{
-				PerChannel:        true,
-				MaxBalancePercent: 90,
-				SwapType:          "reverse",
+				PerChannel:           true,
+				InboundBalancePercent: 10,
+				SwapType:             "reverse",
 			},
 			outcome: nil,
 		},
 		{
 			name: "TotalBalance/Reverse",
 			config: &SerializedLnConfig{
-				MaxBalancePercent: 60,
-				MinBalancePercent: 40,
+				InboundBalancePercent: 40,
+				OutboundBalancePercent:  40,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 150, nil),
@@ -457,8 +457,8 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Reverse",
 			config: &SerializedLnConfig{
-				MaxBalancePercent: 60,
-				MinBalancePercent: 40,
+				InboundBalancePercent: 40,
+				OutboundBalancePercent:  40,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 150, nil),
@@ -467,25 +467,25 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Normal",
 			config: &SerializedLnConfig{
-				MaxBalancePercent: 60,
-				MinBalancePercent: 40,
+				InboundBalancePercent: 40,
+				OutboundBalancePercent:  40,
 			},
 			channels: []*lightning.LightningChannel{
 				{
-					LocalSat:  100,
-					RemoteSat: 100,
+					OutboundSat:  100,
+					InboundSat: 100,
 					Capacity:  200,
 					Id:        1,
 				},
 				{
-					LocalSat:  150,
-					RemoteSat: 50,
+					OutboundSat:  150,
+					InboundSat: 50,
 					Capacity:  200,
 					Id:        2,
 				},
 				{
-					LocalSat:  100,
-					RemoteSat: 500,
+					OutboundSat:  100,
+					InboundSat: 500,
 					Capacity:  600,
 					Id:        3,
 				},
@@ -495,28 +495,28 @@ func TestStrategies(t *testing.T) {
 			},
 		},
 		{
-			name: "TotalBalance/Max",
+			name: "TotalBalance/Inbound",
 			config: &SerializedLnConfig{
-				SwapType:   "reverse",
-				MaxBalance: 600,
+				SwapType:      "reverse",
+				InboundBalance: 400,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 350, nil),
 			},
 		},
 		{
-			name: "TotalBalance/Min",
+			name: "TotalBalance/Outbound",
 			config: &SerializedLnConfig{
-				SwapType:   "normal",
-				MinBalance: 400,
+				SwapType:     "normal",
+				OutboundBalance: 400,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.NormalSwap, 400, nil),
 			},
 			channels: []*lightning.LightningChannel{
 				{
-					LocalSat:  300,
-					RemoteSat: 700,
+					OutboundSat:  300,
+					InboundSat: 700,
 					Capacity:  1000,
 				},
 			},
@@ -524,16 +524,16 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Both/Above",
 			config: &SerializedLnConfig{
-				MinBalance: 400,
-				MaxBalance: 600,
+				OutboundBalance:  400,
+				InboundBalance: 400,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.NormalSwap, 200, nil),
 			},
 			channels: []*lightning.LightningChannel{
 				{
-					LocalSat:  300,
-					RemoteSat: 700,
+					OutboundSat:  300,
+					InboundSat: 700,
 					Capacity:  1000,
 				},
 			},
@@ -541,16 +541,16 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Both/Below",
 			config: &SerializedLnConfig{
-				MinBalance: 400,
-				MaxBalance: 600,
+				OutboundBalance:  400,
+				InboundBalance: 400,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 200, nil),
 			},
 			channels: []*lightning.LightningChannel{
 				{
-					LocalSat:  700,
-					RemoteSat: 500,
+					OutboundSat:  700,
+					InboundSat: 300,
 					Capacity:  1000,
 				},
 			},
@@ -558,8 +558,8 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/None",
 			config: &SerializedLnConfig{
-				MinBalance: 400,
-				MaxBalance: 700,
+				OutboundBalance:  400,
+				InboundBalance: 300,
 			},
 			outcome: nil,
 		},

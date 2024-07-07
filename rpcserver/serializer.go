@@ -245,8 +245,8 @@ func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.Li
 	return &boltzrpc.LightningChannel{
 		Id:        serializeChanId(channel.Id),
 		Capacity:  channel.Capacity,
-		LocalSat:  channel.LocalSat,
-		RemoteSat: channel.RemoteSat,
+		OutboundSat:  channel.OutboundSat,
+		InboundSat: channel.InboundSat,
 		PeerId:    channel.PeerId,
 	}
 }

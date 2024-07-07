@@ -557,8 +557,8 @@ message ChannelId {
 message LightningChannel {
     ChannelId id = 1;
     uint64 capacity = 2;
-    uint64 local_sat = 3;
-    uint64 remote_sat = 4;
+    uint64 outbound_sat = 3;
+    uint64 inbound_sat = 4;
     string peer_id = 5;
 }
 
