@@ -74,7 +74,7 @@ func (cfg *ChainConfig) Init() (err error) {
 	fromInfo := cfg.fromWallet.GetWalletInfo()
 	cfg.pair.From = fromInfo.Currency
 
-	cfg.description = fmt.Sprintf("From wallet %s (%s) to ", fromInfo.Name, fromInfo.Currency)
+	cfg.description = fmt.Sprintf("From wallet %s (%s, max balance %d sats) to ", fromInfo.Name, fromInfo.Currency, cfg.MaxBalance)
 
 	if cfg.ToAddress != "" {
 		cfg.pair.To, err = boltz.GetAddressCurrency(cfg.onchain.Network, cfg.ToAddress)

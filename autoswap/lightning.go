@@ -24,14 +24,14 @@ type LightningConfig struct {
 	*SerializedLnConfig
 	shared
 
-	maxFeePercent utils.Percentage
-	currency      boltz.Currency
-	swapType      boltz.SwapType
-	outboundBalance  Balance
-	inboundBalance Balance
-	strategy      Strategy
-	description   string
-	walletId      *database.Id
+	maxFeePercent   utils.Percentage
+	currency        boltz.Currency
+	swapType        boltz.SwapType
+	outboundBalance Balance
+	inboundBalance  Balance
+	strategy        Strategy
+	description     string
+	walletId        *database.Id
 }
 
 func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
@@ -52,9 +52,9 @@ func DefaultLightningConfig() *SerializedLnConfig {
 	// we can't include values like currency in the base config
 	// since we couldn't know wether the user didn't set the currency at all or set it to BTC
 	return withLightningBase(&SerializedLnConfig{
-		OutboundBalancePercent:  25,
-		InboundBalancePercent: 25,
-		Currency:             boltzrpc.Currency_LBTC,
+		OutboundBalancePercent: 25,
+		InboundBalancePercent:  25,
+		Currency:               boltzrpc.Currency_LBTC,
 	})
 }
 
@@ -91,10 +91,10 @@ func (cfg *LightningConfig) Init() error {
 			return errors.New("per channel rebalancing only supported for reverse swaps")
 		}
 		cfg.strategy = cfg.perChannelStrategy
-		cfg.description = "per channel"
+		cfg.description = "Per channel"
 	} else {
 		cfg.strategy = cfg.totalBalanceStrategy
-		cfg.description = "total balance"
+		cfg.description = "Total balance"
 	}
 
 	if cfg.outboundBalance.IsZero() {
@@ -111,10 +111,12 @@ func (cfg *LightningConfig) Init() error {
 		cfg.description += fmt.Sprintf(" (outbound %s, inbound %s)", cfg.outboundBalance, cfg.inboundBalance)
 	}
 
-	if cfg.swapType != "" {
-		cfg.description += " of type " + string(cfg.swapType)
+	if cfg.Wallet != "" {
+		cfg.description += fmt.Sprintf(" using wallet %s (%s)", cfg.Wallet, cfg.currency)
 	}
-	cfg.description += " for currency " + string(cfg.currency)
+	if cfg.StaticAddress != "" {
+		cfg.description += fmt.Sprintf(" with static address %s (%s)", cfg.StaticAddress, cfg.currency)
+	}
 
 	if cfg.Enabled {
 		return cfg.InitWallet()
