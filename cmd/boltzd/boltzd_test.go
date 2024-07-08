@@ -207,7 +207,20 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	boltzClient := client.NewBoltzClient(clientConn)
 	autoSwapClient := client.NewAutoSwapClient(clientConn)
 	// the liquid wallet needs a bit to sync its subaccounts
-	time.Sleep(200 * time.Millisecond)
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	timeout := time.After(1 * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			_, err = boltzClient.GetInfo()
+		case <-timeout:
+			require.Fail(t, "timed out while waiting for daemon to sync")
+		}
+		if err == nil || strings.Contains(err.Error(), "locked") {
+			break
+		}
+	}
 
 	return boltzClient, autoSwapClient, func() {
 		_, err = autoSwapClient.ResetConfig(autoswap.Lightning)

@@ -18,8 +18,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/mitchellh/mapstructure"
+	"slices"
 	"strings"
-	"time"
+	"sync"
 	"unsafe"
 
 	"github.com/BoltzExchange/boltz-client/logger"
@@ -96,9 +98,10 @@ type Subaccount struct {
 
 type Wallet struct {
 	onchain.WalletInfo
-	subaccount *uint64
-	session    Session
-	connected  bool
+	subaccount     *uint64
+	session        Session
+	connected      bool
+	syncedAccounts []uint64
 }
 
 type Config struct {
@@ -108,6 +111,14 @@ type Config struct {
 }
 
 var config *Config
+
+type syncListener struct {
+	accounts []uint64
+	done     chan bool
+}
+
+var syncListeners []*syncListener
+var syncListenersLock = sync.Mutex{}
 
 func toErr(ret C.int) error {
 	if ret == C.GA_OK {
@@ -222,6 +233,32 @@ func Init(walletConfig Config) error {
 	}
 	config = &walletConfig
 
+	registerHandler(subaccountNotification, func(data map[string]any) {
+		var parsed struct {
+			Pointer   uint64
+			EventType string `mapstructure:"event_type"`
+		}
+		if err := mapstructure.Decode(data, &parsed); err != nil {
+			logger.Errorf("Could not parse subaccount notification: %v", data)
+			return
+		}
+		if parsed.EventType == "synced" {
+			syncListenersLock.Lock()
+			for i, listener := range syncListeners {
+				if slices.Contains(listener.accounts, parsed.Pointer) {
+					listener.accounts = slices.DeleteFunc(listener.accounts, func(u uint64) bool {
+						return u == parsed.Pointer
+					})
+					if len(listener.accounts) == 0 {
+						listener.done <- true
+						syncListeners = slices.Delete(syncListeners, i, i)
+					}
+				}
+			}
+			syncListenersLock.Unlock()
+		}
+	})
+
 	return nil
 }
 
@@ -308,32 +345,22 @@ func (wallet *Wallet) GetSubaccounts(refresh bool) ([]*Subaccount, error) {
 		return nil, err
 	}
 
-	if refresh {
-		for _, subaccount := range result.Subaccounts {
-			// wait for subaccount to be synced
-			logger.Debugf("%+v", subaccount)
-			if subaccount.Used {
-				var result struct {
-					Transactions []any `json:"transactions"`
-				}
-				timeout := time.After(20 * time.Second)
-				ticker := time.NewTicker(500 * time.Millisecond)
-				defer ticker.Stop()
-				for len(result.Transactions) == 0 {
-					details, free = toJson(map[string]any{"subaccount": subaccount.Pointer, "first": 0, "count": 1})
-					err := withAuthHandler(C.GA_get_transactions(wallet.session, details, &handler), handler, &result)
-					free()
-					if err != nil {
-						return nil, fmt.Errorf("could not get transactions for subaccount %d: %w", subaccount.Pointer, err)
-					}
-					select {
-					case <-ticker.C:
-					case <-timeout:
-						return nil, fmt.Errorf("timed out waiting for subaccount %d to sync", subaccount.Pointer)
-					}
-				}
-			}
+	var newAccounts []uint64
+	for _, account := range result.Subaccounts {
+		if !slices.Contains(wallet.syncedAccounts, account.Pointer) {
+			newAccounts = append(newAccounts, account.Pointer)
+			wallet.syncedAccounts = append(wallet.syncedAccounts, account.Pointer)
 		}
+	}
+	if len(newAccounts) > 0 {
+		done := make(chan bool)
+		syncListenersLock.Lock()
+		syncListeners = append(syncListeners, &syncListener{
+			done:     done,
+			accounts: newAccounts,
+		})
+		syncListenersLock.Unlock()
+		<-done
 	}
 	return result.Subaccounts, nil
 }
@@ -431,6 +458,11 @@ func Login(credentials *Credentials) (*Wallet, error) {
 		return nil, err
 	}
 	logger.Debugf("Logged in: %v", result)
+
+	_, err := wallet.GetSubaccounts(false)
+	if err != nil {
+		return nil, err
+	}
 
 	if credentials.Subaccount != nil {
 		if _, err := wallet.SetSubaccount(credentials.Subaccount); err != nil {

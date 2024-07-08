@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/BoltzExchange/boltz-client/build"
 	"github.com/BoltzExchange/boltz-client/macaroons"
@@ -54,8 +55,9 @@ type routedBoltzServer struct {
 	swapper   *autoswap.AutoSwap
 	macaroon  *macaroons.Service
 
-	stop   chan bool
-	locked bool
+	stop    chan bool
+	locked  bool
+	syncing bool
 }
 
 func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func()) {
@@ -1452,31 +1454,45 @@ func (server *routedBoltzServer) unlock(password string) error {
 	if err != nil {
 		return err
 	}
-	for _, creds := range credentials {
-		wallet, err := wallet.Login(creds)
-		if err != nil {
-			return fmt.Errorf("could not login to wallet: %v", err)
-		} else {
-			server.onchain.AddWallet(wallet)
+
+	server.syncing = true
+	go func() {
+		defer func() {
+			server.syncing = false
+		}()
+		var wg sync.WaitGroup
+		wg.Add(len(credentials))
+		for _, creds := range credentials {
+			creds := creds
+			go func() {
+				defer wg.Done()
+				wallet, err := wallet.Login(creds)
+				if err != nil {
+					logger.Errorf("could not login to wallet: %v", err)
+				} else {
+					logger.Infof("logged into wallet: %v", wallet.GetWalletInfo())
+					server.onchain.AddWallet(wallet)
+				}
+			}()
 		}
-	}
+		wg.Wait()
 
-	server.nursery = &nursery.Nursery{}
-	err = server.nursery.Init(
-		server.network,
-		server.lightning,
-		server.onchain,
-		server.boltz,
-		server.database,
-	)
-	if err != nil {
-		return err
-	}
+		server.nursery = &nursery.Nursery{}
+		err = server.nursery.Init(
+			server.network,
+			server.lightning,
+			server.onchain,
+			server.boltz,
+			server.database,
+		)
+		if err != nil {
+			logger.Fatalf("could not start nursery: %v", err)
+		}
 
-	if err := server.swapper.LoadConfig(); err != nil {
-		logger.Warnf("Could not load autoswap config: %v", err)
-	}
-
+		if err := server.swapper.LoadConfig(); err != nil {
+			logger.Warnf("Could not load autoswap config: %v", err)
+		}
+	}()
 	server.locked = false
 
 	return nil
@@ -1494,9 +1510,13 @@ func (server *routedBoltzServer) ChangeWalletPassword(_ context.Context, request
 	return &empty.Empty{}, nil
 }
 
-var errLocked = errors.New("boltzd is locked, use \"unlock\" to enable full RPC access")
+var errLocked = status.Error(codes.FailedPrecondition, "boltzd is locked, use \"unlock\" to enable full RPC access")
+var errSyncing = status.Error(codes.FailedPrecondition, "boltzd is syncing its wallets, please wait")
 
 func (server *routedBoltzServer) requestAllowed(fullMethod string) error {
+	if server.syncing {
+		return handleError(errSyncing)
+	}
 	if server.locked && !strings.Contains(fullMethod, "Unlock") {
 		return handleError(errLocked)
 	}
