@@ -247,11 +247,11 @@ func swapInfo(ctx *cli.Context) error {
 var swapInfoStreamCommand = &cli.Command{
 	Name:      "swapinfostream",
 	Category:  "Info",
-	Usage:     "Streams updates of a swap",
-	ArgsUsage: "id",
-	Action: requireNArgs(1, func(ctx *cli.Context) error {
+	Usage:     "Streams updates of a specific swap or of all swaps",
+	ArgsUsage: "[id]",
+	Action: func(ctx *cli.Context) error {
 		return swapInfoStream(ctx, ctx.Args().First(), ctx.Bool("json"))
-	}),
+	},
 	Flags: []cli.Flag{jsonFlag},
 }
 
@@ -262,6 +262,8 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 	if err != nil {
 		return err
 	}
+
+	isGlobal := id == ""
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " Waiting for next update..."
@@ -284,8 +286,15 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 		if json {
 			printJson(info)
 		} else {
+			var state boltzrpc.SwapState
 			if info.Swap != nil {
-				yellowBold.Printf("Swap Status: %s\n", info.Swap.Status)
+				swap := info.Swap
+				state = swap.State
+				if isGlobal {
+					yellowBold.Printf("Swap %s Status: %s\n", swap.Id, swap.Status)
+				} else {
+					yellowBold.Printf("Status: %s\n", swap.Status)
+				}
 
 				switch info.Swap.State {
 				case boltzrpc.SwapState_ERROR:
@@ -296,30 +305,30 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 
 				status := boltz.ParseEvent(info.Swap.Status)
 				switch status {
-				case boltz.SwapCreated:
-					fmt.Printf("Swap ID: %s\n", info.Swap.Id)
 				case boltz.TransactionMempool:
 					fmt.Printf("Transaction ID: %s\nAmount: %dsat\n", info.Swap.LockupTransactionId, info.Swap.ExpectedAmount)
 				case boltz.InvoiceSet:
 					fmt.Printf("Invoice: %s\n", info.Swap.Invoice)
 				case boltz.TransactionClaimed:
 					fmt.Printf("Paid %dsat onchain fee and %dsat service fee\n", *info.Swap.OnchainFee, *info.Swap.ServiceFee)
-					return nil
 				}
 			} else if info.ReverseSwap != nil {
-				yellowBold.Printf("Swap Status: %s\n", info.ReverseSwap.Status)
-
 				swap := info.ReverseSwap
+				state = swap.State
+				if isGlobal {
+					yellowBold.Printf("Reverse Swap %s Status: %s\n", swap.Id, swap.Status)
+				} else {
+					yellowBold.Printf("Status: %s\n", swap.Status)
+				}
+
 				switch swap.State {
 				case boltzrpc.SwapState_ERROR:
-					fmt.Printf("Error: %s", info.ReverseSwap.Error)
-					return nil
+					fmt.Printf("Error: %s", swap.Error)
 				}
 
 				status := boltz.ParseEvent(swap.Status)
 				switch status {
 				case boltz.SwapCreated:
-					fmt.Printf("Swap ID: %s\n", swap.Id)
 					if swap.ExternalPay {
 						fmt.Printf("Invoice: %s\n", swap.Invoice)
 					}
@@ -328,11 +337,15 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				case boltz.InvoiceSettled:
 					fmt.Printf("Claim transaction ID: %s\n", swap.ClaimTransactionId)
 					fmt.Printf("Paid %dmsat routing fee, %dsat onchain fee and %dsat service fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
-					return nil
 				}
 			} else if info.ChainSwap != nil {
 				swap := info.ChainSwap
-				yellowBold.Printf("Swap Status: %s\n", swap.Status)
+				state = swap.State
+				if isGlobal {
+					yellowBold.Printf("Chain Swap %s Status: %s\n", swap.Id, swap.Status)
+				} else {
+					yellowBold.Printf("Status: %s\n", swap.Status)
+				}
 
 				switch swap.State {
 				case boltzrpc.SwapState_ERROR:
@@ -343,16 +356,16 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 
 				status := boltz.ParseEvent(swap.Status)
 				switch status {
-				case boltz.SwapCreated:
-					fmt.Printf("Swap ID: %s\n", swap.Id)
 				case boltz.TransactionMempool:
 					fmt.Printf("User transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.From, swap.FromData.GetLockupTransactionId(), swap.FromData.Amount)
 				case boltz.TransactionServerMempoool:
 					fmt.Printf("Server transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.To, swap.ToData.GetLockupTransactionId(), swap.ToData.Amount)
 				case boltz.TransactionClaimed:
 					fmt.Printf("Paid %dsat onchain fee and %dsat service fee\n", *swap.OnchainFee, *swap.ServiceFee)
-					return nil
 				}
+			}
+			if state == boltzrpc.SwapState_SUCCESSFUL && !isGlobal {
+				return nil
 			}
 			fmt.Println()
 		}
@@ -894,6 +907,8 @@ func createSwap(ctx *cli.Context) error {
 		fmt.Println()
 	}
 
+	fmt.Println("Swap ID:", swap.Id)
+
 	return swapInfoStream(ctx, swap.Id, false)
 }
 
@@ -1048,6 +1063,8 @@ func createChainSwap(ctx *cli.Context) error {
 		printDeposit(amount, swap.FromData.LockupAddress, float32(timeoutHours), uint64(timeout), pairInfo.Limits)
 		fmt.Println()
 	}
+
+	fmt.Println("Swap ID:", swap.Id)
 
 	return swapInfoStream(ctx, swap.Id, false)
 }
@@ -1210,6 +1227,7 @@ func createReverseSwap(ctx *cli.Context) error {
 	if json {
 		printJson(response)
 	} else {
+		fmt.Println("Swap ID:", response.Id)
 		return swapInfoStream(ctx, response.Id, false)
 	}
 	return nil
