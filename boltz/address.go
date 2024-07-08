@@ -2,7 +2,7 @@ package boltz
 
 import (
 	"errors"
-
+	"fmt"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/vulpemventures/go-elements/address"
 )
@@ -20,4 +20,14 @@ func ValidateAddress(network *Network, rawAddress string, currency Currency) err
 		_, err = address.DecodeType(rawAddress)
 	}
 	return err
+}
+
+func GetAddressCurrency(network *Network, address string) (Currency, error) {
+	if err := ValidateAddress(network, address, CurrencyBtc); err == nil {
+		return CurrencyBtc, nil
+	}
+	if err := ValidateAddress(network, address, CurrencyLiquid); err == nil {
+		return CurrencyLiquid, nil
+	}
+	return "", fmt.Errorf("invalid address: %s", address)
 }

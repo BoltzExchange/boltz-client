@@ -52,12 +52,56 @@ type routedBoltzServer struct {
 	boltz     *boltz.Api
 	nursery   *nursery.Nursery
 	database  *database.Database
-	swapper   *autoswap.AutoSwapper
+	swapper   *autoswap.AutoSwap
 	macaroon  *macaroons.Service
 
 	stop    chan bool
 	locked  bool
 	syncing bool
+}
+
+func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func()) {
+	blocks := server.nursery.BtcBlocks
+	if currency == boltz.CurrencyLiquid {
+		blocks = server.nursery.LiquidBlocks
+	}
+	updates := blocks.Get()
+	return updates, func() {
+		blocks.Remove(updates)
+	}
+}
+
+func entityContext(entity *database.Entity) context.Context {
+	return macaroons.AddEntityToContext(context.Background(), entity)
+}
+
+func (server *routedBoltzServer) CreateAutoSwap(entity *database.Entity, request *boltzrpc.CreateSwapRequest) error {
+	_, err := server.createSwap(entityContext(entity), true, request)
+	return err
+}
+
+func (server *routedBoltzServer) CreateAutoReverseSwap(entity *database.Entity, request *boltzrpc.CreateReverseSwapRequest) error {
+	_, err := server.createReverseSwap(entityContext(entity), true, request)
+	return err
+}
+
+func (server *routedBoltzServer) GetLightningChannels() ([]*lightning.LightningChannel, error) {
+	if server.lightning != nil {
+		return server.lightning.ListChannels()
+	}
+	return nil, errors.New("lightning channels not available")
+}
+
+func (server *routedBoltzServer) GetAutoSwapPairInfo(swapType boltzrpc.SwapType, pair *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
+	return server.GetPairInfo(context.Background(), &boltzrpc.GetPairInfoRequest{
+		Type: swapType,
+		Pair: pair,
+	})
+}
+
+func (server *routedBoltzServer) CreateAutoChainSwap(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest) error {
+	_, err := server.createChainSwap(entityContext(entity), true, request)
+	return err
 }
 
 func handleError(err error) error {
@@ -69,7 +113,7 @@ func handleError(err error) error {
 }
 
 func (server *routedBoltzServer) queryRefundableSwaps() (
-	heights *boltzrpc.BlockHeights, swaps []database.Swap, chainSwaps []database.ChainSwap, err error,
+	heights *boltzrpc.BlockHeights, swaps []*database.Swap, chainSwaps []*database.ChainSwap, err error,
 ) {
 	heights = &boltzrpc.BlockHeights{}
 	heights.Btc, err = server.onchain.GetBlockHeight(boltz.CurrencyBtc)
@@ -166,11 +210,11 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		response.Node = "standalone"
 	}
 
-	if server.swapper != nil {
-		if server.swapper.Running() {
+	if lnSwapper := server.swapper.GetLnSwapper(); lnSwapper != nil {
+		if lnSwapper.Running() {
 			response.AutoSwapStatus = "running"
 		} else {
-			if server.swapper.Error() != "" {
+			if lnSwapper.Error() != "" {
 				response.AutoSwapStatus = "error"
 			} else {
 				response.AutoSwapStatus = "disabled"
@@ -248,7 +292,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, swap := range swaps {
-		response.Swaps = append(response.Swaps, serializeSwap(&swap))
+		response.Swaps = append(response.Swaps, serializeSwap(swap))
 	}
 
 	// Reverse Swaps
@@ -259,7 +303,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, reverseSwap := range reverseSwaps {
-		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(&reverseSwap))
+		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(reverseSwap))
 	}
 
 	chainSwaps, err := server.database.QueryChainSwaps(args)
@@ -268,15 +312,17 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	for _, chainSwap := range chainSwaps {
-		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(&chainSwap))
+		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(chainSwap))
 	}
 
 	return response, nil
 }
 
+var ErrInvalidAddress = status.Errorf(codes.InvalidArgument, "invalid address")
+
 func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzrpc.RefundSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
-	var swaps []database.Swap
-	var chainSwaps []database.ChainSwap
+	var swaps []*database.Swap
+	var chainSwaps []*database.ChainSwap
 	var currency boltz.Currency
 
 	_, refundableSwaps, refundableChainSwaps, err := server.queryRefundableSwaps()
@@ -284,22 +330,31 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 		return nil, handleError(err)
 	}
 
+	var setAddress func(address string) error
+	var setWallet func(walletId uint64) error
+
 	for _, swap := range refundableSwaps {
 		if swap.Id == request.Id {
-			if err := server.database.SetSwapRefundRefundAddress(&swap, request.Address); err != nil {
-				return nil, handleError(err)
-			}
 			currency = swap.Pair.From
+			setAddress = func(address string) error {
+				return server.database.SetSwapRefundAddress(swap, address)
+			}
+			setWallet = func(walletId uint64) error {
+				return server.database.SetSwapRefundWallet(swap, walletId)
+			}
 			swaps = append(swaps, swap)
 		}
 	}
 
 	for _, chainSwap := range refundableChainSwaps {
 		if chainSwap.Id == request.Id {
-			if err := server.database.SetChainSwapAddress(chainSwap.FromData, request.Address); err != nil {
-				return nil, handleError(err)
-			}
 			currency = chainSwap.Pair.From
+			setAddress = func(address string) error {
+				return server.database.SetChainSwapAddress(chainSwap.FromData, address)
+			}
+			setWallet = func(walletId uint64) error {
+				return server.database.SetChainSwapWallet(chainSwap.FromData, walletId)
+			}
 			chainSwaps = append(chainSwaps, chainSwap)
 		}
 	}
@@ -308,8 +363,23 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 		return nil, handleError(status.Errorf(codes.NotFound, "no refundable swap with id %s found", request.Id))
 	}
 
-	if err := boltz.ValidateAddress(server.network, request.Address, currency); err != nil {
-		return nil, handleError(status.Errorf(codes.InvalidArgument, "invalid address"))
+	if destination, ok := request.Destination.(*boltzrpc.RefundSwapRequest_Address); ok {
+		if err := boltz.ValidateAddress(server.network, destination.Address, currency); err != nil {
+			return nil, handleError(ErrInvalidAddress)
+		}
+		err = setAddress(destination.Address)
+	}
+
+	if destination, ok := request.Destination.(*boltzrpc.RefundSwapRequest_WalletId); ok {
+		_, err = server.getWallet(ctx, onchain.WalletChecker{Id: &destination.WalletId, AllowReadonly: true})
+		if err != nil {
+			return nil, handleError(err)
+		}
+		err = setWallet(destination.WalletId)
+	}
+
+	if err != nil {
+		return nil, handleError(err)
 	}
 
 	if err := server.nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
@@ -522,7 +592,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			RefundAddress:       request.GetRefundAddress(),
 			IsAuto:              isAuto,
 			ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
-			EntityId:            server.requireEntity(ctx),
+			EntityId:            requireEntityId(ctx),
 		}
 
 		if request.SendFromInternal {
@@ -587,23 +657,24 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 		logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
 
+		if request.SendFromInternal {
+			swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount)
+			if err != nil {
+				if dbErr := server.database.UpdateSwapState(&swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+					logger.Errorf(dbErr.Error())
+				}
+				return nil, handleError(err)
+			}
+		}
+
 		if err := server.nursery.RegisterSwap(swap); err != nil {
 			return nil, handleError(err)
 		}
-	}
-
-	if request.SendFromInternal {
-		// TODO: custom block target?
-		feeSatPerVbyte, err := server.onchain.EstimateFee(pair.From, 2)
+	} else if request.SendFromInternal {
+		swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount)
 		if err != nil {
 			return nil, handleError(err)
 		}
-		logger.Infof("Paying swap %s with fee of %f sat/vbyte", swapResponse.Id, feeSatPerVbyte)
-		txId, err := wallet.SendToAddress(swapResponse.Address, swapResponse.ExpectedAmount, feeSatPerVbyte)
-		if err != nil {
-			return nil, handleError(err)
-		}
-		swapResponse.TxId = txId
 	}
 
 	return swapResponse, nil
@@ -617,12 +688,16 @@ func (server *routedBoltzServer) lightningAvailable(ctx context.Context) bool {
 	return server.lightning != nil && isAdmin(ctx)
 }
 
-func (server *routedBoltzServer) requireEntity(ctx context.Context) database.Id {
-	id := macaroons.EntityIdFromContext(ctx)
-	if id == nil {
-		return database.DefaultEntityId
+func requireEntity(ctx context.Context) database.Entity {
+	entity := macaroons.EntityFromContext(ctx)
+	if entity == nil {
+		return database.DefaultEntity
 	}
-	return *id
+	return *entity
+}
+
+func requireEntityId(ctx context.Context) database.Id {
+	return requireEntity(ctx).Id
 }
 
 func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
@@ -742,7 +817,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		ClaimTransactionId:  "",
 		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
 		ExternalPay:         externalPay,
-		EntityId:            server.requireEntity(ctx),
+		EntityId:            requireEntityId(ctx),
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -835,7 +910,7 @@ func (server *routedBoltzServer) CreateChainSwap(ctx context.Context, request *b
 func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateChainSwapRequest) (*boltzrpc.ChainSwapInfo, error) {
 	logger.Infof("Creating new chain swap")
 
-	entityId := server.requireEntity(ctx)
+	entityId := requireEntityId(ctx)
 
 	claimPrivateKey, claimPub, err := newKeys()
 	if err != nil {
@@ -994,21 +1069,18 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		return nil, handleError(err)
 	}
 
+	logger.Infof("Created new chain swap %s: %s", chainSwap.Id, marshalJson(chainSwap.Serialize()))
+
 	if !externalPay {
-		// TODO: custom block target?
-		feeSatPerVbyte, err := server.onchain.EstimateFee(pair.From, 2)
-		if err != nil {
-			return nil, handleError(err)
-		}
-		logger.Infof("Paying Chain Swap %s with fee of %f sat/vbyte", chainSwap.Id, feeSatPerVbyte)
 		from := chainSwap.FromData
-		from.LockupTransactionId, err = fromWallet.SendToAddress(from.LockupAddress, from.Amount, feeSatPerVbyte)
+		from.LockupTransactionId, err = server.sendToAddress(fromWallet, from.LockupAddress, from.Amount)
 		if err != nil {
+			if dbErr := server.database.UpdateChainSwapState(&chainSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
+				logger.Error(dbErr.Error())
+			}
 			return nil, handleError(err)
 		}
 	}
-
-	logger.Infof("Created new chain swap %s: %s", chainSwap.Id, marshalJson(chainSwap.Serialize()))
 
 	if err := server.nursery.RegisterChainSwap(chainSwap); err != nil {
 		return nil, handleError(err)
@@ -1073,7 +1145,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 		WalletInfo: onchain.WalletInfo{
 			Name:     request.Params.Name,
 			Currency: currency,
-			EntityId: server.requireEntity(ctx),
+			EntityId: requireEntityId(ctx),
 		},
 		Mnemonic:       request.Credentials.GetMnemonic(),
 		Xpub:           request.Credentials.GetXpub(),
@@ -1219,7 +1291,7 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 
 func (server *routedBoltzServer) getWallet(ctx context.Context, checker onchain.WalletChecker) (onchain.Wallet, error) {
 	if checker.Id == nil {
-		id := server.requireEntity(ctx)
+		id := requireEntityId(ctx)
 		checker.EntityId = &id
 		if checker.Name == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "id or name required")
@@ -1270,13 +1342,11 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 	if err != nil {
 		return nil, handleError(err)
 	}
-	cfg, err := server.swapper.GetConfig()
-	if err == nil {
-		if cfg.Wallet == wallet.GetWalletInfo().Name {
-			return nil, handleError(errors.New(
-				"wallet is used in autoswap, configure a different wallet in autoswap before removing this wallet",
-			))
-		}
+	if server.swapper.WalletUsed(request.Id) {
+		return nil, handleError(fmt.Errorf(
+			"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet",
+			wallet.GetWalletInfo().Name,
+		))
 	}
 	if err := wallet.Remove(); err != nil {
 		return nil, handleError(err)
@@ -1407,9 +1477,6 @@ func (server *routedBoltzServer) unlock(password string) error {
 		}
 		wg.Wait()
 
-		if err := server.swapper.LoadConfig(); err != nil {
-			logger.Warnf("Could not load autoswap config: %v", err)
-		}
 		server.nursery = &nursery.Nursery{}
 		err = server.nursery.Init(
 			server.network,
@@ -1420,6 +1487,10 @@ func (server *routedBoltzServer) unlock(password string) error {
 		)
 		if err != nil {
 			logger.Fatalf("could not start nursery: %v", err)
+		}
+
+		if err := server.swapper.LoadConfig(); err != nil {
+			logger.Warnf("Could not load autoswap config: %v", err)
 		}
 	}()
 	server.locked = false
@@ -1678,6 +1749,16 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 			Minimal: pair.Limits.Minimal,
 			Maximal: pair.Limits.Maximal,
 		}, nil
+}
+
+func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64) (string, error) {
+	// TODO: custom block target?
+	feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency, 2)
+	if err != nil {
+		return "", err
+	}
+	logger.Infof("Using fee of %f sat/vbyte", feeSatPerVbyte)
+	return wallet.SendToAddress(address, amount, feeSatPerVbyte)
 }
 
 func calculateDepositLimit(limit uint64, fees *boltzrpc.Fees, isMin bool) uint64 {

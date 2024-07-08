@@ -443,7 +443,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  |  |
 | `to_address` | [`string`](#string) | optional | Address where funds will be swept to if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | Address where the coins should be refunded to if the swap fails. |
-| `from_wallet_id` | [`uint64`](#uint64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet aswell. |
+| `from_wallet_id` | [`uint64`](#uint64) | optional | Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true. If the swap fails, funds will be refunded to this wallet as well. |
 | `to_wallet_id` | [`uint64`](#uint64) | optional | Wallet where the the funds will go if the swap succeeds. |
 | `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in Boltz. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
@@ -863,8 +863,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`ChannelId`](#channelid) |  |  |
 | `capacity` | [`uint64`](#uint64) |  |  |
-| `local_sat` | [`uint64`](#uint64) |  |  |
-| `remote_sat` | [`uint64`](#uint64) |  |  |
+| `outbound_sat` | [`uint64`](#uint64) |  |  |
+| `inbound_sat` | [`uint64`](#uint64) |  |  |
 | `peer_id` | [`string`](#string) |  |  |
 
 
@@ -1005,6 +1005,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `address` | [`string`](#string) |  |  |
+| `wallet_id` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1318,13 +1319,13 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 ### Methods
-#### GetSwapRecommendations
+#### GetRecommendations
 
 Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
 
 | Request | Response |
 | ------- | -------- |
-| [`GetSwapRecommendationsRequest`](#getswaprecommendationsrequest) | [`GetSwapRecommendationsResponse`](#getswaprecommendationsresponse) |
+| [`GetRecommendationsRequest`](#getrecommendationsrequest) | [`GetRecommendationsResponse`](#getrecommendationsresponse) |
 
 #### GetStatus
 
@@ -1334,29 +1335,21 @@ Returns the current budget of autoswap and some relevant stats.
 | ------- | -------- |
 | [`GetStatusRequest`](#getstatusrequest) | [`GetStatusResponse`](#getstatusresponse) |
 
-#### ResetConfig
+#### UpdateLightningConfig
 
-Resets the configuration to default values.
-
-| Request | Response |
-| ------- | -------- |
-| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`Config`](#config) |
-
-#### SetConfig
-
-Allows setting multiple json-encoded config values at once. Autoswap will reload the configuration after this call.
+Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
-| [`Config`](#config) | [`Config`](#config) |
+| [`UpdateLightningConfigRequest`](#updatelightningconfigrequest) | [`Config`](#config) |
 
-#### SetConfigValue
+#### UpdateChainConfig
 
-Allows setting a specific value in the configuration. Autoswap will reload the configuration after this call.
+Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
 
 | Request | Response |
 | ------- | -------- |
-| [`SetConfigValueRequest`](#setconfigvaluerequest) | [`Config`](#config) |
+| [`UpdateChainConfigRequest`](#updatechainconfigrequest) | [`Config`](#config) |
 
 #### GetConfig
 
@@ -1390,6 +1383,43 @@ Reloads the configuration from disk.
 | `remaining` | [`int64`](#int64) |  |  |
 | `start_date` | [`int64`](#int64) |  |  |
 | `end_date` | [`int64`](#int64) |  |  |
+| `stats` | [`boltzrpc.SwapStats`](#boltzrpc.swapstats) | optional |  |
+
+
+
+
+
+#### ChainConfig
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `enabled` | [`bool`](#bool) |  |  |
+| `from_wallet` | [`string`](#string) |  |  |
+| `to_wallet` | [`string`](#string) |  |  |
+| `to_address` | [`string`](#string) |  |  |
+| `max_balance` | [`uint64`](#uint64) |  |  |
+| `max_fee_percent` | [`float`](#float) |  |  |
+| `budget` | [`uint64`](#uint64) |  |  |
+| `budget_interval` | [`uint64`](#uint64) |  |  |
+| `entity` | [`string`](#string) | optional |  |
+
+
+
+
+
+#### ChainRecommendation
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `amount` | [`uint64`](#uint64) |  |  |
+| `fee_estimate` | [`uint64`](#uint64) |  |  |
+| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the recommendation is not being executed |
 
 
 
@@ -1402,23 +1432,8 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `enabled` | [`bool`](#bool) |  |  |
-| `channel_poll_interval` | [`uint64`](#uint64) |  |  |
-| `static_address` | [`string`](#string) |  |  |
-| `max_balance` | [`uint64`](#uint64) |  |  |
-| `min_balance` | [`uint64`](#uint64) |  |  |
-| `max_balance_percent` | [`float`](#float) |  |  |
-| `min_balance_percent` | [`float`](#float) |  |  |
-| `max_fee_percent` | [`float`](#float) |  |  |
-| `accept_zero_conf` | [`bool`](#bool) |  |  |
-| `failure_backoff` | [`uint64`](#uint64) |  |  |
-| `budget` | [`uint64`](#uint64) |  |  |
-| `budget_interval` | [`uint64`](#uint64) |  |  |
-| `currency` | [`boltzrpc.Currency`](#boltzrpc.currency) |  |  |
-| `swap_type` | [`string`](#string) |  |  |
-| `per_channel` | [`bool`](#bool) |  |  |
-| `wallet` | [`string`](#string) |  |  |
-| `max_swap_amount` | [`uint64`](#uint64) |  |  |
+| `chain` | [`ChainConfig`](#chainconfig) | repeated |  |
+| `lightning` | [`LightningConfig`](#lightningconfig) | repeated |  |
 
 
 
@@ -1429,9 +1444,31 @@ Reloads the configuration from disk.
 
 
 
+
+
+
+#### GetRecommendationsRequest
+
+
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [`string`](#string) | optional |  |
+| `no_dismissed` | [`bool`](#bool) | optional | Do not return any dismissed recommendations |
+
+
+
+
+
+#### GetRecommendationsResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `lightning` | [`LightningRecommendation`](#lightningrecommendation) | repeated |  |
+| `chain` | [`ChainRecommendation`](#chainrecommendation) | repeated |  |
 
 
 
@@ -1452,68 +1489,101 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `running` | [`bool`](#bool) |  |  |
-| `strategy` | [`string`](#string) |  |  |
-| `error` | [`string`](#string) |  |  |
-| `stats` | [`boltzrpc.SwapStats`](#boltzrpc.swapstats) | optional |  |
-| `budget` | [`Budget`](#budget) | optional |  |
+| `lightning` | [`Status`](#status) | optional |  |
+| `chain` | [`Status`](#status) | optional |  |
 
 
 
 
 
-#### GetSwapRecommendationsRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `no_dismissed` | [`bool`](#bool) | optional | Do not return any dismissed recommendations |
-
-
-
-
-
-#### GetSwapRecommendationsResponse
+#### LightningConfig
 
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swaps` | [`SwapRecommendation`](#swaprecommendation) | repeated |  |
+| `enabled` | [`bool`](#bool) |  |  |
+| `channel_poll_interval` | [`uint64`](#uint64) |  |  |
+| `static_address` | [`string`](#string) |  |  |
+| `outbound_balance` | [`uint64`](#uint64) |  |  |
+| `inbound_balance` | [`uint64`](#uint64) |  |  |
+| `outbound_balance_percent` | [`float`](#float) |  |  |
+| `inbound_balance_percent` | [`float`](#float) |  |  |
+| `max_fee_percent` | [`float`](#float) |  |  |
+| `accept_zero_conf` | [`bool`](#bool) |  |  |
+| `failure_backoff` | [`uint64`](#uint64) |  |  |
+| `budget` | [`uint64`](#uint64) |  |  |
+| `budget_interval` | [`uint64`](#uint64) |  |  |
+| `currency` | [`boltzrpc.Currency`](#boltzrpc.currency) |  |  |
+| `swap_type` | [`string`](#string) |  |  |
+| `per_channel` | [`bool`](#bool) |  |  |
+| `wallet` | [`string`](#string) |  |  |
+| `max_swap_amount` | [`uint64`](#uint64) |  |  |
+| `entity` | [`string`](#string) | optional |  |
 
 
 
 
 
-#### SetConfigValueRequest
+#### LightningRecommendation
 
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `key` | [`string`](#string) |  |  |
-| `value` | [`string`](#string) |  |  |
-
-
-
-
-
-#### SwapRecommendation
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `type` | [`string`](#string) |  |  |
 | `amount` | [`uint64`](#uint64) |  |  |
-| `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.lightningchannel) |  |  |
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
-| `dismissed_reasons` | [`string`](#string) | repeated |  |
+| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the recommendation is not being executed |
+| `type` | [`string`](#string) |  |  |
+| `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.lightningchannel) |  |  |
+
+
+
+
+
+#### Status
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `running` | [`bool`](#bool) |  |  |
+| `error` | [`string`](#string) | optional |  |
+| `budget` | [`Budget`](#budget) | optional |  |
+| `description` | [`string`](#string) |  |  |
+
+
+
+
+
+#### UpdateChainConfigRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `config` | [`ChainConfig`](#chainconfig) |  |  |
+| `field_mask` | [`google.protobuf.FieldMask`](#google.protobuf.fieldmask) | optional |  |
+| `reset` | [`bool`](#bool) | optional |  |
+
+
+
+
+
+#### UpdateLightningConfigRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `config` | [`LightningConfig`](#lightningconfig) | optional |  |
+| `field_mask` | [`google.protobuf.FieldMask`](#google.protobuf.fieldmask) |  |  |
+| `reset` | [`bool`](#bool) | optional |  |
 
 
 

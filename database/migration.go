@@ -16,7 +16,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 9
+const latestSchemaVersion = 10
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -484,6 +484,23 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		UPDATE wallets SET entityId = 1 WHERE entityId IS NULL;
 `
 
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+
+	case 9:
+		migration := `
+		DROP TABLE autobudget;
+		CREATE TABLE autobudget
+		(
+			startDate INTEGER NOT NULL,
+			endDate   INTEGER NOT NULL,
+			name      VARCHAR NOT NULL,
+			entityId  INT REFERENCES entities (id),
+
+			PRIMARY KEY (startDate, name, entityId)
+		);
+`
 		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}

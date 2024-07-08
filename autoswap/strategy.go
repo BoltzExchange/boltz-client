@@ -8,50 +8,54 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
-type Strategy = func(channels []*lightning.LightningChannel) []*rawRecommendation
+type Strategy = func(channels []*lightning.LightningChannel) []*lightningRecommendation
 
-func (cfg *Config) channelRecommendation(channel *lightning.LightningChannel) (recommendation *rawRecommendation) {
-	upper := channel.Capacity
-	lower := uint64(0)
+func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningChannel) *lightningRecommendation {
+	outbound := cfg.outboundBalance.Get(channel.Capacity)
+	inbound := cfg.inboundBalance.Get(channel.Capacity)
 
-	if !cfg.maxBalance.IsZero() {
-		upper = cfg.maxBalance.Get(channel.Capacity)
-	}
-	if !cfg.minBalance.IsZero() {
-		lower = cfg.minBalance.Get(channel.Capacity)
+	if channel.Capacity < outbound+inbound {
+		logger.Warnf("Capacity of channel %d, is smaller than the sum of the outbound and inbound tresholds", channel.Id)
+		return nil
 	}
 
-	var swapType boltz.SwapType
-	if channel.LocalSat > upper {
-		swapType = boltz.ReverseSwap
-	} else if channel.LocalSat < lower {
-		swapType = boltz.NormalSwap
+	recommendation := &lightningRecommendation{}
+	if channel.Id != 0 {
+		recommendation.Channel = channel
 	}
-	if swapType != "" && (swapType == cfg.swapType || cfg.swapType == "") {
-		target := float64(upper+lower) / 2
-		recommendation = &rawRecommendation{
-			Type:   swapType,
-			Amount: uint64(math.Abs(float64(channel.LocalSat) - target)),
+	if channel.OutboundSat < outbound {
+		recommendation.Type = boltz.NormalSwap
+		if inbound == 0 {
+			recommendation.Amount = channel.Capacity - channel.OutboundSat
 		}
-		if channel.Id != 0 {
-			recommendation.Channel = channel
+	} else if channel.InboundSat < inbound {
+		recommendation.Type = boltz.ReverseSwap
+		if outbound == 0 {
+			recommendation.Amount = channel.Capacity - channel.InboundSat
 		}
 	}
-	return recommendation
+	if recommendation.Type != "" && cfg.Allowed(recommendation.Type) {
+		if recommendation.Amount == 0 {
+			target := float64(outbound+(channel.Capacity-inbound)) / 2
+			recommendation.Amount = uint64(math.Abs(float64(channel.OutboundSat) - target))
+		}
+		return recommendation
+	}
+	return nil
 }
 
-func (cfg *Config) totalBalanceStrategy(channels []*lightning.LightningChannel) []*rawRecommendation {
-	var recommendations []*rawRecommendation
+func (cfg *LightningConfig) totalBalanceStrategy(channels []*lightning.LightningChannel) []*lightningRecommendation {
+	var recommendations []*lightningRecommendation
 
 	var total lightning.LightningChannel
 
 	for _, channel := range channels {
-		total.LocalSat += channel.LocalSat
-		total.RemoteSat += channel.RemoteSat
+		total.OutboundSat += channel.OutboundSat
+		total.InboundSat += channel.InboundSat
 		total.Capacity += channel.Capacity
 	}
 
-	logger.Debugf("Total local channel balance: %d", total.LocalSat)
+	logger.Debugf("Total channel balances %+v", total)
 
 	recommendation := cfg.channelRecommendation(&total)
 	if recommendation != nil {
@@ -61,8 +65,8 @@ func (cfg *Config) totalBalanceStrategy(channels []*lightning.LightningChannel) 
 	return recommendations
 }
 
-func (cfg *Config) perChannelStrategy(channels []*lightning.LightningChannel) []*rawRecommendation {
-	var recommendations []*rawRecommendation
+func (cfg *LightningConfig) perChannelStrategy(channels []*lightning.LightningChannel) []*lightningRecommendation {
+	var recommendations []*lightningRecommendation
 
 	for _, channel := range channels {
 		recommendation := cfg.channelRecommendation(channel)

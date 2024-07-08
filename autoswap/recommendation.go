@@ -1,22 +1,14 @@
 package autoswap
 
 import (
-	"fmt"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"math"
 
-	"github.com/BoltzExchange/boltz-client/lightning"
-
-	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/utils"
 )
 
-type rawRecommendation struct {
-	Type    boltz.SwapType
-	Amount  uint64
-	Channel *lightning.LightningChannel
-}
-
-type SwapRecommendation struct {
-	rawRecommendation
+type checks struct {
+	Amount           uint64
 	FeeEstimate      uint64
 	DismissedReasons []string
 }
@@ -29,40 +21,44 @@ const (
 	ReasonFailedSwap     = "failed swap"
 )
 
-func (recommendation *SwapRecommendation) Dismiss(reason string) {
+func (recommendation *checks) Dismiss(reason string) {
 	recommendation.DismissedReasons = append(recommendation.DismissedReasons, reason)
 }
 
-func (recommendation *SwapRecommendation) Dismissed() bool {
+func (recommendation *checks) Dismissed() bool {
 	return len(recommendation.DismissedReasons) > 0
 }
 
-func (recommendation rawRecommendation) estimateFee(pair *PairInfo) uint64 {
-	serviceFee := pair.PercentageFee.Calculate(recommendation.Amount)
-	return serviceFee + pair.OnchainFee
+type checkParams struct {
+	Amount           uint64
+	MaxFeePercent    utils.Percentage
+	Budget           *int64
+	Pair             *boltzrpc.PairInfo
+	DismissedReasons []string
 }
 
-func (recommendation rawRecommendation) Check(pair *PairInfo, cfg *Config) *SwapRecommendation {
-	var dismissedReasons []string
-
-	if recommendation.Amount < pair.MinAmount {
-		dismissedReasons = append(dismissedReasons, ReasonAmountBelowMin)
-	}
-	recommendation.Amount = uint64(math.Min(float64(recommendation.Amount), float64(pair.MaxAmount)))
-
-	maxFee := cfg.maxFeePercent.Calculate(recommendation.Amount)
-	fee := recommendation.estimateFee(pair)
-	if fee > maxFee {
-		dismissedReasons = append(dismissedReasons, ReasonMaxFeePercent)
+func check(amount uint64, params checkParams) checks {
+	adjustedAmount := uint64(math.Min(float64(amount), float64(params.Pair.Limits.Maximal)))
+	checks := checks{
+		Amount:           adjustedAmount,
+		DismissedReasons: params.DismissedReasons,
+		FeeEstimate:      utils.CalculateFeeEstimate(params.Pair.Fees, adjustedAmount),
 	}
 
-	return &SwapRecommendation{
-		rawRecommendation: recommendation,
-		FeeEstimate:       fee,
-		DismissedReasons:  dismissedReasons,
+	if checks.Amount < params.Pair.Limits.Minimal {
+		checks.Dismiss(ReasonAmountBelowMin)
 	}
-}
 
-func (recommendation *SwapRecommendation) String() string {
-	return fmt.Sprintf("Type:%v Amount:%v ChanId:%v FeeEstimate:%v DismissedReasons:%v", recommendation.Type, recommendation.Amount, recommendation.Channel.GetId(), recommendation.FeeEstimate, recommendation.DismissedReasons)
+	maxFee := params.MaxFeePercent.Calculate(adjustedAmount)
+	if checks.FeeEstimate > maxFee {
+		checks.Dismiss(ReasonMaxFeePercent)
+	}
+
+	if params.Budget != nil {
+		*params.Budget -= int64(checks.FeeEstimate)
+		if *params.Budget < 0 {
+			checks.Dismiss(ReasonBudgetExceeded)
+		}
+	}
+	return checks
 }

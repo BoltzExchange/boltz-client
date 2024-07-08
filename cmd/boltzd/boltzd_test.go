@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"net"
 	"os"
 	"path"
@@ -222,6 +223,10 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	}
 
 	return boltzClient, autoSwapClient, func() {
+		_, err = autoSwapClient.ResetConfig(autoswap.Lightning)
+		require.NoError(t, err)
+		_, err = autoSwapClient.ResetConfig(autoswap.Chain)
+		require.NoError(t, err)
 		_, err = boltzClient.RemoveWallet(testWallet.Id)
 		require.NoError(t, err)
 		require.NoError(t, boltzClient.Stop())
@@ -301,6 +306,28 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
+func createEntity(t *testing.T, admin client.Boltz, name string) (*boltzrpc.Entity, string, string) {
+	entityName := "test"
+
+	entityInfo, err := admin.CreateEntity(entityName)
+	require.NoError(t, err)
+	require.NotZero(t, entityInfo.Id)
+
+	write, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+		EntityId:    &entityInfo.Id,
+		Permissions: client.FullPermissions,
+	})
+	require.NoError(t, err)
+
+	read, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
+		EntityId:    &entityInfo.Id,
+		Permissions: client.ReadPermissions,
+	})
+	require.NoError(t, err)
+
+	return entityInfo, write.Macaroon, read.Macaroon
+}
+
 func TestMacaroons(t *testing.T) {
 	fullPermissions := []*boltzrpc.MacaroonPermissions{
 		{Action: boltzrpc.MacaroonAction_READ},
@@ -311,7 +338,7 @@ func TestMacaroons(t *testing.T) {
 		{Action: boltzrpc.MacaroonAction_READ},
 	}
 
-	admin, _, stop := setup(t, setupOptions{})
+	admin, adminAuto, stop := setup(t, setupOptions{})
 	defer stop()
 	conn := admin.Connection
 
@@ -348,7 +375,7 @@ func TestMacaroons(t *testing.T) {
 
 	t.Run("Bake", func(t *testing.T) {
 		response, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
-			Permissions: fullPermissions,
+			Permissions: client.FullPermissions,
 		})
 		require.NoError(t, err)
 
@@ -357,7 +384,7 @@ func TestMacaroons(t *testing.T) {
 		anotherAdmin.SetMacaroon(response.Macaroon)
 
 		response, err = admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
-			Permissions: readPermissions,
+			Permissions: client.ReadPermissions,
 		})
 		require.NoError(t, err)
 
@@ -365,7 +392,7 @@ func TestMacaroons(t *testing.T) {
 
 		// write actions are not allowed now
 		_, err = anotherAdmin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
-			Permissions: readPermissions,
+			Permissions: client.ReadPermissions,
 		})
 		require.Error(t, err)
 
@@ -403,7 +430,12 @@ func TestMacaroons(t *testing.T) {
 	})
 
 	t.Run("AutoSwap", func(t *testing.T) {
-		_, err := entityAuto.GetConfig()
+		_, err := adminAuto.ResetConfig(autoswap.Lightning)
+		require.NoError(t, err)
+		cfg, err := adminAuto.GetLightningConfig()
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+		_, err = entityAuto.GetLightningConfig()
 		require.Error(t, err)
 	})
 
@@ -729,21 +761,35 @@ func TestSwap(t *testing.T) {
 					defer stop()
 
 					t.Run("Normal", func(t *testing.T) {
-						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-							Amount:           100000,
-							Pair:             pair,
-							SendFromInternal: true,
+						t.Run("EnoughBalance", func(t *testing.T) {
+
+							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Amount:           100000,
+								Pair:             pair,
+								SendFromInternal: true,
+							})
+							require.NoError(t, err)
+							require.NotEmpty(t, swap.TxId)
+							require.NotZero(t, swap.TimeoutHours)
+							require.NotZero(t, swap.TimeoutBlockHeight)
+
+							stream, _ := swapStream(t, client, swap.Id)
+							test.MineBlock()
+
+							info := stream(boltzrpc.SwapState_SUCCESSFUL)
+							checkSwap(t, info.Swap)
 						})
-						require.NoError(t, err)
-						require.NotEmpty(t, swap.TxId)
-						require.NotZero(t, swap.TimeoutHours)
-						require.NotZero(t, swap.TimeoutBlockHeight)
 
-						stream, _ := swapStream(t, client, swap.Id)
-						test.MineBlock()
-
-						info := stream(boltzrpc.SwapState_SUCCESSFUL)
-						checkSwap(t, info.Swap)
+						t.Run("NoBalance", func(t *testing.T) {
+							emptyWalletId := emptyWallet(t, client, tc.from)
+							_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Amount:           100000,
+								Pair:             pair,
+								SendFromInternal: true,
+								WalletId:         &emptyWalletId,
+							})
+							require.Error(t, err)
+						})
 					})
 					t.Run("Deposit", func(t *testing.T) {
 						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
@@ -770,7 +816,7 @@ func TestSwap(t *testing.T) {
 
 						require.NoError(t, err)
 
-						createFailedSwap := func(t *testing.T, refundAddress string) streamFunc {
+						createFailed := func(t *testing.T, refundAddress string) (streamFunc, streamStatusFunc) {
 							amount := submarinePair.Limits.Minimal + 100
 							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Pair:          pair,
@@ -779,9 +825,8 @@ func TestSwap(t *testing.T) {
 							})
 							require.NoError(t, err)
 
-							stream, _ := swapStream(t, client, swap.Id)
 							test.SendToAddress(cli, swap.Address, amount)
-							return stream
+							return swapStream(t, client, swap.Id)
 						}
 
 						t.Run("Script", func(t *testing.T) {
@@ -791,7 +836,7 @@ func TestSwap(t *testing.T) {
 							})
 
 							refundAddress := cli("getnewaddress")
-							withStream := createFailedSwap(t, refundAddress)
+							withStream, _ := createFailed(t, refundAddress)
 
 							swap := withStream(boltzrpc.SwapState_ERROR).Swap
 
@@ -811,7 +856,7 @@ func TestSwap(t *testing.T) {
 
 						t.Run("Cooperative", func(t *testing.T) {
 							refundAddress := cli("getnewaddress")
-							stream := createFailedSwap(t, refundAddress)
+							stream, _ := createFailed(t, refundAddress)
 
 							info := stream(boltzrpc.SwapState_REFUNDED).Swap
 							require.Zero(t, info.ServiceFee)
@@ -825,42 +870,77 @@ func TestSwap(t *testing.T) {
 							checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
 						})
 
-						if tc.from == boltzrpc.Currency_LBTC {
+						if tc.from == boltzrpc.Currency_BTC {
 							t.Run("Manual", func(t *testing.T) {
-								stream := createFailedSwap(t, "")
+								setup := func(t *testing.T) *boltzrpc.SwapInfo {
+									_, statusStream := createFailed(t, "")
+									info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).Swap
+									clientInfo, err := client.GetInfo()
+									require.NoError(t, err)
+									require.Len(t, clientInfo.RefundableSwaps, 1)
+									require.Equal(t, clientInfo.RefundableSwaps[0], info.Id)
+									return info
+								}
 
-								info := stream(boltzrpc.SwapState_ERROR).Swap
-								refundAddress := cli("getnewaddress")
+								t.Run("Address", func(t *testing.T) {
+									info := setup(t)
+									refundAddress := cli("getnewaddress")
+									destination := &boltzrpc.RefundSwapRequest_Address{}
+									request := &boltzrpc.RefundSwapRequest{Id: info.Id, Destination: destination}
 
-								clientInfo, err := client.GetInfo()
-								require.NoError(t, err)
-								require.Equal(t, clientInfo.RefundableSwaps[0], info.Id)
+									t.Run("Invalid", func(t *testing.T) {
+										destination.Address = "invalid"
+										_, err := client.RefundSwap(request)
+										requireCode(t, err, codes.InvalidArgument)
 
-								t.Run("Invalid", func(t *testing.T) {
-									_, err := client.RefundSwap(info.Id, "invalid")
-									requireCode(t, err, codes.InvalidArgument)
+										_, err = client.RefundSwap(&boltzrpc.RefundSwapRequest{Id: "invalid"})
+										requireCode(t, err, codes.NotFound)
+									})
 
-									_, err = client.RefundSwap("invalid", refundAddress)
-									requireCode(t, err, codes.NotFound)
+									t.Run("Valid", func(t *testing.T) {
+										destination.Address = refundAddress
+										response, err := client.RefundSwap(request)
+										require.NoError(t, err)
+										info := response.Swap
+
+										from := parseCurrency(pair.From)
+										refundFee, err := chain.GetTransactionFee(from, info.RefundTransactionId)
+										require.NoError(t, err)
+										assert.Equal(t, int(refundFee), int(*info.OnchainFee))
+
+										checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
+
+										_, err = client.RefundSwap(request)
+										requireCode(t, err, codes.NotFound)
+									})
 								})
 
-								t.Run("Valid", func(t *testing.T) {
-									_, err := client.RefundSwap(info.Id, refundAddress)
-									require.NoError(t, err)
+								t.Run("Wallet", func(t *testing.T) {
+									info := setup(t)
 
-									info = stream(boltzrpc.SwapState_REFUNDED).Swap
-									require.Zero(t, info.ServiceFee)
+									destination := &boltzrpc.RefundSwapRequest_WalletId{}
+									request := &boltzrpc.RefundSwapRequest{Id: info.Id, Destination: destination}
 
-									from := parseCurrency(pair.From)
+									t.Run("Invalid", func(t *testing.T) {
+										destination.WalletId = 123
+										_, err := client.RefundSwap(request)
+										requireCode(t, err, codes.NotFound)
+									})
 
-									refundFee, err := chain.GetTransactionFee(from, info.RefundTransactionId)
-									require.NoError(t, err)
-									assert.Equal(t, int(refundFee), int(*info.OnchainFee))
+									t.Run("Valid", func(t *testing.T) {
+										destination.WalletId = walletId(t, client, pair.From)
+										response, err := client.RefundSwap(request)
+										require.NoError(t, err)
+										info := response.Swap
+										require.Zero(t, info.ServiceFee)
 
-									checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
+										fromWallet, err := client.GetWalletById(destination.WalletId)
+										require.NoError(t, err)
+										require.NotZero(t, fromWallet.Balance.Unconfirmed)
 
-									_, err = client.RefundSwap(info.Id, refundAddress)
-									requireCode(t, err, codes.NotFound)
+										_, err = client.RefundSwap(request)
+										requireCode(t, err, codes.NotFound)
+									})
 								})
 							})
 						}
@@ -1103,11 +1183,25 @@ func TestReverseSwap(t *testing.T) {
 	})
 
 }
+
 func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
 	wallets, err := client.GetWallets(&currency, false)
 	require.NoError(t, err)
 	require.NotEmpty(t, wallets.Wallets)
 	return wallets.Wallets[0].Id
+}
+
+func emptyWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
+	response, err := client.CreateWallet(&boltzrpc.WalletParams{
+		Currency: currency,
+		Name:     "empty",
+	})
+	if err != nil {
+		existing, err := client.GetWallet("empty")
+		require.NoError(t, err)
+		return existing.Id
+	}
+	return response.Wallet.Id
 }
 
 func TestChainSwap(t *testing.T) {
@@ -1242,33 +1336,46 @@ func TestChainSwap(t *testing.T) {
 			}
 
 			t.Run("InternalWallets", func(t *testing.T) {
-				toWallet, err := client.GetWalletById(toWalletId)
-				require.NoError(t, err)
-				prev := toWallet.Balance.Total
-
-				zeroConf := true
-				swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-					Amount:         100000,
-					Pair:           pair,
-					ToWalletId:     &toWalletId,
-					FromWalletId:   &fromWalletId,
-					AcceptZeroConf: &zeroConf,
-				})
-				require.NoError(t, err)
-				require.NotEmpty(t, swap.Id)
-
-				stream, _ := swapStream(t, client, swap.Id)
-				test.MineBlock()
-				stream(boltzrpc.SwapState_SUCCESSFUL)
-
-				// gdk takes too long to sync
-				if tc.to == boltzrpc.Currency_BTC {
-					toWallet, err = client.GetWalletById(toWalletId)
+				t.Run("EnoughBalance", func(t *testing.T) {
+					toWallet, err := client.GetWalletById(toWalletId)
 					require.NoError(t, err)
-					require.Greater(t, toWallet.Balance.Total, prev)
-				}
+					prev := toWallet.Balance.Total
 
-				checkSwap(t, swap.Id)
+					zeroConf := true
+					swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+						Amount:         100000,
+						Pair:           pair,
+						ToWalletId:     &toWalletId,
+						FromWalletId:   &fromWalletId,
+						AcceptZeroConf: &zeroConf,
+					})
+					require.NoError(t, err)
+					require.NotEmpty(t, swap.Id)
+
+					stream, _ := swapStream(t, client, swap.Id)
+					test.MineBlock()
+					stream(boltzrpc.SwapState_SUCCESSFUL)
+
+					// gdk takes too long to sync
+					if tc.to == boltzrpc.Currency_BTC {
+						toWallet, err = client.GetWalletById(toWalletId)
+						require.NoError(t, err)
+						require.Greater(t, toWallet.Balance.Total, prev)
+					}
+
+					checkSwap(t, swap.Id)
+				})
+
+				t.Run("NoBalance", func(t *testing.T) {
+					emptyWalletId := emptyWallet(t, client, tc.from)
+					_, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+						Amount:       100000,
+						Pair:         pair,
+						ToWalletId:   &toWalletId,
+						FromWalletId: &emptyWalletId,
+					})
+					require.Error(t, err)
+				})
 			})
 
 			t.Run("External", func(t *testing.T) {
@@ -1351,40 +1458,80 @@ func TestChainSwap(t *testing.T) {
 					checkTxOutAddress(t, chain, from, info.FromData.GetTransactionId(), refundAddress, true)
 				})
 
-				if tc.from == boltzrpc.Currency_LBTC {
+				if tc.from == boltzrpc.Currency_BTC {
+
 					t.Run("Manual", func(t *testing.T) {
-						_, statusStream := createFailed(t, "")
-						info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).ChainSwap
-						clientInfo, err := client.GetInfo()
-						require.NoError(t, err)
-						require.Len(t, clientInfo.RefundableSwaps, 1)
-						require.Equal(t, clientInfo.RefundableSwaps[0], info.Id)
+						setup := func(t *testing.T) (*boltzrpc.ChainSwapInfo, streamStatusFunc) {
+							_, statusStream := createFailed(t, "")
+							info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).ChainSwap
+							clientInfo, err := client.GetInfo()
+							require.NoError(t, err)
+							require.Len(t, clientInfo.RefundableSwaps, 1)
+							require.Equal(t, clientInfo.RefundableSwaps[0], info.Id)
+							return info, statusStream
+						}
 
-						t.Run("Invalid", func(t *testing.T) {
-							_, err := client.RefundSwap(info.Id, "invalid")
-							requireCode(t, err, codes.InvalidArgument)
+						t.Run("Address", func(t *testing.T) {
+							info, statusStream := setup(t)
 
-							_, err = client.RefundSwap("invalid", refundAddress)
-							requireCode(t, err, codes.NotFound)
+							destination := &boltzrpc.RefundSwapRequest_Address{}
+							request := &boltzrpc.RefundSwapRequest{Id: info.Id, Destination: destination}
+							t.Run("Invalid", func(t *testing.T) {
+								destination.Address = "invalid"
+								_, err := client.RefundSwap(request)
+								requireCode(t, err, codes.InvalidArgument)
+
+								_, err = client.RefundSwap(&boltzrpc.RefundSwapRequest{Id: "invalid"})
+								requireCode(t, err, codes.NotFound)
+							})
+
+							t.Run("Valid", func(t *testing.T) {
+								destination.Address = refundAddress
+								_, err := client.RefundSwap(request)
+								require.NoError(t, err)
+
+								info = statusStream(boltzrpc.SwapState_REFUNDED, boltz.TransactionLockupFailed).ChainSwap
+								require.Zero(t, info.ServiceFee)
+
+								from := parseCurrency(pair.From)
+
+								refundFee, err := chain.GetTransactionFee(from, info.FromData.GetTransactionId())
+								require.NoError(t, err)
+								assert.Equal(t, int(refundFee), int(*info.OnchainFee))
+
+								checkTxOutAddress(t, chain, from, info.FromData.GetTransactionId(), refundAddress, true)
+
+								_, err = client.RefundSwap(request)
+								requireCode(t, err, codes.NotFound)
+							})
 						})
+						t.Run("Wallet", func(t *testing.T) {
+							info, statusStream := setup(t)
 
-						t.Run("Valid", func(t *testing.T) {
-							_, err := client.RefundSwap(info.Id, refundAddress)
-							require.NoError(t, err)
+							destination := &boltzrpc.RefundSwapRequest_WalletId{}
+							request := &boltzrpc.RefundSwapRequest{Id: info.Id, Destination: destination}
 
-							info = statusStream(boltzrpc.SwapState_REFUNDED, boltz.TransactionLockupFailed).ChainSwap
-							require.Zero(t, info.ServiceFee)
+							t.Run("Invalid", func(t *testing.T) {
+								destination.WalletId = 234213412341234
+								_, err := client.RefundSwap(request)
+								requireCode(t, err, codes.NotFound)
+							})
 
-							from := parseCurrency(pair.From)
+							t.Run("Valid", func(t *testing.T) {
+								destination.WalletId = fromWalletId
+								_, err := client.RefundSwap(request)
+								require.NoError(t, err)
 
-							refundFee, err := chain.GetTransactionFee(from, info.FromData.GetTransactionId())
-							require.NoError(t, err)
-							assert.Equal(t, int(refundFee), int(*info.OnchainFee))
+								info = statusStream(boltzrpc.SwapState_REFUNDED, boltz.TransactionLockupFailed).ChainSwap
+								require.Zero(t, info.ServiceFee)
 
-							checkTxOutAddress(t, chain, from, info.FromData.GetTransactionId(), refundAddress, true)
+								fromWallet, err := client.GetWalletById(fromWalletId)
+								require.NoError(t, err)
+								require.NotZero(t, fromWallet.Balance.Unconfirmed)
 
-							_, err = client.RefundSwap(info.Id, refundAddress)
-							requireCode(t, err, codes.NotFound)
+								_, err = client.RefundSwap(request)
+								requireCode(t, err, codes.NotFound)
+							})
 						})
 					})
 				}
@@ -1394,81 +1541,131 @@ func TestChainSwap(t *testing.T) {
 }
 
 func TestAutoSwap(t *testing.T) {
-
 	cfg := loadConfig(t)
-	cfg.Node = "cln"
+	cfg.Node = "LND"
 
 	_, err := connectLightning(cfg.Cln)
 	require.NoError(t, err)
 	_, err = connectLightning(cfg.LND)
 	require.NoError(t, err)
 
-	var us, them lightning.LightningNode
-	if strings.EqualFold(cfg.Node, "lnd") {
-		us = cfg.LND
-		them = cfg.Cln
-	} else {
-		us = cfg.Cln
-		them = cfg.LND
-	}
-
-	client, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
+	admin, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
-	tests := []struct {
-		desc     string
-		cli      func(string) string
-		currency boltzrpc.Currency
-	}{
-		{"BTC", test.BtcCli, boltzrpc.Currency_BTC},
-		//{"Liquid", liquidCli, boltz.PairLiquid},
-	}
+	_, err = autoSwap.ResetConfig(autoswap.Lightning)
+	require.NoError(t, err)
 
-	t.Run("Setup", func(t *testing.T) {
-		running := func(value bool) *autoswaprpc.GetStatusResponse {
-			status, err := autoSwap.GetStatus()
-			require.NoError(t, err)
-			require.Equal(t, value, status.Running)
-			require.NotZero(t, status.Strategy)
-			return status
+	_, err = autoSwap.ResetConfig(autoswap.Chain)
+	require.NoError(t, err)
+
+	t.Run("Chain", func(t *testing.T) {
+		cfg := &autoswaprpc.ChainConfig{
+			FromWallet: walletName,
+			ToWallet:   cfg.Node,
+			Enabled:    true,
 		}
+		fromWallet, err := admin.GetWallet(cfg.FromWallet)
+		require.NoError(t, err)
+		cfg.MaxBalance = fromWallet.Balance.Confirmed - 1000
 
-		_, err := autoSwap.ResetConfig()
+		_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: cfg})
 		require.NoError(t, err)
 
-		running(false)
-
-		_, err = autoSwap.SetConfigValue("currency", "LBTC")
+		status, err := autoSwap.GetStatus()
 		require.NoError(t, err)
+		require.True(t, status.Chain.Running)
 
-		_, err = autoSwap.Enable()
+		recommendations, err := autoSwap.GetRecommendations(true)
 		require.NoError(t, err)
+		require.Len(t, recommendations.Chain, 1)
 
-		status := running(false)
-		require.NotEmpty(t, status.Error)
+		test.MineBlock()
+		stream, _ := swapStream(t, admin, "")
+		info := stream(boltzrpc.SwapState_PENDING)
+		require.NotNil(t, info.ChainSwap)
+		id := info.ChainSwap.Id
 
-		_, err = autoSwap.SetConfigValue("wallet", walletName)
+		recommendations, err = autoSwap.GetRecommendations(true)
 		require.NoError(t, err)
+		require.Len(t, recommendations.Chain, 0)
 
-		status = running(true)
-		require.Empty(t, status.Error)
+		isAuto := true
+		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{IsAuto: &isAuto})
+		require.Len(t, response.ChainSwaps, 1)
+		require.Equal(t, id, response.ChainSwaps[0].Id)
 
-		_, err = autoSwap.Disable()
+		stream, _ = swapStream(t, admin, id)
 		require.NoError(t, err)
+		test.MineBlock()
+		stream(boltzrpc.SwapState_PENDING)
+		test.MineBlock()
+		stream(boltzrpc.SwapState_SUCCESSFUL)
 
-		running(false)
-	})
-
-	t.Run("CantRemoveWallet", func(t *testing.T) {
-		_, err := autoSwap.SetConfigValue("wallet", walletName)
+		recommendations, err = autoSwap.GetRecommendations(true)
 		require.NoError(t, err)
-		_, err = client.RemoveWallet(testWallet.Id)
+		require.Len(t, recommendations.Chain, 0)
+
+		_, write, _ := createEntity(t, admin, "test")
+		entity := client.NewAutoSwapClient(admin.Connection)
+		entity.SetMacaroon(write)
+
+		_, err = entity.GetConfig()
 		require.Error(t, err)
 	})
 
-	for _, tc := range tests {
-		tc := tc
-		t.Run(tc.desc, func(t *testing.T) {
+	t.Run("Lightning", func(t *testing.T) {
+		_, err := autoSwap.ResetConfig(autoswap.Lightning)
+		require.NoError(t, err)
+
+		var us, them lightning.LightningNode
+		if strings.EqualFold(cfg.Node, "lnd") {
+			us = cfg.LND
+			them = cfg.Cln
+		} else {
+			us = cfg.Cln
+			them = cfg.LND
+		}
+
+		t.Run("Setup", func(t *testing.T) {
+			running := func(value bool) *autoswaprpc.GetStatusResponse {
+				status, err := autoSwap.GetStatus()
+				require.NoError(t, err)
+				require.Equal(t, value, status.Lightning.Running)
+				require.NotEmpty(t, status.Lightning.Description)
+				return status
+			}
+
+			running(false)
+
+			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{
+				Config: &autoswaprpc.LightningConfig{
+					Currency: boltzrpc.Currency_LBTC,
+					Wallet:   walletName,
+				},
+				FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"currency", "wallet"}},
+			})
+			require.NoError(t, err)
+
+			_, err = autoSwap.Enable()
+			require.NoError(t, err)
+
+			status := running(true)
+			require.Empty(t, status.Lightning.Error)
+
+			_, err = autoSwap.SetLightningConfigValue("wallet", "invalid")
+			require.Error(t, err)
+		})
+
+		t.Run("CantRemoveWallet", func(t *testing.T) {
+			_, err := autoSwap.SetLightningConfigValue("wallet", walletName)
+			require.NoError(t, err)
+			_, err = autoSwap.SetLightningConfigValue("enabled", true)
+			require.NoError(t, err)
+			_, err = admin.RemoveWallet(testWallet.Id)
+			require.Error(t, err)
+		})
+
+		t.Run("Start", func(t *testing.T) {
 			getChannel := func(from lightning.LightningNode, peer string) *lightning.LightningChannel {
 				channels, err := from.ListChannels()
 				require.NoError(t, err)
@@ -1487,10 +1684,10 @@ func TestAutoSwap(t *testing.T) {
 				channel := getChannel(from, info.Pubkey)
 				require.NotNil(t, channel)
 
-				if channel.RemoteSat < channel.Capacity/2 {
-					amount = amount + (channel.Capacity/2-channel.RemoteSat)/1000
+				if channel.InboundSat < channel.Capacity/2 {
+					amount = amount + (channel.Capacity/2-channel.InboundSat)/1000
 				}
-				if channel.LocalSat < amount {
+				if channel.OutboundSat < amount {
 					return
 				}
 
@@ -1502,147 +1699,72 @@ func TestAutoSwap(t *testing.T) {
 				time.Sleep(1000 * time.Millisecond)
 			}
 
-			swapCfg := autoswap.DefaultConfig()
-			swapCfg.AcceptZeroConf = true
-			swapCfg.MaxFeePercent = 10
-			swapCfg.Budget = 1000000
-			swapCfg.Currency = tc.currency
-			swapCfg.SwapType = ""
-			swapCfg.Wallet = strings.ToUpper(cfg.Node)
-
-			writeConfig := func(t *testing.T) {
-				_, err := autoSwap.SetConfig(swapCfg)
-				require.NoError(t, err)
-				_, err = autoSwap.ReloadConfig()
-				require.NoError(t, err)
+			channels, err := us.ListChannels()
+			require.NoError(t, err)
+			var inboundBalance uint64
+			for _, channel := range channels {
+				inboundBalance += channel.InboundSat
 			}
 
-			writeConfig(t)
+			swapCfg := autoswap.DefaultLightningConfig()
+			swapCfg.AcceptZeroConf = true
+			swapCfg.MaxFeePercent = 10
+			swapCfg.Currency = boltzrpc.Currency_BTC
+			swapCfg.InboundBalance = inboundBalance - 100
+			swapCfg.SwapType = "reverse"
+			swapCfg.Wallet = strings.ToUpper(cfg.Node)
 
-			t.Run("LocalBalance", func(t *testing.T) {
-				channels, err := us.ListChannels()
-				require.NoError(t, err)
-				var localBalance uint64
-				for _, channel := range channels {
-					localBalance += channel.LocalSat
-				}
-
-				swapCfg.MaxBalance = localBalance + 100
-				swapCfg.SwapType = "reverse"
-				swapCfg.PerChannel = false
-				swapCfg.Enabled = false
-				swapCfg.Budget = 1000000
-				swapCfg.AcceptZeroConf = true
-
-				writeConfig(t)
-
-				recommendations, err := autoSwap.GetSwapRecommendations(true)
-				require.NoError(t, err)
-				require.Zero(t, recommendations.Swaps)
-
-				swapCfg.MaxBalance = localBalance - 100
-				swapCfg.MinBalance = localBalance / 2
-
-				writeConfig(t)
-
-				t.Run("Recommendations", func(t *testing.T) {
-					recommendations, err := autoSwap.GetSwapRecommendations(true)
-					require.NoError(t, err)
-					require.Len(t, recommendations.Swaps, 1)
-					require.Equal(t, string(boltz.ReverseSwap), recommendations.Swaps[0].Type)
-				})
-
-				t.Run("Auto", func(t *testing.T) {
-					pay(them, us, 1_000_000)
-					_, err := autoSwap.SetConfigValue("enabled", "true")
-					require.NoError(t, err)
-
-					time.Sleep(200 * time.Millisecond)
-					isAuto := true
-					swaps, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{IsAuto: &isAuto})
-					require.NoError(t, err)
-
-					require.NotEmpty(t, swaps.ReverseSwaps)
-					stream, _ := swapStream(t, client, swaps.ReverseSwaps[0].Id)
-					stream(boltzrpc.SwapState_SUCCESSFUL)
-
-					stats, err := autoSwap.GetStatus()
-					require.NoError(t, err)
-					require.Equal(t, 1, int(stats.Stats.Count))
-					require.Less(t, stats.Budget.Remaining, int64(stats.Budget.Total))
-					require.NotZero(t, stats.Stats.TotalFees)
-					require.NotZero(t, stats.Stats.TotalAmount)
-				})
-			})
-
-			_, err := autoSwap.ResetConfig()
+			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
 
-			/*
-				t.Run("PerChannel", func(t *testing.T) {
-					cfg.Swap.ChannelImbalanceThreshhold = 1
-					cfg.Swap.PerChannel = true
+			recommendations, err := autoSwap.GetRecommendations(true)
+			require.NoError(t, err)
+			require.Zero(t, recommendations.Lightning)
 
-					pay(them, us, 2000000)
+			swapCfg.InboundBalance = inboundBalance + 100
+			swapCfg.OutboundBalance = inboundBalance / 2
 
-					boltzPubkey := test.BoltzLnCli("getinfo | jq -r .identity_pubkey")
-					boltzChannel := getChannel(us, boltzPubkey)
-					if boltzChannel.LocalSat > 11_000_000 {
-						invoice := test.BoltzLnCli("addinvoice 2000000 | jq -r .payment_request")
-						_, err := us.PayInvoice(invoice, 10000, 30, boltzChannel.Id)
-						require.NoError(t, err)
-					}
+			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
+			require.NoError(t, err)
 
-					time.Sleep(1000 * time.Millisecond)
+			t.Run("Recommendations", func(t *testing.T) {
+				recommendations, err := autoSwap.GetRecommendations(true)
+				require.NoError(t, err)
+				require.Len(t, recommendations.Lightning, 1)
+				require.Equal(t, string(boltz.ReverseSwap), recommendations.Lightning[0].Type)
+			})
 
-					t.Run("Recommendations", func(t *testing.T) {
-						_, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
-						defer stop()
-						recommendations, err := autoSwap.GetSwapRecommendations()
-						require.NoError(t, err)
-						require.Len(t, recommendations.Swaps, 2)
-						require.Equal(t, boltz.ReverseSwap, recommendations.Swaps[0].Type)
-						require.Empty(t, recommendations.Swaps[0].DismissedReasons)
-						require.Equal(t, boltz.ReverseSwap, recommendations.Swaps[1].Type)
-						require.Empty(t, recommendations.Swaps[1].DismissedReasons)
-					})
+			t.Run("Auto", func(t *testing.T) {
+				pay(them, us, 1_000_000)
+				_, err := autoSwap.Enable()
+				require.NoError(t, err)
 
-					t.Run("Auto", func(t *testing.T) {
-						client, _, stop := setup(t, setupOptions{cfg: cfg})
-						defer stop()
+				time.Sleep(200 * time.Millisecond)
+				isAuto := true
+				swaps, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{IsAuto: &isAuto})
+				require.NoError(t, err)
 
-						time.Sleep(500 * time.Millisecond)
-						test.MineBlock()
-						time.Sleep(500 * time.Millisecond)
+				require.NotEmpty(t, swaps.ReverseSwaps)
+				stream, _ := swapStream(t, admin, swaps.ReverseSwaps[0].Id)
+				stream(boltzrpc.SwapState_SUCCESSFUL)
 
-						swaps, err := client.ListSwaps()
-						require.NoError(t, err)
+				status, err := autoSwap.GetStatus()
+				budget := status.Lightning.Budget
+				require.NoError(t, err)
+				require.Equal(t, 1, int(budget.Stats.Count))
+				require.Less(t, budget.Remaining, int64(budget.Total))
+				require.NotZero(t, budget.Stats.TotalFees)
+				require.NotZero(t, budget.Stats.TotalAmount)
+			})
 
-						info, err := them.GetInfo()
-						require.NoError(t, err)
-
-						expected := getChannel(us, info.Pubkey)
-
-						require.NotNil(t, expected)
-						require.Len(t, swaps.ReverseSwaps, 1)
-						require.Len(t, swaps.Swaps, 1)
-
-						require.Equal(t, boltzrpc.SwapState_SUCCESSFUL, swaps.ReverseSwaps[0].State)
-						require.Equal(t, expected.Id, swaps.ReverseSwaps[0].ChanId)
-
-						require.Equal(t, boltzrpc.SwapState_SUCCESSFUL, swaps.Swaps[0].State)
-						require.Equal(t, boltzChannel.Id, swaps.Swaps[0].ChanId)
-					})
-
-				})
-			*/
 		})
-	}
+
+	})
+
 }
 
 func TestWallet(t *testing.T) {
-	cfg := loadConfig(t)
-	client, _, stop := setup(t, setupOptions{cfg: cfg})
+	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
 	// the main setup function already created a wallet
@@ -1748,14 +1870,13 @@ func TestMagicRoutingHints(t *testing.T) {
 }
 
 func TestCreateWalletWithPassword(t *testing.T) {
-	cfg := loadConfig(t)
-	client, _, stop := setup(t, setupOptions{cfg: cfg})
+	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
 	_, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
-	// after creating one with a password, the first one will be encrypted aswell
+	// after creating one with a password, the first one will be encrypted as well
 	secondParams := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_BTC, Password: &password}
 	secondWallet, err := client.CreateWallet(secondParams)
 	require.NoError(t, err)
@@ -1772,22 +1893,20 @@ func TestCreateWalletWithPassword(t *testing.T) {
 }
 
 func TestImportDuplicateCredentials(t *testing.T) {
-	cfg := loadConfig(t)
-	client, _, stop := setup(t, setupOptions{cfg: cfg})
+	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
 	credentials, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
-	// after creating one with a password, the first one will be encrypted aswell
+	// after creating one with a password, the first one will be encrypted as well
 	second := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_BTC}
 	_, err = client.ImportWallet(second, credentials)
 	require.Error(t, err)
 }
 
 func TestChangePassword(t *testing.T) {
-	cfg := loadConfig(t)
-	client, _, stop := setup(t, setupOptions{cfg: cfg})
+	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
 	_, err := client.GetWalletCredentials(testWallet.Id, nil)

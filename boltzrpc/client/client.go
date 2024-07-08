@@ -10,6 +10,15 @@ type Boltz struct {
 	Client boltzrpc.BoltzClient
 }
 
+var FullPermissions = []*boltzrpc.MacaroonPermissions{
+	{Action: boltzrpc.MacaroonAction_READ},
+	{Action: boltzrpc.MacaroonAction_WRITE},
+}
+
+var ReadPermissions = []*boltzrpc.MacaroonPermissions{
+	{Action: boltzrpc.MacaroonAction_READ},
+}
+
 func NewBoltzClient(conn Connection) Boltz {
 	return Boltz{
 		Connection: conn,
@@ -33,8 +42,8 @@ func (boltz *Boltz) ListSwaps(request *boltzrpc.ListSwapsRequest) (*boltzrpc.Lis
 	return boltz.Client.ListSwaps(boltz.Ctx, request)
 }
 
-func (boltz *Boltz) RefundSwap(id string, address string) (*boltzrpc.GetSwapInfoResponse, error) {
-	return boltz.Client.RefundSwap(boltz.Ctx, &boltzrpc.RefundSwapRequest{Id: id, Address: address})
+func (boltz *Boltz) RefundSwap(request *boltzrpc.RefundSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
+	return boltz.Client.RefundSwap(boltz.Ctx, request)
 }
 
 func (boltz *Boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error) {

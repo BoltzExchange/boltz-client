@@ -401,7 +401,10 @@ message ListSwapsResponse {
 }
 message RefundSwapRequest {
     string id = 1;
-    string address = 2;
+    oneof destination {
+        string address = 2;
+        uint64 wallet_id = 3;
+    }
 }
 
 message GetSwapInfoRequest {
@@ -504,7 +507,7 @@ message CreateChainSwapRequest {
     // Address where the coins should be refunded to if the swap fails.
     optional string refund_address = 4;
     // Wallet from which the swap should be paid from. Ignored if `external_pay` is set to true.
-    // If the swap fails, funds will be refunded to this wallet aswell.
+    // If the swap fails, funds will be refunded to this wallet as well.
     optional uint64 from_wallet_id = 5;
     // Wallet where the the funds will go if the swap succeeds.
     optional uint64 to_wallet_id = 6;
@@ -557,8 +560,8 @@ message ChannelId {
 message LightningChannel {
     ChannelId id = 1;
     uint64 capacity = 2;
-    uint64 local_sat = 3;
-    uint64 remote_sat = 4;
+    uint64 outbound_sat = 3;
+    uint64 inbound_sat = 4;
     string peer_id = 5;
 }
 

@@ -19,7 +19,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
@@ -75,59 +74,8 @@ func (server *RpcServer) Init(
 		syncing: false,
 	}
 
-	swapper := &autoswap.AutoSwapper{
-		GetPairInfo: func(pair *boltzrpc.Pair, swapType boltz.SwapType) (*autoswap.PairInfo, error) {
-			if swapType == boltz.NormalSwap {
-				pair, err := routedServer.getSubmarinePair(pair)
-				if err != nil {
-					return nil, err
-				}
-				return &autoswap.PairInfo{
-					Limits: autoswap.Limits{
-						MinAmount: pair.Limits.Minimal,
-						MaxAmount: pair.Limits.Maximal,
-					},
-					PercentageFee: utils.Percentage(pair.Fees.Percentage),
-					OnchainFee:    pair.Fees.MinerFees,
-				}, nil
-			} else if swapType == boltz.ReverseSwap {
-				pair, err := routedServer.getReversePair(pair)
-				if err != nil {
-					return nil, err
-				}
-				return &autoswap.PairInfo{
-					Limits: autoswap.Limits{
-						MinAmount: pair.Limits.Minimal,
-						MaxAmount: pair.Limits.Maximal,
-					},
-					PercentageFee: utils.Percentage(pair.Fees.Percentage),
-					OnchainFee:    pair.Fees.MinerFees.Claim + pair.Fees.MinerFees.Lockup,
-				}, nil
-			}
-
-			return nil, errors.New("invalid swap type")
-		},
-	}
-	if lightning != nil {
-		swapper.ExecuteSwap = func(request *boltzrpc.CreateSwapRequest) error {
-			ctx, err := routedServer.macaroon.AddEntityToContext(context.Background(), "")
-			if err != nil {
-				return err
-			}
-			_, err = routedServer.createSwap(ctx, true, request)
-			return err
-		}
-		swapper.ExecuteReverseSwap = func(request *boltzrpc.CreateReverseSwapRequest) error {
-			ctx, err := routedServer.macaroon.AddEntityToContext(context.Background(), "")
-			if err != nil {
-				return err
-			}
-			_, err = routedServer.createReverseSwap(ctx, true, request)
-			return err
-		}
-		swapper.ListChannels = routedServer.lightning.ListChannels
-	}
-	swapper.Init(database, onchain, autoSwapConfigPath)
+	swapper := &autoswap.AutoSwap{}
+	swapper.Init(database, onchain, autoSwapConfigPath, routedServer)
 	routedServer.swapper = swapper
 
 	routedAutoSwapServer := &routedAutoSwapServer{

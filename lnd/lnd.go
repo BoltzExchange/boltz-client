@@ -35,10 +35,13 @@ type LightningClient interface {
 
 var (
 	paymentStatusFromGrpc = map[lnrpc.Payment_PaymentStatus]lightning.PaymentState{
+		lnrpc.Payment_INITIATED: lightning.PaymentPending,
 		lnrpc.Payment_IN_FLIGHT: lightning.PaymentPending,
 		lnrpc.Payment_SUCCEEDED: lightning.PaymentSucceeded,
 		lnrpc.Payment_FAILED:    lightning.PaymentFailed,
-		lnrpc.Payment_UNKNOWN:   lightning.PaymentFailed,
+		// Ignore the UNKNOWN status in the linter but keep using it for compatibility with older LND versions
+		//nolint:all
+		lnrpc.Payment_UNKNOWN: lightning.PaymentFailed,
 	}
 )
 
@@ -196,12 +199,12 @@ func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 			logger.Warn("Could not parse channel point: " + err.Error())
 		}
 		results = append(results, &lightning.LightningChannel{
-			LocalSat:  uint64(channel.LocalBalance),
-			RemoteSat: uint64(channel.RemoteBalance),
-			Capacity:  uint64(channel.Capacity),
-			Id:        lightning.ChanId(channel.ChanId),
-			PeerId:    channel.RemotePubkey,
-			Point:     *point,
+			OutboundSat: uint64(channel.LocalBalance),
+			InboundSat:  uint64(channel.RemoteBalance),
+			Capacity:    uint64(channel.Capacity),
+			Id:          lightning.ChanId(channel.ChanId),
+			PeerId:      channel.RemotePubkey,
+			Point:       point,
 		})
 	}
 

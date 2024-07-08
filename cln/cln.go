@@ -142,12 +142,12 @@ func (c *Cln) ListChannels() ([]*lightning.LightningChannel, error) {
 		}
 
 		results = append(results, &lightning.LightningChannel{
-			LocalSat:  channel.OurAmountMsat.Msat / 1000,
-			RemoteSat: (channel.AmountMsat.Msat - channel.OurAmountMsat.Msat) / 1000,
-			Capacity:  channel.AmountMsat.Msat / 1000,
-			Id:        chanId,
-			PeerId:    hex.EncodeToString(channel.PeerId),
-			Point: lightning.ChannelPoint{
+			OutboundSat: channel.OurAmountMsat.Msat / 1000,
+			InboundSat:  (channel.AmountMsat.Msat - channel.OurAmountMsat.Msat) / 1000,
+			Capacity:    channel.AmountMsat.Msat / 1000,
+			Id:          chanId,
+			PeerId:      hex.EncodeToString(channel.PeerId),
+			Point: &lightning.ChannelPoint{
 				FundingTxId: hex.EncodeToString(channel.FundingTxid),
 				OutputIndex: channel.FundingOutput,
 			},

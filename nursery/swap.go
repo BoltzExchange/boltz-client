@@ -120,7 +120,7 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 
 func (nursery *Nursery) handleSwapError(swap *database.Swap, err error) {
 	if dbErr := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
-		logger.Error("Could not update swap state: " + dbErr.Error())
+		logger.Error(dbErr.Error())
 	}
 	logger.Errorf("Swap %s error: %v", swap.Id, err)
 	nursery.sendSwapUpdate(*swap)
@@ -299,19 +299,19 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 		if err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
-			handleError("Could not update state of Swap " + swap.Id + ": " + err.Error())
+			handleError(err.Error())
 			return
 		}
 	} else if parsedStatus.IsFailedStatus() {
 		if swap.State == boltzrpc.SwapState_PENDING {
 			if err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
-				handleError("Could not update state of Swap " + swap.Id + ": " + err.Error())
+				handleError(err.Error())
 				return
 			}
 		}
 
 		logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
-		if err := nursery.RefundSwaps(swap.Pair.From, []database.Swap{*swap}, nil); err != nil {
+		if err := nursery.RefundSwaps(swap.Pair.From, []*database.Swap{swap}, nil); err != nil {
 			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 			return
 		}
