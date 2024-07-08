@@ -266,18 +266,6 @@ func (database *Database) QueryPendingSwaps() ([]*Swap, error) {
 	return database.QuerySwaps(SwapQuery{State: &state})
 }
 
-func (database *Database) QueryFailedSwaps(since time.Time) ([]*Swap, error) {
-	state := boltzrpc.SwapState_ERROR
-	return database.QuerySwaps(SwapQuery{State: &state, Since: since})
-}
-
-func (database *Database) QueryNonSuccessfullSwaps(currency boltz.Currency) ([]*Swap, error) {
-	return database.querySwaps(
-		"SELECT * FROM swaps WHERE (state = ? OR state = ?) AND fromCurrency = ?",
-		boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, currency,
-	)
-}
-
 const refundableSwapsQuery = `
 SELECT * FROM swaps
 WHERE fromCurrency = ?

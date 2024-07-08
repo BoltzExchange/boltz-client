@@ -271,11 +271,6 @@ func (database *Database) QueryPendingReverseSwaps() ([]*ReverseSwap, error) {
 	return database.QueryReverseSwaps(SwapQuery{State: &state})
 }
 
-func (database *Database) QueryFailedReverseSwaps(since time.Time) ([]*ReverseSwap, error) {
-	state := boltzrpc.SwapState_ERROR
-	return database.QueryReverseSwaps(SwapQuery{State: &state, Since: since})
-}
-
 const insertReverseSwapStatement = `
 INSERT INTO reverseSwaps (id, fromCurrency, toCurrency, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
                           invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId,
