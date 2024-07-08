@@ -23,24 +23,21 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 	if channel.Id != 0 {
 		recommendation.Channel = channel
 	}
-	var swapType boltz.SwapType
 	if channel.OutboundSat < outbound {
-		swapType = boltz.NormalSwap
-		recommendation.Amount = outbound - channel.OutboundSat
 		recommendation.Type = boltz.NormalSwap
-	} else if channel.InboundSat < inbound {
-		swapType = boltz.ReverseSwap
-		recommendation.Amount = inbound - channel.InboundSat
-		recommendation.Type = boltz.ReverseSwap
-	}
-	if swapType != "" && cfg.Allowed(swapType) {
-		target := float64(outbound+(channel.Capacity-inbound)) / 2
-		recommendation = &lightningRecommendation{
-			Type:   swapType,
-			Amount: uint64(math.Abs(float64(channel.OutboundSat) - target)),
+		if inbound == 0 {
+			recommendation.Amount = channel.Capacity - channel.OutboundSat
 		}
-		if channel.Id != 0 {
-			recommendation.Channel = channel
+	} else if channel.InboundSat < inbound {
+		recommendation.Type = boltz.ReverseSwap
+		if outbound == 0 {
+			recommendation.Amount = channel.Capacity - channel.InboundSat
+		}
+	}
+	if recommendation.Type != "" && cfg.Allowed(recommendation.Type) {
+		if recommendation.Amount == 0 {
+			target := float64(outbound+(channel.Capacity-inbound)) / 2
+			recommendation.Amount = uint64(math.Abs(float64(channel.OutboundSat) - target))
 		}
 		return recommendation
 	}

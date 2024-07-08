@@ -46,7 +46,7 @@ func TestSetLnConfig(t *testing.T) {
 
 	err = swapper.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{
 		Config: &SerializedLnConfig{
-			MaxFeePercent:        10,
+			MaxFeePercent:         10,
 			InboundBalancePercent: defaults.InboundBalancePercent - 10,
 		},
 		FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"inbound_balance_percent"}},
@@ -396,22 +396,22 @@ func TestStrategies(t *testing.T) {
 
 	channels := []*lightning.LightningChannel{
 		{
-			OutboundSat:  100,
-			InboundSat: 100,
-			Capacity:  200,
-			Id:        1,
+			OutboundSat: 100,
+			InboundSat:  100,
+			Capacity:    200,
+			Id:          1,
 		},
 		{
-			OutboundSat:  50,
-			InboundSat: 150,
-			Capacity:  200,
-			Id:        2,
+			OutboundSat: 50,
+			InboundSat:  150,
+			Capacity:    200,
+			Id:          2,
 		},
 		{
-			OutboundSat:  500,
-			InboundSat: 100,
-			Capacity:  600,
-			Id:        3,
+			OutboundSat: 500,
+			InboundSat:  100,
+			Capacity:    600,
+			Id:          3,
 		},
 	}
 
@@ -426,10 +426,10 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "PerChannel/Low",
 			config: &SerializedLnConfig{
-				PerChannel:           true,
-				InboundBalancePercent: 40,
-				OutboundBalancePercent:  40,
-				SwapType:             "reverse",
+				PerChannel:             true,
+				InboundBalancePercent:  40,
+				OutboundBalancePercent: 40,
+				SwapType:               "reverse",
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 200, channels[2]),
@@ -438,17 +438,17 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "PerChannel/High",
 			config: &SerializedLnConfig{
-				PerChannel:           true,
+				PerChannel:            true,
 				InboundBalancePercent: 10,
-				SwapType:             "reverse",
+				SwapType:              "reverse",
 			},
 			outcome: nil,
 		},
 		{
 			name: "TotalBalance/Reverse",
 			config: &SerializedLnConfig{
-				InboundBalancePercent: 40,
-				OutboundBalancePercent:  40,
+				InboundBalancePercent:  40,
+				OutboundBalancePercent: 40,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 150, nil),
@@ -457,8 +457,8 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Reverse",
 			config: &SerializedLnConfig{
-				InboundBalancePercent: 40,
-				OutboundBalancePercent:  40,
+				InboundBalancePercent:  40,
+				OutboundBalancePercent: 40,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 150, nil),
@@ -467,27 +467,27 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Normal",
 			config: &SerializedLnConfig{
-				InboundBalancePercent: 40,
-				OutboundBalancePercent:  40,
+				InboundBalancePercent:  40,
+				OutboundBalancePercent: 40,
 			},
 			channels: []*lightning.LightningChannel{
 				{
-					OutboundSat:  100,
-					InboundSat: 100,
-					Capacity:  200,
-					Id:        1,
+					OutboundSat: 100,
+					InboundSat:  100,
+					Capacity:    200,
+					Id:          1,
 				},
 				{
-					OutboundSat:  150,
-					InboundSat: 50,
-					Capacity:  200,
-					Id:        2,
+					OutboundSat: 150,
+					InboundSat:  50,
+					Capacity:    200,
+					Id:          2,
 				},
 				{
-					OutboundSat:  100,
-					InboundSat: 500,
-					Capacity:  600,
-					Id:        3,
+					OutboundSat: 100,
+					InboundSat:  500,
+					Capacity:    600,
+					Id:          3,
 				},
 			},
 			outcome: []*lightningRecommendation{
@@ -497,69 +497,62 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Inbound",
 			config: &SerializedLnConfig{
-				SwapType:      "reverse",
+				SwapType:       "reverse",
 				InboundBalance: 400,
 			},
 			outcome: []*lightningRecommendation{
-				recommendation(boltz.ReverseSwap, 350, nil),
+				recommendation(boltz.ReverseSwap, 650, nil),
 			},
 		},
 		{
 			name: "TotalBalance/Outbound",
 			config: &SerializedLnConfig{
-				SwapType:     "normal",
-				OutboundBalance: 400,
+				SwapType:        "normal",
+				OutboundBalance: 700,
 			},
 			outcome: []*lightningRecommendation{
-				recommendation(boltz.NormalSwap, 400, nil),
-			},
-			channels: []*lightning.LightningChannel{
-				{
-					OutboundSat:  300,
-					InboundSat: 700,
-					Capacity:  1000,
-				},
+				recommendation(boltz.NormalSwap, 350, nil),
 			},
 		},
 		{
 			name: "TotalBalance/Both/Above",
 			config: &SerializedLnConfig{
-				OutboundBalance:  400,
-				InboundBalance: 400,
+				OutboundBalance: 400,
+				InboundBalance:  400,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.NormalSwap, 200, nil),
 			},
 			channels: []*lightning.LightningChannel{
 				{
-					OutboundSat:  300,
-					InboundSat: 700,
-					Capacity:  1000,
+					OutboundSat: 300,
+					InboundSat:  700,
+					Capacity:    1000,
 				},
 			},
 		},
 		{
 			name: "TotalBalance/Both/Below",
 			config: &SerializedLnConfig{
-				OutboundBalance:  400,
-				InboundBalance: 400,
+				OutboundBalance: 400,
+				InboundBalance:  400,
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 200, nil),
 			},
 			channels: []*lightning.LightningChannel{
 				{
-					OutboundSat:  700,
-					InboundSat: 300,
-					Capacity:  1000,
+					OutboundSat: 700,
+					InboundSat:  300,
+					Capacity:    1000,
 				},
 			},
 		},
 		{
 			name: "TotalBalance/None",
 			config: &SerializedLnConfig{
-				OutboundBalance:  400,
-				InboundBalance: 300,
+				OutboundBalance: 400,
+				InboundBalance:  300,
 			},
 			outcome: nil,
 		},
