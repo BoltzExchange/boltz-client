@@ -347,15 +347,15 @@ func (cfg *LightningConfig) run(stop <-chan bool) {
 	ticker := time.NewTicker(time.Duration(cfg.ChannelPollInterval) * time.Second)
 
 	for {
+		logger.Debugf("Checking for lightning swap recommendation")
 		recommendations, err := cfg.GetSwapRecommendations()
 		if err != nil {
-			logger.Warn("Could not fetch swap recommendations: " + err.Error())
+			logger.Warnf("Could not fetch swap recommendations: %v", err)
 		}
 		if len(recommendations) > 0 {
-			logger.Infof("Got %v swap recommendations", len(recommendations))
 			for _, recommendation := range recommendations {
 				if recommendation.Dismissed() {
-					logger.Infof("Skipping swap recommendation %v because of %v", recommendation, recommendation.DismissedReasons)
+					logger.Infof("Skipping swap recommendation %+v", recommendation)
 					continue
 				}
 

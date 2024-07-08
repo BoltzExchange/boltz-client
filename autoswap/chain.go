@@ -150,7 +150,7 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 func (cfg *ChainConfig) execute(recommendation *ChainRecommendation) error {
 	if recommendation != nil {
 		if recommendation.Dismissed() {
-			logger.Infof("Skipping swap recommendation %v because of %v", recommendation, recommendation.DismissedReasons)
+			logger.Debugf("Skipping swap recommendation %+v", recommendation)
 			return nil
 		}
 		logger.Infof("Executing Swap recommendation: %+v", recommendation)
