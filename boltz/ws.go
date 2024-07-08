@@ -169,6 +169,25 @@ func (boltz *Websocket) Subscribe(swapIds []string) error {
 	}
 }
 
+func (boltz *Websocket) Unsubscribe(swapIds []string) error {
+	if len(swapIds) == 0 {
+		return nil
+	}
+	if err := boltz.SendJson(map[string]any{
+		"op":      "unsubscribe",
+		"channel": "swap.update",
+		"args":    swapIds,
+	}); err != nil {
+		return err
+	}
+	select {
+	case <-boltz.subscriptions:
+		return nil
+	case <-time.After(5 * time.Second):
+		return errors.New("no answer from boltz")
+	}
+}
+
 func (boltz *Websocket) Close() error {
 	boltz.closed = true
 	return boltz.conn.Close()

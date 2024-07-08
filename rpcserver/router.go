@@ -321,10 +321,12 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 var ErrInvalidAddress = status.Errorf(codes.InvalidArgument, "invalid address")
 
 func (server *routedBoltzServer) AbandonSwap(ctx context.Context, request *boltzrpc.AbandonSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
+	fmt.Println("wtf?")
 	swap, reverseSwap, chainSwap, err := server.database.QueryAnySwap(request.Id)
 	if err != nil {
 		return nil, handleError(errors.New("could not find Swap with ID " + request.Id))
 	}
+	fmt.Println(chainSwap)
 	if swap != nil {
 		err = server.database.UpdateSwapState(swap, boltzrpc.SwapState_ABANDONED, "")
 	}

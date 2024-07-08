@@ -196,6 +196,7 @@ func (nursery *Nursery) startSwapListener() {
 				logger.Errorf("Could not query swap %s: %v", status.Id, err)
 				continue
 			}
+			logger.Sillyf("Queried swap %s", status.Id)
 			if status.Error != "" {
 				logger.Warnf("Boltz could not find Swap %s: %s ", status.Id, status.Error)
 				continue

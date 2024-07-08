@@ -322,8 +322,12 @@ func (database *Database) Connect() error {
 }
 
 func (database *Database) Exec(query string, args ...any) (sql.Result, error) {
+	fmt.Println("lockin")
 	database.lock.Lock()
-	defer database.lock.Unlock()
+	defer func() {
+		logger.Silly("Unlocking database")
+		database.lock.Unlock()
+	}()
 	logger.Silly("Executing query: " + query)
 	if database.tx != nil {
 		return database.tx.Exec(query, args...)

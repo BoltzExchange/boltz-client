@@ -103,7 +103,7 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 }
 
 func InitLogger() {
-	logger.Init("", "debug")
+	logger.Init("", "silly")
 }
 
 func BtcCli(cmd string) string {
