@@ -51,11 +51,55 @@ type routedBoltzServer struct {
 	boltz     *boltz.Api
 	nursery   *nursery.Nursery
 	database  *database.Database
-	swapper   *autoswap.AutoSwapper
+	swapper   *autoswap.AutoSwap
 	macaroon  *macaroons.Service
 
 	stop   chan bool
 	locked bool
+}
+
+func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func()) {
+	blocks := server.nursery.BtcBlocks
+	if currency == boltz.CurrencyLiquid {
+		blocks = server.nursery.LiquidBlocks
+	}
+	updates := blocks.Get()
+	return updates, func() {
+		blocks.Remove(updates)
+	}
+}
+
+func entityContext(entity *database.Entity) context.Context {
+	return macaroons.AddEntityToContext(context.Background(), entity)
+}
+
+func (server *routedBoltzServer) CreateAutoSwap(entity *database.Entity, request *boltzrpc.CreateSwapRequest) error {
+	_, err := server.createSwap(entityContext(entity), true, request)
+	return err
+}
+
+func (server *routedBoltzServer) CreateAutoReverseSwap(entity *database.Entity, request *boltzrpc.CreateReverseSwapRequest) error {
+	_, err := server.createReverseSwap(entityContext(entity), true, request)
+	return err
+}
+
+func (server *routedBoltzServer) GetLightningChannels() ([]*lightning.LightningChannel, error) {
+	if server.lightning != nil {
+		return server.lightning.ListChannels()
+	}
+	return nil, errors.New("lightning channels not available")
+}
+
+func (server *routedBoltzServer) GetAutoSwapPairInfo(swapType boltzrpc.SwapType, pair *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
+	return server.GetPairInfo(context.Background(), &boltzrpc.GetPairInfoRequest{
+		Type: swapType,
+		Pair: pair,
+	})
+}
+
+func (server *routedBoltzServer) CreateAutoChainSwap(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest) error {
+	_, err := server.createChainSwap(entityContext(entity), true, request)
+	return err
 }
 
 func handleError(err error) error {
@@ -164,11 +208,11 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		response.Node = "standalone"
 	}
 
-	if server.swapper != nil {
-		if server.swapper.Running() {
+	if lnSwapper := server.swapper.GetLnSwapper(); lnSwapper != nil {
+		if lnSwapper.Running() {
 			response.AutoSwapStatus = "running"
 		} else {
-			if server.swapper.Error() != "" {
+			if lnSwapper.Error() != "" {
 				response.AutoSwapStatus = "error"
 			} else {
 				response.AutoSwapStatus = "disabled"
@@ -546,7 +590,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			RefundAddress:       request.GetRefundAddress(),
 			IsAuto:              isAuto,
 			ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
-			EntityId:            server.requireEntity(ctx),
+			EntityId:            requireEntityId(ctx),
 		}
 
 		if request.SendFromInternal {
@@ -642,12 +686,16 @@ func (server *routedBoltzServer) lightningAvailable(ctx context.Context) bool {
 	return server.lightning != nil && isAdmin(ctx)
 }
 
-func (server *routedBoltzServer) requireEntity(ctx context.Context) database.Id {
-	id := macaroons.EntityIdFromContext(ctx)
-	if id == nil {
-		return database.DefaultEntityId
+func requireEntity(ctx context.Context) database.Entity {
+	entity := macaroons.EntityFromContext(ctx)
+	if entity == nil {
+		return database.DefaultEntity
 	}
-	return *id
+	return *entity
+}
+
+func requireEntityId(ctx context.Context) database.Id {
+	return requireEntity(ctx).Id
 }
 
 func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
@@ -767,7 +815,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		ClaimTransactionId:  "",
 		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
 		ExternalPay:         externalPay,
-		EntityId:            server.requireEntity(ctx),
+		EntityId:            requireEntityId(ctx),
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -860,7 +908,7 @@ func (server *routedBoltzServer) CreateChainSwap(ctx context.Context, request *b
 func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateChainSwapRequest) (*boltzrpc.ChainSwapInfo, error) {
 	logger.Infof("Creating new chain swap")
 
-	entityId := server.requireEntity(ctx)
+	entityId := requireEntityId(ctx)
 
 	claimPrivateKey, claimPub, err := newKeys()
 	if err != nil {
@@ -1095,7 +1143,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 		WalletInfo: onchain.WalletInfo{
 			Name:     request.Params.Name,
 			Currency: currency,
-			EntityId: server.requireEntity(ctx),
+			EntityId: requireEntityId(ctx),
 		},
 		Mnemonic:       request.Credentials.GetMnemonic(),
 		Xpub:           request.Credentials.GetXpub(),
@@ -1241,7 +1289,7 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 
 func (server *routedBoltzServer) getWallet(ctx context.Context, checker onchain.WalletChecker) (onchain.Wallet, error) {
 	if checker.Id == nil {
-		id := server.requireEntity(ctx)
+		id := requireEntityId(ctx)
 		checker.EntityId = &id
 		if checker.Name == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "id or name required")
@@ -1292,13 +1340,11 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 	if err != nil {
 		return nil, handleError(err)
 	}
-	cfg, err := server.swapper.GetConfig()
-	if err == nil {
-		if cfg.Wallet == wallet.GetWalletInfo().Name {
-			return nil, handleError(errors.New(
-				"wallet is used in autoswap, configure a different wallet in autoswap before removing this wallet",
-			))
-		}
+	if server.swapper.WalletUsed(request.Id) {
+		return nil, handleError(fmt.Errorf(
+			"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet",
+			wallet.GetWalletInfo().Name,
+		))
 	}
 	if err := wallet.Remove(); err != nil {
 		return nil, handleError(err)
@@ -1415,9 +1461,6 @@ func (server *routedBoltzServer) unlock(password string) error {
 		}
 	}
 
-	if err := server.swapper.LoadConfig(); err != nil {
-		logger.Warnf("Could not load autoswap config: %v", err)
-	}
 	server.nursery = &nursery.Nursery{}
 	err = server.nursery.Init(
 		server.network,
@@ -1429,6 +1472,11 @@ func (server *routedBoltzServer) unlock(password string) error {
 	if err != nil {
 		return err
 	}
+
+	if err := server.swapper.LoadConfig(); err != nil {
+		logger.Warnf("Could not load autoswap config: %v", err)
+	}
+
 	server.locked = false
 
 	return nil

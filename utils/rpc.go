@@ -32,3 +32,10 @@ func SerializeCurrency(currency boltz.Currency) boltzrpc.Currency {
 		return boltzrpc.Currency_LBTC
 	}
 }
+
+func SerializePair(pair boltz.Pair) *boltzrpc.Pair {
+	return &boltzrpc.Pair{
+		From: SerializeCurrency(pair.From),
+		To:   SerializeCurrency(pair.To),
+	}
+}

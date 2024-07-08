@@ -100,5 +100,5 @@ func (service *Service) validateRequest(ctx context.Context, fullMethod string) 
 		entity = param[0]
 	}
 
-	return service.AddEntityToContext(ctx, entity)
+	return service.validateEntity(ctx, entity)
 }

@@ -132,8 +132,12 @@ CREATE TABLE reverseSwaps
 );
 CREATE TABLE autobudget
 (
-    startDate INTEGER PRIMARY KEY,
-    endDate   INTEGER
+    startDate INTEGER NOT NULL,
+    endDate   INTEGER NOT NULL,
+    name      VARCHAR NOT NULL,
+    entityId  INT REFERENCES entities (id),
+
+    PRIMARY KEY (startDate, name, entityId)
 );
 CREATE TABLE wallets
 (
@@ -255,8 +259,7 @@ type SwapQuery struct {
 	EntityId *Id
 }
 
-func (query *SwapQuery) ToWhereClause() (where string, values []any) {
-	var conditions []string
+func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []any) (string, []any) {
 	if query.From != nil {
 		conditions = append(conditions, "fromCurrency = ?")
 		values = append(values, *query.From)
@@ -281,10 +284,15 @@ func (query *SwapQuery) ToWhereClause() (where string, values []any) {
 		conditions = append(conditions, "entityId = ?")
 		values = append(values, query.EntityId)
 	}
+	var where string
 	if len(conditions) > 0 {
 		where = " WHERE " + strings.Join(conditions, " AND ")
 	}
-	return
+	return where, values
+}
+
+func (query *SwapQuery) ToWhereClause() (string, []any) {
+	return query.ToWhereClauseWithExisting([]string{}, []any{})
 }
 
 func (database *Database) Connect() error {

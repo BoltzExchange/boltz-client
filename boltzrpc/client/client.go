@@ -10,6 +10,15 @@ type Boltz struct {
 	Client boltzrpc.BoltzClient
 }
 
+var FullPermissions = []*boltzrpc.MacaroonPermissions{
+	{Action: boltzrpc.MacaroonAction_READ},
+	{Action: boltzrpc.MacaroonAction_WRITE},
+}
+
+var ReadPermissions = []*boltzrpc.MacaroonPermissions{
+	{Action: boltzrpc.MacaroonAction_READ},
+}
+
 func NewBoltzClient(conn Connection) Boltz {
 	return Boltz{
 		Connection: conn,

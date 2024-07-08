@@ -3,399 +3,345 @@ package autoswap
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
-	"slices"
-	"time"
-
+	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/BurntSushi/toml"
 	"google.golang.org/protobuf/encoding/protojson"
+	"os"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
 )
 
-var ErrorNotConfigured = errors.New("autoswap not configured")
-
-type Limits struct {
-	MinAmount uint64
-	MaxAmount uint64
+type shared struct {
+	onchain  *onchain.Onchain
+	database *database.Database
+	rpc      RpcProvider
 }
 
-type PairInfo struct {
-	Limits
-	PercentageFee utils.Percentage
-	OnchainFee    uint64
+type swapper[T commonConfig] struct {
+	shared
+	stop        chan bool
+	err         error
+	swapperType SwapperType
+	cfg         T
 }
 
-type AutoSwapper struct {
+type commonConfig interface {
+	Init() error
+	GetEnabled() bool
+	GetBudgetInterval() uint64
+	GetBudget() uint64
+	run(stop <-chan bool)
+}
+
+type RpcProvider interface {
+	GetAutoSwapPairInfo(swapType boltzrpc.SwapType, pair *boltzrpc.Pair) (*boltzrpc.PairInfo, error)
+	GetLightningChannels() ([]*lightning.LightningChannel, error)
+	GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func())
+
+	CreateAutoSwap(entity *database.Entity, request *boltzrpc.CreateSwapRequest) error
+	CreateAutoReverseSwap(entity *database.Entity, request *boltzrpc.CreateReverseSwapRequest) error
+	CreateAutoChainSwap(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest) error
+}
+
+type SwapperType string
+
+const (
+	Lightning SwapperType = "lightning"
+	Chain     SwapperType = "chain"
+)
+
+type Config = autoswaprpc.Config
+
+type AutoSwap struct {
 	cfg        *Config
-	onchain    *onchain.Onchain
-	database   *database.Database
-	stop       chan bool
 	configPath string
-	err        error
-	walletId   *database.Id
 
-	ExecuteSwap        func(request *boltzrpc.CreateSwapRequest) error
-	ExecuteReverseSwap func(request *boltzrpc.CreateReverseSwapRequest) error
-	ListChannels       func() ([]*lightning.LightningChannel, error)
-	GetPairInfo        func(pair *boltzrpc.Pair, swapType boltz.SwapType) (*PairInfo, error)
+	lnSwapper     *LightningSwapper
+	chainSwappers map[database.Id]*ChainSwapper
+	err           error
+
+	shared
 }
 
-func (swapper *AutoSwapper) Init(database *database.Database, onchain *onchain.Onchain, configPath string) {
-	swapper.onchain = onchain
-	swapper.database = database
-	swapper.configPath = configPath
+func (autoSwap *AutoSwap) Init(db *database.Database, onchain *onchain.Onchain, configPath string, rpc RpcProvider) {
+	autoSwap.shared = shared{
+		onchain:  onchain,
+		database: db,
+		rpc:      rpc,
+	}
+	autoSwap.configPath = configPath
+	autoSwap.chainSwappers = make(map[database.Id]*ChainSwapper)
 
 	if onchain != nil {
 		go func() {
 			for range onchain.OnWalletChange.Get() {
-				if swapper.Running() || swapper.Enabled() {
-					logger.Info("Restarting auto swapper because of wallet change")
-					swapper.Stop()
-					if err := swapper.Start(); err != nil {
-						logger.Error("Could not restart auto swapper: " + err.Error())
-					}
+				logger.Info("Restarting all auto swappers because of wallet change")
+				if swapper := autoSwap.lnSwapper; swapper != nil {
+					swapper.start()
+				}
+
+				for _, swapper := range autoSwap.chainSwappers {
+					swapper.start()
 				}
 			}
 		}()
 	}
 }
 
-func (swapper *AutoSwapper) SetConfigValue(name string, value any) error {
-	if err := swapper.requireConfig(); err != nil {
-		return err
-	}
-	if err := swapper.cfg.SetValue(name, value); err != nil {
-		return err
-	}
-	return swapper.setConfig(swapper.cfg)
+func (autoSwap *AutoSwap) handleErr(err error) error {
+	autoSwap.err = err
+	return err
 }
 
-func (swapper *AutoSwapper) setConfig(cfg *Config) error {
-	logger.Debugf("Setting auto swap config: %+v", cfg)
-	message := fmt.Sprintf("Using %v strategy to recommend swaps", cfg.strategyName)
-	if cfg.swapType != "" {
-		message += " of type " + string(cfg.swapType)
+func (autoSwap *AutoSwap) UpdateLightningConfig(request *autoswaprpc.UpdateLightningConfigRequest) error {
+	config := request.Config
+	if request.GetReset_() {
+		config = DefaultLightningConfig()
 	}
-	message += " for currency " + string(cfg.currency)
+	lnSwapper := autoSwap.lnSwapper
+	var base *SerializedLnConfig
+	if lnSwapper == nil || request.GetReset_() {
+		autoSwap.lnSwapper = &LightningSwapper{
+			shared:      autoSwap.shared,
+			swapperType: Lightning,
+		}
+		base = DefaultLightningConfig()
+	} else {
+		base = autoSwap.lnSwapper.cfg.SerializedLnConfig
+	}
+	if config == nil {
+		config = base
+	} else {
+		updated, err := overwrite(config, base, request.FieldMask)
+		if err != nil {
+			return err
+		}
+		config = updated.(*SerializedLnConfig)
+	}
 
-	logger.Info(message)
-	swapper.cfg = cfg
-	if cfg.Enabled {
-		if err := swapper.Start(); err != nil {
-			logger.Error("Could not start auto swapper: " + err.Error())
+	if err := autoSwap.lnSwapper.setConfig(NewLightningConfig(config, autoSwap.shared)); err != nil {
+		return err
+	}
+	return autoSwap.saveConfig()
+}
+
+func (autoSwap *AutoSwap) UpdateChainConfig(request *autoswaprpc.UpdateChainConfigRequest, entity database.Entity) error {
+	chainSwapper, ok := autoSwap.chainSwappers[entity.Id]
+	if request.GetReset_() {
+		if ok {
+			chainSwapper.Stop()
+			delete(autoSwap.chainSwappers, entity.Id)
 		}
 	} else {
-		swapper.Stop()
+		config := request.Config
+		var base *SerializedChainConfig
+		if !ok {
+			if request.FieldMask != nil {
+				return fmt.Errorf("chain autoSwap needs to be initialized with full config first")
+			}
+			chainSwapper = &ChainSwapper{
+				shared:      autoSwap.shared,
+				swapperType: Chain,
+			}
+			base = &SerializedChainConfig{}
+		} else {
+			base = chainSwapper.cfg.SerializedChainConfig
+		}
+		updated, err := overwrite(config, base, request.FieldMask)
+		if err != nil {
+			return err
+		}
+		config = updated.(*SerializedChainConfig)
+		if entity.Name != database.DefaultEntityName {
+			config.Entity = &entity.Name
+		}
+
+		if err := chainSwapper.setConfig(NewChainConfig(config, autoSwap.shared)); err != nil {
+			return err
+		}
+
+		autoSwap.chainSwappers[entity.Id] = chainSwapper
 	}
-	return swapper.saveConfig()
+	return autoSwap.saveConfig()
 }
 
-func (swapper *AutoSwapper) SetConfig(values *SerializedConfig) error {
-	cfg := NewConfig(values)
-	if err := cfg.Init(); err != nil {
-		return fmt.Errorf("invalid config: %w", err)
-	}
-	return swapper.setConfig(cfg)
-}
-
-func (swapper *AutoSwapper) LoadConfig() error {
+func (autoSwap *AutoSwap) LoadConfig() error {
 	var err error
 
-	if !utils.FileExists(swapper.configPath) {
+	if !utils.FileExists(autoSwap.configPath) {
 		return nil
 	}
-	serialized := &SerializedConfig{}
+	serialized := &Config{}
 	var cfgToml any
-	if _, err = toml.DecodeFile(swapper.configPath, &cfgToml); err != nil {
-		err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
-	}
+	_, err = toml.DecodeFile(autoSwap.configPath, &cfgToml)
 	if err == nil {
 		// cant go from toml to proto directly, so we need to marshal again
 		cfgJson, _ := json.Marshal(cfgToml)
 		if err = protojson.Unmarshal(cfgJson, serialized); err != nil {
-			err = fmt.Errorf("Could not decode autoswap config: " + err.Error())
+			old := &SerializedLnConfig{}
+			if errOld := protojson.Unmarshal(cfgJson, old); errOld == nil {
+				serialized.Lightning = append(serialized.Lightning, old)
+				err = nil
+			}
 		}
 	}
 
-	if err == nil {
-		err = swapper.SetConfig(serialized)
+	if err != nil {
+		return autoSwap.handleErr(fmt.Errorf("could not load config: %w", err))
 	}
-	// only set error if we dont have a config yet
-	if err != nil && swapper.cfg == nil {
-		swapper.err = err
+
+	for entity, chainSwapper := range autoSwap.chainSwappers {
+		chainSwapper.Stop()
+		delete(autoSwap.chainSwappers, entity)
 	}
-	return err
+
+	if autoSwap.lnSwapper != nil {
+		autoSwap.lnSwapper.Stop()
+		autoSwap.lnSwapper = nil
+	}
+
+	request := &autoswaprpc.UpdateLightningConfigRequest{}
+	if len(serialized.Lightning) > 0 {
+		request.Config = serialized.Lightning[0]
+		if err := autoSwap.UpdateLightningConfig(request); err != nil {
+			logger.Errorf("could not update lightning config: %v", err)
+		}
+	}
+
+	for _, chainConfig := range serialized.Chain {
+		entity := &database.DefaultEntity
+		if chainConfig.Entity != nil {
+			entity, err = autoSwap.database.GetEntityByName(*chainConfig.Entity)
+			if err != nil {
+				logger.Errorf("could not get entity %s: %v", *chainConfig.Entity, err)
+				continue
+			}
+		}
+		request := &autoswaprpc.UpdateChainConfigRequest{Config: chainConfig}
+		if err := autoSwap.UpdateChainConfig(request, *entity); err != nil {
+			logger.Errorf("could not update chain config: %v", err)
+		}
+	}
+	return autoSwap.handleErr(nil)
 }
 
-func (swapper *AutoSwapper) saveConfig() error {
+func (autoSwap *AutoSwap) saveConfig() error {
 	buf := new(bytes.Buffer)
 	marshaler := protojson.MarshalOptions{
 		EmitUnpopulated: true,
 	}
-	marshalled, _ := marshaler.Marshal(swapper.cfg.SerializedConfig)
+
+	cfg := &Config{}
+	if autoSwap.lnSwapper != nil {
+		cfg.Lightning = append(cfg.Lightning, autoSwap.lnSwapper.cfg.SerializedLnConfig)
+	}
+	for _, chainSwapper := range autoSwap.chainSwappers {
+		cfg.Chain = append(cfg.Chain, chainSwapper.cfg.SerializedChainConfig)
+	}
+	marshalled, _ := marshaler.Marshal(cfg)
 	var asJson any
 	// cant go from json to toml directly, so we need to unmarshal again
 	_ = json.Unmarshal(marshalled, &asJson)
 	if err := toml.NewEncoder(buf).Encode(asJson); err != nil {
-		return err
+		return autoSwap.handleErr(fmt.Errorf("could not encode config: %w", err))
 	}
-	return os.WriteFile(swapper.configPath, buf.Bytes(), 0666)
+	autoSwap.cfg = cfg
+	if err := os.WriteFile(autoSwap.configPath, buf.Bytes(), 0666); err != nil {
+		return autoSwap.handleErr(fmt.Errorf("could not write config to disk: %w", err))
+	}
+	return autoSwap.handleErr(nil)
 }
 
-func (swapper *AutoSwapper) requireConfig() error {
-	if swapper.cfg == nil {
-		if swapper.err != nil {
-			return fmt.Errorf("%w: %w", ErrorNotConfigured, swapper.err)
+func (autoSwap *AutoSwap) WalletUsed(id database.Id) bool {
+	if autoSwap.lnSwapper != nil {
+		used := autoSwap.lnSwapper.cfg.walletId
+		if used != nil && *used == id {
+			return true
 		}
-		return ErrorNotConfigured
 	}
-	return nil
-}
-
-func (swapper *AutoSwapper) GetConfig() (*Config, error) {
-	if err := swapper.requireConfig(); err != nil {
-		return nil, err
-	}
-	cfg := *swapper.cfg
-	return &cfg, nil
-}
-
-func (swapper *AutoSwapper) getDismissedChannels() (DismissedChannels, error) {
-	reasons := make(DismissedChannels)
-
-	swaps, err := swapper.database.QueryPendingSwaps()
-	if err != nil {
-		return nil, errors.New("Could not query pending swaps: " + err.Error())
-	}
-
-	reverseSwaps, err := swapper.database.QueryPendingReverseSwaps()
-	if err != nil {
-		return nil, errors.New("Could not query pending reverse swaps: " + err.Error())
-	}
-
-	for _, swap := range swaps {
-		reasons.addChannels(swap.ChanIds, ReasonPendingSwap)
-	}
-	for _, swap := range reverseSwaps {
-		reasons.addChannels(swap.ChanIds, ReasonPendingSwap)
-	}
-
-	since := time.Now().Add(time.Duration(-swapper.cfg.FailureBackoff) * time.Second)
-	failedSwaps, err := swapper.database.QueryFailedSwaps(since)
-	if err != nil {
-		return nil, errors.New("Could not query failed swaps: " + err.Error())
-	}
-
-	failedReverseSwaps, err := swapper.database.QueryFailedReverseSwaps(since)
-	if err != nil {
-		return nil, errors.New("Could not query failed reverse swaps: " + err.Error())
-	}
-	for _, swap := range failedSwaps {
-		reasons.addChannels(swap.ChanIds, ReasonFailedSwap)
-	}
-	for _, swap := range failedReverseSwaps {
-		reasons.addChannels(swap.ChanIds, ReasonFailedSwap)
-	}
-
-	return reasons, nil
-}
-
-func (swapper *AutoSwapper) validateRecommendations(
-	recommendations []*rawRecommendation,
-	budget int64,
-) ([]*SwapRecommendation, error) {
-	dismissedChannels, err := swapper.getDismissedChannels()
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Debugf("Dismissed channels: %v", dismissedChannels)
-
-	// we might be able to fit more swaps in the budget if we sort by amount
-	slices.SortFunc(recommendations, func(a, b *rawRecommendation) int {
-		return int(a.Amount - b.Amount)
-	})
-
-	var checked []*SwapRecommendation
-	for _, recommendation := range recommendations {
-		pairInfo, err := swapper.GetPairInfo(swapper.cfg.GetPair(recommendation.Type), recommendation.Type)
-		if err != nil {
-			logger.Warn("Could not get pair info: " + err.Error())
-			continue
+	for _, chainSwapper := range autoSwap.chainSwappers {
+		if chainSwapper.cfg.fromWallet.GetWalletInfo().Id == id {
+			return true
 		}
+	}
+	return false
+}
 
-		recommendation := recommendation.Check(pairInfo, swapper.cfg)
-		reasons, ok := dismissedChannels[recommendation.Channel.GetId()]
-		if ok {
-			recommendation.DismissedReasons = append(recommendation.DismissedReasons, reasons...)
+func (autoSwap *AutoSwap) GetConfig(entityId *database.Id) *Config {
+	scoped := &Config{}
+	for entity, chainSwapper := range autoSwap.chainSwappers {
+		if entityId == nil || *entityId == entity {
+			scoped.Chain = append(scoped.Chain, chainSwapper.cfg.SerializedChainConfig)
 		}
-		if len(recommendation.DismissedReasons) == 0 {
-			budget -= int64(recommendation.FeeEstimate)
-		}
-		if budget < 0 {
-			recommendation.Dismiss(ReasonBudgetExceeded)
-		}
-		checked = append(checked, recommendation)
 	}
-
-	return checked, nil
+	if autoSwap.lnSwapper != nil && (entityId == nil || *entityId == database.DefaultEntityId) {
+		scoped.Lightning = []*SerializedLnConfig{autoSwap.lnSwapper.cfg.SerializedLnConfig}
+	}
+	return scoped
 }
 
-func (swapper *AutoSwapper) GetSwapRecommendations() ([]*SwapRecommendation, error) {
-	if err := swapper.requireConfig(); err != nil {
-		return nil, err
-	}
-	if swapper.ListChannels == nil {
-		return nil, errors.New("lightning channels are not available")
-	}
-	channels, err := swapper.ListChannels()
-	if err != nil {
-		return nil, err
-	}
-
-	recommendations := swapper.cfg.strategy(channels)
-
-	budget, err := swapper.GetCurrentBudget(true)
-	if err != nil {
-		return nil, errors.New("Could not get budget: " + err.Error())
-	}
-
-	logger.Debugf("Current autoswap budget: %+v", *budget)
-
-	return swapper.validateRecommendations(recommendations, budget.Amount)
+func (autoSwap *AutoSwap) GetLnSwapper() *LightningSwapper {
+	return autoSwap.lnSwapper
 }
 
-func (swapper *AutoSwapper) execute(recommendation *SwapRecommendation, address string) error {
-	var chanIds []string
-	if chanId := recommendation.Channel.GetId(); chanId != 0 {
-		chanIds = append(chanIds, chanId.ToCln())
-	}
-	pair := swapper.cfg.GetPair(recommendation.Type)
-	var err error
-	if recommendation.Type == boltz.ReverseSwap {
-		err = swapper.ExecuteReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-			Amount:         recommendation.Amount,
-			Address:        address,
-			AcceptZeroConf: swapper.cfg.AcceptZeroConf,
-			Pair:           pair,
-			ChanIds:        chanIds,
-			WalletId:       swapper.walletId,
-		})
-	} else if recommendation.Type == boltz.NormalSwap {
-		err = swapper.ExecuteSwap(&boltzrpc.CreateSwapRequest{
-			Amount: recommendation.Amount,
-			Pair:   pair,
-			//ChanIds:          chanIds,
-			SendFromInternal: true,
-			WalletId:         swapper.walletId,
-		})
-	}
-	return err
+func (autoSwap *AutoSwap) GetChainSwapper(entityId database.Id) *ChainSwapper {
+	return autoSwap.chainSwappers[entityId]
 }
 
-func (swapper *AutoSwapper) Enabled() bool {
-	return swapper.cfg != nil && swapper.cfg.Enabled
-}
-
-func (swapper *AutoSwapper) Running() bool {
-	return swapper.stop != nil
-}
-
-func (swapper *AutoSwapper) Error() string {
-	if swapper.err != nil {
-		return swapper.err.Error()
+func (autoSwap *AutoSwap) Error() string {
+	if autoSwap.err != nil {
+		return autoSwap.err.Error()
 	}
 	return ""
 }
 
-func (swapper *AutoSwapper) Start() error {
-	if err := swapper.requireConfig(); err != nil {
-		return err
-	}
-	swapper.Stop()
-
-	logger.Info("Starting auto swapper")
-
-	cfg := swapper.cfg
-	address, err := cfg.GetAddress(swapper.onchain.Network)
-	if err != nil {
-		logger.Info(err.Error())
-	}
-	normalSwaps := cfg.swapType == "" || cfg.swapType == boltz.NormalSwap
-	wallet, err := swapper.onchain.GetAnyWallet(onchain.WalletChecker{
-		Name:          &cfg.Wallet,
-		Currency:      cfg.currency,
-		AllowReadonly: !normalSwaps,
-	})
-	if wallet == nil {
-		if address == "" {
-			err = fmt.Errorf("neither external address or wallet is available for currency %s: %v", cfg.currency, err)
-		} else if normalSwaps {
-			err = fmt.Errorf("normal swaps require a wallet: %v", err)
-		} else {
-			err = nil
-		}
-	} else {
-		id := wallet.GetWalletInfo().Id
-		swapper.walletId = &id
-	}
-
-	swapper.err = err
-	if err != nil {
-		return err
-	}
-
-	swapper.stop = make(chan bool)
-	go func() {
-		ticker := time.NewTicker(time.Duration(cfg.ChannelPollInterval) * time.Second)
-
-		for {
-			recommendations, err := swapper.GetSwapRecommendations()
-			if err != nil {
-				logger.Warn("Could not fetch swap recommendations: " + err.Error())
-			}
-			if len(recommendations) > 0 {
-				logger.Infof("Got %v swap recommendations", len(recommendations))
-				for _, recommendation := range recommendations {
-					if recommendation.Dismissed() {
-						logger.Infof("Skipping swap recommendation %v because of %v", recommendation, recommendation.DismissedReasons)
-						continue
-					}
-
-					logger.Infof("Executing Swap recommendation: %v", recommendation)
-
-					err := swapper.execute(recommendation, address)
-					if err != nil {
-						logger.Error("Could not act on swap recommendation : " + err.Error())
-					}
-				}
-			}
-			// wait for ticker after executing so that it runs immediately upon startup
-			select {
-			case <-ticker.C:
-				continue
-			case <-swapper.stop:
-				return
-			}
-		}
-	}()
-	return nil
+func (c *swapper[T]) Running() bool {
+	return c.stop != nil
 }
 
-func (swapper *AutoSwapper) Stop() {
-	if swapper.stop != nil {
-		logger.Info("Stopping auto swapper")
-		swapper.stop <- true
-		swapper.stop = nil
-		swapper.err = nil
+func (c *swapper[T]) Error() string {
+	if c.err != nil {
+		return c.err.Error()
 	}
+	return ""
+}
+
+func (c *swapper[T]) setConfig(cfg T) error {
+	logger.Debugf("Setting %s autoswap config: %+v", c.swapperType, cfg)
+	c.cfg = cfg
+	c.start()
+	return c.err
+}
+
+func (c *swapper[T]) Stop() {
+	if c.stop != nil {
+		logger.Infof("Stopping %s auto swapper", c.swapperType)
+		c.stop <- true
+		c.stop = nil
+		c.err = nil
+	}
+}
+
+func (c *swapper[T]) start() {
+	c.Stop()
+	c.err = c.cfg.Init()
+	if c.err != nil {
+		logger.Errorf("Autoswap wallet configuration has become invalid: %s", c.err)
+		return
+	}
+	if c.cfg.GetEnabled() {
+		logger.Infof("Starting %s auto swapper", c.swapperType)
+		c.stop = make(chan bool)
+		go c.cfg.run(c.stop)
+	}
+}
+func (c *swapper[T]) GetConfig() T {
+	return c.cfg
 }

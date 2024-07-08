@@ -46,12 +46,12 @@ type ChannelPoint struct {
 }
 
 type LightningChannel struct {
-	LocalSat  uint64
-	RemoteSat uint64
-	Capacity  uint64
-	Id        ChanId
-	PeerId    string
-	Point     ChannelPoint
+	OutboundSat uint64
+	InboundSat  uint64
+	Capacity    uint64
+	Id          ChanId
+	PeerId      string
+	Point       *ChannelPoint
 }
 
 func (channel *LightningChannel) GetId() ChanId {

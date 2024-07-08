@@ -12,6 +12,8 @@ type Entity struct {
 const DefaultEntityId Id = 1
 const DefaultEntityName string = "admin"
 
+var DefaultEntity = Entity{Id: DefaultEntityId, Name: DefaultEntityName}
+
 func (d *Database) CreateDefaultEntity() error {
 	defaultEntity, _ := d.GetEntity(DefaultEntityId)
 	if defaultEntity == nil {

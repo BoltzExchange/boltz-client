@@ -45,7 +45,7 @@ docker exec boltz-client boltzcli getinfo
 
 To build, [Go](https://go.dev/) version `1.21` or higher is required. Boltz Client also has C dependencies, which means a C compiler has to be installed to compile the daemon successfully.
 
-Boltz Client depends on [GDK](https://github.com/Blockstream/gdk) by blockstream, which can be either dynamically or statically linked. The recommended way to build from source is linking dynamically as a static link requires compiling gdk aswell.
+Boltz Client depends on [GDK](https://github.com/Blockstream/gdk) by blockstream, which can be either dynamically or statically linked. The recommended way to build from source is linking dynamically as a static link requires compiling gdk as well.
 
 Run `make build` to build the daemon and CLI. The binaries will be placed at the current path.
 
@@ -74,7 +74,7 @@ The LND node to which the daemon connects has to be version `v0.10.0-beta` or hi
 
 By default, boltzd will attempt to connect to lnd running at `localhost:10009` (`lnd.host` and `lnd.port`) and looking for certificate and macaroon inside the data directory `~/.lnd` (`lnd.datadir`).
 
-You can manually set the location of the tls certificate (`lnd.certificate`) and admin macaroon (`lnd.macaroon`) instead of speciyfing the data directory aswell.
+You can manually set the location of the tls certificate (`lnd.certificate`) and admin macaroon (`lnd.macaroon`) instead of speciyfing the data directory as well.
 
 #### CLN
 
@@ -84,7 +84,7 @@ The daemon connects to CLN through [gRPC](https://docs.corelightning.org/docs/gr
 * `--cln.host` host of the machine CLN is running on
 * `--cln.datadir` data directory of cln (`~/.lightning` by default)
 
-You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory aswell.
+You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory as well.
 
 ### CLI
 

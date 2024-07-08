@@ -2,11 +2,12 @@ package rpcserver
 
 import (
 	"context"
-	"encoding/json"
-
+	"errors"
+	"fmt"
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/macaroons"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 
@@ -14,84 +15,127 @@ type routedAutoSwapServer struct {
 	autoswaprpc.AutoSwapServer
 
 	database *database.Database
-	swapper  *autoswap.AutoSwapper
+	swapper  *autoswap.AutoSwap
 }
 
-func (server *routedAutoSwapServer) GetSwapRecommendations(_ context.Context, request *autoswaprpc.GetSwapRecommendationsRequest) (*autoswaprpc.GetSwapRecommendationsResponse, error) {
-	recommendations, err := server.swapper.GetSwapRecommendations()
-
-	if err != nil {
-		return nil, handleError(err)
+func (server *routedAutoSwapServer) lnSwapper(ctx context.Context) *autoswap.LightningSwapper {
+	if isAdmin(ctx) {
+		return server.swapper.GetLnSwapper()
 	}
+	return nil
+}
 
-	var swaps []*autoswaprpc.SwapRecommendation
-	for _, recommendation := range recommendations {
-		noDismissed := request.NoDismissed != nil && *request.NoDismissed
-		if !noDismissed || !recommendation.Dismissed() {
-			swaps = append(swaps, &autoswaprpc.SwapRecommendation{
-				Type:             string(recommendation.Type),
+func (server *routedAutoSwapServer) chainSwapper(ctx context.Context) *autoswap.ChainSwapper {
+	return server.swapper.GetChainSwapper(requireEntityId(ctx))
+}
+
+func (server *routedAutoSwapServer) requireSwapper(ctx context.Context) error {
+	if err := server.swapper.Error(); err != "" {
+		return fmt.Errorf("autoswap: %s", err)
+	}
+	if server.lnSwapper(ctx) == nil && server.chainSwapper(ctx) == nil {
+		return errors.New("autoswap not configured")
+	}
+	return nil
+}
+
+func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, request *autoswaprpc.GetRecommendationsRequest) (*autoswaprpc.GetRecommendationsResponse, error) {
+	if err := server.requireSwapper(ctx); err != nil {
+		return nil, err
+	}
+	response := &autoswaprpc.GetRecommendationsResponse{}
+	if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
+		recommendations, err := lnSwapper.GetConfig().GetSwapRecommendations()
+
+		if err != nil {
+			return nil, handleError(err)
+		}
+
+		for _, recommendation := range recommendations {
+			noDismissed := request.GetNoDismissed()
+			if !noDismissed || !recommendation.Dismissed() {
+				response.Lightning = append(response.Lightning, &autoswaprpc.LightningRecommendation{
+					Type:             string(recommendation.Type),
+					Amount:           recommendation.Amount,
+					Channel:          serializeLightningChannel(recommendation.Channel),
+					FeeEstimate:      recommendation.FeeEstimate,
+					DismissedReasons: recommendation.DismissedReasons,
+				})
+			}
+		}
+	}
+	if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
+		recommendation, err := chainSwapper.GetConfig().GetRecommendation()
+		if err != nil {
+			return nil, handleError(err)
+		}
+		if recommendation != nil && (!request.GetNoDismissed() || !recommendation.Dismissed()) {
+			response.Chain = append(response.Chain, &autoswaprpc.ChainRecommendation{
 				Amount:           recommendation.Amount,
-				Channel:          serializeLightningChannel(recommendation.Channel),
 				FeeEstimate:      recommendation.FeeEstimate,
 				DismissedReasons: recommendation.DismissedReasons,
 			})
 		}
 	}
 
-	return &autoswaprpc.GetSwapRecommendationsResponse{
-		Swaps: swaps,
-	}, nil
-}
-
-func (server *routedAutoSwapServer) GetStatus(_ context.Context, request *autoswaprpc.GetStatusRequest) (*autoswaprpc.GetStatusResponse, error) {
-	response := &autoswaprpc.GetStatusResponse{
-		Running: server.swapper.Running(),
-		Error:   server.swapper.Error(),
-	}
-	cfg, err := server.swapper.GetConfig()
-	if err == nil {
-		response.Strategy = cfg.StrategyName()
-
-		budget, err := server.swapper.GetCurrentBudget(false)
-		if err != nil {
-			return nil, err
-		}
-
-		if budget != nil {
-			response.Budget = &autoswaprpc.Budget{
-				Total:     budget.Total,
-				StartDate: serializeTime(budget.StartDate),
-				EndDate:   serializeTime(budget.EndDate),
-				Remaining: budget.Amount,
-			}
-
-			auto := true
-			stats, err := server.database.QueryStats(database.SwapQuery{Since: budget.StartDate, IsAuto: &auto})
-			if err != nil {
-				return nil, err
-			}
-			response.Stats = stats
-		}
-	}
-
 	return response, nil
 }
 
-func (server *routedAutoSwapServer) GetConfig(ctx context.Context, request *autoswaprpc.GetConfigRequest) (*autoswaprpc.Config, error) {
-	var err error
-
-	config, err := server.swapper.GetConfig()
-	if err != nil {
-		return nil, handleError(err)
+func serializeBudget(budget *autoswap.Budget) *autoswaprpc.Budget {
+	if budget == nil {
+		return nil
 	}
-	return config.SerializedConfig, nil
+	return &autoswaprpc.Budget{
+		Total:     budget.Total,
+		StartDate: serializeTime(budget.StartDate),
+		EndDate:   serializeTime(budget.EndDate),
+		Remaining: budget.Amount,
+		Stats:     budget.Stats,
+	}
 }
 
-func (server *routedAutoSwapServer) ResetConfig(ctx context.Context, _ *empty.Empty) (*autoswaprpc.Config, error) {
-	if err := server.swapper.SetConfig(autoswap.DefaultConfig()); err != nil {
-		return nil, handleError(err)
+func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprpc.GetStatusRequest) (*autoswaprpc.GetStatusResponse, error) {
+	if err := server.requireSwapper(ctx); err != nil {
+		return nil, err
 	}
-	return server.GetConfig(ctx, nil)
+	ln := &autoswaprpc.Status{Running: false}
+	chain := &autoswaprpc.Status{Running: false}
+
+	if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
+		cfg := lnSwapper.GetConfig()
+		budget, err := lnSwapper.GetConfig().GetCurrentBudget(false)
+		if err != nil {
+			return nil, err
+		}
+		ln.Running = lnSwapper.Running()
+		ln.Error = serializeOptionalString(lnSwapper.Error())
+		ln.Description = cfg.Description()
+		ln.Budget = serializeBudget(budget)
+	}
+
+	if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
+		cfg := chainSwapper.GetConfig()
+		budget, err := chainSwapper.GetConfig().GetCurrentBudget(false)
+		if err != nil {
+			return nil, err
+		}
+		chain.Running = chainSwapper.Running()
+		chain.Error = serializeOptionalString(chainSwapper.Error())
+		chain.Description = cfg.Description()
+		chain.Budget = serializeBudget(budget)
+	}
+
+	return &autoswaprpc.GetStatusResponse{
+		Lightning: ln,
+		Chain:     chain,
+	}, nil
+}
+
+func (server *routedAutoSwapServer) GetConfig(ctx context.Context, _ *autoswaprpc.GetConfigRequest) (*autoswaprpc.Config, error) {
+	if err := server.requireSwapper(ctx); err != nil {
+		return nil, err
+	}
+	return server.swapper.GetConfig(macaroons.EntityIdFromContext(ctx)), nil
 }
 
 func (server *routedAutoSwapServer) ReloadConfig(ctx context.Context, _ *empty.Empty) (*autoswaprpc.Config, error) {
@@ -102,23 +146,18 @@ func (server *routedAutoSwapServer) ReloadConfig(ctx context.Context, _ *empty.E
 	return server.GetConfig(ctx, nil)
 }
 
-func (server *routedAutoSwapServer) SetConfig(ctx context.Context, request *autoswaprpc.Config) (*autoswaprpc.Config, error) {
-	if err := server.swapper.SetConfig(request); err != nil {
+func (server *routedAutoSwapServer) UpdateLightningConfig(ctx context.Context, request *autoswaprpc.UpdateLightningConfigRequest) (*autoswaprpc.Config, error) {
+	if err := server.swapper.UpdateLightningConfig(request); err != nil {
 		return nil, err
 	}
 
 	return server.GetConfig(ctx, &autoswaprpc.GetConfigRequest{})
 }
 
-func (server *routedAutoSwapServer) SetConfigValue(ctx context.Context, request *autoswaprpc.SetConfigValueRequest) (*autoswaprpc.Config, error) {
-	var value any
-	if err := json.Unmarshal([]byte(request.Value), &value); err != nil {
-		return nil, err
+func (server *routedAutoSwapServer) UpdateChainConfig(ctx context.Context, request *autoswaprpc.UpdateChainConfigRequest) (*autoswaprpc.Config, error) {
+	if err := server.swapper.UpdateChainConfig(request, requireEntity(ctx)); err != nil {
+		return nil, handleError(err)
 	}
 
-	if err := server.swapper.SetConfigValue(request.Key, value); err != nil {
-		return nil, err
-	}
-
-	return server.GetConfig(ctx, &autoswaprpc.GetConfigRequest{Key: &request.Key})
+	return server.GetConfig(ctx, &autoswaprpc.GetConfigRequest{})
 }

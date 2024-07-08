@@ -25,6 +25,7 @@ require (
 	github.com/lightningnetwork/lnd v0.18.0-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/mennanov/fmutils v0.3.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/rodaine/table v1.1.0
@@ -35,6 +36,7 @@ require (
 	github.com/vulpemventures/go-elements v0.5.3
 	golang.org/x/crypto v0.22.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
+	google.golang.org/genproto v0.0.0-20231016165738-49dd2c1f3d0b
 	google.golang.org/grpc v1.60.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.33.0
@@ -204,7 +206,6 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.19.0 // indirect
-	google.golang.org/genproto v0.0.0-20231016165738-49dd2c1f3d0b // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231016165738-49dd2c1f3d0b // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231030173426-d783a09b4405 // indirect
 	gopkg.in/errgo.v1 v1.0.1 // indirect

@@ -54,3 +54,10 @@ func EntityFromContext(ctx context.Context) *database.Entity {
 	}
 	return nil
 }
+
+func AddEntityToContext(ctx context.Context, entity *database.Entity) context.Context {
+	if entity == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, entityContextKey, entity)
+}

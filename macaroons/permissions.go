@@ -19,6 +19,10 @@ var (
 			Entity: "wallet",
 			Action: "read",
 		},
+		{
+			Entity: "autoswap",
+			Action: "read",
+		},
 	}
 	EntityWritePermissions = []bakery.Op{
 		{
@@ -33,14 +37,14 @@ var (
 			Entity: "wallet",
 			Action: "write",
 		},
+		{
+			Entity: "autoswap",
+			Action: "write",
+		},
 	}
 	ReadPermissions = append([]bakery.Op{
 		{
 			Entity: "admin",
-			Action: "read",
-		},
-		{
-			Entity: "autoswap",
 			Action: "read",
 		},
 	}, EntityReadPermissions...)
@@ -48,10 +52,6 @@ var (
 	WritePermissions = append([]bakery.Op{
 		{
 			Entity: "admin",
-			Action: "write",
-		},
-		{
-			Entity: "autoswap",
 			Action: "write",
 		},
 	}, EntityWritePermissions...)
@@ -173,7 +173,7 @@ var (
 			Entity: "admin",
 			Action: "write",
 		}},
-		"/autoswaprpc.AutoSwap/GetSwapRecommendations": {{
+		"/autoswaprpc.AutoSwap/GetRecommendations": {{
 			Entity: "autoswap",
 			Action: "read",
 		}},
@@ -185,19 +185,15 @@ var (
 			Entity: "autoswap",
 			Action: "read",
 		}},
-		"/autoswaprpc.AutoSwap/ResetConfig": {{
-			Entity: "autoswap",
-			Action: "write",
-		}},
 		"/autoswaprpc.AutoSwap/ReloadConfig": {{
 			Entity: "autoswap",
 			Action: "write",
 		}},
-		"/autoswaprpc.AutoSwap/SetConfig": {{
+		"/autoswaprpc.AutoSwap/UpdateChainConfig": {{
 			Entity: "autoswap",
 			Action: "write",
 		}},
-		"/autoswaprpc.AutoSwap/SetConfigValue": {{
+		"/autoswaprpc.AutoSwap/UpdateLightningConfig": {{
 			Entity: "autoswap",
 			Action: "write",
 		}},
