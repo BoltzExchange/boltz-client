@@ -90,7 +90,7 @@ func checkName(name string) error {
 }
 func printFees(info *boltzrpc.PairInfo) {
 	fmt.Println("The fees for this service are:")
-	fmt.Printf("  - Service fee: %.1f%%\n", info.Fees.Percentage)
+	fmt.Printf("  - Service fee: %s%%\n", fmt.Sprint(info.Fees.Percentage))
 	fmt.Printf("  - Miner fee: %s\n", utils.Satoshis(info.Fees.MinerFees))
 	fmt.Println()
 }

@@ -74,50 +74,47 @@ var jsonFlag = &cli.BoolFlag{
 	Usage: "Prints the output as JSON",
 }
 
-var liquidFlag = &cli.BoolFlag{
-	Name:  "liquid",
-	Usage: "Shorthand for --currency LBTC",
-}
-
-var currencyFlag = &cli.StringFlag{
-	Name:  "currency",
-	Usage: "Currency to use",
-}
-
-var fromFilterFlag = &cli.StringFlag{
-	Name:  "from",
-	Usage: "Originating swap currency",
-}
-var toFilterFlag = &cli.StringFlag{
-	Name:  "to",
-	Usage: "Destinaion swap currency",
-}
-var pendingFilterFlag = &cli.BoolFlag{
-	Name:  "pending",
-	Usage: "Shorthand for --state pending",
-}
-var stateFilterFlag = &cli.StringFlag{
-	Name:  "state",
-	Usage: "Filter swaps by state",
-}
-
 var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
 	Category: "Info",
 	Usage:    "Lists all swaps",
 	Action: func(ctx *cli.Context) error {
-		isAuto := ctx.Bool("auto")
-		return listSwaps(ctx, &isAuto)
+		var isAuto *bool
+		if ctx.Bool("manual") {
+			isAuto = new(bool)
+			*isAuto = false
+		}
+		if ctx.Bool("auto") {
+			isAuto = new(bool)
+			*isAuto = true
+		}
+		return listSwaps(ctx, isAuto)
 	},
 	Flags: []cli.Flag{
 		jsonFlag,
-		fromFilterFlag,
-		toFilterFlag,
-		pendingFilterFlag,
-		stateFilterFlag,
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "Originating swap currency",
+		},
+		&cli.StringFlag{
+			Name:  "to",
+			Usage: "Destinaion swap currency",
+		},
+		&cli.BoolFlag{
+			Name:  "pending",
+			Usage: "Shorthand for --state pending",
+		},
+		&cli.StringFlag{
+			Name:  "state",
+			Usage: "Filter swaps by state",
+		},
 		&cli.BoolFlag{
 			Name:  "auto",
 			Usage: "Only show swaps created by autoswap",
+		},
+		&cli.BoolFlag{
+			Name:  "manual",
+			Usage: "Only show swaps created manually",
 		},
 	},
 }
@@ -404,15 +401,6 @@ var autoSwapCommands = &cli.Command{
 					Usage: "Do not show dismissed recommendations",
 				},
 			},
-		},
-		{
-			Name:  "listswaps",
-			Usage: "List swaps created by autoswap",
-			Action: func(ctx *cli.Context) error {
-				isAuto := true
-				return listSwaps(ctx, &isAuto)
-			},
-			Flags: []cli.Flag{jsonFlag, fromFilterFlag, toFilterFlag, stateFilterFlag, pendingFilterFlag},
 		},
 		{
 			Name:   "setup",
@@ -803,21 +791,19 @@ var createSwapCommand = &cli.Command{
 	Name:      "createswap",
 	Category:  "Swaps",
 	Usage:     "Create a new chain-to-lightning swap",
-	ArgsUsage: "[amount]",
+	ArgsUsage: "currency [amount]",
 	Description: "Creates a new swap (e.g. BTC -> Lightning) specifying the amount in satoshis.\n" +
 		"If the --any-amount flag is specified, any amount within the displayed limits can be paid to the lockup address.\n" +
 		"\nExamples\n" +
-		"Create a swap for 100000 satoshis that will be immediately paid by the clients wallet:\n" +
-		"> boltzcli createswap --internal-send 100000\n" +
-		"Create a swap for any amount of satoshis on liquid:\n" +
-		"> boltzcli createswap --any-amount --currency LBTC\n" +
-		"Create a swap using an existing invoice:\n" +
-		"> boltzcli createswap --invoice lnbcrt1m1pja7adjpp59xdpx33l80wf8rsmqkwjyccdzccsedp9qgy9agf0k8m5g8ttrnzsdq8w3jhxaqcqp5xqzjcsp528qsd7mec4jml9zy302tmr0t995fe9uu80qwgg4zegerh3weyn8s9qyyssqpwecwyvndxh9ar0crgpe4crr93pr4g682u5sstzfk6e0g73s6urxm320j5yuamlszxnk5fzzrtx2hkxw8ehy6kntrx4cr4kcq6zc4uqqy7tcst",
-	Action: createSwap,
+		"Create a swap from mainchain for 100000 satoshis that will be immediately paid by the clients wallet:\n" +
+		"> boltzcli createswap btc 100000\n" +
+		"Create a swap from liquid for any amount of satoshis that can be paid manually:\n" +
+		"> boltzcli createswap --any-amount lbtc\n" +
+		"Create a swap from mainchain using an existing invoice:\n" +
+		"> boltzcli createswap --invoice lnbcrt1m1pja7adjpp59xdpx33l80wf8rsmqkwjyccdzccsedp9qgy9agf0k8m5g8ttrnzsdq8w3jhxaqcqp5xqzjcsp528qsd7mec4jml9zy302tmr0t995fe9uu80qwgg4zegerh3weyn8s9qyyssqpwecwyvndxh9ar0crgpe4crr93pr4g682u5sstzfk6e0g73s6urxm320j5yuamlszxnk5fzzrtx2hkxw8ehy6kntrx4cr4kcq6zc4uqqy7tcst btc",
+	Action: requireNArgs(1, createSwap),
 	Flags: []cli.Flag{
 		jsonFlag,
-		currencyFlag,
-		liquidFlag,
 		&cli.StringFlag{
 			Name:  "from-wallet",
 			Usage: "Internal wallet to fund the swap from",
@@ -843,18 +829,8 @@ var createSwapCommand = &cli.Command{
 
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
-	var amount uint64
 
-	externalPay := ctx.Bool("external-pay")
-	if ctx.Args().First() != "" {
-		amount = parseUint64(ctx.Args().First(), "amount")
-	} else if ctx.Bool("any-amount") {
-		externalPay = true
-	} else {
-		return cli.ShowSubcommandHelp(ctx)
-	}
-
-	currency, err := getCurrency(ctx)
+	currency, err := parseCurrency(ctx.Args().First())
 	if err != nil {
 		return err
 	}
@@ -865,6 +841,17 @@ func createSwap(ctx *cli.Context) error {
 	}
 
 	json := ctx.Bool("json")
+	invoice := ctx.String("invoice")
+	refundAddress := ctx.String("refund")
+	externalPay := ctx.Bool("external-pay")
+	var amount uint64
+	if rawAmount := ctx.Args().Get(1); rawAmount != "" {
+		amount = parseUint64(rawAmount, "amount")
+	} else if ctx.Bool("any-amount") {
+		externalPay = true
+	} else if invoice == "" {
+		return cli.ShowSubcommandHelp(ctx)
+	}
 
 	pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
 	if err != nil {
@@ -879,8 +866,6 @@ func createSwap(ctx *cli.Context) error {
 		}
 	}
 
-	invoice := ctx.String("invoice")
-	refundAddress := ctx.String("refund")
 	walletId, err := getWalletId(ctx, ctx.String("from-wallet"))
 	if err != nil {
 		return err
@@ -977,7 +962,7 @@ func createChainSwap(ctx *cli.Context) error {
 	fromWallet := ctx.String("from-wallet")
 	externalPay := fromWallet == ""
 	request := &boltzrpc.CreateChainSwapRequest{
-		Amount:         uint64(amount),
+		Amount:         amount,
 		Pair:           pair,
 		ExternalPay:    &externalPay,
 		AcceptZeroConf: &acceptZeroConf,
@@ -1104,21 +1089,19 @@ var createReverseSwapCommand = &cli.Command{
 	Name:      "createreverseswap",
 	Category:  "Swaps",
 	Usage:     "Create a new lightning-to-chain swap",
-	ArgsUsage: "amount [address]",
+	ArgsUsage: "currency amount [address]",
 	Description: "Creates a new reverse swap (e.g. Lightning -> BTC) for `amount` satoshis, optionally specifying the destination address.\n" +
 		"If no address is specified, it will be generated by the clients wallet.\n" +
 		"\nExamples\n" +
 		"create a reverse swap for 100000 satoshis that will be sent to the clients btc wallet:\n" +
-		"> boltzcli createreverseswap 100000\n" +
+		"> boltzcli createreverseswap btc 100000\n" +
 		"create a reverse swap for 100000 satoshis that will be sent to the specified btc address:\n" +
-		"> boltzcli createreverseswap 100000 bcrt1qkp70ncua3dqp6syqu24jw5mnpf3gdxqrm3gn2a\n" +
+		"> boltzcli createreverseswap btc 100000 bcrt1qkp70ncua3dqp6syqu24jw5mnpf3gdxqrm3gn2a\n" +
 		"create a reverse swap for 100000 satoshis that will be sent to the clients liquid wallet:\n" +
-		"> boltzcli createreverseswap --currency LBTC 100000",
-	Action: requireNArgs(1, createReverseSwap),
+		"> boltzcli createreverseswap lbtc 100000",
+	Action: requireNArgs(2, createReverseSwap),
 	Flags: []cli.Flag{
 		jsonFlag,
-		currencyFlag,
-		liquidFlag,
 		&cli.StringFlag{
 			Name:  "to-wallet",
 			Usage: "Internal wallet to swap to",
@@ -1142,19 +1125,12 @@ func parseCurrency(currency string) (boltzrpc.Currency, error) {
 		return boltzrpc.Currency_BTC, errors.New("currency is required, allowed values: BTC, LBTC")
 	}
 	upper := strings.ToUpper(currency)
-	if upper == "LBTC" || upper == "L-BTC" {
+	if upper == "LBTC" || upper == "L-BTC" || upper == "LIQUID" {
 		return boltzrpc.Currency_LBTC, nil
 	} else if upper == "BTC" {
 		return boltzrpc.Currency_BTC, nil
 	}
 	return boltzrpc.Currency_BTC, fmt.Errorf("invalid currency: %s, allowed values: BTC, LBTC", currency)
-}
-
-func getCurrency(ctx *cli.Context) (boltzrpc.Currency, error) {
-	if ctx.Bool("liquid") {
-		return boltzrpc.Currency_LBTC, nil
-	}
-	return parseCurrency(ctx.String("currency"))
 }
 
 func getWalletId(ctx *cli.Context, name string) (*uint64, error) {
@@ -1172,19 +1148,17 @@ func getWalletId(ctx *cli.Context, name string) (*uint64, error) {
 func createReverseSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 
-	address := ctx.Args().Get(1)
-
-	currency, err := getCurrency(ctx)
+	currency, err := parseCurrency(ctx.Args().First())
 	if err != nil {
 		return err
 	}
-
 	pair := &boltzrpc.Pair{
 		From: boltzrpc.Currency_BTC,
 		To:   currency,
 	}
 
-	amount := parseUint64(ctx.Args().First(), "amount")
+	address := ctx.Args().Get(2)
+	amount := parseUint64(ctx.Args().Get(1), "amount")
 	json := ctx.Bool("json")
 
 	if !json {
