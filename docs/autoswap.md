@@ -26,8 +26,8 @@ If only one of the two thresholds is configured, the balance target will always 
 
 **Example**
 - `inboundBalance` is set to 200k sats 
-- Current inbound balance of our 500k sats channel is 100k. 
-- Result: A 400k sats reverse swap since the inbound balance is below the set threshold.
+- Current inbound balance of our 500k sats channel is 100k
+- Result: A 400k sats reverse swap since the inbound balance is below the threshold
 
 #### Both thresholds
 

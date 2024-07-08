@@ -95,6 +95,11 @@ func (autoSwap *AutoSwap) Init(db *database.Database, onchain *onchain.Onchain, 
 	}
 }
 
+func (autoSwap *AutoSwap) handleErr(err error) error {
+	autoSwap.err = err
+	return err
+}
+
 func (autoSwap *AutoSwap) UpdateLightningConfig(request *autoswaprpc.UpdateLightningConfigRequest) error {
 	config := request.Config
 	if request.GetReset_() {
@@ -189,8 +194,7 @@ func (autoSwap *AutoSwap) LoadConfig() error {
 	}
 
 	if err != nil {
-		autoSwap.err = fmt.Errorf("could not load config: %w", err)
-		return err
+		return autoSwap.handleErr(fmt.Errorf("could not load config: %w", err))
 	}
 
 	for entity, chainSwapper := range autoSwap.chainSwappers {
@@ -225,7 +229,7 @@ func (autoSwap *AutoSwap) LoadConfig() error {
 			logger.Errorf("could not update chain config: %v", err)
 		}
 	}
-	return nil
+	return autoSwap.handleErr(nil)
 }
 
 func (autoSwap *AutoSwap) saveConfig() error {
@@ -246,10 +250,13 @@ func (autoSwap *AutoSwap) saveConfig() error {
 	// cant go from json to toml directly, so we need to unmarshal again
 	_ = json.Unmarshal(marshalled, &asJson)
 	if err := toml.NewEncoder(buf).Encode(asJson); err != nil {
-		return err
+		return autoSwap.handleErr(fmt.Errorf("could not encode config: %w", err))
 	}
 	autoSwap.cfg = cfg
-	return os.WriteFile(autoSwap.configPath, buf.Bytes(), 0666)
+	if err := os.WriteFile(autoSwap.configPath, buf.Bytes(), 0666); err != nil {
+		return autoSwap.handleErr(fmt.Errorf("could not write config to disk: %w", err))
+	}
+	return autoSwap.handleErr(nil)
 }
 
 func (autoSwap *AutoSwap) WalletUsed(id database.Id) bool {
