@@ -39,7 +39,7 @@ func (server *routedAutoSwapServer) requireSwapper(ctx context.Context) error {
 	return nil
 }
 
-func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, request *autoswaprpc.GetRecommendationsRequest) (*autoswaprpc.GetRecommendationsResponse, error) {
+func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *autoswaprpc.GetRecommendationsRequest) (*autoswaprpc.GetRecommendationsResponse, error) {
 	if err := server.requireSwapper(ctx); err != nil {
 		return nil, err
 	}
@@ -52,16 +52,13 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, requ
 		}
 
 		for _, recommendation := range recommendations {
-			noDismissed := request.GetNoDismissed()
-			if !noDismissed || !recommendation.Dismissed() {
-				response.Lightning = append(response.Lightning, &autoswaprpc.LightningRecommendation{
-					Type:             string(recommendation.Type),
-					Amount:           recommendation.Amount,
-					Channel:          serializeLightningChannel(recommendation.Channel),
-					FeeEstimate:      recommendation.FeeEstimate,
-					DismissedReasons: recommendation.DismissedReasons,
-				})
-			}
+			response.Lightning = append(response.Lightning, &autoswaprpc.LightningRecommendation{
+				Type:             string(recommendation.Type),
+				Amount:           recommendation.Amount,
+				Channel:          serializeLightningChannel(recommendation.Channel),
+				FeeEstimate:      recommendation.FeeEstimate,
+				DismissedReasons: recommendation.DismissedReasons,
+			})
 		}
 	}
 	if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
@@ -69,7 +66,7 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, requ
 		if err != nil {
 			return nil, handleError(err)
 		}
-		if recommendation != nil && (!request.GetNoDismissed() || !recommendation.Dismissed()) {
+		if recommendation != nil {
 			response.Chain = append(response.Chain, &autoswaprpc.ChainRecommendation{
 				Amount:           recommendation.Amount,
 				FeeEstimate:      recommendation.FeeEstimate,

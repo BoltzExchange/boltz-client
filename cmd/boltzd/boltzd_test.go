@@ -1575,7 +1575,7 @@ func TestAutoSwap(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, status.Chain.Running)
 
-		recommendations, err := autoSwap.GetRecommendations(true)
+		recommendations, err := autoSwap.GetRecommendations()
 		require.NoError(t, err)
 		require.Len(t, recommendations.Chain, 1)
 
@@ -1585,9 +1585,9 @@ func TestAutoSwap(t *testing.T) {
 		require.NotNil(t, info.ChainSwap)
 		id := info.ChainSwap.Id
 
-		recommendations, err = autoSwap.GetRecommendations(true)
+		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.Len(t, recommendations.Chain, 0)
+		require.NotEmpty(t, recommendations.Chain[0].DismissedReasons)
 
 		isAuto := true
 		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{IsAuto: &isAuto})
@@ -1601,9 +1601,9 @@ func TestAutoSwap(t *testing.T) {
 		test.MineBlock()
 		stream(boltzrpc.SwapState_SUCCESSFUL)
 
-		recommendations, err = autoSwap.GetRecommendations(true)
+		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.Len(t, recommendations.Chain, 0)
+		require.NotEmpty(t, recommendations.Chain[0].DismissedReasons)
 
 		_, write, _ := createEntity(t, admin, "test")
 		entity := client.NewAutoSwapClient(admin.Connection)
@@ -1717,7 +1717,7 @@ func TestAutoSwap(t *testing.T) {
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
 
-			recommendations, err := autoSwap.GetRecommendations(true)
+			recommendations, err := autoSwap.GetRecommendations()
 			require.NoError(t, err)
 			require.Zero(t, recommendations.Lightning)
 
@@ -1728,7 +1728,7 @@ func TestAutoSwap(t *testing.T) {
 			require.NoError(t, err)
 
 			t.Run("Recommendations", func(t *testing.T) {
-				recommendations, err := autoSwap.GetRecommendations(true)
+				recommendations, err := autoSwap.GetRecommendations()
 				require.NoError(t, err)
 				require.Len(t, recommendations.Lightning, 1)
 				require.Equal(t, string(boltz.ReverseSwap), recommendations.Lightning[0].Type)

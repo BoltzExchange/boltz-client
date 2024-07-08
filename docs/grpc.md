@@ -1452,11 +1452,6 @@ Reloads the configuration from disk.
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `no_dismissed` | [`bool`](#bool) | optional | Do not return any dismissed recommendations |
-
-
 
 
 

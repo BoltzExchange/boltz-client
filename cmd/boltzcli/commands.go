@@ -396,12 +396,6 @@ var autoSwapCommands = &cli.Command{
 			Name:   "recommendations",
 			Usage:  "List recommended swaps",
 			Action: listSwapRecommendations,
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:  "no-dismissed",
-					Usage: "Do not show dismissed recommendations",
-				},
-			},
 		},
 		{
 			Name:  "setup",
@@ -546,7 +540,7 @@ var autoSwapCommands = &cli.Command{
 
 func listSwapRecommendations(ctx *cli.Context) error {
 	client := getAutoSwapClient(ctx)
-	list, err := client.GetRecommendations(ctx.Bool("no-dismissed"))
+	list, err := client.GetRecommendations()
 
 	if err != nil {
 		return err
@@ -983,13 +977,13 @@ func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper *autoswap.Swapper
 		}
 	}
 
-	recommendations, err := client.GetRecommendations(true)
+	recommendations, err := client.GetRecommendations()
 	if err != nil {
 		return err
 	}
 
 	if len(recommendations.Lightning) > 0 || len(recommendations.Chain) > 0 {
-		fmt.Println("Based on above config the following swaps will be performed immediately:")
+		fmt.Println("Based on above config the following swaps will be performed:")
 		printJson(recommendations)
 	}
 
