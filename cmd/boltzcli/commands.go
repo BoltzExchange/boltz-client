@@ -780,6 +780,13 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 
 	fmt.Println()
 	fmt.Println("Config was saved successfully!")
+	if config.OutboundBalance == 0 && config.OutboundBalancePercent == 0 {
+		fmt.Println("Autoswap will target 100% inbound balance when executing swaps.")
+	} else if config.InboundBalance == 0 && config.InboundBalancePercent == 0 {
+		fmt.Println("Autoswap will target 100% outbound balance when executing swaps.")
+	} else {
+		fmt.Println("Autoswap will target the middle between your two thresholds when executing swaps.")
+	}
 	return nil
 }
 
