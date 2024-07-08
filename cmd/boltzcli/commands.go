@@ -1278,16 +1278,23 @@ func createChainSwap(ctx *cli.Context) error {
 var refundSwapCommand = &cli.Command{
 	Name:      "refundswap",
 	Category:  "Swaps",
-	Usage:     "Refund a chain-to-x swap manually",
-	ArgsUsage: "id addresss",
+	Usage:     "Refund a chain-to-x swap manually to an onchain address or internal wallet",
+	ArgsUsage: "id address|wallet",
 	Action:    requireNArgs(2, refundSwap),
 }
 
 func refundSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 	id := ctx.Args().First()
-	address := ctx.Args().Get(1)
-	swap, err := client.RefundSwap(id, address)
+	destination := ctx.Args().Get(1)
+	request := &boltzrpc.RefundSwapRequest{Id: id}
+	walletId, err := getWalletId(ctx, destination)
+	if err == nil {
+		request.Destination = &boltzrpc.RefundSwapRequest_WalletId{WalletId: *walletId}
+	} else {
+		request.Destination = &boltzrpc.RefundSwapRequest_Address{Address: destination}
+	}
+	swap, err := client.RefundSwap(request)
 	if err != nil {
 		return err
 	}

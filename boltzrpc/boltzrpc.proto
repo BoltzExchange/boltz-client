@@ -401,7 +401,10 @@ message ListSwapsResponse {
 }
 message RefundSwapRequest {
     string id = 1;
-    string address = 2;
+    oneof destination {
+        string address = 2;
+        uint64 wallet_id = 3;
+    }
 }
 
 message GetSwapInfoRequest {

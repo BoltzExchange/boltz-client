@@ -29,7 +29,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/rodaine/table v1.1.0
-	github.com/rs/cors v1.10.1
+	github.com/rs/cors v1.11.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/vektra/mockery v1.1.2

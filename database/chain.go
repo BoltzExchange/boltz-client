@@ -207,6 +207,12 @@ func (database *Database) SetChainSwapAddress(swapData *ChainSwapData, address s
 	return err
 }
 
+func (database *Database) SetChainSwapWallet(swapData *ChainSwapData, walletId Id) error {
+	swapData.WalletId = &walletId
+	_, err := database.Exec("UPDATE chainSwapsData SET walletId = ? WHERE id = ? AND currency = ?", walletId, swapData.Id, swapData.Currency)
+	return err
+}
+
 func (database *Database) SetChainSwapTransactionId(swapData *ChainSwapData, transactionId string) error {
 	swapData.Transactionid = transactionId
 	_, err := database.Exec("UPDATE chainSwapsData SET transactionId = ? WHERE id = ? AND currency = ?", transactionId, swapData.Id, swapData.Currency)
@@ -283,15 +289,6 @@ func (database *Database) queryChainSwapData(id string, currency boltz.Currency,
 	return data, nil
 }
 
-const refundableChainSwapsQuery = `
-SELECT swaps.*
-FROM chainSwaps swaps
-         JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.fromCurrency AND data.currency = ?
-WHERE data.lockupTransactionId != ''
-  AND data.transactionId == ''
-  AND (state IN (?, ?) OR (state != ? AND data.timeoutBlockheight < ?))
-`
-
 func (database *Database) QueryChainSwaps(args SwapQuery) ([]*ChainSwap, error) {
 	where, values := args.ToWhereClause()
 	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where, values...)
@@ -302,10 +299,19 @@ func (database *Database) QueryPendingChainSwaps() ([]*ChainSwap, error) {
 	return database.QueryChainSwaps(SwapQuery{State: &state})
 }
 
+const refundableChainSwapsQuery = `
+SELECT swaps.*
+FROM chainSwaps swaps
+         JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.fromCurrency AND data.currency = ?
+WHERE data.lockupTransactionId != ''
+  AND data.transactionId == ''
+  AND (status IN (?, ?) OR (state != ? AND data.timeoutBlockheight < ?))
+`
+
 func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]*ChainSwap, error) {
 	return database.queryChainSwaps(
 		refundableChainSwapsQuery, currency,
-		boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
+		boltz.TransactionLockupFailed.String(), boltz.TransactionFailed.String(), boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
 	)
 }
 
