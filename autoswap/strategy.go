@@ -17,7 +17,7 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 	inbound := cfg.inboundBalance.Get(channel.Capacity)
 
 	if channel.Capacity < outbound+inbound {
-		logger.Warnf("Capacity of channel %d, is smaller than the sum of the outbound and inbound tresholds", channel.Id)
+		logger.Warnf("Capacity of channel %d is smaller than the sum of the outbound and inbound tresholds", channel.Id)
 		return nil
 	}
 
@@ -27,12 +27,12 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 	}
 	if channel.OutboundSat < outbound {
 		recommendation.Type = boltz.NormalSwap
-		if inbound == 0 {
+		if cfg.swapType == boltz.NormalSwap {
 			recommendation.Amount = channel.InboundSat - channelBuffer
 		}
 	} else if channel.InboundSat < inbound {
 		recommendation.Type = boltz.ReverseSwap
-		if outbound == 0 {
+		if cfg.swapType == boltz.ReverseSwap {
 			recommendation.Amount = channel.OutboundSat - channelBuffer
 		}
 	}
