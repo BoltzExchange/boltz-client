@@ -26,12 +26,12 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 	if channel.OutboundSat < outbound {
 		recommendation.Type = boltz.NormalSwap
 		if inbound == 0 {
-			recommendation.Amount = channel.Capacity - channel.OutboundSat
+			recommendation.Amount = channel.InboundSat
 		}
 	} else if channel.InboundSat < inbound {
 		recommendation.Type = boltz.ReverseSwap
 		if outbound == 0 {
-			recommendation.Amount = channel.Capacity - channel.InboundSat
+			recommendation.Amount = channel.OutboundSat
 		}
 	}
 	if recommendation.Type != "" && cfg.Allowed(recommendation.Type) {
