@@ -10,6 +10,8 @@ import (
 
 type Strategy = func(channels []*lightning.LightningChannel) []*lightningRecommendation
 
+var channelBuffer uint64 = 10000
+
 func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningChannel) *lightningRecommendation {
 	outbound := cfg.outboundBalance.Get(channel.Capacity)
 	inbound := cfg.inboundBalance.Get(channel.Capacity)
@@ -26,12 +28,12 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 	if channel.OutboundSat < outbound {
 		recommendation.Type = boltz.NormalSwap
 		if inbound == 0 {
-			recommendation.Amount = channel.InboundSat
+			recommendation.Amount = channel.InboundSat - channelBuffer
 		}
 	} else if channel.InboundSat < inbound {
 		recommendation.Type = boltz.ReverseSwap
 		if outbound == 0 {
-			recommendation.Amount = channel.OutboundSat
+			recommendation.Amount = channel.OutboundSat - channelBuffer
 		}
 	}
 	if recommendation.Type != "" && cfg.Allowed(recommendation.Type) {

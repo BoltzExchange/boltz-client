@@ -561,6 +561,8 @@ func TestStrategies(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			// FIXME: a bit hacky but its just for the tests
+			channelBuffer = 0
 			cfg := NewLightningConfig(tc.config, shared{onchain: getOnchain()})
 			require.NoError(t, cfg.Init())
 			if tc.channels == nil {
