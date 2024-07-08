@@ -1791,7 +1791,11 @@ func removeWallet(ctx *cli.Context) error {
 		return err
 	}
 	_, err = client.RemoveWallet(*walletId)
-	return err
+	if err != nil {
+		return err
+	}
+	fmt.Println("Wallet removed")
+	return nil
 }
 
 func createWallet(ctx *cli.Context, params *boltzrpc.WalletParams) (wallet *boltzrpc.Wallet, err error) {

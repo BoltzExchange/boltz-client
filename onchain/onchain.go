@@ -122,7 +122,22 @@ func (onchain *Onchain) GetAnyWallet(checker WalletChecker) (Wallet, error) {
 			return wallet, nil
 		}
 	}
-	return nil, fmt.Errorf("no wallet found for checker: %+v", checker)
+	var msg string
+	if checker.AllowReadonly {
+		msg += "readonly "
+	}
+	msg += "wallet with"
+	if checker.Id != nil {
+		msg += fmt.Sprintf(" id: %d ", *checker.Id)
+	}
+	if checker.Name != nil {
+		msg += fmt.Sprintf(" name: %s ", *checker.Name)
+	}
+	if checker.Currency != "" {
+		msg += fmt.Sprintf(" currency: %s ", checker.Currency)
+	}
+	msg += "not found"
+	return nil, errors.New(msg)
 }
 
 func (onchain *Onchain) GetWallets(checker WalletChecker) []Wallet {
