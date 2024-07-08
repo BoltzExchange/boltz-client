@@ -18,11 +18,11 @@ Autoswap can either rebalance individual channels or only look at the total bala
 
 
 Autoswap will create normal swaps when the outbound balance goes below the configured `outboundBalance` `outboundBalancePercent`.
-The same happens if the inbound balance goes below the configured `inboundBalance` or `inboundBalancePercent`.
+The same way, autoswap will create reverse swaps when the inbound balance goes below the configured `inboundBalance` or `inboundBalancePercent`.
 If the percentage values are configured, the absolute thresholds will be calculated based on the channel capacity.
 
 #### Single threshold
-If only one of the two thresholds is configured, the balance target will always be the full channel capacity.
+If `inboundBalance` is configured as threshold, the rebalancing target will always be the full channel capacity.
 
 **Example**
 - `inboundBalance` is set to 200k sats 
