@@ -722,7 +722,7 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 
 	var balanceType string
 	prompt = &survey.Select{
-		Message: "How do you want to specify min/max balance values?",
+		Message: "How do you want to specify values?",
 		Options: []string{"percentage", "sats"},
 	}
 	if err := survey.AskOne(prompt, &balanceType); err != nil {
