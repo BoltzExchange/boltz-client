@@ -1701,9 +1701,10 @@ func TestAutoSwap(t *testing.T) {
 
 			channels, err := us.ListChannels()
 			require.NoError(t, err)
-			var inboundBalance uint64
+			var inboundBalance, outboundBalance uint64
 			for _, channel := range channels {
 				inboundBalance += channel.InboundSat
+				outboundBalance += channel.OutboundSat
 			}
 
 			swapCfg := autoswap.DefaultLightningConfig()
@@ -1711,7 +1712,7 @@ func TestAutoSwap(t *testing.T) {
 			swapCfg.MaxFeePercent = 10
 			swapCfg.Currency = boltzrpc.Currency_BTC
 			swapCfg.InboundBalance = inboundBalance - 100
-			swapCfg.SwapType = "reverse"
+			swapCfg.OutboundBalance = outboundBalance - 100
 			swapCfg.Wallet = strings.ToUpper(cfg.Node)
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
@@ -1722,7 +1723,6 @@ func TestAutoSwap(t *testing.T) {
 			require.Zero(t, recommendations.Lightning)
 
 			swapCfg.InboundBalance = inboundBalance + 100
-			swapCfg.OutboundBalance = inboundBalance / 2
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
