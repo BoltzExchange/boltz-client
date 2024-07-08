@@ -247,8 +247,8 @@ func swapInfo(ctx *cli.Context) error {
 var swapInfoStreamCommand = &cli.Command{
 	Name:      "swapinfostream",
 	Category:  "Info",
-	Usage:     "Streams updates of a swap",
-	ArgsUsage: "id",
+	Usage:     "Streams updates of a specific swap or of all swaps",
+	ArgsUsage: "[id]",
 	Action: func(ctx *cli.Context) error {
 		return swapInfoStream(ctx, ctx.Args().First(), ctx.Bool("json"))
 	},
