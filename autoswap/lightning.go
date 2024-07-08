@@ -40,7 +40,7 @@ func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *Lightnin
 
 func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {
 	return merge(&SerializedLnConfig{
-		FailureBackoff:      24 * 60 * 60,
+		FailureBackoff:      60 * 60,
 		MaxFeePercent:       1,
 		ChannelPollInterval: 30,
 		Budget:              100000,
