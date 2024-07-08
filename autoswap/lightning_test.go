@@ -428,11 +428,11 @@ func TestStrategies(t *testing.T) {
 			config: &SerializedLnConfig{
 				PerChannel:             true,
 				InboundBalancePercent:  40,
-				OutboundBalancePercent: 40,
+				OutboundBalancePercent: 40, // ignored because only reverse swaps are executed
 				SwapType:               "reverse",
 			},
 			outcome: []*lightningRecommendation{
-				recommendation(boltz.ReverseSwap, 200, channels[2]),
+				recommendation(boltz.ReverseSwap, 500, channels[2]),
 			},
 		},
 		{
@@ -497,8 +497,9 @@ func TestStrategies(t *testing.T) {
 		{
 			name: "TotalBalance/Inbound",
 			config: &SerializedLnConfig{
-				SwapType:       "reverse",
-				InboundBalance: 400,
+				SwapType:        "reverse",
+				InboundBalance:  400,
+				OutboundBalance: 200, // ignored because only reverse swaps are executed
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.ReverseSwap, 650, nil),
@@ -509,6 +510,7 @@ func TestStrategies(t *testing.T) {
 			config: &SerializedLnConfig{
 				SwapType:        "normal",
 				OutboundBalance: 700,
+				InboundBalance:  200, // ignored because only normal swaps are executed
 			},
 			outcome: []*lightningRecommendation{
 				recommendation(boltz.NormalSwap, 350, nil),
