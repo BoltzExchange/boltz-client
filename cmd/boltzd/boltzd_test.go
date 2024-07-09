@@ -1575,7 +1575,7 @@ func TestAutoSwap(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, status.Chain.Running)
 
-		recommendations, err := autoSwap.GetRecommendations(true)
+		recommendations, err := autoSwap.GetRecommendations()
 		require.NoError(t, err)
 		require.Len(t, recommendations.Chain, 1)
 
@@ -1585,9 +1585,9 @@ func TestAutoSwap(t *testing.T) {
 		require.NotNil(t, info.ChainSwap)
 		id := info.ChainSwap.Id
 
-		recommendations, err = autoSwap.GetRecommendations(true)
+		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.Len(t, recommendations.Chain, 0)
+		require.NotEmpty(t, recommendations.Chain[0].DismissedReasons)
 
 		isAuto := true
 		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{IsAuto: &isAuto})
@@ -1601,9 +1601,9 @@ func TestAutoSwap(t *testing.T) {
 		test.MineBlock()
 		stream(boltzrpc.SwapState_SUCCESSFUL)
 
-		recommendations, err = autoSwap.GetRecommendations(true)
+		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.Len(t, recommendations.Chain, 0)
+		require.NotEmpty(t, recommendations.Chain[0].DismissedReasons)
 
 		_, write, _ := createEntity(t, admin, "test")
 		entity := client.NewAutoSwapClient(admin.Connection)
@@ -1701,9 +1701,10 @@ func TestAutoSwap(t *testing.T) {
 
 			channels, err := us.ListChannels()
 			require.NoError(t, err)
-			var inboundBalance uint64
+			var inboundBalance, outboundBalance uint64
 			for _, channel := range channels {
 				inboundBalance += channel.InboundSat
+				outboundBalance += channel.OutboundSat
 			}
 
 			swapCfg := autoswap.DefaultLightningConfig()
@@ -1711,24 +1712,23 @@ func TestAutoSwap(t *testing.T) {
 			swapCfg.MaxFeePercent = 10
 			swapCfg.Currency = boltzrpc.Currency_BTC
 			swapCfg.InboundBalance = inboundBalance - 100
-			swapCfg.SwapType = "reverse"
+			swapCfg.OutboundBalance = outboundBalance - 100
 			swapCfg.Wallet = strings.ToUpper(cfg.Node)
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
 
-			recommendations, err := autoSwap.GetRecommendations(true)
+			recommendations, err := autoSwap.GetRecommendations()
 			require.NoError(t, err)
 			require.Zero(t, recommendations.Lightning)
 
 			swapCfg.InboundBalance = inboundBalance + 100
-			swapCfg.OutboundBalance = inboundBalance / 2
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
 
 			t.Run("Recommendations", func(t *testing.T) {
-				recommendations, err := autoSwap.GetRecommendations(true)
+				recommendations, err := autoSwap.GetRecommendations()
 				require.NoError(t, err)
 				require.Len(t, recommendations.Lightning, 1)
 				require.Equal(t, string(boltz.ReverseSwap), recommendations.Lightning[0].Type)

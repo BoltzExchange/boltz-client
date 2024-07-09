@@ -24,6 +24,7 @@ type LightningConfig struct {
 	*SerializedLnConfig
 	shared
 
+	reserve         utils.Percentage
 	maxFeePercent   utils.Percentage
 	currency        boltz.Currency
 	swapType        boltz.SwapType
@@ -35,12 +36,12 @@ type LightningConfig struct {
 }
 
 func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
-	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared}
+	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: utils.Percentage(2)}
 }
 
 func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {
 	return merge(&SerializedLnConfig{
-		FailureBackoff:      24 * 60 * 60,
+		FailureBackoff:      60 * 60,
 		MaxFeePercent:       1,
 		ChannelPollInterval: 30,
 		Budget:              100000,
@@ -187,12 +188,18 @@ func (cfg *LightningConfig) AllowReverseSwaps() bool {
 func (cfg *LightningConfig) getDismissedChannels() (DismissedChannels, error) {
 	reasons := make(DismissedChannels)
 
-	swaps, err := cfg.database.QueryPendingSwaps()
+	state := boltzrpc.SwapState_PENDING
+	isAuto := true
+	query := database.SwapQuery{
+		State:  &state,
+		IsAuto: &isAuto,
+	}
+	swaps, err := cfg.database.QuerySwaps(query)
 	if err != nil {
 		return nil, errors.New("Could not query pending swaps: " + err.Error())
 	}
 
-	reverseSwaps, err := cfg.database.QueryPendingReverseSwaps()
+	reverseSwaps, err := cfg.database.QueryReverseSwaps(query)
 	if err != nil {
 		return nil, errors.New("Could not query pending reverse swaps: " + err.Error())
 	}
@@ -204,13 +211,14 @@ func (cfg *LightningConfig) getDismissedChannels() (DismissedChannels, error) {
 		reasons.addChannels(swap.ChanIds, ReasonPendingSwap)
 	}
 
-	since := time.Now().Add(time.Duration(-cfg.FailureBackoff) * time.Second)
-	failedSwaps, err := cfg.database.QueryFailedSwaps(since)
+	state = boltzrpc.SwapState_ERROR
+	query.Since = time.Now().Add(time.Duration(-cfg.FailureBackoff) * time.Second)
+	failedSwaps, err := cfg.database.QuerySwaps(query)
 	if err != nil {
 		return nil, errors.New("Could not query failed swaps: " + err.Error())
 	}
 
-	failedReverseSwaps, err := cfg.database.QueryFailedReverseSwaps(since)
+	failedReverseSwaps, err := cfg.database.QueryReverseSwaps(query)
 	if err != nil {
 		return nil, errors.New("Could not query failed reverse swaps: " + err.Error())
 	}
@@ -340,15 +348,15 @@ func (cfg *LightningConfig) run(stop <-chan bool) {
 	ticker := time.NewTicker(time.Duration(cfg.ChannelPollInterval) * time.Second)
 
 	for {
+		logger.Debugf("Checking for lightning swap recommendation")
 		recommendations, err := cfg.GetSwapRecommendations()
 		if err != nil {
-			logger.Warn("Could not fetch swap recommendations: " + err.Error())
+			logger.Warnf("Could not fetch swap recommendations: %v", err)
 		}
 		if len(recommendations) > 0 {
-			logger.Infof("Got %v swap recommendations", len(recommendations))
 			for _, recommendation := range recommendations {
 				if recommendation.Dismissed() {
-					logger.Infof("Skipping swap recommendation %v because of %v", recommendation, recommendation.DismissedReasons)
+					logger.Infof("Skipping swap recommendation %+v", recommendation)
 					continue
 				}
 

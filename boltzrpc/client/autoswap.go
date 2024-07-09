@@ -24,8 +24,8 @@ func NewAutoSwapClient(conn Connection) AutoSwap {
 	}
 }
 
-func (autoSwap *AutoSwap) GetRecommendations(noDismissed bool) (*autoswaprpc.GetRecommendationsResponse, error) {
-	return autoSwap.Client.GetRecommendations(autoSwap.Ctx, &autoswaprpc.GetRecommendationsRequest{NoDismissed: &noDismissed})
+func (autoSwap *AutoSwap) GetRecommendations() (*autoswaprpc.GetRecommendationsResponse, error) {
+	return autoSwap.Client.GetRecommendations(autoSwap.Ctx, &autoswaprpc.GetRecommendationsRequest{})
 }
 
 func (autoSwap *AutoSwap) GetStatus() (*autoswaprpc.GetStatusResponse, error) {

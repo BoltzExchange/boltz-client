@@ -26,18 +26,29 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 	if channel.OutboundSat < outbound {
 		recommendation.Type = boltz.NormalSwap
 		if cfg.swapType == boltz.NormalSwap {
-			recommendation.Amount = channel.Capacity - channel.OutboundSat
+			recommendation.Amount = channel.InboundSat
 		}
 	} else if channel.InboundSat < inbound {
 		recommendation.Type = boltz.ReverseSwap
 		if cfg.swapType == boltz.ReverseSwap {
-			recommendation.Amount = channel.Capacity - channel.InboundSat
+			recommendation.Amount = channel.OutboundSat
 		}
 	}
 	if recommendation.Type != "" && cfg.Allowed(recommendation.Type) {
 		if recommendation.Amount == 0 {
 			target := float64(outbound+(channel.Capacity-inbound)) / 2
 			recommendation.Amount = uint64(math.Abs(float64(channel.OutboundSat) - target))
+		} else {
+			reserve := cfg.reserve.Calculate(channel.Capacity)
+			if recommendation.Amount < reserve {
+				logger.Warnf(
+					"Recommended amount %d of channel %d is smaller than the reserve %d",
+					recommendation.Amount, channel.Id, reserve,
+				)
+				recommendation.Amount = 0
+			} else {
+				recommendation.Amount -= reserve
+			}
 		}
 		return recommendation
 	}

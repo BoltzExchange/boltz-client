@@ -2,6 +2,7 @@ package autoswap
 
 import (
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"golang.org/x/exp/rand"
 	"testing"
 	"time"
@@ -422,6 +423,7 @@ func TestStrategies(t *testing.T) {
 		outcome      []*lightningRecommendation
 		channels     []*lightning.LightningChannel
 		err          error
+		reserve      utils.Percentage
 	}{
 		{
 			name: "PerChannel/Low",
@@ -558,12 +560,31 @@ func TestStrategies(t *testing.T) {
 			},
 			outcome: nil,
 		},
+		{
+			name: "Reserve",
+			config: &SerializedLnConfig{
+				InboundBalancePercent: 50,
+				SwapType:              "reverse",
+			},
+			outcome: []*lightningRecommendation{
+				recommendation(boltz.ReverseSwap, 600, nil),
+			},
+			reserve: 10,
+			channels: []*lightning.LightningChannel{
+				{
+					OutboundSat: 700,
+					InboundSat:  300,
+					Capacity:    1000,
+				},
+			},
+		},
 	}
 
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			cfg := NewLightningConfig(tc.config, shared{onchain: getOnchain()})
+			cfg.reserve = tc.reserve
 			require.NoError(t, cfg.Init())
 			if tc.channels == nil {
 				tc.channels = channels
@@ -596,6 +617,11 @@ func TestDismissedChannels(t *testing.T) {
 						ChanIds: []lightning.ChanId{1},
 						IsAuto:  true,
 					},
+					{
+						State:   boltzrpc.SwapState_PENDING,
+						ChanIds: []lightning.ChanId{2},
+						IsAuto:  false,
+					},
 				},
 				reverseSwaps: []database.ReverseSwap{
 					{
@@ -606,6 +632,11 @@ func TestDismissedChannels(t *testing.T) {
 						State:   boltzrpc.SwapState_SUCCESSFUL,
 						IsAuto:  true,
 						ChanIds: []lightning.ChanId{3},
+					},
+					{
+						State:   boltzrpc.SwapState_SUCCESSFUL,
+						IsAuto:  false,
+						ChanIds: []lightning.ChanId{2},
 					},
 				},
 			},
@@ -626,6 +657,11 @@ func TestDismissedChannels(t *testing.T) {
 						ChanIds: []lightning.ChanId{1},
 						IsAuto:  true,
 					},
+					{
+						State:   boltzrpc.SwapState_ERROR,
+						ChanIds: []lightning.ChanId{2},
+						IsAuto:  false,
+					},
 				},
 				reverseSwaps: []database.ReverseSwap{
 					{
@@ -633,6 +669,11 @@ func TestDismissedChannels(t *testing.T) {
 						CreatedAt: pastDate(2000 * time.Second),
 						IsAuto:    true,
 						ChanIds:   []lightning.ChanId{2},
+					},
+					{
+						State:   boltzrpc.SwapState_ERROR,
+						ChanIds: []lightning.ChanId{3},
+						IsAuto:  false,
 					},
 				},
 			},

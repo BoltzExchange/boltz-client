@@ -43,10 +43,7 @@ service AutoSwap {
 }
 
 
-message GetRecommendationsRequest {
-  // Do not return any dismissed recommendations
-  optional bool no_dismissed = 1;
-}
+message GetRecommendationsRequest {}
 
 message LightningRecommendation {
   uint64 amount = 1;
