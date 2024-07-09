@@ -28,17 +28,17 @@ func (_m *MockRpcProvider) EXPECT() *MockRpcProvider_Expecter {
 	return &MockRpcProvider_Expecter{mock: &_m.Mock}
 }
 
-// CreateAutoChainSwap provides a mock function with given fields: entity, request
-func (_m *MockRpcProvider) CreateAutoChainSwap(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest) error {
-	ret := _m.Called(entity, request)
+// CreateAutoChainSwap provides a mock function with given fields: tenant, request
+func (_m *MockRpcProvider) CreateAutoChainSwap(tenant *database.Tenant, request *boltzrpc.CreateChainSwapRequest) error {
+	ret := _m.Called(tenant, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateAutoChainSwap")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*database.Entity, *boltzrpc.CreateChainSwapRequest) error); ok {
-		r0 = rf(entity, request)
+	if rf, ok := ret.Get(0).(func(*database.Tenant, *boltzrpc.CreateChainSwapRequest) error); ok {
+		r0 = rf(tenant, request)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -52,15 +52,15 @@ type MockRpcProvider_CreateAutoChainSwap_Call struct {
 }
 
 // CreateAutoChainSwap is a helper method to define mock.On call
-//   - entity *database.Entity
+//   - tenant *database.Tenant
 //   - request *boltzrpc.CreateChainSwapRequest
-func (_e *MockRpcProvider_Expecter) CreateAutoChainSwap(entity interface{}, request interface{}) *MockRpcProvider_CreateAutoChainSwap_Call {
-	return &MockRpcProvider_CreateAutoChainSwap_Call{Call: _e.mock.On("CreateAutoChainSwap", entity, request)}
+func (_e *MockRpcProvider_Expecter) CreateAutoChainSwap(tenant interface{}, request interface{}) *MockRpcProvider_CreateAutoChainSwap_Call {
+	return &MockRpcProvider_CreateAutoChainSwap_Call{Call: _e.mock.On("CreateAutoChainSwap", tenant, request)}
 }
 
-func (_c *MockRpcProvider_CreateAutoChainSwap_Call) Run(run func(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest)) *MockRpcProvider_CreateAutoChainSwap_Call {
+func (_c *MockRpcProvider_CreateAutoChainSwap_Call) Run(run func(tenant *database.Tenant, request *boltzrpc.CreateChainSwapRequest)) *MockRpcProvider_CreateAutoChainSwap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*database.Entity), args[1].(*boltzrpc.CreateChainSwapRequest))
+		run(args[0].(*database.Tenant), args[1].(*boltzrpc.CreateChainSwapRequest))
 	})
 	return _c
 }
@@ -70,22 +70,22 @@ func (_c *MockRpcProvider_CreateAutoChainSwap_Call) Return(_a0 error) *MockRpcPr
 	return _c
 }
 
-func (_c *MockRpcProvider_CreateAutoChainSwap_Call) RunAndReturn(run func(*database.Entity, *boltzrpc.CreateChainSwapRequest) error) *MockRpcProvider_CreateAutoChainSwap_Call {
+func (_c *MockRpcProvider_CreateAutoChainSwap_Call) RunAndReturn(run func(*database.Tenant, *boltzrpc.CreateChainSwapRequest) error) *MockRpcProvider_CreateAutoChainSwap_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateAutoReverseSwap provides a mock function with given fields: entity, request
-func (_m *MockRpcProvider) CreateAutoReverseSwap(entity *database.Entity, request *boltzrpc.CreateReverseSwapRequest) error {
-	ret := _m.Called(entity, request)
+// CreateAutoReverseSwap provides a mock function with given fields: tenant, request
+func (_m *MockRpcProvider) CreateAutoReverseSwap(tenant *database.Tenant, request *boltzrpc.CreateReverseSwapRequest) error {
+	ret := _m.Called(tenant, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateAutoReverseSwap")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*database.Entity, *boltzrpc.CreateReverseSwapRequest) error); ok {
-		r0 = rf(entity, request)
+	if rf, ok := ret.Get(0).(func(*database.Tenant, *boltzrpc.CreateReverseSwapRequest) error); ok {
+		r0 = rf(tenant, request)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -99,15 +99,15 @@ type MockRpcProvider_CreateAutoReverseSwap_Call struct {
 }
 
 // CreateAutoReverseSwap is a helper method to define mock.On call
-//   - entity *database.Entity
+//   - tenant *database.Tenant
 //   - request *boltzrpc.CreateReverseSwapRequest
-func (_e *MockRpcProvider_Expecter) CreateAutoReverseSwap(entity interface{}, request interface{}) *MockRpcProvider_CreateAutoReverseSwap_Call {
-	return &MockRpcProvider_CreateAutoReverseSwap_Call{Call: _e.mock.On("CreateAutoReverseSwap", entity, request)}
+func (_e *MockRpcProvider_Expecter) CreateAutoReverseSwap(tenant interface{}, request interface{}) *MockRpcProvider_CreateAutoReverseSwap_Call {
+	return &MockRpcProvider_CreateAutoReverseSwap_Call{Call: _e.mock.On("CreateAutoReverseSwap", tenant, request)}
 }
 
-func (_c *MockRpcProvider_CreateAutoReverseSwap_Call) Run(run func(entity *database.Entity, request *boltzrpc.CreateReverseSwapRequest)) *MockRpcProvider_CreateAutoReverseSwap_Call {
+func (_c *MockRpcProvider_CreateAutoReverseSwap_Call) Run(run func(tenant *database.Tenant, request *boltzrpc.CreateReverseSwapRequest)) *MockRpcProvider_CreateAutoReverseSwap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*database.Entity), args[1].(*boltzrpc.CreateReverseSwapRequest))
+		run(args[0].(*database.Tenant), args[1].(*boltzrpc.CreateReverseSwapRequest))
 	})
 	return _c
 }
@@ -117,22 +117,22 @@ func (_c *MockRpcProvider_CreateAutoReverseSwap_Call) Return(_a0 error) *MockRpc
 	return _c
 }
 
-func (_c *MockRpcProvider_CreateAutoReverseSwap_Call) RunAndReturn(run func(*database.Entity, *boltzrpc.CreateReverseSwapRequest) error) *MockRpcProvider_CreateAutoReverseSwap_Call {
+func (_c *MockRpcProvider_CreateAutoReverseSwap_Call) RunAndReturn(run func(*database.Tenant, *boltzrpc.CreateReverseSwapRequest) error) *MockRpcProvider_CreateAutoReverseSwap_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateAutoSwap provides a mock function with given fields: entity, request
-func (_m *MockRpcProvider) CreateAutoSwap(entity *database.Entity, request *boltzrpc.CreateSwapRequest) error {
-	ret := _m.Called(entity, request)
+// CreateAutoSwap provides a mock function with given fields: tenant, request
+func (_m *MockRpcProvider) CreateAutoSwap(tenant *database.Tenant, request *boltzrpc.CreateSwapRequest) error {
+	ret := _m.Called(tenant, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateAutoSwap")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*database.Entity, *boltzrpc.CreateSwapRequest) error); ok {
-		r0 = rf(entity, request)
+	if rf, ok := ret.Get(0).(func(*database.Tenant, *boltzrpc.CreateSwapRequest) error); ok {
+		r0 = rf(tenant, request)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -146,15 +146,15 @@ type MockRpcProvider_CreateAutoSwap_Call struct {
 }
 
 // CreateAutoSwap is a helper method to define mock.On call
-//   - entity *database.Entity
+//   - tenant *database.Tenant
 //   - request *boltzrpc.CreateSwapRequest
-func (_e *MockRpcProvider_Expecter) CreateAutoSwap(entity interface{}, request interface{}) *MockRpcProvider_CreateAutoSwap_Call {
-	return &MockRpcProvider_CreateAutoSwap_Call{Call: _e.mock.On("CreateAutoSwap", entity, request)}
+func (_e *MockRpcProvider_Expecter) CreateAutoSwap(tenant interface{}, request interface{}) *MockRpcProvider_CreateAutoSwap_Call {
+	return &MockRpcProvider_CreateAutoSwap_Call{Call: _e.mock.On("CreateAutoSwap", tenant, request)}
 }
 
-func (_c *MockRpcProvider_CreateAutoSwap_Call) Run(run func(entity *database.Entity, request *boltzrpc.CreateSwapRequest)) *MockRpcProvider_CreateAutoSwap_Call {
+func (_c *MockRpcProvider_CreateAutoSwap_Call) Run(run func(tenant *database.Tenant, request *boltzrpc.CreateSwapRequest)) *MockRpcProvider_CreateAutoSwap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*database.Entity), args[1].(*boltzrpc.CreateSwapRequest))
+		run(args[0].(*database.Tenant), args[1].(*boltzrpc.CreateSwapRequest))
 	})
 	return _c
 }
@@ -164,7 +164,7 @@ func (_c *MockRpcProvider_CreateAutoSwap_Call) Return(_a0 error) *MockRpcProvide
 	return _c
 }
 
-func (_c *MockRpcProvider_CreateAutoSwap_Call) RunAndReturn(run func(*database.Entity, *boltzrpc.CreateSwapRequest) error) *MockRpcProvider_CreateAutoSwap_Call {
+func (_c *MockRpcProvider_CreateAutoSwap_Call) RunAndReturn(run func(*database.Tenant, *boltzrpc.CreateSwapRequest) error) *MockRpcProvider_CreateAutoSwap_Call {
 	_c.Call.Return(run)
 	return _c
 }

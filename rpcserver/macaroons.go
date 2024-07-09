@@ -63,8 +63,8 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	return &service, nil
 }
 
-func writeMacaroon(service macaroons.Service, entityId *database.Id, permissions []bakery.Op, path string) error {
-	macaroon, err := service.NewMacaroon(entityId, permissions...)
+func writeMacaroon(service macaroons.Service, tenantId *database.Id, permissions []bakery.Op, path string) error {
+	macaroon, err := service.NewMacaroon(tenantId, permissions...)
 
 	if err != nil {
 		return err

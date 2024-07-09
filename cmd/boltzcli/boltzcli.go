@@ -100,7 +100,7 @@ func main() {
 
 		walletCommands,
 		bakeMacaroonCommand,
-		entityCommands,
+		tenantCommands,
 
 		formatMacaroonCommand,
 		shellCompletionsCommand,

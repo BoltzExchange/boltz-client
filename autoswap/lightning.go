@@ -312,7 +312,7 @@ func (cfg *LightningConfig) GetCurrentBudget(createIfMissing bool) (*Budget, err
 		createIfMissing,
 		Lightning,
 		cfg,
-		database.DefaultEntityId,
+		database.DefaultTenantId,
 	)
 }
 
@@ -324,7 +324,7 @@ func (cfg *LightningConfig) execute(recommendation *LightningRecommendation) err
 	pair := cfg.GetPair(recommendation.Type)
 	var err error
 	if recommendation.Type == boltz.ReverseSwap {
-		err = cfg.rpc.CreateAutoReverseSwap(&database.DefaultEntity, &boltzrpc.CreateReverseSwapRequest{
+		err = cfg.rpc.CreateAutoReverseSwap(&database.DefaultTenant, &boltzrpc.CreateReverseSwapRequest{
 			Amount:         recommendation.Amount,
 			Address:        cfg.StaticAddress,
 			AcceptZeroConf: cfg.AcceptZeroConf,
@@ -333,7 +333,7 @@ func (cfg *LightningConfig) execute(recommendation *LightningRecommendation) err
 			WalletId:       cfg.walletId,
 		})
 	} else if recommendation.Type == boltz.NormalSwap {
-		err = cfg.rpc.CreateAutoSwap(&database.DefaultEntity, &boltzrpc.CreateSwapRequest{
+		err = cfg.rpc.CreateAutoSwap(&database.DefaultTenant, &boltzrpc.CreateSwapRequest{
 			Amount: recommendation.Amount,
 			Pair:   pair,
 			//ChanIds:          chanIds,

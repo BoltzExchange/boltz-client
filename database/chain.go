@@ -25,7 +25,7 @@ type ChainSwap struct {
 	ServiceFeePercent utils.Percentage
 	OnchainFee        *uint64
 	CreatedAt         time.Time
-	EntityId          Id
+	TenantId          Id
 	FromData          *ChainSwapData
 	ToData            *ChainSwapData
 }
@@ -61,7 +61,7 @@ type ChainSwapSerialized struct {
 	ServiceFeePercent utils.Percentage
 	OnchainFee        *uint64
 	CreatedAt         int64
-	EntityId          Id
+	TenantId          Id
 }
 
 type ChainSwapDataSerialized struct {
@@ -95,7 +95,7 @@ func (swap *ChainSwap) Serialize() ChainSwapSerialized {
 		ServiceFeePercent: swap.ServiceFeePercent,
 		OnchainFee:        swap.OnchainFee,
 		CreatedAt:         FormatTime(swap.CreatedAt),
-		EntityId:          swap.EntityId,
+		TenantId:          swap.TenantId,
 	}
 }
 
@@ -119,7 +119,7 @@ func (swapData *ChainSwapData) Serialize() ChainSwapDataSerialized {
 
 const insertChainSwap = `
 		INSERT INTO chainSwaps
-		(id, fromCurrency, toCurrency, state, error, status, acceptZeroConf, preimage, isAuto, serviceFee, serviceFeePercent, onchainFee, createdAt, entityId, createdAt)
+		(id, fromCurrency, toCurrency, state, error, status, acceptZeroConf, preimage, isAuto, serviceFee, serviceFeePercent, onchainFee, createdAt, tenantId, createdAt)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
@@ -144,7 +144,7 @@ func (database *Database) CreateChainSwap(swap ChainSwap) error {
 		serialized.ServiceFeePercent,
 		serialized.OnchainFee,
 		serialized.CreatedAt,
-		serialized.EntityId,
+		serialized.TenantId,
 		FormatTime(swap.CreatedAt),
 	)
 	if err != nil {
@@ -338,7 +338,7 @@ func (database *Database) parseChainSwap(rows *sql.Rows) (*ChainSwap, error) {
 			"serviceFeePercent": &swap.ServiceFeePercent,
 			"onchainFee":        &onchainFee,
 			"createdAt":         &createdAt,
-			"entityId":          &swap.EntityId,
+			"tenantId":          &swap.TenantId,
 		},
 	)
 

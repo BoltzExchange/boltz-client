@@ -12,7 +12,7 @@ type Wallet struct {
 }
 
 func (d *Database) CreateWallet(wallet *Wallet) error {
-	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, entityId, nodePubkey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
+	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
 	row := d.QueryRow(
 		query,
 		wallet.Name,
@@ -22,7 +22,7 @@ func (d *Database) CreateWallet(wallet *Wallet) error {
 		wallet.Mnemonic,
 		wallet.Subaccount,
 		wallet.Salt,
-		wallet.EntityId,
+		wallet.TenantId,
 		wallet.NodePubkey,
 	)
 	return row.Scan(&wallet.Id)
@@ -55,7 +55,7 @@ func parseWallet(rows row) (*Wallet, error) {
 		&wallet.Mnemonic,
 		&wallet.Subaccount,
 		&wallet.Salt,
-		&wallet.EntityId,
+		&wallet.TenantId,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse wallet wallet: %w", err)
@@ -70,10 +70,10 @@ func (d *Database) GetWallet(id Id) (*Wallet, error) {
 	return parseWallet(row)
 }
 
-func (d *Database) GetWalletByName(name string, entity Id) (*Wallet, error) {
+func (d *Database) GetWalletByName(name string, tenant Id) (*Wallet, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	row := d.QueryRow("SELECT * FROM wallets WHERE name = ? AND entityId = ?", name, entity)
+	row := d.QueryRow("SELECT * FROM wallets WHERE name = ? AND tenantId = ?", name, tenant)
 	return parseWallet(row)
 }
 

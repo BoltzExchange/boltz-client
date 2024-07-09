@@ -20,7 +20,7 @@ type ChainConfig struct {
 	*SerializedChainConfig
 	shared
 
-	entity        *database.Entity
+	tenant        *database.Tenant
 	maxFeePercent utils.Percentage
 	fromWallet    onchain.Wallet
 	toWallet      onchain.Wallet
@@ -28,8 +28,8 @@ type ChainConfig struct {
 	description   string
 }
 
-func (cfg *ChainConfig) GetEntityId() database.Id {
-	return cfg.entity.Id
+func (cfg *ChainConfig) GetTenantId() database.Id {
+	return cfg.tenant.Id
 }
 
 func withChainBase(config *SerializedChainConfig) *SerializedChainConfig {
@@ -49,12 +49,12 @@ func (cfg *ChainConfig) Description() string {
 }
 
 func (cfg *ChainConfig) Init() (err error) {
-	if cfg.Entity == nil {
-		cfg.entity = &database.DefaultEntity
+	if cfg.Tenant == nil {
+		cfg.tenant = &database.DefaultTenant
 	} else {
-		cfg.entity, err = cfg.database.GetEntityByName(cfg.GetEntity())
+		cfg.tenant, err = cfg.database.GetTenantByName(cfg.GetTenant())
 		if err != nil {
-			return fmt.Errorf("could not get entity: %w", err)
+			return fmt.Errorf("could not get tenant: %w", err)
 		}
 	}
 	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
@@ -65,7 +65,7 @@ func (cfg *ChainConfig) Init() (err error) {
 	cfg.fromWallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
 		Name:          &cfg.FromWallet,
 		AllowReadonly: false,
-		EntityId:      &cfg.entity.Id,
+		TenantId:      &cfg.tenant.Id,
 	})
 	if err != nil {
 		return fmt.Errorf("could not get from wallet: %w", err)
@@ -86,7 +86,7 @@ func (cfg *ChainConfig) Init() (err error) {
 		cfg.toWallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
 			Name:          &cfg.ToWallet,
 			AllowReadonly: true,
-			EntityId:      &cfg.entity.Id,
+			TenantId:      &cfg.tenant.Id,
 		})
 		if err != nil {
 			return fmt.Errorf("could not get to wallet: %w", err)
@@ -106,7 +106,7 @@ func (cfg *ChainConfig) Init() (err error) {
 }
 
 func (cfg *ChainConfig) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
-	return cfg.shared.GetCurrentBudget(createIfMissing, Chain, cfg, cfg.entity.Id)
+	return cfg.shared.GetCurrentBudget(createIfMissing, Chain, cfg, cfg.tenant.Id)
 }
 
 func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
@@ -134,7 +134,7 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 		state := boltzrpc.SwapState_PENDING
 		pendingSwaps, err := cfg.database.QueryChainSwaps(database.SwapQuery{
 			State:    &state,
-			EntityId: &cfg.entity.Id,
+			TenantId: &cfg.tenant.Id,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("could not query pending swaps: %w", err)
@@ -167,7 +167,7 @@ func (cfg *ChainConfig) execute(recommendation *ChainRecommendation) error {
 			request.ToWalletId = &toWalletId
 		}
 
-		return cfg.rpc.CreateAutoChainSwap(cfg.entity, request)
+		return cfg.rpc.CreateAutoChainSwap(cfg.tenant, request)
 	}
 	return nil
 }

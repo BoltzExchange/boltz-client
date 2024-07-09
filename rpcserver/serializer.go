@@ -80,7 +80,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 		ServiceFee:          serializedSwap.ServiceFee,
 		OnchainFee:          serializedSwap.OnchainFee,
 		WalletId:            serializedSwap.WalletId,
-		EntityId:            serializedSwap.EntityId,
+		TenantId:            serializedSwap.TenantId,
 	}
 
 	return serialized
@@ -114,7 +114,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		OnchainFee:          serializedReverseSwap.OnchainFee,
 		RoutingFeeMsat:      serializedReverseSwap.RoutingFeeMsat,
 		ExternalPay:         serializedReverseSwap.ExternalPay,
-		EntityId:            serializedReverseSwap.EntityId,
+		TenantId:            serializedReverseSwap.TenantId,
 	}
 }
 
@@ -136,7 +136,7 @@ func serializeChainSwap(chainSwap *database.ChainSwap) *boltzrpc.ChainSwapInfo {
 		OnchainFee: serializedchainSwap.OnchainFee,
 		FromData:   serializeChainSwapData(chainSwap.FromData),
 		ToData:     serializeChainSwapData(chainSwap.ToData),
-		EntityId:   chainSwap.EntityId,
+		TenantId:   chainSwap.TenantId,
 	}
 }
 
@@ -251,12 +251,12 @@ func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.Li
 	}
 }
 
-func serializeEntity(entity *database.Entity) *boltzrpc.Entity {
-	if entity == nil {
+func serializeTenant(tenant *database.Tenant) *boltzrpc.Tenant {
+	if tenant == nil {
 		return nil
 	}
-	return &boltzrpc.Entity{
-		Id:   entity.Id,
-		Name: entity.Name,
+	return &boltzrpc.Tenant{
+		Id:   tenant.Id,
+		Name: tenant.Name,
 	}
 }

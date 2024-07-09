@@ -16,8 +16,8 @@ import (
 )
 
 func mockedWallet(t *testing.T, info onchain.WalletInfo) *onchainmock.MockWallet {
-	if info.EntityId == 0 {
-		info.EntityId = database.DefaultEntityId
+	if info.TenantId == 0 {
+		info.TenantId = database.DefaultTenantId
 	}
 	wallet := onchainmock.NewMockWallet(t)
 	wallet.EXPECT().Ready().Return(true)
@@ -40,13 +40,13 @@ func newPairInfo() *boltzrpc.PairInfo {
 
 func TestChainSwapper(t *testing.T) {
 	setup := func(t *testing.T) (*AutoSwap, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
-		name := database.DefaultEntityName
+		name := database.DefaultTenantName
 		config := &SerializedChainConfig{
 			MaxBalance:    500,
 			FromWallet:    "test",
 			ToAddress:     "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
 			MaxFeePercent: 10,
-			Entity:        &name,
+			Tenant:        &name,
 		}
 
 		fromWallet := mockedWallet(t, onchain.WalletInfo{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid})
@@ -54,10 +54,10 @@ func TestChainSwapper(t *testing.T) {
 		swapper, mockProvider := getSwapper(t)
 		swapper.onchain.AddWallet(fromWallet)
 
-		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: config}, database.DefaultEntity)
+		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: config}, database.DefaultTenant)
 		require.NoError(t, err)
 
-		return swapper, swapper.GetChainSwapper(database.DefaultEntityId), mockProvider, fromWallet
+		return swapper, swapper.GetChainSwapper(database.DefaultTenantId), mockProvider, fromWallet
 	}
 
 	test.InitLogger()
@@ -75,11 +75,11 @@ func TestChainSwapper(t *testing.T) {
 
 		t.Run("Valid", func(t *testing.T) {
 
-			entity := &database.Entity{Name: "test"}
-			require.NoError(t, chainSwapper.database.CreateEntity(entity))
+			tenant := &database.Tenant{Name: "test"}
+			require.NoError(t, chainSwapper.database.CreateTenant(tenant))
 			fakeSwaps{chainSwaps: []database.ChainSwap{
 				{
-					EntityId: entity.Id,
+					TenantId: tenant.Id,
 				},
 			}}.create(t, chainSwapper.database)
 
@@ -93,7 +93,7 @@ func TestChainSwapper(t *testing.T) {
 		t.Run("Dismissed", func(t *testing.T) {
 			fakeSwaps{chainSwaps: []database.ChainSwap{
 				{
-					EntityId: chainConfig.entity.Id,
+					TenantId: chainConfig.tenant.Id,
 				},
 			}}.create(t, chainSwapper.database)
 
@@ -123,8 +123,8 @@ func TestChainSwapper(t *testing.T) {
 
 		var amount uint64 = 750
 
-		rpcMock.EXPECT().CreateAutoChainSwap(mock.Anything, mock.Anything).RunAndReturn(func(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest) error {
-			require.Equal(t, database.DefaultEntityId, entity.Id)
+		rpcMock.EXPECT().CreateAutoChainSwap(mock.Anything, mock.Anything).RunAndReturn(func(tenant *database.Tenant, request *boltzrpc.CreateChainSwapRequest) error {
+			require.Equal(t, database.DefaultTenantId, tenant.Id)
 			require.Equal(t, amount, request.Amount)
 			require.NotNil(t, request.FromWalletId)
 			require.NotZero(t, request.ToAddress)
@@ -156,7 +156,7 @@ func TestChainSwapper(t *testing.T) {
 		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{
 			Config:    &autoswaprpc.ChainConfig{Enabled: true},
 			FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"enabled"}},
-		}, database.DefaultEntity)
+		}, database.DefaultTenant)
 		require.NoError(t, err)
 
 		require.True(t, chainSwapper.cfg.Enabled)

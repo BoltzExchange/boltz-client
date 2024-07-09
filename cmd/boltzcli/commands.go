@@ -1933,8 +1933,8 @@ var bakeMacaroonCommand = &cli.Command{
 	Usage: "Bakes a new macaroon",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "entity",
-			Usage: "name of the entity",
+			Name:  "tenant",
+			Usage: "name of the tenant",
 		},
 		&cli.StringFlag{
 			Name:  "save",
@@ -1944,12 +1944,12 @@ var bakeMacaroonCommand = &cli.Command{
 	Action: requireNArgs(1, func(ctx *cli.Context) error {
 		client := getClient(ctx)
 		request := &boltzrpc.BakeMacaroonRequest{}
-		if entityName := ctx.String("entity"); entityName != "" {
-			entity, err := client.GetEntity(entityName)
+		if tenantName := ctx.String("tenant"); tenantName != "" {
+			tenant, err := client.GetTenant(tenantName)
 			if err != nil {
 				return err
 			}
-			request.EntityId = &entity.Id
+			request.TenantId = &tenant.Id
 		}
 		args := ctx.Args()
 		for i := 0; i < args.Len(); i++ {
@@ -1980,35 +1980,35 @@ var bakeMacaroonCommand = &cli.Command{
 	}),
 }
 
-var entityCommands = &cli.Command{
-	Name:     "entity",
-	Category: "Entity",
+var tenantCommands = &cli.Command{
+	Name:     "tenant",
+	Category: "Tenant",
 	Usage:    "Manage the wallets used by the client",
 	Subcommands: []*cli.Command{
 		{
 			Name:      "create",
-			Usage:     "Create a new entity",
+			Usage:     "Create a new tenant",
 			ArgsUsage: "name",
 			Description: "Creates a new wallet for the specified currency and unique name.\n" +
 				"Currency has to be BTC or LBTC (case insensitive).",
 			Action: requireNArgs(1, func(ctx *cli.Context) error {
 				client := getClient(ctx)
 
-				entity, err := client.CreateEntity(ctx.Args().First())
+				tenant, err := client.CreateTenant(ctx.Args().First())
 				if err != nil {
 					return err
 				}
-				printJson(entity)
+				printJson(tenant)
 				return nil
 			}),
 		},
 		{
 			Name:  "list",
-			Usage: "List all entities",
+			Usage: "List all tenants",
 			Action: func(ctx *cli.Context) error {
 				client := getClient(ctx)
 
-				response, err := client.ListEntities()
+				response, err := client.ListTenants()
 				if err != nil {
 					return err
 				}

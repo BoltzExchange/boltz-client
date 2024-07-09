@@ -31,12 +31,12 @@ func (service *Service) Init() {
 	service.bakery = bakery.New(macaroonParams)
 }
 
-func (service *Service) NewMacaroon(entity *database.Id, ops ...bakery.Op) (*bakery.Macaroon, error) {
+func (service *Service) NewMacaroon(tenant *database.Id, ops ...bakery.Op) (*bakery.Macaroon, error) {
 	ctx := addRootKeyIdToContext(context.Background(), defaultRootKeyID)
 
 	var caveats []checkers.Caveat
-	if entity != nil {
-		caveats = append(caveats, checkers.DeclaredCaveat(string(entityContextKey), fmt.Sprint(*entity)))
+	if tenant != nil {
+		caveats = append(caveats, checkers.DeclaredCaveat(string(tenantContextKey), fmt.Sprint(*tenant)))
 	}
 
 	return service.bakery.Oven.NewMacaroon(ctx, bakery.LatestVersion, caveats, ops...)
@@ -54,8 +54,8 @@ func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []
 	return authChecker.Allow(context.Background(), requiredPermissions...)
 }
 
-func (service *Service) validateEntity(ctx context.Context, raw string) (context.Context, error) {
-	id := database.DefaultEntityId
+func (service *Service) validateTenant(ctx context.Context, raw string) (context.Context, error) {
+	id := database.DefaultTenantId
 	if raw != "" {
 		var err error
 		id, err = strconv.ParseUint(raw, 10, 64)
@@ -63,10 +63,10 @@ func (service *Service) validateEntity(ctx context.Context, raw string) (context
 			return nil, err
 		}
 	}
-	entity, err := service.Database.GetEntity(id)
+	tenant, err := service.Database.GetTenant(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid entity %d: %w", id, err)
+		return nil, fmt.Errorf("invalid tenant %d: %w", id, err)
 	}
 
-	return AddEntityToContext(ctx, entity), nil
+	return AddTenantToContext(ctx, tenant), nil
 }

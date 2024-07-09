@@ -164,14 +164,14 @@ func TestChainConfig(t *testing.T) {
 	btcWallet := onchain.WalletInfo{Id: 1, Name: "btc", Currency: boltz.CurrencyBtc}
 	liquidWallet := onchain.WalletInfo{Id: 2, Name: "liquid", Currency: boltz.CurrencyLiquid}
 
-	entityName := "test"
+	tenantName := "test"
 
 	tt := []struct {
 		name      string
 		config    *SerializedChainConfig
 		wallets   []onchain.WalletInfo
 		err       bool
-		setEntity bool
+		setTenant bool
 	}{
 		{
 			name:   "Empty",
@@ -195,34 +195,34 @@ func TestChainConfig(t *testing.T) {
 			err: true,
 		},
 		{
-			name: "Entity/Invalid",
+			name: "Tenant/Invalid",
 			config: &SerializedChainConfig{
 				MaxBalance: 100,
-				Entity:     &entityName,
+				Tenant:     &tenantName,
 			},
 			err: true,
 		},
 		{
-			name: "Entity/NoWallets",
+			name: "Tenant/NoWallets",
 			config: &SerializedChainConfig{
 				MaxBalance: 100,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
-			setEntity: true,
+			setTenant: true,
 			wallets:   []onchain.WalletInfo{btcWallet, liquidWallet},
 			err:       true,
 		},
 		{
-			name: "Entity/Valid",
+			name: "Tenant/Valid",
 			config: &SerializedChainConfig{
 				MaxBalance: 100,
-				Entity:     &entityName,
+				Tenant:     &tenantName,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
 			wallets:   []onchain.WalletInfo{btcWallet, liquidWallet},
-			setEntity: true,
+			setTenant: true,
 			err:       false,
 		},
 		{
@@ -281,13 +281,13 @@ func TestChainConfig(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			shared := getShared(t)
-			entity := &database.Entity{Name: entityName}
-			err := shared.database.CreateEntity(entity)
+			tenant := &database.Tenant{Name: tenantName}
+			err := shared.database.CreateTenant(tenant)
 			require.NoError(t, err)
 
 			for _, info := range tc.wallets {
-				if tc.setEntity {
-					info.EntityId = entity.Id
+				if tc.setTenant {
+					info.TenantId = tenant.Id
 				}
 				shared.onchain.AddWallet(mockedWallet(t, info))
 			}
@@ -302,7 +302,7 @@ func TestChainConfig(t *testing.T) {
 				require.NotEqual(t, chainConfig.pair.From, chainConfig.pair.To)
 				require.NotEmpty(t, chainConfig.description)
 				require.NotZero(t, chainConfig.maxFeePercent)
-				require.NotNil(t, chainConfig.entity)
+				require.NotNil(t, chainConfig.tenant)
 			}
 		})
 	}

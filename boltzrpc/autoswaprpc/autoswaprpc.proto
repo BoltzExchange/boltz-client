@@ -116,7 +116,7 @@ message ChainConfig {
   float max_fee_percent = 6;
   uint64 budget = 7;
   uint64 budget_interval = 8;
-  optional string entity = 9;
+  optional string tenant = 9;
 }
 
 message LightningConfig {
@@ -137,5 +137,5 @@ message LightningConfig {
     bool per_channel = 15;
     string wallet = 16;
     uint64 max_swap_amount = 17;
-    optional string entity = 18;
+    optional string tenant = 18;
 }

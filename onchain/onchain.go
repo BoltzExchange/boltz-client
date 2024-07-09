@@ -32,7 +32,7 @@ type WalletInfo struct {
 	Name     string
 	Currency boltz.Currency
 	Readonly bool
-	EntityId Id
+	TenantId Id
 }
 
 type WalletChecker struct {
@@ -40,7 +40,7 @@ type WalletChecker struct {
 	Name          *string
 	Currency      boltz.Currency
 	AllowReadonly bool
-	EntityId      *Id
+	TenantId      *Id
 }
 
 type BlockProvider interface {
@@ -112,8 +112,8 @@ func (walletChecker *WalletChecker) Allowed(wallet Wallet) bool {
 	currency := info.Currency == walletChecker.Currency || walletChecker.Currency == ""
 	name := walletChecker.Name == nil || info.Name == *walletChecker.Name
 	readonly := !info.Readonly || walletChecker.AllowReadonly
-	entityId := walletChecker.EntityId == nil || info.EntityId == *walletChecker.EntityId
-	return wallet.Ready() && id && currency && name && readonly && entityId
+	tenantId := walletChecker.TenantId == nil || info.TenantId == *walletChecker.TenantId
+	return wallet.Ready() && id && currency && name && readonly && tenantId
 }
 
 func (onchain *Onchain) GetAnyWallet(checker WalletChecker) (Wallet, error) {

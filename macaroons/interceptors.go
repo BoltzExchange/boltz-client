@@ -73,7 +73,7 @@ func (service *Service) validateRequest(ctx context.Context, fullMethod string) 
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
-	var entity string
+	var tenant string
 	for _, caveat := range info.Conditions() {
 		cond, arg, err := checkers.ParseCaveat(caveat)
 		if err != nil {
@@ -81,24 +81,24 @@ func (service *Service) validateRequest(ctx context.Context, fullMethod string) 
 		}
 		if cond == checkers.CondDeclared {
 			split := strings.Split(arg, " ")
-			if split[0] == string(entityContextKey) {
+			if split[0] == string(tenantContextKey) {
 				if split[1] != "" {
-					entity = split[1]
+					tenant = split[1]
 					break
 				}
 			}
 		}
 	}
 
-	if param := md.Get(string(entityContextKey)); len(param) > 0 {
+	if param := md.Get(string(tenantContextKey)); len(param) > 0 {
 		if len(param) != 1 {
-			return nil, fmt.Errorf("expected 1 entity, got %s", param)
+			return nil, fmt.Errorf("expected 1 tenant, got %s", param)
 		}
-		if entity != "" {
-			return nil, status.Error(codes.InvalidArgument, "entity restriction already set by macaroon")
+		if tenant != "" {
+			return nil, status.Error(codes.InvalidArgument, "tenant restriction already set by macaroon")
 		}
-		entity = param[0]
+		tenant = param[0]
 	}
 
-	return service.validateEntity(ctx, entity)
+	return service.validateTenant(ctx, tenant)
 }
