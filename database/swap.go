@@ -274,11 +274,14 @@ WHERE fromCurrency = ?
   AND (state IN (?, ?) OR (state != ? AND swaps.timeoutBlockheight < ?))
 `
 
-func (database *Database) QueryRefundableSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]*Swap, error) {
-	return database.querySwaps(
-		refundableSwapsQuery, currency,
-		boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
-	)
+func (database *Database) QueryRefundableSwaps(tenantId *Id, currency boltz.Currency, currentBlockHeight uint32) ([]*Swap, error) {
+	query := refundableSwapsQuery
+	values := []any{currency, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight}
+	if tenantId != nil {
+		query += " AND tenantId = ?"
+		values = append(values, tenantId)
+	}
+	return database.querySwaps(query, values...)
 }
 
 const insertSwapStatement = `

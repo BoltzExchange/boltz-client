@@ -306,10 +306,8 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
-func createTenant(t *testing.T, admin client.Boltz, name string) (*boltzrpc.Tenant, string, string) {
-	tenantName := "test"
-
-	tenantInfo, err := admin.CreateTenant(tenantName)
+func createTenant(t *testing.T, admin client.Boltz, name string) (*boltzrpc.Tenant, client.Connection, client.Connection) {
+	tenantInfo, err := admin.CreateTenant(name)
 	require.NoError(t, err)
 	require.NotZero(t, tenantInfo.Id)
 
@@ -325,53 +323,31 @@ func createTenant(t *testing.T, admin client.Boltz, name string) (*boltzrpc.Tena
 	})
 	require.NoError(t, err)
 
-	return tenantInfo, write.Macaroon, read.Macaroon
+	readConn := admin.Connection
+	readConn.SetMacaroon(read.Macaroon)
+
+	writeConn := admin.Connection
+	writeConn.SetMacaroon(write.Macaroon)
+
+	return tenantInfo, writeConn, readConn
 }
 
 func TestMacaroons(t *testing.T) {
-	fullPermissions := []*boltzrpc.MacaroonPermissions{
-		{Action: boltzrpc.MacaroonAction_READ},
-		{Action: boltzrpc.MacaroonAction_WRITE},
-	}
-
-	readPermissions := []*boltzrpc.MacaroonPermissions{
-		{Action: boltzrpc.MacaroonAction_READ},
-	}
-
 	admin, adminAuto, stop := setup(t, setupOptions{})
 	defer stop()
 	conn := admin.Connection
 
 	tenantName := "test"
 
-	tenantInfo, err := admin.CreateTenant(tenantName)
-	require.NoError(t, err)
-	require.NotZero(t, tenantInfo.Id)
+	tenantInfo, write, read := createTenant(t, admin, tenantName)
 
 	list, err := admin.ListTenants()
 	require.NoError(t, err)
 	require.Len(t, list.Tenants, 2)
 
-	write, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
-		TenantId:    &tenantInfo.Id,
-		Permissions: fullPermissions,
-	})
-	require.NoError(t, err)
-
-	readonly, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
-		TenantId:    &tenantInfo.Id,
-		Permissions: readPermissions,
-	})
-	require.NoError(t, err)
-
-	tenant := client.NewBoltzClient(conn)
-	tenant.SetMacaroon(write.Macaroon)
-
-	tenantAuto := client.NewAutoSwapClient(conn)
-	tenantAuto.SetMacaroon(write.Macaroon)
-
-	readTenant := client.NewBoltzClient(conn)
-	readTenant.SetMacaroon(readonly.Macaroon)
+	tenant := client.NewBoltzClient(write)
+	tenantAuto := client.NewAutoSwapClient(write)
+	readTenant := client.NewBoltzClient(read)
 
 	t.Run("Bake", func(t *testing.T) {
 		response, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
@@ -403,7 +379,7 @@ func TestMacaroons(t *testing.T) {
 	t.Run("Admin", func(t *testing.T) {
 		_, err = tenant.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
 			TenantId:    &tenantInfo.Id,
-			Permissions: readPermissions,
+			Permissions: client.ReadPermissions,
 		})
 		require.Error(t, err)
 
@@ -478,6 +454,7 @@ func TestMacaroons(t *testing.T) {
 			_, err = admin.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000, ExternalPay: &externalPay})
 			require.NoError(t, err)
 			hasSwaps(t, admin, 1)
+			hasSwaps(t, tenant, 0)
 		})
 
 		t.Run("Tenant", func(t *testing.T) {
@@ -504,43 +481,78 @@ func TestMacaroons(t *testing.T) {
 }
 
 func TestGetSwapInfoStream(t *testing.T) {
-	client, _, stop := setup(t, setupOptions{})
+	admin, _, stop := setup(t, setupOptions{})
 	defer stop()
 
-	stream, err := client.GetSwapInfoStream("")
+	_, write, _ := createTenant(t, admin, "test")
+	tenant := client.NewBoltzClient(write)
+
+	stream, _ := swapStream(t, admin, "")
+	tenantStream, err := tenant.GetSwapInfoStream("")
 	require.NoError(t, err)
 
-	updates := make(chan *boltzrpc.GetSwapInfoResponse)
 	go func() {
 		for {
-			status, err := stream.Recv()
+			_, err := tenantStream.Recv()
 			if err != nil {
-				close(updates)
 				return
 			}
-			updates <- status
+			require.Fail(t, "tenant should not receive updates for admin swap")
 		}
 	}()
 
-	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{})
-	require.NoError(t, err)
+	check := func(t *testing.T, id string) {
+		_, err = admin.GetSwapInfo(id)
+		require.NoError(t, err)
 
-	select {
-	case info := <-updates:
+		stream, err := admin.GetSwapInfoStream(id)
+		require.NoError(t, err)
+		require.NoError(t, stream.CloseSend())
+
+		_, err = tenant.GetSwapInfo(id)
+		requireCode(t, err, codes.PermissionDenied)
+
+		stream, err = tenant.GetSwapInfoStream(id)
+		require.NoError(t, err)
+		_, err = stream.Recv()
+		requireCode(t, err, codes.PermissionDenied)
+	}
+
+	t.Run("Normal", func(t *testing.T) {
+		swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{})
+		require.NoError(t, err)
+
+		info := stream(boltzrpc.SwapState_PENDING)
 		require.Equal(t, swap.Id, info.Swap.Id)
-	case <-time.After(2 * time.Second):
-		require.Fail(t, "no swap update received")
-	}
 
-	reverseSwap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
-	require.NoError(t, err)
+		check(t, swap.Id)
+	})
 
-	select {
-	case info := <-updates:
+	t.Run("Reverse", func(t *testing.T) {
+		reverseSwap, err := admin.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
+		require.NoError(t, err)
+
+		info := stream(boltzrpc.SwapState_PENDING)
 		require.Equal(t, reverseSwap.Id, info.ReverseSwap.Id)
-	case <-time.After(2 * time.Second):
-		require.Fail(t, "no reverse swap update received")
-	}
+
+		check(t, reverseSwap.Id)
+	})
+
+	t.Run("Chain", func(t *testing.T) {
+		externalPay := true
+		chainSwap, err := admin.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+			Amount:      100000,
+			Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
+			ExternalPay: &externalPay,
+			ToWalletId:  &testWallet.Id,
+		})
+		require.NoError(t, err)
+
+		info := stream(boltzrpc.SwapState_PENDING)
+		require.Equal(t, chainSwap.Id, info.ChainSwap.Id)
+
+		check(t, chainSwap.Id)
+	})
 }
 
 func TestGetPairs(t *testing.T) {
@@ -751,19 +763,23 @@ func TestSwap(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
+					cfg := loadConfig(t)
 					boltzApi := getBoltz(t, cfg)
 					cfg.Node = "LND"
 					pair := &boltzrpc.Pair{
 						From: tc.from,
 						To:   boltzrpc.Currency_BTC,
 					}
-					client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
+					admin, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
 					defer stop()
+
+					_, write, _ := createTenant(t, admin, "test")
+					tenant := client.NewBoltzClient(write)
 
 					t.Run("Normal", func(t *testing.T) {
 						t.Run("EnoughBalance", func(t *testing.T) {
 
-							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+							swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Amount:           100000,
 								Pair:             pair,
 								SendFromInternal: true,
@@ -773,7 +789,7 @@ func TestSwap(t *testing.T) {
 							require.NotZero(t, swap.TimeoutHours)
 							require.NotZero(t, swap.TimeoutBlockHeight)
 
-							stream, _ := swapStream(t, client, swap.Id)
+							stream, _ := swapStream(t, admin, swap.Id)
 							test.MineBlock()
 
 							info := stream(boltzrpc.SwapState_SUCCESSFUL)
@@ -781,8 +797,8 @@ func TestSwap(t *testing.T) {
 						})
 
 						t.Run("NoBalance", func(t *testing.T) {
-							emptyWalletId := emptyWallet(t, client, tc.from)
-							_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+							emptyWalletId := emptyWallet(t, admin, tc.from)
+							_, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Amount:           100000,
 								Pair:             pair,
 								SendFromInternal: true,
@@ -792,7 +808,7 @@ func TestSwap(t *testing.T) {
 						})
 					})
 					t.Run("Deposit", func(t *testing.T) {
-						swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+						swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
 							Pair: pair,
 						})
 						require.NoError(t, err)
@@ -800,7 +816,7 @@ func TestSwap(t *testing.T) {
 						test.SendToAddress(tc.cli, swap.Address, 100000)
 						test.MineBlock()
 
-						stream, _ := swapStream(t, client, swap.Id)
+						stream, _ := swapStream(t, admin, swap.Id)
 						info := stream(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
 					})
@@ -812,13 +828,13 @@ func TestSwap(t *testing.T) {
 					t.Run("Refund", func(t *testing.T) {
 						cli := tc.cli
 
-						submarinePair, err := client.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
+						submarinePair, err := admin.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
 
 						require.NoError(t, err)
 
 						createFailed := func(t *testing.T, refundAddress string) (streamFunc, streamStatusFunc) {
 							amount := submarinePair.Limits.Minimal + 100
-							swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+							swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Pair:          pair,
 								RefundAddress: &refundAddress,
 								Amount:        amount + 100,
@@ -826,7 +842,7 @@ func TestSwap(t *testing.T) {
 							require.NoError(t, err)
 
 							test.SendToAddress(cli, swap.Address, amount)
-							return swapStream(t, client, swap.Id)
+							return swapStream(t, admin, swap.Id)
 						}
 
 						t.Run("Script", func(t *testing.T) {
@@ -875,10 +891,14 @@ func TestSwap(t *testing.T) {
 								setup := func(t *testing.T) *boltzrpc.SwapInfo {
 									_, statusStream := createFailed(t, "")
 									info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).Swap
-									clientInfo, err := client.GetInfo()
+									clientInfo, err := admin.GetInfo()
 									require.NoError(t, err)
 									require.Len(t, clientInfo.RefundableSwaps, 1)
 									require.Equal(t, clientInfo.RefundableSwaps[0], info.Id)
+
+									clientInfo, err = tenant.GetInfo()
+									require.NoError(t, err)
+									require.Empty(t, clientInfo.RefundableSwaps)
 									return info
 								}
 
@@ -890,16 +910,16 @@ func TestSwap(t *testing.T) {
 
 									t.Run("Invalid", func(t *testing.T) {
 										destination.Address = "invalid"
-										_, err := client.RefundSwap(request)
+										_, err := admin.RefundSwap(request)
 										requireCode(t, err, codes.InvalidArgument)
 
-										_, err = client.RefundSwap(&boltzrpc.RefundSwapRequest{Id: "invalid"})
+										_, err = admin.RefundSwap(&boltzrpc.RefundSwapRequest{Id: "invalid"})
 										requireCode(t, err, codes.NotFound)
 									})
 
 									t.Run("Valid", func(t *testing.T) {
 										destination.Address = refundAddress
-										response, err := client.RefundSwap(request)
+										response, err := admin.RefundSwap(request)
 										require.NoError(t, err)
 										info := response.Swap
 
@@ -910,7 +930,7 @@ func TestSwap(t *testing.T) {
 
 										checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
 
-										_, err = client.RefundSwap(request)
+										_, err = admin.RefundSwap(request)
 										requireCode(t, err, codes.NotFound)
 									})
 								})
@@ -923,22 +943,26 @@ func TestSwap(t *testing.T) {
 
 									t.Run("Invalid", func(t *testing.T) {
 										destination.WalletId = 123
-										_, err := client.RefundSwap(request)
+										_, err := admin.RefundSwap(request)
 										requireCode(t, err, codes.NotFound)
 									})
 
 									t.Run("Valid", func(t *testing.T) {
-										destination.WalletId = walletId(t, client, pair.From)
-										response, err := client.RefundSwap(request)
+										destination.WalletId = walletId(t, admin, pair.From)
+
+										_, err := tenant.RefundSwap(request)
+										requireCode(t, err, codes.NotFound)
+
+										response, err := admin.RefundSwap(request)
 										require.NoError(t, err)
 										info := response.Swap
 										require.Zero(t, info.ServiceFee)
 
-										fromWallet, err := client.GetWalletById(destination.WalletId)
+										fromWallet, err := admin.GetWalletById(destination.WalletId)
 										require.NoError(t, err)
 										require.NotZero(t, fromWallet.Balance.Unconfirmed)
 
-										_, err = client.RefundSwap(request)
+										_, err = admin.RefundSwap(request)
 										requireCode(t, err, codes.NotFound)
 									})
 								})
@@ -1606,8 +1630,7 @@ func TestAutoSwap(t *testing.T) {
 		require.NotEmpty(t, recommendations.Chain[0].DismissedReasons)
 
 		_, write, _ := createTenant(t, admin, "test")
-		tenant := client.NewAutoSwapClient(admin.Connection)
-		tenant.SetMacaroon(write)
+		tenant := client.NewAutoSwapClient(write)
 
 		_, err = tenant.GetConfig()
 		require.Error(t, err)
