@@ -4,84 +4,84 @@ import (
 	"fmt"
 )
 
-type Entity struct {
+type Tenant struct {
 	Id   Id
 	Name string
 }
 
-const DefaultEntityId Id = 1
-const DefaultEntityName string = "admin"
+const DefaultTenantId Id = 1
+const DefaultTenantName string = "admin"
 
-var DefaultEntity = Entity{Id: DefaultEntityId, Name: DefaultEntityName}
+var DefaultTenant = Tenant{Id: DefaultTenantId, Name: DefaultTenantName}
 
-func (d *Database) CreateDefaultEntity() error {
-	defaultEntity, _ := d.GetEntity(DefaultEntityId)
-	if defaultEntity == nil {
-		if err := d.CreateEntity(&Entity{Id: DefaultEntityId, Name: DefaultEntityName}); err != nil {
+func (d *Database) CreateDefaultTenant() error {
+	defaultTenant, _ := d.GetTenant(DefaultTenantId)
+	if defaultTenant == nil {
+		if err := d.CreateTenant(&Tenant{Id: DefaultTenantId, Name: DefaultTenantName}); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (d *Database) CreateEntity(entity *Entity) error {
-	query := "INSERT INTO entities (name) VALUES (?) RETURNING id"
-	row := d.QueryRow(query, entity.Name)
-	return row.Scan(&entity.Id)
+func (d *Database) CreateTenant(tenant *Tenant) error {
+	query := "INSERT INTO tenants (name) VALUES (?) RETURNING id"
+	row := d.QueryRow(query, tenant.Name)
+	return row.Scan(&tenant.Id)
 }
 
-func (d *Database) GetEntity(id Id) (*Entity, error) {
+func (d *Database) GetTenant(id Id) (*Tenant, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	query := "SELECT * FROM entities WHERE id = ?"
+	query := "SELECT * FROM tenants WHERE id = ?"
 	row := d.QueryRow(query, id)
-	return parseEntity(row)
+	return parseTenant(row)
 }
 
-func (d *Database) GetEntityByName(name string) (*Entity, error) {
+func (d *Database) GetTenantByName(name string) (*Tenant, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	query := "SELECT * FROM entities WHERE name  = ?"
+	query := "SELECT * FROM tenants WHERE name  = ?"
 	row := d.QueryRow(query, name)
-	return parseEntity(row)
+	return parseTenant(row)
 }
 
-func (d *Database) QueryEntities() ([]*Entity, error) {
+func (d *Database) QueryTenants() ([]*Tenant, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	rows, err := d.Query("SELECT * FROM entities")
+	rows, err := d.Query("SELECT * FROM tenants")
 	if err != nil {
-		return nil, fmt.Errorf("failed to query entities: %w", err)
+		return nil, fmt.Errorf("failed to query tenants: %w", err)
 	}
 	defer rows.Close()
-	var result []*Entity
+	var result []*Tenant
 	for rows.Next() {
-		entity, err := parseEntity(rows)
+		tenant, err := parseTenant(rows)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, entity)
+		result = append(result, tenant)
 	}
 	return result, nil
 }
 
-func parseEntity(r row) (*Entity, error) {
-	entity := &Entity{}
-	err := r.Scan(&entity.Id, &entity.Name)
+func parseTenant(r row) (*Tenant, error) {
+	tenant := &Tenant{}
+	err := r.Scan(&tenant.Id, &tenant.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse entity: %w", err)
+		return nil, fmt.Errorf("failed to parse tenant: %w", err)
 	}
-	return entity, nil
+	return tenant, nil
 }
 
-func (d *Database) DeleteEntity(id int64) error {
-	query := "DELETE FROM entities WHERE id = ?"
+func (d *Database) DeleteTenant(id int64) error {
+	query := "DELETE FROM tenants WHERE id = ?"
 	result, err := d.Exec(query, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete entity: %w", err)
+		return fmt.Errorf("failed to delete tenant: %w", err)
 	}
 	if rows, _ := result.RowsAffected(); rows == 0 {
-		return fmt.Errorf("failed to delete entity with id %d", id)
+		return fmt.Errorf("failed to delete tenant with id %d", id)
 	}
 	return nil
 }

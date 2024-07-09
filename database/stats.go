@@ -9,13 +9,13 @@ import (
 
 const statsQuery = `
 SELECT COALESCE(SUM(serviceFee + onchainFee), 0), COALESCE(SUM(expectedAmount), 0), COUNT(*)
-FROM (SELECT serviceFee, onchainFee, expectedAmount, isAuto, createdAt, 'submarine' type, entityId
+FROM (SELECT serviceFee, onchainFee, expectedAmount, isAuto, createdAt, 'submarine' type, tenantId
       FROM swaps
       UNION ALL
-      SELECT serviceFee, onchainFee + (routingFeeMsat / 1000), expectedAmount, isAuto, createdAt, 'reverse' type, entityId
+      SELECT serviceFee, onchainFee + (routingFeeMsat / 1000), expectedAmount, isAuto, createdAt, 'reverse' type, tenantId
       FROM reverseSwaps
       UNION ALL
-      SELECT serviceFee, onchainFee, data.amount, isAuto, createdAt, 'chain' type, entityId
+      SELECT serviceFee, onchainFee, data.amount, isAuto, createdAt, 'chain' type, tenantId
       FROM chainSwaps
       JOIN chainSwapsData data ON chainSwaps.id = data.id AND data.currency = chainSwaps.fromCurrency
       ) stats 

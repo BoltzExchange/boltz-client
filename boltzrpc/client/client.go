@@ -136,16 +136,16 @@ func (boltz *Boltz) ChangeWalletPassword(old string, new string) error {
 	return err
 }
 
-func (boltz *Boltz) CreateEntity(name string) (*boltzrpc.Entity, error) {
-	return boltz.Client.CreateEntity(boltz.Ctx, &boltzrpc.CreateEntityRequest{Name: name})
+func (boltz *Boltz) CreateTenant(name string) (*boltzrpc.Tenant, error) {
+	return boltz.Client.CreateTenant(boltz.Ctx, &boltzrpc.CreateTenantRequest{Name: name})
 }
 
-func (boltz *Boltz) GetEntity(name string) (*boltzrpc.Entity, error) {
-	return boltz.Client.GetEntity(boltz.Ctx, &boltzrpc.GetEntityRequest{Name: name})
+func (boltz *Boltz) GetTenant(name string) (*boltzrpc.Tenant, error) {
+	return boltz.Client.GetTenant(boltz.Ctx, &boltzrpc.GetTenantRequest{Name: name})
 }
 
-func (boltz *Boltz) ListEntities() (*boltzrpc.ListEntitiesResponse, error) {
-	return boltz.Client.ListEntities(boltz.Ctx, &boltzrpc.ListEntitiesRequest{})
+func (boltz *Boltz) ListTenants() (*boltzrpc.ListTenantsResponse, error) {
+	return boltz.Client.ListTenants(boltz.Ctx, &boltzrpc.ListTenantsRequest{})
 }
 
 func (boltz *Boltz) BakeMacaroon(request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {

@@ -45,9 +45,9 @@ type RpcProvider interface {
 	GetLightningChannels() ([]*lightning.LightningChannel, error)
 	GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func())
 
-	CreateAutoSwap(entity *database.Entity, request *boltzrpc.CreateSwapRequest) error
-	CreateAutoReverseSwap(entity *database.Entity, request *boltzrpc.CreateReverseSwapRequest) error
-	CreateAutoChainSwap(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest) error
+	CreateAutoSwap(tenant *database.Tenant, request *boltzrpc.CreateSwapRequest) error
+	CreateAutoReverseSwap(tenant *database.Tenant, request *boltzrpc.CreateReverseSwapRequest) error
+	CreateAutoChainSwap(tenant *database.Tenant, request *boltzrpc.CreateChainSwapRequest) error
 }
 
 type SwapperType string
@@ -132,12 +132,12 @@ func (autoSwap *AutoSwap) UpdateLightningConfig(request *autoswaprpc.UpdateLight
 	return autoSwap.saveConfig()
 }
 
-func (autoSwap *AutoSwap) UpdateChainConfig(request *autoswaprpc.UpdateChainConfigRequest, entity database.Entity) error {
-	chainSwapper, ok := autoSwap.chainSwappers[entity.Id]
+func (autoSwap *AutoSwap) UpdateChainConfig(request *autoswaprpc.UpdateChainConfigRequest, tenant database.Tenant) error {
+	chainSwapper, ok := autoSwap.chainSwappers[tenant.Id]
 	if request.GetReset_() {
 		if ok {
 			chainSwapper.Stop()
-			delete(autoSwap.chainSwappers, entity.Id)
+			delete(autoSwap.chainSwappers, tenant.Id)
 		}
 	} else {
 		config := request.Config
@@ -159,15 +159,15 @@ func (autoSwap *AutoSwap) UpdateChainConfig(request *autoswaprpc.UpdateChainConf
 			return err
 		}
 		config = updated.(*SerializedChainConfig)
-		if entity.Name != database.DefaultEntityName {
-			config.Entity = &entity.Name
+		if tenant.Name != database.DefaultTenantName {
+			config.Tenant = &tenant.Name
 		}
 
 		if err := chainSwapper.setConfig(NewChainConfig(config, autoSwap.shared)); err != nil {
 			return err
 		}
 
-		autoSwap.chainSwappers[entity.Id] = chainSwapper
+		autoSwap.chainSwappers[tenant.Id] = chainSwapper
 	}
 	return autoSwap.saveConfig()
 }
@@ -197,9 +197,9 @@ func (autoSwap *AutoSwap) LoadConfig() error {
 		return autoSwap.handleErr(fmt.Errorf("could not load config: %w", err))
 	}
 
-	for entity, chainSwapper := range autoSwap.chainSwappers {
+	for tenant, chainSwapper := range autoSwap.chainSwappers {
 		chainSwapper.Stop()
-		delete(autoSwap.chainSwappers, entity)
+		delete(autoSwap.chainSwappers, tenant)
 	}
 
 	if autoSwap.lnSwapper != nil {
@@ -216,16 +216,16 @@ func (autoSwap *AutoSwap) LoadConfig() error {
 	}
 
 	for _, chainConfig := range serialized.Chain {
-		entity := &database.DefaultEntity
-		if chainConfig.Entity != nil {
-			entity, err = autoSwap.database.GetEntityByName(*chainConfig.Entity)
+		tenant := &database.DefaultTenant
+		if chainConfig.Tenant != nil {
+			tenant, err = autoSwap.database.GetTenantByName(*chainConfig.Tenant)
 			if err != nil {
-				logger.Errorf("could not get entity %s: %v", *chainConfig.Entity, err)
+				logger.Errorf("could not get tenant %s: %v", *chainConfig.Tenant, err)
 				continue
 			}
 		}
 		request := &autoswaprpc.UpdateChainConfigRequest{Config: chainConfig}
-		if err := autoSwap.UpdateChainConfig(request, *entity); err != nil {
+		if err := autoSwap.UpdateChainConfig(request, *tenant); err != nil {
 			logger.Errorf("could not update chain config: %v", err)
 		}
 	}
@@ -274,14 +274,14 @@ func (autoSwap *AutoSwap) WalletUsed(id database.Id) bool {
 	return false
 }
 
-func (autoSwap *AutoSwap) GetConfig(entityId *database.Id) *Config {
+func (autoSwap *AutoSwap) GetConfig(tenantId *database.Id) *Config {
 	scoped := &Config{}
-	for entity, chainSwapper := range autoSwap.chainSwappers {
-		if entityId == nil || *entityId == entity {
+	for tenant, chainSwapper := range autoSwap.chainSwappers {
+		if tenantId == nil || *tenantId == tenant {
 			scoped.Chain = append(scoped.Chain, chainSwapper.cfg.SerializedChainConfig)
 		}
 	}
-	if autoSwap.lnSwapper != nil && (entityId == nil || *entityId == database.DefaultEntityId) {
+	if autoSwap.lnSwapper != nil && (tenantId == nil || *tenantId == database.DefaultTenantId) {
 		scoped.Lightning = []*SerializedLnConfig{autoSwap.lnSwapper.cfg.SerializedLnConfig}
 	}
 	return scoped
@@ -291,8 +291,8 @@ func (autoSwap *AutoSwap) GetLnSwapper() *LightningSwapper {
 	return autoSwap.lnSwapper
 }
 
-func (autoSwap *AutoSwap) GetChainSwapper(entityId database.Id) *ChainSwapper {
-	return autoSwap.chainSwappers[entityId]
+func (autoSwap *AutoSwap) GetChainSwapper(tenantId database.Id) *ChainSwapper {
+	return autoSwap.chainSwappers[tenantId]
 }
 
 func (autoSwap *AutoSwap) Error() string {

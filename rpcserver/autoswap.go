@@ -26,7 +26,7 @@ func (server *routedAutoSwapServer) lnSwapper(ctx context.Context) *autoswap.Lig
 }
 
 func (server *routedAutoSwapServer) chainSwapper(ctx context.Context) *autoswap.ChainSwapper {
-	return server.swapper.GetChainSwapper(requireEntityId(ctx))
+	return server.swapper.GetChainSwapper(requireTenantId(ctx))
 }
 
 func (server *routedAutoSwapServer) requireSwapper(ctx context.Context) error {
@@ -132,7 +132,7 @@ func (server *routedAutoSwapServer) GetConfig(ctx context.Context, _ *autoswaprp
 	if err := server.requireSwapper(ctx); err != nil {
 		return nil, err
 	}
-	return server.swapper.GetConfig(macaroons.EntityIdFromContext(ctx)), nil
+	return server.swapper.GetConfig(macaroons.TenantIdFromContext(ctx)), nil
 }
 
 func (server *routedAutoSwapServer) ReloadConfig(ctx context.Context, _ *empty.Empty) (*autoswaprpc.Config, error) {
@@ -152,7 +152,7 @@ func (server *routedAutoSwapServer) UpdateLightningConfig(ctx context.Context, r
 }
 
 func (server *routedAutoSwapServer) UpdateChainConfig(ctx context.Context, request *autoswaprpc.UpdateChainConfigRequest) (*autoswaprpc.Config, error) {
-	if err := server.swapper.UpdateChainConfig(request, requireEntity(ctx)); err != nil {
+	if err := server.swapper.UpdateChainConfig(request, requireTenant(ctx)); err != nil {
 		return nil, handleError(err)
 	}
 

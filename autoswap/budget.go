@@ -25,12 +25,12 @@ func (c *shared) GetCurrentBudget(
 	createIfMissing bool,
 	swapperType SwapperType,
 	cfg budgetConfig,
-	entityId database.Id,
+	tenantId database.Id,
 ) (*Budget, error) {
 	budgetDuration := time.Duration(cfg.GetBudgetInterval()) * time.Second
 	totalBudget := cfg.GetBudget()
 
-	currentInterval, err := c.database.QueryCurrentBudgetInterval(string(swapperType), entityId)
+	currentInterval, err := c.database.QueryCurrentBudgetInterval(string(swapperType), tenantId)
 	if err != nil {
 		return nil, errors.New("Could not get budget period: " + err.Error())
 	}
@@ -43,7 +43,7 @@ func (c *shared) GetCurrentBudget(
 					StartDate: now,
 					EndDate:   now.Add(budgetDuration),
 					Name:      string(swapperType),
-					EntityId:  entityId,
+					TenantId:  tenantId,
 				}
 			}
 			for now.After(currentInterval.EndDate) {
@@ -68,7 +68,7 @@ func (c *shared) GetCurrentBudget(
 	stats, err := c.database.QueryStats(database.SwapQuery{
 		Since:    currentInterval.StartDate,
 		IsAuto:   &isAuto,
-		EntityId: &entityId,
+		TenantId: &tenantId,
 	}, swapTypes)
 	if err != nil {
 		return nil, errors.New("Could not get past fees: " + err.Error())

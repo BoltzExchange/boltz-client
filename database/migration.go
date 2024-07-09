@@ -392,7 +392,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		logMigration(oldVersion)
 
 		migration := `
-		CREATE TABLE entities
+		CREATE TABLE tenants
 		(
 			id   INTEGER PRIMARY KEY AUTOINCREMENT,
 			name VARCHAR UNIQUE
@@ -409,18 +409,18 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			mnemonic       VARCHAR,
 			subaccount     INT,
 			salt           VARCHAR,
-			entityId       INT REFERENCES entities (id),
+			tenantId       INT REFERENCES tenants (id),
 
-			UNIQUE (name, entityId, nodePubkey),
+			UNIQUE (name, tenantId, nodePubkey),
 			UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
 		);
 		INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt)
 		SELECT name, currency,  xpub, coreDescriptor, mnemonic, subaccount, salt FROM old_wallets;
 		DROP TABLE old_wallets;
 		ALTER TABLE swaps ADD COLUMN walletId INT REFERENCES wallets(id) ON DELETE SET NULL;
-		ALTER TABLE swaps ADD COLUMN entityId INT REFERENCES entities(id);
+		ALTER TABLE swaps ADD COLUMN tenantId INT REFERENCES tenants(id);
 		ALTER TABLE reverseSwaps ADD COLUMN walletId INT REFERENCES wallets(id) ON DELETE SET NULL;
-		ALTER TABLE reverseSwaps ADD COLUMN entityId INT REFERENCES entities(id);
+		ALTER TABLE reverseSwaps ADD COLUMN tenantId INT REFERENCES tenants(id);
 		ALTER TABLE swaps DROP COLUMN wallet;
 		`
 
@@ -445,7 +445,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
     		serviceFeePercent REAL,
     		onchainFee        INT,
     		createdAt         INT,
-    		entityId          INT REFERENCES entities (id)
+    		tenantId          INT REFERENCES tenants (id)
 		);
 
 		CREATE TABLE chainSwapsData
@@ -473,15 +473,15 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		}
 
 	case 8:
-		if err := tx.CreateDefaultEntity(); err != nil {
+		if err := tx.CreateDefaultTenant(); err != nil {
 			return err
 		}
 
 		migration := `
-		UPDATE swaps SET entityId = 1 WHERE entityId IS NULL;
-		UPDATE reverseSwaps SET entityId = 1 WHERE entityId IS NULL;
-		UPDATE chainSwaps SET entityId = 1 WHERE entityId IS NULL;
-		UPDATE wallets SET entityId = 1 WHERE entityId IS NULL;
+		UPDATE swaps SET tenantId = 1 WHERE tenantId IS NULL;
+		UPDATE reverseSwaps SET tenantId = 1 WHERE tenantId IS NULL;
+		UPDATE chainSwaps SET tenantId = 1 WHERE tenantId IS NULL;
+		UPDATE wallets SET tenantId = 1 WHERE tenantId IS NULL;
 `
 
 		if _, err := tx.Exec(migration); err != nil {
@@ -496,9 +496,9 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			startDate INTEGER NOT NULL,
 			endDate   INTEGER NOT NULL,
 			name      VARCHAR NOT NULL,
-			entityId  INT REFERENCES entities (id),
+			tenantId  INT REFERENCES tenants (id),
 
-			PRIMARY KEY (startDate, name, entityId)
+			PRIMARY KEY (startDate, name, tenantId)
 		);
 `
 		if _, err := tx.Exec(migration); err != nil {

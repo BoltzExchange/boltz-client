@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	EntityReadPermissions = []bakery.Op{
+	TenantReadPermissions = []bakery.Op{
 		{
 			Entity: "info",
 			Action: "read",
@@ -24,7 +24,7 @@ var (
 			Action: "read",
 		},
 	}
-	EntityWritePermissions = []bakery.Op{
+	TenantWritePermissons = []bakery.Op{
 		{
 			Entity: "info",
 			Action: "write",
@@ -47,14 +47,14 @@ var (
 			Entity: "admin",
 			Action: "read",
 		},
-	}, EntityReadPermissions...)
+	}, TenantReadPermissions...)
 
 	WritePermissions = append([]bakery.Op{
 		{
 			Entity: "admin",
 			Action: "write",
 		},
-	}, EntityWritePermissions...)
+	}, TenantWritePermissons...)
 
 	RPCServerPermissions = map[string][]bakery.Op{
 		"/boltzrpc.Boltz/GetInfo": {{
@@ -157,15 +157,15 @@ var (
 			Entity: "admin",
 			Action: "read",
 		}},
-		"/boltzrpc.Boltz/CreateEntity": {{
+		"/boltzrpc.Boltz/CreateTenant": {{
 			Entity: "admin",
 			Action: "write",
 		}},
-		"/boltzrpc.Boltz/ListEntities": {{
+		"/boltzrpc.Boltz/ListTenants": {{
 			Entity: "admin",
 			Action: "read",
 		}},
-		"/boltzrpc.Boltz/GetEntity": {{
+		"/boltzrpc.Boltz/GetTenant": {{
 			Entity: "admin",
 			Action: "read",
 		}},
@@ -208,17 +208,17 @@ func AdminPermissions() []bakery.Op {
 	return admin
 }
 
-func GetPermissions(isEntity bool, permissions []*boltzrpc.MacaroonPermissions) (result []bakery.Op) {
+func GetPermissions(isTenant bool, permissions []*boltzrpc.MacaroonPermissions) (result []bakery.Op) {
 	for _, permission := range permissions {
 		if permission.Action == boltzrpc.MacaroonAction_READ {
-			if isEntity {
-				result = append(result, EntityReadPermissions...)
+			if isTenant {
+				result = append(result, TenantReadPermissions...)
 			} else {
 				result = append(result, ReadPermissions...)
 			}
 		} else if permission.Action == boltzrpc.MacaroonAction_WRITE {
-			if isEntity {
-				result = append(result, EntityWritePermissions...)
+			if isTenant {
+				result = append(result, TenantWritePermissons...)
 			} else {
 				result = append(result, WritePermissions...)
 			}

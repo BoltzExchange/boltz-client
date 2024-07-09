@@ -12,7 +12,7 @@ type contextKey string
 
 var rootKeyIDContextKey contextKey = "rootkeyid"
 
-const entityContextKey contextKey = "entity"
+const tenantContextKey contextKey = "tenant"
 
 func generateNewRootKey() ([]byte, error) {
 	rootKey := make([]byte, rootKeyLen)
@@ -41,23 +41,23 @@ func addRootKeyIdToContext(ctx context.Context, value interface{}) context.Conte
 	return context.WithValue(ctx, rootKeyIDContextKey, value)
 }
 
-func EntityIdFromContext(ctx context.Context) *database.Id {
-	if entity := ctx.Value(entityContextKey); entity != nil {
-		return &EntityFromContext(ctx).Id
+func TenantIdFromContext(ctx context.Context) *database.Id {
+	if tenant := ctx.Value(tenantContextKey); tenant != nil {
+		return &TenantFromContext(ctx).Id
 	}
 	return nil
 }
 
-func EntityFromContext(ctx context.Context) *database.Entity {
-	if value := ctx.Value(entityContextKey); value != nil {
-		return value.(*database.Entity)
+func TenantFromContext(ctx context.Context) *database.Tenant {
+	if value := ctx.Value(tenantContextKey); value != nil {
+		return value.(*database.Tenant)
 	}
 	return nil
 }
 
-func AddEntityToContext(ctx context.Context, entity *database.Entity) context.Context {
-	if entity == nil {
+func AddTenantToContext(ctx context.Context, tenant *database.Tenant) context.Context {
+	if tenant == nil {
 		return ctx
 	}
-	return context.WithValue(ctx, entityContextKey, entity)
+	return context.WithValue(ctx, tenantContextKey, tenant)
 }

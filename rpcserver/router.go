@@ -71,17 +71,17 @@ func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-cha
 	}
 }
 
-func entityContext(entity *database.Entity) context.Context {
-	return macaroons.AddEntityToContext(context.Background(), entity)
+func tenantContext(tenant *database.Tenant) context.Context {
+	return macaroons.AddTenantToContext(context.Background(), tenant)
 }
 
-func (server *routedBoltzServer) CreateAutoSwap(entity *database.Entity, request *boltzrpc.CreateSwapRequest) error {
-	_, err := server.createSwap(entityContext(entity), true, request)
+func (server *routedBoltzServer) CreateAutoSwap(tenant *database.Tenant, request *boltzrpc.CreateSwapRequest) error {
+	_, err := server.createSwap(tenantContext(tenant), true, request)
 	return err
 }
 
-func (server *routedBoltzServer) CreateAutoReverseSwap(entity *database.Entity, request *boltzrpc.CreateReverseSwapRequest) error {
-	_, err := server.createReverseSwap(entityContext(entity), true, request)
+func (server *routedBoltzServer) CreateAutoReverseSwap(tenant *database.Tenant, request *boltzrpc.CreateReverseSwapRequest) error {
+	_, err := server.createReverseSwap(tenantContext(tenant), true, request)
 	return err
 }
 
@@ -99,8 +99,8 @@ func (server *routedBoltzServer) GetAutoSwapPairInfo(swapType boltzrpc.SwapType,
 	})
 }
 
-func (server *routedBoltzServer) CreateAutoChainSwap(entity *database.Entity, request *boltzrpc.CreateChainSwapRequest) error {
-	_, err := server.createChainSwap(entityContext(entity), true, request)
+func (server *routedBoltzServer) CreateAutoChainSwap(tenant *database.Tenant, request *boltzrpc.CreateChainSwapRequest) error {
+	_, err := server.createChainSwap(tenantContext(tenant), true, request)
 	return err
 }
 
@@ -187,7 +187,7 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		Version:             build.GetVersion(),
 		Network:             server.network.Name,
 		BlockHeights:        blockHeights,
-		Entity:              serializeEntity(macaroons.EntityFromContext(ctx)),
+		Tenant:              serializeTenant(macaroons.TenantFromContext(ctx)),
 		PendingSwaps:        pendingSwapIds,
 		PendingReverseSwaps: pendingReverseSwapIds,
 		RefundableSwaps:     refundableSwapIds,
@@ -273,7 +273,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	args := database.SwapQuery{
 		IsAuto:   request.IsAuto,
 		State:    request.State,
-		EntityId: macaroons.EntityIdFromContext(ctx),
+		TenantId: macaroons.TenantIdFromContext(ctx),
 	}
 
 	if request.From != nil {
@@ -592,7 +592,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			RefundAddress:       request.GetRefundAddress(),
 			IsAuto:              isAuto,
 			ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
-			EntityId:            requireEntityId(ctx),
+			TenantId:            requireTenantId(ctx),
 		}
 
 		if request.SendFromInternal {
@@ -688,16 +688,16 @@ func (server *routedBoltzServer) lightningAvailable(ctx context.Context) bool {
 	return server.lightning != nil && isAdmin(ctx)
 }
 
-func requireEntity(ctx context.Context) database.Entity {
-	entity := macaroons.EntityFromContext(ctx)
-	if entity == nil {
-		return database.DefaultEntity
+func requireTenant(ctx context.Context) database.Tenant {
+	tenant := macaroons.TenantFromContext(ctx)
+	if tenant == nil {
+		return database.DefaultTenant
 	}
-	return *entity
+	return *tenant
 }
 
-func requireEntityId(ctx context.Context) database.Id {
-	return requireEntity(ctx).Id
+func requireTenantId(ctx context.Context) database.Id {
+	return requireTenant(ctx).Id
 }
 
 func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
@@ -817,7 +817,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		ClaimTransactionId:  "",
 		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
 		ExternalPay:         externalPay,
-		EntityId:            requireEntityId(ctx),
+		TenantId:            requireTenantId(ctx),
 	}
 
 	for _, chanId := range request.ChanIds {
@@ -910,7 +910,7 @@ func (server *routedBoltzServer) CreateChainSwap(ctx context.Context, request *b
 func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateChainSwapRequest) (*boltzrpc.ChainSwapInfo, error) {
 	logger.Infof("Creating new chain swap")
 
-	entityId := requireEntityId(ctx)
+	tenantId := requireTenantId(ctx)
 
 	claimPrivateKey, claimPub, err := newKeys()
 	if err != nil {
@@ -994,7 +994,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		IsAuto:            isAuto,
 		AcceptZeroConf:    request.GetAcceptZeroConf(),
 		ServiceFeePercent: utils.Percentage(chainPair.Fees.Percentage),
-		EntityId:          entityId,
+		TenantId:          tenantId,
 	}
 
 	parseDetails := func(details *boltz.ChainSwapData, currency boltz.Currency) (*database.ChainSwapData, error) {
@@ -1145,7 +1145,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 		WalletInfo: onchain.WalletInfo{
 			Name:     request.Params.Name,
 			Currency: currency,
-			EntityId: requireEntityId(ctx),
+			TenantId: requireTenantId(ctx),
 		},
 		Mnemonic:       request.Credentials.GetMnemonic(),
 		Xpub:           request.Credentials.GetXpub(),
@@ -1246,7 +1246,7 @@ func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.
 		Name:     info.Name,
 		Currency: serializeCurrency(info.Currency),
 		Readonly: info.Readonly,
-		EntityId: info.EntityId,
+		TenantId: info.TenantId,
 	}
 	balance, err := wal.GetBalance()
 	if err != nil {
@@ -1277,7 +1277,7 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 	checker := onchain.WalletChecker{
 		Currency:      utils.ParseCurrency(request.Currency),
 		AllowReadonly: request.GetIncludeReadonly(),
-		EntityId:      macaroons.EntityIdFromContext(ctx),
+		TenantId:      macaroons.TenantIdFromContext(ctx),
 	}
 	for _, current := range server.onchain.GetWallets(checker) {
 		wallet, err := server.serializeWallet(current)
@@ -1291,8 +1291,8 @@ func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzr
 
 func (server *routedBoltzServer) getWallet(ctx context.Context, checker onchain.WalletChecker) (onchain.Wallet, error) {
 	if checker.Id == nil {
-		id := requireEntityId(ctx)
-		checker.EntityId = &id
+		id := requireTenantId(ctx)
+		checker.TenantId = &id
 		if checker.Name == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "id or name required")
 		}
@@ -1301,8 +1301,8 @@ func (server *routedBoltzServer) getWallet(ctx context.Context, checker onchain.
 }
 
 func (server *routedBoltzServer) getAnyWallet(ctx context.Context, checker onchain.WalletChecker) (onchain.Wallet, error) {
-	if checker.EntityId == nil {
-		checker.EntityId = macaroons.EntityIdFromContext(ctx)
+	if checker.TenantId == nil {
+		checker.TenantId = macaroons.TenantIdFromContext(ctx)
 	}
 	found, err := server.onchain.GetAnyWallet(checker)
 	if err != nil {
@@ -1427,7 +1427,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			Name:     server.lightning.Name(),
 			Currency: boltz.CurrencyBtc,
 			Readonly: false,
-			EntityId: database.DefaultEntityId,
+			TenantId: database.DefaultTenantId,
 		}
 		nodeWallet, err := server.database.GetNodeWallet(info.Pubkey)
 		if err != nil {
@@ -1660,8 +1660,8 @@ func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltz
 }
 
 func isAdmin(ctx context.Context) bool {
-	id := macaroons.EntityIdFromContext(ctx)
-	return id == nil || *id == database.DefaultEntityId
+	id := macaroons.TenantIdFromContext(ctx)
+	return id == nil || *id == database.DefaultTenantId
 }
 
 func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {
@@ -1670,15 +1670,15 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 		return nil, handleError(errors.New("only admin can bake macaroons"))
 	}
 
-	if request.EntityId != nil {
-		_, err := server.database.GetEntity(request.GetEntityId())
+	if request.TenantId != nil {
+		_, err := server.database.GetTenant(request.GetTenantId())
 		if err != nil {
-			return nil, handleError(fmt.Errorf("could not find entity %d: %w", request.EntityId, err))
+			return nil, handleError(fmt.Errorf("could not find tenant %d: %w", request.TenantId, err))
 		}
 	}
 
-	permissions := macaroons.GetPermissions(request.EntityId != nil, request.Permissions)
-	mac, err := server.macaroon.NewMacaroon(request.EntityId, permissions...)
+	permissions := macaroons.GetPermissions(request.TenantId != nil, request.Permissions)
+	mac, err := server.macaroon.NewMacaroon(request.TenantId, permissions...)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -1691,34 +1691,34 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 	}, nil
 }
 
-func (server *routedBoltzServer) CreateEntity(ctx context.Context, request *boltzrpc.CreateEntityRequest) (*boltzrpc.Entity, error) {
-	entity := &database.Entity{Name: request.Name}
+func (server *routedBoltzServer) CreateTenant(ctx context.Context, request *boltzrpc.CreateTenantRequest) (*boltzrpc.Tenant, error) {
+	tenant := &database.Tenant{Name: request.Name}
 
-	if err := server.database.CreateEntity(entity); err != nil {
+	if err := server.database.CreateTenant(tenant); err != nil {
 		return nil, handleError(err)
 	}
 
-	return serializeEntity(entity), nil
+	return serializeTenant(tenant), nil
 }
 
-func (server *routedBoltzServer) GetEntity(ctx context.Context, request *boltzrpc.GetEntityRequest) (*boltzrpc.Entity, error) {
-	entity, err := server.database.GetEntityByName(request.Name)
+func (server *routedBoltzServer) GetTenant(ctx context.Context, request *boltzrpc.GetTenantRequest) (*boltzrpc.Tenant, error) {
+	tenant, err := server.database.GetTenantByName(request.Name)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	return serializeEntity(entity), nil
+	return serializeTenant(tenant), nil
 }
 
-func (server *routedBoltzServer) ListEntities(ctx context.Context, request *boltzrpc.ListEntitiesRequest) (*boltzrpc.ListEntitiesResponse, error) {
-	entities, err := server.database.QueryEntities()
+func (server *routedBoltzServer) ListTenants(ctx context.Context, request *boltzrpc.ListTenantsRequest) (*boltzrpc.ListTenantsResponse, error) {
+	tenants, err := server.database.QueryTenants()
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	response := &boltzrpc.ListEntitiesResponse{}
-	for _, entity := range entities {
-		response.Entities = append(response.Entities, serializeEntity(entity))
+	response := &boltzrpc.ListTenantsResponse{}
+	for _, tenant := range tenants {
+		response.Tenants = append(response.Tenants, serializeTenant(tenant))
 	}
 
 	return response, nil

@@ -65,28 +65,28 @@ type fakeSwaps struct {
 	chainSwaps   []database.ChainSwap
 }
 
-func entityId(existing database.Id) database.Id {
+func tenantId(existing database.Id) database.Id {
 	if existing == 0 {
-		return database.DefaultEntityId
+		return database.DefaultTenantId
 	}
 	return existing
 }
 
 func (f fakeSwaps) create(t *testing.T, db *database.Database) {
 	for _, swap := range f.swaps {
-		swap.EntityId = entityId(swap.EntityId)
+		swap.TenantId = tenantId(swap.TenantId)
 		swap.Id = randomId()
 		require.NoError(t, db.CreateSwap(swap))
 	}
 
 	for _, reverseSwap := range f.reverseSwaps {
-		reverseSwap.EntityId = entityId(reverseSwap.EntityId)
+		reverseSwap.TenantId = tenantId(reverseSwap.TenantId)
 		reverseSwap.Id = randomId()
 		require.NoError(t, db.CreateReverseSwap(reverseSwap))
 	}
 
 	for _, chainSwap := range f.chainSwaps {
-		chainSwap.EntityId = entityId(chainSwap.EntityId)
+		chainSwap.TenantId = tenantId(chainSwap.TenantId)
 		id := randomId()
 		chainSwap.Id = id
 		chainSwap.Pair = boltz.Pair{
@@ -157,7 +157,7 @@ func TestBudget(t *testing.T) {
 	}
 
 	/*
-		allSwapsWithEntity := fakeSwaps{
+		allSwapsWithTenant := fakeSwaps{
 			swaps:        swaps,
 			reverseSwaps: reverseSwaps,
 			chainSwaps:   chainSwaps,
@@ -350,7 +350,7 @@ func TestBudget(t *testing.T) {
 					createIfMissing,
 					swapperType,
 					cfg,
-					database.DefaultEntityId,
+					database.DefaultTenantId,
 				)
 			}
 
@@ -359,7 +359,7 @@ func TestBudget(t *testing.T) {
 			require.Nil(t, budget)
 
 			if tc.currentInterval != nil {
-				tc.currentInterval.EntityId = database.DefaultEntityId
+				tc.currentInterval.TenantId = database.DefaultTenantId
 				tc.currentInterval.Name = string(tc.swapperType)
 				require.NoError(t, db.CreateBudget(*tc.currentInterval))
 			}

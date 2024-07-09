@@ -41,7 +41,7 @@ type Swap struct {
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
 	WalletId            *Id
-	EntityId            Id
+	TenantId            Id
 }
 
 type SwapSerialized struct {
@@ -69,7 +69,7 @@ type SwapSerialized struct {
 	ServiceFeePercent   utils.Percentage
 	OnchainFee          *uint64
 	WalletId            *Id
-	EntityId            Id
+	TenantId            Id
 }
 
 func (swap *Swap) BlindingPubKey() *btcec.PublicKey {
@@ -110,7 +110,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 		ServiceFeePercent:   swap.ServiceFeePercent,
 		OnchainFee:          swap.OnchainFee,
 		WalletId:            swap.WalletId,
-		EntityId:            swap.EntityId,
+		TenantId:            swap.TenantId,
 	}
 }
 
@@ -165,7 +165,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
 			"walletId":            &swap.WalletId,
-			"entityId":            &swap.EntityId,
+			"tenantId":            &swap.TenantId,
 		},
 	)
 
@@ -284,7 +284,7 @@ func (database *Database) QueryRefundableSwaps(currency boltz.Currency, currentB
 const insertSwapStatement = `
 INSERT INTO swaps (id, fromCurrency, toCurrency, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address,
                    expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress,
-                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, walletId, claimPubKey, swapTree, entityId)
+                   blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, walletId, claimPubKey, swapTree, tenantId)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
@@ -323,7 +323,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 		swap.WalletId,
 		formatPublicKey(swap.ClaimPubKey),
 		formatJson(swap.SwapTree.Serialize()),
-		swap.EntityId,
+		swap.TenantId,
 	)
 	return err
 }

@@ -213,33 +213,33 @@ Changes the password for wallet encryption.
 | ------- | -------- |
 | [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
-#### CreateEntity
+#### CreateTenant
 
-Creates a new entity which can be used to bake restricted macaroons.
-
-| Request | Response |
-| ------- | -------- |
-| [`CreateEntityRequest`](#createentityrequest) | [`Entity`](#entity) |
-
-#### ListEntities
-
-Returns all entities.
+Creates a new tenant which can be used to bake restricted macaroons.
 
 | Request | Response |
 | ------- | -------- |
-| [`ListEntitiesRequest`](#listentitiesrequest) | [`ListEntitiesResponse`](#listentitiesresponse) |
+| [`CreateTenantRequest`](#createtenantrequest) | [`Tenant`](#tenant) |
 
-#### GetEntity
+#### ListTenants
 
-Get a specifiy entity.
+Returns all tenants.
 
 | Request | Response |
 | ------- | -------- |
-| [`GetEntityRequest`](#getentityrequest) | [`Entity`](#entity) |
+| [`ListTenantsRequest`](#listtenantsrequest) | [`ListTenantsResponse`](#listtenantsresponse) |
+
+#### GetTenant
+
+Get a specifiy tenant.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetTenantRequest`](#gettenantrequest) | [`Tenant`](#tenant) |
 
 #### BakeMacaroon
 
-Bakes a new macaroon with the specified permissions. The macaroon can also be restricted to a specific entity. In this case, - any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities. - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
+Bakes a new macaroon with the specified permissions. The macaroon can also be restricted to a specific tenant. In this case, - any swap or wallet created with the returned macaroon will belong to this tenant and can not be accessed by other tenants. - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
 
 | Request | Response |
 | ------- | -------- |
@@ -257,7 +257,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `entity_id` | [`uint64`](#uint64) | optional |  |
+| `tenant_id` | [`uint64`](#uint64) | optional |  |
 | `permissions` | [`MacaroonPermissions`](#macaroonpermissions) | repeated |  |
 
 
@@ -364,7 +364,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `service_fee_percent` | [`float`](#float) |  |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
-| `entity_id` | [`uint64`](#uint64) |  |  |
+| `tenant_id` | [`uint64`](#uint64) |  |  |
 | `from_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 | `to_data` | [`ChainSwapData`](#chainswapdata) |  |  |
 
@@ -467,19 +467,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### CreateEntityRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [`string`](#string) |  |  |
-
-
-
-
-
 #### CreateReverseSwapRequest
 
 
@@ -554,6 +541,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### CreateTenantRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [`string`](#string) |  |  |
+
+
+
+
+
 #### CreateWalletRequest
 
 
@@ -609,20 +609,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### Entity
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [`uint64`](#uint64) |  |  |
-| `name` | [`string`](#string) |  |  |
-
-
-
-
-
 #### Fees
 
 
@@ -632,19 +618,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
 | `miner` | [`MinerFees`](#minerfees) |  |  |
-
-
-
-
-
-#### GetEntityRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `name` | [`string`](#string) |  |  |
 
 
 
@@ -672,7 +645,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `auto_swap_status` | [`string`](#string) |  | one of: running, disabled, error |
 | `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
 | `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
-| `entity` | [`Entity`](#entity) | optional | the currently authenticated entity |
+| `tenant` | [`Tenant`](#tenant) | optional | the currently authenticated tenant |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -790,6 +763,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### GetTenantRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [`string`](#string) |  |  |
+
+
+
+
+
 #### GetWalletCredentialsRequest
 
 
@@ -886,27 +872,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### ListEntitiesRequest
-
-
-
-
-
-
-
-#### ListEntitiesResponse
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `entities` | [`Entity`](#entity) | repeated |  |
-
-
-
-
-
 #### ListSwapsRequest
 
 
@@ -934,6 +899,27 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `channel_creations` | [`CombinedChannelSwapInfo`](#combinedchannelswapinfo) | repeated |  |
 | `reverse_swaps` | [`ReverseSwapInfo`](#reverseswapinfo) | repeated |  |
 | `chain_swaps` | [`ChainSwapInfo`](#chainswapinfo) | repeated |  |
+
+
+
+
+
+#### ListTenantsRequest
+
+
+
+
+
+
+
+#### ListTenantsResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tenants` | [`Tenant`](#tenant) | repeated |  |
 
 
 
@@ -1060,7 +1046,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |
 | `external_pay` | [`bool`](#bool) |  |  |
-| `entity_id` | [`uint64`](#uint64) |  |  |
+| `tenant_id` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1137,7 +1123,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `wallet_id` | [`uint64`](#uint64) | optional | internal wallet which was used to pay the swap |
-| `entity_id` | [`uint64`](#uint64) |  |  |
+| `tenant_id` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1155,6 +1141,20 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `avg_fees` | [`uint64`](#uint64) |  |  |
 | `avg_amount` | [`uint64`](#uint64) |  |  |
 | `count` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### Tenant
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`uint64`](#uint64) |  |  |
+| `name` | [`string`](#string) |  |  |
 
 
 
@@ -1211,7 +1211,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `currency` | [`Currency`](#currency) |  |  |
 | `readonly` | [`bool`](#bool) |  |  |
 | `balance` | [`Balance`](#balance) |  |  |
-| `entity_id` | [`uint64`](#uint64) |  |  |
+| `tenant_id` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1404,7 +1404,7 @@ Reloads the configuration from disk.
 | `max_fee_percent` | [`float`](#float) |  |  |
 | `budget` | [`uint64`](#uint64) |  |  |
 | `budget_interval` | [`uint64`](#uint64) |  |  |
-| `entity` | [`string`](#string) | optional |  |
+| `tenant` | [`string`](#string) | optional |  |
 
 
 
@@ -1515,7 +1515,7 @@ Reloads the configuration from disk.
 | `per_channel` | [`bool`](#bool) |  |  |
 | `wallet` | [`string`](#string) |  |  |
 | `max_swap_amount` | [`uint64`](#uint64) |  |  |
-| `entity` | [`string`](#string) | optional |  |
+| `tenant` | [`string`](#string) | optional |  |
 
 
 

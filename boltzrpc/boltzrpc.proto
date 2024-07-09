@@ -142,43 +142,43 @@ service Boltz {
     rpc ChangeWalletPassword(ChangeWalletPasswordRequest) returns (google.protobuf.Empty);
 
     /*
-    Creates a new entity which can be used to bake restricted macaroons.
+    Creates a new tenant which can be used to bake restricted macaroons.
      */
-    rpc CreateEntity(CreateEntityRequest) returns (Entity);
+    rpc CreateTenant(CreateTenantRequest) returns (Tenant);
 
     /*
-    Returns all entities.
+    Returns all tenants.
      */
-    rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+    rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse);
 
     /*
-    Get a specifiy entity.
+    Get a specifiy tenant.
      */
-    rpc GetEntity(GetEntityRequest) returns (Entity);
+    rpc GetTenant(GetTenantRequest) returns (Tenant);
 
     /*
     Bakes a new macaroon with the specified permissions.
-    The macaroon can also be restricted to a specific entity. In this case, 
-    - any swap or wallet created with the returned macaroon will belong to this entity and can not be accessed by other entities.
+    The macaroon can also be restricted to a specific tenant. In this case, 
+    - any swap or wallet created with the returned macaroon will belong to this tenant and can not be accessed by other tenants.
     - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
      */
     rpc BakeMacaroon(BakeMacaroonRequest) returns (BakeMacaroonResponse);
 }
 
-message CreateEntityRequest {
+message CreateTenantRequest {
     string name = 1;
 }
 
-message ListEntitiesRequest {}
-message ListEntitiesResponse {
-    repeated Entity entities = 1;
+message ListTenantsRequest {}
+message ListTenantsResponse {
+    repeated Tenant tenants = 1;
 }
 
-message GetEntityRequest {
+message GetTenantRequest {
     string name = 1;
 }
 
-message Entity {
+message Tenant {
     uint64 id = 1;
     string name = 2;
 }
@@ -193,7 +193,7 @@ message MacaroonPermissions {
 }
 
 message BakeMacaroonRequest {
-    optional uint64 entity_id = 1;
+    optional uint64 tenant_id = 1;
     repeated MacaroonPermissions permissions = 2;
 }
 message BakeMacaroonResponse {
@@ -258,7 +258,7 @@ message SwapInfo {
     optional uint64 onchain_fee = 18;
     // internal wallet which was used to pay the swap
     optional uint64 wallet_id = 20;
-    uint64 entity_id = 21;
+    uint64 tenant_id = 21;
 }
 
 enum SwapType {
@@ -323,7 +323,7 @@ message ReverseSwapInfo {
     optional uint64 onchain_fee = 19;
     optional uint64 routing_fee_msat = 20;
     bool external_pay = 21;
-    uint64 entity_id = 22;
+    uint64 tenant_id = 22;
 }
 
 message BlockHeights {
@@ -343,8 +343,8 @@ message GetInfoResponse {
     BlockHeights block_heights = 8;
     // swaps that need a manual interaction to refund
     repeated string refundable_swaps = 12;
-    // the currently authenticated entity
-    optional Entity entity = 13;
+    // the currently authenticated tenant
+    optional Tenant tenant = 13;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -530,7 +530,7 @@ message ChainSwapInfo {
     float service_fee_percent = 10;
     optional uint64 onchain_fee = 11;
     int64 created_at = 12;
-    uint64 entity_id = 13;
+    uint64 tenant_id = 13;
     ChainSwapData from_data = 14;
     ChainSwapData to_data = 15;
 }
@@ -654,7 +654,7 @@ message Wallet {
     Currency currency = 3;
     bool readonly = 4;
     Balance balance = 5;
-    uint64 entity_id = 6;
+    uint64 tenant_id = 6;
 }
 
 message Wallets {

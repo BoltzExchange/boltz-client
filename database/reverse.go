@@ -44,7 +44,7 @@ type ReverseSwap struct {
 	OnchainFee          *uint64
 	ExternalPay         bool
 	WalletId            *Id
-	EntityId            Id
+	TenantId            Id
 }
 
 type ReverseSwapSerialized struct {
@@ -74,7 +74,7 @@ type ReverseSwapSerialized struct {
 	OnchainFee          *uint64
 	ExternalPay         bool
 	WalletId            *Id
-	EntityId            Id
+	TenantId            Id
 }
 
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
@@ -104,7 +104,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		OnchainFee:          reverseSwap.OnchainFee,
 		ExternalPay:         reverseSwap.ExternalPay,
 		WalletId:            reverseSwap.WalletId,
-		EntityId:            reverseSwap.EntityId,
+		TenantId:            reverseSwap.TenantId,
 	}
 }
 
@@ -166,7 +166,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
 			"externalPay":         &externalPay,
-			"entityId":            &reverseSwap.EntityId,
+			"tenantId":            &reverseSwap.TenantId,
 			"walletId":            &reverseSwap.WalletId,
 		},
 	)
@@ -275,7 +275,7 @@ const insertReverseSwapStatement = `
 INSERT INTO reverseSwaps (id, fromCurrency, toCurrency, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
                           invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId,
                           claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee,
-                          serviceFeePercent, onchainFee, refundPubKey, swapTree, externalPay, entityId, walletId)
+                          serviceFeePercent, onchainFee, refundPubKey, swapTree, externalPay, tenantId, walletId)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
@@ -309,7 +309,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		formatPublicKey(reverseSwap.RefundPubKey),
 		formatJson(reverseSwap.SwapTree.Serialize()),
 		reverseSwap.ExternalPay,
-		reverseSwap.EntityId,
+		reverseSwap.TenantId,
 		reverseSwap.WalletId,
 	)
 	return err

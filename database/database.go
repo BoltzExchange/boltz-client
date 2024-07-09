@@ -58,7 +58,7 @@ CREATE TABLE swaps
     onchainFee          INT,
     createdAt           INT,
     walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
-    entityId            INT REFERENCES entities (id)
+    tenantId            INT REFERENCES tenants (id)
 );
 
 CREATE TABLE chainSwaps
@@ -76,7 +76,7 @@ CREATE TABLE chainSwaps
     serviceFeePercent REAL,
     onchainFee        INT,
     createdAt         INT,
-    entityId          INT REFERENCES entities (id)
+    tenantId          INT REFERENCES tenants (id)
 );
 
 CREATE TABLE chainSwapsData
@@ -128,16 +128,16 @@ CREATE TABLE reverseSwaps
     createdAt           INT,
     externalPay         BOOLEAN,
     walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
-    entityId            INT REFERENCES entities (id)
+    tenantId            INT REFERENCES tenants (id)
 );
 CREATE TABLE autobudget
 (
     startDate INTEGER NOT NULL,
     endDate   INTEGER NOT NULL,
     name      VARCHAR NOT NULL,
-    entityId  INT REFERENCES entities (id),
+    tenantId  INT REFERENCES tenants (id),
 
-    PRIMARY KEY (startDate, name, entityId)
+    PRIMARY KEY (startDate, name, tenantId)
 );
 CREATE TABLE wallets
 (
@@ -150,12 +150,12 @@ CREATE TABLE wallets
     mnemonic       VARCHAR,
     subaccount     INT,
     salt           VARCHAR,
-    entityId       INT NOT NULL REFERENCES entities (id),
+    tenantId       INT NOT NULL REFERENCES tenants (id),
 
-    UNIQUE (name, entityId, nodePubkey),
+    UNIQUE (name, tenantId, nodePubkey),
     UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
 );
-CREATE TABLE entities
+CREATE TABLE tenants
 (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR UNIQUE
@@ -256,7 +256,7 @@ type SwapQuery struct {
 	State    *boltzrpc.SwapState
 	IsAuto   *bool
 	Since    time.Time
-	EntityId *Id
+	TenantId *Id
 }
 
 func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []any) (string, []any) {
@@ -280,9 +280,9 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 		conditions = append(conditions, "createdAt >= ?")
 		values = append(values, query.Since.Unix())
 	}
-	if query.EntityId != nil {
-		conditions = append(conditions, "entityId = ?")
-		values = append(values, query.EntityId)
+	if query.TenantId != nil {
+		conditions = append(conditions, "tenantId = ?")
+		values = append(values, query.TenantId)
 	}
 	var where string
 	if len(conditions) > 0 {
@@ -314,7 +314,7 @@ func (database *Database) Connect() error {
 			return err
 		}
 
-		if err := database.CreateDefaultEntity(); err != nil {
+		if err := database.CreateDefaultTenant(); err != nil {
 			return err
 		}
 	}
