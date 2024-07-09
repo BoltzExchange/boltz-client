@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -16,7 +17,7 @@ func (p Percentage) Ratio() float64 {
 }
 
 func (p Percentage) Calculate(value uint64) uint64 {
-	return uint64(float64(value) * p.Ratio())
+	return uint64(math.Ceil(float64(value) * p.Ratio()))
 }
 
 func (p *Percentage) UnmarshalJSON(text []byte) error {

@@ -2,7 +2,6 @@ package autoswap
 
 import (
 	"github.com/BoltzExchange/boltz-client/utils"
-	"math"
 )
 
 type Balance struct {
@@ -20,7 +19,7 @@ func (b Balance) IsAbsolute() bool {
 
 func (b Balance) Get(capacity uint64) uint64 {
 	if b.IsAbsolute() {
-		return uint64(math.Min(float64(b.Absolute), float64(capacity)))
+		return min(b.Absolute, capacity)
 	}
 	return b.Relative.Calculate(capacity)
 }

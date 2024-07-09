@@ -24,6 +24,7 @@ type LightningConfig struct {
 	*SerializedLnConfig
 	shared
 
+	reserve         utils.Percentage
 	maxFeePercent   utils.Percentage
 	currency        boltz.Currency
 	swapType        boltz.SwapType
@@ -35,7 +36,7 @@ type LightningConfig struct {
 }
 
 func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
-	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared}
+	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: utils.Percentage(2)}
 }
 
 func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {

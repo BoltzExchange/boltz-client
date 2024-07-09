@@ -2,6 +2,7 @@ package autoswap
 
 import (
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"golang.org/x/exp/rand"
 	"testing"
 	"time"
@@ -422,6 +423,7 @@ func TestStrategies(t *testing.T) {
 		outcome      []*lightningRecommendation
 		channels     []*lightning.LightningChannel
 		err          error
+		reserve      utils.Percentage
 	}{
 		{
 			name: "PerChannel/Low",
@@ -558,14 +560,31 @@ func TestStrategies(t *testing.T) {
 			},
 			outcome: nil,
 		},
+		{
+			name: "Reserve",
+			config: &SerializedLnConfig{
+				InboundBalancePercent: 50,
+				SwapType:              "reverse",
+			},
+			outcome: []*lightningRecommendation{
+				recommendation(boltz.ReverseSwap, 600, nil),
+			},
+			reserve: 10,
+			channels: []*lightning.LightningChannel{
+				{
+					OutboundSat: 700,
+					InboundSat:  300,
+					Capacity:    1000,
+				},
+			},
+		},
 	}
 
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			// FIXME: a bit hacky but its just for the tests
-			channelBuffer = 0
 			cfg := NewLightningConfig(tc.config, shared{onchain: getOnchain()})
+			cfg.reserve = tc.reserve
 			require.NoError(t, cfg.Init())
 			if tc.channels == nil {
 				tc.channels = channels
