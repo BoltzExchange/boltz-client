@@ -257,7 +257,7 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.Ch
 func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, error) {
 	if currency == boltz.CurrencyLiquid && nursery.network == boltz.MainNet {
 		if _, ok := nursery.onchain.Liquid.Tx.(*onchain.BoltzTxProvider); ok {
-			return 0.01, nil
+			return nursery.boltz.GetFeeEstimation(boltz.CurrencyLiquid)
 		}
 	}
 	return nursery.onchain.EstimateFee(currency, 2)

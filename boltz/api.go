@@ -370,11 +370,13 @@ func (boltz *Api) GetPairs() (*GetPairsResponse, error) {
 	return &response, err
 }
 
-func (boltz *Api) GetFeeEstimation() (*map[string]uint64, error) {
-	var response map[string]uint64
-	err := boltz.sendGetRequest("/getfeeestimation", &response)
+func (boltz *Api) GetFeeEstimation(currency Currency) (float64, error) {
+	var response struct {
+		Fee float64
+	}
+	err := boltz.sendGetRequest(fmt.Sprintf("/v2/chain/%s/fee", currency), &response)
 
-	return &response, err
+	return response.Fee, err
 }
 
 func (boltz *Api) GetSubmarinePairs() (response SubmarinePairs, err error) {
