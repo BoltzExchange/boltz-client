@@ -92,14 +92,9 @@ func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmo
 }
 
 func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
-	chain, err := initOnchain(cfg, boltz.Regtest)
-	require.NoError(t, err)
-
 	boltzApi := getBoltz(t, cfg)
-
-	chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
-	chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
-
+	chain, err := initOnchain(cfg, boltzApi, boltz.Regtest)
+	require.NoError(t, err)
 	return chain
 }
 

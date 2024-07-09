@@ -4,23 +4,23 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
-type boltzTxProvider struct {
+type BoltzTxProvider struct {
 	*boltz.Api
 	currency boltz.Currency
 }
 
 func NewBoltzTxProvider(boltz *boltz.Api, currency boltz.Currency) TxProvider {
-	return &boltzTxProvider{boltz, currency}
+	return &BoltzTxProvider{boltz, currency}
 }
 
-func (txProvider boltzTxProvider) GetRawTransaction(txId string) (string, error) {
+func (txProvider BoltzTxProvider) GetRawTransaction(txId string) (string, error) {
 	return txProvider.GetTransaction(txId, txProvider.currency)
 }
 
-func (txProvider boltzTxProvider) BroadcastTransaction(txHex string) (string, error) {
+func (txProvider BoltzTxProvider) BroadcastTransaction(txHex string) (string, error) {
 	return txProvider.Api.BroadcastTransaction(txProvider.currency, txHex)
 }
 
-func (txProvider boltzTxProvider) IsTransactionConfirmed(txId string) (bool, error) {
+func (txProvider BoltzTxProvider) IsTransactionConfirmed(txId string) (bool, error) {
 	return true, nil
 }

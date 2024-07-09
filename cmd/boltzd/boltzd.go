@@ -117,23 +117,17 @@ func Init(cfg *config.Config) {
 
 	logger.Info("Parsed chain: " + network.Name)
 
-	chain, err := initOnchain(cfg, network)
-	if err != nil {
-		logger.Fatalf("could not init onchain: %v", err)
-	}
-
-	autoSwapConfPath := path.Join(cfg.DataDir, "autoswap.toml")
-
 	boltzApi, err := initBoltz(cfg, network)
 	if err != nil {
 		logger.Fatalf("could not init Boltz API: %v", err)
 	}
 
-	// Use the Boltz API in regtest to avoid situations where electrum does not know about the tx yet
-	if network == boltz.Regtest {
-		chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
-		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	chain, err := initOnchain(cfg, boltzApi, network)
+	if err != nil {
+		logger.Fatalf("could not init onchain: %v", err)
 	}
+
+	autoSwapConfPath := path.Join(cfg.DataDir, "autoswap.toml")
 
 	if lightningNode != nil {
 		if err := lightning.ConnectBoltz(lightningNode, boltzApi); err != nil {
@@ -192,7 +186,7 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 	return boltzApi, nil
 }
 
-func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, error) {
+func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network) (*onchain.Onchain, error) {
 	chain := &onchain.Onchain{
 		Btc:     &onchain.Currency{},
 		Liquid:  &onchain.Currency{},
@@ -200,6 +194,10 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 	}
 
 	chain.Init()
+
+	if cfg.ElectrumLiquidUrl == "" && cfg.MempoolLiquidApi == "" {
+		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	}
 
 	if !wallet.Initialized() {
 		err := wallet.Init(wallet.Config{
@@ -228,7 +226,9 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
 		chain.Liquid.Blocks = client
-		chain.Liquid.Tx = client
+		if chain.Liquid.Tx == nil {
+			chain.Liquid.Tx = client
+		}
 	}
 	if network == boltz.MainNet {
 		cfg.MempoolApi = "https://mempool.space/api"
@@ -249,7 +249,15 @@ func initOnchain(cfg *config.Config, network *boltz.Network) (*onchain.Onchain, 
 		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
 		client := mempool.InitClient(cfg.MempoolLiquidApi)
 		chain.Liquid.Blocks = client
-		chain.Liquid.Tx = client
+		if chain.Liquid.Tx == nil {
+			chain.Liquid.Tx = client
+		}
+	}
+
+	// always use boltz api in regtest because electrum can be a bit slow
+	if network == boltz.Regtest {
+		chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
+		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
 	}
 
 	return chain, nil
