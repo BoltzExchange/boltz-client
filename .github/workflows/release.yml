@@ -36,5 +36,43 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: bin/*.zip
+          files: |
+            boltz-client-*.tar.gz
+            boltz-client-manifest-*.txt
           draft: true
+          body: |
+            # Verifying the Release
+
+            In order to verify the release, you'll need to have `gpg` or `gpg2` installed on your system. You'll first need to import the keys that have signed this release if you haven't done so already: 
+
+            ```
+            curl https://raw.githubusercontent.com/BoltzExchange/boltz-client/master/keys/michael.asc | gpg --import
+            ```
+
+            Once you have the required PGP keys, you can verify the release (assuming `boltz-client-manifest-${{ env.RELEASE_VERSION }}.sig` and `boltz-client-manifest-${{ env.RELEASE_VERSION }}.txt` are in the current directory) with:
+
+            ```
+            gpg --verify boltz-client-manifest-${{ env.RELEASE_VERSION }}.sig boltz-client-manifest-${{ env.RELEASE_VERSION }}.txt
+            ```
+
+            You should see the following if the verification was successful:
+
+            ```
+            gpg: Signature made Mo 01 Jul 2024 00:40:51 CEST
+            gpg:                using RSA key C2640F630570F5EDEDE02DE684D249BA71685D46
+            gpg: Good signature from "Michael <me@michael1011.at>" [unknown]
+            gpg:                 aka "Michael <michael101101@me.com>" [unknown]
+            ```
+            
+            You should also verify that the hashes still match with the archive you've downloaded.
+            
+            ```
+            sha256sum --ignore-missing -c boltz-client-manifest-${{ env.RELEASE_VERSION }}.txt
+            ```
+            
+            If your archive is valid, you should see the following output (depending on the archive you've downloaded):
+            
+            ```
+            boltz-client-linux-amd64-${{ env.RELEASE_VERSION }}.tar.gz: OK
+            ```
+
