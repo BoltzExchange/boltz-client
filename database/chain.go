@@ -266,8 +266,6 @@ func (database *Database) QueryChainSwap(id string) (swap *ChainSwap, err error)
 }
 
 func (database *Database) queryChainSwapData(id string, currency boltz.Currency, isClaim bool) (data *ChainSwapData, err error) {
-	database.lock.RLock()
-	defer database.lock.RUnlock()
 	rows, err := database.Query("SELECT * FROM chainSwapsData WHERE id = ? AND currency = ?", id, currency)
 
 	if err != nil {
@@ -308,10 +306,15 @@ WHERE data.lockupTransactionId != ''
   AND (status IN (?, ?) OR (state != ? AND data.timeoutBlockheight < ?))
 `
 
-func (database *Database) QueryRefundableChainSwaps(currency boltz.Currency, currentBlockHeight uint32) ([]*ChainSwap, error) {
+func (database *Database) QueryRefundableChainSwaps(tenantId *Id, currency boltz.Currency, currentBlockHeight uint32) ([]*ChainSwap, error) {
+	query := refundableChainSwapsQuery
+	values := []any{currency, boltz.TransactionLockupFailed.String(), boltz.TransactionFailed.String(), boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight}
+	if tenantId != nil {
+		query += " AND tenantId = ?"
+		values = append(values, tenantId)
+	}
 	return database.queryChainSwaps(
-		refundableChainSwapsQuery, currency,
-		boltz.TransactionLockupFailed.String(), boltz.TransactionFailed.String(), boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight,
+		query, values...,
 	)
 }
 

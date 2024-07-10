@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -37,11 +38,14 @@ func (service *Service) StreamServerInterceptor() grpc.StreamServerInterceptor {
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
-		if _, err := service.validateRequest(ss.Context(), info.FullMethod); err != nil {
+		ctx, err := service.validateRequest(ss.Context(), info.FullMethod)
+		if err != nil {
 			return err
 		}
+		wrapped := grpc_middleware.WrapServerStream(ss)
+		wrapped.WrappedContext = ctx
 
-		return handler(srv, ss)
+		return handler(srv, wrapped)
 	}
 }
 
