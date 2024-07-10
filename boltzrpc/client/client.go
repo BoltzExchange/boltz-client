@@ -10,6 +10,13 @@ type Boltz struct {
 	Client boltzrpc.BoltzClient
 }
 
+type AutoSwapType string
+
+const (
+	LnAutoSwap    AutoSwapType = "lightning"
+	ChainAutoSwap AutoSwapType = "chain"
+)
+
 var FullPermissions = []*boltzrpc.MacaroonPermissions{
 	{Action: boltzrpc.MacaroonAction_READ},
 	{Action: boltzrpc.MacaroonAction_WRITE},

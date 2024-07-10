@@ -3,7 +3,6 @@ package client
 import (
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -62,8 +61,8 @@ func (autoSwap *AutoSwap) ReloadConfig() (*autoswaprpc.Config, error) {
 	return autoSwap.Client.ReloadConfig(autoSwap.Ctx, &empty.Empty{})
 }
 
-func (autoSwap *AutoSwap) SetConfigValue(swapper autoswap.SwapperType, key string, value any) (*autoswaprpc.Config, error) {
-	if swapper == autoswap.Lightning {
+func (autoSwap *AutoSwap) SetConfigValue(swapper AutoSwapType, key string, value any) (*autoswaprpc.Config, error) {
+	if swapper == LnAutoSwap {
 		config := &autoswaprpc.LightningConfig{}
 		mask, err := setValue(config, key, value)
 		if err != nil {
@@ -87,11 +86,11 @@ func (autoSwap *AutoSwap) SetConfigValue(swapper autoswap.SwapperType, key strin
 }
 
 func (autoSwap *AutoSwap) SetLightningConfigValue(key string, value any) (*autoswaprpc.Config, error) {
-	return autoSwap.SetConfigValue(autoswap.Lightning, key, value)
+	return autoSwap.SetConfigValue(LnAutoSwap, key, value)
 }
 
 func (autoSwap *AutoSwap) SetChainConfigValue(key string, value any) (*autoswaprpc.Config, error) {
-	return autoSwap.SetConfigValue(autoswap.Chain, key, value)
+	return autoSwap.SetConfigValue(ChainAutoSwap, key, value)
 }
 
 func getField(message protoreflect.ProtoMessage, name string) (protoreflect.FieldDescriptor, error) {
@@ -167,9 +166,9 @@ func (autoSwap *AutoSwap) UpdateChainConfig(request *autoswaprpc.UpdateChainConf
 	return autoSwap.Client.UpdateChainConfig(autoSwap.Ctx, request)
 }
 
-func (autoSwap *AutoSwap) ResetConfig(swapper autoswap.SwapperType) (*autoswaprpc.Config, error) {
+func (autoSwap *AutoSwap) ResetConfig(swapper AutoSwapType) (*autoswaprpc.Config, error) {
 	reset := true
-	if swapper == autoswap.Lightning {
+	if swapper == LnAutoSwap {
 		return autoSwap.Client.UpdateLightningConfig(autoSwap.Ctx, &autoswaprpc.UpdateLightningConfigRequest{Reset_: &reset})
 	} else {
 		return autoSwap.Client.UpdateChainConfig(autoSwap.Ctx, &autoswaprpc.UpdateChainConfigRequest{Reset_: &reset})
