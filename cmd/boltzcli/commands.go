@@ -1779,7 +1779,11 @@ func removeWallet(ctx *cli.Context) error {
 		return nil
 	}
 	client := getClient(ctx)
-	walletId, err := getWalletId(ctx, ctx.Args().First())
+	name := ctx.Args().First()
+	if name == "" {
+		return errors.New("wallet name can not be empty")
+	}
+	walletId, err := getWalletId(ctx, name)
 	if err != nil {
 		return err
 	}
