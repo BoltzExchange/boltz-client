@@ -361,7 +361,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `preimage` | [`string`](#string) |  |  |
 | `is_auto` | [`bool`](#bool) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
-| `service_fee_percent` | [`float`](#float) |  |  |
+| `service_fee_percent` | [`double`](#double) |  |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
 | `tenant_id` | [`uint64`](#uint64) |  |  |
@@ -1088,7 +1088,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `percentage` | [`float`](#float) |  |  |
+| `percentage` | [`double`](#double) |  |  |
 | `miner_fees` | [`uint64`](#uint64) |  |  |
 
 
