@@ -1,4 +1,61 @@
 
+<a name="v2.1.0"></a>
+## [v2.1.0] - 2024-07-10
+### Feat
+- tenant checks on swapinfo and refundswap ([#190](https://github.com/BoltzExchange/boltz-client/issues/190))
+- use boltz endpoint on liquid by default for lower fees ([#187](https://github.com/BoltzExchange/boltz-client/issues/187))
+- minor autoswap improvements ([#183](https://github.com/BoltzExchange/boltz-client/issues/183))
+- improve error message when wallet is not found ([#175](https://github.com/BoltzExchange/boltz-client/issues/175))
+- make sure all gdk accounts are synced on startup ([#171](https://github.com/BoltzExchange/boltz-client/issues/171))
+- chain autoswap ([#139](https://github.com/BoltzExchange/boltz-client/issues/139))
+- global swapinfo stream in cli ([#177](https://github.com/BoltzExchange/boltz-client/issues/177))
+- allow manual refunds to wallets ([#167](https://github.com/BoltzExchange/boltz-client/issues/167))
+- test invalid boltz data ([#156](https://github.com/BoltzExchange/boltz-client/issues/156))
+- request proxy for http and ws api ([#155](https://github.com/BoltzExchange/boltz-client/issues/155))
+- magic routing hint support ([#146](https://github.com/BoltzExchange/boltz-client/issues/146))
+- initial chainswaps ([#133](https://github.com/BoltzExchange/boltz-client/issues/133))
+- use `row` interface to simplify db logic
+- allow baking admin macaroons
+- show refundable swaps in cli ([#132](https://github.com/BoltzExchange/boltz-client/issues/132))
+- more fine grained permissions
+- entity related rpc implementation
+- allow specifying basic permissions in rpc
+- entity parameter for listswaps and getwallets rpc
+- macaroon based entity authentication
+- standalone mode ([#123](https://github.com/BoltzExchange/boltz-client/issues/123))
+
+### Fix
+- add space ([#193](https://github.com/BoltzExchange/boltz-client/issues/193))
+- cli fees ([#191](https://github.com/BoltzExchange/boltz-client/issues/191))
+- How do you want to specify min/max balance values? -> How do you… ([#181](https://github.com/BoltzExchange/boltz-client/issues/181))
+- enforce empty wallet name ([#185](https://github.com/BoltzExchange/boltz-client/issues/185))
+- ignore other threshold if only one swap type is allowed ([#182](https://github.com/BoltzExchange/boltz-client/issues/182))
+- set swap to error state if paying internally fails ([#170](https://github.com/BoltzExchange/boltz-client/issues/170))
+- correct wallet cli flag names ([#159](https://github.com/BoltzExchange/boltz-client/issues/159))
+- round up fee by 1 ([#153](https://github.com/BoltzExchange/boltz-client/issues/153))
+- register swap listeners when recovering pending swaps
+- disable rbf when sending from internal wallets ([#142](https://github.com/BoltzExchange/boltz-client/issues/142))
+- only refund immediately if coins were locked up ([#149](https://github.com/BoltzExchange/boltz-client/issues/149))
+- changepassword help description ([#135](https://github.com/BoltzExchange/boltz-client/issues/135))
+- permissions for `GetPairs` rpc
+- proper error check in grpc client ([#131](https://github.com/BoltzExchange/boltz-client/issues/131))
+- correct error check when cleaning up old tls cert and key
+
+### Refactor
+- rename entity to tenant ([#188](https://github.com/BoltzExchange/boltz-client/issues/188))
+- package binaries using tar instead of zip ([#172](https://github.com/BoltzExchange/boltz-client/issues/172))
+- improve wallets rpc ([#158](https://github.com/BoltzExchange/boltz-client/issues/158))
+- do not implicitly use nil entity as admin default ([#154](https://github.com/BoltzExchange/boltz-client/issues/154))
+- simplify internal onchain interfaces ([#147](https://github.com/BoltzExchange/boltz-client/issues/147))
+- improve refundable swap queries ([#150](https://github.com/BoltzExchange/boltz-client/issues/150))
+- add streamStatus in tests ([#144](https://github.com/BoltzExchange/boltz-client/issues/144))
+- unify pair rpcs ([#143](https://github.com/BoltzExchange/boltz-client/issues/143))
+- allow specifying entity as request header
+- use ids instead of names for wallet and entity in rpc
+- rename `SetId` to `SetupWallet`
+- per-output addresses for transactions ([#130](https://github.com/BoltzExchange/boltz-client/issues/130))
+
+
 <a name="v2.0.2"></a>
 ## [v2.0.2] - 2024-03-26
 ### Feat
@@ -226,6 +283,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.2...v2.1.0
 [v2.0.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.1...v2.0.2
 [v2.0.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0...v2.0.1
 [v2.0.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0-beta...v2.0.0
