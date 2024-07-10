@@ -125,7 +125,8 @@ docker:
 binaries:
 	@$(call print, "Building binaries")
 	docker buildx build --output bin --platform $(PLATFORMS) --target binaries .
-	tar -czvf bin/boltz-client-linux-amd64.tar.gz bin/linux_amd64
-	tar -czvf bin/boltz-client-linux-arm64.tar.gz bin/linux_arm64
+	tar -czvf boltz-client-linux-amd64-v$(VERSION).tar.gz bin/linux_amd64
+	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
+	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
 
 .PHONY: build binaries
