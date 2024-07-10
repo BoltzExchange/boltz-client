@@ -1083,7 +1083,7 @@ func createSwap(ctx *cli.Context) error {
 	}
 
 	if !json {
-		printFees(pairInfo.Fees)
+		printFees(pairInfo.Fees, amount)
 
 		if !prompt("Do you want to continue?") {
 			return nil
@@ -1246,7 +1246,7 @@ func createChainSwap(ctx *cli.Context) error {
 
 	json := ctx.Bool("json")
 	if !json {
-		printFees(pairInfo.Fees)
+		printFees(pairInfo.Fees, amount)
 		if !prompt("Do you want to continue?") {
 			return nil
 		}
@@ -1391,8 +1391,7 @@ func createReverseSwap(ctx *cli.Context) error {
 			return err
 		}
 
-		fmt.Println("You will receive the withdrawal to the specified onchain address")
-		printFees(pairInfo.Fees)
+		printFees(pairInfo.Fees, amount)
 
 		if !prompt("Do you want to continue?") {
 			return nil
