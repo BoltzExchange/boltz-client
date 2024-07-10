@@ -166,7 +166,7 @@ func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair)
 		Pair: serializePair(pair),
 		Hash: submarinePair.Hash,
 		Fees: &boltzrpc.SwapFees{
-			Percentage: float32(submarinePair.Fees.Percentage),
+			Percentage: submarinePair.Fees.Percentage,
 			MinerFees:  submarinePair.Fees.MinerFees,
 		},
 		Limits: &boltzrpc.Limits{
@@ -183,7 +183,7 @@ func serializeReversePair(pair boltz.Pair, reversePair *boltz.ReversePair) *bolt
 		Pair: serializePair(pair),
 		Hash: reversePair.Hash,
 		Fees: &boltzrpc.SwapFees{
-			Percentage: float32(reversePair.Fees.Percentage),
+			Percentage: reversePair.Fees.Percentage,
 			MinerFees:  miner.Claim + miner.Lockup,
 		},
 		Limits: &boltzrpc.Limits{
@@ -199,7 +199,7 @@ func serializeChainPair(pair boltz.Pair, chainPair *boltz.ChainPair) *boltzrpc.P
 		Pair: serializePair(pair),
 		Hash: chainPair.Hash,
 		Fees: &boltzrpc.SwapFees{
-			Percentage: float32(chainPair.Fees.Percentage),
+			Percentage: chainPair.Fees.Percentage,
 			MinerFees:  miner.Server + miner.User.Claim + miner.User.Lockup,
 		},
 		Limits: &boltzrpc.Limits{
@@ -243,11 +243,11 @@ func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.Li
 		return nil
 	}
 	return &boltzrpc.LightningChannel{
-		Id:        serializeChanId(channel.Id),
-		Capacity:  channel.Capacity,
-		OutboundSat:  channel.OutboundSat,
-		InboundSat: channel.InboundSat,
-		PeerId:    channel.PeerId,
+		Id:          serializeChanId(channel.Id),
+		Capacity:    channel.Capacity,
+		OutboundSat: channel.OutboundSat,
+		InboundSat:  channel.InboundSat,
+		PeerId:      channel.PeerId,
 	}
 }
 

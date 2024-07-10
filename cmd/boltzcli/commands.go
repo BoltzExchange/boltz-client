@@ -171,7 +171,7 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 
 		if len(list.Swaps) > 0 {
 
-			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Boltz Fee", "Onchain Fee", "Created At")
 			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 			for _, swap := range list.Swaps {
@@ -188,7 +188,7 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 
 		if len(list.ReverseSwaps) > 0 {
 
-			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Boltz Fee", "Onchain Fee", "Created At")
 			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 			for _, swap := range list.ReverseSwaps {
@@ -203,7 +203,7 @@ func listSwaps(ctx *cli.Context, isAuto *bool) error {
 		}
 
 		if len(list.ChainSwaps) > 0 {
-			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Service Fee", "Onchain Fee", "Created At")
+			tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Boltz Fee", "Onchain Fee", "Created At")
 			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 			for _, swap := range list.ChainSwaps {
@@ -308,7 +308,7 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				case boltz.InvoiceSet:
 					fmt.Printf("Invoice: %s\n", info.Swap.Invoice)
 				case boltz.TransactionClaimed:
-					fmt.Printf("Paid %dsat onchain fee and %dsat service fee\n", *info.Swap.OnchainFee, *info.Swap.ServiceFee)
+					fmt.Printf("Paid %d sat onchain fee and %d sat boltz fee\n", *info.Swap.OnchainFee, *info.Swap.ServiceFee)
 				}
 			} else if info.ReverseSwap != nil {
 				swap := info.ReverseSwap
@@ -334,7 +334,7 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 					fmt.Printf("Lockup transaction ID: %s\n", swap.LockupTransactionId)
 				case boltz.InvoiceSettled:
 					fmt.Printf("Claim transaction ID: %s\n", swap.ClaimTransactionId)
-					fmt.Printf("Paid %dmsat routing fee, %dsat onchain fee and %dsat service fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
+					fmt.Printf("Paid %d msat routing fee, %d sat onchain fee and %d sat boltz fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
 				}
 			} else if info.ChainSwap != nil {
 				swap := info.ChainSwap
@@ -359,7 +359,7 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				case boltz.TransactionServerMempoool:
 					fmt.Printf("Server transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.To, swap.ToData.GetLockupTransactionId(), swap.ToData.Amount)
 				case boltz.TransactionClaimed:
-					fmt.Printf("Paid %dsat onchain fee and %dsat service fee\n", *swap.OnchainFee, *swap.ServiceFee)
+					fmt.Printf("Paid %d sat onchain fee and %d sat boltz fee\n", *swap.OnchainFee, *swap.ServiceFee)
 				}
 			}
 			if state == boltzrpc.SwapState_SUCCESSFUL && !isGlobal {
@@ -1083,7 +1083,7 @@ func createSwap(ctx *cli.Context) error {
 	}
 
 	if !json {
-		printFees(pairInfo.Fees)
+		printFees(pairInfo.Fees, amount)
 
 		if !prompt("Do you want to continue?") {
 			return nil
@@ -1246,7 +1246,7 @@ func createChainSwap(ctx *cli.Context) error {
 
 	json := ctx.Bool("json")
 	if !json {
-		printFees(pairInfo.Fees)
+		printFees(pairInfo.Fees, amount)
 		if !prompt("Do you want to continue?") {
 			return nil
 		}
@@ -1391,8 +1391,7 @@ func createReverseSwap(ctx *cli.Context) error {
 			return err
 		}
 
-		fmt.Println("You will receive the withdrawal to the specified onchain address")
-		printFees(pairInfo.Fees)
+		printFees(pairInfo.Fees, amount)
 
 		if !prompt("Do you want to continue?") {
 			return nil

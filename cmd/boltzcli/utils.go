@@ -88,11 +88,18 @@ func checkName(name string) error {
 	}
 	return nil
 }
-func printFees(fees *boltzrpc.SwapFees) {
+func printFees(fees *boltzrpc.SwapFees, amount uint64) {
 	fmt.Println("The fees for this service are:")
-	fmt.Printf("  - Service fee: %s%%\n", fmt.Sprint(fees.Percentage))
-	fmt.Printf("  - Miner fee: %s\n", utils.Satoshis(fees.MinerFees))
-	fmt.Printf("Total: %s\n", utils.Satoshis(utils.CalculateFeeEstimate(fees, 0)))
+	if amount == 0 {
+		fmt.Printf("  - Boltz fee: %s%%\n", fmt.Sprint(fees.Percentage))
+	} else {
+		serviceFee := utils.Satoshis(utils.Percentage(fees.Percentage).Calculate(amount))
+		fmt.Printf("  - Boltz fee (%s%%): %s\n", fmt.Sprint(fees.Percentage), serviceFee)
+	}
+	fmt.Printf("  - Network fee: %s\n", utils.Satoshis(fees.MinerFees))
+	if amount != 0 {
+		fmt.Printf("Total: %s\n", utils.Satoshis(utils.CalculateFeeEstimate(fees, amount)))
+	}
 	fmt.Println()
 }
 

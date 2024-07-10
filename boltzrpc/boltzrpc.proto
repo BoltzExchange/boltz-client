@@ -360,7 +360,7 @@ message Limits {
 }
 
 message SwapFees {
-    float percentage = 1;
+    double percentage = 1;
     uint64 miner_fees = 2;
 }
 
@@ -527,7 +527,7 @@ message ChainSwapInfo {
     string preimage = 6;
     bool is_auto = 8;
     optional uint64 service_fee = 9;
-    float service_fee_percent = 10;
+    double service_fee_percent = 10;
     optional uint64 onchain_fee = 11;
     int64 created_at = 12;
     uint64 tenant_id = 13;
