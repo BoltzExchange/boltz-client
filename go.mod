@@ -1,8 +1,6 @@
 module github.com/BoltzExchange/boltz-client
 
-go 1.21.4
-
-toolchain go1.22.4
+go 1.22.5
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
@@ -20,6 +18,7 @@ require (
 	github.com/git-chglog/git-chglog v0.15.4
 	github.com/golang/protobuf v1.5.3
 	github.com/gorilla/websocket v1.5.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/lightningnetwork/lnd v0.18.0-beta
@@ -98,7 +97,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

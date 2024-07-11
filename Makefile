@@ -1,5 +1,7 @@
 PKG := github.com/BoltzExchange/boltz-client
 VERSION := 2.1.0
+GDK_VERSION = 0.71.3
+GO_VERSION := 1.22.5
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
 PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
@@ -120,13 +122,16 @@ PLATFORMS := linux/amd64,linux/arm64
 
 docker:
 	@$(call print, "Building docker image")
-	docker buildx build --push --platform $(PLATFORMS) -t boltz/boltz-client:$(VERSION) -t boltz/boltz-client:latest .
+	docker buildx build --push --platform $(PLATFORMS) -t boltz/boltz-client:$(VERSION) -t boltz/boltz-client:latest --build-arg GO_VERSION=$(GO_VERSION) .
 
 binaries:
 	@$(call print, "Building binaries")
-	docker buildx build --output bin --platform $(PLATFORMS) --target binaries .
+	docker buildx build --output bin --platform $(PLATFORMS) --target binaries --build-arg GO_VERSION=$(GO_VERSION) .
 	tar -czvf boltz-client-linux-amd64-v$(VERSION).tar.gz bin/linux_amd64
 	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
+
+gdk:
+	docker buildx build --push --platform $(PLATFORMS) -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile --build-arg GDK_VERSION=$(GDK_VERSION) .
 
 .PHONY: build binaries

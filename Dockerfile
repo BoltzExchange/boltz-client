@@ -1,9 +1,7 @@
-FROM golang:1.21-alpine as go
-FROM michael1011/gdk-ubuntu-builder:0.68.2 as builder
+ARG GO_VERSION
 
-ARG GDK_ARGS
-RUN git clone https://github.com/Blockstream/gdk --depth 1 --branch release_0.68.2
-RUN export PATH="/root/.cargo/bin:$PATH" && cd gdk && ./tools/build.sh --gcc --buildtype release --no-deps-rebuild --external-deps-dir /prebuild/gcc ${GDK_ARGS}
+FROM golang:$GO_VERSION-alpine as go
+FROM boltz/gdk-ubuntu:latest as builder
 
 COPY --from=go /usr/local/go /usr/local/go
 ENV PATH="/usr/local/go/bin:$PATH"
