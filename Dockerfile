@@ -1,7 +1,8 @@
 ARG GO_VERSION
+ARG GDK_VERSION
 
 FROM golang:$GO_VERSION-alpine as go
-FROM boltz/gdk-ubuntu:latest as builder
+FROM boltz/gdk-ubuntu:$GDK_VERSION as builder
 
 COPY --from=go /usr/local/go /usr/local/go
 ENV PATH="/usr/local/go/bin:$PATH"
