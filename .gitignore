@@ -11,6 +11,8 @@ boltzcli
 !cmd/boltzd
 !cmd/boltzcli
 bin/
+boltz-client-*.tar.gz
+boltz-client-manifest-*.txt
 
 # Test binary, built with `go test -c`
 *.test
