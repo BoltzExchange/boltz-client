@@ -334,7 +334,11 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 					fmt.Printf("Lockup transaction ID: %s\n", swap.LockupTransactionId)
 				case boltz.InvoiceSettled:
 					fmt.Printf("Claim transaction ID: %s\n", swap.ClaimTransactionId)
-					fmt.Printf("Paid %d msat routing fee, %d sat onchain fee and %d sat boltz fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
+					if swap.ExternalPay {
+						fmt.Printf("Paid %d sat onchain fee and %d sat boltz fee\n", *swap.OnchainFee, *swap.ServiceFee)
+					} else {
+						fmt.Printf("Paid %d msat routing fee, %d sat onchain fee and %d sat boltz fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
+					}
 				}
 			} else if info.ChainSwap != nil {
 				swap := info.ChainSwap

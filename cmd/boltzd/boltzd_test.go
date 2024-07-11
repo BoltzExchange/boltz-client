@@ -1171,6 +1171,7 @@ func TestReverseSwap(t *testing.T) {
 
 	t.Run("ExternalPay", func(t *testing.T) {
 		cfg := loadConfig(t)
+		require.NoError(t, cfg.Cln.Connect())
 		client, _, stop := setup(t, setupOptions{cfg: cfg, node: "lnd"})
 		defer stop()
 
@@ -1196,12 +1197,13 @@ func TestReverseSwap(t *testing.T) {
 
 		stream, _ := swapStream(t, client, swap.Id)
 
-		_, err = cfg.LND.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
+		_, err = cfg.Cln.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
 		stream(boltzrpc.SwapState_PENDING)
 		info := stream(boltzrpc.SwapState_SUCCESSFUL)
 		require.True(t, info.ReverseSwap.ExternalPay)
+		require.Nil(t, info.ReverseSwap.RoutingFeeMsat)
 
 		test.MineBlock()
 	})
