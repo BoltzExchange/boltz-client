@@ -1,14 +1,14 @@
-FROM golang:1.20.2 as old-builder
+FROM golang:1.20.2 AS old-builder
 
-# Shallow clone project.
+# Shallow clone project
 RUN git clone --depth=1 --branch v1.2.7 https://github.com/BoltzExchange/boltz-lnd /go/src/github.com/BoltzExchange/boltz-lnd
 
-# Build the binaries.
+# Build the binaries
 RUN cd /go/src/github.com/BoltzExchange/boltz-lnd \
     && go mod vendor \
     && make build
 
-FROM boltz/boltz-client:latest as final
+FROM boltz/boltz-client:latest AS final
 
 VOLUME /root/.boltz
 
