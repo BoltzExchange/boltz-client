@@ -146,5 +146,5 @@ func TestEncryptedCredentials(t *testing.T) {
 	_, err = decrypted.Decrypt(password)
 	require.Error(t, err)
 
-	require.NoError(t, wallet.Remove())
+	require.NoError(t, wallet.Disconnect())
 }

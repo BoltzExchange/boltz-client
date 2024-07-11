@@ -153,22 +153,23 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 		require.NoError(t, err)
 		credentials.Name = walletName
 		credentials.TenantId = database.DefaultTenantId
-		require.NoError(t, wallet.Remove())
+		require.NoError(t, wallet.Disconnect())
 	}
-
-	require.NoError(t, cfg.Database.Connect())
 
 	encrytpedCredentials := credentials
 	if options.password != "" {
 		encrytpedCredentials, err = credentials.Encrypt(password)
 		require.NoError(t, err)
 	}
-	_, err = cfg.Database.Exec("DELETE FROM wallets")
-	require.NoError(t, err)
-	testWallet = &database.Wallet{
-		Credentials: encrytpedCredentials,
+	testWallet = &database.Wallet{Credentials: encrytpedCredentials}
+
+	require.NoError(t, cfg.Database.Connect())
+	_, err = cfg.Database.GetWallet(encrytpedCredentials.Id)
+	if err != nil {
+		require.NoError(t, cfg.Database.CreateWallet(testWallet))
+	} else {
+		require.NoError(t, cfg.Database.UpdateWalletCredentials(encrytpedCredentials))
 	}
-	require.NoError(t, cfg.Database.CreateWallet(testWallet))
 
 	lightningNode, err := initLightning(cfg)
 	require.NoError(t, err)
@@ -227,8 +228,10 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 		require.NoError(t, err)
 		_, err = autoSwapClient.ResetConfig(client.ChainAutoSwap)
 		require.NoError(t, err)
-		_, err = boltzClient.RemoveWallet(testWallet.Id)
-		require.NoError(t, err)
+		/*
+			_, err = boltzClient.RemoveWallet(testWallet.Id)
+			require.NoError(t, err)
+		*/
 		require.NoError(t, boltzClient.Stop())
 	}
 }

@@ -238,4 +238,4 @@ func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
 	return transaction.Status.Confirmed, nil
 }
 
-func (c *Client) Shutdown() {}
+func (c *Client) Disconnect() {}

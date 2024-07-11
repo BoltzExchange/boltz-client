@@ -486,15 +486,9 @@ func GenerateMnemonic() (string, error) {
 	return C.GoString(mnemonic), nil
 }
 
-func (wallet *Wallet) Remove() error {
+func (wallet *Wallet) Disconnect() error {
 	if !wallet.connected {
 		return nil
-	}
-
-	var handler AuthHandler
-	var result any
-	if err := withAuthHandler(C.GA_remove_account(wallet.session, &handler), handler, &result); err != nil {
-		return err
 	}
 
 	if err := toErr(C.GA_destroy_session(wallet.session)); err != nil {

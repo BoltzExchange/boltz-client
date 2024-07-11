@@ -84,6 +84,10 @@ func (lnd *LND) Ready() bool {
 	return lnd.client != nil
 }
 
+func (lnd *LND) Disconnect() error {
+	return nil
+}
+
 func (lnd *LND) Connect() error {
 	cert, err := filepath.EvalSymlinks(lnd.Certificate)
 	if err != nil {

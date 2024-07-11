@@ -20,6 +20,51 @@ func (_m *MockWallet) EXPECT() *MockWallet_Expecter {
 	return &MockWallet_Expecter{mock: &_m.Mock}
 }
 
+// Disconnect provides a mock function with given fields:
+func (_m *MockWallet) Disconnect() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Disconnect")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockWallet_Disconnect_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Disconnect'
+type MockWallet_Disconnect_Call struct {
+	*mock.Call
+}
+
+// Disconnect is a helper method to define mock.On call
+func (_e *MockWallet_Expecter) Disconnect() *MockWallet_Disconnect_Call {
+	return &MockWallet_Disconnect_Call{Call: _e.mock.On("Disconnect")}
+}
+
+func (_c *MockWallet_Disconnect_Call) Run(run func()) *MockWallet_Disconnect_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockWallet_Disconnect_Call) Return(_a0 error) *MockWallet_Disconnect_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockWallet_Disconnect_Call) RunAndReturn(run func() error) *MockWallet_Disconnect_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetBalance provides a mock function with given fields:
 func (_m *MockWallet) GetBalance() (*onchain.Balance, error) {
 	ret := _m.Called()

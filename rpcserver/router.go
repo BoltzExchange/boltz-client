@@ -1468,7 +1468,7 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 			wallet.GetWalletInfo().Name,
 		))
 	}
-	if err := wallet.Remove(); err != nil {
+	if err := wallet.Disconnect(); err != nil {
 		return nil, handleError(err)
 	}
 	id := wallet.GetWalletInfo().Id
