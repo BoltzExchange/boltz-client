@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/autoswap"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
 	"google.golang.org/protobuf/proto"
 	"io"
 	"os"
@@ -604,7 +604,7 @@ func autoSwapStatus(ctx *cli.Context) error {
 	return nil
 }
 
-func printConfig(ctx *cli.Context, autoSwapType *autoswap.SwapperType, key string, asJson, hideZero bool) error {
+func printConfig(ctx *cli.Context, autoSwapType *client.AutoSwapType, key string, asJson, hideZero bool) error {
 	client := getAutoSwapClient(ctx)
 
 	var message proto.Message
@@ -647,7 +647,7 @@ func printConfig(ctx *cli.Context, autoSwapType *autoswap.SwapperType, key strin
 	return nil
 }
 
-func autoSwapSetup(ctx *cli.Context, swapper *autoswap.SwapperType) error {
+func autoSwapSetup(ctx *cli.Context, swapper *client.AutoSwapType) error {
 	if swapper == nil || *swapper == lightning {
 		if err := autoSwapLightningSetup(ctx); err != nil {
 			return err
@@ -670,7 +670,7 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 			return nil
 		}
 	}
-	entireConfig, err := autoSwap.ResetConfig(autoswap.Lightning)
+	entireConfig, err := autoSwap.ResetConfig(client.LnAutoSwap)
 	if err != nil {
 		return err
 	}
@@ -934,10 +934,10 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 	return nil
 }
 
-var lightning = autoswap.Lightning
-var chain = autoswap.Chain
+var lightning = client.LnAutoSwap
+var chain = client.ChainAutoSwap
 
-func autoSwapConfig(ctx *cli.Context, swapper *autoswap.SwapperType) (err error) {
+func autoSwapConfig(ctx *cli.Context, swapper *client.AutoSwapType) (err error) {
 	client := getAutoSwapClient(ctx)
 
 	if ctx.Bool("reload") {
@@ -966,7 +966,7 @@ func autoSwapConfig(ctx *cli.Context, swapper *autoswap.SwapperType) (err error)
 	return printConfig(ctx, swapper, key, ctx.Bool("json"), false)
 }
 
-func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper *autoswap.SwapperType) error {
+func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper *client.AutoSwapType) error {
 	client := getAutoSwapClient(ctx)
 
 	if showConfig {
@@ -1005,7 +1005,7 @@ func enableAutoSwap(ctx *cli.Context, showConfig bool, swapper *autoswap.Swapper
 	return autoSwapStatus(ctx)
 }
 
-func disableAutoSwap(ctx *cli.Context, autoSwapType autoswap.SwapperType) error {
+func disableAutoSwap(ctx *cli.Context, autoSwapType client.AutoSwapType) error {
 	client := getAutoSwapClient(ctx)
 	_, err := client.SetConfigValue(autoSwapType, "enabled", false)
 	return err

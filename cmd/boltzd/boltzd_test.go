@@ -223,9 +223,9 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	waitForSync(t, boltzClient)
 
 	return boltzClient, autoSwapClient, func() {
-		_, err = autoSwapClient.ResetConfig(autoswap.Lightning)
+		_, err = autoSwapClient.ResetConfig(client.LnAutoSwap)
 		require.NoError(t, err)
-		_, err = autoSwapClient.ResetConfig(autoswap.Chain)
+		_, err = autoSwapClient.ResetConfig(client.ChainAutoSwap)
 		require.NoError(t, err)
 		_, err = boltzClient.RemoveWallet(testWallet.Id)
 		require.NoError(t, err)
@@ -406,7 +406,7 @@ func TestMacaroons(t *testing.T) {
 	})
 
 	t.Run("AutoSwap", func(t *testing.T) {
-		_, err := adminAuto.ResetConfig(autoswap.Lightning)
+		_, err := adminAuto.ResetConfig(client.LnAutoSwap)
 		require.NoError(t, err)
 		cfg, err := adminAuto.GetLightningConfig()
 		require.NoError(t, err)
@@ -1576,10 +1576,10 @@ func TestAutoSwap(t *testing.T) {
 	admin, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
-	_, err = autoSwap.ResetConfig(autoswap.Lightning)
+	_, err = autoSwap.ResetConfig(client.LnAutoSwap)
 	require.NoError(t, err)
 
-	_, err = autoSwap.ResetConfig(autoswap.Chain)
+	_, err = autoSwap.ResetConfig(client.ChainAutoSwap)
 	require.NoError(t, err)
 
 	t.Run("Chain", func(t *testing.T) {
@@ -1637,7 +1637,7 @@ func TestAutoSwap(t *testing.T) {
 	})
 
 	t.Run("Lightning", func(t *testing.T) {
-		_, err := autoSwap.ResetConfig(autoswap.Lightning)
+		_, err := autoSwap.ResetConfig(client.LnAutoSwap)
 		require.NoError(t, err)
 
 		var us, them lightning.LightningNode
