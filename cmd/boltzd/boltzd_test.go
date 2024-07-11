@@ -1077,8 +1077,9 @@ func TestReverseSwap(t *testing.T) {
 
 					require.NotZero(t, info.ReverseSwap.OnchainFee)
 					require.NotZero(t, info.ReverseSwap.ServiceFee)
-					require.Less(t, info.ReverseSwap.PaidAt, time.Now().Unix())
-					require.GreaterOrEqual(t, info.ReverseSwap.PaidAt, info.ReverseSwap.CreatedAt)
+					require.NotNil(t, info.ReverseSwap.PaidAt)
+					require.LessOrEqual(t, *info.ReverseSwap.PaidAt, time.Now().Unix())
+					require.GreaterOrEqual(t, *info.ReverseSwap.PaidAt, info.ReverseSwap.CreatedAt)
 
 					invoice, err := zpay32.Decode(info.ReverseSwap.Invoice, &chaincfg.RegressionNetParams)
 					require.NoError(t, err)
