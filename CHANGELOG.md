@@ -1,6 +1,6 @@
 
 <a name="v2.1.0"></a>
-## [v2.1.0] - 2024-07-10
+## [v2.1.0] - 2024-07-11
 ### Feat
 - tenant checks on swapinfo and refundswap ([#190](https://github.com/BoltzExchange/boltz-client/issues/190))
 - use boltz endpoint on liquid by default for lower fees ([#187](https://github.com/BoltzExchange/boltz-client/issues/187))
@@ -25,6 +25,8 @@
 - standalone mode ([#123](https://github.com/BoltzExchange/boltz-client/issues/123))
 
 ### Fix
+- make sure cli doesnt depend on gdk ([#200](https://github.com/BoltzExchange/boltz-client/issues/200))
+- properly wait for sync in unlock test
 - add space ([#193](https://github.com/BoltzExchange/boltz-client/issues/193))
 - cli fees ([#191](https://github.com/BoltzExchange/boltz-client/issues/191))
 - How do you want to specify min/max balance values? -> How do you… ([#181](https://github.com/BoltzExchange/boltz-client/issues/181))
