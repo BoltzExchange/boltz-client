@@ -16,6 +16,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 	go func() {
 		defer nursery.waitGroup.Done()
 		for newBlock := range blockNotifier.Get() {
+			logger.Debugf("Received new block, checking refundable swaps: %d", newBlock.Height)
 			swaps, chainSwaps, err := nursery.database.QueryAllRefundableSwaps(nil, currency, newBlock.Height)
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
@@ -51,6 +52,10 @@ func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []*database.S
 	}
 	for _, output := range outputs {
 		output.Cooperative = output.TimeoutBlockHeight > height
+		logger.Debugf(
+			"Output for swap %s cooperative: %t (%d > %d)",
+			output.SwapId, output.Cooperative, output.TimeoutBlockHeight, height,
+		)
 	}
 
 	if len(outputs) == 0 {

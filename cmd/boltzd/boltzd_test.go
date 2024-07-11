@@ -112,6 +112,24 @@ type setupOptions struct {
 	node     string
 }
 
+func waitForSync(t *testing.T, client client.Boltz) {
+	ticker := time.NewTicker(100 * time.Millisecond)
+	timeout := time.After(1 * time.Second)
+	for {
+		var err error
+		select {
+		case <-ticker.C:
+			_, err = client.GetInfo()
+		case <-timeout:
+			require.Fail(t, "timed out while waiting for daemon to sync")
+		}
+		if err == nil || strings.Contains(err.Error(), "locked") {
+			break
+		}
+	}
+
+}
+
 func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, func()) {
 	cfg := options.cfg
 	if cfg == nil {
@@ -201,21 +219,8 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 
 	boltzClient := client.NewBoltzClient(clientConn)
 	autoSwapClient := client.NewAutoSwapClient(clientConn)
-	// the liquid wallet needs a bit to sync its subaccounts
 
-	ticker := time.NewTicker(100 * time.Millisecond)
-	timeout := time.After(1 * time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			_, err = boltzClient.GetInfo()
-		case <-timeout:
-			require.Fail(t, "timed out while waiting for daemon to sync")
-		}
-		if err == nil || strings.Contains(err.Error(), "locked") {
-			break
-		}
-	}
+	waitForSync(t, boltzClient)
 
 	return boltzClient, autoSwapClient, func() {
 		_, err = autoSwapClient.ResetConfig(autoswap.Lightning)
@@ -1835,6 +1840,9 @@ func TestUnlock(t *testing.T) {
 	require.NoError(t, client.Unlock(password))
 
 	test.MineBlock()
+
+	waitForSync(t, client)
+
 	_, err = client.GetInfo()
 	require.NoError(t, err)
 
