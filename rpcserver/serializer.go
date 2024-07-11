@@ -110,6 +110,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		ClaimTransactionId:  serializedReverseSwap.ClaimTransactionId,
 		BlindingKey:         serializeOptionalString(serializedReverseSwap.BlindingKey),
 		CreatedAt:           serializeTime(reverseSwap.CreatedAt),
+		PaidAt:              serializeOptionalTime(reverseSwap.PaidAt),
 		ServiceFee:          serializedReverseSwap.ServiceFee,
 		OnchainFee:          serializedReverseSwap.OnchainFee,
 		RoutingFeeMsat:      serializedReverseSwap.RoutingFeeMsat,
@@ -236,6 +237,14 @@ func serializeWalletCredentials(credentials *wallet.Credentials) *boltzrpc.Walle
 
 func serializeTime(t time.Time) int64 {
 	return t.UTC().Unix()
+}
+
+func serializeOptionalTime(t time.Time) *int64 {
+	if t.IsZero() {
+		return nil
+	}
+	unix := t.UTC().Unix()
+	return &unix
 }
 
 func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.LightningChannel {

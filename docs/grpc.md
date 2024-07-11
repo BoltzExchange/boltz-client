@@ -1042,6 +1042,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `chan_ids` | [`ChannelId`](#channelid) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
+| `paid_at` | [`int64`](#int64) | optional |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |

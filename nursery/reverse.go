@@ -5,6 +5,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightningnetwork/lnd/zpay32"
+	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -140,6 +141,11 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 	switch parsedStatus {
 	case boltz.TransactionMempool:
+		if err := nursery.database.SetReverseSwapPaidAt(reverseSwap, time.Now()); err != nil {
+			handleError("Could not set paid at in database: " + err.Error())
+			return
+		}
+
 		fallthrough
 
 	case boltz.TransactionConfirmed:

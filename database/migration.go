@@ -16,7 +16,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 10
+const latestSchemaVersion = 11
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -500,6 +500,13 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 
 			PRIMARY KEY (startDate, name, tenantId)
 		);
+`
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+	case 10:
+		migration := `
+		ALTER TABLE reverseSwaps ADD COLUMN paidAt INT;
 `
 		if _, err := tx.Exec(migration); err != nil {
 			return err
