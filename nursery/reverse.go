@@ -176,7 +176,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			return
 		}
 
-		if nursery.lightning != nil {
+		if nursery.lightning != nil && !reverseSwap.ExternalPay {
 			status, err := nursery.lightning.PaymentStatus(reverseSwap.PreimageHash())
 			if err != nil {
 				handleError("Could not get payment status: " + err.Error())
