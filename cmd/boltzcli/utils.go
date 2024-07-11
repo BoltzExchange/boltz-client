@@ -114,3 +114,32 @@ func printDeposit(amount uint64, address string, hours float32, blockHeight uint
 	fmt.Printf("Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
 		amountString, address, hours, blockHeight)
 }
+
+var errNotNumber = errors.New("not a valid number")
+
+func uintValidator(ans interface{}) error {
+	if raw, ok := ans.(string); ok {
+		_, err := strconv.ParseUint(raw, 10, 64)
+		if err != nil {
+			return errNotNumber
+		}
+	} else {
+		return errNotNumber
+	}
+	return nil
+}
+
+func percentValidator(ans interface{}) error {
+	if raw, ok := ans.(string); ok {
+		num, err := strconv.ParseFloat(raw, 64)
+		if err != nil {
+			return errNotNumber
+		}
+		if num < 0 || num > 100 {
+			return errors.New("percentage must be between 0 and 100")
+		}
+	} else {
+		return errNotNumber
+	}
+	return nil
+}

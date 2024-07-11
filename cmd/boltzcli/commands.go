@@ -729,14 +729,14 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 			qs = append(qs, &survey.Question{
 				Name:     "outboundBalance",
 				Prompt:   &survey.Input{Message: "What is the minimum amount of sats you want to keep as your outbound balance?"},
-				Validate: survey.Required,
+				Validate: survey.ComposeValidators(survey.Required, uintValidator),
 			})
 		}
 		if allowReverse {
 			qs = append(qs, &survey.Question{
 				Name:     "inboundBalance",
 				Prompt:   &survey.Input{Message: "What is the minimum amount of sats you want to keep as your inbound balance?"},
-				Validate: survey.Required,
+				Validate: survey.ComposeValidators(survey.Required, uintValidator),
 			})
 		}
 	} else {
@@ -746,7 +746,7 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 				Prompt: &survey.Input{Message: "What is the minimum percentage of total capacity you want to keep as your outbound balance?",
 					Default: fmt.Sprint(config.OutboundBalancePercent),
 				},
-				Validate: survey.Required,
+				Validate: survey.ComposeValidators(survey.Required, percentValidator),
 			})
 		}
 		if allowReverse {
@@ -755,12 +755,12 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 				Prompt: &survey.Input{Message: "What is the minimum percentage of total capacity you want to keep as your inbound balance?",
 					Default: fmt.Sprint(config.InboundBalancePercent),
 				},
-				Validate: survey.Required,
+				Validate: survey.ComposeValidators(survey.Required, percentValidator),
 			})
 		}
 	}
 
-	qs = append(qs, askBudget(config.BudgetInterval, config.Budget)...)
+	qs = append(qs, askBudget(config.MaxFeePercent, config.BudgetInterval, config.Budget)...)
 
 	if err := survey.Ask(qs, config); err != nil {
 		return err
@@ -917,7 +917,7 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 			}),
 		},
 	}
-	questions = append(questions, askBudget(uint64((time.Hour*24*7).Seconds()), 100000)...)
+	questions = append(questions, askBudget(1, uint64((time.Hour*24*7).Seconds()), 100000)...)
 
 	if err := survey.Ask(questions, config); err != nil {
 		return err
@@ -1615,15 +1615,24 @@ func askPassword(ctx *cli.Context, askNew bool) (*string, error) {
 	return &password, nil
 }
 
-func askBudget(defaultDuration uint64, defaultBudget uint64) []*survey.Question {
+func askBudget(defaultMaxFeePercent float32, defaultDuration, defaultBudget uint64) []*survey.Question {
 	defaultDurationDays := fmt.Sprint(float64(defaultDuration) / (24 * time.Hour).Seconds())
 	return []*survey.Question{
+		{
+			Name: "maxFeePercent",
+			Prompt: &survey.Input{
+				Message: "What is the maximum percentage of the total swap amount you are willing to pay as fees?",
+				Default: fmt.Sprint(defaultMaxFeePercent),
+			},
+			Validate: survey.ComposeValidators(survey.Required, percentValidator),
+		},
 		{
 			Name: "BudgetInterval",
 			Prompt: &survey.Input{
 				Message: "In which interval should the fee budget of the auto swapper be reset? (days)",
 				Default: defaultDurationDays,
 			},
+			Validate: survey.ComposeValidators(survey.Required, uintValidator),
 		},
 		{
 			Name: "Budget",
@@ -1631,6 +1640,7 @@ func askBudget(defaultDuration uint64, defaultBudget uint64) []*survey.Question 
 				Message: "How many sats do you want to spend max on fees per budget interval?",
 				Default: fmt.Sprint(defaultBudget),
 			},
+			Validate: survey.ComposeValidators(survey.Required, uintValidator),
 		},
 	}
 }
