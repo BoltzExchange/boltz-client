@@ -432,6 +432,9 @@ func Login(credentials *Credentials) (*Wallet, error) {
 		login["mnemonic"] = credentials.Mnemonic
 		wallet.Readonly = false
 	} else if credentials.Xpub != "" {
+		if credentials.Currency == boltz.CurrencyLiquid {
+			return nil, errors.New("xpub not supported for liquid")
+		}
 		login["slip132_extended_pubkeys"] = []string{credentials.Xpub}
 		wallet.Readonly = true
 	} else if credentials.CoreDescriptor != "" {

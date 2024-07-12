@@ -59,14 +59,15 @@ func TestReal(t *testing.T) {
 	require.Zero(t, balance.Total)
 }
 
-func TestImportSlip132Wallet(t *testing.T) {
+func TestImportWallet(t *testing.T) {
 	tests := []struct {
 		name        string
 		credentials onchainWallet.Credentials
+		err         bool
 	}{
 		{
-			"Xpub",
-			onchainWallet.Credentials{
+			name: "Xpub/Btc",
+			credentials: onchainWallet.Credentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyBtc,
 				},
@@ -74,8 +75,18 @@ func TestImportSlip132Wallet(t *testing.T) {
 			},
 		},
 		{
-			"CoreDescriptor/Btc",
-			onchainWallet.Credentials{
+			name: "Xpub/Liquid",
+			credentials: onchainWallet.Credentials{
+				WalletInfo: onchain.WalletInfo{
+					Currency: boltz.CurrencyLiquid,
+				},
+				Xpub: "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
+			},
+			err: true,
+		},
+		{
+			name: "CoreDescriptor/Btc",
+			credentials: onchainWallet.Credentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyBtc,
 				},
@@ -83,8 +94,8 @@ func TestImportSlip132Wallet(t *testing.T) {
 			},
 		},
 		{
-			"CoreDescriptor/Liquid",
-			onchainWallet.Credentials{
+			name: "CoreDescriptor/Liquid",
+			credentials: onchainWallet.Credentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyLiquid,
 				},
@@ -96,16 +107,20 @@ func TestImportSlip132Wallet(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			wallet, err := onchainWallet.Login(&tc.credentials)
-			require.NoError(t, err)
+			if tc.err {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 
-			accounts, err := wallet.GetSubaccounts(false)
-			require.NoError(t, err)
-			_, err = wallet.SetSubaccount(&accounts[0].Pointer)
-			require.NoError(t, err)
+				accounts, err := wallet.GetSubaccounts(false)
+				require.NoError(t, err)
+				_, err = wallet.SetSubaccount(&accounts[0].Pointer)
+				require.NoError(t, err)
 
-			address, err := wallet.NewAddress()
-			require.NoError(t, err)
-			require.NotEmpty(t, address)
+				address, err := wallet.NewAddress()
+				require.NoError(t, err)
+				require.NotEmpty(t, address)
+			}
 		})
 	}
 }
