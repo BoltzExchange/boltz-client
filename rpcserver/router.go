@@ -788,6 +788,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		PreimageHash:   preimageHash,
 		ClaimPublicKey: publicKey.SerializeCompressed(),
 		ReferralId:     referralId,
+		Description:    request.GetDescription(),
 	}
 
 	if request.Address != "" {

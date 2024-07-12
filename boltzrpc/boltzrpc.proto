@@ -486,6 +486,8 @@ message CreateReverseSwapRequest {
     optional bool return_immediately = 7;
     // If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true.
     optional bool external_pay = 8;
+    // Description of the invoice which will be created for the swap
+    optional string description = 9;
 }
 message CreateReverseSwapResponse {
     string id = 1;

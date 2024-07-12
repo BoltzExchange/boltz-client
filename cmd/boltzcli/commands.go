@@ -1342,6 +1342,10 @@ var createReverseSwapCommand = &cli.Command{
 			Name:  "external-pay",
 			Usage: "Do not automatically pay the swap from the connected lightning node",
 		},
+		&cli.StringFlag{
+			Name:  "description",
+			Usage: "Description of the swap invoice",
+		},
 		&cli.StringSliceFlag{
 			Name: "chan-id",
 		},
@@ -1387,6 +1391,7 @@ func createReverseSwap(ctx *cli.Context) error {
 
 	address := ctx.Args().Get(2)
 	amount := parseUint64(ctx.Args().Get(1), "amount")
+	description := ctx.String("description")
 	json := ctx.Bool("json")
 
 	if !json {
@@ -1415,6 +1420,7 @@ func createReverseSwap(ctx *cli.Context) error {
 		WalletId:          walletId,
 		ChanIds:           ctx.StringSlice("chan-id"),
 		ReturnImmediately: &returnImmediately,
+		Description:       &description,
 	}
 	if externalPay := ctx.Bool("external-pay"); externalPay {
 		request.ExternalPay = &externalPay
