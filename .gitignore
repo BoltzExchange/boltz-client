@@ -11,6 +11,7 @@ boltzcli
 !cmd/boltzd
 !cmd/boltzcli
 bin/
+onchain/wallet/lib/
 boltz-client-*.tar.gz
 boltz-client-manifest-*.txt
 

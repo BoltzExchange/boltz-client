@@ -65,7 +65,7 @@ integration:
 # Building
 #
 
-build: 
+build: download-gdk
 	@$(call print, "Building boltz-client")
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
@@ -98,6 +98,18 @@ deps:
 		sed -i '/#\|package/!s/secp256k1/go_secp256k1/g' *.go && \
 		find secp256k1-zkp -type f -name "*.c" -print0 | xargs -0 sed -i '/include/!s/secp256k1/go_secp256k1/g' && \
 		find secp256k1-zkp -type f -name "*.h" -print0 | xargs -0 sed -i '/include/!s/secp256k1/go_secp256k1/g'
+
+LIB_PATH := onchain/wallet/lib/libgreenaddress.so
+
+download-gdk:
+ifeq ("$(wildcard $(LIB_PATH))","")
+	@$(call print, "Downloading gdk library")
+	@container_id=$$(docker create "boltz/gdk-ubuntu:$(GDK_VERSION)" true); \
+	docker cp "$$container_id:/root/gdk/gdk/build-gcc/src/libgreenaddress.so" $(LIB_PATH) && \
+	docker rm "$$container_id";
+endif
+
+
 #
 # Utils
 #
