@@ -1,19 +1,18 @@
 ARG GO_VERSION
 ARG GDK_VERSION
 
-FROM golang:$GO_VERSION-alpine AS go
-FROM boltz/gdk-ubuntu:$GDK_VERSION AS builder
-
-COPY --from=go /usr/local/go /usr/local/go
-ENV PATH="/usr/local/go/bin:$PATH"
+FROM boltz/gdk-ubuntu:$GDK_VERSION AS gdk
+FROM golang:$GO_VERSION AS builder
 
 WORKDIR /boltz-client
 
 COPY . ./
-RUN cp /root/gdk/gdk/build-gcc/libgreenaddress_full.a /boltz-client/onchain/wallet/lib/
+COPY --from=gdk / /boltz-client/onchain/wallet/lib/
 
 # Build the binaries.
-RUN make deps static
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    make deps static
 
 FROM scratch AS binaries
 
