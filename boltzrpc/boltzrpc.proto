@@ -319,6 +319,7 @@ message ReverseSwapInfo {
     repeated ChannelId chan_ids = 15;
     optional string blinding_key = 16;
     int64 created_at = 17;
+    optional int64 paid_at = 23; // the time when the invoice was paid
     optional uint64 service_fee = 18;
     optional uint64 onchain_fee = 19;
     optional uint64 routing_fee_msat = 20;

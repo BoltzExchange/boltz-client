@@ -23,6 +23,7 @@ type ReverseSwap struct {
 	State               boltzrpc.SwapState
 	Error               string
 	CreatedAt           time.Time
+	PaidAt              time.Time
 	Status              boltz.SwapUpdateEvent
 	AcceptZeroConf      bool
 	PrivateKey          *btcec.PrivateKey
@@ -130,7 +131,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var preimage string
 	var redeemScript string
 	blindingKey := PrivateKeyScanner{Nullable: true}
-	var createdAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
+	var createdAt, paidAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
 	var externalPay sql.NullBool
 	swapTree := JsonScanner[*boltz.SerializedTree]{Nullable: true}
 	refundPubKey := PublicKeyScanner{Nullable: true}
@@ -165,6 +166,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"serviceFeePercent":   &reverseSwap.ServiceFeePercent,
 			"onchainFee":          &onchainFee,
 			"createdAt":           &createdAt,
+			"paidAt":              &paidAt,
 			"externalPay":         &externalPay,
 			"tenantId":            &reverseSwap.TenantId,
 			"walletId":            &reverseSwap.WalletId,
@@ -200,6 +202,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	}
 
 	reverseSwap.CreatedAt = parseTime(createdAt.Int64)
+	reverseSwap.PaidAt = parseTime(paidAt.Int64)
 
 	if swapTree.Value != nil {
 		reverseSwap.SwapTree = swapTree.Value.Deserialize()
@@ -357,5 +360,12 @@ func (database *Database) SetReverseSwapServiceFee(reverseSwap *ReverseSwap, ser
 	reverseSwap.OnchainFee = addToOptional(reverseSwap.OnchainFee, onchainFee)
 
 	_, err := database.Exec("UPDATE reverseSwaps SET serviceFee = ?, onchainFee = ? WHERE id = ?", serviceFee, reverseSwap.OnchainFee, reverseSwap.Id)
+	return err
+}
+
+func (database *Database) SetReverseSwapPaidAt(reverseSwap *ReverseSwap, paidAt time.Time) error {
+	reverseSwap.PaidAt = paidAt
+
+	_, err := database.Exec("UPDATE reverseSwaps SET paidAt = ? WHERE id = ?", FormatTime(reverseSwap.PaidAt), reverseSwap.Id)
 	return err
 }

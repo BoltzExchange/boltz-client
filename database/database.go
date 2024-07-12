@@ -126,6 +126,7 @@ CREATE TABLE reverseSwaps
     serviceFeePercent   REAL    DEFAULT 0,
     onchainFee          INT,
     createdAt           INT,
+    paidAt              INT,
     externalPay         BOOLEAN,
     walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
     tenantId            INT REFERENCES tenants (id)
