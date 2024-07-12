@@ -717,6 +717,9 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 	}
 	config.Wallet = wallet.Name
 	config.Currency = wallet.Currency
+	if allowNormal && wallet.Balance.GetTotal() == 0 {
+		fmt.Println("Warning: Your selected wallet has no balance. Autoswap will not be able to execute normal swaps.")
+	}
 
 	var balanceType string
 	prompt = &survey.Select{
