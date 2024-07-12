@@ -1177,7 +1177,7 @@ type ReverseSwapInfo struct {
 	ChanIds             []*ChannelId `protobuf:"bytes,15,rep,name=chan_ids,json=chanIds,proto3" json:"chan_ids,omitempty"`
 	BlindingKey         *string      `protobuf:"bytes,16,opt,name=blinding_key,json=blindingKey,proto3,oneof" json:"blinding_key,omitempty"`
 	CreatedAt           int64        `protobuf:"varint,17,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	PaidAt              *int64       `protobuf:"varint,23,opt,name=paid_at,json=paidAt,proto3,oneof" json:"paid_at,omitempty"`
+	PaidAt              *int64       `protobuf:"varint,23,opt,name=paid_at,json=paidAt,proto3,oneof" json:"paid_at,omitempty"` // the time when the swap invoice was paid
 	ServiceFee          *uint64      `protobuf:"varint,18,opt,name=service_fee,json=serviceFee,proto3,oneof" json:"service_fee,omitempty"`
 	OnchainFee          *uint64      `protobuf:"varint,19,opt,name=onchain_fee,json=onchainFee,proto3,oneof" json:"onchain_fee,omitempty"`
 	RoutingFeeMsat      *uint64      `protobuf:"varint,20,opt,name=routing_fee_msat,json=routingFeeMsat,proto3,oneof" json:"routing_fee_msat,omitempty"`
