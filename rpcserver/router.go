@@ -40,6 +40,15 @@ import (
 
 const referralId = "boltz-client"
 
+type serverState string
+
+const (
+	stateUnlocked         serverState = "unlocked"
+	stateSyncing          serverState = "syncing"
+	stateLocked           serverState = "locked"
+	stateLightningSyncing serverState = "lightningSyncing"
+)
+
 type routedBoltzServer struct {
 	boltzrpc.BoltzServer
 
@@ -53,9 +62,8 @@ type routedBoltzServer struct {
 	swapper   *autoswap.AutoSwap
 	macaroon  *macaroons.Service
 
-	stop    chan bool
-	locked  bool
-	syncing bool
+	stop  chan bool
+	state serverState
 }
 
 func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func()) {
@@ -1486,8 +1494,10 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 }
 
 func (server *routedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Empty, error) {
-	server.nursery.Stop()
-	logger.Debugf("Stopped nursery")
+	if server.nursery != nil {
+		server.nursery.Stop()
+		logger.Debugf("Stopped nursery")
+	}
 	server.stop <- true
 	return &empty.Empty{}, nil
 }
@@ -1537,8 +1547,15 @@ func (server *routedBoltzServer) VerifyWalletPassword(_ context.Context, request
 }
 
 func (server *routedBoltzServer) unlock(password string) error {
-	if !server.locked {
-		return errors.New("boltzd already unlocked!")
+	credentials, err := server.decryptWalletCredentials(password)
+	if err != nil {
+		if status.Code(err) == codes.InvalidArgument {
+			logger.Infof("Server is locked")
+			server.state = stateLocked
+			return nil
+		} else {
+			return err
+		}
 	}
 
 	if server.lightning != nil {
@@ -1573,15 +1590,10 @@ func (server *routedBoltzServer) unlock(password string) error {
 		server.onchain.AddWallet(server.lightning)
 	}
 
-	credentials, err := server.decryptWalletCredentials(password)
-	if err != nil {
-		return err
-	}
-
-	server.syncing = true
+	server.state = stateSyncing
 	go func() {
 		defer func() {
-			server.syncing = false
+			server.state = stateUnlocked
 		}()
 		var wg sync.WaitGroup
 		wg.Add(len(credentials))
@@ -1616,7 +1628,6 @@ func (server *routedBoltzServer) unlock(password string) error {
 			logger.Warnf("Could not load autoswap config: %v", err)
 		}
 	}()
-	server.locked = false
 
 	return nil
 }
@@ -1633,15 +1644,22 @@ func (server *routedBoltzServer) ChangeWalletPassword(_ context.Context, request
 	return &empty.Empty{}, nil
 }
 
-var errLocked = status.Error(codes.FailedPrecondition, "boltzd is locked, use \"unlock\" to enable full RPC access")
-var errSyncing = status.Error(codes.FailedPrecondition, "boltzd is syncing its wallets, please wait")
-
 func (server *routedBoltzServer) requestAllowed(fullMethod string) error {
-	if server.syncing {
-		return handleError(errSyncing)
+	if strings.Contains(fullMethod, "Stop") {
+		return nil
 	}
-	if server.locked && !strings.Contains(fullMethod, "Unlock") {
-		return handleError(errLocked)
+	if server.state == stateLightningSyncing {
+		return status.Errorf(codes.Unavailable, "connected lightning node is syncing, please wait")
+	}
+	if server.state == stateSyncing {
+		return status.Error(codes.Unavailable, "boltzd is syncing its wallets, please wait")
+	}
+	if strings.Contains(fullMethod, "Unlock") {
+		if server.state == stateUnlocked {
+			return status.Errorf(codes.FailedPrecondition, "boltzd is already unlocked")
+		}
+	} else if server.state == stateLocked {
+		return status.Error(codes.FailedPrecondition, "boltzd is locked, use \"unlock\" to enable full RPC access")
 	}
 	return nil
 }
@@ -1654,7 +1672,7 @@ func (server *routedBoltzServer) UnaryServerInterceptor() grpc.UnaryServerInterc
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
 		if err := server.requestAllowed(info.FullMethod); err != nil {
-			return nil, err
+			return nil, handleError(err)
 		}
 
 		return handler(ctx, req)
@@ -1669,7 +1687,7 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 		handler grpc.StreamHandler,
 	) error {
 		if err := server.requestAllowed(info.FullMethod); err != nil {
-			return err
+			return handleError(err)
 		}
 
 		return handler(srv, ss)

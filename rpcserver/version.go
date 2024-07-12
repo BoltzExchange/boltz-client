@@ -1,4 +1,4 @@
-package main
+package rpcserver
 
 import (
 	"github.com/BoltzExchange/boltz-client/boltz"
