@@ -1689,11 +1689,14 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 
 	mnemonic := ""
 	importType := "mnemonic"
-	if params.Currency == boltzrpc.Currency_BTC && readonly {
+	if readonly {
 		prompt := &survey.Select{
 			Message: "Which import type do you want to use?",
-			Options: []string{"mnemonic", "xpub", "core descriptor"},
+			Options: []string{"mnemonic", "core descriptor"},
 			Default: "mnemonic",
+		}
+		if params.Currency == boltzrpc.Currency_BTC {
+			prompt.Options = append(prompt.Options, "xpub")
 		}
 		if err := survey.AskOne(prompt, &importType); err != nil {
 			return nil, err

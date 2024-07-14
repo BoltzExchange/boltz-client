@@ -59,14 +59,15 @@ func TestReal(t *testing.T) {
 	require.Zero(t, balance.Total)
 }
 
-func TestImportSlip132Wallet(t *testing.T) {
+func TestImportWallet(t *testing.T) {
 	tests := []struct {
 		name        string
 		credentials onchainWallet.Credentials
+		err         bool
 	}{
 		{
-			"Xpub",
-			onchainWallet.Credentials{
+			name: "Xpub/Btc",
+			credentials: onchainWallet.Credentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyBtc,
 				},
@@ -74,12 +75,31 @@ func TestImportSlip132Wallet(t *testing.T) {
 			},
 		},
 		{
-			"CoreDescriptor",
-			onchainWallet.Credentials{
+			name: "Xpub/Liquid",
+			credentials: onchainWallet.Credentials{
+				WalletInfo: onchain.WalletInfo{
+					Currency: boltz.CurrencyLiquid,
+				},
+				Xpub: "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
+			},
+			err: true,
+		},
+		{
+			name: "CoreDescriptor/Btc",
+			credentials: onchainWallet.Credentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyBtc,
 				},
 				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
+			},
+		},
+		{
+			name: "CoreDescriptor/Liquid",
+			credentials: onchainWallet.Credentials{
+				WalletInfo: onchain.WalletInfo{
+					Currency: boltz.CurrencyLiquid,
+				},
+				CoreDescriptor: "ct(slip77(099d2fa0d9e56478d00ba3044a55aa9878a2f0e1c0fd1c57962573994771f87a),elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*))#60v4fm2h",
 			},
 		},
 	}
@@ -87,16 +107,20 @@ func TestImportSlip132Wallet(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			wallet, err := onchainWallet.Login(&tc.credentials)
-			require.NoError(t, err)
+			if tc.err {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 
-			accounts, err := wallet.GetSubaccounts(false)
-			require.NoError(t, err)
-			_, err = wallet.SetSubaccount(&accounts[0].Pointer)
-			require.NoError(t, err)
+				accounts, err := wallet.GetSubaccounts(false)
+				require.NoError(t, err)
+				_, err = wallet.SetSubaccount(&accounts[0].Pointer)
+				require.NoError(t, err)
 
-			address, err := wallet.NewAddress()
-			require.NoError(t, err)
-			require.NotEmpty(t, address)
+				address, err := wallet.NewAddress()
+				require.NoError(t, err)
+				require.NotEmpty(t, address)
+			}
 		})
 	}
 }

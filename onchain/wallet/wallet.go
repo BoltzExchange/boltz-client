@@ -90,10 +90,11 @@ func (c *Credentials) Encrypt(password string) (*Credentials, error) {
 }
 
 type Subaccount struct {
-	Pointer uint64 `json:"pointer"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Used    bool   `json:"bip44_discovered"`
+	Pointer         uint64   `json:"pointer"`
+	Name            string   `json:"name"`
+	Type            string   `json:"type"`
+	Used            bool     `json:"bip44_discovered"`
+	CoreDescriptors []string `json:"core_descriptors"`
 }
 
 type Wallet struct {
@@ -431,6 +432,9 @@ func Login(credentials *Credentials) (*Wallet, error) {
 		login["mnemonic"] = credentials.Mnemonic
 		wallet.Readonly = false
 	} else if credentials.Xpub != "" {
+		if credentials.Currency == boltz.CurrencyLiquid {
+			return nil, errors.New("xpub not supported for liquid")
+		}
 		login["slip132_extended_pubkeys"] = []string{credentials.Xpub}
 		wallet.Readonly = true
 	} else if credentials.CoreDescriptor != "" {
