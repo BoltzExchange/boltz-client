@@ -482,6 +482,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `wallet_id` | [`uint64`](#uint64) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
 | `return_immediately` | [`bool`](#bool) | optional | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true. |
+| `description` | [`string`](#string) | optional | Description of the invoice which will be created for the swap |
 
 
 
@@ -1042,7 +1043,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `chan_ids` | [`ChannelId`](#channelid) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
-| `paid_at` | [`int64`](#int64) | optional | the time when the swap invoice was paid |
+| `paid_at` | [`int64`](#int64) | optional | the time when the invoice was paid |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |

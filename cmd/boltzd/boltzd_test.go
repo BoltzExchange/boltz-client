@@ -1180,12 +1180,14 @@ func TestReverseSwap(t *testing.T) {
 
 		externalPay := true
 		returnImmediately := false
+		description := "test"
 
 		request := &boltzrpc.CreateReverseSwapRequest{
 			Amount:            100000,
 			AcceptZeroConf:    true,
 			ExternalPay:       &externalPay,
 			ReturnImmediately: &returnImmediately,
+			Description:       &description,
 		}
 
 		// cant wait for claim transaction if paid externally
@@ -1197,6 +1199,12 @@ func TestReverseSwap(t *testing.T) {
 		swap, err := client.CreateReverseSwap(request)
 		require.NoError(t, err)
 		require.NotEmpty(t, swap.Invoice)
+
+		decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
+		require.NoError(t, err)
+
+		require.Equal(t, btcutil.Amount(request.Amount), decoded.MilliSat.ToSatoshis())
+		require.Equal(t, description, *decoded.Description)
 
 		stream, _ := swapStream(t, client, swap.Id)
 
