@@ -2,6 +2,7 @@ package lightning
 
 import (
 	"context"
+	"errors"
 	"github.com/BoltzExchange/boltz-client/onchain"
 )
 
@@ -19,6 +20,8 @@ const (
 	// The cltv expiry has to be lowered in regtest to allow for lower swap timeouts
 	RegtestCltv = 20
 )
+
+var ErrInvoiceNotFound = errors.New("invoice not found")
 
 type PaymentStatus struct {
 	State         PaymentState

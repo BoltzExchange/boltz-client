@@ -240,6 +240,9 @@ func (lnd *LND) CheckInvoicePaid(paymentHash []byte) (bool, error) {
 		RHash: paymentHash,
 	})
 	if err != nil {
+		if strings.Contains(err.Error(), "there are no existing invoices") {
+			return false, lightning.ErrInvoiceNotFound
+		}
 		return false, err
 	}
 	return invoice.State == lnrpc.Invoice_SETTLED, nil

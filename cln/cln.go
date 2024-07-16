@@ -266,7 +266,7 @@ func (c *Cln) CheckInvoicePaid(paymentHash []byte) (bool, error) {
 	}
 
 	if len(res.Invoices) == 0 {
-		return false, nil
+		return false, lightning.ErrInvoiceNotFound
 	}
 
 	for _, invoice := range res.Invoices {

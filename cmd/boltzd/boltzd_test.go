@@ -684,6 +684,7 @@ func TestSwap(t *testing.T) {
 	})
 
 	t.Run("Invoice", func(t *testing.T) {
+		cfg.Node = "Cln"
 		client, _, stop := setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
