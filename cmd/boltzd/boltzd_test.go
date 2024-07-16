@@ -228,10 +228,6 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 		require.NoError(t, err)
 		_, err = autoSwapClient.ResetConfig(client.ChainAutoSwap)
 		require.NoError(t, err)
-		/*
-			_, err = boltzClient.RemoveWallet(testWallet.Id)
-			require.NoError(t, err)
-		*/
 		require.NoError(t, boltzClient.Stop())
 	}
 }
