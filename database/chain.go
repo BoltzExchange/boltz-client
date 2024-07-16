@@ -292,11 +292,6 @@ func (database *Database) QueryChainSwaps(args SwapQuery) ([]*ChainSwap, error) 
 	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where, values...)
 }
 
-func (database *Database) QueryPendingChainSwaps() ([]*ChainSwap, error) {
-	state := boltzrpc.SwapState_PENDING
-	return database.QueryChainSwaps(SwapQuery{State: &state})
-}
-
 const refundableChainSwapsQuery = `
 SELECT swaps.*
 FROM chainSwaps swaps
@@ -316,6 +311,26 @@ func (database *Database) QueryRefundableChainSwaps(tenantId *Id, currency boltz
 	return database.queryChainSwaps(
 		query, values...,
 	)
+}
+
+const claimableChainSwapsQuery = `
+SELECT swaps.*
+FROM chainSwaps swaps
+         JOIN chainSwapsData data ON swaps.id = data.id AND data.currency = swaps.toCurrency AND data.currency = ?
+WHERE data.lockupTransactionId != ''
+  AND data.transactionId == ''
+  AND state != ? 
+  AND data.timeoutBlockheight > ?
+`
+
+func (database *Database) QueryClaimableChainSwaps(tenantId *Id, currency boltz.Currency, currentBlockHeight uint32) ([]*ChainSwap, error) {
+	query := claimableChainSwapsQuery
+	values := []any{currency, boltzrpc.SwapState_REFUNDED, currentBlockHeight}
+	if tenantId != nil {
+		query += " AND tenantId = ?"
+		values = append(values, tenantId)
+	}
+	return database.queryChainSwaps(query, values...)
 }
 
 func (database *Database) parseChainSwap(rows *sql.Rows) (*ChainSwap, error) {

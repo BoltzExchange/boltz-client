@@ -26,7 +26,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 			if len(swaps) > 0 || len(chainSwaps) > 0 {
 				logger.Infof("Found %d Swaps to refund at height %d", len(swaps)+len(chainSwaps), newBlock.Height)
 
-				if err := nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
+				if _, err := nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
 					logger.Error("Could not refund Swaps: " + err.Error())
 				}
 			}
@@ -36,7 +36,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 	return blockNotifier
 }
 
-func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []*database.Swap, chainSwaps []*database.ChainSwap) error {
+func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []*database.Swap, chainSwaps []*database.ChainSwap) (string, error) {
 	var outputs []*Output
 
 	for _, swap := range swaps {
@@ -48,7 +48,7 @@ func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []*database.S
 
 	height, err := nursery.onchain.GetBlockHeight(currency)
 	if err != nil {
-		return fmt.Errorf("could not get block height: %w", err)
+		return "", fmt.Errorf("could not get block height: %w", err)
 	}
 	for _, output := range outputs {
 		output.Cooperative = output.TimeoutBlockHeight > height
@@ -60,7 +60,7 @@ func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []*database.S
 
 	if len(outputs) == 0 {
 		logger.Info("Did not find any outputs to refund")
-		return nil
+		return "", nil
 	}
 	return nursery.createTransaction(currency, outputs)
 }

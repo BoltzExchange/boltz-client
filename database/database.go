@@ -254,10 +254,18 @@ type Id = uint64
 type SwapQuery struct {
 	From     *boltz.Currency
 	To       *boltz.Currency
-	State    *boltzrpc.SwapState
+	States   []boltzrpc.SwapState
 	IsAuto   *bool
 	Since    time.Time
 	TenantId *Id
+}
+
+var PendingSwapQuery = SwapQuery{
+	States: []boltzrpc.SwapState{boltzrpc.SwapState_PENDING},
+}
+
+var FailedSwapQuery = SwapQuery{
+	States: []boltzrpc.SwapState{boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SERVER_ERROR},
 }
 
 func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []any) (string, []any) {
@@ -269,9 +277,13 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 		conditions = append(conditions, "toCurrency = ?")
 		values = append(values, *query.To)
 	}
-	if query.State != nil {
-		conditions = append(conditions, "state = ?")
-		values = append(values, *query.State)
+	if query.States != nil {
+		states := make([]string, len(query.States))
+		for i, state := range query.States {
+			states[i] = "?"
+			values = append(values, state)
+		}
+		conditions = append(conditions, "state IN ("+strings.Join(states, ",")+")")
 	}
 	if query.IsAuto != nil {
 		conditions = append(conditions, "isAuto = ?")
@@ -377,6 +389,18 @@ func (database *Database) QueryAllRefundableSwaps(tenantId *Id, currency boltz.C
 		return nil, nil, err
 	}
 	return swaps, chainSwaps, nil
+}
+
+func (database *Database) QueryAllClaimableSwaps(tenantId *Id, currency boltz.Currency, currentHeight uint32) ([]*ReverseSwap, []*ChainSwap, error) {
+	reverseSwaps, err := database.QueryClaimableReverseSwaps(tenantId, currency, currentHeight)
+	if err != nil {
+		return nil, nil, err
+	}
+	chainSwaps, err := database.QueryClaimableChainSwaps(tenantId, currency, currentHeight)
+	if err != nil {
+		return nil, nil, err
+	}
+	return reverseSwaps, chainSwaps, nil
 }
 
 func (database *Database) createTables() error {

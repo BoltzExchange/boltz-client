@@ -55,11 +55,19 @@ Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 
 #### RefundSwap
 
-Refund a failed swap manually. This is only required when no refund address has been set or the swap does not have an associated wallet.
+Refund a failed swap manually. This is only required when no refund address has been set and the swap does not have an associated wallet.
 
 | Request | Response |
 | ------- | -------- |
 | [`RefundSwapRequest`](#refundswaprequest) | [`GetSwapInfoResponse`](#getswapinforesponse) |
+
+#### ClaimSwaps
+
+Claim swaps manually. This is only required when no claim address has been set and the swap does not have an associated wallet.
+
+| Request | Response |
+| ------- | -------- |
+| [`ClaimSwapsRequest`](#claimswapsrequest) | [`ClaimSwapsResponse`](#claimswapsresponse) |
 
 #### GetSwapInfo
 
@@ -418,6 +426,34 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### ClaimSwapsRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `swap_ids` | [`string`](#string) | repeated |  |
+| `address` | [`string`](#string) |  |  |
+| `wallet_id` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### ClaimSwapsResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transaction_id` | [`string`](#string) |  |  |
+
+
+
+
+
 #### CombinedChannelSwapInfo
 
 
@@ -647,6 +683,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `block_heights` | [`BlockHeights`](#blockheights) |  | mapping of the currency to the latest block height. |
 | `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
 | `tenant` | [`Tenant`](#tenant) | optional | the currently authenticated tenant |
+| `claimable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to claim |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |

@@ -240,6 +240,24 @@ func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap,
 	return reverseSwap, err
 }
 
+const claimableSwapsQuery = `
+SELECT * FROM reverseSwaps
+WHERE fromCurrency = ?
+  AND reverseSwaps.lockupTransactionId != ''
+  AND reverseSwaps.claimTransactionId == ''
+  AND reverseSwaps.timeoutBlockheight > ?
+`
+
+func (database *Database) QueryClaimableReverseSwaps(tenantId *Id, currency boltz.Currency, currentBlockHeight uint32) ([]*ReverseSwap, error) {
+	query := claimableSwapsQuery
+	values := []any{currency, currentBlockHeight}
+	if tenantId != nil {
+		query += " AND tenantId = ?"
+		values = append(values, *tenantId)
+	}
+	return database.queryReverseSwaps(query, values...)
+}
+
 func (database *Database) queryReverseSwaps(query string, values ...any) (swaps []*ReverseSwap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
@@ -270,8 +288,7 @@ func (database *Database) QueryReverseSwaps(args SwapQuery) ([]*ReverseSwap, err
 }
 
 func (database *Database) QueryPendingReverseSwaps() ([]*ReverseSwap, error) {
-	state := boltzrpc.SwapState_PENDING
-	return database.QueryReverseSwaps(SwapQuery{State: &state})
+	return database.QueryReverseSwaps(PendingSwapQuery)
 }
 
 const insertReverseSwapStatement = `
@@ -345,6 +362,20 @@ func (database *Database) SetReverseSwapClaimTransactionId(reverseSwap *ReverseS
 	reverseSwap.OnchainFee = &fee
 
 	_, err := database.Exec("UPDATE reverseSwaps SET claimTransactionId = ?, onchainFee = ? WHERE id = ?", claimTransactionId, fee, reverseSwap.Id)
+	return err
+}
+
+func (database *Database) SetReverseSwapClaimAddress(reverseSwap *ReverseSwap, claimAddress string) error {
+	reverseSwap.ClaimAddress = claimAddress
+
+	_, err := database.Exec("UPDATE reverseSwaps SET claimAddress = ? WHERE id = ?", claimAddress, reverseSwap.Id)
+	return err
+}
+
+func (database *Database) SetReverseSwapWalletId(reverseSwap *ReverseSwap, walletId Id) error {
+	reverseSwap.WalletId = &walletId
+
+	_, err := database.Exec("UPDATE reverseSwaps SET walletId = ? WHERE id = ?", walletId, reverseSwap.Id)
 	return err
 }
 

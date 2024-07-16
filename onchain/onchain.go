@@ -47,7 +47,7 @@ type BlockProvider interface {
 	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
 	EstimateFee(confTarget int32) (float64, error)
-	Shutdown()
+	Disconnect()
 }
 
 type TxProvider interface {
@@ -66,6 +66,7 @@ type Wallet interface {
 	Ready() bool
 	GetBalance() (*Balance, error)
 	GetWalletInfo() WalletInfo
+	Disconnect() error
 }
 
 type Currency struct {
@@ -295,8 +296,13 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 	}
 }
 
-func (onchain *Onchain) Shutdown() {
+func (onchain *Onchain) Disconnect() {
 	onchain.OnWalletChange.Close()
-	onchain.Btc.Blocks.Shutdown()
-	onchain.Liquid.Blocks.Shutdown()
+	onchain.Btc.Blocks.Disconnect()
+	onchain.Liquid.Blocks.Disconnect()
+	for _, wallet := range onchain.Wallets {
+		if err := wallet.Disconnect(); err != nil {
+			logger.Errorf("Error shutting down wallet: %s", err.Error())
+		}
+	}
 }

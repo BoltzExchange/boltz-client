@@ -188,12 +188,9 @@ func (cfg *LightningConfig) AllowReverseSwaps() bool {
 func (cfg *LightningConfig) getDismissedChannels() (DismissedChannels, error) {
 	reasons := make(DismissedChannels)
 
-	state := boltzrpc.SwapState_PENDING
 	isAuto := true
-	query := database.SwapQuery{
-		State:  &state,
-		IsAuto: &isAuto,
-	}
+	query := database.PendingSwapQuery
+	query.IsAuto = &isAuto
 	swaps, err := cfg.database.QuerySwaps(query)
 	if err != nil {
 		return nil, errors.New("Could not query pending swaps: " + err.Error())
@@ -211,8 +208,9 @@ func (cfg *LightningConfig) getDismissedChannels() (DismissedChannels, error) {
 		reasons.addChannels(swap.ChanIds, ReasonPendingSwap)
 	}
 
-	state = boltzrpc.SwapState_ERROR
+	query = database.FailedSwapQuery
 	query.Since = time.Now().Add(time.Duration(-cfg.FailureBackoff) * time.Second)
+	query.IsAuto = &isAuto
 	failedSwaps, err := cfg.database.QuerySwaps(query)
 	if err != nil {
 		return nil, errors.New("Could not query failed swaps: " + err.Error())

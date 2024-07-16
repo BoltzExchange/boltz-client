@@ -131,9 +131,8 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 
 		checked := check(amount, checkParams{Pair: pairInfo, MaxFeePercent: cfg.maxFeePercent, Budget: &budget.Amount})
 
-		state := boltzrpc.SwapState_PENDING
 		pendingSwaps, err := cfg.database.QueryChainSwaps(database.SwapQuery{
-			State:    &state,
+			States:   []boltzrpc.SwapState{boltzrpc.SwapState_PENDING},
 			TenantId: &cfg.tenant.Id,
 		})
 		if err != nil {

@@ -80,7 +80,7 @@ func (c *Client) BroadcastTransaction(txHex string) (string, error) {
 	return c.client.BroadcastTransaction(c.ctx, txHex)
 }
 
-func (c *Client) Shutdown() {
+func (c *Client) Disconnect() {
 	c.client.Shutdown()
 }
 

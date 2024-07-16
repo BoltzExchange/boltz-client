@@ -186,7 +186,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		output := nursery.getChainSwapClaimOutput(swap)
-		if err := nursery.createTransaction(swap.Pair.To, []*Output{output}); err != nil {
+		if _, err := nursery.createTransaction(swap.Pair.To, []*Output{output}); err != nil {
 			logger.Infof("Could not claim chain swap output: " + err.Error())
 			return
 		}
@@ -226,7 +226,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 		if swap.FromData.LockupTransactionId != "" {
-			if err := nursery.RefundSwaps(swap.Pair.From, nil, []*database.ChainSwap{swap}); err != nil {
+			if _, err := nursery.RefundSwaps(swap.Pair.From, nil, []*database.ChainSwap{swap}); err != nil {
 				handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 				return
 			}

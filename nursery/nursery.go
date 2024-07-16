@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"sync"
 	"time"
@@ -112,7 +113,7 @@ func (nursery *Nursery) Init(
 
 	nursery.startSwapListener()
 
-	return nursery.recoverPending()
+	return nursery.recoverSwaps()
 }
 
 func (nursery *Nursery) Stop() {
@@ -126,7 +127,7 @@ func (nursery *Nursery) Stop() {
 	}
 	nursery.globalListener.Close()
 	logger.Debugf("Closed all event listeners")
-	nursery.onchain.Shutdown()
+	nursery.onchain.Disconnect()
 }
 
 func (nursery *Nursery) registerSwaps(swapIds []string) error {
@@ -146,20 +147,24 @@ func (nursery *Nursery) registerSwaps(swapIds []string) error {
 	return nil
 }
 
-func (nursery *Nursery) recoverPending() error {
-	logger.Info("Recovering pending Swaps")
+func (nursery *Nursery) recoverSwaps() error {
+	logger.Info("Recovering Swaps")
 
-	swaps, err := nursery.database.QueryPendingSwaps()
+	query := database.SwapQuery{
+		// we also recover the ERROR state as this might be a temporary error and any swap will eventually be successfull or expired
+		States: []boltzrpc.SwapState{boltzrpc.SwapState_PENDING, boltzrpc.SwapState_ERROR},
+	}
+	swaps, err := nursery.database.QuerySwaps(query)
 	if err != nil {
 		return err
 	}
 
-	reverseSwaps, err := nursery.database.QueryPendingReverseSwaps()
+	reverseSwaps, err := nursery.database.QueryReverseSwaps(query)
 	if err != nil {
 		return err
 	}
 
-	chainSwaps, err := nursery.database.QueryPendingChainSwaps()
+	chainSwaps, err := nursery.database.QueryChainSwaps(query)
 	if err != nil {
 		return err
 	}
@@ -263,22 +268,22 @@ func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, erro
 	return nursery.onchain.EstimateFee(currency, 2)
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) error {
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (id string, err error) {
 	outputs, details := nursery.populateOutputs(outputs)
 	if len(details) == 0 {
-		return errors.New("all outputs invalid")
+		return "", errors.New("all outputs invalid")
 	}
 
 	results := make(boltz.Results)
 
-	handleErr := func(err error) error {
+	handleErr := func(err error) (string, error) {
 		for _, output := range outputs {
 			results.SetErr(output.SwapId, err)
 			if err := results[output.SwapId].Err; err != nil {
 				output.setError(results[output.SwapId].Err)
 			}
 		}
-		return err
+		return id, err
 	}
 
 	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
@@ -293,7 +298,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 		return handleErr(fmt.Errorf("construct: %w", err))
 	}
 
-	id, err := nursery.onchain.BroadcastTransaction(transaction)
+	id, err = nursery.onchain.BroadcastTransaction(transaction)
 	if err != nil {
 		return handleErr(fmt.Errorf("broadcast: %w", err))
 	}
@@ -391,4 +396,15 @@ func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint
 	}
 
 	return lockupTransaction, vout, value, nil
+}
+
+func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
+	var outputs []*Output
+	for _, swap := range reverseSwaps {
+		outputs = append(outputs, nursery.getReverseSwapClaimOutput(swap))
+	}
+	for _, swap := range chainSwaps {
+		outputs = append(outputs, nursery.getChainSwapClaimOutput(swap))
+	}
+	return nursery.createTransaction(currency, outputs)
 }
