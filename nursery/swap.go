@@ -8,6 +8,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/lightningnetwork/lnd/zpay32"
@@ -242,8 +243,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			return
 		}
 
-	case boltz.TransactionClaimed:
-	case boltz.TransactionClaimPending:
+	case boltz.TransactionClaimPending, boltz.TransactionClaimed:
 		// Verify that the invoice was actually paid
 		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
 
@@ -255,11 +255,11 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		if nursery.lightning != nil {
 			paid, err := nursery.lightning.CheckInvoicePaid(decodedInvoice.PaymentHash[:])
 			if err != nil {
-				handleError("Could not get invoice information from lightning node: " + err.Error())
-				return
-			}
-
-			if !paid {
+				if !errors.Is(err, lightning.ErrInvoiceNotFound) {
+					handleError("Could not get invoice information from lightning node: " + err.Error())
+					return
+				}
+			} else if !paid {
 				logger.Warnf("Swap %s was not actually settled. Refunding at block %d", swap.Id, swap.TimoutBlockHeight)
 				return
 			}
