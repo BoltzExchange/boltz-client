@@ -1256,6 +1256,9 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 }
 
 func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *boltzrpc.ImportWalletRequest) (*boltzrpc.Wallet, error) {
+	if request.Params == nil {
+		return nil, handleError(errors.New("missing wallet parameters"))
+	}
 	if err := checkName(request.Params.Name); err != nil {
 		return nil, handleError(err)
 	}
