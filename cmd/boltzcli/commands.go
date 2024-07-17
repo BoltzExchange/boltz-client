@@ -710,7 +710,7 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 		config.InboundBalancePercent = 0
 	}
 
-	readonly := config.SwapType != "reverse"
+	readonly := config.SwapType == "reverse"
 	wallet, err := askForWallet(ctx, "Select wallet which should be used for swaps", nil, readonly)
 	if err != nil {
 		return err
@@ -833,7 +833,7 @@ func askForWallet(ctx *cli.Context, message string, currency *boltzrpc.Currency,
 		info := &boltzrpc.WalletParams{}
 		if currency == nil {
 			prompt := &survey.Select{
-				Message: message,
+				Message: "Select the wallet currency",
 				Options: []string{"LBTC", "BTC"},
 				Default: "LBTC",
 			}
