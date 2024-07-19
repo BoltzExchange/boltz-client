@@ -25,6 +25,7 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
+	lnmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/lightning"
 	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -104,11 +105,13 @@ var walletCredentials *wallet.Credentials
 var testWallet *database.Wallet
 
 type setupOptions struct {
-	cfg      *config.Config
-	password string
-	chain    *onchain.Onchain
-	boltzApi *boltz.Api
-	node     string
+	cfg       *config.Config
+	password  string
+	chain     *onchain.Onchain
+	boltzApi  *boltz.Api
+	lightning lightning.LightningNode
+	node      string
+	dontSync  bool
 }
 
 func waitForSync(t *testing.T, client client.Boltz) {
@@ -213,13 +216,14 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	boltzClient := client.NewBoltzClient(clientConn)
 	autoSwapClient := client.NewAutoSwapClient(clientConn)
 
-	waitForSync(t, boltzClient)
+	if !options.dontSync {
+
+		waitForSync(t, boltzClient)
+	}
 
 	return boltzClient, autoSwapClient, func() {
 		_, err = autoSwapClient.ResetConfig(client.LnAutoSwap)
-		require.NoError(t, err)
 		_, err = autoSwapClient.ResetConfig(client.ChainAutoSwap)
-		require.NoError(t, err)
 		require.NoError(t, boltzClient.Stop())
 	}
 }
@@ -295,6 +299,21 @@ func TestGetInfo(t *testing.T) {
 			require.Equal(t, "regtest", info.Network)
 		})
 	}
+
+	t.Run("Syncing", func(t *testing.T) {
+		node := lnmock.NewMockLightningNode(t)
+
+		node.EXPECT().Connect().Return(nil)
+		node.EXPECT().GetInfo().Return(&lightning.LightningInfo{Synced: false}, nil)
+
+		client, _, stop := setup(t, setupOptions{lightning: node, dontSync: true})
+		defer stop()
+
+		_, err := client.GetInfo()
+		require.Error(t, err)
+		requireCode(t, err, codes.Unavailable)
+		require.ErrorContains(t, err, "lightning node")
+	})
 }
 
 func createTenant(t *testing.T, admin client.Boltz, name string) (*boltzrpc.Tenant, client.Connection, client.Connection) {
