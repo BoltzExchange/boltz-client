@@ -1550,6 +1550,9 @@ func (server *routedBoltzServer) unlock(password string) error {
 	credentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
 		if status.Code(err) == codes.InvalidArgument {
+			if server.state == stateLocked {
+				return err
+			}
 			logger.Infof("Server is locked")
 			server.state = stateLocked
 			return nil
