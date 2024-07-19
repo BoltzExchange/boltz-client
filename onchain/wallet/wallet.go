@@ -470,7 +470,20 @@ func Login(credentials *Credentials) (*Wallet, error) {
 
 	if credentials.Subaccount != nil {
 		if _, err := wallet.SetSubaccount(credentials.Subaccount); err != nil {
-			logger.Errorf("Failed to set subaccount for wallet %s. You might have to resync it using GetSubaccounts: %v", credentials.Name, err)
+			logger.Warnf("Failed to set subaccount for wallet %s, Resyncing subaccounts", credentials.Name)
+			if _, err := wallet.GetSubaccounts(true); err != nil {
+				return nil, err
+			}
+			if _, err := wallet.SetSubaccount(credentials.Subaccount); err != nil {
+				subaccount, err := wallet.SetSubaccount(nil)
+				if err != nil {
+					logger.Errorf("Failed to set existing and new subaccount for wallet %s: %v", credentials.Name, err)
+					return nil, err
+				}
+				if *subaccount != *credentials.Subaccount {
+					logger.Infof("Subaccount %d was not found, using new subaccount %d", *credentials.Subaccount, *subaccount)
+				}
+			}
 		}
 	}
 
