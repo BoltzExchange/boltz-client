@@ -77,11 +77,11 @@ func TestChainSwapper(t *testing.T) {
 
 			tenant := &database.Tenant{Name: "test"}
 			require.NoError(t, chainSwapper.database.CreateTenant(tenant))
-			fakeSwaps{chainSwaps: []database.ChainSwap{
+			test.FakeSwaps{ChainSwaps: []database.ChainSwap{
 				{
 					TenantId: tenant.Id,
 				},
-			}}.create(t, chainSwapper.database)
+			}}.Create(t, chainSwapper.database)
 
 			recommendation, err := chainConfig.GetRecommendation()
 			require.NoError(t, err)
@@ -91,11 +91,11 @@ func TestChainSwapper(t *testing.T) {
 		})
 
 		t.Run("Dismissed", func(t *testing.T) {
-			fakeSwaps{chainSwaps: []database.ChainSwap{
+			test.FakeSwaps{ChainSwaps: []database.ChainSwap{
 				{
 					TenantId: chainConfig.tenant.Id,
 				},
-			}}.create(t, chainSwapper.database)
+			}}.Create(t, chainSwapper.database)
 
 			pairInfo.Fees.MinerFees = 1000000
 			pairInfo.Limits.Minimal = 2 * expectedAmount

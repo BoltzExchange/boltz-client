@@ -53,6 +53,14 @@ Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 | ------- | -------- |
 | [`ListSwapsRequest`](#listswapsrequest) | [`ListSwapsResponse`](#listswapsresponse) |
 
+#### GetStats
+
+Returns stats of all swaps, reverse swaps, and chain swaps in the database.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetStatsRequest`](#getstatsrequest) | [`GetStatsResponse`](#getstatsresponse) |
+
 #### RefundSwap
 
 Refund a failed swap manually. This is only required when no refund address has been set and the swap does not have an associated wallet.
@@ -745,6 +753,32 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### GetStatsRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `is_auto` | [`bool`](#bool) | optional | only consider manual or autoswaps. returns both if left empty |
+
+
+
+
+
+#### GetStatsResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `stats` | [`SwapStats`](#swapstats) |  |  |
+
+
+
+
+
 #### GetSubaccountsRequest
 
 
@@ -919,7 +953,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `from` | [`Currency`](#currency) | optional |  |
 | `to` | [`Currency`](#currency) | optional |  |
-| `is_auto` | [`bool`](#bool) | optional |  |
+| `is_auto` | [`bool`](#bool) | optional | only consider manual or autoswaps. returns both if left empty |
 | `state` | [`SwapState`](#swapstate) | optional |  |
 
 
@@ -1180,6 +1214,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `avg_fees` | [`uint64`](#uint64) |  |  |
 | `avg_amount` | [`uint64`](#uint64) |  |  |
 | `count` | [`uint64`](#uint64) |  |  |
+| `success_count` | [`uint64`](#uint64) |  |  |
 
 
 

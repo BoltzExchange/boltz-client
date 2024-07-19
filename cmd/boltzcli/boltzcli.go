@@ -90,6 +90,7 @@ func main() {
 		getSwapCommand,
 		swapInfoStreamCommand,
 		listSwapsCommand,
+		getStatsCommand,
 
 		createSwapCommand,
 		createReverseSwapCommand,

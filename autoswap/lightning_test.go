@@ -1,9 +1,8 @@
 package autoswap
 
 import (
-	"fmt"
+	"github.com/BoltzExchange/boltz-client/test"
 	"github.com/BoltzExchange/boltz-client/utils"
-	"golang.org/x/exp/rand"
 	"testing"
 	"time"
 
@@ -25,14 +24,6 @@ func getLnSwapper(t *testing.T, cfg *SerializedLnConfig) (*LightningSwapper, *Mo
 	}
 	require.NoError(t, swapper.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: cfg}))
 	return swapper.lnSwapper, mockProvider
-}
-
-func randomId() string {
-	return fmt.Sprint(rand.Uint32())
-}
-
-func pastDate(duration time.Duration) time.Time {
-	return time.Now().Add(-duration)
 }
 
 func TestSetLnConfig(t *testing.T) {
@@ -57,52 +48,6 @@ func TestSetLnConfig(t *testing.T) {
 	require.NotEqual(t, defaults.InboundBalancePercent, lnSwapper.cfg.InboundBalancePercent)
 	require.False(t, lnSwapper.Running())
 	require.Empty(t, lnSwapper.Error())
-}
-
-type fakeSwaps struct {
-	swaps        []database.Swap
-	reverseSwaps []database.ReverseSwap
-	chainSwaps   []database.ChainSwap
-}
-
-func tenantId(existing database.Id) database.Id {
-	if existing == 0 {
-		return database.DefaultTenantId
-	}
-	return existing
-}
-
-func (f fakeSwaps) create(t *testing.T, db *database.Database) {
-	for _, swap := range f.swaps {
-		swap.TenantId = tenantId(swap.TenantId)
-		swap.Id = randomId()
-		require.NoError(t, db.CreateSwap(swap))
-	}
-
-	for _, reverseSwap := range f.reverseSwaps {
-		reverseSwap.TenantId = tenantId(reverseSwap.TenantId)
-		reverseSwap.Id = randomId()
-		require.NoError(t, db.CreateReverseSwap(reverseSwap))
-	}
-
-	for _, chainSwap := range f.chainSwaps {
-		chainSwap.TenantId = tenantId(chainSwap.TenantId)
-		id := randomId()
-		chainSwap.Id = id
-		chainSwap.Pair = boltz.Pair{
-			From: boltz.CurrencyLiquid,
-			To:   boltz.CurrencyBtc,
-		}
-		chainSwap.FromData = &database.ChainSwapData{
-			Id:       id,
-			Currency: chainSwap.Pair.From,
-		}
-		chainSwap.ToData = &database.ChainSwapData{
-			Id:       id,
-			Currency: chainSwap.Pair.To,
-		}
-		require.NoError(t, db.CreateChainSwap(chainSwap))
-	}
 }
 
 func TestBudget(t *testing.T) {
@@ -150,26 +95,17 @@ func TestBudget(t *testing.T) {
 			IsAuto:         false,
 		},
 	}
-	allSwaps := fakeSwaps{
-		swaps:        swaps,
-		reverseSwaps: reverseSwaps,
-		chainSwaps:   chainSwaps,
+	allSwaps := test.FakeSwaps{
+		Swaps:        swaps,
+		ReverseSwaps: reverseSwaps,
+		ChainSwaps:   chainSwaps,
 	}
-
-	/*
-		allSwapsWithTenant := fakeSwaps{
-			swaps:        swaps,
-			reverseSwaps: reverseSwaps,
-			chainSwaps:   chainSwaps,
-		}
-
-	*/
 
 	tests := []struct {
 		name            string
 		budget          uint64
 		interval        time.Duration
-		fakeSwaps       fakeSwaps
+		fakeSwaps       test.FakeSwaps
 		expected        int64
 		currentInterval *database.BudgetInterval
 		swapperType     SwapperType
@@ -194,15 +130,15 @@ func TestBudget(t *testing.T) {
 			name:     "Swaps",
 			budget:   100,
 			interval: 1000 * time.Second,
-			fakeSwaps: fakeSwaps{
-				swaps: []database.Swap{
+			fakeSwaps: test.FakeSwaps{
+				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 						IsAuto:     true,
 					},
 				},
-				chainSwaps: chainSwaps,
+				ChainSwaps: chainSwaps,
 			},
 			expected:    80,
 			swapperType: Lightning,
@@ -211,8 +147,8 @@ func TestBudget(t *testing.T) {
 			name:     "Reverse Swaps",
 			budget:   100,
 			interval: 1000 * time.Second,
-			fakeSwaps: fakeSwaps{
-				reverseSwaps: []database.ReverseSwap{
+			fakeSwaps: test.FakeSwaps{
+				ReverseSwaps: []database.ReverseSwap{
 					{
 						OnchainFee:     fee(10),
 						ServiceFee:     fee(10),
@@ -220,7 +156,7 @@ func TestBudget(t *testing.T) {
 						IsAuto:         true,
 					},
 				},
-				chainSwaps: chainSwaps,
+				ChainSwaps: chainSwaps,
 			},
 			expected:    70,
 			swapperType: Lightning,
@@ -229,14 +165,14 @@ func TestBudget(t *testing.T) {
 			name:     "Auto-Only",
 			budget:   100,
 			interval: 1000 * time.Second,
-			fakeSwaps: fakeSwaps{
-				swaps: []database.Swap{
+			fakeSwaps: test.FakeSwaps{
+				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 					},
 				},
-				chainSwaps: chainSwaps,
+				ChainSwaps: chainSwaps,
 			},
 			expected:    100,
 			swapperType: Lightning,
@@ -245,22 +181,22 @@ func TestBudget(t *testing.T) {
 			name:     "New/Lightning",
 			budget:   100,
 			interval: 5 * time.Minute,
-			fakeSwaps: fakeSwaps{
-				swaps: []database.Swap{
+			fakeSwaps: test.FakeSwaps{
+				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 						IsAuto:     true,
-						CreatedAt:  pastDate(7 * time.Minute),
+						CreatedAt:  test.PastDate(7 * time.Minute),
 					},
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 						IsAuto:     true,
-						CreatedAt:  pastDate(2 * time.Minute),
+						CreatedAt:  test.PastDate(2 * time.Minute),
 					},
 				},
-				chainSwaps: []database.ChainSwap{
+				ChainSwaps: []database.ChainSwap{
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
@@ -274,8 +210,8 @@ func TestBudget(t *testing.T) {
 				},
 			},
 			currentInterval: &database.BudgetInterval{
-				StartDate: pastDate(8 * time.Minute),
-				EndDate:   pastDate(3 * time.Minute),
+				StartDate: test.PastDate(8 * time.Minute),
+				EndDate:   test.PastDate(3 * time.Minute),
 			},
 			expected:    80,
 			swapperType: Lightning,
@@ -284,39 +220,39 @@ func TestBudget(t *testing.T) {
 			name:     "New/Chain",
 			budget:   100,
 			interval: 5 * time.Minute,
-			fakeSwaps: fakeSwaps{
-				swaps: []database.Swap{
+			fakeSwaps: test.FakeSwaps{
+				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 						IsAuto:     true,
-						CreatedAt:  pastDate(7 * time.Minute),
+						CreatedAt:  test.PastDate(7 * time.Minute),
 					},
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 						IsAuto:     true,
-						CreatedAt:  pastDate(2 * time.Minute),
+						CreatedAt:  test.PastDate(2 * time.Minute),
 					},
 				},
-				chainSwaps: []database.ChainSwap{
+				ChainSwaps: []database.ChainSwap{
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 						IsAuto:     true,
-						CreatedAt:  pastDate(7 * time.Minute),
+						CreatedAt:  test.PastDate(7 * time.Minute),
 					},
 					{
 						OnchainFee: fee(10),
 						ServiceFee: fee(10),
 						IsAuto:     true,
-						CreatedAt:  pastDate(2 * time.Minute),
+						CreatedAt:  test.PastDate(2 * time.Minute),
 					},
 				},
 			},
 			currentInterval: &database.BudgetInterval{
-				StartDate: pastDate(8 * time.Minute),
-				EndDate:   pastDate(3 * time.Minute),
+				StartDate: test.PastDate(8 * time.Minute),
+				EndDate:   test.PastDate(3 * time.Minute),
 			},
 			expected:    80,
 			swapperType: Chain,
@@ -368,7 +304,7 @@ func TestBudget(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, int64(tc.budget), budget.Amount)
 
-			tc.fakeSwaps.create(t, db)
+			tc.fakeSwaps.Create(t, db)
 
 			budget, err = get(true)
 			require.NoError(t, err)
@@ -602,7 +538,7 @@ func TestDismissedChannels(t *testing.T) {
 		name      string
 		config    *SerializedLnConfig
 		channels  []*lightning.LightningChannel
-		fakeSwaps fakeSwaps
+		fakeSwaps test.FakeSwaps
 		dismissed DismissedChannels
 	}{
 		{
@@ -610,8 +546,8 @@ func TestDismissedChannels(t *testing.T) {
 			config: &SerializedLnConfig{
 				FailureBackoff: 1000,
 			},
-			fakeSwaps: fakeSwaps{
-				swaps: []database.Swap{
+			fakeSwaps: test.FakeSwaps{
+				Swaps: []database.Swap{
 					{
 						State:   boltzrpc.SwapState_PENDING,
 						ChanIds: []lightning.ChanId{1},
@@ -623,7 +559,7 @@ func TestDismissedChannels(t *testing.T) {
 						IsAuto:  false,
 					},
 				},
-				reverseSwaps: []database.ReverseSwap{
+				ReverseSwaps: []database.ReverseSwap{
 					{
 						State:  boltzrpc.SwapState_PENDING,
 						IsAuto: true,
@@ -650,8 +586,8 @@ func TestDismissedChannels(t *testing.T) {
 			config: &SerializedLnConfig{
 				FailureBackoff: 1000,
 			},
-			fakeSwaps: fakeSwaps{
-				swaps: []database.Swap{
+			fakeSwaps: test.FakeSwaps{
+				Swaps: []database.Swap{
 					{
 						State:   boltzrpc.SwapState_ERROR,
 						ChanIds: []lightning.ChanId{1},
@@ -663,10 +599,10 @@ func TestDismissedChannels(t *testing.T) {
 						IsAuto:  false,
 					},
 				},
-				reverseSwaps: []database.ReverseSwap{
+				ReverseSwaps: []database.ReverseSwap{
 					{
 						State:     boltzrpc.SwapState_ERROR,
-						CreatedAt: pastDate(2000 * time.Second),
+						CreatedAt: test.PastDate(2000 * time.Second),
 						IsAuto:    true,
 						ChanIds:   []lightning.ChanId{2},
 					},
@@ -689,7 +625,7 @@ func TestDismissedChannels(t *testing.T) {
 			swapper, _ := getLnSwapper(t, tc.config)
 			db := swapper.database
 
-			tc.fakeSwaps.create(t, db)
+			tc.fakeSwaps.Create(t, db)
 
 			dismissed, err := swapper.cfg.getDismissedChannels()
 			require.NoError(t, err)

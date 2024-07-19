@@ -2,6 +2,8 @@ package test
 
 import (
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/database"
+	"math/rand/v2"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -138,4 +140,59 @@ func MineUntil(t *testing.T, cli Cli, height int64) {
 
 func SendToAddress(cli Cli, address string, amount uint64) string {
 	return cli("sendtoaddress " + address + " " + fmt.Sprint(float64(amount)/1e8))
+}
+
+type FakeSwaps struct {
+	Swaps        []database.Swap
+	ReverseSwaps []database.ReverseSwap
+	ChainSwaps   []database.ChainSwap
+}
+
+func RandomId() string {
+	return fmt.Sprint(rand.Uint32())
+}
+
+func tenantId(existing database.Id) database.Id {
+	if existing == 0 {
+		return database.DefaultTenantId
+	}
+	return existing
+}
+
+func (f FakeSwaps) Create(t *testing.T, db *database.Database) {
+	for _, swap := range f.Swaps {
+		swap.TenantId = tenantId(swap.TenantId)
+		swap.Id = RandomId()
+		require.NoError(t, db.CreateSwap(swap))
+	}
+
+	for _, reverseSwap := range f.ReverseSwaps {
+		reverseSwap.TenantId = tenantId(reverseSwap.TenantId)
+		reverseSwap.Id = RandomId()
+		require.NoError(t, db.CreateReverseSwap(reverseSwap))
+	}
+
+	for _, chainSwap := range f.ChainSwaps {
+		chainSwap.TenantId = tenantId(chainSwap.TenantId)
+		id := RandomId()
+		chainSwap.Id = id
+		chainSwap.Pair = boltz.Pair{
+			From: boltz.CurrencyLiquid,
+			To:   boltz.CurrencyBtc,
+		}
+		if chainSwap.FromData == nil {
+			chainSwap.FromData = &database.ChainSwapData{}
+		}
+		if chainSwap.ToData == nil {
+			chainSwap.ToData = &database.ChainSwapData{}
+		}
+		chainSwap.FromData.Id = id
+		chainSwap.FromData.Currency = chainSwap.Pair.From
+		chainSwap.ToData.Id = id
+		chainSwap.ToData.Currency = chainSwap.Pair.To
+		require.NoError(t, db.CreateChainSwap(chainSwap))
+	}
+}
+func PastDate(duration time.Duration) time.Time {
+	return time.Now().Add(-duration)
 }
