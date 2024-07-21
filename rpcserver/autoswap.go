@@ -129,9 +129,6 @@ func (server *routedAutoSwapServer) GetStatus(ctx context.Context, _ *autoswaprp
 }
 
 func (server *routedAutoSwapServer) GetConfig(ctx context.Context, _ *autoswaprpc.GetConfigRequest) (*autoswaprpc.Config, error) {
-	if err := server.requireSwapper(ctx); err != nil {
-		return nil, err
-	}
 	return server.swapper.GetConfig(macaroons.TenantIdFromContext(ctx)), nil
 }
 

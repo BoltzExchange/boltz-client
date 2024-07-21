@@ -78,6 +78,7 @@ func (autoSwap *AutoSwap) Init(db *database.Database, onchain *onchain.Onchain, 
 	}
 	autoSwap.configPath = configPath
 	autoSwap.chainSwappers = make(map[database.Id]*ChainSwapper)
+	autoSwap.cfg = &Config{}
 
 	if onchain != nil {
 		go func() {
@@ -275,13 +276,16 @@ func (autoSwap *AutoSwap) WalletUsed(id database.Id) bool {
 }
 
 func (autoSwap *AutoSwap) GetConfig(tenantId *database.Id) *Config {
+	if tenantId == nil || *tenantId == database.DefaultTenantId {
+		return autoSwap.cfg
+	}
 	scoped := &Config{}
 	for tenant, chainSwapper := range autoSwap.chainSwappers {
-		if tenantId == nil || *tenantId == tenant {
+		if *tenantId == tenant {
 			scoped.Chain = append(scoped.Chain, chainSwapper.cfg.SerializedChainConfig)
 		}
 	}
-	if autoSwap.lnSwapper != nil && (tenantId == nil || *tenantId == database.DefaultTenantId) {
+	if autoSwap.lnSwapper != nil && *tenantId == database.DefaultTenantId {
 		scoped.Lightning = []*SerializedLnConfig{autoSwap.lnSwapper.cfg.SerializedLnConfig}
 	}
 	return scoped
