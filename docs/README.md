@@ -85,7 +85,7 @@ The daemon connects to CLN through [gRPC](https://docs.corelightning.org/docs/gr
 * `--cln.datadir` data directory of cln (`~/.lightning` by default)
 
 You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory as well.
-You might have to set the `cln.servername` option aswell if you are using a custom certificate.
+You might have to set the `cln.servername` option as well, if you are using a custom certificate.
 
 ### CLI
 
