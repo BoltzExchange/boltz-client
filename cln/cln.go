@@ -29,6 +29,7 @@ type Cln struct {
 	RootCert   string `long:"cln.rootcert" description:"Path to the root cert of the CLN gRPC"`
 	PrivateKey string `long:"cln.privatekey" description:"Path to the client key of the CLN gRPC"`
 	CertChain  string `long:"cln.certchain" description:"Path to the client cert of the CLN gRPC"`
+	ServerName string `long:"cln.servername" description:"Server name used in the certificate"`
 
 	Client protos.NodeClient
 
@@ -76,7 +77,7 @@ func (c *Cln) Connect() error {
 	}
 
 	creds := credentials.NewTLS(&tls.Config{
-		ServerName:   "cln",
+		ServerName:   c.ServerName,
 		RootCAs:      caPool,
 		Certificates: []tls.Certificate{cert},
 	})

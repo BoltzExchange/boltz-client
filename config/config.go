@@ -91,6 +91,7 @@ func LoadConfig(dataDir string) (*Config, error) {
 			RootCert:   "",
 			PrivateKey: "",
 			CertChain:  "",
+			ServerName: "cln",
 		},
 
 		RPC: &rpcserver.RpcServer{
