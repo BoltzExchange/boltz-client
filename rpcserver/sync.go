@@ -1,11 +1,11 @@
-package main
+package rpcserver
 
 import (
-	"strconv"
-	"time"
-
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const retryInterval = 15
@@ -18,26 +18,21 @@ func connectLightning(lightning lightning.LightningNode) (*lightning.LightningIn
 		return nil, err
 	}
 
-	return waitForLightningSynced(lightning), nil
-}
-
-func waitForLightningSynced(lightning lightning.LightningNode) *lightning.LightningInfo {
-	info, err := lightning.GetInfo()
-
-	if err == nil {
-		if !info.Synced {
-			logger.Warn("Lightning node not synced yet")
-			logger.Info(retryMessage)
-			time.Sleep(retryInterval * time.Second)
-
-			return waitForLightningSynced(lightning)
+	for {
+		info, err := lightning.GetInfo()
+		if err != nil {
+			if strings.Contains(err.Error(), "unlock") {
+				logger.Warn("Lightning node is locked")
+			} else {
+				return nil, err
+			}
 		}
-		return info
-	} else {
-		logger.Error("Could not get lightning info: " + err.Error())
+		if info.Synced {
+			return info, nil
+		} else {
+			logger.Warn("Lightning node not synced yet")
+		}
 		logger.Info(retryMessage)
 		time.Sleep(retryInterval * time.Second)
-
-		return waitForLightningSynced(lightning)
 	}
 }

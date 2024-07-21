@@ -11,3 +11,6 @@ packages:
       inpackage: True
     interfaces:
       RpcProvider:
+  github.com/BoltzExchange/boltz-client/lightning:
+    interfaces:
+      LightningNode:

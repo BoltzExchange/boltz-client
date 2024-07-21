@@ -19,13 +19,15 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 
 	service.Init()
 
-	if utils.FileExists(server.AdminMacaroonPath) && utils.FileExists(server.ReadonlyMacaroonPath) {
-		adminMac, err := os.ReadFile(server.AdminMacaroonPath)
+	cfg := server.cfg.RPC
+
+	if utils.FileExists(cfg.AdminMacaroonPath) && utils.FileExists(cfg.ReadonlyMacaroonPath) {
+		adminMac, err := os.ReadFile(cfg.AdminMacaroonPath)
 		if err != nil {
 			return nil, err
 		}
 
-		readMac, err := os.ReadFile(server.ReadonlyMacaroonPath)
+		readMac, err := os.ReadFile(cfg.ReadonlyMacaroonPath)
 		if err != nil {
 			return nil, err
 		}
@@ -48,13 +50,13 @@ func (server *RpcServer) generateMacaroons(database *database.Database) (*macaro
 	}
 	logger.Info("Generating new Macaroons")
 
-	err := writeMacaroon(service, nil, macaroons.AdminPermissions(), server.AdminMacaroonPath)
+	err := writeMacaroon(service, nil, macaroons.AdminPermissions(), cfg.AdminMacaroonPath)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = writeMacaroon(service, nil, macaroons.ReadPermissions, server.ReadonlyMacaroonPath)
+	err = writeMacaroon(service, nil, macaroons.ReadPermissions, cfg.ReadonlyMacaroonPath)
 
 	if err != nil {
 		return nil, err

@@ -15,7 +15,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/lnd"
-	"github.com/BoltzExchange/boltz-client/rpcserver"
 	"github.com/BoltzExchange/boltz-client/utils"
 )
 
@@ -26,6 +25,23 @@ type helpOptions struct {
 
 type boltzOptions struct {
 	URL string `long:"boltz.url" description:"Boltz API URL"`
+}
+
+type RpcOptions struct {
+	Host string `long:"rpc.host" description:"gRPC host to which Boltz should listen"`
+	Port int    `long:"rpc.port" short:"p" description:"gRPC port to which Boltz should listen"`
+
+	RestHost     string `long:"rpc.rest.host" description:"REST host to which Boltz should listen"`
+	RestPort     int    `long:"rpc.rest.port" description:"REST port to which Boltz should listen"`
+	RestDisabled bool   `long:"rpc.rest.disable" description:"Disables the REST API proxy"`
+
+	TlsCertPath string `long:"rpc.tlscert" description:"Path to the TLS certificate of boltz-client"`
+	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-client"`
+	NoTls       bool   `long:"rpc.no-tls" description:"Disables TLS"`
+
+	NoMacaroons          bool   `long:"rpc.no-macaroons" description:"Disables Macaroon authentication"`
+	AdminMacaroonPath    string `long:"rpc.adminmacaroonpath" description:"Path to the admin Macaroon"`
+	ReadonlyMacaroonPath string `long:"rpc.readonlymacaroonpath" description:"Path to the readonly macaroon"`
 }
 
 type Config struct {
@@ -48,8 +64,8 @@ type Config struct {
 
 	Lightning lightning.LightningNode
 
-	RPC      *rpcserver.RpcServer `group:"RPC options"`
-	Database *database.Database   `group:"Database options"`
+	RPC      *RpcOptions        `group:"RPC options"`
+	Database *database.Database `group:"Database options"`
 
 	MempoolApi       string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 	MempoolLiquidApi string `long:"mempool-liquid" description:"mempool.space liquid API to use for fee estimations; set to empty string to disable"`
@@ -93,7 +109,7 @@ func LoadConfig(dataDir string) (*Config, error) {
 			CertChain:  "",
 		},
 
-		RPC: &rpcserver.RpcServer{
+		RPC: &RpcOptions{
 			Host: "127.0.0.1",
 			Port: 9002,
 

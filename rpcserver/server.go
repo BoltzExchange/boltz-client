@@ -3,11 +3,19 @@ package rpcserver
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/BoltzExchange/boltz-client/config"
+	"github.com/BoltzExchange/boltz-client/electrum"
+	"github.com/BoltzExchange/boltz-client/mempool"
+	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"io/fs"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,84 +23,61 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
-	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 )
 
 type RpcServer struct {
-	Host string `long:"rpc.host" description:"gRPC host to which Boltz should listen"`
-	Port int    `long:"rpc.port" short:"p" description:"gRPC port to which Boltz should listen"`
-
-	RestHost     string `long:"rpc.rest.host" description:"REST host to which Boltz should listen"`
-	RestPort     int    `long:"rpc.rest.port" description:"REST port to which Boltz should listen"`
-	RestDisabled bool   `long:"rpc.rest.disable" description:"Disables the REST API proxy"`
-
-	TlsCertPath string `long:"rpc.tlscert" description:"Path to the TLS certificate of boltz-client"`
-	TlsKeyPath  string `long:"rpc.tlskey" description:"Path to the TLS private key of boltz-client"`
-	NoTls       bool   `long:"rpc.no-tls" description:"Disables TLS"`
-
-	NoMacaroons          bool   `long:"rpc.no-macaroons" description:"Disables Macaroon authentication"`
-	AdminMacaroonPath    string `long:"rpc.adminmacaroonpath" description:"Path to the admin Macaroon"`
-	ReadonlyMacaroonPath string `long:"rpc.readonlymacaroonpath" description:"Path to the readonly macaroon"`
-
-	Grpc *grpc.Server
-
-	Stop chan bool `json:"-"`
+	cfg            *config.Config
+	grpc           *grpc.Server
+	boltzServer    *routedBoltzServer
+	autoswapServer *routedAutoSwapServer
 }
 
-func (server *RpcServer) Init(
-	network *boltz.Network,
-	lightning lightning.LightningNode,
-	boltzApi *boltz.Api,
-	database *database.Database,
-	onchain *onchain.Onchain,
-	autoSwapConfigPath string,
-) error {
-	var serverOpts []grpc.ServerOption
-	var err error
+func NewRpcServer(cfg *config.Config) *RpcServer {
+	return &RpcServer{cfg: cfg}
+}
 
-	server.Stop = make(chan bool)
-	routedServer := &routedBoltzServer{
-		network: network,
+func (server *RpcServer) Init() error {
+	rpcCfg := server.cfg.RPC
 
-		lightning: lightning,
-		boltz:     boltzApi,
-		database:  database,
-		onchain:   onchain,
-
-		stop:    server.Stop,
-		locked:  true,
-		syncing: false,
+	if err := server.cfg.Database.Connect(); err != nil {
+		return fmt.Errorf("could not connect to database: %w", err)
 	}
 
-	swapper := &autoswap.AutoSwap{}
-	swapper.Init(database, onchain, autoSwapConfigPath, routedServer)
-	routedServer.swapper = swapper
+	var serverOpts []grpc.ServerOption
 
-	routedAutoSwapServer := &routedAutoSwapServer{
-		database: database,
+	swapper := &autoswap.AutoSwap{}
+	server.boltzServer = &routedBoltzServer{
+		database: server.cfg.Database,
+		stop:     make(chan bool),
+		state:    stateLightningSyncing,
+		swapper:  swapper,
+	}
+	server.autoswapServer = &routedAutoSwapServer{
+		database: server.cfg.Database,
 		swapper:  swapper,
 	}
 
-	if server.NoTls {
+	unaryInterceptors := []grpc.UnaryServerInterceptor{server.boltzServer.UnaryServerInterceptor()}
+	streamInterceptors := []grpc.StreamServerInterceptor{server.boltzServer.StreamServerInterceptor()}
+
+	if rpcCfg.NoTls {
 		// cleanup previous certificates to avoid confusion
-		if err := os.Remove(server.TlsCertPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := os.Remove(rpcCfg.TlsCertPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
-		if err := os.Remove(server.TlsKeyPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := os.Remove(rpcCfg.TlsKeyPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 	} else {
-		certData, err := loadCertificate(server.TlsCertPath, server.TlsKeyPath, false)
+		certData, err := loadCertificate(rpcCfg.TlsCertPath, rpcCfg.TlsKeyPath, false)
 
 		if err != nil {
 			return err
@@ -101,22 +86,16 @@ func (server *RpcServer) Init(
 
 		serverOpts = append(serverOpts, serverCreds)
 	}
-	if !server.NoMacaroons {
-		routedServer.macaroon, err = server.generateMacaroons(database)
-
+	if !rpcCfg.NoMacaroons {
+		macaroon, err := server.generateMacaroons(server.cfg.Database)
 		if err != nil {
 			return err
 		}
+		unaryInterceptors = append(unaryInterceptors, macaroon.UnaryServerInterceptor())
+		streamInterceptors = append(streamInterceptors, macaroon.StreamServerInterceptor())
+		server.boltzServer.macaroon = macaroon
 	} else {
 		logger.Warn("Disabled Macaroon authentication")
-	}
-
-	unaryInterceptors := []grpc.UnaryServerInterceptor{routedServer.UnaryServerInterceptor()}
-	streamInterceptors := []grpc.StreamServerInterceptor{routedServer.StreamServerInterceptor()}
-
-	if routedServer.macaroon != nil {
-		unaryInterceptors = append(unaryInterceptors, routedServer.macaroon.UnaryServerInterceptor())
-		streamInterceptors = append(streamInterceptors, routedServer.macaroon.StreamServerInterceptor())
 	}
 
 	if len(unaryInterceptors) != 0 || len(streamInterceptors) != 0 {
@@ -126,28 +105,108 @@ func (server *RpcServer) Init(
 		serverOpts = append(serverOpts, chainedUnary, chainedStream)
 	}
 
-	server.Grpc = grpc.NewServer(serverOpts...)
-	boltzrpc.RegisterBoltzServer(server.Grpc, routedServer)
-
-	autoswaprpc.RegisterAutoSwapServer(server.Grpc, routedAutoSwapServer)
-
-	if err = routedServer.unlock(""); err != nil {
-		if status.Code(err) == codes.InvalidArgument {
-			logger.Infof("Server is locked")
-		} else {
-			return err
-		}
-	}
+	server.grpc = grpc.NewServer(serverOpts...)
+	boltzrpc.RegisterBoltzServer(server.grpc, server.boltzServer)
+	autoswaprpc.RegisterAutoSwapServer(server.grpc, server.autoswapServer)
 
 	return nil
 }
 
+func (server *routedBoltzServer) initLightning(cfg *config.Config) error {
+	if server.lightning != nil {
+		return nil
+	}
+	if cfg.Standalone {
+		if cfg.Network == "" {
+			return errors.New("standalone mode requires a network to be set")
+		}
+		return nil
+	}
+	isClnConfigured := cfg.Cln.RootCert != ""
+	isLndConfigured := cfg.LND.Macaroon != ""
+
+	if strings.EqualFold(cfg.Node, "CLN") {
+		server.lightning = cfg.Cln
+	} else if strings.EqualFold(cfg.Node, "LND") {
+		server.lightning = cfg.LND
+	} else if isClnConfigured && isLndConfigured {
+		return errors.New("both CLN and LND are configured. Set --node to specify which node to use")
+	} else if isClnConfigured {
+		server.lightning = cfg.Cln
+	} else if isLndConfigured {
+		server.lightning = cfg.LND
+	} else {
+		return errors.New("no lightning node configured. Configure either CLN or LND")
+	}
+	return nil
+}
+
+func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
+	if err := server.initLightning(cfg); err != nil {
+		return fmt.Errorf("could not init lightning: %w", err)
+	}
+	if server.lightning != nil {
+		info, err := connectLightning(server.lightning)
+		if err != nil {
+			return err
+		}
+
+		if server.lightning.Name() == string(lightning.NodeTypeCln) {
+			checkClnVersion(info)
+		} else if server.lightning.Name() == string(lightning.NodeTypeLnd) {
+			checkLndVersion(info)
+		}
+
+		logger.Info(fmt.Sprintf("Connected to lightning node %v (%v): %v", server.lightning.Name(), info.Version, info.Pubkey))
+
+		cfg.Network = info.Network
+	}
+
+	server.network, err = boltz.ParseChain(cfg.Network)
+	if err != nil {
+		return err
+	}
+
+	if server.boltz == nil {
+		server.boltz, err = initBoltz(cfg, server.network)
+		if err != nil {
+			return fmt.Errorf("could not init Boltz API: %w", err)
+		}
+	}
+
+	if server.onchain == nil {
+		server.onchain, err = initOnchain(cfg, server.boltz, server.network)
+		if err != nil {
+			return fmt.Errorf("could not init onchain: %v", err)
+		}
+	}
+
+	autoConfPath := path.Join(cfg.DataDir, "autoswap.toml")
+	server.swapper.Init(server.database, server.onchain, autoConfPath, server)
+
+	if server.lightning != nil {
+		if err := lightning.ConnectBoltz(server.lightning, server.boltz); err != nil {
+			logger.Warn("Could not connect to to boltz node: " + err.Error())
+		}
+	}
+
+	return server.unlock("")
+}
+
 func (server *RpcServer) Start() chan error {
+	go func() {
+		if err := server.boltzServer.start(server.cfg); err != nil {
+			logger.Fatal(fmt.Sprintf("Could not start Boltz server: %v", err))
+		}
+	}()
+
 	errChannel := make(chan error, 2)
 
-	rpcUrl := server.Host + ":"
-	if server.Port != 0 {
-		rpcUrl += strconv.Itoa(server.Port)
+	cfg := server.cfg.RPC
+
+	rpcUrl := cfg.Host + ":"
+	if cfg.Port != 0 {
+		rpcUrl += strconv.Itoa(cfg.Port)
 	}
 
 	// Because the RPC and REST servers are blocking, they are started Go routines
@@ -165,7 +224,7 @@ func (server *RpcServer) Start() chan error {
 			return
 		}
 
-		if err := server.Grpc.Serve(listener); err != nil {
+		if err := server.grpc.Serve(listener); err != nil {
 			errChannel <- err
 		}
 		wg.Done()
@@ -173,16 +232,16 @@ func (server *RpcServer) Start() chan error {
 
 	var httpServer *http.Server
 
-	if !server.RestDisabled {
+	if !cfg.RestDisabled {
 		wg.Add(1)
 		go func() {
-			restUrl := server.RestHost + ":" + strconv.Itoa(server.RestPort)
-			logger.Info("Starting REST server on: " + restUrl)
+			restUrl := cfg.RestHost + ":" + strconv.Itoa(cfg.RestPort)
+			logger.Info("Starting REST cfg on: " + restUrl)
 
 			creds := insecure.NewCredentials()
 			var err error
-			if !server.NoTls {
-				creds, err = credentials.NewClientTLSFromFile(server.TlsCertPath, "")
+			if !cfg.NoTls {
+				creds, err = credentials.NewClientTLSFromFile(cfg.TlsCertPath, "")
 				if err != nil {
 					errChannel <- err
 					return
@@ -193,8 +252,8 @@ func (server *RpcServer) Start() chan error {
 
 			var sanitizedRpcUrl string
 
-			if server.Host == "0.0.0.0" {
-				sanitizedRpcUrl = "127.0.0.1:" + strconv.Itoa(server.Port)
+			if cfg.Host == "0.0.0.0" {
+				sanitizedRpcUrl = "127.0.0.1:" + strconv.Itoa(cfg.Port)
 			} else {
 				sanitizedRpcUrl = rpcUrl
 			}
@@ -215,10 +274,10 @@ func (server *RpcServer) Start() chan error {
 			c := cors.AllowAll()
 			httpServer.Handler = c.Handler(httpServer.Handler)
 
-			if server.NoTls {
+			if cfg.NoTls {
 				err = httpServer.ListenAndServe()
 			} else {
-				err = httpServer.ListenAndServeTLS(server.TlsCertPath, server.TlsKeyPath)
+				err = httpServer.ListenAndServeTLS(cfg.TlsCertPath, cfg.TlsKeyPath)
 			}
 			if err != nil && err.Error() != "http: Server closed" {
 				errChannel <- err
@@ -228,7 +287,7 @@ func (server *RpcServer) Start() chan error {
 	}
 
 	go func() {
-		<-server.Stop
+		<-server.boltzServer.stop
 		logger.Info("Shutting down")
 		if httpServer != nil {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -237,10 +296,121 @@ func (server *RpcServer) Start() chan error {
 				errChannel <- err
 			}
 		}
-		server.Grpc.GracefulStop()
+		server.grpc.GracefulStop()
 		wg.Wait()
 		close(errChannel)
 	}()
 
 	return errChannel
+}
+
+func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
+	boltzUrl := cfg.Boltz.URL
+	if boltzUrl == "" {
+		switch network {
+		case boltz.MainNet:
+			boltzUrl = "https://api.boltz.exchange"
+		case boltz.TestNet:
+			boltzUrl = "https://api.testnet.boltz.exchange"
+		case boltz.Regtest:
+			boltzUrl = "http://127.0.0.1:9001"
+		}
+		logger.Infof("Using default Boltz endpoint for network %s: %s", network.Name, boltzUrl)
+	} else {
+		logger.Info("Using configured Boltz endpoint: " + boltzUrl)
+	}
+
+	boltzApi := &boltz.Api{URL: boltzUrl}
+	if cfg.Proxy != "" {
+		proxy, err := url.Parse(cfg.Proxy)
+		if err != nil {
+			return nil, fmt.Errorf("invalid proxy URL: %v", err)
+		}
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.Proxy = http.ProxyURL(proxy)
+		boltzApi.Client = http.Client{
+			Transport: transport,
+		}
+	}
+
+	checkBoltzVersion(boltzApi)
+
+	return boltzApi, nil
+}
+
+func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network) (*onchain.Onchain, error) {
+	chain := &onchain.Onchain{
+		Btc:     &onchain.Currency{},
+		Liquid:  &onchain.Currency{},
+		Network: network,
+	}
+
+	chain.Init()
+
+	if cfg.ElectrumLiquidUrl == "" && cfg.MempoolLiquidApi == "" {
+		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	}
+
+	if !wallet.Initialized() {
+		err := wallet.Init(wallet.Config{
+			DataDir: cfg.DataDir,
+			Network: network,
+			Debug:   false,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("could not init wallet: %v", err)
+		}
+	}
+
+	if cfg.ElectrumUrl != "" {
+		logger.Info("Using configured Electrum RPC: " + cfg.ElectrumUrl)
+		client, err := electrum.NewClient(cfg.ElectrumUrl, cfg.ElectrumSSL)
+		if err != nil {
+			return nil, fmt.Errorf("could not connect to electrum: %v", err)
+		}
+		chain.Btc.Blocks = client
+		chain.Btc.Tx = client
+	}
+	if cfg.ElectrumLiquidUrl != "" {
+		logger.Info("Using configured Electrum Liquid RPC: " + cfg.ElectrumLiquidUrl)
+		client, err := electrum.NewClient(cfg.ElectrumLiquidUrl, cfg.ElectrumLiquiLiquidSSL)
+		if err != nil {
+			return nil, fmt.Errorf("could not connect to electrum: %v", err)
+		}
+		chain.Liquid.Blocks = client
+		if chain.Liquid.Tx == nil {
+			chain.Liquid.Tx = client
+		}
+	}
+	if network == boltz.MainNet {
+		cfg.MempoolApi = "https://mempool.space/api"
+		cfg.MempoolLiquidApi = "https://liquid.network/api"
+	} else if network == boltz.TestNet {
+		cfg.MempoolApi = "https://mempool.space/testnet/api"
+		cfg.MempoolLiquidApi = "https://liquid.network/liquidtestnet/api"
+	}
+
+	if cfg.MempoolApi != "" {
+		logger.Info("mempool.space API: " + cfg.MempoolApi)
+		client := mempool.InitClient(cfg.MempoolApi)
+		chain.Btc.Blocks = client
+		chain.Btc.Tx = client
+	}
+
+	if cfg.MempoolLiquidApi != "" {
+		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
+		client := mempool.InitClient(cfg.MempoolLiquidApi)
+		chain.Liquid.Blocks = client
+		if chain.Liquid.Tx == nil {
+			chain.Liquid.Tx = client
+		}
+	}
+
+	// always use boltz api in regtest because electrum can be a bit slow
+	if network == boltz.Regtest {
+		chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
+		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	}
+
+	return chain, nil
 }

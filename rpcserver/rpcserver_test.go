@@ -1,6 +1,6 @@
 //go:build !unit
 
-package main
+package rpcserver
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"net"
 	"os"
-	"path"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
+	lnmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/lightning"
 	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -101,15 +101,17 @@ func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
 var walletName = "regtest"
 var password = "password"
 var walletParams = &boltzrpc.WalletParams{Currency: boltzrpc.Currency_LBTC, Name: walletName}
-var credentials *wallet.Credentials
+var walletCredentials *wallet.Credentials
 var testWallet *database.Wallet
 
 type setupOptions struct {
-	cfg      *config.Config
-	password string
-	chain    *onchain.Onchain
-	boltzApi *boltz.Api
-	node     string
+	cfg       *config.Config
+	password  string
+	chain     *onchain.Onchain
+	boltzApi  *boltz.Api
+	lightning lightning.LightningNode
+	node      string
+	dontSync  bool
 }
 
 func waitForSync(t *testing.T, client client.Boltz) {
@@ -147,18 +149,18 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	logger.Init("", cfg.LogLevel)
 
 	var err error
-	if credentials == nil {
+	if walletCredentials == nil {
 		var wallet *wallet.Wallet
-		wallet, credentials, err = test.InitTestWallet(parseCurrency(walletParams.Currency), false)
+		wallet, walletCredentials, err = test.InitTestWallet(parseCurrency(walletParams.Currency), false)
 		require.NoError(t, err)
-		credentials.Name = walletName
-		credentials.TenantId = database.DefaultTenantId
+		walletCredentials.Name = walletName
+		walletCredentials.TenantId = database.DefaultTenantId
 		require.NoError(t, wallet.Disconnect())
 	}
 
-	encrytpedCredentials := credentials
+	encrytpedCredentials := walletCredentials
 	if options.password != "" {
-		encrytpedCredentials, err = credentials.Encrypt(password)
+		encrytpedCredentials, err = walletCredentials.Encrypt(password)
 		require.NoError(t, err)
 	}
 	testWallet = &database.Wallet{Credentials: encrytpedCredentials}
@@ -171,21 +173,14 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 		require.NoError(t, cfg.Database.UpdateWalletCredentials(encrytpedCredentials))
 	}
 
-	lightningNode, err := initLightning(cfg)
-	require.NoError(t, err)
-
-	if options.chain == nil {
-		options.chain = getOnchain(t, cfg)
-	}
-	if options.boltzApi == nil {
-		options.boltzApi = getBoltz(t, cfg)
-	}
-
-	autoSwapConfPath := path.Join(t.TempDir(), "autoswap.toml")
-
-	err = cfg.RPC.Init(boltz.Regtest, lightningNode, options.boltzApi, cfg.Database, options.chain, autoSwapConfPath)
-	require.NoError(t, err)
-	server := cfg.RPC.Grpc
+	rpc := NewRpcServer(cfg)
+	require.NoError(t, rpc.Init())
+	rpc.boltzServer.boltz = options.boltzApi
+	rpc.boltzServer.onchain = options.chain
+	rpc.boltzServer.lightning = options.lightning
+	go func() {
+		require.NoError(t, rpc.boltzServer.start(cfg))
+	}()
 
 	lis := bufconn.Listen(1024 * 1024)
 
@@ -202,15 +197,15 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	}
 
 	go func() {
-		if err := server.Serve(lis); err != nil {
+		if err := rpc.grpc.Serve(lis); err != nil {
 			logger.Error("error connecting serving server: " + err.Error())
 		}
 	}()
 
 	go func() {
-		<-cfg.RPC.Stop
-		lis.Close()
-		server.GracefulStop()
+		<-rpc.boltzServer.stop
+		require.NoError(t, lis.Close())
+		rpc.grpc.GracefulStop()
 	}()
 
 	clientConn := client.Connection{ClientConn: conn}
@@ -221,13 +216,14 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	boltzClient := client.NewBoltzClient(clientConn)
 	autoSwapClient := client.NewAutoSwapClient(clientConn)
 
-	waitForSync(t, boltzClient)
+	if !options.dontSync {
+
+		waitForSync(t, boltzClient)
+	}
 
 	return boltzClient, autoSwapClient, func() {
 		_, err = autoSwapClient.ResetConfig(client.LnAutoSwap)
-		require.NoError(t, err)
 		_, err = autoSwapClient.ResetConfig(client.ChainAutoSwap)
-		require.NoError(t, err)
 		require.NoError(t, boltzClient.Stop())
 	}
 }
@@ -303,6 +299,21 @@ func TestGetInfo(t *testing.T) {
 			require.Equal(t, "regtest", info.Network)
 		})
 	}
+
+	t.Run("Syncing", func(t *testing.T) {
+		node := lnmock.NewMockLightningNode(t)
+
+		node.EXPECT().Connect().Return(nil)
+		node.EXPECT().GetInfo().Return(&lightning.LightningInfo{Synced: false}, nil)
+
+		client, _, stop := setup(t, setupOptions{lightning: node, dontSync: true})
+		defer stop()
+
+		_, err := client.GetInfo()
+		require.Error(t, err)
+		requireCode(t, err, codes.Unavailable)
+		require.ErrorContains(t, err, "lightning node")
+	})
 }
 
 func createTenant(t *testing.T, admin client.Boltz, name string) (*boltzrpc.Tenant, client.Connection, client.Connection) {
@@ -2046,7 +2057,7 @@ func TestUnlock(t *testing.T) {
 
 	c, err := client.GetWalletCredentials(testWallet.Id, &password)
 	require.NoError(t, err)
-	require.Equal(t, credentials.Mnemonic, *c.Mnemonic)
+	require.Equal(t, walletCredentials.Mnemonic, *c.Mnemonic)
 
 	wrongPassword := "wrong"
 	second := &boltzrpc.WalletParams{Currency: boltzrpc.Currency_LBTC, Name: "new", Password: &wrongPassword}
