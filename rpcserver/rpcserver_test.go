@@ -1838,7 +1838,7 @@ func TestAutoSwap(t *testing.T) {
 		_, write, _ := createTenant(t, admin, "test")
 		tenant := client.NewAutoSwapClient(write)
 
-		_, err = tenant.GetConfig()
+		_, err = tenant.GetChainConfig()
 		require.Error(t, err)
 	})
 
