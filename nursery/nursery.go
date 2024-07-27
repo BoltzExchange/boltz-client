@@ -259,15 +259,6 @@ func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.Ch
 	return blockNotifier
 }
 
-func (nursery *Nursery) getFeeEstimation(currency boltz.Currency) (float64, error) {
-	if currency == boltz.CurrencyLiquid && nursery.network == boltz.MainNet {
-		if _, ok := nursery.onchain.Liquid.Tx.(*onchain.BoltzTxProvider); ok {
-			return nursery.boltz.GetFeeEstimation(boltz.CurrencyLiquid)
-		}
-	}
-	return nursery.onchain.EstimateFee(currency, 2)
-}
-
 func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (id string, err error) {
 	outputs, details := nursery.populateOutputs(outputs)
 	if len(details) == 0 {
@@ -286,7 +277,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 		return id, err
 	}
 
-	feeSatPerVbyte, err := nursery.getFeeEstimation(currency)
+	feeSatPerVbyte, err := nursery.onchain.EstimateFee(currency, 2)
 	if err != nil {
 		return handleErr(fmt.Errorf("could not get fee estimation: %w", err))
 	}
