@@ -3,6 +3,6 @@
 package wallet
 
 /*
-#cgo LDFLAGS: ${SRCDIR}/lib/libgreenaddress_full.a -Wl,--no-as-needed -ldl
+#cgo LDFLAGS: ${SRCDIR}/lib/libgreen_gdk_full.a -Wl,--no-as-needed -ldl
 */
 import "C"

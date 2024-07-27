@@ -6,7 +6,17 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "gdk_export.h"
+#if defined(_WIN32)
+#ifdef GDK_BUILD
+#define GDK_API __declspec(dllexport)
+#else
+#define GDK_API
+#endif
+#elif defined(__GNUC__) && defined(GDK_BUILD)
+#define GDK_API __attribute__((visibility("default")))
+#else
+#define GDK_API
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +59,13 @@ typedef void (*GA_notification_handler)(void* context, GA_json* details);
  * :param config: The :ref:`init-config-arg`.
  */
 GDK_API int GA_init(const GA_json* config);
+
+/**
+ * Completely shut down the library, releasing all resources.
+ *
+ * No further GDK calls should be made after this call.
+ */
+GDK_API int GA_shutdown(void);
 
 #ifndef SWIG
 /**
@@ -153,9 +170,21 @@ GDK_API int GA_get_proxy_settings(struct GA_session* session, GA_json** output);
  * :param net_params: The :ref:`net-params` of the network to compute an identifier for.
  * :param params: The :ref:`wallet-id-request` to compute an identifier for.
  * :param output: Destination for the output JSON.
+ *|     The call handlers result is :ref:`login-result`.
  *|     Returned GA_json should be freed using `GA_destroy_json`.
  */
 GDK_API int GA_get_wallet_identifier(const GA_json* net_params, const GA_json* params, GA_json** output);
+
+/**
+ * Operate on cached session data.
+ *
+ * :param session: The session to use.
+ * :param details: The :ref:`cache-control-request` giving the operation to perform.
+ * :param call: Destination for the resulting GA_auth_handler to complete the action.
+ *|     The call handlers result is :ref:`cache-control-result`.
+ *|     Returned GA_auth_handler should be freed using `GA_destroy_auth_handler`.
+ */
+GDK_API int GA_cache_control(struct GA_session* session, GA_json* details, struct GA_auth_handler** call);
 
 /**
  * Make a request to an http server.
@@ -216,14 +245,16 @@ GDK_API int GA_validate_asset_domain_name(struct GA_session* session, const GA_j
 GDK_API int GA_validate(struct GA_session* session, GA_json* details, struct GA_auth_handler** call);
 
 /**
- * Create a new user wallet.
+ * Create a new user wallet or watch only session.
  *
  * :param session: The session to use.
- * :param hw_device: :ref:`hw-device` or empty JSON for software wallet registration.
- * :param details: The :ref:`login-credentials` for software wallet registration.
+ * :param hw_device: :ref:`hw-device` or empty JSON for software wallet/watch only registration.
+ * :param details: The :ref:`login-credentials` for software wallet/watch only registration.
  * :param call: Destination for the resulting GA_auth_handler to perform the registration.
+ *|     The call handlers result is :ref:`login-result`.
  *|     Returned GA_auth_handler should be freed using `GA_destroy_auth_handler`.
  *
+ * .. note:: When registering a watch only session, the calling session must be logged in.
  * .. note:: When calling from C/C++, the parameters ``hw_device`` and ``details`` will be emptied when the call
  *completes.
  */
@@ -237,6 +268,7 @@ GDK_API int GA_register_user(
  * :param hw_device: :ref:`hw-device` or empty JSON for software wallet login.
  * :param details: The :ref:`login-credentials` for authenticating the user.
  * :param call: Destination for the resulting GA_auth_handler to perform the login.
+ *|     The call handlers result is :ref:`login-result`.
  *|     Returned GA_auth_handler should be freed using `GA_destroy_auth_handler`.
  *
  * If a sessions underlying network connection has disconnected and
@@ -249,15 +281,6 @@ GDK_API int GA_register_user(
  */
 GDK_API int GA_login_user(
     struct GA_session* session, GA_json* hw_device, GA_json* details, struct GA_auth_handler** call);
-
-/**
- * Set or disable a watch-only login for a logged-in user wallet.
- *
- * :param session: The session to use.
- * :param username: The watch-only username to login with, or a blank string to disable.
- * :param password: The watch-only password to login with, or a blank string to disable.
- */
-GDK_API int GA_set_watch_only(struct GA_session* session, const char* username, const char* password);
 
 /**
  * Get the current watch-only login for a logged-in user wallet, if any.
@@ -329,19 +352,6 @@ GDK_API int GA_get_subaccounts(struct GA_session* session, const GA_json* detail
  *|     Returned GA_auth_handler should be freed using `GA_destroy_auth_handler`.
  */
 GDK_API int GA_get_subaccount(struct GA_session* session, uint32_t subaccount, struct GA_auth_handler** call);
-
-/**
- * Rename a subaccount.
- *
- * :param session: The session to use.
- * :param subaccount: The value of ``"pointer"`` from :ref:`subaccount-list` or
- *|                   :ref:`subaccount-detail` for the subaccount to rename.
- * :param new_name: New name for the subaccount.
- *
- * .. note:: This call is deprecated and will be removed in a future release. Use
- *|          `GA_update_subaccount` to rename subaccounts.
- */
-GDK_API int GA_rename_subaccount(struct GA_session* session, uint32_t subaccount, const char* new_name);
 
 /**
  * Update subaccount information.
@@ -593,6 +603,9 @@ GDK_API int GA_complete_swap_transaction(
  * .. note:: EXPERIMENTAL warning: this call may be changed in future releases.
  */
 GDK_API int GA_psbt_sign(struct GA_session* session, GA_json* details, struct GA_auth_handler** call);
+
+/* Experimental API: not for public use */
+GDK_API int GA_psbt_from_json(struct GA_session* session, GA_json* details, struct GA_auth_handler** call);
 
 /**
  * Get wallet details of a PSBT or PSET.
@@ -883,8 +896,8 @@ GDK_API int GA_destroy_auth_handler(struct GA_auth_handler* call);
  * Enable or disable a two factor authentication method.
  *
  * :param session: The session to use
- * :param method: The two factor method to enable/disable, i.e. ``"email"``, ``"sms"``, ``"phone"``, ``"gauth"``
- * :param twofactor_details: The two factor method and associated data such as an email address. :ref:`twofactor-detail`
+ * :param method: The two factor method to enable/disable, e.g. ``"email"``, ``"sms"``, ``"phone"``, ``"gauth"``
+ * :param twofactor_details: :ref:`twofactor-detail` giving the two factor method and associated data.
  * :param call: Destination for the resulting GA_auth_handler to perform the action
  *|     Returned GA_auth_handler should be freed using `GA_destroy_auth_handler`.
  *
@@ -944,8 +957,9 @@ GDK_API int GA_twofactor_cancel_reset(struct GA_session* session, struct GA_auth
  * Change twofactor limits settings.
  *
  * :param session: The session to use.
- * :param limit_details: Details of the new :ref:`transaction-limits`
+ * :param limit_details: :ref:`transaction-limits` containing the new limits to set.
  * :param call: Destination for the resulting GA_auth_handler to perform the change.
+ *|     The call handlers result is :ref:`transaction-limits`.
  *|     Returned GA_auth_handler should be freed using `GA_destroy_auth_handler`.
  *
  * .. note:: When calling from C/C++, the parameter ``limit_details`` will be emptied when the call completes.
@@ -976,7 +990,9 @@ GDK_API int GA_bcur_encode(struct GA_session* session, GA_json* details, struct 
  *|     Returned GA_auth_handler should be freed using `GA_destroy_auth_handler`.
  *
  * For multi-part data, the call hander will request further parts using
- * ``"request_code"`` with a method of ``"data"``. see: `auth-handler-status`.
+ * ``"request_code"`` with a method of ``"data"``. see: `auth-handler-status` for
+ * details on the general mechanism and `bcur-decode-auth-handler-status` for
+ * details on the data passed to and expected from the auth handler.
  *
  * .. note:: When calling from C/C++, the parameter ``details`` will be emptied when the call completes.
  */
