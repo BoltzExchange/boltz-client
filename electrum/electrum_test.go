@@ -14,7 +14,7 @@ import (
 var url = "localhost:19001"
 
 func client(t *testing.T) *Client {
-	client, err := NewClient(url, false)
+	client, err := NewClient(onchain.RegtestElectrumConfig.Btc)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		client.Disconnect()

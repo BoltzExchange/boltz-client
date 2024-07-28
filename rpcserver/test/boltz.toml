@@ -1,6 +1,3 @@
-electrumUrl = "localhost:19001"
-electrumLiquidUrl = "localhost:19002"
-
 network = "regtest"
 
 [LND]

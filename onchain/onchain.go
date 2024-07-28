@@ -70,6 +70,21 @@ type Wallet interface {
 	Disconnect() error
 }
 
+type ElectrumOptions struct {
+	Url string `long:"url" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
+	SSL bool   `long:"ssl" description:"whether the electrum server uses ssl"`
+}
+
+type ElectrumConfig struct {
+	Btc    ElectrumOptions `group:"Btc Electrum Options" namespace:"mempool.btc"`
+	Liquid ElectrumOptions `group:"Liquid Electrum Options" namespace:"mempool.liquid"`
+}
+
+var RegtestElectrumConfig = ElectrumConfig{
+	Btc:    ElectrumOptions{Url: "localhost:19001"},
+	Liquid: ElectrumOptions{Url: "localhost:19002"},
+}
+
 type Currency struct {
 	Blocks BlockProvider
 	Tx     TxProvider
