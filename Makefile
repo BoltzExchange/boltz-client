@@ -56,10 +56,19 @@ unit:
 	@$(call print, "Running unit tests")
 	$(GOTEST) ./... -v -tags unit
 
-integration:
+integration: start-regtest
 	@$(call print, "Running integration tests")
 	$(GOTEST) ./... -v
 
+download-regtest:
+ifeq ("$(wildcard regtest/start.sh)","")
+	@$(call print, "Downloading regtest")
+	eval git clone https://github.com/BoltzExchange/regtest
+endif
+
+start-regtest: download-regtest
+	@$(call print, "Starting regtest")
+	eval cd regtest && git pull && ./start.sh
 
 #
 # Building

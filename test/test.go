@@ -18,14 +18,19 @@ import (
 
 type Cli func(string) string
 
-func sh(cmd string) string {
-	out, err := exec.Command("sh", "-c", cmd).Output()
+func bash(cmd string) string {
+	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
 
 	if err != nil {
+		fmt.Println(string(out))
 		logger.Fatal("could not execute cmd: " + cmd + " err:" + err.Error())
 	}
 
 	return strings.TrimSuffix(string(out), "\n")
+}
+
+func run(cmd string) string {
+	return bash(fmt.Sprintf("docker exec -i boltz-scripts bash -c \"source /etc/profile.d/utils.sh && %s\"", cmd))
 }
 
 func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *wallet.Credentials, error) {
@@ -107,11 +112,15 @@ func InitLogger() {
 }
 
 func BtcCli(cmd string) string {
-	return sh("docker exec regtest-bitcoind-1 bitcoin-cli -rpcuser=regtest -rpcpassword=regtest -regtest " + cmd)
+	return run("bitcoin-cli-sim-server " + cmd)
+}
+
+func BackendCli(cmd string) string {
+	return bash("docker exec -i boltz-backend /boltz-backend/bin/boltz-cli " + cmd)
 }
 
 func LiquidCli(cmd string) string {
-	return sh("docker exec regtest-elementsd-1 elements-cli " + cmd)
+	return run("elements-cli-sim-server " + cmd)
 }
 
 func MineBlock() {
@@ -129,16 +138,4 @@ func MineUntil(t *testing.T, cli Cli, height int64) {
 
 func SendToAddress(cli Cli, address string, amount uint64) string {
 	return cli("sendtoaddress " + address + " " + fmt.Sprint(float64(amount)/1e8))
-}
-
-func LnCli(cmd string) string {
-	return sh("docker exec regtest-lnd-1-1 lncli --network regtest --rpcserver=lnd-1:10009 " + cmd)
-}
-
-func ClnCli(cmd string) string {
-	return sh("docker exec regtest-clightning-1-1 lightning-cli --network regtest " + cmd)
-}
-
-func BoltzLnCli(cmd string) string {
-	return sh("docker exec regtest-lnd-2-1 lncli --network regtest --rpcserver=lnd-2:10009 " + cmd)
 }

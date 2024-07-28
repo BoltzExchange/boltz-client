@@ -29,17 +29,11 @@ jobs:
       - name: Build
         run: make build
 
-      - name: Setup Regtest
-        run: |
-          git clone https://github.com/BoltzExchange/legend-regtest-enviroment.git ~/regtest
-          sudo chmod -R 777 ~/regtest
-          cd ~/regtest
-          chmod +x ./regtest
-          ./regtest
-          sudo chmod -R a+rwx .
-
       - name: Unit Tests
         run: make unit
+
+      - name: Start Regtest
+        run: make download-regtest && chmod -R 777 regtest && make start-regtest
 
       - name: Integration Tests
         run: make integration
