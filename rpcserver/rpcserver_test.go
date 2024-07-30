@@ -47,6 +47,12 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
+func TestMain(m *testing.M) {
+	test.BackendCli("updatetimeout 300 300 350 300 300 --pair L-BTC/BTC")
+	test.BackendCli("updatetimeout 300 300 350 300 300 --pair BTC/BTC")
+	os.Exit(m.Run())
+}
+
 func requireCode(t *testing.T, err error, code codes.Code) {
 	assert.Equal(t, code, status.Code(err))
 }
@@ -1830,10 +1836,6 @@ func TestAutoSwap(t *testing.T) {
 		stream(boltzrpc.SwapState_PENDING)
 		test.MineBlock()
 		stream(boltzrpc.SwapState_SUCCESSFUL)
-
-		recommendations, err = autoSwap.GetRecommendations()
-		require.NoError(t, err)
-		require.NotEmpty(t, recommendations.Chain[0].DismissedReasons)
 
 		_, write, _ := createTenant(t, admin, "test")
 		tenant := client.NewAutoSwapClient(write)

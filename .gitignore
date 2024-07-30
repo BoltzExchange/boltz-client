@@ -27,12 +27,14 @@ vendor/
 # Config, database, log, certificate and macaroon files
 boltz.toml
 !rpcserver/test/boltz.toml
-cmd/boltzd/test/autoswap.toml
+rpcserver/test/wallet
+rpcserver/test/autoswap.toml
 boltz.db
 boltz.log
 tls.key
 tls.cert
 *.macaroon
+regtest
 
 # Goland
 .idea/
