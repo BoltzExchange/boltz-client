@@ -276,7 +276,7 @@ func (autoSwap *AutoSwap) WalletUsed(id database.Id) bool {
 }
 
 func (autoSwap *AutoSwap) GetConfig(tenantId *database.Id) *Config {
-	if tenantId == nil || *tenantId == database.DefaultTenantId {
+	if tenantId == nil {
 		return autoSwap.cfg
 	}
 	scoped := &Config{}
