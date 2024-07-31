@@ -1,6 +1,9 @@
 package rpcserver
 
 import (
+	"github.com/BoltzExchange/boltz-client/autoswap"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -245,6 +248,29 @@ func serializeOptionalTime(t time.Time) *int64 {
 	}
 	unix := t.UTC().Unix()
 	return &unix
+}
+
+func serializeLightningSwap(swap *autoswap.LightningSwap) *autoswaprpc.LightningSwap {
+	if swap == nil {
+		return nil
+	}
+	return &autoswaprpc.LightningSwap{
+		Amount:           swap.Amount,
+		Type:             utils.SerializeSwapType(swap.Type),
+		FeeEstimate:      swap.FeeEstimate,
+		DismissedReasons: swap.DismissedReasons,
+	}
+}
+
+func serializeAutoChainSwap(swap *autoswap.ChainSwap) *autoswaprpc.ChainSwap {
+	if swap == nil {
+		return nil
+	}
+	return &autoswaprpc.ChainSwap{
+		Amount:           swap.Amount,
+		FeeEstimate:      swap.FeeEstimate,
+		DismissedReasons: swap.DismissedReasons,
+	}
 }
 
 func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.LightningChannel {

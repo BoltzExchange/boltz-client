@@ -12,9 +12,15 @@ import (
 	"github.com/BoltzExchange/boltz-client/utils"
 )
 
-type ChainRecommendation = checks
+type ChainSwap = checks
+
 type ChainSwapper = swapper[*ChainConfig]
 type SerializedChainConfig = autoswaprpc.ChainConfig
+
+type ChainRecommendation struct {
+	Swap        *ChainSwap
+	FromBalance *onchain.Balance
+}
 
 type ChainConfig struct {
 	*SerializedChainConfig
@@ -110,6 +116,7 @@ func (cfg *ChainConfig) GetCurrentBudget(createIfMissing bool) (*Budget, error) 
 }
 
 func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
+
 	balance, err := cfg.fromWallet.GetBalance()
 	if err != nil {
 		return nil, fmt.Errorf("could not get wallet balance: %w", err)
@@ -125,6 +132,7 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 		return nil, fmt.Errorf("could not get current budget: %w", err)
 	}
 
+	recommendation := &ChainRecommendation{FromBalance: balance}
 	if balance.Confirmed > cfg.MaxBalance {
 		// TODO: properly sweep wallet
 		amount := balance.Confirmed - 10000
@@ -141,21 +149,21 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 		if len(pendingSwaps) > 0 {
 			checked.Dismiss(ReasonPendingSwap)
 		}
-		return &checked, nil
+		recommendation.Swap = &checked
 	}
-	return nil, nil
+	return recommendation, nil
 }
 
-func (cfg *ChainConfig) execute(recommendation *ChainRecommendation) error {
-	if recommendation != nil {
-		if recommendation.Dismissed() {
-			logger.Debugf("Skipping swap recommendation %+v", recommendation)
+func (cfg *ChainConfig) execute(swap *ChainSwap) error {
+	if swap != nil {
+		if swap.Dismissed() {
+			logger.Debugf("Skipping swap recommendation %+v", swap)
 			return nil
 		}
-		logger.Infof("Executing Swap recommendation: %+v", recommendation)
+		logger.Infof("Executing Swap recommendation: %+v", swap)
 		fromWalletId := cfg.fromWallet.GetWalletInfo().Id
 		request := &boltzrpc.CreateChainSwapRequest{
-			Amount:       recommendation.Amount,
+			Amount:       swap.Amount,
 			Pair:         utils.SerializePair(cfg.pair),
 			FromWalletId: &fromWalletId,
 		}
@@ -187,7 +195,7 @@ func (cfg *ChainConfig) run(stop <-chan bool) {
 					continue
 				}
 
-				if err := cfg.execute(recommendation); err != nil {
+				if err := cfg.execute(recommendation.Swap); err != nil {
 					logger.Errorf("Could not act on swap recommendation: %s", err)
 				}
 			}

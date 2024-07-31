@@ -45,20 +45,29 @@ service AutoSwap {
 
 message GetRecommendationsRequest {}
 
-message LightningRecommendation {
+message LightningSwap {
   uint64 amount = 1;
   uint64 fee_estimate = 2;
-  // any reasons why the recommendation is not being executed
+  boltzrpc.SwapType type = 3;
+  // any reasons why the swap is not being executed
+  repeated string dismissed_reasons = 4;
+}
+
+message LightningRecommendation {
+  optional LightningSwap swap = 1;
+  boltzrpc.LightningChannel channel = 2;
+}
+
+message ChainSwap {
+  uint64 amount = 1;
+  uint64 fee_estimate = 2;
+  // any reasons why the swap is not being executed
   repeated string dismissed_reasons = 3;
-  string type = 4;
-  boltzrpc.LightningChannel channel = 5;
 }
 
 message ChainRecommendation {
-  uint64 amount = 1;
-  uint64 fee_estimate = 2;
-  // any reasons why the recommendation is not being executed
-  repeated string dismissed_reasons = 3;
+  optional ChainSwap swap = 1;
+  boltzrpc.Balance wallet_balance = 2;
 }
 
 message Budget {

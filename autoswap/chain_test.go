@@ -85,9 +85,9 @@ func TestChainSwapper(t *testing.T) {
 
 			recommendation, err := chainConfig.GetRecommendation()
 			require.NoError(t, err)
-			require.NotZero(t, recommendation.FeeEstimate)
-			require.Empty(t, recommendation.DismissedReasons)
-			require.Equal(t, expectedAmount, recommendation.Amount)
+			require.NotZero(t, recommendation.Swap.FeeEstimate)
+			require.Empty(t, recommendation.Swap.DismissedReasons)
+			require.Equal(t, expectedAmount, recommendation.Swap.Amount)
 		})
 
 		t.Run("Dismissed", func(t *testing.T) {
@@ -101,11 +101,11 @@ func TestChainSwapper(t *testing.T) {
 			pairInfo.Limits.Minimal = 2 * expectedAmount
 			recommendation, err := chainConfig.GetRecommendation()
 			require.NoError(t, err)
-			require.Contains(t, recommendation.DismissedReasons, ReasonBudgetExceeded)
-			require.Contains(t, recommendation.DismissedReasons, ReasonMaxFeePercent)
-			require.Contains(t, recommendation.DismissedReasons, ReasonAmountBelowMin)
-			require.Contains(t, recommendation.DismissedReasons, ReasonPendingSwap)
-			require.Equal(t, expectedAmount, recommendation.Amount)
+			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonBudgetExceeded)
+			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonMaxFeePercent)
+			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonAmountBelowMin)
+			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonPendingSwap)
+			require.Equal(t, expectedAmount, recommendation.Swap.Amount)
 		})
 
 		t.Run("NoBalance", func(t *testing.T) {
@@ -113,7 +113,7 @@ func TestChainSwapper(t *testing.T) {
 			balance.Confirmed = 100
 			recommendation, err := chainConfig.GetRecommendation()
 			require.NoError(t, err)
-			require.Nil(t, recommendation)
+			require.Nil(t, recommendation.Swap)
 		})
 
 	})
@@ -131,9 +131,9 @@ func TestChainSwapper(t *testing.T) {
 			return nil
 		}).Once()
 
-		require.NoError(t, chainSwapper.cfg.execute(&ChainRecommendation{Amount: amount}))
+		require.NoError(t, chainSwapper.cfg.execute(&ChainSwap{Amount: amount}))
 		require.NoError(t, chainSwapper.cfg.execute(nil))
-		require.NoError(t, chainSwapper.cfg.execute(&ChainRecommendation{Amount: amount, DismissedReasons: []string{ReasonBudgetExceeded}}))
+		require.NoError(t, chainSwapper.cfg.execute(&ChainSwap{Amount: amount, DismissedReasons: []string{ReasonBudgetExceeded}}))
 	})
 
 	t.Run("Start", func(t *testing.T) {

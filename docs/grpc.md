@@ -1456,9 +1456,23 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `swap` | [`ChainSwap`](#chainswap) | optional |  |
+| `wallet_balance` | [`boltzrpc.Balance`](#boltzrpc.balance) |  |  |
+
+
+
+
+
+#### ChainSwap
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
 | `amount` | [`uint64`](#uint64) |  |  |
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
-| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the recommendation is not being executed |
+| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the swap is not being executed |
 
 
 
@@ -1567,11 +1581,24 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| `swap` | [`LightningSwap`](#lightningswap) | optional |  |
+| `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.lightningchannel) |  |  |
+
+
+
+
+
+#### LightningSwap
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
 | `amount` | [`uint64`](#uint64) |  |  |
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
-| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the recommendation is not being executed |
-| `type` | [`string`](#string) |  |  |
-| `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.lightningchannel) |  |  |
+| `type` | [`boltzrpc.SwapType`](#boltzrpc.swaptype) |  |  |
+| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the swap is not being executed |
 
 
 

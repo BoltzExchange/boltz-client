@@ -230,21 +230,27 @@ func (cfg *LightningConfig) getDismissedChannels() (DismissedChannels, error) {
 	return reasons, nil
 }
 
-type lightningRecommendation struct {
-	Amount  uint64
-	Type    boltz.SwapType
-	Channel *lightning.LightningChannel
+type LightningSwap struct {
+	checks
+	Type boltz.SwapType
+}
+
+func (lightningSwap *LightningSwap) GetAmount() uint64 {
+	if lightningSwap == nil {
+		return 0
+	}
+	return lightningSwap.Amount
 }
 
 type LightningRecommendation struct {
-	checks
-	Type    boltz.SwapType
+	Swap    *LightningSwap
 	Channel *lightning.LightningChannel
 }
 
 func (cfg *LightningConfig) validateRecommendations(
-	recommendations []*lightningRecommendation,
+	recommendations []*LightningRecommendation,
 	budget int64,
+	includeAll bool,
 ) ([]*LightningRecommendation, error) {
 	dismissedChannels, err := cfg.getDismissedChannels()
 	if err != nil {
@@ -254,40 +260,38 @@ func (cfg *LightningConfig) validateRecommendations(
 	logger.Debugf("Dismissed channels: %v", dismissedChannels)
 
 	// we might be able to fit more swaps in the budget if we sort by amount
-	slices.SortFunc(recommendations, func(a, b *lightningRecommendation) int {
-		return int(a.Amount - b.Amount)
+	slices.SortFunc(recommendations, func(a, b *LightningRecommendation) int {
+		return int(a.Swap.GetAmount() - b.Swap.GetAmount())
 	})
 
 	var checked []*LightningRecommendation
 	for _, recommendation := range recommendations {
-		swapType := boltzrpc.SwapType_SUBMARINE
-		if recommendation.Type == boltz.ReverseSwap {
-			swapType = boltzrpc.SwapType_REVERSE
-		}
-		pairInfo, err := cfg.rpc.GetAutoSwapPairInfo(swapType, cfg.GetPair(recommendation.Type))
-		if err != nil {
-			logger.Warn("Could not get pair info: " + err.Error())
-			continue
+		swap := recommendation.Swap
+		if swap != nil {
+			pairInfo, err := cfg.rpc.GetAutoSwapPairInfo(utils.SerializeSwapType(swap.Type), cfg.GetPair(swap.Type))
+			if err != nil {
+				logger.Warn("Could not get pair info: " + err.Error())
+				continue
+			}
+
+			params := checkParams{
+				MaxFeePercent:    cfg.maxFeePercent,
+				Budget:           &budget,
+				Pair:             pairInfo,
+				DismissedReasons: dismissedChannels[recommendation.Channel.GetId()],
+			}
+			recommendation.Swap.checks = check(recommendation.Swap.GetAmount(), params)
 		}
 
-		params := checkParams{
-			MaxFeePercent:    cfg.maxFeePercent,
-			Budget:           &budget,
-			Pair:             pairInfo,
-			DismissedReasons: dismissedChannels[recommendation.Channel.GetId()],
+		if includeAll || swap != nil {
+			checked = append(checked, recommendation)
 		}
-
-		checked = append(checked, &LightningRecommendation{
-			checks:  check(recommendation.Amount, params),
-			Type:    recommendation.Type,
-			Channel: recommendation.Channel,
-		})
 	}
 
 	return checked, nil
 }
 
-func (cfg *LightningConfig) GetSwapRecommendations() ([]*LightningRecommendation, error) {
+func (cfg *LightningConfig) GetSwapRecommendations(includeAll bool) ([]*LightningRecommendation, error) {
 	channels, err := cfg.rpc.GetLightningChannels()
 	if err != nil {
 		return nil, err
@@ -302,7 +306,7 @@ func (cfg *LightningConfig) GetSwapRecommendations() ([]*LightningRecommendation
 
 	logger.Debugf("Current autoswap budget: %+v", *budget)
 
-	return cfg.validateRecommendations(recommendations, budget.Amount)
+	return cfg.validateRecommendations(recommendations, budget.Amount, includeAll)
 }
 
 func (cfg *LightningConfig) GetCurrentBudget(createIfMissing bool) (*Budget, error) {
@@ -319,20 +323,21 @@ func (cfg *LightningConfig) execute(recommendation *LightningRecommendation) err
 	if chanId := recommendation.Channel.GetId(); chanId != 0 {
 		chanIds = append(chanIds, chanId.ToCln())
 	}
-	pair := cfg.GetPair(recommendation.Type)
+	swap := recommendation.Swap
+	pair := cfg.GetPair(swap.Type)
 	var err error
-	if recommendation.Type == boltz.ReverseSwap {
+	if swap.Type == boltz.ReverseSwap {
 		err = cfg.rpc.CreateAutoReverseSwap(&database.DefaultTenant, &boltzrpc.CreateReverseSwapRequest{
-			Amount:         recommendation.Amount,
+			Amount:         swap.Amount,
 			Address:        cfg.StaticAddress,
 			AcceptZeroConf: cfg.AcceptZeroConf,
 			Pair:           pair,
 			ChanIds:        chanIds,
 			WalletId:       cfg.walletId,
 		})
-	} else if recommendation.Type == boltz.NormalSwap {
+	} else if swap.Type == boltz.NormalSwap {
 		err = cfg.rpc.CreateAutoSwap(&database.DefaultTenant, &boltzrpc.CreateSwapRequest{
-			Amount: recommendation.Amount,
+			Amount: swap.Amount,
 			Pair:   pair,
 			//ChanIds:          chanIds,
 			SendFromInternal: true,
@@ -347,13 +352,13 @@ func (cfg *LightningConfig) run(stop <-chan bool) {
 
 	for {
 		logger.Debugf("Checking for lightning swap recommendation")
-		recommendations, err := cfg.GetSwapRecommendations()
+		recommendations, err := cfg.GetSwapRecommendations(false)
 		if err != nil {
 			logger.Warnf("Could not fetch swap recommendations: %v", err)
 		}
 		if len(recommendations) > 0 {
 			for _, recommendation := range recommendations {
-				if recommendation.Dismissed() {
+				if recommendation.Swap.Dismissed() {
 					logger.Infof("Skipping swap recommendation %+v", recommendation)
 					continue
 				}
