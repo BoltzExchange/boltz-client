@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/rpcserver"
-	"os"
-	"strings"
-
 	"github.com/BoltzExchange/boltz-client/config"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/rpcserver"
 	"github.com/BoltzExchange/boltz-client/utils"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 )
 
 // TODO: close dangling channels
@@ -46,6 +47,16 @@ func main() {
 		logger.Fatalf("Could not initialize Server: %v", err)
 	}
 	errChannel := rpc.Start()
+
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	go func() {
+		<-sigc
+		logger.Info("Received shutdown signal, stopping server...")
+		if err := rpc.Stop(); err != nil {
+			logger.Fatal("Could not stop server: " + err.Error())
+		}
+	}()
 
 	err = <-errChannel
 
