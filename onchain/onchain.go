@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -300,9 +301,17 @@ func (onchain *Onchain) Disconnect() {
 	onchain.OnWalletChange.Close()
 	onchain.Btc.Blocks.Disconnect()
 	onchain.Liquid.Blocks.Disconnect()
+	var wg sync.WaitGroup
+	wg.Add(len(onchain.Wallets))
+
 	for _, wallet := range onchain.Wallets {
-		if err := wallet.Disconnect(); err != nil {
-			logger.Errorf("Error shutting down wallet: %s", err.Error())
-		}
+		wallet := wallet
+		go func() {
+			if err := wallet.Disconnect(); err != nil {
+				logger.Errorf("Error shutting down wallet: %s", err.Error())
+			}
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 }
