@@ -69,7 +69,7 @@ type LightningSwap struct {
 	Amount      uint64            `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	FeeEstimate uint64            `protobuf:"varint,2,opt,name=fee_estimate,json=feeEstimate,proto3" json:"fee_estimate,omitempty"`
 	Type        boltzrpc.SwapType `protobuf:"varint,3,opt,name=type,proto3,enum=boltzrpc.SwapType" json:"type,omitempty"`
-	// any reasons why the swap is not being executed
+	// Reasons for which the swap is not being executed
 	DismissedReasons []string `protobuf:"bytes,4,rep,name=dismissed_reasons,json=dismissedReasons,proto3" json:"dismissed_reasons,omitempty"`
 }
 
@@ -138,6 +138,8 @@ type LightningRecommendation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Populated when a swap is recommended for the associated `channel`,
+	// otherwise, the current balances are below the configured thresholds
 	Swap    *LightningSwap             `protobuf:"bytes,1,opt,name=swap,proto3,oneof" json:"swap,omitempty"`
 	Channel *boltzrpc.LightningChannel `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
 }
@@ -195,7 +197,7 @@ type ChainSwap struct {
 
 	Amount      uint64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	FeeEstimate uint64 `protobuf:"varint,2,opt,name=fee_estimate,json=feeEstimate,proto3" json:"fee_estimate,omitempty"`
-	// any reasons why the swap is not being executed
+	// Reasons for which the swap is not being executed
 	DismissedReasons []string `protobuf:"bytes,3,rep,name=dismissed_reasons,json=dismissedReasons,proto3" json:"dismissed_reasons,omitempty"`
 }
 
@@ -257,6 +259,7 @@ type ChainRecommendation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Populated when a swap is recommended based on the current balance of the configured `from_wallet`
 	Swap          *ChainSwap        `protobuf:"bytes,1,opt,name=swap,proto3,oneof" json:"swap,omitempty"`
 	WalletBalance *boltzrpc.Balance `protobuf:"bytes,2,opt,name=wallet_balance,json=walletBalance,proto3" json:"wallet_balance,omitempty"`
 }

@@ -116,7 +116,6 @@ func (cfg *ChainConfig) GetCurrentBudget(createIfMissing bool) (*Budget, error) 
 }
 
 func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
-
 	balance, err := cfg.fromWallet.GetBalance()
 	if err != nil {
 		return nil, fmt.Errorf("could not get wallet balance: %w", err)

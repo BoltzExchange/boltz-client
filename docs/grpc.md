@@ -1392,7 +1392,7 @@ Updates the chain configuration entirely or partially. Autoswap will reload the 
 
 #### GetConfig
 
-Returns the currently used configurationencoded as json. If a key is specfied, only the value of that key will be returned.
+Returns the currently used configuration.
 
 | Request | Response |
 | ------- | -------- |
@@ -1456,7 +1456,7 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swap` | [`ChainSwap`](#chainswap) | optional |  |
+| `swap` | [`ChainSwap`](#chainswap) | optional | Populated when a swap is recommended based on the current balance of the configured `from_wallet` |
 | `wallet_balance` | [`boltzrpc.Balance`](#boltzrpc.balance) |  |  |
 
 
@@ -1472,7 +1472,7 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `amount` | [`uint64`](#uint64) |  |  |
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
-| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the swap is not being executed |
+| `dismissed_reasons` | [`string`](#string) | repeated | Reasons for which the swap is not being executed |
 
 
 
@@ -1581,7 +1581,7 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swap` | [`LightningSwap`](#lightningswap) | optional |  |
+| `swap` | [`LightningSwap`](#lightningswap) | optional | Populated when a swap is recommended for the associated `channel`, otherwise, the current balances are below the configured thresholds |
 | `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.lightningchannel) |  |  |
 
 
@@ -1598,7 +1598,7 @@ Reloads the configuration from disk.
 | `amount` | [`uint64`](#uint64) |  |  |
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
 | `type` | [`boltzrpc.SwapType`](#boltzrpc.swaptype) |  |  |
-| `dismissed_reasons` | [`string`](#string) | repeated | any reasons why the swap is not being executed |
+| `dismissed_reasons` | [`string`](#string) | repeated | Reasons for which the swap is not being executed |
 
 
 
