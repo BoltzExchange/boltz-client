@@ -304,6 +304,11 @@ func (server *RpcServer) Start() chan error {
 	return errChannel
 }
 
+func (server *RpcServer) Stop() error {
+	_, err := server.boltzServer.Stop(context.Background(), nil)
+	return err
+}
+
 func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 	boltzUrl := cfg.Boltz.URL
 	if boltzUrl == "" {
