@@ -255,7 +255,7 @@ type SwapQuery struct {
 	From     *boltz.Currency
 	To       *boltz.Currency
 	States   []boltzrpc.SwapState
-	IsAuto   *bool
+	Include  boltzrpc.IncludeSwaps
 	Since    time.Time
 	TenantId *Id
 }
@@ -285,9 +285,9 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 		}
 		conditions = append(conditions, "state IN ("+strings.Join(states, ",")+")")
 	}
-	if query.IsAuto != nil {
+	if query.Include != boltzrpc.IncludeSwaps_ALL {
 		conditions = append(conditions, "isAuto = ?")
-		values = append(values, *query.IsAuto)
+		values = append(values, query.Include == boltzrpc.IncludeSwaps_AUTO)
 	}
 	if !query.Since.IsZero() {
 		conditions = append(conditions, "createdAt >= ?")

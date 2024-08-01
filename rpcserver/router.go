@@ -326,7 +326,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	response := &boltzrpc.ListSwapsResponse{}
 
 	args := database.SwapQuery{
-		IsAuto:   request.IsAuto,
+		Include:  request.Include,
 		TenantId: macaroons.TenantIdFromContext(ctx),
 	}
 
@@ -378,7 +378,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 
 func (server *routedBoltzServer) GetStats(ctx context.Context, request *boltzrpc.GetStatsRequest) (*boltzrpc.GetStatsResponse, error) {
 	stats, err := server.database.QueryStats(database.SwapQuery{
-		IsAuto:   request.IsAuto,
+		Include:  request.Include,
 		TenantId: macaroons.TenantIdFromContext(ctx),
 	}, []boltz.SwapType{boltz.NormalSwap, boltz.ReverseSwap, boltz.ChainSwap})
 	if err != nil {

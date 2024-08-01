@@ -760,7 +760,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `is_auto` | [`bool`](#bool) | optional | only consider manual or autoswaps. returns both if left empty |
+| `include` | [`IncludeSwaps`](#includeswaps) |  | which swaps to include in the stats |
 
 
 
@@ -953,8 +953,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `from` | [`Currency`](#currency) | optional |  |
 | `to` | [`Currency`](#currency) | optional |  |
-| `is_auto` | [`bool`](#bool) | optional | only consider manual or autoswaps. returns both if left empty |
 | `state` | [`SwapState`](#swapstate) | optional |  |
+| `include` | [`IncludeSwaps`](#includeswaps) |  |  |
 
 
 
@@ -1347,6 +1347,17 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ---- | ------ | ----------- |
 | BTC | 0 |  |
 | LBTC | 1 |  |
+
+
+
+#### IncludeSwaps
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ALL | 0 |  |
+| MANUAL | 1 |  |
+| AUTO | 2 |  |
 
 
 

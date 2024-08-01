@@ -58,7 +58,6 @@ func (c *shared) GetCurrentBudget(
 		}
 	}
 
-	isAuto := true
 	var swapTypes []boltz.SwapType
 	if swapperType == Lightning {
 		swapTypes = []boltz.SwapType{boltz.NormalSwap, boltz.ReverseSwap}
@@ -67,7 +66,7 @@ func (c *shared) GetCurrentBudget(
 	}
 	stats, err := c.database.QueryStats(database.SwapQuery{
 		Since:    currentInterval.StartDate,
-		IsAuto:   &isAuto,
+		Include:  boltzrpc.IncludeSwaps_AUTO,
 		TenantId: &tenantId,
 	}, swapTypes)
 	if err != nil {

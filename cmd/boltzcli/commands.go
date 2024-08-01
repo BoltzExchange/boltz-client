@@ -79,18 +79,7 @@ var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
 	Category: "Info",
 	Usage:    "Lists all swaps",
-	Action: func(ctx *cli.Context) error {
-		var isAuto *bool
-		if ctx.Bool("manual") {
-			isAuto = new(bool)
-			*isAuto = false
-		}
-		if ctx.Bool("auto") {
-			isAuto = new(bool)
-			*isAuto = true
-		}
-		return listSwaps(ctx, isAuto)
-	},
+	Action:   listSwaps,
 	Flags: []cli.Flag{
 		jsonFlag,
 		&cli.StringFlag{
@@ -120,22 +109,23 @@ var listSwapsCommand = &cli.Command{
 	},
 }
 
+func getIncludeSwaps(ctx *cli.Context) boltzrpc.IncludeSwaps {
+	if ctx.Bool("manual") {
+		return boltzrpc.IncludeSwaps_MANUAL
+	}
+	if ctx.Bool("auto") {
+		return boltzrpc.IncludeSwaps_AUTO
+	}
+	return boltzrpc.IncludeSwaps_ALL
+}
+
 var getStatsCommand = &cli.Command{
 	Name:     "stats",
 	Category: "Info",
 	Usage:    "Get swap related stats",
 	Action: func(ctx *cli.Context) error {
-		var isAuto *bool
-		if ctx.Bool("manual") {
-			isAuto = new(bool)
-			*isAuto = false
-		}
-		if ctx.Bool("auto") {
-			isAuto = new(bool)
-			*isAuto = true
-		}
 		client := getClient(ctx)
-		response, err := client.GetStats(&boltzrpc.GetStatsRequest{IsAuto: isAuto})
+		response, err := client.GetStats(&boltzrpc.GetStatsRequest{Include: getIncludeSwaps(ctx)})
 		if err != nil {
 			return err
 		}
@@ -159,10 +149,10 @@ var getStatsCommand = &cli.Command{
 	},
 }
 
-func listSwaps(ctx *cli.Context, isAuto *bool) error {
+func listSwaps(ctx *cli.Context) error {
 	client := getClient(ctx)
 	request := &boltzrpc.ListSwapsRequest{
-		IsAuto: isAuto,
+		Include: getIncludeSwaps(ctx),
 	}
 	if from := ctx.String("from"); from != "" {
 		currency, err := parseCurrency(from)

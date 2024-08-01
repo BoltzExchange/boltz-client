@@ -400,13 +400,17 @@ message GetServiceInfoResponse {
     Limits limits = 2;
 }
 
+enum IncludeSwaps {
+    ALL = 0;
+    MANUAL = 1;
+    AUTO = 2;
+}
 
 message ListSwapsRequest {
     optional Currency from = 1;
     optional Currency to = 2;
-    // only consider manual or autoswaps. returns both if left empty
-    optional bool is_auto = 3;
     optional SwapState state = 4;
+    IncludeSwaps include = 5;
 }
 message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
@@ -416,8 +420,8 @@ message ListSwapsResponse {
 }
 
 message GetStatsRequest {
-    // only consider manual or autoswaps. returns both if left empty
-    optional bool is_auto = 1;
+    // which swaps to include in the stats
+    IncludeSwaps include = 1;
 }
 
 message GetStatsResponse {
