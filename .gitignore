@@ -38,5 +38,6 @@ regtest
 
 # Goland
 .idea/
+.run/
 
 test-data
