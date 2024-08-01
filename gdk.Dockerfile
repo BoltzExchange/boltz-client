@@ -11,7 +11,7 @@ RUN export PATH="/root/.cargo/bin:$PATH" && cd gdk && \
 
 FROM scratch AS final
 
-COPY --from=builder /root/gdk/gdk/build-gcc/libgreen_gdk_full.a /
+COPY --from=builder /root/gdk/gdk/build-gcc/src/libgreen_gdk.a /
 COPY --from=builder /root/gdk/gdk/build-gcc/src/libgreen_gdk.so /
 
 ENTRYPOINT []
