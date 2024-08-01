@@ -12,8 +12,8 @@ jobs:
 
     strategy:
       matrix:
-        platform: [ubuntu-latest]
-        go-version: [1.21.x]
+        platform: [ ubuntu-latest ]
+        go-version: [ 1.21.x ]
 
     runs-on: ${{ matrix.platform }}
 
@@ -33,6 +33,8 @@ jobs:
         run: make unit
 
       - name: Start Regtest
+        env:
+          COMPOSE_PROFILES: ci
         run: make download-regtest && chmod -R 777 regtest && make start-regtest
 
       - name: Integration Tests
