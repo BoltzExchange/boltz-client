@@ -1,6 +1,6 @@
 PKG := github.com/BoltzExchange/boltz-client
 VERSION := 2.1.0
-GDK_VERSION = 0.71.3
+GDK_VERSION = 0.72.2
 GO_VERSION := 1.22.5
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
@@ -98,8 +98,7 @@ install:
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-deps:
-	git submodule update --init --recursive
+deps: submodules
 	go mod vendor
 	cp -r ./go-secp256k1-zkp/secp256k1-zkp ./vendor/github.com/vulpemventures/go-secp256k1-zkp
 	# exclude the package and any lines including a # (#cgo, #include, etc.)
@@ -109,7 +108,7 @@ deps:
 		find secp256k1-zkp -type f -name "*.h" -print0 | xargs -0 sed -i '/include/!s/secp256k1/go_secp256k1/g'
 
 download-gdk:
-ifeq ("$(wildcard onchain/wallet/lib/libgreenaddress.so)","")
+ifeq ("$(wildcard onchain/wallet/lib/libgreen_gdk.so)","")
 	@$(call print, "Downloading gdk library")
 	@container_id=$$(docker create "boltz/gdk-ubuntu:$(GDK_VERSION)" true); \
 	docker cp "$$container_id:/" onchain/wallet/lib/ && \
@@ -120,6 +119,10 @@ endif
 #
 # Utils
 #
+
+submodules:
+	@$(call print, "Updating submodules")
+	git submodule update --init --recursive
 
 mockery:
 	@$(call print, "Generating mocks")
@@ -151,7 +154,7 @@ binaries:
 	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
 
-gdk:
+build-gdk: submodules
 	docker buildx build --push -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile $(DOCKER_ARGS) .
 
 .PHONY: build binaries
