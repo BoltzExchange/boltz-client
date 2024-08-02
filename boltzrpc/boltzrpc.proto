@@ -420,7 +420,6 @@ message ListSwapsResponse {
 }
 
 message GetStatsRequest {
-    // which swaps to include in the stats
     IncludeSwaps include = 1;
 }
 
