@@ -172,6 +172,11 @@ func (onchain *Onchain) GetWalletById(id Id) (wallet Wallet, err error) {
 }
 
 func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (float64, error) {
+	if currency == boltz.CurrencyLiquid && onchain.Network == boltz.MainNet {
+		if boltzProvider, ok := onchain.Liquid.Tx.(*BoltzTxProvider); ok {
+			return boltzProvider.GetFeeEstimation(boltz.CurrencyLiquid)
+		}
+	}
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return 0, err

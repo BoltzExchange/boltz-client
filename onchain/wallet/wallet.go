@@ -30,6 +30,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
+const MinFeeRate = 0.01
+
 var ErrSubAccountNotSet = errors.New("subaccount not set")
 
 type AuthHandler = *C.struct_GA_auth_handler
@@ -103,6 +105,7 @@ type Wallet struct {
 	session        Session
 	connected      bool
 	syncedAccounts []uint64
+	txProvider     onchain.TxProvider
 }
 
 type Config struct {
@@ -292,7 +295,10 @@ func (wallet *Wallet) Connect() error {
 		return err
 	}
 
-	params := make(map[string]any)
+	params := map[string]any{
+		// gdk uses sat/kVB
+		"min_fee_rate": MinFeeRate * 1000,
+	}
 	var electrum onchain.ElectrumOptions
 	if wallet.Currency == boltz.CurrencyBtc {
 		electrum = config.Electrum.Btc
@@ -501,6 +507,10 @@ func GenerateMnemonic() (string, error) {
 	return C.GoString(mnemonic), nil
 }
 
+func (wallet *Wallet) SetTxProvider(txProvider onchain.TxProvider) {
+	wallet.txProvider = txProvider
+}
+
 func (wallet *Wallet) Disconnect() error {
 	if !wallet.connected {
 		return nil
@@ -616,6 +626,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 
 	transactionDetails, free := toJson(map[string]any{
+		// gdk uses sat/kVB
 		"fee_rate": satPerVbyte * 1000,
 		"addressees": []map[string]any{
 			{
@@ -644,6 +655,24 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", err
 	}
 	free()
+
+	if wallet.txProvider != nil {
+		var signedTx struct {
+			Transaction string `json:"transaction"`
+			Error       string `json:"error"`
+		}
+		if err := mapstructure.Decode(result, &signedTx); err != nil {
+			return "", err
+		}
+		if signedTx.Error != "" {
+			return "", errors.New(signedTx.Error)
+		}
+		tx, err := wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
+		if err != nil {
+			return "", err
+		}
+		return tx, nil
+	}
 
 	params, free = toJson(result)
 	var sendTx struct {
