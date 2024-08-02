@@ -5,10 +5,12 @@ package wallet_test
 import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/logger"
+	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	onchainWallet "github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/test"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -32,15 +34,34 @@ func TestBalance(t *testing.T) {
 	require.NotZero(t, balance.Total)
 }
 func TestSend(t *testing.T) {
-	txid, err := wallet.SendToAddress(test.BtcCli("getnewaddress"), 10000, 1)
-	require.NoError(t, err)
-	rawTx := test.BtcCli("getrawtransaction " + txid)
-	tx, err := boltz.NewBtcTxFromHex(rawTx)
-	require.NoError(t, err)
-	for _, txIn := range tx.MsgTx().TxIn {
-		require.Equalf(t, wire.MaxTxInSequenceNum-1, txIn.Sequence, "rbf should be disabled")
-	}
-	test.MineBlock()
+	t.Run("Normal", func(t *testing.T) {
+		txid, err := wallet.SendToAddress(test.BtcCli("getnewaddress"), 10000, 1)
+		require.NoError(t, err)
+		rawTx := test.BtcCli("getrawtransaction " + txid)
+		tx, err := boltz.NewBtcTxFromHex(rawTx)
+		require.NoError(t, err)
+		for _, txIn := range tx.MsgTx().TxIn {
+			require.Equalf(t, wire.MaxTxInSequenceNum-1, txIn.Sequence, "rbf should be disabled")
+		}
+		test.MineBlock()
+	})
+
+	t.Run("TxProvider", func(t *testing.T) {
+		t.Cleanup(func() {
+			wallet.SetTxProvider(nil)
+		})
+
+		txProvider := onchainmock.NewMockTxProvider(t)
+		txProvider.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(func(txHex string) (string, error) {
+			require.NotEmpty(t, txHex)
+			return "txid", nil
+		})
+		wallet.SetTxProvider(txProvider)
+
+		txid, err := wallet.SendToAddress(test.BtcCli("getnewaddress"), 10000, onchainWallet.MinFeeRate)
+		require.NoError(t, err)
+		require.Equal(t, "txid", txid)
+	})
 }
 
 func TestReal(t *testing.T) {
