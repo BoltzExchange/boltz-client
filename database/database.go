@@ -285,9 +285,13 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 		}
 		conditions = append(conditions, "state IN ("+strings.Join(states, ",")+")")
 	}
-	if query.Include != boltzrpc.IncludeSwaps_ALL {
+	if query.Include == boltzrpc.IncludeSwaps_MANUAL {
 		conditions = append(conditions, "isAuto = ?")
-		values = append(values, query.Include == boltzrpc.IncludeSwaps_AUTO)
+		values = append(values, false)
+	}
+	if query.Include == boltzrpc.IncludeSwaps_AUTO {
+		conditions = append(conditions, "isAuto = ?")
+		values = append(values, true)
 	}
 	if !query.Since.IsZero() {
 		conditions = append(conditions, "createdAt >= ?")
