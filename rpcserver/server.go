@@ -373,7 +373,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 	}
 
 	if cfg.Electrum.Btc.Url != "" {
-		logger.Info("Using configured Electrum Btc RPC: " + cfg.Electrum.Btc.Url)
+		logger.Info("Using configured Electrum BTC RPC: " + cfg.Electrum.Btc.Url)
 		client, err := electrum.NewClient(cfg.Electrum.Btc)
 		if err != nil {
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
