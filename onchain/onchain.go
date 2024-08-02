@@ -71,13 +71,13 @@ type Wallet interface {
 }
 
 type ElectrumOptions struct {
-	Url string `long:"url" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
-	SSL bool   `long:"ssl" description:"whether the electrum server uses ssl"`
+	Url string
+	SSL bool
 }
 
 type ElectrumConfig struct {
-	Btc    ElectrumOptions `group:"Btc Electrum Options" namespace:"mempool.btc"`
-	Liquid ElectrumOptions `group:"Liquid Electrum Options" namespace:"mempool.liquid"`
+	Btc    ElectrumOptions
+	Liquid ElectrumOptions
 }
 
 var RegtestElectrumConfig = ElectrumConfig{

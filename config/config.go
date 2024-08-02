@@ -71,7 +71,11 @@ type Config struct {
 	MempoolApi       string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 	MempoolLiquidApi string `long:"mempool-liquid" description:"mempool.space liquid API to use for fee estimations; set to empty string to disable"`
 
-	Electrum onchain.ElectrumConfig
+	ElectrumUrl       string `long:"electrum" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
+	ElectrumSSL       bool   `long:"electrum-ssl" description:"whether the electrum server uses ssl"`
+	ElectrumLiquidUrl string `long:"electrum-liquid" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
+	ElectrumLiquidSSL bool   `long:"electrum-liquid-ssl" description:"whether the electrum server uses ssl"`
+	Electrum          onchain.ElectrumConfig
 
 	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
@@ -216,6 +220,11 @@ func LoadConfig(dataDir string) (*Config, error) {
 
 	createDirIfNotExists(cfg.DataDir)
 	createDirIfNotExists(macaroonDir)
+
+	cfg.Electrum = onchain.ElectrumConfig{
+		Btc:    onchain.ElectrumOptions{Url: cfg.ElectrumUrl, SSL: cfg.ElectrumSSL},
+		Liquid: onchain.ElectrumOptions{Url: cfg.ElectrumLiquidUrl, SSL: cfg.ElectrumLiquidSSL},
+	}
 
 	return &cfg, nil
 }
