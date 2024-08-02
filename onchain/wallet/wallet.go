@@ -295,6 +295,7 @@ func (wallet *Wallet) Connect() error {
 	}
 
 	params := map[string]any{
+		// gdk uses sat/kVB
 		"min_fee_rate": MinFeeRate * 1000,
 	}
 	if wallet.Currency == boltz.CurrencyBtc {
@@ -619,6 +620,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 
 	transactionDetails, free := toJson(map[string]any{
+		// gdk uses sat/kVB
 		"fee_rate": satPerVbyte * 1000,
 		"addressees": []map[string]any{
 			{
