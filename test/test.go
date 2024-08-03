@@ -40,9 +40,10 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 	InitLogger()
 	if !wallet.Initialized() {
 		err = wallet.Init(wallet.Config{
-			DataDir: "./test-data",
-			Network: boltz.Regtest,
-			Debug:   debug,
+			DataDir:  "./test-data",
+			Network:  boltz.Regtest,
+			Debug:    debug,
+			Electrum: onchain.RegtestElectrumConfig,
 		})
 		if err != nil {
 			return nil, nil, err

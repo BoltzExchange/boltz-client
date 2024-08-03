@@ -17,15 +17,15 @@ type Client struct {
 	blockHeight uint32
 }
 
-func NewClient(url string, ssl bool) (*Client, error) {
+func NewClient(options onchain.ElectrumOptions) (*Client, error) {
 	// Establishing a new SSL connection to an ElectrumX server
 	ctx := context.Background()
 	c := &Client{ctx: ctx}
 	var err error
-	if ssl {
-		c.client, err = electrum.NewClientSSL(ctx, url, &tls.Config{})
+	if options.SSL {
+		c.client, err = electrum.NewClientSSL(ctx, options.Url, &tls.Config{})
 	} else {
-		c.client, err = electrum.NewClientTCP(ctx, url)
+		c.client, err = electrum.NewClientTCP(ctx, options.Url)
 	}
 	if err != nil {
 		return nil, err

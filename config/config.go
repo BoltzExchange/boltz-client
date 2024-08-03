@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"os"
 	"path"
 	"runtime"
@@ -70,14 +71,21 @@ type Config struct {
 	MempoolApi       string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 	MempoolLiquidApi string `long:"mempool-liquid" description:"mempool.space liquid API to use for fee estimations; set to empty string to disable"`
 
-	ElectrumUrl            string `long:"electrum" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
-	ElectrumSSL            bool   `long:"electrum-ssl" description:"whether the electrum server uses ssl"`
-	ElectrumLiquidUrl      string `long:"electrum-liquid" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
-	ElectrumLiquiLiquidSSL bool   `long:"electrum-liquid-ssl" description:"whether the electrum server uses ssl"`
+	ElectrumUrl       string `long:"electrum" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
+	ElectrumSSL       bool   `long:"electrum-ssl" description:"whether the electrum server uses ssl"`
+	ElectrumLiquidUrl string `long:"electrum-liquid" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
+	ElectrumLiquidSSL bool   `long:"electrum-liquid-ssl" description:"whether the electrum server uses ssl"`
 
 	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
 	Help *helpOptions `group:"Help Options"`
+}
+
+func (c *Config) Electrum() onchain.ElectrumConfig {
+	return onchain.ElectrumConfig{
+		Btc:    onchain.ElectrumOptions{Url: c.ElectrumUrl, SSL: c.ElectrumSSL},
+		Liquid: onchain.ElectrumOptions{Url: c.ElectrumLiquidUrl, SSL: c.ElectrumLiquidSSL},
+	}
 }
 
 func LoadConfig(dataDir string) (*Config, error) {

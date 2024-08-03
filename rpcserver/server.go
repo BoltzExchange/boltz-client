@@ -352,33 +352,39 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 
 	chain.Init()
 
-	if cfg.ElectrumLiquidUrl == "" && cfg.MempoolLiquidApi == "" {
+	electrumConfig := cfg.Electrum()
+	if electrumConfig.Liquid.Url == "" && cfg.MempoolLiquidApi == "" {
 		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	}
+
+	if network == boltz.Regtest && electrumConfig.Btc.Url == "" && electrumConfig.Liquid.Url == "" {
+		electrumConfig = onchain.RegtestElectrumConfig
 	}
 
 	if !wallet.Initialized() {
 		err := wallet.Init(wallet.Config{
-			DataDir: cfg.DataDir,
-			Network: network,
-			Debug:   false,
+			DataDir:  cfg.DataDir,
+			Network:  network,
+			Debug:    false,
+			Electrum: electrumConfig,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("could not init wallet: %v", err)
 		}
 	}
 
-	if cfg.ElectrumUrl != "" {
-		logger.Info("Using configured Electrum RPC: " + cfg.ElectrumUrl)
-		client, err := electrum.NewClient(cfg.ElectrumUrl, cfg.ElectrumSSL)
+	if electrumConfig.Btc.Url != "" {
+		logger.Info("Using configured Electrum BTC RPC: " + electrumConfig.Btc.Url)
+		client, err := electrum.NewClient(electrumConfig.Btc)
 		if err != nil {
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
 		chain.Btc.Blocks = client
 		chain.Btc.Tx = client
 	}
-	if cfg.ElectrumLiquidUrl != "" {
-		logger.Info("Using configured Electrum Liquid RPC: " + cfg.ElectrumLiquidUrl)
-		client, err := electrum.NewClient(cfg.ElectrumLiquidUrl, cfg.ElectrumLiquiLiquidSSL)
+	if electrumConfig.Liquid.Url != "" {
+		logger.Info("Using configured Electrum Liquid RPC: " + electrumConfig.Liquid.Url)
+		client, err := electrum.NewClient(electrumConfig.Liquid)
 		if err != nil {
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}

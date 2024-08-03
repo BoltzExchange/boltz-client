@@ -109,9 +109,10 @@ type Wallet struct {
 }
 
 type Config struct {
-	DataDir string
-	Network *boltz.Network
-	Debug   bool
+	DataDir  string
+	Network  *boltz.Network
+	Debug    bool
+	Electrum onchain.ElectrumConfig
 }
 
 var config *Config
@@ -298,30 +299,35 @@ func (wallet *Wallet) Connect() error {
 		// gdk uses sat/kVB
 		"min_fee_rate": MinFeeRate * 1000,
 	}
+	var electrum onchain.ElectrumOptions
 	if wallet.Currency == boltz.CurrencyBtc {
+		electrum = config.Electrum.Btc
 		if config.Network == boltz.MainNet {
 			params["name"] = "electrum-mainnet"
 		} else if config.Network == boltz.TestNet {
 			params["name"] = "electrum-testnet"
 		} else if config.Network == boltz.Regtest {
 			params["name"] = "electrum-localtest"
-			params["electrum_url"] = "localhost:19001"
 		} else {
 			return errors.New("unknown network")
 		}
 	} else if wallet.Currency == boltz.CurrencyLiquid {
+		electrum = config.Electrum.Liquid
 		if config.Network == boltz.MainNet {
 			params["name"] = "electrum-liquid"
 		} else if config.Network == boltz.TestNet {
 			params["name"] = "electrum-testnet-liquid"
 		} else if config.Network == boltz.Regtest {
 			params["name"] = "electrum-localtest-liquid"
-			params["electrum_url"] = "localhost:19002"
 		} else {
 			return errors.New("unknown network")
 		}
 	} else {
 		return errors.New("unknown currency")
+	}
+	if electrum.Url != "" {
+		params["electrum_url"] = electrum.Url
+		params["electrum_tls"] = electrum.SSL
 	}
 	paramsJson, free := toJson(params)
 	defer free()
