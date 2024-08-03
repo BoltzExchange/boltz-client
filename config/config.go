@@ -75,11 +75,17 @@ type Config struct {
 	ElectrumSSL       bool   `long:"electrum-ssl" description:"whether the electrum server uses ssl"`
 	ElectrumLiquidUrl string `long:"electrum-liquid" description:"electrum rpc to use for fee estimations; set to empty string to disable"`
 	ElectrumLiquidSSL bool   `long:"electrum-liquid-ssl" description:"whether the electrum server uses ssl"`
-	Electrum          onchain.ElectrumConfig
 
 	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
 	Help *helpOptions `group:"Help Options"`
+}
+
+func (c *Config) Electrum() onchain.ElectrumConfig {
+	return onchain.ElectrumConfig{
+		Btc:    onchain.ElectrumOptions{Url: c.ElectrumUrl, SSL: c.ElectrumSSL},
+		Liquid: onchain.ElectrumOptions{Url: c.ElectrumLiquidUrl, SSL: c.ElectrumLiquidSSL},
+	}
 }
 
 func LoadConfig(dataDir string) (*Config, error) {
@@ -220,11 +226,6 @@ func LoadConfig(dataDir string) (*Config, error) {
 
 	createDirIfNotExists(cfg.DataDir)
 	createDirIfNotExists(macaroonDir)
-
-	cfg.Electrum = onchain.ElectrumConfig{
-		Btc:    onchain.ElectrumOptions{Url: cfg.ElectrumUrl, SSL: cfg.ElectrumSSL},
-		Liquid: onchain.ElectrumOptions{Url: cfg.ElectrumLiquidUrl, SSL: cfg.ElectrumLiquidSSL},
-	}
 
 	return &cfg, nil
 }
