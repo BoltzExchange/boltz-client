@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"github.com/fatih/color"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"log"
 	"os"
 	"strings"
@@ -39,24 +40,20 @@ var (
 	fileLogger    *log.Logger
 )
 
+type Options struct {
+	*lumberjack.Logger
+	Level string
+}
+
 // Init set logfile to "" to disable the file logger
-func Init(logfile string, level string) {
+func Init(options Options) {
 	isDisabled = false
 
-	if logfile != "" {
-		logFile, err := os.OpenFile(
-			logfile,
-			os.O_CREATE|os.O_WRONLY|os.O_APPEND,
-			0600,
-		)
-		if err != nil {
-			consoleLogger.Fatalf("Could not open logfile %s: %v", logfile, err)
-		}
-
-		fileLogger = log.New(logFile, "", loggerFlags)
+	if options.Logger != nil && options.Filename != "" {
+		fileLogger = log.New(options.Logger, "", loggerFlags)
 	}
 
-	parseLogLevel(level)
+	parseLogLevel(options.Level)
 }
 
 func parseLogLevel(level string) {
