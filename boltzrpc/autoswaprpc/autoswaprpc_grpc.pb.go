@@ -40,11 +40,11 @@ type AutoSwapClient interface {
 	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
 	// Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateLightningConfig(ctx context.Context, in *UpdateLightningConfigRequest, opts ...grpc.CallOption) (*Config, error)
-	// Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
+	//
+	//Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateChainConfig(ctx context.Context, in *UpdateChainConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
-	//Returns the currently used configurationencoded as json.
-	//If a key is specfied, only the value of that key will be returned.
+	//Returns the currently used configuration.
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
 	//Reloads the configuration from disk.
@@ -125,11 +125,11 @@ type AutoSwapServer interface {
 	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	// Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateLightningConfig(context.Context, *UpdateLightningConfigRequest) (*Config, error)
-	// Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
+	//
+	//Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
 	UpdateChainConfig(context.Context, *UpdateChainConfigRequest) (*Config, error)
 	//
-	//Returns the currently used configurationencoded as json.
-	//If a key is specfied, only the value of that key will be returned.
+	//Returns the currently used configuration.
 	GetConfig(context.Context, *GetConfigRequest) (*Config, error)
 	//
 	//Reloads the configuration from disk.

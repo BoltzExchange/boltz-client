@@ -26,13 +26,11 @@ service AutoSwap {
 
   /*
   Updates the chain configuration entirely or partially. Autoswap will reload the configuration after this call.
-
   */
   rpc UpdateChainConfig(UpdateChainConfigRequest) returns (Config);
 
   /*
-  Returns the currently used configurationencoded as json.
-  If a key is specfied, only the value of that key will be returned.
+  Returns the currently used configuration.
   */
   rpc GetConfig(GetConfigRequest) returns (Config);
 
@@ -45,20 +43,32 @@ service AutoSwap {
 
 message GetRecommendationsRequest {}
 
-message LightningRecommendation {
+message LightningSwap {
   uint64 amount = 1;
   uint64 fee_estimate = 2;
-  // any reasons why the recommendation is not being executed
+  boltzrpc.SwapType type = 3;
+  // Reasons for which the swap is not being executed
+  repeated string dismissed_reasons = 4;
+}
+
+message LightningRecommendation {
+  // Populated when a swap is recommended for the associated `channel`,
+  // otherwise, the current balances are below the configured thresholds
+  optional LightningSwap swap = 1;
+  boltzrpc.LightningChannel channel = 2;
+}
+
+message ChainSwap {
+  uint64 amount = 1;
+  uint64 fee_estimate = 2;
+  // Reasons for which the swap is not being executed
   repeated string dismissed_reasons = 3;
-  string type = 4;
-  boltzrpc.LightningChannel channel = 5;
 }
 
 message ChainRecommendation {
-  uint64 amount = 1;
-  uint64 fee_estimate = 2;
-  // any reasons why the recommendation is not being executed
-  repeated string dismissed_reasons = 3;
+  // Populated when a swap is recommended based on the current balance of the configured `from_wallet`
+  optional ChainSwap swap = 1;
+  boltzrpc.Balance wallet_balance = 2;
 }
 
 message Budget {

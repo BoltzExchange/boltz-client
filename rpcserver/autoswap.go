@@ -45,7 +45,7 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *a
 	}
 	response := &autoswaprpc.GetRecommendationsResponse{}
 	if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
-		recommendations, err := lnSwapper.GetConfig().GetSwapRecommendations()
+		recommendations, err := lnSwapper.GetConfig().GetSwapRecommendations(true)
 
 		if err != nil {
 			return nil, handleError(err)
@@ -53,11 +53,8 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *a
 
 		for _, recommendation := range recommendations {
 			response.Lightning = append(response.Lightning, &autoswaprpc.LightningRecommendation{
-				Type:             string(recommendation.Type),
-				Amount:           recommendation.Amount,
-				Channel:          serializeLightningChannel(recommendation.Channel),
-				FeeEstimate:      recommendation.FeeEstimate,
-				DismissedReasons: recommendation.DismissedReasons,
+				Swap:    serializeLightningSwap(recommendation.Swap),
+				Channel: serializeLightningChannel(recommendation.Channel),
 			})
 		}
 	}
@@ -68,9 +65,8 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *a
 		}
 		if recommendation != nil {
 			response.Chain = append(response.Chain, &autoswaprpc.ChainRecommendation{
-				Amount:           recommendation.Amount,
-				FeeEstimate:      recommendation.FeeEstimate,
-				DismissedReasons: recommendation.DismissedReasons,
+				Swap:          serializeAutoChainSwap(recommendation.Swap),
+				WalletBalance: serializeWalletBalance(recommendation.FromBalance),
 			})
 		}
 	}

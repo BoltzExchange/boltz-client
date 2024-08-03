@@ -385,10 +385,12 @@ func TestBudget(t *testing.T) {
 
 }
 
-func recommendation(t boltz.SwapType, a uint64, c *lightning.LightningChannel) *lightningRecommendation {
-	return &lightningRecommendation{
-		Amount:  a,
-		Type:    t,
+func recommendation(t boltz.SwapType, a uint64, c *lightning.LightningChannel) *LightningRecommendation {
+	return &LightningRecommendation{
+		Swap: &LightningSwap{
+			checks: checks{Amount: a},
+			Type:   t,
+		},
 		Channel: c,
 	}
 }
@@ -420,7 +422,7 @@ func TestStrategies(t *testing.T) {
 		name         string
 		config       *SerializedLnConfig
 		veverseSwaps []database.ReverseSwap
-		outcome      []*lightningRecommendation
+		outcome      []*LightningRecommendation
 		channels     []*lightning.LightningChannel
 		err          error
 		reserve      utils.Percentage
@@ -433,7 +435,9 @@ func TestStrategies(t *testing.T) {
 				OutboundBalancePercent: 40, // ignored because only reverse swaps are executed
 				SwapType:               "reverse",
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
+				{Channel: channels[0]},
+				{Channel: channels[1]},
 				recommendation(boltz.ReverseSwap, 500, channels[2]),
 			},
 		},
@@ -452,7 +456,7 @@ func TestStrategies(t *testing.T) {
 				InboundBalancePercent:  40,
 				OutboundBalancePercent: 40,
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.ReverseSwap, 150, nil),
 			},
 		},
@@ -462,7 +466,7 @@ func TestStrategies(t *testing.T) {
 				InboundBalancePercent:  40,
 				OutboundBalancePercent: 40,
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.ReverseSwap, 150, nil),
 			},
 		},
@@ -492,7 +496,7 @@ func TestStrategies(t *testing.T) {
 					Id:          3,
 				},
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.NormalSwap, 150, nil),
 			},
 		},
@@ -503,7 +507,7 @@ func TestStrategies(t *testing.T) {
 				InboundBalance:  400,
 				OutboundBalance: 200, // ignored because only reverse swaps are executed
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.ReverseSwap, 650, nil),
 			},
 		},
@@ -514,7 +518,7 @@ func TestStrategies(t *testing.T) {
 				OutboundBalance: 700,
 				InboundBalance:  200, // ignored because only normal swaps are executed
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.NormalSwap, 350, nil),
 			},
 		},
@@ -524,7 +528,7 @@ func TestStrategies(t *testing.T) {
 				OutboundBalance: 400,
 				InboundBalance:  400,
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.NormalSwap, 200, nil),
 			},
 			channels: []*lightning.LightningChannel{
@@ -541,7 +545,7 @@ func TestStrategies(t *testing.T) {
 				OutboundBalance: 400,
 				InboundBalance:  400,
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.ReverseSwap, 200, nil),
 			},
 			channels: []*lightning.LightningChannel{
@@ -566,7 +570,7 @@ func TestStrategies(t *testing.T) {
 				InboundBalancePercent: 50,
 				SwapType:              "reverse",
 			},
-			outcome: []*lightningRecommendation{
+			outcome: []*LightningRecommendation{
 				recommendation(boltz.ReverseSwap, 600, nil),
 			},
 			reserve: 10,
@@ -591,7 +595,14 @@ func TestStrategies(t *testing.T) {
 			}
 			recommendations := cfg.strategy(tc.channels)
 
-			require.Equal(t, tc.outcome, recommendations)
+			if tc.outcome == nil {
+				require.Nil(t, recommendations[0].Swap)
+			} else {
+				if len(tc.outcome) == 1 {
+					recommendations[0].Channel = nil
+				}
+				require.Equal(t, tc.outcome, recommendations)
+			}
 		})
 
 	}
@@ -702,18 +713,18 @@ func TestDismissedChannels(t *testing.T) {
 func TestCheckSwapRecommendation(t *testing.T) {
 
 	tests := []struct {
-		name           string
-		config         *SerializedLnConfig
-		recommendation *lightningRecommendation
-		outcome        []string
+		name    string
+		config  *SerializedLnConfig
+		amount  uint64
+		outcome []string
 	}{
 		{
 			name: "MaxFeePercent/High",
 			config: &SerializedLnConfig{
 				MaxFeePercent: 25,
 			},
-			recommendation: recommendation(boltz.NormalSwap, 100, nil),
-			outcome:        nil,
+			amount:  100,
+			outcome: nil,
 		},
 		{
 			name: "MaxFeePercent/High",
@@ -721,32 +732,32 @@ func TestCheckSwapRecommendation(t *testing.T) {
 				MaxFeePercent: 25,
 				Budget:        150,
 			},
-			recommendation: recommendation(boltz.NormalSwap, 100, nil),
-			outcome:        nil,
+			amount:  100,
+			outcome: nil,
 		},
 		{
 			name: "MaxFeePercent/Low",
 			config: &SerializedLnConfig{
 				MaxFeePercent: 10,
 			},
-			recommendation: recommendation(boltz.NormalSwap, 100, nil),
-			outcome:        []string{ReasonMaxFeePercent},
+			amount:  100,
+			outcome: []string{ReasonMaxFeePercent},
 		},
 		{
 			name: "LowAmount",
 			config: &SerializedLnConfig{
 				MaxFeePercent: 25,
 			},
-			recommendation: recommendation(boltz.NormalSwap, 99, nil),
-			outcome:        []string{ReasonAmountBelowMin},
+			amount:  99,
+			outcome: []string{ReasonAmountBelowMin},
 		},
 		{
 			name: "HighAmount",
 			config: &SerializedLnConfig{
 				MaxFeePercent: 25,
 			},
-			recommendation: recommendation(boltz.NormalSwap, 100000, nil),
-			outcome:        nil,
+			amount:  100000,
+			outcome: nil,
 		},
 		{
 			name: "BudgetExceeded",
@@ -754,8 +765,8 @@ func TestCheckSwapRecommendation(t *testing.T) {
 				MaxFeePercent: 25,
 				Budget:        10,
 			},
-			recommendation: recommendation(boltz.NormalSwap, 10000, nil),
-			outcome:        []string{ReasonBudgetExceeded},
+			amount:  10000,
+			outcome: []string{ReasonBudgetExceeded},
 		},
 	}
 
@@ -765,16 +776,21 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			t.Parallel()
 
 			if tc.config.Budget == 0 {
-				tc.config.Budget = tc.recommendation.Amount
+				tc.config.Budget = tc.amount
 			}
 
 			swapper, ln := getLnSwapper(t, tc.config)
 			pairInfo := newPairInfo()
 			ln.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
 
-			validated, err := swapper.cfg.validateRecommendations([]*lightningRecommendation{tc.recommendation}, int64(tc.config.Budget))
+			validated, err := swapper.cfg.validateRecommendations([]*LightningRecommendation{{Swap: &LightningSwap{
+				Type: boltz.NormalSwap,
+				checks: checks{
+					Amount: tc.amount,
+				},
+			}}}, int64(tc.config.Budget), true)
 			require.NoError(t, err)
-			require.Equal(t, tc.outcome, validated[0].DismissedReasons)
+			require.Equal(t, tc.outcome, validated[0].Swap.DismissedReasons)
 		})
 	}
 }

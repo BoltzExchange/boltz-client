@@ -1823,7 +1823,7 @@ func TestAutoSwap(t *testing.T) {
 
 		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.NotEmpty(t, recommendations.Chain[0].DismissedReasons)
+		require.NotEmpty(t, recommendations.Chain[0].Swap.DismissedReasons)
 
 		isAuto := true
 		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{IsAuto: &isAuto})
@@ -1930,20 +1930,12 @@ func TestAutoSwap(t *testing.T) {
 				time.Sleep(1000 * time.Millisecond)
 			}
 
-			channels, err := us.ListChannels()
-			require.NoError(t, err)
-			var inboundBalance, outboundBalance uint64
-			for _, channel := range channels {
-				inboundBalance += channel.InboundSat
-				outboundBalance += channel.OutboundSat
-			}
-
 			swapCfg := autoswap.DefaultLightningConfig()
 			swapCfg.AcceptZeroConf = true
 			swapCfg.MaxFeePercent = 10
 			swapCfg.Currency = boltzrpc.Currency_BTC
-			swapCfg.InboundBalance = inboundBalance - 100
-			swapCfg.OutboundBalance = outboundBalance - 100
+			swapCfg.InboundBalance = 1
+			swapCfg.OutboundBalance = 1
 			swapCfg.Wallet = strings.ToUpper(cfg.Node)
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
@@ -1951,9 +1943,9 @@ func TestAutoSwap(t *testing.T) {
 
 			recommendations, err := autoSwap.GetRecommendations()
 			require.NoError(t, err)
-			require.Zero(t, recommendations.Lightning)
-
-			swapCfg.InboundBalance = inboundBalance + 100
+			recommendation := recommendations.Lightning[0]
+			require.Nil(t, recommendation.Swap)
+			swapCfg.InboundBalance = recommendation.Channel.InboundSat + 100
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
@@ -1962,7 +1954,7 @@ func TestAutoSwap(t *testing.T) {
 				recommendations, err := autoSwap.GetRecommendations()
 				require.NoError(t, err)
 				require.Len(t, recommendations.Lightning, 1)
-				require.Equal(t, string(boltz.ReverseSwap), recommendations.Lightning[0].Type)
+				require.Equal(t, boltzrpc.SwapType_REVERSE, recommendations.Lightning[0].Swap.Type)
 			})
 
 			t.Run("Auto", func(t *testing.T) {
