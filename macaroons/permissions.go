@@ -77,6 +77,10 @@ var (
 			Entity: "swap",
 			Action: "read",
 		}},
+		"/boltzrpc.Boltz/GetStats": {{
+			Entity: "swap",
+			Action: "read",
+		}},
 		"/boltzrpc.Boltz/GetSwapInfo": {{
 			Entity: "swap",
 			Action: "read",

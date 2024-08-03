@@ -53,6 +53,14 @@ Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 | ------- | -------- |
 | [`ListSwapsRequest`](#listswapsrequest) | [`ListSwapsResponse`](#listswapsresponse) |
 
+#### GetStats
+
+Returns stats of all swaps, reverse swaps, and chain swaps in the database.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetStatsRequest`](#getstatsrequest) | [`GetStatsResponse`](#getstatsresponse) |
+
 #### RefundSwap
 
 Refund a failed swap manually. This is only required when no refund address has been set and the swap does not have an associated wallet.
@@ -745,6 +753,32 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### GetStatsRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `include` | [`IncludeSwaps`](#includeswaps) |  | which swaps to include in the stats |
+
+
+
+
+
+#### GetStatsResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `stats` | [`SwapStats`](#swapstats) |  |  |
+
+
+
+
+
 #### GetSubaccountsRequest
 
 
@@ -919,8 +953,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `from` | [`Currency`](#currency) | optional |  |
 | `to` | [`Currency`](#currency) | optional |  |
-| `is_auto` | [`bool`](#bool) | optional |  |
 | `state` | [`SwapState`](#swapstate) | optional |  |
+| `include` | [`IncludeSwaps`](#includeswaps) |  |  |
 
 
 
@@ -1180,6 +1214,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `avg_fees` | [`uint64`](#uint64) |  |  |
 | `avg_amount` | [`uint64`](#uint64) |  |  |
 | `count` | [`uint64`](#uint64) |  |  |
+| `success_count` | [`uint64`](#uint64) |  |  |
 
 
 
@@ -1312,6 +1347,17 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ---- | ------ | ----------- |
 | BTC | 0 |  |
 | LBTC | 1 |  |
+
+
+
+#### IncludeSwaps
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ALL | 0 |  |
+| MANUAL | 1 |  |
+| AUTO | 2 |  |
 
 
 

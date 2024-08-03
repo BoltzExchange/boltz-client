@@ -34,6 +34,11 @@ service Boltz {
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
 
     /*
+    Returns stats of all swaps, reverse swaps, and chain swaps in the database.
+    */
+    rpc GetStats (GetStatsRequest) returns (GetStatsResponse);
+
+    /*
     Refund a failed swap manually.
     This is only required when no refund address has been set and the swap does not have an associated wallet.
     */
@@ -135,13 +140,13 @@ service Boltz {
     /*
     Unlocks the server. This will be required on startup if there are any encrypted wallets.
      */
-    rpc Unlock(UnlockRequest) returns (google.protobuf.Empty); 
+    rpc Unlock(UnlockRequest) returns (google.protobuf.Empty);
 
     /*
     Check if the password is correct.
      */
-    rpc VerifyWalletPassword(VerifyWalletPasswordRequest) returns (VerifyWalletPasswordResponse); 
-    
+    rpc VerifyWalletPassword(VerifyWalletPasswordRequest) returns (VerifyWalletPasswordResponse);
+
     /*
     Changes the password for wallet encryption.
      */
@@ -164,7 +169,7 @@ service Boltz {
 
     /*
     Bakes a new macaroon with the specified permissions.
-    The macaroon can also be restricted to a specific tenant. In this case, 
+    The macaroon can also be restricted to a specific tenant. In this case,
     - any swap or wallet created with the returned macaroon will belong to this tenant and can not be accessed by other tenants.
     - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
      */
@@ -395,18 +400,31 @@ message GetServiceInfoResponse {
     Limits limits = 2;
 }
 
+enum IncludeSwaps {
+    ALL = 0;
+    MANUAL = 1;
+    AUTO = 2;
+}
 
 message ListSwapsRequest {
     optional Currency from = 1;
     optional Currency to = 2;
-    optional bool is_auto = 3;
     optional SwapState state = 4;
+    IncludeSwaps include = 5;
 }
 message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
     repeated CombinedChannelSwapInfo channel_creations = 2;
     repeated ReverseSwapInfo reverse_swaps = 3;
     repeated ChainSwapInfo chain_swaps = 4;
+}
+
+message GetStatsRequest {
+    IncludeSwaps include = 1;
+}
+
+message GetStatsResponse {
+    SwapStats stats = 1;
 }
 
 message RefundSwapRequest {
@@ -595,6 +613,7 @@ message SwapStats {
     uint64 avg_fees = 3;
     uint64 avg_amount = 4;
     uint64 count = 5;
+    uint64 success_count = 6;
 }
 
 message Budget {

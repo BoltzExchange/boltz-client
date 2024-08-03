@@ -79,18 +79,7 @@ var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
 	Category: "Info",
 	Usage:    "Lists all swaps",
-	Action: func(ctx *cli.Context) error {
-		var isAuto *bool
-		if ctx.Bool("manual") {
-			isAuto = new(bool)
-			*isAuto = false
-		}
-		if ctx.Bool("auto") {
-			isAuto = new(bool)
-			*isAuto = true
-		}
-		return listSwaps(ctx, isAuto)
-	},
+	Action:   listSwaps,
 	Flags: []cli.Flag{
 		jsonFlag,
 		&cli.StringFlag{
@@ -120,10 +109,50 @@ var listSwapsCommand = &cli.Command{
 	},
 }
 
-func listSwaps(ctx *cli.Context, isAuto *bool) error {
+func getIncludeSwaps(ctx *cli.Context) boltzrpc.IncludeSwaps {
+	if ctx.Bool("manual") {
+		return boltzrpc.IncludeSwaps_MANUAL
+	}
+	if ctx.Bool("auto") {
+		return boltzrpc.IncludeSwaps_AUTO
+	}
+	return boltzrpc.IncludeSwaps_ALL
+}
+
+var getStatsCommand = &cli.Command{
+	Name:     "stats",
+	Category: "Info",
+	Usage:    "Get swap related stats",
+	Action: func(ctx *cli.Context) error {
+		client := getClient(ctx)
+		response, err := client.GetStats(&boltzrpc.GetStatsRequest{Include: getIncludeSwaps(ctx)})
+		if err != nil {
+			return err
+		}
+		if ctx.Bool("json") {
+			printJson(response)
+		} else {
+			printStats(response.Stats)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		jsonFlag,
+		&cli.BoolFlag{
+			Name:  "auto",
+			Usage: "Only show swaps created by autoswap",
+		},
+		&cli.BoolFlag{
+			Name:  "manual",
+			Usage: "Only show swaps created manually",
+		},
+	},
+}
+
+func listSwaps(ctx *cli.Context) error {
 	client := getClient(ctx)
 	request := &boltzrpc.ListSwapsRequest{
-		IsAuto: isAuto,
+		Include: getIncludeSwaps(ctx),
 	}
 	if from := ctx.String("from"); from != "" {
 		currency, err := parseCurrency(from)
@@ -570,17 +599,20 @@ func printStatus(prefix string, status *autoswaprpc.Status) {
 	}
 	if status.Budget != nil {
 		budget := status.Budget
-		stats := budget.Stats
 		yellowBold.Println("\nBudget")
 		fmt.Printf(" - From %s until %s\n", parseDate(budget.StartDate), parseDate(budget.EndDate))
 		fmt.Println(" - Total: " + utils.Satoshis(budget.Total))
 		fmt.Println(" - Remaining: " + utils.Satoshis(budget.Remaining))
 
-		yellowBold.Println("Stats")
-		fmt.Println(" - Swaps: " + strconv.Itoa(int(stats.Count)))
-		fmt.Println(" - Amount: " + utils.Satoshis(stats.TotalAmount) + " (avg " + utils.Satoshis(stats.AvgAmount) + ")")
-		fmt.Println(" - Fees: " + utils.Satoshis(stats.TotalFees) + " (avg " + utils.Satoshis(stats.AvgFees) + ")")
+		printStats(budget.Stats)
 	}
+}
+
+func printStats(stats *boltzrpc.SwapStats) {
+	yellowBold.Println("Stats")
+	fmt.Printf(" - Successfull Swaps: %d\n", stats.SuccessCount)
+	fmt.Println(" - Amount: " + utils.Satoshis(stats.TotalAmount))
+	fmt.Println(" - Fees: " + utils.Satoshis(stats.TotalFees))
 }
 
 func autoSwapStatus(ctx *cli.Context) error {

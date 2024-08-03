@@ -49,6 +49,10 @@ func (boltz *Boltz) ListSwaps(request *boltzrpc.ListSwapsRequest) (*boltzrpc.Lis
 	return boltz.Client.ListSwaps(boltz.Ctx, request)
 }
 
+func (boltz *Boltz) GetStats(request *boltzrpc.GetStatsRequest) (*boltzrpc.GetStatsResponse, error) {
+	return boltz.Client.GetStats(boltz.Ctx, request)
+}
+
 func (boltz *Boltz) RefundSwap(request *boltzrpc.RefundSwapRequest) (*boltzrpc.GetSwapInfoResponse, error) {
 	return boltz.Client.RefundSwap(boltz.Ctx, request)
 }

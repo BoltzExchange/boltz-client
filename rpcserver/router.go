@@ -326,7 +326,7 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	response := &boltzrpc.ListSwapsResponse{}
 
 	args := database.SwapQuery{
-		IsAuto:   request.IsAuto,
+		Include:  request.Include,
 		TenantId: macaroons.TenantIdFromContext(ctx),
 	}
 
@@ -374,6 +374,17 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	return response, nil
+}
+
+func (server *routedBoltzServer) GetStats(ctx context.Context, request *boltzrpc.GetStatsRequest) (*boltzrpc.GetStatsResponse, error) {
+	stats, err := server.database.QueryStats(database.SwapQuery{
+		Include:  request.Include,
+		TenantId: macaroons.TenantIdFromContext(ctx),
+	}, []boltz.SwapType{boltz.NormalSwap, boltz.ReverseSwap, boltz.ChainSwap})
+	if err != nil {
+		return nil, handleError(err)
+	}
+	return &boltzrpc.GetStatsResponse{Stats: stats}, nil
 }
 
 var ErrInvalidAddress = status.Errorf(codes.InvalidArgument, "invalid address")
