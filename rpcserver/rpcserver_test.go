@@ -61,7 +61,7 @@ func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
 	cfg, err := config.LoadConfig(dataDir)
 	require.NoError(t, err)
-	cfg.LogLevel = "debug"
+	cfg.Log.Level = "debug"
 	cfg.Database.Path = t.TempDir() + "/boltz.db"
 	cfg.Node = "lnd"
 	return cfg
@@ -152,7 +152,7 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 		cfg.Standalone = true
 	}
 
-	logger.Init("", cfg.LogLevel)
+	logger.Init(cfg.Log)
 
 	var err error
 	if walletCredentials == nil {

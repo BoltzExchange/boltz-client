@@ -2,11 +2,14 @@ package config
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/onchain"
 	"os"
 	"path"
 	"runtime"
 	"strings"
+
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
@@ -50,8 +53,12 @@ type Config struct {
 
 	ConfigFile string `short:"c" long:"configfile" description:"Path to configuration file"`
 
-	LogFile  string `short:"l" long:"logfile" description:"Path to the log file"`
-	LogLevel string `long:"loglevel" description:"Log level (fatal, error, warn, info, debug, silly)"`
+	LogFile    string `short:"l" long:"logfile" description:"Path to the log file"`
+	LogLevel   string `long:"loglevel" description:"Log level (fatal, error, warn, info, debug, silly)"`
+	LogMaxSize int    `long:"logmaxsize" description:"Maximum size of the log file in megabytes before it gets rotated"`
+	LogMaxAge  int    `long:"logmaxage" description:"Maximum age of old log files in days before they get deleted"`
+
+	Log logger.Options
 
 	Network string `long:"network" description:"Network to use (mainnet, testnet, regtest)"`
 
@@ -94,8 +101,9 @@ func LoadConfig(dataDir string) (*Config, error) {
 
 		ConfigFile: "",
 
-		LogFile:  "",
-		LogLevel: "info",
+		LogLevel:   "info",
+		LogMaxSize: 5,
+		LogMaxAge:  30,
 
 		Network: "mainnet",
 
@@ -214,6 +222,14 @@ func LoadConfig(dataDir string) (*Config, error) {
 	}
 
 	cfg.LogFile = utils.ExpandDefaultPath(cfg.DataDir, cfg.LogFile, "boltz.log")
+	cfg.Log = logger.Options{
+		Level: cfg.LogLevel,
+		Logger: &lumberjack.Logger{
+			Filename: cfg.LogFile,
+			MaxAge:   cfg.LogMaxAge,
+			MaxSize:  cfg.LogMaxSize,
+		},
+	}
 	cfg.Database.Path = utils.ExpandDefaultPath(cfg.DataDir, cfg.Database.Path, "boltz.db")
 
 	cfg.RPC.TlsKeyPath = utils.ExpandDefaultPath(cfg.DataDir, cfg.RPC.TlsKeyPath, "tls.key")

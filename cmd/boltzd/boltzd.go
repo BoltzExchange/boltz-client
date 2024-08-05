@@ -28,7 +28,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Init(cfg.LogFile, cfg.LogLevel)
+	logger.Init(cfg.Log)
 
 	formattedCfg, err := utils.FormatJson(cfg)
 
