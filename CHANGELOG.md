@@ -1,4 +1,35 @@
 
+<a name="v2.1.1"></a>
+## [v2.1.1] - 2024-08-06
+### Feat
+- rotating logs ([#238](https://github.com/BoltzExchange/boltz-client/issues/238))
+- stats gRPC ([#222](https://github.com/BoltzExchange/boltz-client/issues/222))
+- include lightning and wallet balances in autoswap recommendations ([#231](https://github.com/BoltzExchange/boltz-client/issues/231))
+- use lowball fee on liquid ([#234](https://github.com/BoltzExchange/boltz-client/issues/234))
+- handle shutdown signals gracefully ([#230](https://github.com/BoltzExchange/boltz-client/issues/230))
+- add config option for cln server name ([#219](https://github.com/BoltzExchange/boltz-client/issues/219))
+- improve rpc startup error states ([#216](https://github.com/BoltzExchange/boltz-client/issues/216))
+- ClaimSwaps gRPC method ([#198](https://github.com/BoltzExchange/boltz-client/issues/198))
+- custom reverse swap invoice description ([#208](https://github.com/BoltzExchange/boltz-client/issues/208))
+- Liquid readonly wallets ([#203](https://github.com/BoltzExchange/boltz-client/issues/203))
+- warning in autoswap setup if selected wallet has no balance ([#210](https://github.com/BoltzExchange/boltz-client/issues/210))
+- download gdk dynamically ([#209](https://github.com/BoltzExchange/boltz-client/issues/209))
+- remember time of reverse swap payment ([#207](https://github.com/BoltzExchange/boltz-client/issues/207))
+- add more validators and `maxFeePercent` to autoswap setup ([#199](https://github.com/BoltzExchange/boltz-client/issues/199))
+
+### Fix
+- static GDK artifact ([#239](https://github.com/BoltzExchange/boltz-client/issues/239))
+- pass configured electrum url to gdk ([#235](https://github.com/BoltzExchange/boltz-client/issues/235))
+- only return complete autoswap config if no tenant is specified ([#226](https://github.com/BoltzExchange/boltz-client/issues/226))
+- dont error in `GetConfig` rpc when autoswap is not configured ([#220](https://github.com/BoltzExchange/boltz-client/issues/220))
+- automatically try to resync wallet subaccounts when not found ([#215](https://github.com/BoltzExchange/boltz-client/issues/215))
+- correct message when asking for wallet currency in autoswap setup ([#213](https://github.com/BoltzExchange/boltz-client/issues/213))
+- check if wallet params are nil ([#212](https://github.com/BoltzExchange/boltz-client/issues/212))
+- skip invoice status check if it does not come from own node ([#211](https://github.com/BoltzExchange/boltz-client/issues/211))
+- do not check status for externally paid invoices ([#206](https://github.com/BoltzExchange/boltz-client/issues/206))
+- make sure name is not empty when removing wallet in cli ([#197](https://github.com/BoltzExchange/boltz-client/issues/197))
+
+
 <a name="v2.1.0"></a>
 ## [v2.1.0] - 2024-07-11
 ### Feat
@@ -285,6 +316,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.0...v2.1.1
 [v2.1.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.2...v2.1.0
 [v2.0.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.1...v2.0.2
 [v2.0.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.0...v2.0.1
