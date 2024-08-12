@@ -38,8 +38,6 @@ import (
 	"sync"
 )
 
-const referralId = "boltz-client"
-
 type serverState string
 
 const (
@@ -54,13 +52,14 @@ type routedBoltzServer struct {
 
 	network *boltz.Network
 
-	onchain   *onchain.Onchain
-	lightning lightning.LightningNode
-	boltz     *boltz.Api
-	nursery   *nursery.Nursery
-	database  *database.Database
-	swapper   *autoswap.AutoSwap
-	macaroon  *macaroons.Service
+	onchain    *onchain.Onchain
+	lightning  lightning.LightningNode
+	boltz      *boltz.Api
+	nursery    *nursery.Nursery
+	database   *database.Database
+	swapper    *autoswap.AutoSwap
+	macaroon   *macaroons.Service
+	referralId string
 
 	stop  chan bool
 	state serverState
@@ -661,7 +660,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		To:              pair.To,
 		PairHash:        submarinePair.Hash,
 		RefundPublicKey: publicKey.SerializeCompressed(),
-		ReferralId:      referralId,
+		ReferralId:      server.referralId,
 	}
 	var swapResponse *boltzrpc.CreateSwapResponse
 
@@ -913,7 +912,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		InvoiceAmount:  request.Amount,
 		PreimageHash:   preimageHash,
 		ClaimPublicKey: publicKey.SerializeCompressed(),
-		ReferralId:     referralId,
+		ReferralId:     server.referralId,
 		Description:    request.GetDescription(),
 	}
 
@@ -1075,7 +1074,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		PairHash:        chainPair.Hash,
 		ClaimPublicKey:  claimPub.SerializeCompressed(),
 		RefundPublicKey: refundPub.SerializeCompressed(),
-		ReferralId:      referralId,
+		ReferralId:      server.referralId,
 	}
 
 	preimage, preimageHash, err := newPreimage()
