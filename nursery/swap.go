@@ -288,12 +288,16 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			return
 		}
 		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
-		serviceFee := swap.ServiceFeePercent.Calculate(swap.ExpectedAmount)
-		boltzOnchainFee := swap.ExpectedAmount - invoiceAmount - serviceFee
+		serviceFee := swap.ServiceFeePercent.Calculate(invoiceAmount)
+		boltzOnchainFee := int64(swap.ExpectedAmount - invoiceAmount - serviceFee)
+		if boltzOnchainFee < 0 {
+			logger.Warnf("Boltz onchain fee seems to be negative")
+			boltzOnchainFee = 0
+		}
 
 		logger.Infof("Swap service fee: %dsat onchain fee: %dsat", serviceFee, boltzOnchainFee)
 
-		if err := nursery.database.SetSwapServiceFee(swap, serviceFee, boltzOnchainFee); err != nil {
+		if err := nursery.database.SetSwapServiceFee(swap, serviceFee, uint64(boltzOnchainFee)); err != nil {
 			handleError("Could not set swap service fee in database: " + err.Error())
 			return
 		}
