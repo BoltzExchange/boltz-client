@@ -68,13 +68,16 @@ func TestChainSwapper(t *testing.T) {
 		pairInfo := newPairInfo()
 		rpcMock.EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(pairInfo, nil)
 
-		balance := &onchain.Balance{Total: 20000, Confirmed: 20000, Unconfirmed: 0}
+		balance := &onchain.Balance{Total: 1000, Confirmed: 1000, Unconfirmed: 0}
 		fromWallet.EXPECT().GetBalance().Return(balance, nil)
 
-		expectedAmount := balance.Confirmed - 10000
+		// the min reserve will be used by default
+		require.Equal(t, MinReserve, chainConfig.reserveBalance)
+		reserve := uint64(500)
+		chainConfig.reserveBalance = reserve
+		expectedAmount := balance.Confirmed - reserve
 
 		t.Run("Valid", func(t *testing.T) {
-
 			tenant := &database.Tenant{Name: "test"}
 			require.NoError(t, chainSwapper.database.CreateTenant(tenant))
 			test.FakeSwaps{ChainSwaps: []database.ChainSwap{
