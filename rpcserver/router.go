@@ -801,7 +801,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
 
 		if request.SendFromInternal {
-			swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount, !request.GetZeroConf())
+			swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount, !request.GetZeroConf(), submarinePair.Limits.MaximalZeroConfAmount)
 			if err != nil {
 				if dbErr := server.database.UpdateSwapState(&swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
 					logger.Errorf(dbErr.Error())
@@ -814,7 +814,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			return nil, handleError(err)
 		}
 	} else if request.SendFromInternal {
-		swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount, !request.GetZeroConf())
+		swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount, !request.GetZeroConf(), submarinePair.Limits.MaximalZeroConfAmount)
 		if err != nil {
 			return nil, handleError(err)
 		}
@@ -1212,7 +1212,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	if !externalPay {
 		from := chainSwap.FromData
-		from.LockupTransactionId, err = server.sendToAddress(fromWallet, from.LockupAddress, from.Amount, !request.GetLockupZeroConf())
+		from.LockupTransactionId, err = server.sendToAddress(fromWallet, from.LockupAddress, from.Amount, !request.GetLockupZeroConf(), chainPair.Limits.MaximalZeroConfAmount)
 		if err != nil {
 			if dbErr := server.database.UpdateChainSwapState(&chainSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
 				logger.Error(dbErr.Error())
@@ -1939,8 +1939,11 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 		}, nil
 }
 
-func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, allowLowball bool) (string, error) {
+func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, allowLowball bool, maxZeroConfAmount uint64) (string, error) {
 	// TODO: custom block target?
+	if amount > maxZeroConfAmount {
+		allowLowball = true
+	}
 	feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency, 2, allowLowball)
 	if err != nil {
 		return "", err
