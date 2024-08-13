@@ -85,6 +85,8 @@ type Config struct {
 
 	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
+	ReferralId string
+
 	Help *helpOptions `group:"Help Options"`
 }
 
@@ -145,6 +147,8 @@ func LoadConfig(dataDir string) (*Config, error) {
 		Database: &database.Database{
 			Path: "",
 		},
+
+		ReferralId: "boltz-client",
 	}
 
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
