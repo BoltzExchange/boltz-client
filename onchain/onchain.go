@@ -171,8 +171,8 @@ func (onchain *Onchain) GetWalletById(id Id) (wallet Wallet, err error) {
 	return onchain.GetAnyWallet(WalletChecker{Id: &id})
 }
 
-func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32) (float64, error) {
-	if currency == boltz.CurrencyLiquid && onchain.Network == boltz.MainNet {
+func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32, allowLowball bool) (float64, error) {
+	if currency == boltz.CurrencyLiquid && onchain.Network == boltz.MainNet && allowLowball {
 		if boltzProvider, ok := onchain.Liquid.Tx.(*BoltzTxProvider); ok {
 			return boltzProvider.GetFeeEstimation(boltz.CurrencyLiquid)
 		}
