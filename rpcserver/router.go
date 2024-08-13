@@ -650,7 +650,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	pair := utils.ParsePair(request.Pair)
 
-	submarinePair, err := server.getSubmarinePair(request.Pair)
+	submarinePair, err := server.GetPairInfo(ctx, &boltzrpc.GetPairInfoRequest{Type: boltzrpc.SwapType_SUBMARINE, Pair: request.Pair})
 	if err != nil {
 		return nil, err
 	}
@@ -676,6 +676,8 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		}
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
+		// set amount for balance check
+		request.Amount = uint64(decoded.MilliSat.ToSatoshis())
 	} else if !server.lightningAvailable(ctx) {
 		return nil, handleError(errors.New("invoice is required in standalone mode"))
 	} else if request.Amount != 0 {
@@ -699,14 +701,18 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		createSwap.PreimageHash = preimageHash
 	}
 
-	sendFromInternal := request.GetSendFromInternal()
 	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
 		Currency:      pair.From,
 		Id:            request.WalletId,
-		AllowReadonly: !sendFromInternal,
+		AllowReadonly: !request.SendFromInternal,
 	})
-	if err != nil && sendFromInternal {
-		return nil, handleError(err)
+	if request.SendFromInternal {
+		if err != nil {
+			return nil, handleError(err)
+		}
+		if err := checkBalance(wallet, request.Amount+utils.CalculateFeeEstimate(submarinePair.Fees, request.Amount)); err != nil {
+			return nil, handleError(err)
+		}
 	}
 
 	if swapResponse == nil {
@@ -1099,6 +1105,9 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 			Currency: pair.From,
 		})
 		if err != nil {
+			return nil, handleError(err)
+		}
+		if err := checkBalance(fromWallet, request.Amount); err != nil {
 			return nil, handleError(err)
 		}
 	} else if !externalPay {
@@ -1949,6 +1958,17 @@ func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address st
 	}
 	logger.Infof("Using fee of %f sat/vbyte", feeSatPerVbyte)
 	return wallet.SendToAddress(address, amount, feeSatPerVbyte)
+}
+
+func checkBalance(wallet onchain.Wallet, requiredAmount uint64) error {
+	balance, err := wallet.GetBalance()
+	if err != nil {
+		return err
+	}
+	if balance.Confirmed < requiredAmount {
+		return fmt.Errorf("wallet %s has insufficient balance: %d < %d", wallet.GetWalletInfo().Name, balance.Confirmed, requiredAmount)
+	}
+	return nil
 }
 
 func calculateDepositLimit(limit uint64, fees *boltzrpc.Fees, isMin bool) uint64 {

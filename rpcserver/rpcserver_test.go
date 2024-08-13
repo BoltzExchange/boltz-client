@@ -821,7 +821,7 @@ func TestSwap(t *testing.T) {
 								SendFromInternal: true,
 								WalletId:         &emptyWalletId,
 							})
-							require.Error(t, err)
+							require.ErrorContains(t, err, "insufficient balance")
 						})
 					})
 					t.Run("Deposit", func(t *testing.T) {
@@ -1517,7 +1517,7 @@ func TestChainSwap(t *testing.T) {
 						ToWalletId:   &toWalletId,
 						FromWalletId: &emptyWalletId,
 					})
-					require.Error(t, err)
+					require.ErrorContains(t, err, "insufficient balance")
 				})
 			})
 
