@@ -270,6 +270,7 @@ message SwapInfo {
     // internal wallet which was used to pay the swap
     optional uint64 wallet_id = 20;
     uint64 tenant_id = 21;
+    bool is_auto = 23;
 }
 
 enum SwapType {
@@ -336,6 +337,7 @@ message ReverseSwapInfo {
     optional uint64 routing_fee_msat = 20;
     bool external_pay = 21;
     uint64 tenant_id = 22;
+    bool is_auto = 24;
 }
 
 message BlockHeights {

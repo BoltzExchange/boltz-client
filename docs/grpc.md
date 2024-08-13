@@ -1122,6 +1122,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |
 | `external_pay` | [`bool`](#bool) |  |  |
 | `tenant_id` | [`uint64`](#uint64) |  |  |
+| `is_auto` | [`bool`](#bool) |  |  |
 
 
 
@@ -1199,6 +1200,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `wallet_id` | [`uint64`](#uint64) | optional | internal wallet which was used to pay the swap |
 | `tenant_id` | [`uint64`](#uint64) |  |  |
+| `is_auto` | [`bool`](#bool) |  |  |
 
 
 
