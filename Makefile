@@ -34,6 +34,11 @@ default: build
 $(TOOLS_PATH):
 	eval export PATH="$PATH:$(go env GOPATH)/bin"
 
+release:
+	git commit -a -m "chore: bump version to v$(VERSION)"
+	git tag -s v$(VERSION) -m "v$(VERSION)"
+	make changelog
+	git commit -a -m "chore: update changelog"
 
 tools: $(TOOLS_PATH)
 	@$(call print, "Installing tools")
