@@ -11,7 +11,7 @@ import (
 
 type Budget struct {
 	database.BudgetInterval
-	Amount int64
+	Amount uint64
 	Total  uint64
 	Stats  *boltzrpc.SwapStats
 }
@@ -73,11 +73,11 @@ func (c *shared) GetCurrentBudget(
 		return nil, errors.New("Could not get past fees: " + err.Error())
 	}
 
-	budget := int64(totalBudget) - int64(stats.TotalFees)
+	budget := max(0, int64(totalBudget)-int64(stats.TotalFees))
 
 	return &Budget{
 		BudgetInterval: *currentInterval,
-		Amount:         budget,
+		Amount:         uint64(budget),
 		Total:          totalBudget,
 		Stats:          stats,
 	}, nil
