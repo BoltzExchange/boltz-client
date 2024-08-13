@@ -1828,6 +1828,7 @@ func TestAutoSwap(t *testing.T) {
 		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{Include: boltzrpc.IncludeSwaps_AUTO})
 		require.Len(t, response.ChainSwaps, 1)
 		require.Equal(t, id, response.ChainSwaps[0].Id)
+		require.True(t, response.ChainSwaps[0].IsAuto)
 
 		stream, _ = swapStream(t, admin, id)
 		require.NoError(t, err)
@@ -1966,6 +1967,7 @@ func TestAutoSwap(t *testing.T) {
 				require.NoError(t, err)
 
 				require.NotEmpty(t, swaps.ReverseSwaps)
+				require.True(t, swaps.ReverseSwaps[0].IsAuto)
 				stream, _ := swapStream(t, admin, swaps.ReverseSwaps[0].Id)
 				stream(boltzrpc.SwapState_SUCCESSFUL)
 

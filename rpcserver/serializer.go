@@ -84,6 +84,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 		OnchainFee:          serializedSwap.OnchainFee,
 		WalletId:            serializedSwap.WalletId,
 		TenantId:            serializedSwap.TenantId,
+		IsAuto:              serializedSwap.IsAuto,
 	}
 
 	return serialized
@@ -119,6 +120,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		RoutingFeeMsat:      serializedReverseSwap.RoutingFeeMsat,
 		ExternalPay:         serializedReverseSwap.ExternalPay,
 		TenantId:            serializedReverseSwap.TenantId,
+		IsAuto:              serializedReverseSwap.IsAuto,
 	}
 }
 
@@ -126,21 +128,22 @@ func serializeChainSwap(chainSwap *database.ChainSwap) *boltzrpc.ChainSwapInfo {
 	if chainSwap == nil {
 		return nil
 	}
-	serializedchainSwap := chainSwap.Serialize()
+	serializedChainSwap := chainSwap.Serialize()
 
 	return &boltzrpc.ChainSwapInfo{
-		Id:         serializedchainSwap.Id,
+		Id:         serializedChainSwap.Id,
 		Pair:       serializePair(chainSwap.Pair),
 		State:      chainSwap.State,
-		Error:      serializedchainSwap.Error,
-		Status:     serializedchainSwap.Status,
-		Preimage:   serializedchainSwap.Preimage,
+		Error:      serializedChainSwap.Error,
+		Status:     serializedChainSwap.Status,
+		Preimage:   serializedChainSwap.Preimage,
 		CreatedAt:  serializeTime(chainSwap.CreatedAt),
-		ServiceFee: serializedchainSwap.ServiceFee,
-		OnchainFee: serializedchainSwap.OnchainFee,
+		ServiceFee: serializedChainSwap.ServiceFee,
+		OnchainFee: serializedChainSwap.OnchainFee,
 		FromData:   serializeChainSwapData(chainSwap.FromData),
 		ToData:     serializeChainSwapData(chainSwap.ToData),
 		TenantId:   chainSwap.TenantId,
+		IsAuto:     serializedChainSwap.IsAuto,
 	}
 }
 
