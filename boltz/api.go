@@ -67,7 +67,7 @@ type SubmarinePair struct {
 	Limits struct {
 		Minimal               uint64 `json:"minimal"`
 		Maximal               uint64 `json:"maximal"`
-		MaximalZeroConfAmount uint64 `json:"maximalZeroConfAmount"`
+		MaximalZeroConfAmount uint64 `json:"maximalZeroConf"`
 	} `json:"limits"`
 	Fees struct {
 		Percentage float64 `json:"percentage"`
@@ -101,7 +101,7 @@ type ChainPair struct {
 	Limits struct {
 		Minimal               uint64 `json:"minimal"`
 		Maximal               uint64 `json:"maximal"`
-		MaximalZeroConfAmount uint64 `json:"maximalZeroConfAmount"`
+		MaximalZeroConfAmount uint64 `json:"maximalZeroConf"`
 	} `json:"limits"`
 	Fees struct {
 		Percentage float64 `json:"percentage"`
