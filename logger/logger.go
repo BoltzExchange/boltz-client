@@ -36,7 +36,7 @@ var (
 	debugPrefix = color.CyanString("DEBUG")
 	sillyPrefix = "SILLY"
 
-	consoleLogger = log.New(os.Stdout, "", loggerFlags)
+	consoleLogger = log.New(os.Stderr, "", loggerFlags)
 	fileLogger    *log.Logger
 )
 
