@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -1865,7 +1866,10 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 	if request.TenantId != nil {
 		_, err := server.database.GetTenant(request.GetTenantId())
 		if err != nil {
-			return nil, fmt.Errorf("could not find tenant %d: %w", request.TenantId, err)
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, status.Errorf(codes.NotFound, "could not find tenant %d: %s", request.TenantId, err)
+			}
+			return nil, err
 		}
 	}
 
@@ -1896,6 +1900,9 @@ func (server *routedBoltzServer) CreateTenant(ctx context.Context, request *bolt
 func (server *routedBoltzServer) GetTenant(ctx context.Context, request *boltzrpc.GetTenantRequest) (*boltzrpc.Tenant, error) {
 	tenant, err := server.database.GetTenantByName(request.Name)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "tenant %s does not exist", request.Name)
+		}
 		return nil, err
 	}
 
