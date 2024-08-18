@@ -10,7 +10,7 @@ import (
 )
 
 func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
-	blockNotifier := nursery.registerBlockListener(currency)
+	blockNotifier := nursery.onchain.RegisterBlockListener(nursery.ctx, currency)
 
 	nursery.waitGroup.Add(1)
 	go func() {

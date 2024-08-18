@@ -88,6 +88,8 @@ var RegtestElectrumConfig = ElectrumConfig{
 type Currency struct {
 	Blocks BlockProvider
 	Tx     TxProvider
+
+	blockHeight uint32
 }
 
 type Onchain struct {
@@ -260,6 +262,47 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 	return 0, fmt.Errorf("unknown transaction type")
 }
 
+const retryInterval = 15 * time.Second
+
+func (onchain *Onchain) RegisterBlockListener(ctx context.Context, currency boltz.Currency) *utils.ChannelForwarder[*BlockEpoch] {
+	chain, err := onchain.GetCurrency(currency)
+	if err != nil || chain.Blocks == nil {
+		logger.Warnf("no block listener for %s", currency)
+		return nil
+	}
+
+	logger.Infof("Connecting to block %s epoch stream", currency)
+	blocks := make(chan *BlockEpoch)
+	blockNotifier := utils.ForwardChannel(blocks, 0, false)
+
+	go func() {
+		defer func() {
+			blockNotifier.Close()
+			logger.Debugf("Closed block listener for %s", currency)
+		}()
+		for {
+			err := chain.Blocks.RegisterBlockListener(ctx, blocks)
+			if err != nil && ctx.Err() == nil {
+				logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
+				logger.Infof("Retrying connection in %s", retryInterval)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(retryInterval):
+			}
+		}
+	}()
+
+	go func() {
+		for block := range blockNotifier.Get() {
+			chain.blockHeight = block.Height
+		}
+	}()
+
+	return blockNotifier
+}
+
 func (onchain *Onchain) GetBlockProvider(currency boltz.Currency) BlockProvider {
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
@@ -270,11 +313,14 @@ func (onchain *Onchain) GetBlockProvider(currency boltz.Currency) BlockProvider 
 }
 
 func (onchain *Onchain) GetBlockHeight(currency boltz.Currency) (uint32, error) {
-	listener := onchain.GetBlockProvider(currency)
-	if listener != nil {
-		return listener.GetBlockHeight()
+	chain, err := onchain.GetCurrency(currency)
+	if err != nil {
+		return 0, err
 	}
-	return 0, fmt.Errorf("no block listener for currency %s", currency)
+	if chain.blockHeight == 0 {
+		chain.blockHeight, err = chain.Blocks.GetBlockHeight()
+	}
+	return chain.blockHeight, err
 }
 
 func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (string, error) {

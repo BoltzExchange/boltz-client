@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"sync"
-	"time"
 
 	"github.com/BoltzExchange/boltz-client/utils"
 
@@ -40,8 +40,6 @@ type Nursery struct {
 	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
 	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
 }
-
-const retryInterval = 15 * time.Second
 
 type SwapUpdate struct {
 	Swap        *database.Swap
@@ -224,39 +222,6 @@ func (nursery *Nursery) removeSwapListener(id string) {
 		listener.Close()
 		delete(nursery.eventListeners, id)
 	}
-}
-
-func (nursery *Nursery) registerBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
-	provider := nursery.onchain.GetBlockProvider(currency)
-	if provider == nil {
-		logger.Warnf("no block listener for %s", currency)
-		return nil
-	}
-
-	logger.Infof("Connecting to block %s epoch stream", currency)
-	blocks := make(chan *onchain.BlockEpoch)
-	blockNotifier := utils.ForwardChannel(blocks, 0, false)
-
-	go func() {
-		defer func() {
-			blockNotifier.Close()
-			logger.Debugf("Closed block listener for %s", currency)
-		}()
-		for {
-			err := provider.RegisterBlockListener(nursery.ctx, blocks)
-			if err != nil && nursery.ctx.Err() == nil {
-				logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
-				logger.Infof("Retrying connection in %s", retryInterval)
-			}
-			select {
-			case <-nursery.ctx.Done():
-				return
-			case <-time.After(retryInterval):
-			}
-		}
-	}()
-
-	return blockNotifier
 }
 
 func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (id string, err error) {
