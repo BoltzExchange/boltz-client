@@ -111,7 +111,7 @@ func (server *routedBoltzServer) CreateAutoChainSwap(tenant *database.Tenant, re
 }
 
 func handleError(err error) error {
-	if err != nil {
+	if err != nil && status.Code(err) == codes.Unknown {
 		logger.Warn("RPC request failed: " + err.Error())
 	}
 
