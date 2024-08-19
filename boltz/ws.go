@@ -14,6 +14,8 @@ import (
 )
 
 const reconnectInterval = 15 * time.Second
+const pingInterval = 30 * time.Second
+const pongWait = 5 * time.Second
 
 type SwapUpdate struct {
 	SwapStatusResponse `mapstructure:",squash"`
@@ -53,14 +55,6 @@ func (boltz *Api) NewWebsocket() *Websocket {
 	}
 }
 
-func (boltz *Websocket) SendJson(data any) error {
-	send, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-	return boltz.conn.WriteMessage(websocket.TextMessage, send)
-}
-
 func (boltz *Websocket) Connect() error {
 	if boltz.closed {
 		return errors.New("websocket is closed")
@@ -85,6 +79,31 @@ func (boltz *Websocket) Connect() error {
 
 	logger.Infof("Connected to Boltz ws at %s", wsUrl)
 
+	setDeadline := func() error {
+		return conn.SetReadDeadline(time.Now().Add(pingInterval + pongWait))
+	}
+	_ = setDeadline()
+	conn.SetPongHandler(func(string) error {
+		logger.Silly("Received pong")
+		return setDeadline()
+	})
+
+	go func() {
+		ticker := time.NewTicker(pingInterval)
+		defer ticker.Stop()
+		for range ticker.C {
+			// Will not wait longer with writing than for the response
+			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(pongWait))
+			if err != nil {
+				if boltz.closed {
+					return
+				}
+				logger.Errorf("could not send ping; closing connection: %s", err)
+				_ = boltz.Close()
+			}
+		}
+	}()
+
 	go func() {
 		for {
 			msgType, message, err := conn.ReadMessage()
@@ -100,10 +119,6 @@ func (boltz *Websocket) Connect() error {
 			logger.Silly("Received websocket message: " + string(message))
 
 			switch msgType {
-			case websocket.PingMessage:
-				if err := conn.WriteMessage(websocket.PongMessage, nil); err != nil {
-					logger.Errorf("could not send pong: %s", err)
-				}
 			case websocket.TextMessage:
 				var response wsResponse
 				if err := json.Unmarshal(message, &response); err != nil {
@@ -138,7 +153,7 @@ func (boltz *Websocket) Connect() error {
 			}
 		}
 		for {
-			logger.Errorf("lost connection to boltz ws, reconnecting in %d", reconnectInterval)
+			logger.Errorf("lost connection to boltz ws, reconnecting in %s", reconnectInterval)
 			time.Sleep(reconnectInterval)
 			err := boltz.Connect()
 			if err == nil {
@@ -154,7 +169,7 @@ func (boltz *Websocket) Subscribe(swapIds []string) error {
 	if len(swapIds) == 0 {
 		return nil
 	}
-	if err := boltz.SendJson(map[string]any{
+	if err := boltz.conn.WriteJSON(map[string]any{
 		"op":      "subscribe",
 		"channel": "swap.update",
 		"args":    swapIds,
