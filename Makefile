@@ -69,11 +69,16 @@ download-regtest:
 ifeq ("$(wildcard regtest/start.sh)","")
 	@$(call print, "Downloading regtest")
 	eval git clone https://github.com/BoltzExchange/regtest
+	cp regtest.override.yml regtest/docker-compose.override.yml
 endif
 
 start-regtest: download-regtest
 	@$(call print, "Starting regtest")
-	eval cd regtest && git pull && ./start.sh
+	eval cd regtest && ./start.sh
+
+update-regtest: download-regtest
+	@$(call print, "Updating regtest")
+	eval cd regtest && git pull && docker compose pull
 
 #
 # Building
