@@ -68,12 +68,12 @@ integration: start-regtest
 download-regtest:
 ifeq ("$(wildcard regtest/start.sh)","")
 	@$(call print, "Downloading regtest")
-	eval git clone https://github.com/BoltzExchange/regtest
+	make submodules
 endif
 
 start-regtest: download-regtest
 	@$(call print, "Starting regtest")
-	eval cd regtest && git pull && ./start.sh
+	eval cd regtest && ./start.sh
 
 #
 # Building
@@ -159,7 +159,7 @@ binaries:
 	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
 
-build-gdk: submodules
+build-gdk:
 	docker buildx build --push -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile $(DOCKER_ARGS) .
 
 .PHONY: build binaries
