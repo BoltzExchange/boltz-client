@@ -16,8 +16,6 @@ GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
 COMMIT := $(shell git log --pretty=format:'%h' -n 1)
 LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -X $(PKG)/build.Version=$(VERSION) -w -s"
 
-XARGS := xargs -L 1
-
 GREEN := "\\033[0;32m"
 NC := "\\033[0m"
 
@@ -40,14 +38,9 @@ release:
 	make changelog
 	git commit -a -m "chore: update changelog"
 
-tools: $(TOOLS_PATH)
+install-tools: $(TOOLS_PATH)
 	@$(call print, "Installing tools")
-	go install \
-		"github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway" \
-		"github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc" \
-		"google.golang.org/grpc/cmd/protoc-gen-go-grpc" \
-		"google.golang.org/protobuf/cmd/protoc-gen-go" \
-		"github.com/git-chglog/git-chglog/cmd/git-chglog" \
+	cat tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
 
 proto: $(TOOLS_PATH)
 	@$(call print, "Generating protosbufs")
