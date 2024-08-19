@@ -2,3 +2,6 @@
 	path = go-secp256k1-zkp
 	url = https://github.com/vulpemventures/go-secp256k1-zkp
 	branch = v1.1.6
+[submodule "regtest"]
+	path = regtest
+	url = https://github.com/BoltzExchange/regtest

@@ -1,6 +1,7 @@
 package nursery
 
 import (
+	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -136,7 +137,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	}
 
 	handleError := func(err string) {
-		nursery.handleReverseSwapError(reverseSwap, fmt.Errorf(err))
+		nursery.handleReverseSwapError(reverseSwap, errors.New(err))
 	}
 
 	switch parsedStatus {

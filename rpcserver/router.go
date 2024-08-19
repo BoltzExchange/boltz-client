@@ -809,7 +809,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			swapResponse.TxId, err = server.sendToAddress(wallet, swapResponse.Address, swapResponse.ExpectedAmount, !request.GetZeroConf(), submarinePair.Limits.MaximalZeroConfAmount)
 			if err != nil {
 				if dbErr := server.database.UpdateSwapState(&swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
-					logger.Errorf(dbErr.Error())
+					logger.Error(dbErr.Error())
 				}
 				return nil, handleError(err)
 			}
@@ -1469,7 +1469,7 @@ func (server *routedBoltzServer) getAnyWallet(ctx context.Context, checker oncha
 	}
 	found, err := server.onchain.GetAnyWallet(checker)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		return nil, status.Error(codes.NotFound, err.Error())
 	}
 	return found, nil
 }
