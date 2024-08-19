@@ -1469,7 +1469,7 @@ Reloads the configuration from disk.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `total` | [`uint64`](#uint64) |  |  |
-| `remaining` | [`int64`](#int64) |  |  |
+| `remaining` | [`uint64`](#uint64) |  |  |
 | `start_date` | [`int64`](#int64) |  |  |
 | `end_date` | [`int64`](#int64) |  |  |
 | `stats` | [`boltzrpc.SwapStats`](#boltzrpc.swapstats) | optional |  |

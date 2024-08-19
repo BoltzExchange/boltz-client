@@ -248,7 +248,7 @@ type LightningRecommendation struct {
 
 func (cfg *LightningConfig) validateRecommendations(
 	recommendations []*LightningRecommendation,
-	budget int64,
+	budget uint64,
 	includeAll bool,
 ) ([]*LightningRecommendation, error) {
 	dismissedChannels, err := cfg.getDismissedChannels()

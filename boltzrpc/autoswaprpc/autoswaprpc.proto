@@ -73,7 +73,7 @@ message ChainRecommendation {
 
 message Budget {
   uint64 total = 1;
-  int64 remaining = 2;
+  uint64 remaining = 2;
   int64 start_date = 3;
   int64 end_date = 4;
   optional boltzrpc.SwapStats stats = 5;

@@ -32,7 +32,7 @@ func (recommendation *checks) Dismissed() bool {
 type checkParams struct {
 	Amount           uint64
 	MaxFeePercent    utils.Percentage
-	Budget           *int64
+	Budget           *uint64
 	Pair             *boltzrpc.PairInfo
 	DismissedReasons []string
 }
@@ -55,9 +55,10 @@ func check(amount uint64, params checkParams) checks {
 	}
 
 	if params.Budget != nil {
-		*params.Budget -= int64(checks.FeeEstimate)
-		if *params.Budget < 0 {
+		if checks.FeeEstimate > *params.Budget {
 			checks.Dismiss(ReasonBudgetExceeded)
+		} else {
+			*params.Budget -= checks.FeeEstimate
 		}
 	}
 	return checks

@@ -23,7 +23,7 @@ func TestRawRecommendation(t *testing.T) {
 		amount uint64
 		params checkParams
 		result checks
-		budget int64
+		budget uint64
 	}{
 		{
 			name:   "AmountBelowMin",
@@ -96,13 +96,15 @@ func TestRawRecommendation(t *testing.T) {
 				tc.result.Amount = tc.amount
 			}
 			if tc.budget == 0 {
-				tc.budget = int64(tc.amount)
+				tc.budget = tc.amount
 			}
 			initialBudget := tc.budget
 			tc.params.Budget = &tc.budget
 			checks := check(tc.amount, tc.params)
 			require.Equal(t, tc.result, checks)
-			require.Equal(t, initialBudget-int64(checks.FeeEstimate), tc.budget)
+			if initialBudget > checks.FeeEstimate {
+				require.Equal(t, initialBudget-checks.FeeEstimate, tc.budget)
+			}
 		})
 	}
 }

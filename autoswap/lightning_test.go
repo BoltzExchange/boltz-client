@@ -106,7 +106,7 @@ func TestBudget(t *testing.T) {
 		budget          uint64
 		interval        time.Duration
 		fakeSwaps       test.FakeSwaps
-		expected        int64
+		expected        uint64
 		currentInterval *database.BudgetInterval
 		swapperType     SwapperType
 	}{
@@ -175,6 +175,24 @@ func TestBudget(t *testing.T) {
 				ChainSwaps: chainSwaps,
 			},
 			expected:    100,
+			swapperType: Lightning,
+		},
+		{
+			name:     "Zero",
+			budget:   10,
+			interval: 1000 * time.Second,
+			fakeSwaps: test.FakeSwaps{
+				ReverseSwaps: []database.ReverseSwap{
+					{
+						OnchainFee:     fee(100),
+						ServiceFee:     fee(100),
+						RoutingFeeMsat: fee(10000),
+						IsAuto:         true,
+					},
+				},
+				ChainSwaps: chainSwaps,
+			},
+			expected:    0,
 			swapperType: Lightning,
 		},
 		{
@@ -302,7 +320,7 @@ func TestBudget(t *testing.T) {
 
 			budget, err = get(true)
 			require.NoError(t, err)
-			require.Equal(t, int64(tc.budget), budget.Amount)
+			require.Equal(t, tc.budget, budget.Amount)
 
 			tc.fakeSwaps.Create(t, db)
 
@@ -724,7 +742,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 				checks: checks{
 					Amount: tc.amount,
 				},
-			}}}, int64(tc.config.Budget), true)
+			}}}, tc.config.Budget, true)
 			require.NoError(t, err)
 			require.Equal(t, tc.outcome, validated[0].Swap.DismissedReasons)
 		})
