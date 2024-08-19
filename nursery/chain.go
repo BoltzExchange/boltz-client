@@ -135,7 +135,7 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 
 func (nursery *Nursery) handleChainSwapError(swap *database.ChainSwap, err error) {
 	if dbErr := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
-		logger.Errorf(dbErr.Error())
+		logger.Error(dbErr.Error())
 	}
 	logger.Errorf("Chain Swap %s error: %s", swap.Id, err)
 	nursery.sendChainSwapUpdate(*swap)
@@ -187,7 +187,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 
 		output := nursery.getChainSwapClaimOutput(swap)
 		if _, err := nursery.createTransaction(swap.Pair.To, []*Output{output}); err != nil {
-			logger.Infof("Could not claim chain swap output: " + err.Error())
+			logger.Infof("Could not claim chain swap output: %s", err)
 			return
 		}
 	}
