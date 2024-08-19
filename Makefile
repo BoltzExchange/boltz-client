@@ -69,6 +69,7 @@ download-regtest:
 ifeq ("$(wildcard regtest/start.sh)","")
 	@$(call print, "Downloading regtest")
 	make submodules
+	cp regtest.override.yml regtest/docker-compose.override.yml
 endif
 
 start-regtest: download-regtest
