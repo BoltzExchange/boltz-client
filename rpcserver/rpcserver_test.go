@@ -580,6 +580,7 @@ func TestGetPairs(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, info.Submarine, 2)
 	require.Len(t, info.Reverse, 2)
+	require.Len(t, info.Chain, 2)
 }
 
 func checkTxOutAddress(t *testing.T, chain *onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {

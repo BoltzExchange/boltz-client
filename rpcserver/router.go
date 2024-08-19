@@ -26,6 +26,7 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/lightningnetwork/lnd/zpay32"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -1783,52 +1784,66 @@ func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltz.Ch
 func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltzrpc.GetPairsResponse, error) {
 	response := &boltzrpc.GetPairsResponse{}
 
-	submarinePairs, err := server.boltz.GetSubmarinePairs()
-	if err != nil {
-		return nil, err
-	}
+	eg := errgroup.Group{}
+	eg.Go(func() error {
+		submarinePairs, err := server.boltz.GetSubmarinePairs()
+		if err != nil {
+			return err
+		}
 
-	for from, p := range submarinePairs {
-		for to, pair := range p {
-			if from != boltz.CurrencyRootstock {
-				response.Submarine = append(response.Submarine, serializeSubmarinePair(boltz.Pair{
-					From: from,
-					To:   to,
-				}, &pair))
+		for from, p := range submarinePairs {
+			for to, pair := range p {
+				if from != boltz.CurrencyRootstock {
+					response.Submarine = append(response.Submarine, serializeSubmarinePair(boltz.Pair{
+						From: from,
+						To:   to,
+					}, &pair))
+				}
 			}
 		}
-	}
+		return nil
+	})
 
-	reversePairs, err := server.boltz.GetReversePairs()
-	if err != nil {
-		return nil, err
-	}
+	eg.Go(func() error {
+		reversePairs, err := server.boltz.GetReversePairs()
+		if err != nil {
+			return err
+		}
 
-	for from, p := range reversePairs {
-		for to, pair := range p {
-			if to != boltz.CurrencyRootstock {
-				response.Reverse = append(response.Reverse, serializeReversePair(boltz.Pair{
-					From: from,
-					To:   to,
-				}, &pair))
+		for from, p := range reversePairs {
+			for to, pair := range p {
+				if to != boltz.CurrencyRootstock {
+					response.Reverse = append(response.Reverse, serializeReversePair(boltz.Pair{
+						From: from,
+						To:   to,
+					}, &pair))
+				}
 			}
 		}
-	}
+		return nil
+	})
 
-	chainPairs, err := server.boltz.GetChainPairs()
-	if err != nil {
-		return nil, err
-	}
+	eg.Go(func() error {
+		chainPairs, err := server.boltz.GetChainPairs()
+		if err != nil {
+			return err
+		}
 
-	for from, p := range chainPairs {
-		for to, pair := range p {
-			if from != boltz.CurrencyRootstock && to != boltz.CurrencyRootstock {
-				response.Chain = append(response.Chain, serializeChainPair(boltz.Pair{
-					From: from,
-					To:   to,
-				}, &pair))
+		for from, p := range chainPairs {
+			for to, pair := range p {
+				if from != boltz.CurrencyRootstock && to != boltz.CurrencyRootstock {
+					response.Chain = append(response.Chain, serializeChainPair(boltz.Pair{
+						From: from,
+						To:   to,
+					}, &pair))
+				}
 			}
 		}
+		return nil
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
 	}
 
 	return response, nil
