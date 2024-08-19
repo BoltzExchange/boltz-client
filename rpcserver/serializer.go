@@ -217,6 +217,9 @@ func serializeChainPair(pair boltz.Pair, chainPair *boltz.ChainPair) *boltzrpc.P
 }
 
 func serializeWalletBalance(balance *onchain.Balance) *boltzrpc.Balance {
+	if balance == nil {
+		return nil
+	}
 	return &boltzrpc.Balance{
 		Confirmed:   balance.Confirmed,
 		Total:       balance.Total,
@@ -224,7 +227,7 @@ func serializeWalletBalance(balance *onchain.Balance) *boltzrpc.Balance {
 	}
 }
 
-func serializewalletSubaccount(subaccount wallet.Subaccount, balance *onchain.Balance) *boltzrpc.Subaccount {
+func serializeWalletSubaccount(subaccount wallet.Subaccount, balance *onchain.Balance) *boltzrpc.Subaccount {
 	return &boltzrpc.Subaccount{
 		Balance: serializeWalletBalance(balance),
 		Pointer: subaccount.Pointer,

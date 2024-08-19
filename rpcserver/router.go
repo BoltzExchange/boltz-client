@@ -1345,7 +1345,7 @@ func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *bol
 	if err != nil {
 		return nil, handleError(err)
 	}
-	return serializewalletSubaccount(*subaccount, balance), nil
+	return serializeWalletSubaccount(*subaccount, balance), nil
 }
 
 func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *boltzrpc.GetSubaccountsRequest) (*boltzrpc.GetSubaccountsResponse, error) {
@@ -1365,7 +1365,7 @@ func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *bo
 		if err != nil {
 			logger.Errorf("failed to get balance for subaccount %+v: %v", subaccount, err.Error())
 		}
-		response.Subaccounts = append(response.Subaccounts, serializewalletSubaccount(*subaccount, balance))
+		response.Subaccounts = append(response.Subaccounts, serializeWalletSubaccount(*subaccount, balance))
 	}
 
 	if subaccount, err := wallet.CurrentSubaccount(); err == nil {
