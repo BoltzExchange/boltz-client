@@ -1976,7 +1976,7 @@ func TestAutoSwap(t *testing.T) {
 				budget := status.Lightning.Budget
 				require.NoError(t, err)
 				require.Equal(t, 1, int(budget.Stats.Count))
-				require.Less(t, budget.Remaining, int64(budget.Total))
+				require.Less(t, budget.Remaining, budget.Total)
 				require.NotZero(t, budget.Stats.TotalFees)
 				require.NotZero(t, budget.Stats.TotalAmount)
 			})

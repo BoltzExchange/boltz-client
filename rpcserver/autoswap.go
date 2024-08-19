@@ -48,7 +48,7 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *a
 		recommendations, err := lnSwapper.GetConfig().GetSwapRecommendations(true)
 
 		if err != nil {
-			return nil, handleError(err)
+			return nil, err
 		}
 
 		for _, recommendation := range recommendations {
@@ -61,7 +61,7 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *a
 	if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
 		recommendation, err := chainSwapper.GetConfig().GetRecommendation()
 		if err != nil {
-			return nil, handleError(err)
+			return nil, err
 		}
 		if recommendation != nil {
 			response.Chain = append(response.Chain, &autoswaprpc.ChainRecommendation{
@@ -146,7 +146,7 @@ func (server *routedAutoSwapServer) UpdateLightningConfig(ctx context.Context, r
 
 func (server *routedAutoSwapServer) UpdateChainConfig(ctx context.Context, request *autoswaprpc.UpdateChainConfigRequest) (*autoswaprpc.Config, error) {
 	if err := server.swapper.UpdateChainConfig(request, requireTenant(ctx)); err != nil {
-		return nil, handleError(err)
+		return nil, err
 	}
 
 	return server.GetConfig(ctx, &autoswaprpc.GetConfigRequest{})
