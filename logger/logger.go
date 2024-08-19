@@ -143,7 +143,7 @@ func write(l *log.Logger, level LogLevel, prefix string, msg string) {
 
 	l.Print(logLine)
 
-	if fileLogger != nil && prefix != fatalPrefix {
+	if fileLogger != nil {
 		fileLogger.Print(logLine)
 	}
 }
