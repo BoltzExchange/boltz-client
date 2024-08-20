@@ -2016,7 +2016,6 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 }
 
 func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, allowLowball bool, maxZeroConfAmount uint64, fee *float64) (string, error) {
-	// TODO: custom block target?
 	if amount > maxZeroConfAmount {
 		allowLowball = true
 	}
