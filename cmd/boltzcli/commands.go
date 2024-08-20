@@ -936,6 +936,15 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 
 	questions := []*survey.Question{
 		{
+			Name: "ReserveBalance",
+			Prompt: &survey.Input{
+				Message: "How much sats do you want to keep in your wallet as a reserve after a swap has been made?",
+				// TODO: remove default buffer once proper sweep is implemented
+				Default: fmt.Sprint(10000),
+			},
+			Validate: uintValidator,
+		},
+		{
 			Name: "MaxBalance",
 			Prompt: &survey.Input{
 				Message: "What is the maximum amount of sats you want to accumulate before a chain swap is started?",
@@ -946,8 +955,7 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 					return errors.New("not a valid number")
 				}
 
-				// TODO: remove buffer once proper sweep is implemented
-				limit := pairInfo.Limits.Minimal + 10000
+				limit := pairInfo.Limits.Minimal + config.ReserveBalance
 				if num < limit {
 					return fmt.Errorf("must be at least %d", limit)
 				}
