@@ -55,10 +55,11 @@ func (server *RpcServer) Init() error {
 
 	swapper := &autoswap.AutoSwap{}
 	server.boltzServer = &routedBoltzServer{
-		database: server.cfg.Database,
-		stop:     make(chan bool),
-		state:    stateLightningSyncing,
-		swapper:  swapper,
+		database:   server.cfg.Database,
+		stop:       make(chan bool),
+		state:      stateLightningSyncing,
+		swapper:    swapper,
+		referralId: server.cfg.ReferralId,
 	}
 	server.autoswapServer = &routedAutoSwapServer{
 		database: server.cfg.Database,
