@@ -28,8 +28,8 @@ func mockedWallet(t *testing.T, info onchain.WalletInfo) *onchainmock.MockWallet
 func newPairInfo() *boltzrpc.PairInfo {
 	return &boltzrpc.PairInfo{
 		Limits: &boltzrpc.Limits{
-			Minimal: 100,
-			Maximal: 10000,
+			Minimal: 1000,
+			Maximal: 1000000,
 		},
 		Fees: &boltzrpc.SwapFees{
 			Percentage: 1,
@@ -42,7 +42,7 @@ func TestChainSwapper(t *testing.T) {
 	setup := func(t *testing.T) (*AutoSwap, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
 		name := database.DefaultTenantName
 		config := &SerializedChainConfig{
-			MaxBalance:    500,
+			MaxBalance:    100000,
 			FromWallet:    "test",
 			ToAddress:     "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
 			MaxFeePercent: 10,
@@ -62,18 +62,20 @@ func TestChainSwapper(t *testing.T) {
 
 	test.InitLogger()
 
+	defaultBalance := onchain.Balance{Total: 200000, Confirmed: 200000, Unconfirmed: 0}
+
 	t.Run("GetRecommendation", func(t *testing.T) {
 		_, chainSwapper, rpcMock, fromWallet := setup(t)
 		chainConfig := chainSwapper.cfg
 		pairInfo := newPairInfo()
 		rpcMock.EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(pairInfo, nil)
 
-		balance := &onchain.Balance{Total: 1000, Confirmed: 1000, Unconfirmed: 0}
-		fromWallet.EXPECT().GetBalance().Return(balance, nil)
+		balance := defaultBalance
+		fromWallet.EXPECT().GetBalance().Return(&balance, nil)
 
 		// the min reserve will be used by default
 		require.Equal(t, MinReserve, chainConfig.reserveBalance)
-		reserve := uint64(500)
+		reserve := uint64(50000)
 		chainConfig.reserveBalance = reserve
 		expectedAmount := balance.Confirmed - reserve
 
@@ -146,8 +148,8 @@ func TestChainSwapper(t *testing.T) {
 		rpcMock.EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(pairInfo, nil).Once()
 		rpcMock.EXPECT().CreateAutoChainSwap(mock.Anything, mock.Anything).Return(nil).Once()
 
-		balance := &onchain.Balance{Total: 1000, Confirmed: 1000, Unconfirmed: 0}
-		fromWallet.EXPECT().GetBalance().Return(balance, nil)
+		balance := defaultBalance
+		fromWallet.EXPECT().GetBalance().Return(&balance, nil)
 
 		cleaned := false
 		blockUpdates := make(chan *onchain.BlockEpoch)

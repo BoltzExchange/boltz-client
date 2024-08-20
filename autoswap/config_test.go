@@ -182,14 +182,14 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "NoWallets",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 			},
 			err: true,
 		},
 		{
 			name: "InvalidWallet",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: "i dont",
 				ToWallet:   "exist",
 			},
@@ -198,7 +198,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "Tenant/Invalid",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				Tenant:     &tenantName,
 			},
 			err: true,
@@ -206,7 +206,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "Tenant/NoWallets",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
@@ -217,7 +217,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "Tenant/Valid",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				Tenant:     &tenantName,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
@@ -229,7 +229,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToWallet",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
@@ -239,7 +239,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToWallet/SameCurrency",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: liquidWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
@@ -250,7 +250,7 @@ func TestChainConfig(t *testing.T) {
 			name: "ToAddress/Valid",
 
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: liquidWallet.Name,
 				ToAddress:  "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
 			},
@@ -260,7 +260,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToAddress/SameCurrency",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: btcWallet.Name,
 				ToAddress:  "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
 			},
@@ -270,7 +270,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToAddress/Invalid",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: liquidWallet.Name,
 				ToAddress:  "ahdslöfkjasöldfkj",
 			},
