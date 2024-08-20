@@ -74,10 +74,10 @@ func (c *Client) GetBlockHeight() (uint32, error) {
 	return c.blockHeight, nil
 }
 
-func (c *Client) EstimateFee(confTarget int32) (float64, error) {
+func (c *Client) EstimateFee() (float64, error) {
 	ctx, cancel := c.timeoutContext()
 	defer cancel()
-	fee, err := c.client.GetFee(ctx, uint32(confTarget))
+	fee, err := c.client.GetFee(ctx, 2)
 	return float64(fee), err
 }
 

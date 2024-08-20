@@ -7,7 +7,6 @@ import (
 	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -22,13 +21,13 @@ func TestEstimateLowballFee(t *testing.T) {
 		},
 		Network: boltz.MainNet,
 	}
-	blocks.EXPECT().EstimateFee(mock.Anything).Return(0.1, nil)
+	blocks.EXPECT().EstimateFee().Return(0.1, nil)
 
-	fee, err := chain.EstimateFee(boltz.CurrencyLiquid, 2, true)
+	fee, err := chain.EstimateFee(boltz.CurrencyLiquid, true)
 	require.NoError(t, err)
 	require.Equal(t, fee, wallet.MinFeeRate)
 
-	fee, err = chain.EstimateFee(boltz.CurrencyLiquid, 2, false)
+	fee, err = chain.EstimateFee(boltz.CurrencyLiquid, false)
 	require.NoError(t, err)
 	require.Greater(t, fee, wallet.MinFeeRate)
 }

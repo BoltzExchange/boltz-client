@@ -47,7 +47,7 @@ type WalletChecker struct {
 type BlockProvider interface {
 	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
-	EstimateFee(confTarget int32) (float64, error)
+	EstimateFee() (float64, error)
 	Disconnect()
 }
 
@@ -173,7 +173,7 @@ func (onchain *Onchain) GetWalletById(id Id) (wallet Wallet, err error) {
 	return onchain.GetAnyWallet(WalletChecker{Id: &id})
 }
 
-func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32, allowLowball bool) (float64, error) {
+func (onchain *Onchain) EstimateFee(currency boltz.Currency, allowLowball bool) (float64, error) {
 	if currency == boltz.CurrencyLiquid && onchain.Network == boltz.MainNet && allowLowball {
 		if boltzProvider, ok := onchain.Liquid.Tx.(*BoltzTxProvider); ok {
 			return boltzProvider.GetFeeEstimation(boltz.CurrencyLiquid)
@@ -191,7 +191,7 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency, confTarget int32, a
 		minFee = 1
 	}
 
-	fee, err := chain.Blocks.EstimateFee(confTarget)
+	fee, err := chain.Blocks.EstimateFee()
 	if err != nil && currency == boltz.CurrencyLiquid {
 		logger.Warnf("Could not get fee for liquid, falling back to hardcoded min fee: %s", err.Error())
 		return minFee, nil

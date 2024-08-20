@@ -43,6 +43,8 @@ const (
 	Boltz_GetWallet_FullMethodName            = "/boltzrpc.Boltz/GetWallet"
 	Boltz_GetWalletCredentials_FullMethodName = "/boltzrpc.Boltz/GetWalletCredentials"
 	Boltz_RemoveWallet_FullMethodName         = "/boltzrpc.Boltz/RemoveWallet"
+	Boltz_WalletSend_FullMethodName           = "/boltzrpc.Boltz/WalletSend"
+	Boltz_WalletReceive_FullMethodName        = "/boltzrpc.Boltz/WalletReceive"
 	Boltz_Stop_FullMethodName                 = "/boltzrpc.Boltz/Stop"
 	Boltz_Unlock_FullMethodName               = "/boltzrpc.Boltz/Unlock"
 	Boltz_VerifyWalletPassword_FullMethodName = "/boltzrpc.Boltz/VerifyWalletPassword"
@@ -119,6 +121,10 @@ type BoltzClient interface {
 	GetWalletCredentials(ctx context.Context, in *GetWalletCredentialsRequest, opts ...grpc.CallOption) (*WalletCredentials, error)
 	// Removes a wallet.
 	RemoveWallet(ctx context.Context, in *RemoveWalletRequest, opts ...grpc.CallOption) (*RemoveWalletResponse, error)
+	// Send coins from a wallet.
+	WalletSend(ctx context.Context, in *WalletSendRequest, opts ...grpc.CallOption) (*WalletSendResponse, error)
+	// Get a new address of the wallet.
+	WalletReceive(ctx context.Context, in *WalletReceiveRequest, opts ...grpc.CallOption) (*WalletReceiveResponse, error)
 	// Gracefully stops the daemon.
 	Stop(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Unlocks the server. This will be required on startup if there are any encrypted wallets.
@@ -381,6 +387,24 @@ func (c *boltzClient) RemoveWallet(ctx context.Context, in *RemoveWalletRequest,
 	return out, nil
 }
 
+func (c *boltzClient) WalletSend(ctx context.Context, in *WalletSendRequest, opts ...grpc.CallOption) (*WalletSendResponse, error) {
+	out := new(WalletSendResponse)
+	err := c.cc.Invoke(ctx, Boltz_WalletSend_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) WalletReceive(ctx context.Context, in *WalletReceiveRequest, opts ...grpc.CallOption) (*WalletReceiveResponse, error) {
+	out := new(WalletReceiveResponse)
+	err := c.cc.Invoke(ctx, Boltz_WalletReceive_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *boltzClient) Stop(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, Boltz_Stop_FullMethodName, in, out, opts...)
@@ -519,6 +543,10 @@ type BoltzServer interface {
 	GetWalletCredentials(context.Context, *GetWalletCredentialsRequest) (*WalletCredentials, error)
 	// Removes a wallet.
 	RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error)
+	// Send coins from a wallet.
+	WalletSend(context.Context, *WalletSendRequest) (*WalletSendResponse, error)
+	// Get a new address of the wallet.
+	WalletReceive(context.Context, *WalletReceiveRequest) (*WalletReceiveResponse, error)
 	// Gracefully stops the daemon.
 	Stop(context.Context, *empty.Empty) (*empty.Empty, error)
 	// Unlocks the server. This will be required on startup if there are any encrypted wallets.
@@ -613,6 +641,12 @@ func (UnimplementedBoltzServer) GetWalletCredentials(context.Context, *GetWallet
 }
 func (UnimplementedBoltzServer) RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveWallet not implemented")
+}
+func (UnimplementedBoltzServer) WalletSend(context.Context, *WalletSendRequest) (*WalletSendResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WalletSend not implemented")
+}
+func (UnimplementedBoltzServer) WalletReceive(context.Context, *WalletReceiveRequest) (*WalletReceiveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WalletReceive not implemented")
 }
 func (UnimplementedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
@@ -1068,6 +1102,42 @@ func _Boltz_RemoveWallet_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_WalletSend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WalletSendRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).WalletSend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_WalletSend_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).WalletSend(ctx, req.(*WalletSendRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_WalletReceive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WalletReceiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).WalletReceive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_WalletReceive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).WalletReceive(ctx, req.(*WalletReceiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Boltz_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(empty.Empty)
 	if err := dec(in); err != nil {
@@ -1306,6 +1376,14 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveWallet",
 			Handler:    _Boltz_RemoveWallet_Handler,
+		},
+		{
+			MethodName: "WalletSend",
+			Handler:    _Boltz_WalletSend_Handler,
+		},
+		{
+			MethodName: "WalletReceive",
+			Handler:    _Boltz_WalletReceive_Handler,
 		},
 		{
 			MethodName: "Stop",

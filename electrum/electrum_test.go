@@ -45,7 +45,7 @@ func TestBlockStream(t *testing.T) {
 
 func TestEstimateFee(t *testing.T) {
 	client := client(t)
-	fee, err := client.EstimateFee(1)
+	fee, err := client.EstimateFee()
 	require.NoError(t, err)
 	require.NotZero(t, fee)
 }

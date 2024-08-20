@@ -1545,10 +1545,11 @@ var walletCommands = &cli.Command{
 			Action:      requireNArgs(1, showCredentials),
 		},
 		{
-			Name:   "list",
-			Usage:  "List currently used wallets",
-			Action: listWallets,
-			Flags:  []cli.Flag{jsonFlag},
+			Name:    "list",
+			Aliases: []string{"balances"},
+			Usage:   "Show all available wallets and their balances",
+			Action:  listWallets,
+			Flags:   []cli.Flag{jsonFlag},
 		},
 		{
 			Name:        "subaccount",
@@ -1568,6 +1569,23 @@ var walletCommands = &cli.Command{
 			Usage:     "Remove a wallet",
 			ArgsUsage: "name",
 			Action:    requireNArgs(1, removeWallet),
+		},
+		{
+			Name:      "send",
+			Usage:     "Send from a wallet",
+			ArgsUsage: "name destination amount",
+			Flags: []cli.Flag{
+				&cli.Float64Flag{
+					Name: "sat-per-vbyte",
+				},
+			},
+			Action: requireNArgs(3, walletSend),
+		},
+		{
+			Name:      "receive",
+			Usage:     "Get a new address for a wallet",
+			ArgsUsage: "name",
+			Action:    requireNArgs(1, walletReceive),
 		},
 	},
 }
@@ -1876,6 +1894,47 @@ func removeWallet(ctx *cli.Context) error {
 		return err
 	}
 	fmt.Println("Wallet removed")
+	return nil
+}
+
+func walletSend(ctx *cli.Context) error {
+	client := getClient(ctx)
+	walletId, err := getWalletId(ctx, ctx.Args().First())
+	if err != nil {
+		return err
+	}
+	address := ctx.Args().Get(1)
+	amount := ctx.Args().Get(2)
+
+	request := &boltzrpc.WalletSendRequest{
+		Id:      *walletId,
+		Address: address,
+		Amount:  parseUint64(amount, "amount"),
+	}
+
+	if satPerVbyte := ctx.Float64("sat-per-vbyte"); satPerVbyte != 0 {
+		request.SatPerVbyte = &satPerVbyte
+	}
+
+	response, err := client.WalletSend(request)
+	if err != nil {
+		return err
+	}
+	printJson(response)
+	return nil
+}
+
+func walletReceive(ctx *cli.Context) error {
+	client := getClient(ctx)
+	walletId, err := getWalletId(ctx, ctx.Args().First())
+	if err != nil {
+		return err
+	}
+	address, err := client.WalletReceive(*walletId)
+	if err != nil {
+		return err
+	}
+	printJson(address)
 	return nil
 }
 
