@@ -1545,10 +1545,11 @@ var walletCommands = &cli.Command{
 			Action:      requireNArgs(1, showCredentials),
 		},
 		{
-			Name:   "list",
-			Usage:  "List currently used wallets",
-			Action: listWallets,
-			Flags:  []cli.Flag{jsonFlag},
+			Name:    "list",
+			Aliases: []string{"balances"},
+			Usage:   "Show all available wallets and their balances",
+			Action:  listWallets,
+			Flags:   []cli.Flag{jsonFlag},
 		},
 		{
 			Name:        "subaccount",
