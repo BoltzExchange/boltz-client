@@ -123,14 +123,12 @@ func (boltz *Boltz) RemoveWallet(id uint64) (*boltzrpc.RemoveWalletResponse, err
 	return boltz.Client.RemoveWallet(boltz.Ctx, &boltzrpc.RemoveWalletRequest{Id: id})
 }
 
-func (boltz *Boltz) WalletSend(request *boltzrpc.WalletSendRequest) (string, error) {
-	response, err := boltz.Client.WalletSend(boltz.Ctx, request)
-	return response.GetTxId(), err
+func (boltz *Boltz) WalletSend(request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendResponse, error) {
+	return boltz.Client.WalletSend(boltz.Ctx, request)
 }
 
-func (boltz *Boltz) WalletReceive(id uint64) (string, error) {
-	response, err := boltz.Client.WalletReceive(boltz.Ctx, &boltzrpc.WalletReceiveRequest{Id: id})
-	return response.GetAddress(), err
+func (boltz *Boltz) WalletReceive(id uint64) (*boltzrpc.WalletReceiveResponse, error) {
+	return boltz.Client.WalletReceive(boltz.Ctx, &boltzrpc.WalletReceiveRequest{Id: id})
 }
 
 func (boltz *Boltz) Stop() error {

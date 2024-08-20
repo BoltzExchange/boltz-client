@@ -2131,22 +2131,22 @@ func TestWalletSendReceive(t *testing.T) {
 	nodeWallet, err := client.GetWallet(strings.ToUpper(cfg.Node))
 	require.NoError(t, err)
 
-	receiveAddress, err := client.WalletReceive(otherWallet.Wallet.Id)
+	response, err := client.WalletReceive(otherWallet.Wallet.Id)
 	require.NoError(t, err)
 
 	amount := uint64(100000)
 	send := func(satPerVbyte *float64) uint64 {
 		request := &boltzrpc.WalletSendRequest{
 			Id:          nodeWallet.Id,
-			Address:     receiveAddress,
+			Address:     response.Address,
 			Amount:      amount,
 			SatPerVbyte: satPerVbyte,
 		}
-		txid, err := client.WalletSend(request)
+		response, err := client.WalletSend(request)
 		require.NoError(t, err)
-		require.NotEmpty(t, txid)
+		require.NotEmpty(t, response)
 
-		txFee, err := chain.GetTransactionFee(boltz.CurrencyBtc, txid)
+		txFee, err := chain.GetTransactionFee(boltz.CurrencyBtc, response.TxId)
 		require.NoError(t, err)
 		return txFee
 	}

@@ -1915,11 +1915,11 @@ func walletSend(ctx *cli.Context) error {
 		request.SatPerVbyte = &satPerVbyte
 	}
 
-	txId, err := client.WalletSend(request)
+	response, err := client.WalletSend(request)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Transaction ID:", txId)
+	printJson(response)
 	return nil
 }
 
@@ -1933,7 +1933,7 @@ func walletReceive(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Address:", address)
+	printJson(address)
 	return nil
 }
 
