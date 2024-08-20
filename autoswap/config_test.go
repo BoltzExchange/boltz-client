@@ -57,15 +57,15 @@ func TestLightningConfig(t *testing.T) {
 			name: "ValidReverse",
 			cfg: &SerializedLnConfig{
 				InboundBalancePercent: 25,
-				SwapType:             "reverse",
+				SwapType:              "reverse",
 			},
 			err: false,
 		},
 		{
 			name: "TooMuchBalance/Percent",
 			cfg: &SerializedLnConfig{
-				OutboundBalancePercent:  75,
-				InboundBalancePercent: 75,
+				OutboundBalancePercent: 75,
+				InboundBalancePercent:  75,
 			},
 			err: true,
 		},
@@ -73,8 +73,8 @@ func TestLightningConfig(t *testing.T) {
 			name: "PerChannel/SubmarineForbidden",
 			cfg: &SerializedLnConfig{
 				OutboundBalance: 10000,
-				PerChannel:   true,
-				SwapType:     "submarine",
+				PerChannel:      true,
+				SwapType:        "submarine",
 			},
 			err: true,
 		},
@@ -171,6 +171,7 @@ func TestChainConfig(t *testing.T) {
 		config    *SerializedChainConfig
 		wallets   []onchain.WalletInfo
 		err       bool
+		errFunc   require.ErrorAssertionFunc
 		setTenant bool
 	}{
 		{
@@ -276,6 +277,16 @@ func TestChainConfig(t *testing.T) {
 			wallets: []onchain.WalletInfo{liquidWallet},
 			err:     true,
 		},
+		{
+			name: "ReserveGreaterThanMax",
+			config: &SerializedChainConfig{
+				ReserveBalance: 200,
+				MaxBalance:     100,
+			},
+			errFunc: func(t require.TestingT, err error, i ...interface{}) {
+				require.ErrorContains(t, err, "reserve balance", i...)
+			},
+		},
 	}
 
 	for _, tc := range tt {
@@ -295,7 +306,9 @@ func TestChainConfig(t *testing.T) {
 			chainConfig := NewChainConfig(tc.config, shared)
 			require.NotNil(t, chainConfig)
 			err = chainConfig.Init()
-			if tc.err {
+			if tc.errFunc != nil {
+				tc.errFunc(t, err)
+			} else if tc.err {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)

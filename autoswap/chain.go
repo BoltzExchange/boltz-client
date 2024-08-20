@@ -74,6 +74,10 @@ func (cfg *ChainConfig) Init() (err error) {
 	// TODO: properly sweep wallet if no reserve balance is set
 	cfg.reserveBalance = max(MinReserve, cfg.ReserveBalance)
 
+	if cfg.MaxBalance < cfg.reserveBalance {
+		return fmt.Errorf("reserve balance %d is greater than max balance %d", cfg.reserveBalance, cfg.MaxBalance)
+	}
+
 	cfg.fromWallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
 		Name:          &cfg.FromWallet,
 		AllowReadonly: false,
