@@ -86,19 +86,19 @@ func (boltz *Websocket) Connect() error {
 		logger.Silly("Received pong")
 		return setDeadline()
 	})
+	pingTicker := time.NewTicker(pingInterval)
 
 	go func() {
-		ticker := time.NewTicker(pingInterval)
-		defer ticker.Stop()
-		for range ticker.C {
+		defer pingTicker.Stop()
+		for range pingTicker.C {
 			// Will not wait longer with writing than for the response
 			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(pongWait))
 			if err != nil {
 				if boltz.closed {
 					return
 				}
-				logger.Errorf("could not send ping; closing connection: %s", err)
-				_ = boltz.Close()
+				logger.Errorf("could not send ping: %s", err)
+				return
 			}
 		}
 	}()
@@ -152,6 +152,7 @@ func (boltz *Websocket) Connect() error {
 			}
 		}
 		for {
+			pingTicker.Stop()
 			logger.Errorf("lost connection to boltz ws, reconnecting in %s", reconnectInterval)
 			time.Sleep(reconnectInterval)
 			err := boltz.Connect()
