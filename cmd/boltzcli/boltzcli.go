@@ -84,6 +84,12 @@ func main() {
 			Usage:   "Path to a gRPC Macaroon of Boltz",
 			EnvVars: []string{"BOLTZ_MACAROON"},
 		},
+		&cli.StringFlag{
+			Name:    "tenant",
+			Value:   "",
+			Usage:   "Id or name of the tenant to use for the request",
+			EnvVars: []string{"BOLTZ_TENANT"},
+		},
 	}
 	app.Commands = []*cli.Command{
 		getInfoCommand,
@@ -154,6 +160,10 @@ func getConnection(ctx *cli.Context) client.Connection {
 	}
 
 	err := boltz.Connect()
+
+	if tenant := ctx.String("tenant"); tenant != "" && ctx.Command.Name != "bakemacaroon" {
+		boltz.SetTenant(tenant)
+	}
 
 	if err != nil {
 		fmt.Println("Could not connect to Boltz: " + err.Error())

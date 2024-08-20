@@ -365,6 +365,24 @@ func TestMacaroons(t *testing.T) {
 	tenantAuto := client.NewAutoSwapClient(write)
 	readTenant := client.NewBoltzClient(read)
 
+	t.Run("SetTenant", func(t *testing.T) {
+		admin := client.NewBoltzClient(conn)
+
+		admin.SetTenant(tenantName)
+		info, err := admin.GetInfo()
+		require.NoError(t, err)
+		require.Equal(t, tenantInfo.Id, info.Tenant.Id)
+
+		admin.SetTenant(info.Tenant.Id)
+		info, err = admin.GetInfo()
+		require.NoError(t, err)
+		require.Equal(t, tenantInfo.Id, info.Tenant.Id)
+
+		admin.SetTenant("invalid")
+		_, err = admin.GetInfo()
+		require.Error(t, err)
+	})
+
 	t.Run("Bake", func(t *testing.T) {
 		response, err := admin.BakeMacaroon(&boltzrpc.BakeMacaroonRequest{
 			Permissions: client.FullPermissions,

@@ -55,18 +55,18 @@ func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []
 }
 
 func (service *Service) validateTenant(ctx context.Context, raw string) (context.Context, error) {
-	id := database.DefaultTenantId
 	if raw != "" {
-		var err error
-		id, err = strconv.ParseUint(raw, 10, 64)
-		if err != nil {
-			return nil, err
+		var tenant *database.Tenant
+		id, err := strconv.ParseUint(raw, 10, 64)
+		if err == nil {
+			tenant, err = service.Database.GetTenant(id)
+		} else {
+			tenant, err = service.Database.GetTenantByName(raw)
 		}
+		if err != nil {
+			return nil, fmt.Errorf("invalid tenant %s: %w", raw, err)
+		}
+		return AddTenantToContext(ctx, tenant), nil
 	}
-	tenant, err := service.Database.GetTenant(id)
-	if err != nil {
-		return nil, fmt.Errorf("invalid tenant %d: %w", id, err)
-	}
-
-	return AddTenantToContext(ctx, tenant), nil
+	return AddTenantToContext(ctx, &database.DefaultTenant), nil
 }
