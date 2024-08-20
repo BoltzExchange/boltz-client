@@ -51,6 +51,9 @@ type SwapUpdate struct {
 type swapListener = *utils.ChannelForwarder[SwapUpdate]
 
 func (nursery *Nursery) sendUpdate(id string, update SwapUpdate) {
+	if update.IsFinal {
+		nursery.boltzWs.Unsubscribe(id)
+	}
 	nursery.globalListener.Send(update)
 	if listener, ok := nursery.eventListeners[id]; ok {
 		listener.Send(update)
@@ -129,7 +132,6 @@ func (nursery *Nursery) Stop() {
 }
 
 func (nursery *Nursery) registerSwaps(swapIds []string) error {
-	logger.Infof("Listening to events of Swaps: %v", swapIds)
 	nursery.eventListenersLock.Lock()
 	defer nursery.eventListenersLock.Unlock()
 

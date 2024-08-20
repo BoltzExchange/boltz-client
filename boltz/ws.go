@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/logger"
@@ -30,6 +31,7 @@ type Websocket struct {
 	conn          *websocket.Conn
 	closed        bool
 	dialer        *websocket.Dialer
+	swapIds       []string
 }
 
 type wsResponse struct {
@@ -56,9 +58,6 @@ func (boltz *Api) NewWebsocket() *Websocket {
 }
 
 func (boltz *Websocket) Connect() error {
-	if boltz.closed {
-		return errors.New("websocket is closed")
-	}
 	wsUrl, err := url.Parse(boltz.apiUrl)
 	if err != nil {
 		return err
@@ -72,10 +71,10 @@ func (boltz *Websocket) Connect() error {
 	}
 
 	conn, _, err := boltz.dialer.Dial(wsUrl.String(), nil)
-	boltz.conn = conn
 	if err != nil {
 		return fmt.Errorf("could not connect to boltz ws at %s: %w", wsUrl, err)
 	}
+	boltz.conn = conn
 
 	logger.Infof("Connected to Boltz ws at %s", wsUrl)
 
@@ -87,19 +86,19 @@ func (boltz *Websocket) Connect() error {
 		logger.Silly("Received pong")
 		return setDeadline()
 	})
+	pingTicker := time.NewTicker(pingInterval)
 
 	go func() {
-		ticker := time.NewTicker(pingInterval)
-		defer ticker.Stop()
-		for range ticker.C {
+		defer pingTicker.Stop()
+		for range pingTicker.C {
 			// Will not wait longer with writing than for the response
 			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(pongWait))
 			if err != nil {
 				if boltz.closed {
 					return
 				}
-				logger.Errorf("could not send ping; closing connection: %s", err)
-				_ = boltz.Close()
+				logger.Errorf("could not send ping: %s", err)
+				return
 			}
 		}
 	}()
@@ -153,6 +152,7 @@ func (boltz *Websocket) Connect() error {
 			}
 		}
 		for {
+			pingTicker.Stop()
 			logger.Errorf("lost connection to boltz ws, reconnecting in %s", reconnectInterval)
 			time.Sleep(reconnectInterval)
 			err := boltz.Connect()
@@ -162,10 +162,18 @@ func (boltz *Websocket) Connect() error {
 		}
 	}()
 
+	if len(boltz.swapIds) > 0 {
+		return boltz.subscribe(boltz.swapIds)
+	}
+
 	return nil
 }
 
-func (boltz *Websocket) Subscribe(swapIds []string) error {
+func (boltz *Websocket) subscribe(swapIds []string) error {
+	if boltz.closed {
+		return errors.New("websocket is closed")
+	}
+	logger.Infof("Subscribing to Swaps: %v", swapIds)
 	if len(swapIds) == 0 {
 		return nil
 	}
@@ -182,6 +190,21 @@ func (boltz *Websocket) Subscribe(swapIds []string) error {
 	case <-time.After(5 * time.Second):
 		return errors.New("no answer from boltz")
 	}
+}
+
+func (boltz *Websocket) Subscribe(swapIds []string) error {
+	if err := boltz.subscribe(swapIds); err != nil {
+		return err
+	}
+	boltz.swapIds = append(boltz.swapIds, swapIds...)
+	return nil
+}
+
+func (boltz *Websocket) Unsubscribe(swapId string) {
+	boltz.swapIds = slices.DeleteFunc(boltz.swapIds, func(id string) bool {
+		return id == swapId
+	})
+	logger.Debugf("Unsubscribed from swap %s", swapId)
 }
 
 func (boltz *Websocket) Close() error {
