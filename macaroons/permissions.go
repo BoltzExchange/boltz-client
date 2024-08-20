@@ -137,6 +137,14 @@ var (
 			Entity: "wallet",
 			Action: "write",
 		}},
+		"/boltzrpc.Boltz/WalletSend": {{
+			Entity: "wallet",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/WalletReceive": {{
+			Entity: "wallet",
+			Action: "read",
+		}},
 		"/boltzrpc.Boltz/GetWalletCredentials": {{
 			Entity: "wallet",
 			Action: "write",

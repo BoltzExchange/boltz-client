@@ -54,9 +54,9 @@ func (_c *MockBlockProvider_Disconnect_Call) RunAndReturn(run func()) *MockBlock
 	return _c
 }
 
-// EstimateFee provides a mock function with given fields: confTarget
-func (_m *MockBlockProvider) EstimateFee(confTarget int32) (float64, error) {
-	ret := _m.Called(confTarget)
+// EstimateFee provides a mock function with given fields:
+func (_m *MockBlockProvider) EstimateFee() (float64, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for EstimateFee")
@@ -64,17 +64,17 @@ func (_m *MockBlockProvider) EstimateFee(confTarget int32) (float64, error) {
 
 	var r0 float64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int32) (float64, error)); ok {
-		return rf(confTarget)
+	if rf, ok := ret.Get(0).(func() (float64, error)); ok {
+		return rf()
 	}
-	if rf, ok := ret.Get(0).(func(int32) float64); ok {
-		r0 = rf(confTarget)
+	if rf, ok := ret.Get(0).(func() float64); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(float64)
 	}
 
-	if rf, ok := ret.Get(1).(func(int32) error); ok {
-		r1 = rf(confTarget)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -88,14 +88,13 @@ type MockBlockProvider_EstimateFee_Call struct {
 }
 
 // EstimateFee is a helper method to define mock.On call
-//   - confTarget int32
-func (_e *MockBlockProvider_Expecter) EstimateFee(confTarget interface{}) *MockBlockProvider_EstimateFee_Call {
-	return &MockBlockProvider_EstimateFee_Call{Call: _e.mock.On("EstimateFee", confTarget)}
+func (_e *MockBlockProvider_Expecter) EstimateFee() *MockBlockProvider_EstimateFee_Call {
+	return &MockBlockProvider_EstimateFee_Call{Call: _e.mock.On("EstimateFee")}
 }
 
-func (_c *MockBlockProvider_EstimateFee_Call) Run(run func(confTarget int32)) *MockBlockProvider_EstimateFee_Call {
+func (_c *MockBlockProvider_EstimateFee_Call) Run(run func()) *MockBlockProvider_EstimateFee_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int32))
+		run()
 	})
 	return _c
 }
@@ -105,7 +104,7 @@ func (_c *MockBlockProvider_EstimateFee_Call) Return(_a0 float64, _a1 error) *Mo
 	return _c
 }
 
-func (_c *MockBlockProvider_EstimateFee_Call) RunAndReturn(run func(int32) (float64, error)) *MockBlockProvider_EstimateFee_Call {
+func (_c *MockBlockProvider_EstimateFee_Call) RunAndReturn(run func() (float64, error)) *MockBlockProvider_EstimateFee_Call {
 	_c.Call.Return(run)
 	return _c
 }

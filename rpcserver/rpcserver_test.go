@@ -156,12 +156,12 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 
 	var err error
 	if walletCredentials == nil {
-		var wallet *wallet.Wallet
-		wallet, walletCredentials, err = test.InitTestWallet(parseCurrency(walletParams.Currency), false)
+		var testWallet *wallet.Wallet
+		testWallet, walletCredentials, err = test.InitTestWallet(parseCurrency(walletParams.Currency), false)
 		require.NoError(t, err)
 		walletCredentials.Name = walletName
 		walletCredentials.TenantId = database.DefaultTenantId
-		require.NoError(t, wallet.Disconnect())
+		require.NoError(t, testWallet.Disconnect())
 	}
 
 	encrytpedCredentials := walletCredentials
@@ -2116,6 +2116,65 @@ func TestCreateWalletWithPassword(t *testing.T) {
 
 	_, err = client.RemoveWallet(secondWallet.Wallet.Id)
 	require.NoError(t, err)
+
+}
+
+func TestWalletSendReceive(t *testing.T) {
+	cfg := loadConfig(t)
+	chain := getOnchain(t, cfg)
+	client, _, stop := setup(t, setupOptions{chain: chain})
+	defer stop()
+
+	otherWallet, err := client.CreateWallet(&boltzrpc.WalletParams{Name: "test", Currency: boltzrpc.Currency_BTC})
+	require.NoError(t, err)
+
+	nodeWallet, err := client.GetWallet(strings.ToUpper(cfg.Node))
+	require.NoError(t, err)
+
+	receiveAddress, err := client.WalletReceive(otherWallet.Wallet.Id)
+	require.NoError(t, err)
+
+	amount := uint64(100000)
+	send := func(satPerVbyte *float64) uint64 {
+		request := &boltzrpc.WalletSendRequest{
+			Id:          nodeWallet.Id,
+			Address:     receiveAddress,
+			Amount:      amount,
+			SatPerVbyte: satPerVbyte,
+		}
+		txid, err := client.WalletSend(request)
+		require.NoError(t, err)
+		require.NotEmpty(t, txid)
+
+		txFee, err := chain.GetTransactionFee(boltz.CurrencyBtc, txid)
+		require.NoError(t, err)
+		return txFee
+	}
+
+	defaultFee := send(nil)
+	feeRate := float64(10)
+	highFee := send(&feeRate)
+
+	require.Greater(t, highFee, defaultFee)
+
+	test.MineBlock()
+
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			wallet, err := client.GetWalletById(otherWallet.Wallet.Id)
+			require.NoError(t, err)
+			if wallet.Balance.Total == amount*2 {
+				return
+			}
+		case <-timeout:
+			t.Fatal("timeout while waiting for balance")
+		}
+
+	}
 
 }
 

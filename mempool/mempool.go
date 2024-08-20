@@ -75,12 +75,11 @@ func (c *Client) getFeeRecommendation() (*feeEstimation, error) {
 	return &fees, nil
 }
 
-func (c *Client) EstimateFee(confTarget int32) (float64, error) {
+func (c *Client) EstimateFee() (float64, error) {
 	fees, err := c.getFeeRecommendation()
 	if err != nil {
 		return 0, err
 	}
-	// TODO: take confTarget into consideration or refactor interface to take constants for "fast" or "slow" fee
 	return fees.HalfHourFee, nil
 }
 
