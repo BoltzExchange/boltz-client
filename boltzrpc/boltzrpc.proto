@@ -138,7 +138,7 @@ service Boltz {
     rpc WalletSend (WalletSendRequest) returns (WalletSendResponse);
 
     /*
-    Get a new address to receive coins.
+    Get a new address of the wallet.
      */
     rpc WalletReceive (WalletReceiveRequest) returns (WalletReceiveResponse);
 
@@ -499,7 +499,7 @@ message CreateSwapRequest {
     // Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte;
     // when `zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions
     optional bool zero_conf = 8;
-    // fee rate to use when sending from internal wallet
+    // Fee rate to use when sending from internal wallet
     optional double sat_per_vbyte = 9;
 }
 message CreateSwapResponse {
@@ -578,7 +578,7 @@ message CreateChainSwapRequest {
     // Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte;
     // when `lockup_zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions
     optional bool lockup_zero_conf = 9;
-    // fee rate to use when sending from internal wallet
+    // Fee rate to use when sending from internal wallet
     optional double sat_per_vbyte = 10;
 }
 
@@ -716,7 +716,7 @@ message WalletSendRequest {
     uint64 id = 1;
     string address = 2;
     uint64 amount = 3;
-    // fee rate to use for the transaction
+    // Fee rate to use for the transaction
     optional double sat_per_vbyte = 4;
 }
 
@@ -729,7 +729,7 @@ message WalletReceiveRequest {
 }
 
 message WalletReceiveResponse {
-    string address = 2;
+    string address = 1;
 }
 
 

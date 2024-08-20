@@ -207,7 +207,7 @@ Send coins from a wallet.
 
 #### WalletReceive
 
-Get a new address to receive coins.
+Get a new address of the wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -508,7 +508,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `accept_zero_conf` | [`bool`](#bool) | optional | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in Boltz. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
 | `lockup_zero_conf` | [`bool`](#bool) | optional | Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte; when `lockup_zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions |
-| `sat_per_vbyte` | [`double`](#double) | optional | fee rate to use when sending from internal wallet |
+| `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
 
 
 
@@ -581,7 +581,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `wallet_id` | [`uint64`](#uint64) | optional | wallet to pay swap from. only used if `send_from_internal` is set to true |
 | `invoice` | [`string`](#string) | optional | invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node |
 | `zero_conf` | [`bool`](#bool) | optional | Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte; when `zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions |
-| `sat_per_vbyte` | [`double`](#double) | optional | fee rate to use when sending from internal wallet |
+| `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
 
 
 
@@ -1380,7 +1380,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `id` | [`uint64`](#uint64) |  |  |
 | `address` | [`string`](#string) |  |  |
 | `amount` | [`uint64`](#uint64) |  |  |
-| `sat_per_vbyte` | [`double`](#double) | optional | fee rate to use for the transaction |
+| `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use for the transaction |
 
 
 

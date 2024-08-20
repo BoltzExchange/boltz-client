@@ -123,7 +123,7 @@ type BoltzClient interface {
 	RemoveWallet(ctx context.Context, in *RemoveWalletRequest, opts ...grpc.CallOption) (*RemoveWalletResponse, error)
 	// Send coins from a wallet.
 	WalletSend(ctx context.Context, in *WalletSendRequest, opts ...grpc.CallOption) (*WalletSendResponse, error)
-	// Get a new address to receive coins.
+	// Get a new address of the wallet.
 	WalletReceive(ctx context.Context, in *WalletReceiveRequest, opts ...grpc.CallOption) (*WalletReceiveResponse, error)
 	// Gracefully stops the daemon.
 	Stop(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -545,7 +545,7 @@ type BoltzServer interface {
 	RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error)
 	// Send coins from a wallet.
 	WalletSend(context.Context, *WalletSendRequest) (*WalletSendResponse, error)
-	// Get a new address to receive coins.
+	// Get a new address of the wallet.
 	WalletReceive(context.Context, *WalletReceiveRequest) (*WalletReceiveResponse, error)
 	// Gracefully stops the daemon.
 	Stop(context.Context, *empty.Empty) (*empty.Empty, error)

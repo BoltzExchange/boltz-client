@@ -2795,7 +2795,7 @@ type CreateSwapRequest struct {
 	// Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte;
 	// when `zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions
 	ZeroConf *bool `protobuf:"varint,8,opt,name=zero_conf,json=zeroConf,proto3,oneof" json:"zero_conf,omitempty"`
-	// fee rate to use when sending from internal wallet
+	// Fee rate to use when sending from internal wallet
 	SatPerVbyte *float64 `protobuf:"fixed64,9,opt,name=sat_per_vbyte,json=satPerVbyte,proto3,oneof" json:"sat_per_vbyte,omitempty"`
 }
 
@@ -3276,7 +3276,7 @@ type CreateChainSwapRequest struct {
 	// Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte;
 	// when `lockup_zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions
 	LockupZeroConf *bool `protobuf:"varint,9,opt,name=lockup_zero_conf,json=lockupZeroConf,proto3,oneof" json:"lockup_zero_conf,omitempty"`
-	// fee rate to use when sending from internal wallet
+	// Fee rate to use when sending from internal wallet
 	SatPerVbyte *float64 `protobuf:"fixed64,10,opt,name=sat_per_vbyte,json=satPerVbyte,proto3,oneof" json:"sat_per_vbyte,omitempty"`
 }
 
@@ -4672,7 +4672,7 @@ type WalletSendRequest struct {
 	Id      uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 	Amount  uint64 `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	// fee rate to use for the transaction
+	// Fee rate to use for the transaction
 	SatPerVbyte *float64 `protobuf:"fixed64,4,opt,name=sat_per_vbyte,json=satPerVbyte,proto3,oneof" json:"sat_per_vbyte,omitempty"`
 }
 
@@ -4835,7 +4835,7 @@ type WalletReceiveResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 }
 
 func (x *WalletReceiveResponse) Reset() {
@@ -6067,7 +6067,7 @@ var file_boltzrpc_proto_rawDesc = []byte{
 	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x69, 0x64,
 	0x22, 0x31, 0x0a, 0x15, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76,
 	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72,
+	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72,
 	0x65, 0x73, 0x73, 0x22, 0xc2, 0x01, 0x0a, 0x06, 0x57, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x12, 0x0e,
 	0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12,
 	0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61,

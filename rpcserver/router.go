@@ -2026,7 +2026,7 @@ func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address st
 		}
 		fee = &feeSatPerVbyte
 	}
-	logger.Infof("Using fee of %f sat/vbyte", *fee)
+	logger.Debugf("Using fee of %f sat/vbyte", *fee)
 	return wallet.SendToAddress(address, amount, *fee)
 }
 
