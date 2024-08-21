@@ -938,7 +938,7 @@ func autoSwapChainSetup(ctx *cli.Context) error {
 		{
 			Name: "ReserveBalance",
 			Prompt: &survey.Input{
-				Message: "How much sats do you want to keep in your wallet as a reserve after a swap has been made?",
+				Message: "How much sats do you want to keep in your wallet as reserve?",
 				// TODO: remove default buffer once proper sweep is implemented
 				Default: fmt.Sprint(10000),
 			},
