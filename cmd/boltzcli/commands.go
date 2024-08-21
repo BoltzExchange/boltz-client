@@ -1158,14 +1158,22 @@ func createSwap(ctx *cli.Context) error {
 		return nil
 	}
 
-	if externalPay {
-		printDeposit(amount, swap.Address, swap.TimeoutHours, uint64(swap.TimeoutBlockHeight), pairInfo.Limits)
+	if swap.Id == "" {
+		if externalPay {
+			fmt.Println("This invoice is from a boltz reverse swap. You can pay to the onchain address directly.")
+			fmt.Println(swap.Bip21)
+		} else {
+			fmt.Println("Invoice has been paid directly to the wallet:", swap.TxId)
+		}
+		return nil
+	} else {
+		if externalPay {
+			printDeposit(swap.ExpectedAmount, swap.Address, swap.TimeoutHours, uint64(swap.TimeoutBlockHeight), pairInfo.Limits)
+		}
 		fmt.Println()
+		fmt.Println("Swap ID:", swap.Id)
+		return swapInfoStream(ctx, swap.Id, false)
 	}
-
-	fmt.Println("Swap ID:", swap.Id)
-
-	return swapInfoStream(ctx, swap.Id, false)
 }
 
 var createChainSwapCommand = &cli.Command{

@@ -115,6 +115,9 @@ func (c *Client) GetUnspentOutputs(address string) ([]*onchain.Output, error) {
 		return nil, err
 	}
 	unspent, err := c.client.ListUnspent(ctx, sh)
+	if err != nil {
+		return nil, err
+	}
 	result := make([]*onchain.Output, 0, len(unspent))
 	for _, u := range unspent {
 		result = append(result, &onchain.Output{

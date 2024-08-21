@@ -2084,7 +2084,8 @@ func TestUnlock(t *testing.T) {
 
 func TestMagicRoutingHints(t *testing.T) {
 	cfg := loadConfig(t)
-	cfg.MaxZeroConfAmount = 100000
+	maxZeroConfAmount := uint64(100000)
+	cfg.MaxZeroConfAmount = &maxZeroConfAmount
 	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
@@ -2109,9 +2110,9 @@ func TestMagicRoutingHints(t *testing.T) {
 				ExternalPay: &externalPay,
 			}
 			if tc.zeroconf {
-				request.Amount = cfg.MaxZeroConfAmount / 2
+				request.Amount = maxZeroConfAmount / 2
 			} else {
-				request.Amount = cfg.MaxZeroConfAmount * 2
+				request.Amount = maxZeroConfAmount * 2
 			}
 			reverseSwap, err := client.CreateReverseSwap(request)
 			require.NoError(t, err)

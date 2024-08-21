@@ -222,6 +222,7 @@ func (nursery *Nursery) startSwapListener() {
 	go func() {
 		defer nursery.waitGroup.Done()
 		notifier := wallet.TransactionNotifier.Get()
+		defer wallet.TransactionNotifier.Remove(notifier)
 		for {
 			select {
 			case notification := <-notifier:
