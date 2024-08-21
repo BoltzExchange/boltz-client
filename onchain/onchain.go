@@ -393,5 +393,15 @@ func (onchain *Onchain) Disconnect() {
 			wg.Done()
 		}()
 	}
-	wg.Wait()
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-time.After(10 * time.Second):
+		logger.Warnf("Wallet disconnect timed out")
+	case <-done:
+	}
 }
