@@ -215,9 +215,11 @@ func (c *Client) GetBlockHeight() (uint32, error) {
 }
 
 type transaction struct {
+	TxId   string `json:"txid"`
 	Status struct {
 		Confirmed bool
 	}
+	Value uint64 `json:"value"`
 }
 
 func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
@@ -235,6 +237,30 @@ func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
 	}
 
 	return transaction.Status.Confirmed, nil
+}
+
+func (c *Client) GetUnspentOutputs(address string) ([]*onchain.Output, error) {
+	res, err := http.Get(c.api + "/address/" + address + "/utxo")
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("could not get address %s utxos, failed with status: %d", address, res.StatusCode)
+	}
+
+	var response []transaction
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+	var result []*onchain.Output
+	for _, tx := range response {
+		result = append(result, &onchain.Output{
+			TxId:  tx.TxId,
+			Value: tx.Value,
+		})
+	}
+
+	return result, nil
 }
 
 func (c *Client) Disconnect() {}

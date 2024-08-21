@@ -44,11 +44,17 @@ type WalletChecker struct {
 	TenantId      *Id
 }
 
+type Output struct {
+	TxId  string
+	Value uint64
+}
+
 type BlockProvider interface {
 	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
 	EstimateFee() (float64, error)
 	Disconnect()
+	GetUnspentOutputs(address string) ([]*Output, error)
 }
 
 type TxProvider interface {
@@ -361,6 +367,14 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 			return confirmed, nil
 		}
 	}
+}
+
+func (onchain *Onchain) GetUnspentOutputs(currency boltz.Currency, address string) ([]*Output, error) {
+	chain, err := onchain.GetCurrency(currency)
+	if err != nil {
+		return nil, err
+	}
+	return chain.Blocks.GetUnspentOutputs(address)
 }
 
 func (onchain *Onchain) Disconnect() {

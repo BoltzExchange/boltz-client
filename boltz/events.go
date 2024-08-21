@@ -24,6 +24,9 @@ const (
 
 	TransactionServerMempoool
 	TransactionServerConfirmed
+
+	TransactionDirect
+	TransactionDirectMempool
 )
 
 var swapUpdateEventStrings = map[string]SwapUpdateEvent{
@@ -47,6 +50,9 @@ var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 	"transaction.claim.pending":    TransactionClaimPending,
 	"transaction.server.mempool":   TransactionServerMempoool,
 	"transaction.server.confirmed": TransactionServerConfirmed,
+
+	"transaction.direct":         TransactionDirect,
+	"transaction.direct.mempool": TransactionDirectMempool,
 }
 
 var CompletedStatus = []string{

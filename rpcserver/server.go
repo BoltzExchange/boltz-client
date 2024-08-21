@@ -55,11 +55,12 @@ func (server *RpcServer) Init() error {
 
 	swapper := &autoswap.AutoSwap{}
 	server.boltzServer = &routedBoltzServer{
-		database:   server.cfg.Database,
-		stop:       make(chan bool),
-		state:      stateLightningSyncing,
-		swapper:    swapper,
-		referralId: server.cfg.ReferralId,
+		database:          server.cfg.Database,
+		stop:              make(chan bool),
+		state:             stateLightningSyncing,
+		swapper:           swapper,
+		referralId:        server.cfg.ReferralId,
+		maxZeroConfAmount: server.cfg.MaxZeroConfAmount,
 	}
 	server.autoswapServer = &routedAutoSwapServer{
 		database: server.cfg.Database,
@@ -189,6 +190,15 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		if err := lightning.ConnectBoltz(server.lightning, server.boltz); err != nil {
 			logger.Warn("Could not connect to to boltz node: " + err.Error())
 		}
+	}
+
+	if server.maxZeroConfAmount == nil {
+		pair, err := server.getSubmarinePair(&boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC})
+		if err != nil {
+			return fmt.Errorf("could not get submarine pair: %v", err)
+		}
+		server.maxZeroConfAmount = &pair.Limits.MaximalZeroConfAmount
+		logger.Infof("No maximal zero conf amount set, using same value as boltz: %v", server.maxZeroConfAmount)
 	}
 
 	return server.unlock("")

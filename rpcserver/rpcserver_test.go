@@ -2083,35 +2083,62 @@ func TestUnlock(t *testing.T) {
 }
 
 func TestMagicRoutingHints(t *testing.T) {
-	client, _, stop := setup(t, setupOptions{})
+	cfg := loadConfig(t)
+	cfg.MaxZeroConfAmount = 100000
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
-	addr := test.BtcCli("getnewaddress")
-	pair := &boltzrpc.Pair{
-		From: boltzrpc.Currency_BTC,
-		To:   boltzrpc.Currency_BTC,
+	tt := []struct {
+		desc     string
+		zeroconf bool
+		currency boltzrpc.Currency
+	}{
+		{"Btc/Normal", true, boltzrpc.Currency_BTC},
+		{"Liquid/Normal", false, boltzrpc.Currency_LBTC},
+		{"Liquid/ZeroConf", true, boltzrpc.Currency_LBTC},
 	}
-	externalPay := true
-	var amount uint64 = 100000
-	reverseSwap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-		Amount:      amount,
-		Address:     addr,
-		Pair:        pair,
-		ExternalPay: &externalPay,
-	})
-	require.NoError(t, err)
+	for _, tc := range tt {
+		t.Run(tc.desc, func(t *testing.T) {
 
-	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-		Pair:             pair,
-		Invoice:          reverseSwap.Invoice,
-		SendFromInternal: true,
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, swap.Bip21)
-	require.NotEmpty(t, swap.TxId)
-	require.NotZero(t, swap.ExpectedAmount)
-	require.Equal(t, addr, swap.Address)
-	require.Empty(t, swap.Id)
+			externalPay := true
+			request := &boltzrpc.CreateReverseSwapRequest{
+				Pair: &boltzrpc.Pair{
+					From: boltzrpc.Currency_BTC,
+					To:   tc.currency,
+				},
+				ExternalPay: &externalPay,
+			}
+			if tc.zeroconf {
+				request.Amount = cfg.MaxZeroConfAmount / 2
+			} else {
+				request.Amount = cfg.MaxZeroConfAmount * 2
+			}
+			reverseSwap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
+
+			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Pair: &boltzrpc.Pair{
+					From: tc.currency,
+					To:   boltzrpc.Currency_BTC,
+				},
+				Invoice:          reverseSwap.Invoice,
+				SendFromInternal: true,
+			})
+			require.NoError(t, err)
+			require.NotEmpty(t, swap.Bip21)
+			require.NotEmpty(t, swap.TxId)
+			require.NotZero(t, swap.ExpectedAmount)
+			require.Empty(t, swap.Id)
+
+			_, statusStream := swapStream(t, client, reverseSwap.Id)
+			if !tc.zeroconf {
+				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
+			}
+			test.MineBlock()
+			info := statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect)
+			require.Equal(t, info.ReverseSwap.ClaimAddress, swap.Address)
+		})
+	}
 }
 
 func TestCreateWalletWithPassword(t *testing.T) {
@@ -2190,6 +2217,7 @@ func TestWalletSendReceive(t *testing.T) {
 			}
 		case <-timeout:
 			t.Fatal("timeout while waiting for balance")
+			return
 		}
 
 	}

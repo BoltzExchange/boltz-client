@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/mitchellh/mapstructure"
 	"slices"
@@ -32,7 +33,13 @@ import (
 
 const MinFeeRate = 0.01
 
+type TransactionNotification struct {
+	TxId     string
+	Currency boltz.Currency
+}
+
 var ErrSubAccountNotSet = errors.New("subaccount not set")
+var TransactionNotifier = utils.ForwardChannel(make(chan TransactionNotification), 0, false)
 
 type AuthHandler = *C.struct_GA_auth_handler
 type Json = *C.GA_json
@@ -258,6 +265,25 @@ func Init(walletConfig Config) error {
 			}
 			syncListenersLock.Unlock()
 		}
+	})
+
+	registerHandler(transactionNotification, func(data map[string]any) {
+		var parsed struct {
+			Transaction string `mapstructure:"txhash"`
+			Type        string `mapstructure:"type"`
+		}
+		if err := mapstructure.Decode(data, &parsed); err != nil {
+			logger.Errorf("Could not parse subaccount notification: %v", data)
+			return
+		}
+		currency := boltz.CurrencyBtc
+		if parsed.Type == "" {
+			currency = boltz.CurrencyLiquid
+		}
+		TransactionNotifier.Send(TransactionNotification{
+			TxId:     parsed.Transaction,
+			Currency: currency,
+		})
 	})
 
 	return nil
@@ -590,6 +616,45 @@ func (wallet *Wallet) GetBalance() (*onchain.Balance, error) {
 		return nil, ErrSubAccountNotSet
 	}
 	return wallet.GetSubaccountBalance(*wallet.subaccount)
+}
+
+func (wallet *Wallet) SearchOutput(txId, address string) (*onchain.Output, error) {
+	if wallet.subaccount == nil {
+		return nil, ErrSubAccountNotSet
+	}
+	params, free := toJson(map[string]any{
+		"subaccount": *wallet.subaccount,
+		"first":      0,
+		"count":      30,
+	})
+	defer free()
+	var handler AuthHandler
+	var outputs struct {
+		Transactions []struct {
+			BlockHeight uint32 `json:"block_height"`
+			TxId        string `json:"txhash"`
+			Outputs     []struct {
+				Address string `json:"address"`
+				Satoshi uint64 `json:"satoshi"`
+			}
+		} `json:"transactions"`
+	}
+	if err := withAuthHandler(C.GA_get_transactions(wallet.session, params, &handler), handler, &outputs); err != nil {
+		return nil, err
+	}
+	for _, tx := range outputs.Transactions {
+		if tx.TxId == txId || txId == "" {
+			for _, output := range tx.Outputs {
+				if output.Address == address {
+					return &onchain.Output{
+						TxId:  tx.TxId,
+						Value: output.Satoshi,
+					}, nil
+				}
+			}
+		}
+	}
+	return nil, nil
 }
 
 func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
