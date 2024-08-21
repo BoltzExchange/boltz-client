@@ -57,15 +57,15 @@ func TestLightningConfig(t *testing.T) {
 			name: "ValidReverse",
 			cfg: &SerializedLnConfig{
 				InboundBalancePercent: 25,
-				SwapType:             "reverse",
+				SwapType:              "reverse",
 			},
 			err: false,
 		},
 		{
 			name: "TooMuchBalance/Percent",
 			cfg: &SerializedLnConfig{
-				OutboundBalancePercent:  75,
-				InboundBalancePercent: 75,
+				OutboundBalancePercent: 75,
+				InboundBalancePercent:  75,
 			},
 			err: true,
 		},
@@ -73,8 +73,8 @@ func TestLightningConfig(t *testing.T) {
 			name: "PerChannel/SubmarineForbidden",
 			cfg: &SerializedLnConfig{
 				OutboundBalance: 10000,
-				PerChannel:   true,
-				SwapType:     "submarine",
+				PerChannel:      true,
+				SwapType:        "submarine",
 			},
 			err: true,
 		},
@@ -171,6 +171,7 @@ func TestChainConfig(t *testing.T) {
 		config    *SerializedChainConfig
 		wallets   []onchain.WalletInfo
 		err       bool
+		errFunc   require.ErrorAssertionFunc
 		setTenant bool
 	}{
 		{
@@ -181,14 +182,14 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "NoWallets",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 			},
 			err: true,
 		},
 		{
 			name: "InvalidWallet",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: "i dont",
 				ToWallet:   "exist",
 			},
@@ -197,7 +198,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "Tenant/Invalid",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				Tenant:     &tenantName,
 			},
 			err: true,
@@ -205,7 +206,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "Tenant/NoWallets",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
@@ -216,7 +217,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "Tenant/Valid",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				Tenant:     &tenantName,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
@@ -228,7 +229,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToWallet",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: btcWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
@@ -238,7 +239,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToWallet/SameCurrency",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: liquidWallet.Name,
 				ToWallet:   liquidWallet.Name,
 			},
@@ -249,7 +250,7 @@ func TestChainConfig(t *testing.T) {
 			name: "ToAddress/Valid",
 
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: liquidWallet.Name,
 				ToAddress:  "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
 			},
@@ -259,7 +260,7 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToAddress/SameCurrency",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: btcWallet.Name,
 				ToAddress:  "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
 			},
@@ -269,12 +270,22 @@ func TestChainConfig(t *testing.T) {
 		{
 			name: "ToAddress/Invalid",
 			config: &SerializedChainConfig{
-				MaxBalance: 100,
+				MaxBalance: 100000,
 				FromWallet: liquidWallet.Name,
 				ToAddress:  "ahdslöfkjasöldfkj",
 			},
 			wallets: []onchain.WalletInfo{liquidWallet},
 			err:     true,
+		},
+		{
+			name: "ReserveGreaterThanMax",
+			config: &SerializedChainConfig{
+				ReserveBalance: 200,
+				MaxBalance:     100,
+			},
+			errFunc: func(t require.TestingT, err error, i ...interface{}) {
+				require.ErrorContains(t, err, "reserve balance", i...)
+			},
 		},
 	}
 
@@ -295,7 +306,9 @@ func TestChainConfig(t *testing.T) {
 			chainConfig := NewChainConfig(tc.config, shared)
 			require.NotNil(t, chainConfig)
 			err = chainConfig.Init()
-			if tc.err {
+			if tc.errFunc != nil {
+				tc.errFunc(t, err)
+			} else if tc.err {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)

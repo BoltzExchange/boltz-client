@@ -22,16 +22,19 @@ type ChainRecommendation struct {
 	FromBalance *onchain.Balance
 }
 
+const MinReserve = uint64(10000)
+
 type ChainConfig struct {
 	*SerializedChainConfig
 	shared
 
-	tenant        *database.Tenant
-	maxFeePercent utils.Percentage
-	fromWallet    onchain.Wallet
-	toWallet      onchain.Wallet
-	pair          boltz.Pair
-	description   string
+	tenant         *database.Tenant
+	maxFeePercent  utils.Percentage
+	reserveBalance uint64
+	fromWallet     onchain.Wallet
+	toWallet       onchain.Wallet
+	pair           boltz.Pair
+	description    string
 }
 
 func (cfg *ChainConfig) GetTenantId() database.Id {
@@ -66,6 +69,13 @@ func (cfg *ChainConfig) Init() (err error) {
 	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
 	if cfg.MaxBalance == 0 {
 		return errors.New("MaxBalance must be set")
+	}
+
+	// TODO: properly sweep wallet if no reserve balance is set
+	cfg.reserveBalance = max(MinReserve, cfg.ReserveBalance)
+
+	if cfg.MaxBalance < cfg.reserveBalance {
+		return fmt.Errorf("reserve balance %d is greater than max balance %d", cfg.reserveBalance, cfg.MaxBalance)
 	}
 
 	cfg.fromWallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
@@ -133,8 +143,7 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 
 	recommendation := &ChainRecommendation{FromBalance: balance}
 	if balance.Confirmed > cfg.MaxBalance {
-		// TODO: properly sweep wallet
-		amount := balance.Confirmed - 10000
+		amount := balance.Confirmed - cfg.reserveBalance
 
 		checked := check(amount, checkParams{Pair: pairInfo, MaxFeePercent: cfg.maxFeePercent, Budget: &budget.Amount})
 

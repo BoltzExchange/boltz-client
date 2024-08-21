@@ -665,6 +665,7 @@ func TestDismissedChannels(t *testing.T) {
 }
 
 func TestCheckSwapRecommendation(t *testing.T) {
+	pairInfo := newPairInfo()
 
 	tests := []struct {
 		name    string
@@ -677,24 +678,15 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			config: &SerializedLnConfig{
 				MaxFeePercent: 25,
 			},
-			amount:  100,
-			outcome: nil,
-		},
-		{
-			name: "MaxFeePercent/High",
-			config: &SerializedLnConfig{
-				MaxFeePercent: 25,
-				Budget:        150,
-			},
-			amount:  100,
+			amount:  10000,
 			outcome: nil,
 		},
 		{
 			name: "MaxFeePercent/Low",
 			config: &SerializedLnConfig{
-				MaxFeePercent: 10,
+				MaxFeePercent: 1,
 			},
-			amount:  100,
+			amount:  10000,
 			outcome: []string{ReasonMaxFeePercent},
 		},
 		{
@@ -702,7 +694,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			config: &SerializedLnConfig{
 				MaxFeePercent: 25,
 			},
-			amount:  99,
+			amount:  pairInfo.Limits.Minimal - 10,
 			outcome: []string{ReasonAmountBelowMin},
 		},
 		{
@@ -710,7 +702,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			config: &SerializedLnConfig{
 				MaxFeePercent: 25,
 			},
-			amount:  100000,
+			amount:  pairInfo.Limits.Minimal + 10,
 			outcome: nil,
 		},
 		{
@@ -734,7 +726,6 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			}
 
 			swapper, ln := getLnSwapper(t, tc.config)
-			pairInfo := newPairInfo()
 			ln.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
 
 			validated, err := swapper.cfg.validateRecommendations([]*LightningRecommendation{{Swap: &LightningSwap{

@@ -1563,6 +1563,7 @@ Reloads the configuration from disk.
 | `to_wallet` | [`string`](#string) |  |  |
 | `to_address` | [`string`](#string) |  |  |
 | `max_balance` | [`uint64`](#uint64) |  |  |
+| `reserve_balance` | [`uint64`](#uint64) |  |  |
 | `max_fee_percent` | [`float`](#float) |  |  |
 | `budget` | [`uint64`](#uint64) |  |  |
 | `budget_interval` | [`uint64`](#uint64) |  |  |

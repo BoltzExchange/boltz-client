@@ -123,6 +123,7 @@ message ChainConfig {
   string to_wallet = 3;
   string to_address = 4;
   uint64 max_balance = 5;
+  uint64 reserve_balance = 10;
   float max_fee_percent = 6;
   uint64 budget = 7;
   uint64 budget_interval = 8;
