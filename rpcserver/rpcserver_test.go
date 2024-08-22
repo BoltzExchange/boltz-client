@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -2086,7 +2087,8 @@ func TestMagicRoutingHints(t *testing.T) {
 	cfg := loadConfig(t)
 	maxZeroConfAmount := uint64(100000)
 	cfg.MaxZeroConfAmount = &maxZeroConfAmount
-	client, _, stop := setup(t, setupOptions{cfg: cfg})
+	chain := getOnchain(t, cfg)
+	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 	defer stop()
 
 	tt := []struct {
@@ -2100,6 +2102,16 @@ func TestMagicRoutingHints(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.desc, func(t *testing.T) {
+
+			confirmed := false
+			if !tc.zeroconf || tc.currency == boltzrpc.Currency_BTC {
+				currency, _ := chain.GetCurrency(utils.ParseCurrency(&tc.currency))
+				mockTx := onchainmock.NewMockTxProvider(t)
+				mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
+					return confirmed, nil
+				})
+				currency.Tx = mockTx
+			}
 
 			externalPay := true
 			request := &boltzrpc.CreateReverseSwapRequest{
@@ -2136,6 +2148,7 @@ func TestMagicRoutingHints(t *testing.T) {
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
 			}
 			test.MineBlock()
+			confirmed = true
 			info := statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect)
 			require.Equal(t, info.ReverseSwap.ClaimAddress, swap.Address)
 		})

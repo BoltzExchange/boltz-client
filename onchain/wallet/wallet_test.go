@@ -48,15 +48,15 @@ func TestSend(t *testing.T) {
 
 	t.Run("TxProvider", func(t *testing.T) {
 		t.Cleanup(func() {
-			wallet.SetTxProvider(nil)
+			wallet.SetTxBroadcaster(nil)
 		})
 
-		txProvider := onchainmock.NewMockTxProvider(t)
+		txProvider := onchainmock.NewMockTxBroadcaster(t)
 		txProvider.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(func(txHex string) (string, error) {
 			require.NotEmpty(t, txHex)
 			return "txid", nil
 		})
-		wallet.SetTxProvider(txProvider)
+		wallet.SetTxBroadcaster(txProvider)
 
 		txid, err := wallet.SendToAddress(test.BtcCli("getnewaddress"), 10000, onchainWallet.MinFeeRate)
 		require.NoError(t, err)

@@ -112,7 +112,7 @@ type Wallet struct {
 	session        Session
 	connected      bool
 	syncedAccounts []uint64
-	txProvider     onchain.TxProvider
+	txBroadcaster  onchain.TxBroadcaster
 }
 
 type Config struct {
@@ -533,8 +533,8 @@ func GenerateMnemonic() (string, error) {
 	return C.GoString(mnemonic), nil
 }
 
-func (wallet *Wallet) SetTxProvider(txProvider onchain.TxProvider) {
-	wallet.txProvider = txProvider
+func (wallet *Wallet) SetTxBroadcaster(txBroadcaster onchain.TxBroadcaster) {
+	wallet.txBroadcaster = txBroadcaster
 }
 
 func (wallet *Wallet) Disconnect() error {
@@ -721,7 +721,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 	free()
 
-	if wallet.txProvider != nil {
+	if wallet.txBroadcaster != nil {
 		var signedTx struct {
 			Transaction string `json:"transaction"`
 			Error       string `json:"error"`
@@ -732,7 +732,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		if signedTx.Error != "" {
 			return "", errors.New(signedTx.Error)
 		}
-		tx, err := wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
+		tx, err := wallet.txBroadcaster.BroadcastTransaction(signedTx.Transaction)
 		if err != nil {
 			return "", err
 		}

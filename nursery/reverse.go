@@ -321,14 +321,12 @@ func (nursery *Nursery) checkSwapWallet(swap *database.ReverseSwap, txId string)
 			if txId == "" && swap.Status == boltz.TransactionDirectMempool {
 				txId = swap.ClaimTransactionId
 			}
-			if txId != "" {
-				output, err := ownWallet.SearchOutput(txId, swap.ClaimAddress)
-				if err != nil {
-					return true, err
-				}
-				if output != nil {
-					nursery.handleReverseSwapDirectPayment(swap, output)
-				}
+			output, err := ownWallet.SearchOutput(txId, swap.ClaimAddress)
+			if err != nil {
+				return true, err
+			}
+			if output != nil {
+				nursery.handleReverseSwapDirectPayment(swap, output)
 			}
 			return true, nil
 		}

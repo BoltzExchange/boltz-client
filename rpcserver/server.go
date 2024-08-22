@@ -365,7 +365,8 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 
 	electrumConfig := cfg.Electrum()
 	if electrumConfig.Liquid.Url == "" && cfg.MempoolLiquidApi == "" {
-		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+		// use boltz for broadcasting if no custom electrum or mempool is configured
+		chain.Liquid.Broadcast = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
 	}
 
 	if network == boltz.Regtest && electrumConfig.Btc.Url == "" && electrumConfig.Liquid.Url == "" {
@@ -392,6 +393,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		}
 		chain.Btc.Blocks = client
 		chain.Btc.Tx = client
+		chain.Btc.Broadcast = client
 	}
 	if electrumConfig.Liquid.Url != "" {
 		logger.Info("Using configured Electrum Liquid RPC: " + electrumConfig.Liquid.Url)
@@ -400,8 +402,10 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
 		chain.Liquid.Blocks = client
-		if chain.Liquid.Tx == nil {
-			chain.Liquid.Tx = client
+		chain.Liquid.Tx = client
+		// dont overwrite the boltz broadcaster which is used when no custom electrum or mempool is configured
+		if chain.Liquid.Broadcast == nil {
+			chain.Liquid.Broadcast = client
 		}
 	}
 	if network == boltz.MainNet {
@@ -417,21 +421,28 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		client := mempool.InitClient(cfg.MempoolApi)
 		chain.Btc.Blocks = client
 		chain.Btc.Tx = client
+		chain.Btc.Broadcast = client
 	}
 
 	if cfg.MempoolLiquidApi != "" {
 		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
 		client := mempool.InitClient(cfg.MempoolLiquidApi)
 		chain.Liquid.Blocks = client
-		if chain.Liquid.Tx == nil {
-			chain.Liquid.Tx = client
+		chain.Liquid.Tx = client
+		// dont overwrite the boltz broadcaster which is used when no custom electrum or mempool is configured
+		if chain.Liquid.Broadcast == nil {
+			chain.Liquid.Broadcast = client
 		}
 	}
 
 	// always use boltz api in regtest because electrum can be a bit slow
 	if network == boltz.Regtest {
-		chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
-		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+		btc := onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
+		chain.Btc.Tx = btc
+		chain.Btc.Broadcast = btc
+		liquid := onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+		chain.Liquid.Tx = liquid
+		chain.Liquid.Broadcast = liquid
 	}
 
 	return chain, nil

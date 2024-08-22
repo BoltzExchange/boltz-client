@@ -1276,7 +1276,7 @@ func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*
 	if err != nil {
 		return nil, err
 	}
-	result.SetTxProvider(chain.Tx)
+	result.SetTxBroadcaster(chain.Broadcast)
 	return result, nil
 }
 
