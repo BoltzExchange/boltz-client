@@ -316,6 +316,7 @@ func TestChainConfig(t *testing.T) {
 				require.NotEmpty(t, chainConfig.description)
 				require.NotZero(t, chainConfig.maxFeePercent)
 				require.NotNil(t, chainConfig.tenant)
+				require.GreaterOrEqual(t, chainConfig.reserveBalance, MinReserve)
 			}
 		})
 	}
