@@ -2147,8 +2147,8 @@ func TestMagicRoutingHints(t *testing.T) {
 			if !tc.zeroconf {
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
 			}
-			test.MineBlock()
 			confirmed = true
+			test.MineBlock()
 			info := statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect)
 			require.Equal(t, info.ReverseSwap.ClaimAddress, swap.Address)
 		})

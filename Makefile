@@ -8,7 +8,7 @@ PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
 
 GO_BIN := ${GOPATH}/bin
 
-GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v -timeout 120s
+GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v -timeout 3m
 GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
 GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
