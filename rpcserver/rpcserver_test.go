@@ -2096,7 +2096,7 @@ func TestMagicRoutingHints(t *testing.T) {
 		zeroconf bool
 		currency boltzrpc.Currency
 	}{
-		{"Btc/Normal", true, boltzrpc.Currency_BTC},
+		{"Btc/Normal", false, boltzrpc.Currency_BTC},
 		{"Liquid/Normal", false, boltzrpc.Currency_LBTC},
 		{"Liquid/ZeroConf", true, boltzrpc.Currency_LBTC},
 	}
@@ -2144,7 +2144,8 @@ func TestMagicRoutingHints(t *testing.T) {
 			require.Empty(t, swap.Id)
 
 			_, statusStream := swapStream(t, client, reverseSwap.Id)
-			if !tc.zeroconf {
+			// it only gets to mempool state on liquid since its using gdk - btc uses the node wallet
+			if !tc.zeroconf && tc.currency == boltzrpc.Currency_LBTC {
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
 			}
 			confirmed = true
