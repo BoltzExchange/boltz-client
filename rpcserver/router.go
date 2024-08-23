@@ -1283,12 +1283,15 @@ func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*
 func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *wallet.Credentials, password string) error {
 	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
-		return errors.New("wrong password")
+		return status.Error(codes.InvalidArgument, "wrong password")
 	}
 
 	for _, existing := range decryptWalletCredentials {
+		if existing.Name == credentials.Name && existing.TenantId == credentials.TenantId {
+			return status.Errorf(codes.InvalidArgument, "wallet %s already exists", existing.Name)
+		}
 		if existing.Mnemonic == credentials.Mnemonic && existing.Xpub == credentials.Xpub && existing.CoreDescriptor == credentials.CoreDescriptor {
-			return fmt.Errorf("wallet %s has the same credentials", existing.Name)
+			return status.Errorf(codes.InvalidArgument, "wallet %s has the same credentials", existing.Name)
 		}
 	}
 

@@ -2156,26 +2156,33 @@ func TestMagicRoutingHints(t *testing.T) {
 	}
 }
 
-func TestCreateWalletWithPassword(t *testing.T) {
+func TestCreateWallet(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
-	_, err := client.GetWalletCredentials(testWallet.Id, nil)
-	require.NoError(t, err)
+	t.Run("WithPassword", func(t *testing.T) {
+		_, err := client.GetWalletCredentials(testWallet.Id, nil)
+		require.NoError(t, err)
 
-	// after creating one with a password, the first one will be encrypted as well
-	secondParams := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_BTC, Password: &password}
-	secondWallet, err := client.CreateWallet(secondParams)
-	require.NoError(t, err)
+		// after creating one with a password, the first one will be encrypted as well
+		secondParams := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_BTC, Password: &password}
+		secondWallet, err := client.CreateWallet(secondParams)
+		require.NoError(t, err)
 
-	_, err = client.GetWalletCredentials(testWallet.Id, nil)
-	require.Error(t, err)
+		_, err = client.GetWalletCredentials(testWallet.Id, nil)
+		require.Error(t, err)
 
-	_, err = client.GetWalletCredentials(testWallet.Id, &password)
-	require.NoError(t, err)
+		_, err = client.GetWalletCredentials(testWallet.Id, &password)
+		require.NoError(t, err)
 
-	_, err = client.RemoveWallet(secondWallet.Wallet.Id)
-	require.NoError(t, err)
+		_, err = client.RemoveWallet(secondWallet.Wallet.Id)
+		require.NoError(t, err)
+	})
+
+	t.Run("DuplicateName", func(t *testing.T) {
+		_, err := client.CreateWallet(&boltzrpc.WalletParams{Name: walletName, Currency: boltzrpc.Currency_BTC})
+		require.Error(t, err)
+	})
 
 }
 
