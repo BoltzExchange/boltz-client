@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -2083,35 +2084,76 @@ func TestUnlock(t *testing.T) {
 }
 
 func TestMagicRoutingHints(t *testing.T) {
-	client, _, stop := setup(t, setupOptions{})
+	cfg := loadConfig(t)
+	maxZeroConfAmount := uint64(100000)
+	cfg.MaxZeroConfAmount = &maxZeroConfAmount
+	chain := getOnchain(t, cfg)
+	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 	defer stop()
 
-	addr := test.BtcCli("getnewaddress")
-	pair := &boltzrpc.Pair{
-		From: boltzrpc.Currency_BTC,
-		To:   boltzrpc.Currency_BTC,
+	tt := []struct {
+		desc     string
+		zeroconf bool
+		currency boltzrpc.Currency
+	}{
+		{"Btc/Normal", false, boltzrpc.Currency_BTC},
+		{"Liquid/Normal", false, boltzrpc.Currency_LBTC},
+		{"Liquid/ZeroConf", true, boltzrpc.Currency_LBTC},
 	}
-	externalPay := true
-	var amount uint64 = 100000
-	reverseSwap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-		Amount:      amount,
-		Address:     addr,
-		Pair:        pair,
-		ExternalPay: &externalPay,
-	})
-	require.NoError(t, err)
+	for _, tc := range tt {
+		t.Run(tc.desc, func(t *testing.T) {
 
-	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-		Pair:             pair,
-		Invoice:          reverseSwap.Invoice,
-		SendFromInternal: true,
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, swap.Bip21)
-	require.NotEmpty(t, swap.TxId)
-	require.NotZero(t, swap.ExpectedAmount)
-	require.Equal(t, addr, swap.Address)
-	require.Empty(t, swap.Id)
+			confirmed := false
+			if !tc.zeroconf || tc.currency == boltzrpc.Currency_BTC {
+				currency, _ := chain.GetCurrency(utils.ParseCurrency(&tc.currency))
+				mockTx := onchainmock.NewMockTxProvider(t)
+				mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
+					return confirmed, nil
+				})
+				currency.Tx = mockTx
+			}
+
+			externalPay := true
+			request := &boltzrpc.CreateReverseSwapRequest{
+				Pair: &boltzrpc.Pair{
+					From: boltzrpc.Currency_BTC,
+					To:   tc.currency,
+				},
+				ExternalPay: &externalPay,
+			}
+			if tc.zeroconf {
+				request.Amount = maxZeroConfAmount / 2
+			} else {
+				request.Amount = maxZeroConfAmount * 2
+			}
+			reverseSwap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
+
+			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Pair: &boltzrpc.Pair{
+					From: tc.currency,
+					To:   boltzrpc.Currency_BTC,
+				},
+				Invoice:          reverseSwap.Invoice,
+				SendFromInternal: true,
+			})
+			require.NoError(t, err)
+			require.NotEmpty(t, swap.Bip21)
+			require.NotEmpty(t, swap.TxId)
+			require.NotZero(t, swap.ExpectedAmount)
+			require.Empty(t, swap.Id)
+
+			_, statusStream := swapStream(t, client, reverseSwap.Id)
+			// it only gets to mempool state on liquid since its using gdk - btc uses the node wallet
+			if !tc.zeroconf && tc.currency == boltzrpc.Currency_LBTC {
+				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
+			}
+			confirmed = true
+			test.MineBlock()
+			info := statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect)
+			require.Equal(t, info.ReverseSwap.ClaimAddress, swap.Address)
+		})
+	}
 }
 
 func TestCreateWalletWithPassword(t *testing.T) {
@@ -2190,6 +2232,7 @@ func TestWalletSendReceive(t *testing.T) {
 			}
 		case <-timeout:
 			t.Fatal("timeout while waiting for balance")
+			return
 		}
 
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"sync"
 
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -36,6 +37,8 @@ type Nursery struct {
 	eventListenersLock sync.RWMutex
 	globalListener     swapListener
 	waitGroup          sync.WaitGroup
+
+	MaxZeroConfAmount uint64
 
 	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
 	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
@@ -190,7 +193,7 @@ func (nursery *Nursery) recoverSwaps() error {
 func (nursery *Nursery) startSwapListener() {
 	logger.Infof("Starting swap update listener")
 
-	nursery.waitGroup.Add(1)
+	nursery.waitGroup.Add(2)
 
 	go func() {
 		for status := range nursery.boltzWs.Updates {
@@ -214,6 +217,23 @@ func (nursery *Nursery) startSwapListener() {
 			}
 		}
 		nursery.waitGroup.Done()
+	}()
+
+	go func() {
+		defer nursery.waitGroup.Done()
+		notifier := wallet.TransactionNotifier.Get()
+		defer wallet.TransactionNotifier.Remove(notifier)
+		for {
+			select {
+			case notification := <-notifier:
+				if err := nursery.checkExternalReverseSwaps(notification.Currency, notification.TxId); err != nil {
+					logger.Errorf("Could not check external reverse swaps: %v", err)
+				}
+			case <-nursery.ctx.Done():
+				return
+			}
+		}
+
 	}()
 }
 
@@ -329,6 +349,8 @@ type voutInfo struct {
 	requireConfirmed bool
 }
 
+var ErrNotConfirmed = errors.New("lockup transaction not confirmed")
+
 func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
 	lockupTransaction, err := nursery.onchain.GetTransaction(info.currency, info.transactionId, info.blindingKey)
 	if err != nil {
@@ -341,7 +363,7 @@ func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint
 	}
 
 	if info.expectedAmount != 0 && value < info.expectedAmount {
-		return nil, 0, 0, errors.New("locked up less onchain coins than expected")
+		return nil, 0, 0, fmt.Errorf("locked up less onchain coins than expected: %d < %d", value, info.expectedAmount)
 	}
 	if info.requireConfirmed {
 		confirmed, err := nursery.onchain.IsTransactionConfirmed(info.currency, info.transactionId)
@@ -349,7 +371,7 @@ func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint
 			return nil, 0, 0, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
 		}
 		if !confirmed {
-			return nil, 0, 0, errors.New("lockup transaction not confirmed")
+			return nil, 0, 0, ErrNotConfirmed
 		}
 	}
 

@@ -164,6 +164,64 @@ func (_c *MockBlockProvider_GetBlockHeight_Call) RunAndReturn(run func() (uint32
 	return _c
 }
 
+// GetUnspentOutputs provides a mock function with given fields: address
+func (_m *MockBlockProvider) GetUnspentOutputs(address string) ([]*onchain.Output, error) {
+	ret := _m.Called(address)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUnspentOutputs")
+	}
+
+	var r0 []*onchain.Output
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]*onchain.Output, error)); ok {
+		return rf(address)
+	}
+	if rf, ok := ret.Get(0).(func(string) []*onchain.Output); ok {
+		r0 = rf(address)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*onchain.Output)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(address)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockBlockProvider_GetUnspentOutputs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUnspentOutputs'
+type MockBlockProvider_GetUnspentOutputs_Call struct {
+	*mock.Call
+}
+
+// GetUnspentOutputs is a helper method to define mock.On call
+//   - address string
+func (_e *MockBlockProvider_Expecter) GetUnspentOutputs(address interface{}) *MockBlockProvider_GetUnspentOutputs_Call {
+	return &MockBlockProvider_GetUnspentOutputs_Call{Call: _e.mock.On("GetUnspentOutputs", address)}
+}
+
+func (_c *MockBlockProvider_GetUnspentOutputs_Call) Run(run func(address string)) *MockBlockProvider_GetUnspentOutputs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockBlockProvider_GetUnspentOutputs_Call) Return(_a0 []*onchain.Output, _a1 error) *MockBlockProvider_GetUnspentOutputs_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockBlockProvider_GetUnspentOutputs_Call) RunAndReturn(run func(string) ([]*onchain.Output, error)) *MockBlockProvider_GetUnspentOutputs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RegisterBlockListener provides a mock function with given fields: ctx, channel
 func (_m *MockBlockProvider) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
 	ret := _m.Called(ctx, channel)

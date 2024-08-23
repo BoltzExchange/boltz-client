@@ -11,7 +11,8 @@ import "C"
 type Notification string
 
 var (
-	subaccountNotification Notification = "subaccount"
+	subaccountNotification  Notification = "subaccount"
+	transactionNotification Notification = "transaction"
 )
 
 type handlerFunc = func(map[string]any)

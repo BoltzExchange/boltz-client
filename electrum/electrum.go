@@ -106,3 +106,24 @@ func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
 	}
 	return transaction.Confirmations > 0, nil
 }
+
+func (c *Client) GetUnspentOutputs(address string) ([]*onchain.Output, error) {
+	ctx, cancel := c.timeoutContext()
+	defer cancel()
+	sh, err := electrum.AddressToElectrumScriptHash(address)
+	if err != nil {
+		return nil, err
+	}
+	unspent, err := c.client.ListUnspent(ctx, sh)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*onchain.Output, 0, len(unspent))
+	for _, u := range unspent {
+		result = append(result, &onchain.Output{
+			TxId:  u.Hash,
+			Value: u.Value,
+		})
+	}
+	return result, nil
+}

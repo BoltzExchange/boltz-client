@@ -42,11 +42,12 @@ func TestChainSwapper(t *testing.T) {
 	setup := func(t *testing.T) (*AutoSwap, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
 		name := database.DefaultTenantName
 		config := &SerializedChainConfig{
-			MaxBalance:    100000,
-			FromWallet:    "test",
-			ToAddress:     "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
-			MaxFeePercent: 10,
-			Tenant:        &name,
+			MaxBalance:     100000,
+			ReserveBalance: 50000,
+			FromWallet:     "test",
+			ToAddress:      "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
+			MaxFeePercent:  10,
+			Tenant:         &name,
 		}
 
 		fromWallet := mockedWallet(t, onchain.WalletInfo{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid})
@@ -73,11 +74,7 @@ func TestChainSwapper(t *testing.T) {
 		balance := defaultBalance
 		fromWallet.EXPECT().GetBalance().Return(&balance, nil)
 
-		// the min reserve will be used by default
-		require.Equal(t, MinReserve, chainConfig.reserveBalance)
-		reserve := uint64(50000)
-		chainConfig.reserveBalance = reserve
-		expectedAmount := balance.Confirmed - reserve
+		expectedAmount := balance.Confirmed - chainConfig.reserveBalance
 
 		t.Run("Valid", func(t *testing.T) {
 			tenant := &database.Tenant{Name: "test"}

@@ -17,62 +17,6 @@ func (_m *MockTxProvider) EXPECT() *MockTxProvider_Expecter {
 	return &MockTxProvider_Expecter{mock: &_m.Mock}
 }
 
-// BroadcastTransaction provides a mock function with given fields: txHex
-func (_m *MockTxProvider) BroadcastTransaction(txHex string) (string, error) {
-	ret := _m.Called(txHex)
-
-	if len(ret) == 0 {
-		panic("no return value specified for BroadcastTransaction")
-	}
-
-	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(txHex)
-	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(txHex)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(txHex)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockTxProvider_BroadcastTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BroadcastTransaction'
-type MockTxProvider_BroadcastTransaction_Call struct {
-	*mock.Call
-}
-
-// BroadcastTransaction is a helper method to define mock.On call
-//   - txHex string
-func (_e *MockTxProvider_Expecter) BroadcastTransaction(txHex interface{}) *MockTxProvider_BroadcastTransaction_Call {
-	return &MockTxProvider_BroadcastTransaction_Call{Call: _e.mock.On("BroadcastTransaction", txHex)}
-}
-
-func (_c *MockTxProvider_BroadcastTransaction_Call) Run(run func(txHex string)) *MockTxProvider_BroadcastTransaction_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *MockTxProvider_BroadcastTransaction_Call) Return(_a0 string, _a1 error) *MockTxProvider_BroadcastTransaction_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockTxProvider_BroadcastTransaction_Call) RunAndReturn(run func(string) (string, error)) *MockTxProvider_BroadcastTransaction_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetRawTransaction provides a mock function with given fields: txId
 func (_m *MockTxProvider) GetRawTransaction(txId string) (string, error) {
 	ret := _m.Called(txId)

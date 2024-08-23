@@ -54,14 +54,15 @@ type routedBoltzServer struct {
 
 	network *boltz.Network
 
-	onchain    *onchain.Onchain
-	lightning  lightning.LightningNode
-	boltz      *boltz.Api
-	nursery    *nursery.Nursery
-	database   *database.Database
-	swapper    *autoswap.AutoSwap
-	macaroon   *macaroons.Service
-	referralId string
+	onchain           *onchain.Onchain
+	lightning         lightning.LightningNode
+	boltz             *boltz.Api
+	nursery           *nursery.Nursery
+	database          *database.Database
+	swapper           *autoswap.AutoSwap
+	macaroon          *macaroons.Service
+	referralId        string
+	maxZeroConfAmount *uint64
 
 	stop  chan bool
 	state serverState
@@ -887,13 +888,13 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	}
 
 	var walletId *database.Id
-	claimAddress := request.Address
 	pair := utils.ParsePair(request.Pair)
+	claimAddress := request.Address
 	if claimAddress != "" {
 		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
 
 		if err != nil {
-			return nil, fmt.Errorf("Invalid claim address %s: %w", claimAddress, err)
+			return nil, fmt.Errorf("invalid claim address %s: %w", claimAddress, err)
 		}
 	} else {
 		wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
@@ -906,6 +907,13 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		}
 		info := wallet.GetWalletInfo()
 		walletId = &info.Id
+
+		if externalPay {
+			claimAddress, err = wallet.NewAddress()
+			if err != nil {
+				return nil, fmt.Errorf("could not claim address from wallet: %w", err)
+			}
+		}
 	}
 
 	preimage, preimageHash, err := newPreimage()
@@ -938,14 +946,14 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		Description:    request.GetDescription(),
 	}
 
-	if request.Address != "" {
-		addressHash := sha256.Sum256([]byte(request.Address))
+	if claimAddress != "" {
+		addressHash := sha256.Sum256([]byte(claimAddress))
 		signature, err := schnorr.Sign(privateKey, addressHash[:])
 		if err != nil {
 			return nil, err
 		}
 		createRequest.AddressSignature = signature.Serialize()
-		createRequest.Address = request.Address
+		createRequest.Address = claimAddress
 	}
 
 	response, err := server.boltz.CreateReverseSwap(createRequest)
@@ -1268,7 +1276,7 @@ func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*
 	if err != nil {
 		return nil, err
 	}
-	result.SetTxProvider(chain.Tx)
+	result.SetTxBroadcaster(chain.Broadcast)
 	return result, nil
 }
 
@@ -1694,7 +1702,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 		}
 		wg.Wait()
 
-		server.nursery = &nursery.Nursery{}
+		server.nursery = &nursery.Nursery{MaxZeroConfAmount: *server.maxZeroConfAmount}
 		err = server.nursery.Init(
 			server.network,
 			server.lightning,
@@ -1789,25 +1797,13 @@ func (server *routedBoltzServer) getOwnWallet(ctx context.Context, checker oncha
 	return wallet, nil
 }
 
-func findPair[T any](pair boltz.Pair, nested map[boltz.Currency]map[boltz.Currency]T) (*T, error) {
-	from, hasPair := nested[pair.From]
-	if !hasPair {
-		return nil, fmt.Errorf("could not find pair from %v", pair)
-	}
-	result, hasPair := from[pair.To]
-	if !hasPair {
-		return nil, fmt.Errorf("could not find pair to %v", pair)
-	}
-	return &result, nil
-}
-
 func (server *routedBoltzServer) getSubmarinePair(request *boltzrpc.Pair) (*boltz.SubmarinePair, error) {
 	pairsResponse, err := server.boltz.GetSubmarinePairs()
 	if err != nil {
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	return findPair(pair, pairsResponse)
+	return boltz.FindPair(pair, pairsResponse)
 }
 
 func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltz.ReversePair, error) {
@@ -1816,7 +1812,7 @@ func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltz.
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	return findPair(pair, pairsResponse)
+	return boltz.FindPair(pair, pairsResponse)
 }
 
 func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltz.ChainPair, error) {
@@ -1825,7 +1821,7 @@ func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltz.Ch
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	return findPair(pair, pairsResponse)
+	return boltz.FindPair(pair, pairsResponse)
 }
 
 func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltzrpc.GetPairsResponse, error) {

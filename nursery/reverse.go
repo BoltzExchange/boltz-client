@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightningnetwork/lnd/zpay32"
 	"time"
@@ -221,4 +223,113 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	}
 
 	nursery.sendReverseSwapUpdate(*reverseSwap)
+}
+
+func (nursery *Nursery) handleReverseSwapDirectPayment(swap *database.ReverseSwap, output *onchain.Output) {
+	err := nursery.database.RunTx(func(tx *database.Transaction) error {
+		logger.Debugf("Found direct payment to Reverse Swap %s", swap.Id)
+
+		currency := swap.Pair.To
+		pairs, err := nursery.boltz.GetReversePairs()
+		if err != nil {
+			return fmt.Errorf("get reverse pairs: %s", err)
+		}
+		pair, err := boltz.FindPair(swap.Pair, pairs)
+		if err != nil {
+			return fmt.Errorf("find reverse swap pair: %s", err)
+		}
+		claimFee := pair.Fees.MinerFees.Claim
+		if currency == boltz.CurrencyLiquid && claimFee > 100 && nursery.network == boltz.MainNet {
+			return fmt.Errorf("claim fee too high for liquid: %d", claimFee)
+		}
+		// we dont know the output value of liquid when the claim address is external
+		expectedAmount := swap.OnchainAmount - claimFee - 50
+		if (currency == boltz.CurrencyBtc || output.Value != 0) && output.Value < expectedAmount {
+			return fmt.Errorf("locked up less onchain coins than expected: %d < %d", output.Value, expectedAmount)
+		}
+		if err := tx.SetReverseSwapClaimTransactionId(swap, output.TxId, 0); err != nil {
+			return fmt.Errorf("set paid at: %s", err)
+		}
+		if currency == boltz.CurrencyBtc || expectedAmount > nursery.MaxZeroConfAmount {
+			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, output.TxId)
+			if err != nil {
+				return fmt.Errorf("is transaction confirmed: %s", err)
+			}
+			if !confirmed {
+				logger.Infof("Rejecting zero conf for direct payment of swap %s: %s", swap.Id, output.TxId)
+				if err := tx.UpdateReverseSwapStatus(swap, boltz.TransactionDirectMempool); err != nil {
+					return fmt.Errorf("set reverse swap status: %s", err)
+				}
+				return nil
+			}
+		}
+		if err := tx.SetReverseSwapPaidAt(swap, time.Now()); err != nil {
+			return fmt.Errorf("set paid at: %s", err)
+		}
+		if err := tx.UpdateReverseSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
+			return fmt.Errorf("could not update swap: %s", err)
+		}
+		if err := tx.UpdateReverseSwapStatus(swap, boltz.TransactionDirect); err != nil {
+			return fmt.Errorf("set reverse swap status: %s", err)
+		}
+		logger.Infof("Reverse Swap %s succeeded through direct payment: %s", swap.Id, swap.ClaimTransactionId)
+		return nil
+	})
+	if err != nil {
+		nursery.handleReverseSwapError(swap, err)
+	} else {
+		nursery.sendReverseSwapUpdate(*swap)
+	}
+}
+
+func (nursery *Nursery) checkExternalReverseSwaps(currency boltz.Currency, txId string) error {
+	reverseSwaps, err := nursery.database.QueryReverseSwaps(database.SwapQuery{
+		To:     &currency,
+		States: []boltzrpc.SwapState{boltzrpc.SwapState_PENDING, boltzrpc.SwapState_ERROR},
+	})
+	if err != nil {
+		return err
+	}
+	for _, swap := range reverseSwaps {
+		if swap.ExternalPay {
+			checked, err := nursery.checkSwapWallet(swap, txId)
+			if err != nil {
+				return err
+			}
+			// ignore external adresses if we are looking for a specific id
+			if !checked && txId == "" {
+				outputs, err := nursery.onchain.GetUnspentOutputs(currency, swap.ClaimAddress)
+				if err != nil {
+					return err
+				}
+				for _, output := range outputs {
+					nursery.handleReverseSwapDirectPayment(swap, output)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (nursery *Nursery) checkSwapWallet(swap *database.ReverseSwap, txId string) (bool, error) {
+	if swap.WalletId != nil {
+		swapWallet, err := nursery.onchain.GetWalletById(*swap.WalletId)
+		if err != nil {
+			return false, err
+		}
+		if ownWallet, ok := swapWallet.(*wallet.Wallet); ok {
+			if txId == "" && swap.Status == boltz.TransactionDirectMempool {
+				txId = swap.ClaimTransactionId
+			}
+			output, err := ownWallet.SearchOutput(txId, swap.ClaimAddress)
+			if err != nil {
+				return true, err
+			}
+			if output != nil {
+				nursery.handleReverseSwapDirectPayment(swap, output)
+			}
+			return true, nil
+		}
+	}
+	return false, nil
 }

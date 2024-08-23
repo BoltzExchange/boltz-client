@@ -238,6 +238,17 @@ func (database *Database) BeginTx() (*Transaction, error) {
 	}, nil
 }
 
+func (database *Database) RunTx(run func(tx *Transaction) error) error {
+	tx, err := database.BeginTx()
+	if err != nil {
+		return err
+	}
+	if err := run(tx); err != nil {
+		return tx.Rollback(err)
+	}
+	return tx.Commit()
+}
+
 func (transaction *Transaction) Commit() error {
 	return transaction.tx.Commit()
 }

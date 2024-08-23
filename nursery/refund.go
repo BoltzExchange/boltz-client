@@ -16,7 +16,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 	go func() {
 		defer nursery.waitGroup.Done()
 		for newBlock := range blockNotifier.Get() {
-			logger.Debugf("Received new block, checking refundable swaps: %d", newBlock.Height)
+			logger.Debugf("Received new block, checking refundable and externally paid reverse swaps: %d", newBlock.Height)
 			swaps, chainSwaps, err := nursery.database.QueryAllRefundableSwaps(nil, currency, newBlock.Height)
 			if err != nil {
 				logger.Error("Could not query refundable Swaps: " + err.Error())
@@ -29,6 +29,10 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 				if _, err := nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
 					logger.Error("Could not refund Swaps: " + err.Error())
 				}
+			}
+
+			if err := nursery.checkExternalReverseSwaps(currency, ""); err != nil {
+				logger.Error("Could not check external reverse swaps: " + err.Error())
 			}
 		}
 	}()

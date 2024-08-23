@@ -1,14 +1,14 @@
 PKG := github.com/BoltzExchange/boltz-client
 VERSION := 2.1.1
 GDK_VERSION = 0.72.2
-GO_VERSION := 1.22.5
+GO_VERSION := 1.23.0
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
 PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
 
 GO_BIN := ${GOPATH}/bin
 
-GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v -timeout 120s
+GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v -timeout 3m
 GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
 GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v

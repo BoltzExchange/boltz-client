@@ -87,6 +87,8 @@ type Config struct {
 
 	ReferralId string
 
+	MaxZeroConfAmount *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
+
 	Help *helpOptions `group:"Help Options"`
 }
 
