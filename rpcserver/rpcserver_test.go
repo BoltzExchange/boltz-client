@@ -1835,8 +1835,8 @@ func TestAutoSwap(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, recommendations.Chain, 1)
 
-		test.MineBlock()
 		stream, _ := swapStream(t, admin, "")
+		test.MineBlock()
 		info := stream(boltzrpc.SwapState_PENDING)
 		require.NotNil(t, info.ChainSwap)
 		id := info.ChainSwap.Id
