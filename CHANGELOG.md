@@ -1,4 +1,31 @@
 
+<a name="v2.1.2"></a>
+## [v2.1.2] - 2024-08-24
+### Feat
+- properly implement magic routing hints ([#264](https://github.com/BoltzExchange/boltz-client/issues/264))
+- chain autoswap reserve balance ([#259](https://github.com/BoltzExchange/boltz-client/issues/259))
+- `tenant` flag in cli ([#262](https://github.com/BoltzExchange/boltz-client/issues/262))
+- send and receive rpcs for wallets ([#261](https://github.com/BoltzExchange/boltz-client/issues/261))
+- resubscribe to swaps when reconnecting websocket ([#258](https://github.com/BoltzExchange/boltz-client/issues/258))
+- regular pings for Boltz WebSocket ([#252](https://github.com/BoltzExchange/boltz-client/issues/252))
+- check wallet balance before creating swaps to avoid unnecessary swap creation ([#244](https://github.com/BoltzExchange/boltz-client/issues/244))
+- add `is_auto' to gRPC swap messages ([#247](https://github.com/BoltzExchange/boltz-client/issues/247))
+- release helper in Makefile ([#246](https://github.com/BoltzExchange/boltz-client/issues/246))
+
+### Fix
+- check for duplicate wallet names ([#265](https://github.com/BoltzExchange/boltz-client/issues/265))
+- pass referralId to server ([#263](https://github.com/BoltzExchange/boltz-client/issues/263))
+- include fatal logs in log file ([#256](https://github.com/BoltzExchange/boltz-client/issues/256))
+- check for nil balance when serializing subaccount ([#250](https://github.com/BoltzExchange/boltz-client/issues/250))
+- deserialization of max 0-conf amount ([#248](https://github.com/BoltzExchange/boltz-client/issues/248))
+
+### Refactor
+- improve error handling ([#249](https://github.com/BoltzExchange/boltz-client/issues/249))
+- convert remaining budget to uint64 ([#245](https://github.com/BoltzExchange/boltz-client/issues/245))
+- remember last block height ([#251](https://github.com/BoltzExchange/boltz-client/issues/251))
+- fetch pairs in parallel in `GetPairs` ([#254](https://github.com/BoltzExchange/boltz-client/issues/254))
+
+
 <a name="v2.1.1"></a>
 ## [v2.1.1] - 2024-08-13
 ### Feat
@@ -320,6 +347,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.1...v2.1.2
 [v2.1.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.0...v2.1.1
 [v2.1.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.2...v2.1.0
 [v2.0.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.1...v2.0.2
