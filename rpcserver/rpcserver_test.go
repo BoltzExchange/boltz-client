@@ -1810,7 +1810,7 @@ func TestChainSwap(t *testing.T) {
 
 func TestAutoSwap(t *testing.T) {
 	cfg := loadConfig(t)
-	cfg.Node = "LND"
+	cfg.Node = "CLN"
 
 	_, err := connectLightning(cfg.Cln)
 	require.NoError(t, err)
@@ -1881,15 +1881,6 @@ func TestAutoSwap(t *testing.T) {
 	t.Run("Lightning", func(t *testing.T) {
 		reset(t)
 
-		var us, them lightning.LightningNode
-		if strings.EqualFold(cfg.Node, "lnd") {
-			us = cfg.LND
-			them = cfg.Cln
-		} else {
-			us = cfg.Cln
-			them = cfg.LND
-		}
-
 		t.Run("Setup", func(t *testing.T) {
 			running := func(value bool) *autoswaprpc.GetStatusResponse {
 				status, err := autoSwap.GetStatus()
@@ -1930,39 +1921,6 @@ func TestAutoSwap(t *testing.T) {
 		})
 
 		t.Run("Start", func(t *testing.T) {
-			getChannel := func(from lightning.LightningNode, peer string) *lightning.LightningChannel {
-				channels, err := from.ListChannels()
-				require.NoError(t, err)
-				for _, channel := range channels {
-					if channel.PeerId == peer {
-						return channel
-					}
-				}
-				return nil
-			}
-
-			pay := func(from lightning.LightningNode, to lightning.LightningNode, amount uint64) {
-				info, err := to.GetInfo()
-				require.NoError(t, err)
-
-				channel := getChannel(from, info.Pubkey)
-				require.NotNil(t, channel)
-
-				if channel.InboundSat < channel.Capacity/2 {
-					amount = amount + (channel.Capacity/2-channel.InboundSat)/1000
-				}
-				if channel.OutboundSat < amount {
-					return
-				}
-
-				response, err := to.CreateInvoice(amount, nil, 100000, "Testt")
-				require.NoError(t, err)
-				_, err = from.PayInvoice(context.Background(), response.PaymentRequest, 10000, 30, []lightning.ChanId{channel.Id})
-				require.NoError(t, err)
-
-				time.Sleep(1000 * time.Millisecond)
-			}
-
 			swapCfg := autoswap.DefaultLightningConfig()
 			swapCfg.AcceptZeroConf = true
 			swapCfg.Budget = 1000000
@@ -1979,7 +1937,9 @@ func TestAutoSwap(t *testing.T) {
 			require.NoError(t, err)
 			recommendation := recommendations.Lightning[0]
 			require.Nil(t, recommendation.Swap)
-			swapCfg.InboundBalance = recommendation.Channel.InboundSat + 100
+			offset := uint64(100000)
+			swapCfg.InboundBalance = recommendation.Channel.InboundSat + offset
+			swapCfg.OutboundBalance = recommendation.Channel.OutboundSat - offset
 
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
@@ -1992,17 +1952,20 @@ func TestAutoSwap(t *testing.T) {
 			})
 
 			t.Run("Auto", func(t *testing.T) {
-				pay(them, us, 1_000_000)
 				_, err := autoSwap.Enable()
 				require.NoError(t, err)
 
-				time.Sleep(200 * time.Millisecond)
+				stream, _ := swapStream(t, admin, "")
+				test.MineBlock()
+				info := stream(boltzrpc.SwapState_PENDING)
+				require.NotNil(t, info.ReverseSwap)
+				require.True(t, info.ReverseSwap.IsAuto)
+				id := info.ReverseSwap.Id
+
 				swaps, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{Include: boltzrpc.IncludeSwaps_AUTO})
 				require.NoError(t, err)
-
-				require.NotEmpty(t, swaps.ReverseSwaps)
-				require.True(t, swaps.ReverseSwaps[0].IsAuto)
-				stream, _ := swapStream(t, admin, swaps.ReverseSwaps[0].Id)
+				require.Equal(t, id, swaps.ReverseSwaps[0].Id)
+				stream, _ = swapStream(t, admin, id)
 				stream(boltzrpc.SwapState_SUCCESSFUL)
 
 				status, err := autoSwap.GetStatus()
