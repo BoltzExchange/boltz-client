@@ -198,7 +198,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 			return fmt.Errorf("could not get submarine pair: %v", err)
 		}
 		server.maxZeroConfAmount = &pair.Limits.MaximalZeroConfAmount
-		logger.Infof("No maximal zero conf amount set, using same value as boltz: %v", server.maxZeroConfAmount)
+		logger.Infof("No maximal zero conf amount set, using same value as boltz: %v", *server.maxZeroConfAmount)
 	}
 
 	return server.unlock("")

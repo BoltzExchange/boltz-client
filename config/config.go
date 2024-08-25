@@ -58,7 +58,7 @@ type Config struct {
 	LogMaxSize int    `long:"logmaxsize" description:"Maximum size of the log file in megabytes before it gets rotated"`
 	LogMaxAge  int    `long:"logmaxage" description:"Maximum age of old log files in days before they get deleted"`
 
-	Log logger.Options
+	Log logger.Options `json:"-"`
 
 	Network string `long:"network" description:"Network to use (mainnet, testnet, regtest)"`
 
@@ -70,7 +70,7 @@ type Config struct {
 
 	Standalone bool `long:"standalone" description:"Run boltz-client without a lightning node"`
 
-	Lightning lightning.LightningNode
+	Lightning lightning.LightningNode `json:"-"`
 
 	RPC      *RpcOptions        `group:"RPC options"`
 	Database *database.Database `group:"Database options"`

@@ -83,7 +83,7 @@ func (autoSwap *AutoSwap) Init(db *database.Database, onchain *onchain.Onchain, 
 	if onchain != nil {
 		go func() {
 			for range onchain.OnWalletChange.Get() {
-				logger.Info("Restarting all auto swappers because of wallet change")
+				logger.Debugf("Restarting all auto swappers because of wallet change")
 				if swapper := autoSwap.lnSwapper; swapper != nil {
 					swapper.start()
 				}
