@@ -16,8 +16,8 @@ func TestEstimateLowballFee(t *testing.T) {
 	blocks := onchainmock.NewMockBlockProvider(t)
 	chain := &onchain.Onchain{
 		Liquid: &onchain.Currency{
-			Broadcast: onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid),
-			Blocks:    blocks,
+			Tx:     onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid),
+			Blocks: blocks,
 		},
 		Network: boltz.MainNet,
 	}

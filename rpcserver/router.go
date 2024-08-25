@@ -1283,7 +1283,7 @@ func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*
 	if err != nil {
 		return nil, err
 	}
-	result.SetTxBroadcaster(chain.Broadcast)
+	result.SetTxProvider(chain.Tx)
 	return result, nil
 }
 

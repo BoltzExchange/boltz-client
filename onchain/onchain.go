@@ -59,11 +59,8 @@ type BlockProvider interface {
 
 type TxProvider interface {
 	GetRawTransaction(txId string) (string, error)
-	IsTransactionConfirmed(txId string) (bool, error)
-}
-
-type TxBroadcaster interface {
 	BroadcastTransaction(txHex string) (string, error)
+	IsTransactionConfirmed(txId string) (bool, error)
 }
 
 type AddressProvider interface {
@@ -95,9 +92,8 @@ var RegtestElectrumConfig = ElectrumConfig{
 }
 
 type Currency struct {
-	Blocks    BlockProvider
-	Tx        TxProvider
-	Broadcast TxBroadcaster
+	Blocks BlockProvider
+	Tx     TxProvider
 
 	blockHeight uint32
 }
@@ -185,7 +181,7 @@ func (onchain *Onchain) GetWalletById(id Id) (wallet Wallet, err error) {
 
 func (onchain *Onchain) EstimateFee(currency boltz.Currency, allowLowball bool) (float64, error) {
 	if currency == boltz.CurrencyLiquid && onchain.Network == boltz.MainNet && allowLowball {
-		if boltzProvider, ok := onchain.Liquid.Broadcast.(*BoltzTxProvider); ok {
+		if boltzProvider, ok := onchain.Liquid.Tx.(*BoltzTxProvider); ok {
 			return boltzProvider.GetFeeEstimation(boltz.CurrencyLiquid)
 		}
 	}
@@ -344,7 +340,7 @@ func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (str
 		return "", err
 	}
 
-	return chain.Broadcast.BroadcastTransaction(serialized)
+	return chain.Tx.BroadcastTransaction(serialized)
 }
 
 func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId string) (bool, error) {
@@ -359,13 +355,13 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 	}
 	for {
 		confirmed, err := chain.Tx.IsTransactionConfirmed(txId)
-		if err != nil {
+		if err != nil || !confirmed {
 			if retry == 0 {
 				return false, err
 			}
 			retry--
 			retryInterval := 10 * time.Second
-			logger.Debugf("Transaction %s not found yet, retrying in %s", txId, retryInterval)
+			logger.Debugf("Transaction %s not confirmed yet, retrying in %s", txId, retryInterval)
 			<-time.After(retryInterval)
 		} else {
 			return confirmed, nil
