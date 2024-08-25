@@ -725,6 +725,10 @@ func TestSwap(t *testing.T) {
 		client, _, stop := setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
+		node := cfg.LND
+		_, err := connectLightning(node)
+		require.NoError(t, err)
+
 		t.Run("Invalid", func(t *testing.T) {
 			invoice := "invalid"
 			_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
@@ -733,10 +737,17 @@ func TestSwap(t *testing.T) {
 			require.Error(t, err)
 		})
 
-		t.Run("Valid", func(t *testing.T) {
-			node := cfg.LND
-			_, err := connectLightning(node)
+		t.Run("ZeroAmount", func(t *testing.T) {
+			invoice, err := node.CreateInvoice(0, nil, 0, "test")
 			require.NoError(t, err)
+			_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Invoice: &invoice.PaymentRequest,
+			})
+			requireCode(t, err, codes.InvalidArgument)
+			require.ErrorContains(t, err, "not supported")
+		})
+
+		t.Run("Valid", func(t *testing.T) {
 			invoice, err := node.CreateInvoice(100000, nil, 0, "test")
 			require.NoError(t, err)
 			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
