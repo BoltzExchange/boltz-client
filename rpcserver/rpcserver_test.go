@@ -1819,13 +1819,15 @@ func TestAutoSwap(t *testing.T) {
 	admin, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
-	_, err = autoSwap.ResetConfig(client.LnAutoSwap)
-	require.NoError(t, err)
-
-	_, err = autoSwap.ResetConfig(client.ChainAutoSwap)
-	require.NoError(t, err)
+	reset := func(t *testing.T) {
+		_, err = autoSwap.ResetConfig(client.LnAutoSwap)
+		require.NoError(t, err)
+		_, err = autoSwap.ResetConfig(client.ChainAutoSwap)
+		require.NoError(t, err)
+	}
 
 	t.Run("Chain", func(t *testing.T) {
+		reset(t)
 		cfg := &autoswaprpc.ChainConfig{
 			FromWallet: walletName,
 			ToWallet:   cfg.Node,
@@ -1876,8 +1878,7 @@ func TestAutoSwap(t *testing.T) {
 	})
 
 	t.Run("Lightning", func(t *testing.T) {
-		_, err := autoSwap.ResetConfig(client.LnAutoSwap)
-		require.NoError(t, err)
+		reset(t)
 
 		var us, them lightning.LightningNode
 		if strings.EqualFold(cfg.Node, "lnd") {
@@ -1963,6 +1964,7 @@ func TestAutoSwap(t *testing.T) {
 
 			swapCfg := autoswap.DefaultLightningConfig()
 			swapCfg.AcceptZeroConf = true
+			swapCfg.Budget = 1000000
 			swapCfg.MaxFeePercent = 10
 			swapCfg.Currency = boltzrpc.Currency_BTC
 			swapCfg.InboundBalance = 1
