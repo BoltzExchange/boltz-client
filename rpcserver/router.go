@@ -671,7 +671,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 	if invoice := request.GetInvoice(); invoice != "" {
 		decoded, err := zpay32.Decode(invoice, server.network.Btc)
 		if err != nil {
-			return nil, fmt.Errorf("invalid invoice: %w", err)
+			return nil, status.Errorf(codes.InvalidArgument, "invalid invoice: %s", err)
 		}
 		swapResponse, err = server.checkMagicRoutingHint(decoded, invoice)
 		if err != nil {
@@ -680,7 +680,14 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
 		// set amount for balance check
-		request.Amount = uint64(decoded.MilliSat.ToSatoshis())
+		if decoded.MilliSat == nil {
+			request.Amount = 0
+		} else {
+			request.Amount = uint64(decoded.MilliSat.ToSatoshis())
+		}
+		if request.Amount == 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "0 amount invoices are not supported")
+		}
 	} else if !server.lightningAvailable(ctx) {
 		return nil, errors.New("invoice is required in standalone mode")
 	} else if request.Amount != 0 {
