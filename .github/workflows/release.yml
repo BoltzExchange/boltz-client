@@ -44,6 +44,14 @@ jobs:
             boltz-client-manifest-*.txt
           draft: true
           body: |
+            # Summary
+            
+            TODO
+            
+            # Highlights
+            
+            TODO
+            
             # Verifying the Release
 
             In order to verify the release, you'll need to have `gpg` or `gpg2` installed on your system. You'll first need to import the keys that have signed this release if you haven't done so already: 
