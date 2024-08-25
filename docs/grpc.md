@@ -545,6 +545,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `return_immediately` | [`bool`](#bool) | optional | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true. |
 | `description` | [`string`](#string) | optional | Description of the invoice which will be created for the swap |
+| `description_hash` | [`bytes`](#bytes) | optional | Description hash of the invoice which will be created for the swap. Takes precedence over `description` |
 
 
 

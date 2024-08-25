@@ -5,6 +5,7 @@ package rpcserver
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/onchain"
@@ -1227,44 +1228,73 @@ func TestReverseSwap(t *testing.T) {
 		defer stop()
 
 		externalPay := true
-		returnImmediately := false
 		description := "test"
+		descriptionHash := sha256.Sum256([]byte(description))
 
-		request := &boltzrpc.CreateReverseSwapRequest{
-			Amount:            100000,
-			AcceptZeroConf:    true,
-			ExternalPay:       &externalPay,
-			ReturnImmediately: &returnImmediately,
-			Description:       &description,
+		getRequest := func() *boltzrpc.CreateReverseSwapRequest {
+			return &boltzrpc.CreateReverseSwapRequest{
+				Amount:         100000,
+				AcceptZeroConf: true,
+				ExternalPay:    &externalPay,
+			}
 		}
 
-		// cant wait for claim transaction if paid externally
-		_, err := client.CreateReverseSwap(request)
-		require.Error(t, err)
+		t.Run("DescriptionHash", func(t *testing.T) {
+			request := getRequest()
+			request.DescriptionHash = descriptionHash[:]
 
-		request.ReturnImmediately = nil
+			swap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
 
-		swap, err := client.CreateReverseSwap(request)
-		require.NoError(t, err)
-		require.NotEmpty(t, swap.Invoice)
+			decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
+			require.NoError(t, err)
 
-		decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
-		require.NoError(t, err)
+			require.Equal(t, descriptionHash[:], decoded.DescriptionHash[:])
+		})
 
-		require.Equal(t, btcutil.Amount(request.Amount), decoded.MilliSat.ToSatoshis())
-		require.Equal(t, description, *decoded.Description)
+		t.Run("Description", func(t *testing.T) {
+			request := getRequest()
+			request.Description = &description
+			swap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
 
-		stream, _ := swapStream(t, client, swap.Id)
+			decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
+			require.NoError(t, err)
 
-		_, err = cfg.Cln.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
-		require.NoError(t, err)
+			require.Equal(t, btcutil.Amount(request.Amount), decoded.MilliSat.ToSatoshis())
+			require.Equal(t, description, *decoded.Description)
+		})
 
-		stream(boltzrpc.SwapState_PENDING)
-		info := stream(boltzrpc.SwapState_SUCCESSFUL)
-		require.True(t, info.ReverseSwap.ExternalPay)
-		require.Nil(t, info.ReverseSwap.RoutingFeeMsat)
+		t.Run("ReturnImmediately", func(t *testing.T) {
+			request := getRequest()
+			returnImmediately := false
+			request.ReturnImmediately = &returnImmediately
 
-		test.MineBlock()
+			// cant wait for claim transaction if paid externally
+			_, err := client.CreateReverseSwap(request)
+			require.Error(t, err)
+		})
+
+		t.Run("Pay", func(t *testing.T) {
+			request := getRequest()
+
+			swap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
+			require.NotEmpty(t, swap.Invoice)
+
+			stream, _ := swapStream(t, client, swap.Id)
+
+			_, err = cfg.Cln.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
+			require.NoError(t, err)
+
+			stream(boltzrpc.SwapState_PENDING)
+			info := stream(boltzrpc.SwapState_SUCCESSFUL)
+			require.True(t, info.ReverseSwap.ExternalPay)
+			require.Nil(t, info.ReverseSwap.RoutingFeeMsat)
+
+			test.MineBlock()
+		})
+
 	})
 
 	t.Run("ManualClaim", func(t *testing.T) {
