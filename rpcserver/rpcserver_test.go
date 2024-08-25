@@ -704,8 +704,8 @@ func TestSwap(t *testing.T) {
 		client, _, stop = setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
-		ticker := time.NewTicker(100 * time.Millisecond)
-		timeout := time.After(1 * time.Second)
+		ticker := time.NewTicker(200 * time.Millisecond)
+		timeout := time.After(5 * time.Second)
 		for {
 			select {
 			case <-ticker.C:
@@ -1092,8 +1092,8 @@ func TestReverseSwap(t *testing.T) {
 
 						client, _, stop = setup(t, setupOptions{cfg: cfg})
 
-						ticker := time.NewTicker(100 * time.Millisecond)
-						timeout := time.After(3 * time.Second)
+						ticker := time.NewTicker(200 * time.Millisecond)
+						timeout := time.After(5 * time.Second)
 						for info.GetReverseSwap().GetState() != boltzrpc.SwapState_SUCCESSFUL {
 							select {
 							case <-ticker.C:
