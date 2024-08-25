@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/autoswap"
@@ -603,7 +602,7 @@ func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.
 
 func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, invoice string) (*boltzrpc.CreateSwapResponse, error) {
 	if pubKey := boltz.FindMagicRoutingHint(decoded); pubKey != nil {
-		logger.Infof("Found magic routing hint in invoice %s", invoice)
+		logger.Info("Found magic routing hint in invoice")
 		reverseBip21, err := server.boltz.GetReverseSwapBip21(invoice)
 		var boltzErr boltz.Error
 		if err != nil && !errors.As(err, &boltzErr) {
@@ -653,8 +652,6 @@ func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *zpay32.Inv
 
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
-	logger.Infof("Creating Swap for %d sats", request.Amount)
-
 	privateKey, publicKey, err := newKeys()
 	if err != nil {
 		return nil, err
@@ -678,6 +675,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	var preimage, preimageHash []byte
 	if invoice := request.GetInvoice(); invoice != "" {
+		logger.Infof("Creating Swap for invoice: %s", invoice)
 		decoded, err := zpay32.Decode(invoice, server.network.Btc)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid invoice: %s", err)
@@ -701,6 +699,8 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 	} else if !server.lightningAvailable(ctx) {
 		return nil, errors.New("invoice is required in standalone mode")
 	} else if request.Amount != 0 {
+		logger.Infof("Creating Swap for %d sats", request.Amount)
+
 		invoice, err := server.lightning.CreateInvoice(request.Amount, nil, 0, utils.GetSwapMemo(string(pair.From)))
 		if err != nil {
 			return nil, err
@@ -733,6 +733,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err := checkBalance(wallet, request.Amount+utils.CalculateFeeEstimate(submarinePair.Fees, request.Amount)); err != nil {
 			return nil, err
 		}
+		logger.Infof("Using wallet %+v to pay swap", wallet.GetWalletInfo())
 	}
 
 	if swapResponse == nil {
@@ -762,6 +763,8 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
 			TenantId:            requireTenantId(ctx),
 		}
+
+		logger.Infof("Created new Swap %s (IsAuto: %v, From: %s, Tenant: %s)", swap.Id, swap.IsAuto, pair.From, requireTenant(ctx).Name)
 
 		if request.SendFromInternal {
 			id := wallet.GetWalletInfo().Id
@@ -801,7 +804,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			return nil, err
 		}
 
-		logger.Info("Verified redeem script and address of Swap " + swap.Id)
+		logger.Debugf("Verified redeem script and address of Swap %s", swap.Id)
 
 		err = server.database.CreateSwap(swap)
 		if err != nil {
@@ -822,8 +825,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			TimeoutBlockHeight: response.TimeoutBlockHeight,
 			TimeoutHours:       float32(timeoutHours),
 		}
-
-		logger.Info("Created new Swap " + swap.Id + ": " + marshalJson(swap.Serialize()))
 
 		if request.SendFromInternal {
 			swapResponse.TxId, err = server.sendToAddress(
@@ -883,7 +884,8 @@ func requireTenantId(ctx context.Context) database.Id {
 }
 
 func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
-	logger.Infof("Creating Reverse Swap for %d sats", request.Amount)
+	pair := utils.ParsePair(request.Pair)
+	logger.Infof("Creating Reverse Swap for %d sats to %s", request.Amount, pair.To)
 
 	externalPay := request.GetExternalPay()
 	if !server.lightningAvailable(ctx) {
@@ -905,7 +907,6 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	}
 
 	var walletId *database.Id
-	pair := utils.ParsePair(request.Pair)
 	claimAddress := request.Address
 	if claimAddress != "" {
 		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
@@ -913,6 +914,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		if err != nil {
 			return nil, fmt.Errorf("invalid claim address %s: %w", claimAddress, err)
 		}
+		logger.Infof("Using claim address: %s", claimAddress)
 	} else {
 		wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
 			Currency:      pair.To,
@@ -923,6 +925,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 			return nil, err
 		}
 		info := wallet.GetWalletInfo()
+		logger.Infof("Using wallet %+v as reverse swap destination", info)
 		walletId = &info.Id
 
 		if externalPay {
@@ -938,8 +941,6 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	if err != nil {
 		return nil, err
 	}
-
-	logger.Info("Generated preimage " + hex.EncodeToString(preimage))
 
 	privateKey, publicKey, err := newKeys()
 
@@ -1006,6 +1007,11 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		TenantId:            requireTenantId(ctx),
 	}
 
+	logger.Infof(
+		"Created new Reverse Swap %s (IsAuto: %v, AcceptZeroConf: %v, Tenant: %s, ExternalPay: %v)",
+		reverseSwap.Id, reverseSwap.IsAuto, reverseSwap.AcceptZeroConf, requireTenant(ctx).Name, externalPay,
+	)
+
 	for _, chanId := range request.ChanIds {
 		parsed, err := lightning.NewChanIdFromString(chanId)
 		if err != nil {
@@ -1046,7 +1052,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, errors.New("invalid invoice preimage hash")
 	}
 
-	logger.Info("Verified redeem script and invoice of Reverse Swap " + reverseSwap.Id)
+	logger.Debugf("Verified redeem script and invoice of Reverse Swap %s", reverseSwap.Id)
 
 	err = server.database.CreateReverseSwap(reverseSwap)
 
@@ -1057,8 +1063,6 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	if err := server.nursery.RegisterReverseSwap(reverseSwap); err != nil {
 		return nil, err
 	}
-
-	logger.Info("Created new Reverse Swap " + reverseSwap.Id + ": " + marshalJson(reverseSwap.Serialize()))
 
 	rpcResponse := &boltzrpc.CreateReverseSwapResponse{
 		Id:            reverseSwap.Id,
@@ -1094,7 +1098,6 @@ func (server *routedBoltzServer) CreateChainSwap(ctx context.Context, request *b
 }
 
 func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateChainSwapRequest) (*boltzrpc.ChainSwapInfo, error) {
-	logger.Infof("Creating new chain swap")
 
 	tenantId := requireTenantId(ctx)
 
@@ -1109,6 +1112,8 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	}
 
 	pair := utils.ParsePair(request.Pair)
+
+	logger.Infof("Creating Chain Swap for %d sats from %s to %s", request.Amount, pair.From, pair.To)
 
 	chainPair, err := server.getChainPair(request.Pair)
 	if err != nil {
@@ -1130,7 +1135,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		return nil, err
 	}
 
-	logger.Info("Creating Chain Swap with preimage hash: " + hex.EncodeToString(preimageHash))
+	logger.Debugf("Creating Chain Swap with preimage hash: %x", preimageHash)
 
 	createChainSwap.PreimageHash = preimageHash
 	if request.Amount == 0 {
@@ -1152,6 +1157,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		if err := checkBalance(fromWallet, request.Amount); err != nil {
 			return nil, err
 		}
+		logger.Infof("Using wallet %+v to pay chain swap", fromWallet.GetWalletInfo())
 	} else if !externalPay {
 		return nil, errors.New("from wallet required if external pay is not specified")
 	}
@@ -1164,7 +1170,10 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		if err != nil {
 			return nil, err
 		}
-	} else if request.ToAddress == nil {
+		logger.Infof("Using wallet %+v as chain swap destination", toWallet.GetWalletInfo())
+	} else if request.ToAddress != nil {
+		logger.Infof("Using address %+v as chain swap destination", request.GetToAddress())
+	} else {
 		return nil, errors.New("to address or to wallet required")
 	}
 
@@ -1185,6 +1194,11 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		ServiceFeePercent: utils.Percentage(chainPair.Fees.Percentage),
 		TenantId:          tenantId,
 	}
+
+	logger.Infof(
+		"Created new Chain Swap %s (IsAuto: %v, AcceptZeroConf: %v, Tenant: %s, ExternalPay: %v)",
+		response.Id, chainSwap.IsAuto, chainSwap.AcceptZeroConf, requireTenant(ctx).Name, externalPay,
+	)
 
 	parseDetails := func(details *boltz.ChainSwapData, currency boltz.Currency) (*database.ChainSwapData, error) {
 		swapData := &database.ChainSwapData{
@@ -1251,14 +1265,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		chainSwap.FromData.WalletId = &id
 	}
 
-	logger.Info("Verified redeem script and address of chainSwap " + chainSwap.Id)
+	logger.Debugf("Verified redeem script and address of Chain Swap %s", chainSwap.Id)
 
 	err = server.database.CreateChainSwap(chainSwap)
 	if err != nil {
 		return nil, err
 	}
-
-	logger.Infof("Created new chain swap %s: %s", chainSwap.Id, marshalJson(chainSwap.Serialize()))
 
 	if !externalPay {
 		from := chainSwap.FromData
@@ -2095,11 +2107,6 @@ func newPreimage() ([]byte, []byte, error) {
 	preimageHash := sha256.Sum256(preimage)
 
 	return preimage, preimageHash[:], nil
-}
-
-func marshalJson(data interface{}) string {
-	marshalled, _ := json.MarshalIndent(data, "", "  ")
-	return string(marshalled)
 }
 
 func checkName(name string) error {
