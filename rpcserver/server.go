@@ -365,6 +365,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 
 	electrumConfig := cfg.Electrum()
 	if electrumConfig.Liquid.Url == "" && cfg.MempoolLiquidApi == "" {
+		// use boltz for broadcasting if no custom electrum or mempool is configured
 		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
 	}
 
@@ -400,6 +401,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
 		chain.Liquid.Blocks = client
+		// dont override boltz tx provider
 		if chain.Liquid.Tx == nil {
 			chain.Liquid.Tx = client
 		}
@@ -423,6 +425,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
 		client := mempool.InitClient(cfg.MempoolLiquidApi)
 		chain.Liquid.Blocks = client
+		// dont override boltz tx provider
 		if chain.Liquid.Tx == nil {
 			chain.Liquid.Tx = client
 		}
