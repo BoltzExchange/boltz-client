@@ -281,6 +281,7 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) (streamFunc, s
 					require.Fail(t, fmt.Sprintf("update stream for swap %s stopped before state %s", swapId, state))
 				}
 			case <-time.After(15 * time.Second):
+				test.PrintBackendLogs()
 				require.Fail(t, fmt.Sprintf("timed out while waiting for swap %s to reach state %s", swapId, state))
 			}
 		}

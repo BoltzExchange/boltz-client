@@ -197,3 +197,7 @@ func (f FakeSwaps) Create(t *testing.T, db *database.Database) {
 func PastDate(duration time.Duration) time.Time {
 	return time.Now().Add(-duration)
 }
+
+func PrintBackendLogs() {
+	fmt.Println(bash("docker logs boltz-backend"))
+}
