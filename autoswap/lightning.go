@@ -358,11 +358,11 @@ func (cfg *LightningConfig) run(stop <-chan bool) {
 		if len(recommendations) > 0 {
 			for _, recommendation := range recommendations {
 				if recommendation.Swap.Dismissed() {
-					logger.Infof("Skipping swap recommendation %+v", recommendation)
+					logger.Infof("Skipping swap recommendation %+v", recommendation.Swap)
 					continue
 				}
 
-				logger.Infof("Executing Swap recommendation: %+v", recommendation)
+				logger.Infof("Executing Swap recommendation: %+v", recommendation.Swap)
 
 				err := cfg.execute(recommendation)
 				if err != nil {

@@ -1698,7 +1698,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 				if err != nil {
 					logger.Errorf("could not login to wallet: %v", err)
 				} else {
-					logger.Infof("logged into wallet: %v", wallet.GetWalletInfo())
+					logger.Debugf("Logged into wallet: %+v", wallet.GetWalletInfo())
 					server.onchain.AddWallet(wallet)
 				}
 			}()
