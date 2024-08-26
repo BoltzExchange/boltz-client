@@ -1,4 +1,21 @@
 
+<a name="v2.1.3"></a>
+## [v2.1.3] - 2024-08-26
+### Feat
+- add description hash option for reverse swaps ([#271](https://github.com/BoltzExchange/boltz-client/issues/271))
+
+### Fix
+- gdk memory leak ([#276](https://github.com/BoltzExchange/boltz-client/issues/276))
+- use zero conf when invoice expiry is less than block time ([#270](https://github.com/BoltzExchange/boltz-client/issues/270))
+- revert tx broadcaster ([#273](https://github.com/BoltzExchange/boltz-client/issues/273))
+- check for zero amount invoices ([#269](https://github.com/BoltzExchange/boltz-client/issues/269))
+
+### Refactor
+- make status logs less verbose ([#275](https://github.com/BoltzExchange/boltz-client/issues/275))
+- dont log private info ([#274](https://github.com/BoltzExchange/boltz-client/issues/274))
+- decrease log verbosity ([#267](https://github.com/BoltzExchange/boltz-client/issues/267))
+
+
 <a name="v2.1.2"></a>
 ## [v2.1.2] - 2024-08-24
 ### Feat
@@ -347,6 +364,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.2...v2.1.3
 [v2.1.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.1...v2.1.2
 [v2.1.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.0...v2.1.1
 [v2.1.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.0.2...v2.1.0
