@@ -6,7 +6,6 @@ packages:
       Wallet:
       TxProvider:
       BlockProvider:
-      TxBroadcaster:
   github.com/BoltzExchange/boltz-client/autoswap:
     config:
       dir: autoswap

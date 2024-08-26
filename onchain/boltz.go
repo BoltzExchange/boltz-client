@@ -9,7 +9,7 @@ type BoltzTxProvider struct {
 	currency boltz.Currency
 }
 
-func NewBoltzTxProvider(boltz *boltz.Api, currency boltz.Currency) *BoltzTxProvider {
+func NewBoltzTxProvider(boltz *boltz.Api, currency boltz.Currency) TxProvider {
 	return &BoltzTxProvider{boltz, currency}
 }
 
