@@ -38,6 +38,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type serverState string
@@ -642,6 +643,14 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, 
 	return nil, nil
 }
 
+func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *zpay32.Invoice) {
+	expiryLeft := invoice.Timestamp.Add(invoice.Expiry() - 10*time.Second).Sub(time.Now())
+	if expiryLeft.Minutes() < boltz.GetBlockTime(utils.ParseCurrency(&request.Pair.From)) {
+		zeroConf := true
+		request.ZeroConf = &zeroConf
+	}
+}
+
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Infof("Creating Swap for %d sats", request.Amount)
@@ -677,6 +686,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, err
 		}
+		checkInvoiceExpiry(request, decoded)
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
 		// set amount for balance check
