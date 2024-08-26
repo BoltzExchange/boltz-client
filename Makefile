@@ -63,11 +63,16 @@ ifeq ("$(wildcard regtest/start.sh)","")
 	@$(call print, "Downloading regtest")
 	make submodules
 	cp regtest.override.yml regtest/docker-compose.override.yml
+	cd regtest && git apply ../regtest.patch
 endif
 
 start-regtest: download-regtest
 	@$(call print, "Starting regtest")
 	eval cd regtest && ./start.sh
+
+restart-regtest: download-regtest
+	@$(call print, "Restarting regtest")
+	eval cd regtest && ./restart.sh
 
 #
 # Building

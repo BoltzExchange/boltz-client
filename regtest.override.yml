@@ -1,6 +1,6 @@
 services:
   boltz-client:
-    profiles: !override ["none"]
+    profiles: !override [ "none" ]
 
   scripts:
     depends_on: !override
