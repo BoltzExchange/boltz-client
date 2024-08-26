@@ -643,7 +643,7 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, 
 }
 
 func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *zpay32.Invoice) {
-	expiryLeft := invoice.Timestamp.Add(invoice.Expiry() - 10*time.Second).Sub(time.Now())
+	expiryLeft := time.Until(invoice.Timestamp.Add(invoice.Expiry() - 10*time.Second))
 	currency := request.Pair.GetFrom()
 	if expiryLeft.Minutes() < boltz.GetBlockTime(utils.ParseCurrency(&currency)) {
 		zeroConf := true
