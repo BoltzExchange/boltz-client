@@ -544,6 +544,8 @@ message CreateReverseSwapRequest {
     optional bool external_pay = 8;
     // Description of the invoice which will be created for the swap
     optional string description = 9;
+    // Description hash of the invoice which will be created for the swap. Takes precedence over `description`
+    optional bytes description_hash = 10;
 }
 message CreateReverseSwapResponse {
     string id = 1;

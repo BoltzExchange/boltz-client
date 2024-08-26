@@ -953,14 +953,15 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	}
 
 	createRequest := boltz.CreateReverseSwapRequest{
-		From:           pair.From,
-		To:             pair.To,
-		PairHash:       reversePair.Hash,
-		InvoiceAmount:  request.Amount,
-		PreimageHash:   preimageHash,
-		ClaimPublicKey: publicKey.SerializeCompressed(),
-		ReferralId:     server.referralId,
-		Description:    request.GetDescription(),
+		From:            pair.From,
+		To:              pair.To,
+		PairHash:        reversePair.Hash,
+		InvoiceAmount:   request.Amount,
+		PreimageHash:    preimageHash,
+		ClaimPublicKey:  publicKey.SerializeCompressed(),
+		ReferralId:      server.referralId,
+		Description:     request.GetDescription(),
+		DescriptionHash: request.GetDescriptionHash(),
 	}
 
 	if claimAddress != "" {

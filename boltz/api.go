@@ -293,6 +293,7 @@ type CreateReverseSwapRequest struct {
 	Address          string    `json:"address,omitempty"`
 	AddressSignature HexString `json:"addressSignature,omitempty"`
 	Description      string    `json:"description,omitempty"`
+	DescriptionHash  HexString `json:"descriptionHash,omitempty"`
 
 	Error string `json:"error"`
 }
