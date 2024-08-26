@@ -197,7 +197,7 @@ func (nursery *Nursery) startSwapListener() {
 
 	go func() {
 		for status := range nursery.boltzWs.Updates {
-			logger.Infof("Swap %s status update: %s", status.Id, status.Status)
+			logger.Debugf("Swap %s status update: %s", status.Id, status.Status)
 
 			swap, reverseSwap, chainSwap, err := nursery.database.QueryAnySwap(status.Id)
 			if err != nil {

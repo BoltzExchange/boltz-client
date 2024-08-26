@@ -145,9 +145,11 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 	parsedStatus := boltz.ParseEvent(status.Status)
 
 	if parsedStatus == swap.Status {
-		logger.Infof("Status of Chain Swap %s is %s already", swap.Id, parsedStatus)
+		logger.Debugf("Status of Chain Swap %s is %s already", swap.Id, parsedStatus)
 		return
 	}
+
+	logger.Infof("Status of Chain Swap %s changed to: %s", swap.Id, parsedStatus)
 
 	handleError := func(err string) {
 		nursery.handleChainSwapError(swap, errors.New(err))

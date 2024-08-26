@@ -134,9 +134,11 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	parsedStatus := boltz.ParseEvent(event.Status)
 
 	if parsedStatus == reverseSwap.Status {
-		logger.Info("Status of Reverse Swap " + reverseSwap.Id + " is " + parsedStatus.String() + " already")
+		logger.Debugf("Status of Reverse Swap %s is %s already", reverseSwap.Id, parsedStatus)
 		return
 	}
+
+	logger.Infof("Status of Reverse Swap %s changed to: %s", reverseSwap.Id, parsedStatus)
 
 	handleError := func(err string) {
 		nursery.handleReverseSwapError(reverseSwap, errors.New(err))
