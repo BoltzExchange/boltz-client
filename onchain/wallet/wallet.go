@@ -172,12 +172,13 @@ func freeJson(json Json) {
 
 func parseJson[V any](output Json, value *V) error {
 	cStr := C.CString("")
-	defer C.free(unsafe.Pointer(cStr))
+	defer freeJson(output)
 	if C.GA_convert_json_to_string(output, &cStr) != C.GA_OK {
 		return errors.New("failed to convert json to string")
 	}
-	freeJson(output)
-	return json.Unmarshal([]byte(C.GoString(cStr)), value)
+	goStr := []byte(C.GoString(cStr))
+	C.free(unsafe.Pointer(cStr))
+	return json.Unmarshal(goStr, value)
 }
 
 func withOutput[V any](ret C.int, output Json, value *V) error {
@@ -188,8 +189,11 @@ func withOutput[V any](ret C.int, output Json, value *V) error {
 	return parseJson(output, value)
 }
 
-func withAuthHandler[R any](ret C.int, handler AuthHandler, result *R) (err error) {
-	//defer C.GA_destroy_auth_handler(handler)
+func withAuthHandler[R any](ret C.int, handler *AuthHandler, result *R) (err error) {
+	if handler == nil {
+		return errors.New("auth handler is nil")
+	}
+	defer C.GA_destroy_auth_handler(*handler)
 	var output Json
 
 	if err := toErr(ret); err != nil {
@@ -202,7 +206,7 @@ func withAuthHandler[R any](ret C.int, handler AuthHandler, result *R) (err erro
 		Error        string         `json:"error"`
 		RequiredData map[string]any `json:"required_data"`
 	}
-	if err := withOutput(C.GA_auth_handler_get_status(handler, &output), output, &handlerStatus); err != nil {
+	if err := withOutput(C.GA_auth_handler_get_status(*handler, &output), output, &handlerStatus); err != nil {
 		return err
 	}
 
@@ -289,25 +293,6 @@ func Init(walletConfig Config) error {
 	return nil
 }
 
-func (wallet *Wallet) EncryptCredentials(mnemonic string, pin string) (map[string]any, error) {
-	encrypt := map[string]any{
-		"pin": pin,
-		"plaintext": map[string]any{
-			"mnemonic": mnemonic,
-		},
-	}
-	credentialsJson, free := toJson(encrypt)
-	defer free()
-	var encrypted struct {
-		PinData map[string]any `json:"pin_data"`
-	}
-	var handler AuthHandler
-	if err := withAuthHandler(C.GA_encrypt_with_pin(wallet.session, credentialsJson, &handler), handler, &encrypted); err != nil {
-		return nil, err
-	}
-	return encrypted.PinData, nil
-}
-
 func (wallet *Wallet) Connect() error {
 	if wallet.connected {
 		return nil
@@ -370,12 +355,12 @@ func (wallet *Wallet) Connect() error {
 func (wallet *Wallet) GetSubaccounts(refresh bool) ([]*Subaccount, error) {
 	details, free := toJson(map[string]any{"refresh": refresh})
 	defer free()
-	var handler AuthHandler
+	handler := new(AuthHandler)
 	var result struct {
 		Subaccounts []*Subaccount `json:"subaccounts"`
 	}
 
-	err := withAuthHandler(C.GA_get_subaccounts(wallet.session, details, &handler), handler, &result)
+	err := withAuthHandler(C.GA_get_subaccounts(wallet.session, details, handler), handler, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +390,7 @@ func (wallet *Wallet) SetSubaccount(subaccount *uint64) (*uint64, error) {
 	if err != nil {
 		return nil, err
 	}
-	var handler AuthHandler
+	handler := new(AuthHandler)
 	if subaccount == nil {
 		accType := "p2wpkh"
 		for _, account := range accounts {
@@ -419,7 +404,7 @@ func (wallet *Wallet) SetSubaccount(subaccount *uint64) (*uint64, error) {
 			var result struct {
 				Pointer uint64 `json:"pointer"`
 			}
-			err := withAuthHandler(C.GA_create_subaccount(wallet.session, details, &handler), handler, &result)
+			err := withAuthHandler(C.GA_create_subaccount(wallet.session, details, handler), handler, &result)
 			if err != nil {
 				return nil, err
 			}
@@ -428,7 +413,7 @@ func (wallet *Wallet) SetSubaccount(subaccount *uint64) (*uint64, error) {
 		}
 	} else {
 		var result any
-		err := withAuthHandler(C.GA_get_subaccount(wallet.session, C.uint32_t(*subaccount), &handler), handler, &result)
+		err := withAuthHandler(C.GA_get_subaccount(wallet.session, C.uint32_t(*subaccount), handler), handler, &result)
 		if err != nil {
 			return nil, err
 		}
@@ -440,8 +425,8 @@ func (wallet *Wallet) SetSubaccount(subaccount *uint64) (*uint64, error) {
 
 func (wallet *Wallet) GetSubaccount(pointer uint64) (*Subaccount, error) {
 	var result Subaccount
-	var handler AuthHandler
-	err := withAuthHandler(C.GA_get_subaccount(wallet.session, C.uint32_t(pointer), &handler), handler, &result)
+	handler := new(AuthHandler)
+	err := withAuthHandler(C.GA_get_subaccount(wallet.session, C.uint32_t(pointer), handler), handler, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -487,9 +472,9 @@ func Login(credentials *Credentials) (*Wallet, error) {
 	hwDevice, freeDevice := toJson(nil)
 	defer freeDevice()
 
-	var handler AuthHandler
+	handler := new(AuthHandler)
 	var result any
-	if err := withAuthHandler(C.GA_login_user(wallet.session, hwDevice, loginJson, &handler), handler, &result); err != nil {
+	if err := withAuthHandler(C.GA_login_user(wallet.session, hwDevice, loginJson, handler), handler, &result); err != nil {
 		if strings.Contains(err.Error(), "checksum") {
 			return nil, errors.New("invalid xpub")
 		}
@@ -559,11 +544,11 @@ func (wallet *Wallet) NewAddress() (string, error) {
 		"subaccount": *wallet.subaccount,
 	})
 	defer free()
-	var handler AuthHandler
+	handler := new(AuthHandler)
 	var details struct {
 		Address string `json:"address"`
 	}
-	err := withAuthHandler(C.GA_get_receive_address(wallet.session, params, &handler), handler, &details)
+	err := withAuthHandler(C.GA_get_receive_address(wallet.session, params, handler), handler, &details)
 	if err != nil {
 		return "", err
 	}
@@ -581,9 +566,9 @@ func (wallet *Wallet) getSubaccountBalance(subaccount uint64, includeUnconfirmed
 	detailsJson, free := toJson(details)
 	defer free()
 
-	var handler AuthHandler
+	handler := new(AuthHandler)
 	var balances map[string]uint64
-	err := withAuthHandler(C.GA_get_balance(wallet.session, detailsJson, &handler), handler, &balances)
+	err := withAuthHandler(C.GA_get_balance(wallet.session, detailsJson, handler), handler, &balances)
 	if err != nil {
 		return 0, err
 	}
@@ -628,7 +613,7 @@ func (wallet *Wallet) SearchOutput(txId, address string) (*onchain.Output, error
 		"count":      30,
 	})
 	defer free()
-	var handler AuthHandler
+	handler := new(AuthHandler)
 	var outputs struct {
 		Transactions []struct {
 			BlockHeight uint32 `json:"block_height"`
@@ -639,7 +624,7 @@ func (wallet *Wallet) SearchOutput(txId, address string) (*onchain.Output, error
 			}
 		} `json:"transactions"`
 	}
-	if err := withAuthHandler(C.GA_get_transactions(wallet.session, params, &handler), handler, &outputs); err != nil {
+	if err := withAuthHandler(C.GA_get_transactions(wallet.session, params, handler), handler, &outputs); err != nil {
 		return nil, err
 	}
 	for _, tx := range outputs.Transactions {
@@ -669,12 +654,12 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		"num_confs":  0,
 	})
 	defer free()
-	var handler AuthHandler
+	handler := new(AuthHandler)
 
 	var outputs struct {
 		Unspent map[string][]map[string]any `json:"unspent_outputs"`
 	}
-	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, &handler), handler, &outputs); err != nil {
+	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, handler), handler, &outputs); err != nil {
 		return "", err
 	}
 
@@ -705,18 +690,18 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	defer free()
 
 	var result any
-	if err := withAuthHandler(C.GA_create_transaction(wallet.session, transactionDetails, &handler), handler, &result); err != nil {
+	if err := withAuthHandler(C.GA_create_transaction(wallet.session, transactionDetails, handler), handler, &result); err != nil {
 		return "", err
 	}
 
 	params, free = toJson(result)
-	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, &handler), handler, &result); err != nil {
+	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, handler), handler, &result); err != nil {
 		return "", err
 	}
 	free()
 
 	params, free = toJson(result)
-	if err := withAuthHandler(C.GA_sign_transaction(wallet.session, params, &handler), handler, &result); err != nil {
+	if err := withAuthHandler(C.GA_sign_transaction(wallet.session, params, handler), handler, &result); err != nil {
 		return "", err
 	}
 	free()
@@ -744,7 +729,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		TxHash string `json:"txhash"`
 		Error  string `json:"error"`
 	}
-	if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, &handler), handler, &sendTx); err != nil {
+	if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
 		return "", err
 	}
 	free()
