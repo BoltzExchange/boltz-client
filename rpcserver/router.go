@@ -852,7 +852,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			wallet,
 			swapResponse.Address,
 			swapResponse.ExpectedAmount,
-			!request.GetZeroConf(),
+			false,
 			submarinePair.Limits.MaximalZeroConfAmount,
 			request.SatPerVbyte,
 		)
