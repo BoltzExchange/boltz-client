@@ -1,4 +1,10 @@
 
+<a name="v2.1.4"></a>
+## [v2.1.4] - 2024-08-27
+### Fix
+- dont allow lowball when paying submarine swap directly ([#277](https://github.com/BoltzExchange/boltz-client/issues/277))
+
+
 <a name="v2.1.3"></a>
 ## [v2.1.3] - 2024-08-26
 ### Feat
@@ -364,6 +370,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.3...v2.1.4
 [v2.1.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.2...v2.1.3
 [v2.1.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.1...v2.1.2
 [v2.1.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.0...v2.1.1
