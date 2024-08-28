@@ -2,7 +2,6 @@ package autoswap
 
 import (
 	"github.com/BoltzExchange/boltz-client/test"
-	"github.com/BoltzExchange/boltz-client/utils"
 	"testing"
 	"time"
 
@@ -379,7 +378,7 @@ func TestStrategies(t *testing.T) {
 		outcome      []*LightningRecommendation
 		channels     []*lightning.LightningChannel
 		err          error
-		reserve      utils.Percentage
+		reserve      boltz.Percentage
 	}{
 		{
 			name: "PerChannel/Low",

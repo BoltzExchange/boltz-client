@@ -542,6 +542,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the swap from an internal wallet. |
 | `lockup_zero_conf` | [`bool`](#bool) | optional | Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte; when `lockup_zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions |
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
+| `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
 
 
 
@@ -580,6 +581,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `description` | [`string`](#string) | optional | Description of the invoice which will be created for the swap |
 | `description_hash` | [`bytes`](#bytes) | optional | Description hash of the invoice which will be created for the swap. Takes precedence over `description` |
 | `invoice_expiry` | [`uint64`](#uint64) | optional | Expiry of the reverse swap invoice in seconds |
+| `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
 
 
 
@@ -617,6 +619,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `invoice` | [`string`](#string) | optional | bolt11 invoice, lnurl, or lnaddress to use for the swap. required in standalone mode. when connected to a lightning node, a new invoice for `amount` sats will be fetched the `amount` field has to be populated in case of a lnurl and lnaddress |
 | `zero_conf` | [`bool`](#bool) | optional | Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte; when `zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions |
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
+| `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
 
 
 
