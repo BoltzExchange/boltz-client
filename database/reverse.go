@@ -8,11 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/utils"
-
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
@@ -42,7 +40,7 @@ type ReverseSwap struct {
 	IsAuto              bool
 	RoutingFeeMsat      *uint64
 	ServiceFee          *uint64
-	ServiceFeePercent   utils.Percentage
+	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
 	WalletId            *Id
@@ -73,7 +71,7 @@ type ReverseSwapSerialized struct {
 	IsAuto              bool
 	RoutingFeeMsat      *uint64
 	ServiceFee          *uint64
-	ServiceFeePercent   utils.Percentage
+	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
 	WalletId            *Id

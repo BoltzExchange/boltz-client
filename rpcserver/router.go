@@ -285,25 +285,12 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 }
 
 func (server *routedBoltzServer) GetPairInfo(_ context.Context, request *boltzrpc.GetPairInfoRequest) (*boltzrpc.PairInfo, error) {
-	pair := utils.ParsePair(request.Pair)
 	if request.Type == boltzrpc.SwapType_SUBMARINE {
-		submarinePair, err := server.getSubmarinePair(request.Pair)
-		if err != nil {
-			return nil, err
-		}
-		return serializeSubmarinePair(pair, submarinePair), nil
+		return server.getSubmarinePair(request.Pair)
 	} else if request.Type == boltzrpc.SwapType_REVERSE {
-		reversePair, err := server.getReversePair(request.Pair)
-		if err != nil {
-			return nil, err
-		}
-		return serializeReversePair(pair, reversePair), nil
+		return server.getReversePair(request.Pair)
 	} else if request.Type == boltzrpc.SwapType_CHAIN {
-		chainPair, err := server.getChainPair(request.Pair)
-		if err != nil {
-			return nil, err
-		}
-		return serializeChainPair(pair, chainPair), nil
+		return server.getChainPair(request.Pair)
 	}
 
 	return nil, errors.New("invalid swap type")
@@ -678,15 +665,17 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	pair := utils.ParsePair(request.Pair)
 
-	submarinePair, err := server.GetPairInfo(ctx, &boltzrpc.GetPairInfoRequest{Type: boltzrpc.SwapType_SUBMARINE, Pair: request.Pair})
-	if err != nil {
-		return nil, err
+	if request.AcceptedPair == nil {
+		request.AcceptedPair, err = server.getSubmarinePair(request.Pair)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	createSwap := boltz.CreateSwapRequest{
 		From:            pair.From,
 		To:              pair.To,
-		PairHash:        submarinePair.Hash,
+		PairHash:        request.AcceptedPair.Hash,
 		RefundPublicKey: publicKey.SerializeCompressed(),
 		ReferralId:      server.referralId,
 	}
@@ -749,7 +738,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, err
 		}
-		if err := checkBalance(wallet, request.Amount+utils.CalculateFeeEstimate(submarinePair.Fees, request.Amount)); err != nil {
+		if err := checkBalance(wallet, request.Amount+utils.CalculateFeeEstimate(request.AcceptedPair.Fees, request.Amount)); err != nil {
 			return nil, err
 		}
 		logger.Infof("Using wallet %+v to pay swap", wallet.GetWalletInfo())
@@ -779,7 +768,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			RefundTransactionId: "",
 			RefundAddress:       request.GetRefundAddress(),
 			IsAuto:              isAuto,
-			ServiceFeePercent:   utils.Percentage(submarinePair.Fees.Percentage),
+			ServiceFeePercent:   boltz.Percentage(request.AcceptedPair.Fees.Percentage),
 			TenantId:            requireTenantId(ctx),
 		}
 
@@ -823,6 +812,12 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			return nil, err
 		}
 
+		if request.Amount != 0 {
+			if err := server.nursery.CheckAmounts(boltz.NormalSwap, pair, response.ExpectedAmount, request.Amount, swap.ServiceFeePercent); err != nil {
+				return nil, err
+			}
+		}
+
 		logger.Debugf("Verified redeem script and address of Swap %s", swap.Id)
 
 		err = server.database.CreateSwap(swap)
@@ -851,7 +846,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 				swapResponse.Address,
 				swapResponse.ExpectedAmount,
 				!request.GetZeroConf(),
-				submarinePair.Limits.MaximalZeroConfAmount,
+				request.AcceptedPair.Limits.MaximalZeroConfAmount,
 				request.SatPerVbyte,
 			)
 			if err != nil {
@@ -871,7 +866,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			swapResponse.Address,
 			swapResponse.ExpectedAmount,
 			false,
-			submarinePair.Limits.MaximalZeroConfAmount,
+			request.AcceptedPair.Limits.MaximalZeroConfAmount,
 			request.SatPerVbyte,
 		)
 		if err != nil {
@@ -967,15 +962,17 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, err
 	}
 
-	reversePair, err := server.getReversePair(request.Pair)
-	if err != nil {
-		return nil, err
+	if request.AcceptedPair == nil {
+		request.AcceptedPair, err = server.getReversePair(request.Pair)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	createRequest := boltz.CreateReverseSwapRequest{
 		From:            pair.From,
 		To:              pair.To,
-		PairHash:        reversePair.Hash,
+		PairHash:        request.AcceptedPair.Hash,
 		InvoiceAmount:   request.Amount,
 		PreimageHash:    preimageHash,
 		ClaimPublicKey:  publicKey.SerializeCompressed(),
@@ -1021,7 +1018,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		TimeoutBlockHeight:  response.TimeoutBlockHeight,
 		LockupTransactionId: "",
 		ClaimTransactionId:  "",
-		ServiceFeePercent:   utils.Percentage(reversePair.Fees.Percentage),
+		ServiceFeePercent:   boltz.Percentage(request.AcceptedPair.Fees.Percentage),
 		ExternalPay:         externalPay,
 		WalletId:            walletId,
 		TenantId:            requireTenantId(ctx),
@@ -1059,6 +1056,10 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	}
 
 	if err := reverseSwap.SwapTree.CheckAddress(response.LockupAddress, server.network, blindingPubKey); err != nil {
+		return nil, err
+	}
+
+	if err := server.nursery.CheckAmounts(boltz.ReverseSwap, pair, request.Amount, reverseSwap.OnchainAmount, reverseSwap.ServiceFeePercent); err != nil {
 		return nil, err
 	}
 
@@ -1138,16 +1139,18 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	logger.Infof("Creating Chain Swap for %d sats from %s to %s", request.Amount, pair.From, pair.To)
 
-	chainPair, err := server.getChainPair(request.Pair)
-	if err != nil {
-		return nil, err
+	if request.AcceptedPair == nil {
+		request.AcceptedPair, err = server.getChainPair(request.Pair)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	createChainSwap := boltz.ChainRequest{
 		From:            pair.From,
 		To:              pair.To,
 		UserLockAmount:  request.GetAmount(),
-		PairHash:        chainPair.Hash,
+		PairHash:        request.AcceptedPair.Hash,
 		ClaimPublicKey:  claimPub.SerializeCompressed(),
 		RefundPublicKey: refundPub.SerializeCompressed(),
 		ReferralId:      server.referralId,
@@ -1214,7 +1217,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		Preimage:          preimage,
 		IsAuto:            isAuto,
 		AcceptZeroConf:    request.GetAcceptZeroConf(),
-		ServiceFeePercent: utils.Percentage(chainPair.Fees.Percentage),
+		ServiceFeePercent: boltz.Percentage(request.AcceptedPair.Fees.Percentage),
 		TenantId:          tenantId,
 	}
 
@@ -1288,6 +1291,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		chainSwap.FromData.WalletId = &id
 	}
 
+	if request.Amount != nil {
+		if err := server.nursery.CheckAmounts(boltz.ChainSwap, pair, chainSwap.FromData.Amount, chainSwap.ToData.Amount, chainSwap.ServiceFeePercent); err != nil {
+			return nil, err
+		}
+	}
+
 	logger.Debugf("Verified redeem script and address of Chain Swap %s", chainSwap.Id)
 
 	err = server.database.CreateChainSwap(chainSwap)
@@ -1302,7 +1311,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 			from.LockupAddress,
 			from.Amount,
 			!request.GetLockupZeroConf(),
-			chainPair.Limits.MaximalZeroConfAmount,
+			request.AcceptedPair.Limits.MaximalZeroConfAmount,
 			request.SatPerVbyte,
 		)
 		if err != nil {
@@ -1910,31 +1919,34 @@ func (server *routedBoltzServer) getOwnWallet(ctx context.Context, checker oncha
 	return wallet, nil
 }
 
-func (server *routedBoltzServer) getSubmarinePair(request *boltzrpc.Pair) (*boltz.SubmarinePair, error) {
+func (server *routedBoltzServer) getSubmarinePair(request *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
 	pairsResponse, err := server.boltz.GetSubmarinePairs()
 	if err != nil {
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	return boltz.FindPair(pair, pairsResponse)
+	found, err := boltz.FindPair(pair, pairsResponse)
+	return serializeSubmarinePair(pair, found), err
 }
 
-func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltz.ReversePair, error) {
+func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
 	pairsResponse, err := server.boltz.GetReversePairs()
 	if err != nil {
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	return boltz.FindPair(pair, pairsResponse)
+	found, err := boltz.FindPair(pair, pairsResponse)
+	return serializeReversePair(pair, found), err
 }
 
-func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltz.ChainPair, error) {
+func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
 	pairsResponse, err := server.boltz.GetChainPairs()
 	if err != nil {
 		return nil, err
 	}
 	pair := utils.ParsePair(request)
-	return boltz.FindPair(pair, pairsResponse)
+	found, err := boltz.FindPair(pair, pairsResponse)
+	return serializeChainPair(pair, found), err
 }
 
 func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltzrpc.GetPairsResponse, error) {

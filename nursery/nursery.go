@@ -380,6 +380,19 @@ type voutInfo struct {
 
 var ErrNotConfirmed = errors.New("lockup transaction not confirmed")
 
+func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {
+	fees := make(boltz.FeeEstimations)
+	fees[boltz.CurrencyLiquid], err = nursery.onchain.EstimateFee(boltz.CurrencyLiquid, true)
+	if err != nil {
+		return err
+	}
+	fees[boltz.CurrencyBtc], err = nursery.onchain.EstimateFee(boltz.CurrencyBtc, true)
+	if err != nil {
+		return err
+	}
+	return boltz.CheckAmounts(swapType, pair, sendAmount, receiveAmount, serviceFee, fees, false)
+}
+
 func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
 	lockupTransaction, err := nursery.onchain.GetTransaction(info.currency, info.transactionId, info.blindingKey)
 	if err != nil {

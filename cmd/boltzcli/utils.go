@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"os"
@@ -93,7 +94,7 @@ func printFees(fees *boltzrpc.SwapFees, amount uint64) {
 	if amount == 0 {
 		fmt.Printf("  - Boltz fee: %s%%\n", fmt.Sprint(fees.Percentage))
 	} else {
-		serviceFee := utils.Satoshis(utils.Percentage(fees.Percentage).Calculate(amount))
+		serviceFee := utils.Satoshis(boltz.Percentage(fees.Percentage).Calculate(amount))
 		fmt.Printf("  - Boltz fee (%s%%): %s\n", fmt.Sprint(fees.Percentage), serviceFee)
 	}
 	fmt.Printf("  - Network fee: %s\n", utils.Satoshis(fees.MinerFees))

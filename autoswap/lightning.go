@@ -24,8 +24,8 @@ type LightningConfig struct {
 	*SerializedLnConfig
 	shared
 
-	reserve         utils.Percentage
-	maxFeePercent   utils.Percentage
+	reserve         boltz.Percentage
+	maxFeePercent   boltz.Percentage
 	currency        boltz.Currency
 	swapType        boltz.SwapType
 	outboundBalance Balance
@@ -36,7 +36,7 @@ type LightningConfig struct {
 }
 
 func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
-	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: utils.Percentage(2)}
+	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: boltz.Percentage(2)}
 }
 
 func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {
@@ -67,14 +67,14 @@ func (cfg *LightningConfig) Init() error {
 	}
 
 	cfg.currency = utils.ParseCurrency(&cfg.Currency)
-	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
+	cfg.maxFeePercent = boltz.Percentage(cfg.MaxFeePercent)
 	cfg.outboundBalance = Balance{Absolute: cfg.OutboundBalance}
 	cfg.inboundBalance = Balance{Absolute: cfg.InboundBalance}
 
 	// Only consider relative values if absolute values are not set
 	if cfg.InboundBalance == 0 && cfg.OutboundBalance == 0 {
-		cfg.outboundBalance.Relative = utils.Percentage(cfg.OutboundBalancePercent)
-		cfg.inboundBalance.Relative = utils.Percentage(cfg.InboundBalancePercent)
+		cfg.outboundBalance.Relative = boltz.Percentage(cfg.OutboundBalancePercent)
+		cfg.inboundBalance.Relative = boltz.Percentage(cfg.InboundBalancePercent)
 		if cfg.OutboundBalancePercent+cfg.InboundBalancePercent >= 100 {
 			return errors.New("sum of balance percentages must be smaller than 100")
 		}

@@ -203,6 +203,11 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 					return
 				}
 
+				if err := nursery.CheckAmounts(boltz.ChainSwap, swap.Pair, fromAmount, quote.Amount, swap.ServiceFeePercent); err != nil {
+					handleError("could not accept quote: %w", err)
+					return
+				}
+
 				if err := nursery.boltz.AcceptChainSwapQuote(swap.Id, quote); err != nil {
 					handleError("could not accept quote: %w", err)
 					return

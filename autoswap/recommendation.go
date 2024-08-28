@@ -1,6 +1,7 @@
 package autoswap
 
 import (
+	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"math"
 
@@ -31,7 +32,7 @@ func (recommendation *checks) Dismissed() bool {
 
 type checkParams struct {
 	Amount           uint64
-	MaxFeePercent    utils.Percentage
+	MaxFeePercent    boltz.Percentage
 	Budget           *uint64
 	Pair             *boltzrpc.PairInfo
 	DismissedReasons []string
