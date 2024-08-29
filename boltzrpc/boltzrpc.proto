@@ -133,7 +133,7 @@ service Boltz {
     rpc RemoveWallet (RemoveWalletRequest) returns (RemoveWalletResponse);
 
     /*
-    Send coins from a wallet.
+    Send coins from a wallet. Only the confirmed balance can be spent.
      */
     rpc WalletSend (WalletSendRequest) returns (WalletSendResponse);
 

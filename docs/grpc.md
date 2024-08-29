@@ -199,7 +199,7 @@ Removes a wallet.
 
 #### WalletSend
 
-Send coins from a wallet.
+Send coins from a wallet. Only the confirmed balance can be spent.
 
 | Request | Response |
 | ------- | -------- |
