@@ -8,6 +8,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/electrum"
 	"github.com/BoltzExchange/boltz-client/mempool"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"google.golang.org/grpc/keepalive"
 	"io/fs"
 	"net"
 	"net/http"
@@ -51,7 +52,8 @@ func (server *RpcServer) Init() error {
 		return fmt.Errorf("could not connect to database: %w", err)
 	}
 
-	var serverOpts []grpc.ServerOption
+	keepalivePolicy := keepalive.EnforcementPolicy{MinTime: 10 * time.Second, PermitWithoutStream: true}
+	serverOpts := []grpc.ServerOption{grpc.KeepaliveEnforcementPolicy(keepalivePolicy)}
 
 	swapper := &autoswap.AutoSwap{}
 	server.boltzServer = &routedBoltzServer{
