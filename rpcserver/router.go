@@ -2046,7 +2046,8 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 }
 
 func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, allowLowball bool, maxZeroConfAmount uint64, fee *float64) (string, error) {
-	if amount > maxZeroConfAmount {
+	if amount > maxZeroConfAmount && !allowLowball {
+		logger.Infof("Amount %d exceeds maximal zero conf amount %d, allowing lowball", amount, maxZeroConfAmount)
 		allowLowball = true
 	}
 	if fee == nil {
@@ -2056,7 +2057,7 @@ func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address st
 		}
 		fee = &feeSatPerVbyte
 	}
-	logger.Debugf("Using fee of %f sat/vbyte", *fee)
+	logger.Infof("Using fee of %f sat/vbyte (allowLowball: %v)", *fee, allowLowball)
 	return wallet.SendToAddress(address, amount, *fee)
 }
 

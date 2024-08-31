@@ -651,7 +651,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 	params, free := toJson(map[string]any{
 		"subaccount": *wallet.subaccount,
-		"num_confs":  0,
+		"num_confs":  1,
 	})
 	defer free()
 	handler := new(AuthHandler)

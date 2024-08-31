@@ -121,7 +121,7 @@ type BoltzClient interface {
 	GetWalletCredentials(ctx context.Context, in *GetWalletCredentialsRequest, opts ...grpc.CallOption) (*WalletCredentials, error)
 	// Removes a wallet.
 	RemoveWallet(ctx context.Context, in *RemoveWalletRequest, opts ...grpc.CallOption) (*RemoveWalletResponse, error)
-	// Send coins from a wallet.
+	// Send coins from a wallet. Only the confirmed balance can be spent.
 	WalletSend(ctx context.Context, in *WalletSendRequest, opts ...grpc.CallOption) (*WalletSendResponse, error)
 	// Get a new address of the wallet.
 	WalletReceive(ctx context.Context, in *WalletReceiveRequest, opts ...grpc.CallOption) (*WalletReceiveResponse, error)
@@ -543,7 +543,7 @@ type BoltzServer interface {
 	GetWalletCredentials(context.Context, *GetWalletCredentialsRequest) (*WalletCredentials, error)
 	// Removes a wallet.
 	RemoveWallet(context.Context, *RemoveWalletRequest) (*RemoveWalletResponse, error)
-	// Send coins from a wallet.
+	// Send coins from a wallet. Only the confirmed balance can be spent.
 	WalletSend(context.Context, *WalletSendRequest) (*WalletSendResponse, error)
 	// Get a new address of the wallet.
 	WalletReceive(context.Context, *WalletReceiveRequest) (*WalletReceiveResponse, error)
