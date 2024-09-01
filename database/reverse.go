@@ -34,6 +34,7 @@ type ReverseSwap struct {
 	Invoice             string
 	ClaimAddress        string
 	OnchainAmount       uint64
+	InvoiceAmount       uint64
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
@@ -64,6 +65,7 @@ type ReverseSwapSerialized struct {
 	Invoice             string
 	ClaimAddress        string
 	OnchainAmount       uint64
+	InvoiceAmount       uint64
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
@@ -94,6 +96,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		Invoice:             reverseSwap.Invoice,
 		ClaimAddress:        reverseSwap.ClaimAddress,
 		OnchainAmount:       reverseSwap.OnchainAmount,
+		InvoiceAmount:       reverseSwap.InvoiceAmount,
 		TimeoutBlockHeight:  reverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: reverseSwap.LockupTransactionId,
 		ClaimTransactionId:  reverseSwap.ClaimTransactionId,
@@ -155,7 +158,8 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"redeemScript":        &redeemScript,
 			"invoice":             &reverseSwap.Invoice,
 			"claimAddress":        &reverseSwap.ClaimAddress,
-			"expectedAmount":      &reverseSwap.OnchainAmount,
+			"onchainAmount":       &reverseSwap.OnchainAmount,
+			"invoiceAmount":       &reverseSwap.InvoiceAmount,
 			"timeoutBlockheight":  &reverseSwap.TimeoutBlockHeight,
 			"lockupTransactionId": &reverseSwap.LockupTransactionId,
 			"claimTransactionId":  &reverseSwap.ClaimTransactionId,
@@ -293,10 +297,10 @@ func (database *Database) QueryPendingReverseSwaps() ([]*ReverseSwap, error) {
 
 const insertReverseSwapStatement = `
 INSERT INTO reverseSwaps (id, fromCurrency, toCurrency, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
-                          invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId,
+                          invoice, claimAddress, onchainAmount, invoiceAmount, timeoutBlockheight, lockupTransactionId,
                           claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee,
                           serviceFeePercent, onchainFee, refundPubKey, swapTree, externalPay, tenantId, walletId)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
@@ -316,6 +320,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		reverseSwap.Invoice,
 		reverseSwap.ClaimAddress,
 		reverseSwap.OnchainAmount,
+		reverseSwap.InvoiceAmount,
 		reverseSwap.TimeoutBlockHeight,
 		reverseSwap.LockupTransactionId,
 		reverseSwap.ClaimTransactionId,

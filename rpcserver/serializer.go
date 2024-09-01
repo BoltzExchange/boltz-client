@@ -90,6 +90,23 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	return serialized
 }
 
+func serializeAnySwap(swap *database.AnySwap) *boltzrpc.AnySwapInfo {
+	return &boltzrpc.AnySwapInfo{
+		Id:         swap.Id,
+		Type:       utils.SerializeSwapType(swap.Type),
+		Pair:       serializePair(swap.Pair),
+		State:      swap.State,
+		Error:      serializeOptionalString(swap.Error),
+		Status:     swap.Status.String(),
+		Amount:     swap.Amount,
+		CreatedAt:  serializeTime(swap.CreatedAt),
+		ServiceFee: swap.ServiceFee,
+		OnchainFee: swap.OnchainFee,
+		IsAuto:     swap.IsAuto,
+		TenantId:   swap.TenantId,
+	}
+}
+
 func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSwapInfo {
 	if reverseSwap == nil {
 		return nil
@@ -108,7 +125,8 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		RedeemScript:        serializedReverseSwap.RedeemScript,
 		Invoice:             serializedReverseSwap.Invoice,
 		ClaimAddress:        serializedReverseSwap.ClaimAddress,
-		OnchainAmount:       int64(serializedReverseSwap.OnchainAmount),
+		OnchainAmount:       serializedReverseSwap.OnchainAmount,
+		InvoiceAmount:       serializedReverseSwap.InvoiceAmount,
 		TimeoutBlockHeight:  serializedReverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: serializedReverseSwap.LockupTransactionId,
 		ClaimTransactionId:  serializedReverseSwap.ClaimTransactionId,

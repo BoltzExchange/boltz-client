@@ -20,6 +20,58 @@ import (
 
 // TODO: prepare insert statements only once
 
+const createViews =
+// language=sql
+`
+CREATE VIEW allSwaps AS
+SELECT data.id     as id,
+       fromCurrency,
+       toCurrency,
+       'chain'     AS type,
+       data.amount as amount,
+       state,
+       error,
+       status,
+       createdAt,
+       onchainFee,
+       serviceFee,
+       isAuto,
+       tenantId
+FROM chainSwaps
+         JOIN chainSwapsData data ON chainSwaps.id = data.id AND chainSwaps.fromCurrency = data.currency
+UNION ALL
+SELECT id,
+       fromCurrency,
+       toCurrency,
+       'reverse'     AS type,
+       invoiceAmount as amount,
+       state,
+       error,
+       status,
+       createdAt,
+       coalesce(onchainFee, 0) + (coalesce(routingFeeMsat, 0) / 1000)
+                     as onchainFee,
+       serviceFee,
+       isAuto,
+       tenantId
+FROM reverseSwaps
+UNION ALL
+SELECT id,
+       fromCurrency,
+       toCurrency,
+       'submarine'    AS type,
+       expectedAmount as amount,
+       state,
+       error,
+       status,
+       createdAt,
+       onchainFee,
+       serviceFee,
+       isAuto,
+       tenantId
+FROM swaps;
+`
+
 const createTables = `
 CREATE TABLE version
 (
@@ -115,7 +167,8 @@ CREATE TABLE reverseSwaps
     redeemScript        VARCHAR,
     invoice             VARCHAR,
     claimAddress        VARCHAR,
-    expectedAmount      INT,
+    onchainAmount       INT,
+    invoiceAmount       INT,
     timeoutBlockheight  INTEGER,
     lockupTransactionId VARCHAR,
     claimTransactionId  VARCHAR,
@@ -160,9 +213,8 @@ CREATE TABLE tenants
 (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR UNIQUE
-)
-
-`
+);
+` + createViews
 
 type Database struct {
 	Path string `long:"database.path" description:"Path to the database file"`
@@ -269,6 +321,8 @@ type SwapQuery struct {
 	Include  boltzrpc.IncludeSwaps
 	Since    time.Time
 	TenantId *Id
+	Limit    *uint64
+	Offset   *uint64
 }
 
 var PendingSwapQuery = SwapQuery{
@@ -315,6 +369,15 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 	var where string
 	if len(conditions) > 0 {
 		where = " WHERE " + strings.Join(conditions, " AND ")
+	}
+	where += " ORDER BY createdAt DESC"
+	if query.Limit != nil {
+		where += " LIMIT ?"
+		values = append(values, *query.Limit)
+	}
+	if query.Offset != nil {
+		where += " OFFSET ?"
+		values = append(values, *query.Offset)
 	}
 	return where, values
 }

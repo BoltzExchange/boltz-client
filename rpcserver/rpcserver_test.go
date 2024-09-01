@@ -517,7 +517,7 @@ func TestMacaroons(t *testing.T) {
 	})
 }
 
-func TestGetSwapInfoStream(t *testing.T) {
+func TestSwapInfo(t *testing.T) {
 	admin, _, stop := setup(t, setupOptions{})
 	defer stop()
 
@@ -554,41 +554,57 @@ func TestGetSwapInfoStream(t *testing.T) {
 		_, err = stream.Recv()
 		requireCode(t, err, codes.PermissionDenied)
 	}
+	externalPay := true
 
-	t.Run("Normal", func(t *testing.T) {
-		swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{})
-		require.NoError(t, err)
+	swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{})
+	require.NoError(t, err)
+	info := stream(boltzrpc.SwapState_PENDING)
+	require.Equal(t, swap.Id, info.Swap.Id)
 
-		info := stream(boltzrpc.SwapState_PENDING)
-		require.Equal(t, swap.Id, info.Swap.Id)
+	check(t, swap.Id)
 
-		check(t, swap.Id)
+	reverseSwap, err := admin.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000, ExternalPay: &externalPay})
+	require.NoError(t, err)
+	info = stream(boltzrpc.SwapState_PENDING)
+	require.Equal(t, reverseSwap.Id, info.ReverseSwap.Id)
+
+	check(t, reverseSwap.Id)
+
+	chainSwap, err := admin.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+		Amount:      100000,
+		Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
+		ExternalPay: &externalPay,
+		ToWalletId:  &testWallet.Id,
 	})
+	require.NoError(t, err)
+	info = stream(boltzrpc.SwapState_PENDING)
+	require.Equal(t, chainSwap.Id, info.ChainSwap.Id)
 
-	t.Run("Reverse", func(t *testing.T) {
-		reverseSwap, err := admin.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
+	check(t, chainSwap.Id)
+
+	t.Run("List", func(t *testing.T) {
+		unify := true
+		request := &boltzrpc.ListSwapsRequest{Unify: &unify}
+
+		swaps, err := admin.ListSwaps(request)
 		require.NoError(t, err)
+		require.Len(t, swaps.AllSwaps, 3)
 
-		info := stream(boltzrpc.SwapState_PENDING)
-		require.Equal(t, reverseSwap.Id, info.ReverseSwap.Id)
-
-		check(t, reverseSwap.Id)
-	})
-
-	t.Run("Chain", func(t *testing.T) {
-		externalPay := true
-		chainSwap, err := admin.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-			Amount:      100000,
-			Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
-			ExternalPay: &externalPay,
-			ToWalletId:  &testWallet.Id,
-		})
+		limit := uint64(1)
+		request.Limit = &limit
+		swaps, err = admin.ListSwaps(request)
 		require.NoError(t, err)
+		require.Len(t, swaps.AllSwaps, int(limit))
+		require.Equal(t, boltzrpc.SwapType_CHAIN, swaps.AllSwaps[0].Type)
 
-		info := stream(boltzrpc.SwapState_PENDING)
-		require.Equal(t, chainSwap.Id, info.ChainSwap.Id)
-
-		check(t, chainSwap.Id)
+		offset := uint64(1)
+		limit = 2
+		request.Offset = &offset
+		swaps, err = admin.ListSwaps(request)
+		require.NoError(t, err)
+		require.Len(t, swaps.AllSwaps, int(limit))
+		require.Equal(t, boltzrpc.SwapType_REVERSE, swaps.AllSwaps[0].Type)
+		require.Equal(t, boltzrpc.SwapType_SUBMARINE, swaps.AllSwaps[1].Type)
 	})
 }
 
@@ -1131,16 +1147,13 @@ func TestReverseSwap(t *testing.T) {
 					require.LessOrEqual(t, *info.ReverseSwap.PaidAt, time.Now().Unix())
 					require.GreaterOrEqual(t, *info.ReverseSwap.PaidAt, info.ReverseSwap.CreatedAt)
 
-					invoice, err := zpay32.Decode(info.ReverseSwap.Invoice, &chaincfg.RegressionNetParams)
-					require.NoError(t, err)
-
 					currency := parseCurrency(tc.to)
 
 					claimFee, err := chain.GetTransactionFee(currency, info.ReverseSwap.ClaimTransactionId)
 					require.NoError(t, err)
 
-					totalFees := int64(invoice.MilliSat.ToSatoshis()) - info.ReverseSwap.OnchainAmount
-					require.Equal(t, totalFees+int64(claimFee), int64(*info.ReverseSwap.ServiceFee+*info.ReverseSwap.OnchainFee))
+					totalFees := info.ReverseSwap.InvoiceAmount - info.ReverseSwap.OnchainAmount
+					require.Equal(t, int64(totalFees+claimFee), int64(*info.ReverseSwap.ServiceFee+*info.ReverseSwap.OnchainFee))
 
 					if tc.external {
 						require.Equal(t, addr, info.ReverseSwap.ClaimAddress)

@@ -7,7 +7,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/lightningnetwork/lnd/zpay32"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -181,12 +180,6 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		decodedInvoice, err := zpay32.Decode(reverseSwap.Invoice, nursery.network.Btc)
-		if err != nil {
-			handleError("Could not decode invoice: " + err.Error())
-			return
-		}
-
 		if nursery.lightning != nil && !reverseSwap.ExternalPay {
 			status, err := nursery.lightning.PaymentStatus(reverseSwap.PreimageHash())
 			if err != nil {
@@ -201,9 +194,8 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			}
 		}
 
-		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
-		serviceFee := reverseSwap.ServiceFeePercent.Calculate(invoiceAmount)
-		boltzOnchainFee := invoiceAmount - reverseSwap.OnchainAmount - serviceFee
+		serviceFee := reverseSwap.ServiceFeePercent.Calculate(reverseSwap.InvoiceAmount)
+		boltzOnchainFee := reverseSwap.InvoiceAmount - reverseSwap.OnchainAmount - serviceFee
 
 		logger.Infof("Reverse Swap service fee: %dsat; boltz onchain fee: %dsat", serviceFee, boltzOnchainFee)
 

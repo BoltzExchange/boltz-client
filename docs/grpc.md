@@ -282,6 +282,30 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 ### Messages
 
+#### AnySwapInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `type` | [`SwapType`](#swaptype) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
+| `state` | [`SwapState`](#swapstate) |  |  |
+| `error` | [`string`](#string) | optional |  |
+| `status` | [`string`](#string) |  |  |
+| `amount` | [`uint64`](#uint64) |  | the "from" amount of the swap. its the expected amount sent to be to the lockup address for submarine and chain swaps and the invoice amount for reverse swaps. the "to" amount can be calculated by subtracting the service and network fee. |
+| `created_at` | [`int64`](#int64) |  |  |
+| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `onchain_fee` | [`uint64`](#uint64) | optional | inclues the routing fee for reverse swaps |
+| `is_auto` | [`bool`](#bool) |  |  |
+| `tenant_id` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
 #### BakeMacaroonRequest
 
 
@@ -976,6 +1000,9 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `to` | [`Currency`](#currency) | optional |  |
 | `state` | [`SwapState`](#swapstate) | optional |  |
 | `include` | [`IncludeSwaps`](#includeswaps) |  |  |
+| `limit` | [`uint64`](#uint64) | optional |  |
+| `offset` | [`uint64`](#uint64) | optional |  |
+| `unify` | [`bool`](#bool) | optional | wether to return swaps in the shared `all_swaps` list or in the detailed lists. the `limit` and `offset` are only considered when `unify` is true. |
 
 
 
@@ -989,9 +1016,10 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `swaps` | [`SwapInfo`](#swapinfo) | repeated |  |
-| `channel_creations` | [`CombinedChannelSwapInfo`](#combinedchannelswapinfo) | repeated |  |
+| `channel_creations` | [`CombinedChannelSwapInfo`](#combinedchannelswapinfo) | repeated | **Deprecated.**  |
 | `reverse_swaps` | [`ReverseSwapInfo`](#reverseswapinfo) | repeated |  |
 | `chain_swaps` | [`ChainSwapInfo`](#chainswapinfo) | repeated |  |
+| `all_swaps` | [`AnySwapInfo`](#anyswapinfo) | repeated | populated when `unify` is set to true in the request |
 
 
 
@@ -1127,7 +1155,8 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `redeem_script` | [`string`](#string) |  |  |
 | `invoice` | [`string`](#string) |  |  |
 | `claim_address` | [`string`](#string) |  |  |
-| `onchain_amount` | [`int64`](#int64) |  |  |
+| `onchain_amount` | [`uint64`](#uint64) |  |  |
+| `invoice_amount` | [`uint64`](#uint64) |  |  |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) |  |  |
 | `claim_transaction_id` | [`string`](#string) |  |  |

@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"github.com/lightningnetwork/lnd/zpay32"
 	"strconv"
 	"strings"
 
@@ -16,7 +17,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 11
+const latestSchemaVersion = 12
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -510,6 +511,35 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 `
 		if _, err := tx.Exec(migration); err != nil {
 			return err
+		}
+	case 11:
+		migration := `
+		ALTER TABLE reverseSwaps RENAME COLUMN "expectedAmount" TO "onchainAmount";
+		ALTER TABLE reverseSwaps ADD COLUMN "invoiceAmount" INT DEFAULT 0;
+`
+		migration += createViews
+
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+
+		reverseSwaps, err := tx.QueryReverseSwaps(SwapQuery{})
+		if err != nil {
+			return err
+		}
+		for _, reverseSwap := range reverseSwaps {
+			decoded, err := zpay32.Decode(reverseSwap.Invoice, boltz.MainNet.Btc)
+			if err != nil {
+				decoded, err = zpay32.Decode(reverseSwap.Invoice, boltz.TestNet.Btc)
+				if err != nil {
+					decoded, err = zpay32.Decode(reverseSwap.Invoice, boltz.Regtest.Btc)
+				}
+			}
+			if err == nil && decoded.MilliSat != nil {
+				if _, err := tx.Exec("UPDATE reverseSwaps SET invoiceAmount = ? WHERE id = ?", decoded.MilliSat.ToSatoshis(), reverseSwap.Id); err != nil {
+					return err
+				}
+			}
 		}
 
 	case latestSchemaVersion:
