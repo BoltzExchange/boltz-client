@@ -23,6 +23,7 @@ import (
 const createViews =
 // language=sql
 `
+DROP VIEW IF EXISTS allSwaps;
 CREATE VIEW allSwaps AS
 SELECT data.id     as id,
        fromCurrency,
