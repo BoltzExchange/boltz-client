@@ -196,75 +196,19 @@ func listSwaps(ctx *cli.Context) error {
 		headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 		columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-		if unify {
-			if len(list.AllSwaps) > 0 {
-				tbl := table.New("Type", "ID", "From", "To", "State", "Status", "Amount", "Boltz Fee", "Network Fee", "Created At")
-				tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+		if len(list.AllSwaps) > 0 {
+			tbl := table.New("Type", "ID", "From", "To", "State", "Status", "Send Amount", "Boltz Fee", "Network Fee", "Created At")
+			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
-				for _, swap := range list.AllSwaps {
-					tbl.AddRow(swap.Type, swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.Amount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
-				}
-
-				tbl.Print()
-				return nil
-			} else {
-				fmt.Println("No swaps found")
-				return nil
+			for _, swap := range list.AllSwaps {
+				tbl.AddRow(swap.Type, swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.FromAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
 			}
+
+			tbl.Print()
+			return nil
 		} else {
-
-			if len(list.Swaps) == 0 && len(list.ReverseSwaps) == 0 && len(list.ChainSwaps) == 0 {
-				fmt.Println("No swaps found")
-				return nil
-			}
-
-			if len(list.Swaps) > 0 {
-
-				tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Boltz Fee", "Onchain Fee", "Created At")
-				tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
-
-				for _, swap := range list.Swaps {
-					tbl.AddRow(swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.ExpectedAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
-				}
-
-				if _, err := yellowBold.Println("Swaps"); err != nil {
-					return err
-				}
-
-				tbl.Print()
-				fmt.Println()
-			}
-
-			if len(list.ReverseSwaps) > 0 {
-
-				tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Boltz Fee", "Onchain Fee", "Created At")
-				tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
-
-				for _, swap := range list.ReverseSwaps {
-					tbl.AddRow(swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.OnchainAmount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
-				}
-
-				if _, err := yellowBold.Println("Reverse Swaps"); err != nil {
-					return err
-				}
-				tbl.Print()
-				fmt.Println()
-			}
-
-			if len(list.ChainSwaps) > 0 {
-				tbl := table.New("ID", "From", "To", "State", "Status", "Amount", "Boltz Fee", "Onchain Fee", "Created At")
-				tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
-
-				for _, swap := range list.ChainSwaps {
-					tbl.AddRow(swap.Id, swap.Pair.From, swap.Pair.To, swap.State, swap.Status, swap.FromData.Amount, optionalInt(swap.ServiceFee), optionalInt(swap.OnchainFee), parseDate(swap.CreatedAt))
-				}
-
-				if _, err := yellowBold.Println("Chain Swaps"); err != nil {
-					return err
-				}
-
-				tbl.Print()
-			}
+			fmt.Println("No swaps found")
+			return nil
 		}
 	}
 

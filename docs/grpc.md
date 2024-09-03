@@ -295,7 +295,8 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `state` | [`SwapState`](#swapstate) |  |  |
 | `error` | [`string`](#string) | optional |  |
 | `status` | [`string`](#string) |  |  |
-| `amount` | [`uint64`](#uint64) |  | the "from" amount of the swap. its the expected amount sent to be to the lockup address for submarine and chain swaps and the invoice amount for reverse swaps. the "to" amount can be calculated by subtracting the service and network fee. |
+| `from_amount` | [`uint64`](#uint64) |  | the "from" amount of the swap. its the expected amount sent to be to the lockup address for submarine and chain swaps and the invoice amount for reverse swaps. |
+| `to_amount` | [`uint64`](#uint64) |  | the `from_amount` minus the service and network fee. |
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`uint64`](#uint64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional | inclues the routing fee for reverse swaps |

@@ -91,6 +91,13 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 }
 
 func serializeAnySwap(swap *database.AnySwap) *boltzrpc.AnySwapInfo {
+	toAmount := swap.Amount
+	if swap.OnchainFee != nil {
+		toAmount -= *swap.OnchainFee
+	}
+	if swap.ServiceFee != nil {
+		toAmount -= *swap.ServiceFee
+	}
 	return &boltzrpc.AnySwapInfo{
 		Id:         swap.Id,
 		Type:       utils.SerializeSwapType(swap.Type),
@@ -98,7 +105,8 @@ func serializeAnySwap(swap *database.AnySwap) *boltzrpc.AnySwapInfo {
 		State:      swap.State,
 		Error:      serializeOptionalString(swap.Error),
 		Status:     swap.Status.String(),
-		Amount:     swap.Amount,
+		FromAmount: swap.Amount,
+		ToAmount:   toAmount,
 		CreatedAt:  serializeTime(swap.CreatedAt),
 		ServiceFee: swap.ServiceFee,
 		OnchainFee: swap.OnchainFee,

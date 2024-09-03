@@ -429,8 +429,9 @@ message AnySwapInfo {
     // the "from" amount of the swap.
     // its the expected amount sent to be to the lockup address for submarine and chain swaps and
     // the invoice amount for reverse swaps.
-    // the "to" amount can be calculated by subtracting the service and network fee.
-    uint64 amount = 7;
+    uint64 from_amount = 7;
+    // the `from_amount` minus the service and network fee.
+    uint64 to_amount = 13;
     int64 created_at = 8;
     optional uint64 service_fee = 9;
     // inclues the routing fee for reverse swaps
