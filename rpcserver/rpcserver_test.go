@@ -605,6 +605,12 @@ func TestSwapInfo(t *testing.T) {
 		require.Len(t, swaps.AllSwaps, int(limit))
 		require.Equal(t, boltzrpc.SwapType_REVERSE, swaps.AllSwaps[0].Type)
 		require.Equal(t, boltzrpc.SwapType_SUBMARINE, swaps.AllSwaps[1].Type)
+
+		// offset and limit only support for unify
+		unify = false
+		_, err = admin.ListSwaps(request)
+		requireCode(t, err, codes.InvalidArgument)
+
 	})
 }
 

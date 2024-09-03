@@ -358,6 +358,10 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 			response.AllSwaps = append(response.AllSwaps, serializeAnySwap(swap))
 		}
 	} else {
+		if request.Offset != nil || request.Limit != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "offset and limit are only supported with unify")
+
+		}
 		swaps, err := server.database.QuerySwaps(args)
 		if err != nil {
 			return nil, err
