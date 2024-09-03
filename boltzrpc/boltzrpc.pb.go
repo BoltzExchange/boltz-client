@@ -2105,11 +2105,10 @@ type AnySwapInfo struct {
 	State  SwapState `protobuf:"varint,4,opt,name=state,proto3,enum=boltzrpc.SwapState" json:"state,omitempty"`
 	Error  *string   `protobuf:"bytes,5,opt,name=error,proto3,oneof" json:"error,omitempty"`
 	Status string    `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
-	// the "from" amount of the swap.
-	// its the expected amount sent to be to the lockup address for submarine and chain swaps and
+	// The expected amount to be sent to the lockup address for submarine and chain swaps and
 	// the invoice amount for reverse swaps.
 	FromAmount uint64 `protobuf:"varint,7,opt,name=from_amount,json=fromAmount,proto3" json:"from_amount,omitempty"`
-	// the `from_amount` minus the service and network fee.
+	// `from_amount` minus the service and network fee.
 	ToAmount   uint64  `protobuf:"varint,13,opt,name=to_amount,json=toAmount,proto3" json:"to_amount,omitempty"`
 	CreatedAt  int64   `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	ServiceFee *uint64 `protobuf:"varint,9,opt,name=service_fee,json=serviceFee,proto3,oneof" json:"service_fee,omitempty"`
