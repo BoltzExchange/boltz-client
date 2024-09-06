@@ -1,4 +1,13 @@
 
+<a name="v2.1.5"></a>
+## [v2.1.5] - 2024-09-04
+### Feat
+- add keepalive policy to grpc server ([#279](https://github.com/BoltzExchange/boltz-client/issues/279))
+
+### Fix
+- only spend confirmed utxos ([#278](https://github.com/BoltzExchange/boltz-client/issues/278))
+
+
 <a name="v2.1.4"></a>
 ## [v2.1.4] - 2024-08-27
 ### Fix
@@ -370,6 +379,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.4...v2.1.5
 [v2.1.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.3...v2.1.4
 [v2.1.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.2...v2.1.3
 [v2.1.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.1...v2.1.2
