@@ -43,14 +43,14 @@ func TestStats(t *testing.T) {
 				ReverseSwaps: []database.ReverseSwap{
 					{
 						State:          boltzrpc.SwapState_SERVER_ERROR,
-						OnchainAmount:  100,
+						InvoiceAmount:  100,
 						OnchainFee:     fee(10),
 						ServiceFee:     fee(10),
 						RoutingFeeMsat: fee(5000),
 						IsAuto:         true,
 					},
 					{
-						OnchainAmount: 100,
+						InvoiceAmount: 100,
 						State:         boltzrpc.SwapState_SUCCESSFUL,
 						OnchainFee:    fee(10),
 						ServiceFee:    fee(15),

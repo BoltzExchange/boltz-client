@@ -39,8 +39,11 @@ func TestMigration(t *testing.T) {
 				require.Equal(t, latestSchemaVersion, version)
 				_, err := database.QuerySwaps(SwapQuery{})
 				require.NoError(t, err)
-				_, err = database.QueryReverseSwaps(SwapQuery{})
+				reverseSwaps, err := database.QueryReverseSwaps(SwapQuery{})
 				require.NoError(t, err)
+				for _, reverseSwap := range reverseSwaps {
+					require.NotZero(t, reverseSwap.InvoiceAmount)
+				}
 				_, err = database.QueryWalletCredentials()
 				require.NoError(t, err)
 			} else {

@@ -346,33 +346,50 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 		args.To = &parsed
 	}
 
-	swaps, err := server.database.QuerySwaps(args)
-	if err != nil {
-		return nil, err
-	}
+	if request.GetUnify() {
+		args.Offset = request.Offset
+		args.Limit = request.Limit
+		allSwaps, err := server.database.QueryAllSwaps(args)
+		if err != nil {
+			return nil, err
+		}
 
-	for _, swap := range swaps {
-		response.Swaps = append(response.Swaps, serializeSwap(swap))
-	}
+		for _, swap := range allSwaps {
+			response.AllSwaps = append(response.AllSwaps, serializeAnySwap(swap))
+		}
+	} else {
+		if request.Offset != nil || request.Limit != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "offset and limit are only supported with unify")
 
-	// Reverse Swaps
-	reverseSwaps, err := server.database.QueryReverseSwaps(args)
+		}
+		swaps, err := server.database.QuerySwaps(args)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
-	}
+		for _, swap := range swaps {
+			response.Swaps = append(response.Swaps, serializeSwap(swap))
+		}
 
-	for _, reverseSwap := range reverseSwaps {
-		response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(reverseSwap))
-	}
+		// Reverse Swaps
+		reverseSwaps, err := server.database.QueryReverseSwaps(args)
 
-	chainSwaps, err := server.database.QueryChainSwaps(args)
-	if err != nil {
-		return nil, err
-	}
+		if err != nil {
+			return nil, err
+		}
 
-	for _, chainSwap := range chainSwaps {
-		response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(chainSwap))
+		for _, reverseSwap := range reverseSwaps {
+			response.ReverseSwaps = append(response.ReverseSwaps, serializeReverseSwap(reverseSwap))
+		}
+
+		chainSwaps, err := server.database.QueryChainSwaps(args)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, chainSwap := range chainSwaps {
+			response.ChainSwaps = append(response.ChainSwaps, serializeChainSwap(chainSwap))
+		}
 	}
 
 	return response, nil
@@ -1044,7 +1061,6 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	}
 
 	invoice, err := zpay32.Decode(reverseSwap.Invoice, server.network.Btc)
-
 	if err != nil {
 		return nil, err
 	}
@@ -1052,6 +1068,10 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 	if !bytes.Equal(preimageHash, invoice.PaymentHash[:]) {
 		return nil, errors.New("invalid invoice preimage hash")
 	}
+	if invoice.MilliSat == nil {
+		return nil, errors.New("invoice amount is missing")
+	}
+	reverseSwap.InvoiceAmount = uint64(invoice.MilliSat.ToSatoshis())
 
 	logger.Debugf("Verified redeem script and invoice of Reverse Swap %s", reverseSwap.Id)
 

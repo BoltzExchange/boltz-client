@@ -333,7 +333,8 @@ message ReverseSwapInfo {
     string redeem_script = 7;
     string invoice = 8;
     string claim_address = 9;
-    int64 onchain_amount = 10;
+    uint64 onchain_amount = 10;
+    uint64 invoice_amount = 25;
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
@@ -418,17 +419,44 @@ enum IncludeSwaps {
     AUTO = 2;
 }
 
+message AnySwapInfo {
+    string id = 1;
+    SwapType type = 2;
+    Pair pair = 3;
+    SwapState state = 4;
+    optional string error = 5;
+    string status = 6;
+    // The expected amount to be sent to the lockup address for submarine and chain swaps and
+    // the invoice amount for reverse swaps.
+    uint64 from_amount = 7;
+    // `from_amount` minus the service and network fee.
+    uint64 to_amount = 13;
+    int64 created_at = 8;
+    optional uint64 service_fee = 9;
+    // inclues the routing fee for reverse swaps
+    optional uint64 onchain_fee = 10;
+    bool is_auto = 11;
+    uint64 tenant_id = 12;
+}
+
 message ListSwapsRequest {
     optional Currency from = 1;
     optional Currency to = 2;
     optional SwapState state = 4;
     IncludeSwaps include = 5;
+    optional uint64 limit = 6;
+    optional uint64 offset = 7;
+    // wether to return swaps in the shared `all_swaps` list or in the detailed lists.
+    // the `limit` and `offset` are only considered when `unify` is true.
+    optional bool unify = 8;
 }
 message ListSwapsResponse {
     repeated SwapInfo swaps = 1;
-    repeated CombinedChannelSwapInfo channel_creations = 2;
+    repeated CombinedChannelSwapInfo channel_creations = 2 [deprecated = true];
     repeated ReverseSwapInfo reverse_swaps = 3;
     repeated ChainSwapInfo chain_swaps = 4;
+    // populated when `unify` is set to true in the request
+    repeated AnySwapInfo all_swaps = 5;
 }
 
 message GetStatsRequest {
