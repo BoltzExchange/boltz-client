@@ -23,6 +23,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/BoltzExchange/boltz-client/logger"
@@ -597,36 +598,17 @@ func (wallet *Wallet) GetBalance() (*onchain.Balance, error) {
 }
 
 func (wallet *Wallet) SearchOutput(txId, address string) (*onchain.Output, error) {
-	if wallet.subaccount == nil {
-		return nil, ErrSubAccountNotSet
-	}
-	params, free := toJson(map[string]any{
-		"subaccount": *wallet.subaccount,
-		"first":      0,
-		"count":      30,
-	})
-	defer free()
-	handler := new(AuthHandler)
-	var outputs struct {
-		Transactions []struct {
-			BlockHeight uint32 `json:"block_height"`
-			TxId        string `json:"txhash"`
-			Outputs     []struct {
-				Address string `json:"address"`
-				Satoshi uint64 `json:"satoshi"`
-			}
-		} `json:"transactions"`
-	}
-	if err := withAuthHandler(C.GA_get_transactions(wallet.session, params, handler), handler, &outputs); err != nil {
+	transactoins, err := wallet.GetTransactions(0, 0)
+	if err != nil {
 		return nil, err
 	}
-	for _, tx := range outputs.Transactions {
-		if tx.TxId == txId || txId == "" {
+	for _, tx := range transactoins {
+		if tx.Id == txId || txId == "" {
 			for _, output := range tx.Outputs {
 				if output.Address == address {
 					return &onchain.Output{
-						TxId:  tx.TxId,
-						Value: output.Satoshi,
+						TxId:  tx.Id,
+						Value: output.Amount,
 					}, nil
 				}
 			}
@@ -784,6 +766,73 @@ func (wallet *Wallet) SetSpentOutputs(outputs []string) {
 	for _, output := range outputs {
 		wallet.spentOutputs[output] = true
 	}
+}
+
+func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
+	if wallet.subaccount == nil {
+		return nil, ErrSubAccountNotSet
+	}
+	if limit == 0 {
+		limit = 30
+	}
+	if limit > 30 {
+		return nil, errors.New("limit cant be larger than 30")
+	}
+	params, free := toJson(map[string]any{
+		"subaccount": *wallet.subaccount,
+		"first":      offset,
+		"count":      limit,
+	})
+	defer free()
+	handler := new(AuthHandler)
+	var result struct {
+		Transactions []struct {
+			BlockHeight uint32 `json:"block_height"`
+			TxId        string `json:"txhash"`
+			Inputs      []struct {
+				Address    string `json:"address"`
+				Satoshi    uint64 `json:"satoshi"`
+				IsRelevant bool   `json:"is_relevant"`
+			}
+			Outputs []struct {
+				Address    string `json:"address"`
+				Satoshi    uint64 `json:"satoshi"`
+				IsRelevant bool   `json:"is_relevant"`
+			}
+			Timestamp int64            `json:"created_at_ts"`
+			Type      string           `json:"type"`
+			Satoshi   map[string]int64 `json:"satoshi"`
+		} `json:"transactions"`
+	}
+	if err := withAuthHandler(C.GA_get_transactions(wallet.session, params, handler), handler, &result); err != nil {
+		return nil, err
+	}
+
+	asset := "btc"
+	if wallet.Currency == boltz.CurrencyLiquid {
+		asset = config.Network.Liquid.AssetID
+	}
+
+	var transactions []*onchain.WalletTransaction
+	for _, tx := range result.Transactions {
+		var outputs []onchain.TransactionOutput
+		for _, out := range tx.Outputs {
+			outputs = append(outputs, onchain.TransactionOutput{
+				Address:      out.Address,
+				Amount:       out.Satoshi,
+				IsOurAddress: out.IsRelevant,
+			})
+		}
+		transactions = append(transactions, &onchain.WalletTransaction{
+			Id:            tx.TxId,
+			Timestamp:     time.UnixMicro(tx.Timestamp),
+			BlockHeight:   tx.BlockHeight,
+			Outputs:       outputs,
+			BalanceChange: tx.Satoshi[asset],
+		})
+	}
+
+	return transactions, nil
 }
 
 func (wallet *Wallet) Ready() bool {

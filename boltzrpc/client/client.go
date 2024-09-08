@@ -97,6 +97,10 @@ func (boltz *Boltz) GetWallets(currency *boltzrpc.Currency, includeReadonly bool
 	return boltz.Client.GetWallets(boltz.Ctx, &boltzrpc.GetWalletsRequest{Currency: currency, IncludeReadonly: &includeReadonly})
 }
 
+func (boltz *Boltz) ListWalletTransactions(request *boltzrpc.ListWalletTransactionsRequest) (*boltzrpc.ListWalletTransactionsResponse, error) {
+	return boltz.Client.ListWalletTransactions(boltz.Ctx, request)
+}
+
 func (boltz *Boltz) ImportWallet(params *boltzrpc.WalletParams, credentials *boltzrpc.WalletCredentials) (*boltzrpc.Wallet, error) {
 	return boltz.Client.ImportWallet(boltz.Ctx, &boltzrpc.ImportWalletRequest{Params: params, Credentials: credentials})
 }

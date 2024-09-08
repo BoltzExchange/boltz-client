@@ -122,6 +122,65 @@ func (_c *MockWallet_GetBalance_Call) RunAndReturn(run func() (*onchain.Balance,
 	return _c
 }
 
+// GetTransactions provides a mock function with given fields: limit, offset
+func (_m *MockWallet) GetTransactions(limit uint64, offset uint64) ([]*onchain.WalletTransaction, error) {
+	ret := _m.Called(limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactions")
+	}
+
+	var r0 []*onchain.WalletTransaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(uint64, uint64) ([]*onchain.WalletTransaction, error)); ok {
+		return rf(limit, offset)
+	}
+	if rf, ok := ret.Get(0).(func(uint64, uint64) []*onchain.WalletTransaction); ok {
+		r0 = rf(limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*onchain.WalletTransaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(uint64, uint64) error); ok {
+		r1 = rf(limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockWallet_GetTransactions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactions'
+type MockWallet_GetTransactions_Call struct {
+	*mock.Call
+}
+
+// GetTransactions is a helper method to define mock.On call
+//   - limit uint64
+//   - offset uint64
+func (_e *MockWallet_Expecter) GetTransactions(limit interface{}, offset interface{}) *MockWallet_GetTransactions_Call {
+	return &MockWallet_GetTransactions_Call{Call: _e.mock.On("GetTransactions", limit, offset)}
+}
+
+func (_c *MockWallet_GetTransactions_Call) Run(run func(limit uint64, offset uint64)) *MockWallet_GetTransactions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(uint64), args[1].(uint64))
+	})
+	return _c
+}
+
+func (_c *MockWallet_GetTransactions_Call) Return(_a0 []*onchain.WalletTransaction, _a1 error) *MockWallet_GetTransactions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockWallet_GetTransactions_Call) RunAndReturn(run func(uint64, uint64) ([]*onchain.WalletTransaction, error)) *MockWallet_GetTransactions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetWalletInfo provides a mock function with given fields:
 func (_m *MockWallet) GetWalletInfo() onchain.WalletInfo {
 	ret := _m.Called()

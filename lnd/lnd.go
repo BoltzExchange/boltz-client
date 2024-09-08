@@ -200,7 +200,6 @@ func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	var results []*lightning.LightningChannel
 
 	for _, channel := range channels.Channels {
@@ -220,6 +219,10 @@ func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 	}
 
 	return results, nil
+}
+
+func (lnd *LND) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
+	return nil, errors.New("not implemented for lnd")
 }
 
 func (lnd *LND) CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {

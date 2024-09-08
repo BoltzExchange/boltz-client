@@ -9,6 +9,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
+	"net/url"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/autoswap"
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
@@ -30,14 +39,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"math"
-	"net/url"
-	"regexp"
-	"slices"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 type serverState string
@@ -1486,6 +1487,63 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 		Mnemonic: mnemonic,
 		Wallet:   created,
 	}, nil
+}
+
+func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, request *boltzrpc.ListWalletTransactionsRequest) (*boltzrpc.ListWalletTransactionsResponse, error) {
+	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{Id: &request.Id})
+	if err != nil {
+		return nil, err
+	}
+	transactions, err := wallet.GetTransactions(request.GetLimit(), request.GetOffset())
+	if err != nil {
+		return nil, err
+	}
+	var txIds []string
+	for _, tx := range transactions {
+		txIds = append(txIds, tx.Id)
+	}
+	swaps, err := server.database.QuerySwapsByTransactions(database.SwapQuery{TenantId: macaroons.TenantIdFromContext(ctx)}, txIds)
+	if err != nil {
+		return nil, err
+	}
+	response := &boltzrpc.ListWalletTransactionsResponse{}
+	for _, tx := range transactions {
+		result := &boltzrpc.WalletTransaction{
+			Id:            tx.Id,
+			Timestamp:     tx.Timestamp.Unix(),
+			BlockHeight:   tx.BlockHeight,
+			BalanceChange: tx.BalanceChange,
+		}
+		for _, output := range tx.Outputs {
+			result.Outputs = append(result.Outputs, &boltzrpc.TransactionOutput{
+				Address:      output.Address,
+				Amount:       output.Amount,
+				IsOurAddress: output.IsOurAddress,
+			})
+		}
+		i := slices.IndexFunc(swaps, func(swap *database.AnySwap) bool {
+			return swap.RefundTransactionid == tx.Id || swap.ClaimTransactionid == tx.Id || swap.LockupTransactionid == tx.Id
+		})
+		if i >= 0 {
+			if request.GetExcludeSwapRelated() {
+				continue
+			}
+			swap := swaps[i]
+			txSwap := &boltzrpc.TransactionSwap{Id: swap.Id}
+			if swap.RefundTransactionid == tx.Id {
+				txSwap.Type = boltzrpc.TransactionType_REFUND
+			}
+			if swap.ClaimTransactionid == tx.Id {
+				txSwap.Type = boltzrpc.TransactionType_CLAIM
+			}
+			if swap.LockupTransactionid == tx.Id {
+				txSwap.Type = boltzrpc.TransactionType_LOCKUP
+			}
+			result.Swaps = append(result.Swaps, txSwap)
+		}
+		response.Transactions = append(response.Transactions, result)
+	}
+	return response, nil
 }
 
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {

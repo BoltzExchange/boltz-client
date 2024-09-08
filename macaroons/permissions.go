@@ -153,6 +153,10 @@ var (
 			Entity: "wallet",
 			Action: "read",
 		}},
+		"/boltzrpc.Boltz/ListWalletTransactions": {{
+			Entity: "wallet",
+			Action: "read",
+		}},
 		"/boltzrpc.Boltz/GetWallet": {{
 			Entity: "wallet",
 			Action: "read",

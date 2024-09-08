@@ -1533,6 +1533,13 @@ var walletCommands = &cli.Command{
 			Flags:   []cli.Flag{jsonFlag},
 		},
 		{
+			Name:      "transactions",
+			ArgsUsage: "name",
+			Usage:     "Show the recent transaction history of a wallet",
+			Action:    requireNArgs(1, listTransactions),
+			Flags:     []cli.Flag{jsonFlag, &cli.BoolFlag{Name: "exclude-swap-related", Usage: "Exclude swap related transactions"}},
+		},
+		{
 			Name:        "subaccount",
 			Usage:       "Select the subaccount for a wallet",
 			Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
@@ -1976,6 +1983,24 @@ func listWallets(ctx *cli.Context) error {
 	// } else {
 	// 	printSubaccount(info.Subaccount)
 	// }
+	return nil
+}
+
+func listTransactions(ctx *cli.Context) error {
+	client := getClient(ctx)
+	walletId, err := getWalletId(ctx, ctx.Args().First())
+	if err != nil {
+		return err
+	}
+	exclude := ctx.Bool("exclude-swap-related")
+	response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{
+		Id:                 *walletId,
+		ExcludeSwapRelated: &exclude,
+	})
+	if err != nil {
+		return err
+	}
+	printJson(response)
 	return nil
 }
 

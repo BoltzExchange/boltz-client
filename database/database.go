@@ -25,11 +25,11 @@ const createViews =
 `
 DROP VIEW IF EXISTS allSwaps;
 CREATE VIEW allSwaps AS
-SELECT data.id     as id,
+SELECT chainSwaps.id     as id,
        fromCurrency,
        toCurrency,
        'chain'     AS type,
-       data.amount as amount,
+       fromData.amount as amount,
        state,
        error,
        status,
@@ -37,9 +37,13 @@ SELECT data.id     as id,
        onchainFee,
        serviceFee,
        isAuto,
+       toData.transactionId AS claimTransactionId,
+       fromData.lockupTransactionId AS lockupTransactionId,
+       fromData.transactionId AS refundTransactionId,
        tenantId
 FROM chainSwaps
-         JOIN chainSwapsData data ON chainSwaps.id = data.id AND chainSwaps.fromCurrency = data.currency
+         JOIN chainSwapsData fromData ON chainSwaps.id = fromData.id AND chainSwaps.fromCurrency = fromData.currency
+         JOIN chainSwapsData toData ON chainSwaps.id = toData.id AND chainSwaps.toCurrency = toData.currency
 UNION ALL
 SELECT id,
        fromCurrency,
@@ -54,6 +58,9 @@ SELECT id,
                      as onchainFee,
        serviceFee,
        isAuto,
+       claimTransactionId,
+       lockupTransactionId,
+       '' AS refundTransactionId,
        tenantId
 FROM reverseSwaps
 UNION ALL
@@ -69,6 +76,9 @@ SELECT id,
        onchainFee,
        serviceFee,
        isAuto,
+       '' AS claimTransactionId,
+       lockupTransactionId,
+       refundTransactionId,
        tenantId
 FROM swaps;
 `
