@@ -267,9 +267,9 @@ func (_c *MockWallet_Ready_Call) RunAndReturn(run func() bool) *MockWallet_Ready
 	return _c
 }
 
-// SendToAddress provides a mock function with given fields: address, amount, satPerVbyte
-func (_m *MockWallet) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
-	ret := _m.Called(address, amount, satPerVbyte)
+// SendToAddress provides a mock function with given fields: address, amount, satPerVbyte, sendAll
+func (_m *MockWallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
+	ret := _m.Called(address, amount, satPerVbyte, sendAll)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendToAddress")
@@ -277,17 +277,17 @@ func (_m *MockWallet) SendToAddress(address string, amount uint64, satPerVbyte f
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, uint64, float64) (string, error)); ok {
-		return rf(address, amount, satPerVbyte)
+	if rf, ok := ret.Get(0).(func(string, uint64, float64, bool) (string, error)); ok {
+		return rf(address, amount, satPerVbyte, sendAll)
 	}
-	if rf, ok := ret.Get(0).(func(string, uint64, float64) string); ok {
-		r0 = rf(address, amount, satPerVbyte)
+	if rf, ok := ret.Get(0).(func(string, uint64, float64, bool) string); ok {
+		r0 = rf(address, amount, satPerVbyte, sendAll)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, uint64, float64) error); ok {
-		r1 = rf(address, amount, satPerVbyte)
+	if rf, ok := ret.Get(1).(func(string, uint64, float64, bool) error); ok {
+		r1 = rf(address, amount, satPerVbyte, sendAll)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -304,13 +304,14 @@ type MockWallet_SendToAddress_Call struct {
 //   - address string
 //   - amount uint64
 //   - satPerVbyte float64
-func (_e *MockWallet_Expecter) SendToAddress(address interface{}, amount interface{}, satPerVbyte interface{}) *MockWallet_SendToAddress_Call {
-	return &MockWallet_SendToAddress_Call{Call: _e.mock.On("SendToAddress", address, amount, satPerVbyte)}
+//   - sendAll bool
+func (_e *MockWallet_Expecter) SendToAddress(address interface{}, amount interface{}, satPerVbyte interface{}, sendAll interface{}) *MockWallet_SendToAddress_Call {
+	return &MockWallet_SendToAddress_Call{Call: _e.mock.On("SendToAddress", address, amount, satPerVbyte, sendAll)}
 }
 
-func (_c *MockWallet_SendToAddress_Call) Run(run func(address string, amount uint64, satPerVbyte float64)) *MockWallet_SendToAddress_Call {
+func (_c *MockWallet_SendToAddress_Call) Run(run func(address string, amount uint64, satPerVbyte float64, sendAll bool)) *MockWallet_SendToAddress_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(uint64), args[2].(float64))
+		run(args[0].(string), args[1].(uint64), args[2].(float64), args[3].(bool))
 	})
 	return _c
 }
@@ -320,7 +321,7 @@ func (_c *MockWallet_SendToAddress_Call) Return(_a0 string, _a1 error) *MockWall
 	return _c
 }
 
-func (_c *MockWallet_SendToAddress_Call) RunAndReturn(run func(string, uint64, float64) (string, error)) *MockWallet_SendToAddress_Call {
+func (_c *MockWallet_SendToAddress_Call) RunAndReturn(run func(string, uint64, float64, bool) (string, error)) *MockWallet_SendToAddress_Call {
 	_c.Call.Return(run)
 	return _c
 }

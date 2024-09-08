@@ -34,8 +34,10 @@ func TestBalance(t *testing.T) {
 	require.NotZero(t, balance.Total)
 }
 func TestSend(t *testing.T) {
+	addr := test.BtcCli("getnewaddress")
+
 	t.Run("Normal", func(t *testing.T) {
-		txid, err := wallet.SendToAddress(test.BtcCli("getnewaddress"), 10000, 1)
+		txid, err := wallet.SendToAddress(addr, 10000, 1, false)
 		require.NoError(t, err)
 		rawTx := test.BtcCli("getrawtransaction " + txid)
 		tx, err := boltz.NewBtcTxFromHex(rawTx)
@@ -49,6 +51,7 @@ func TestSend(t *testing.T) {
 	t.Run("TxProvider", func(t *testing.T) {
 		t.Cleanup(func() {
 			wallet.SetTxProvider(nil)
+			wallet.SetSpentOutputs(nil)
 		})
 
 		txProvider := onchainmock.NewMockTxProvider(t)
@@ -58,9 +61,16 @@ func TestSend(t *testing.T) {
 		})
 		wallet.SetTxProvider(txProvider)
 
-		txid, err := wallet.SendToAddress(test.BtcCli("getnewaddress"), 10000, onchainWallet.MinFeeRate)
+		txid, err := wallet.SendToAddress(addr, 0, onchainWallet.MinFeeRate, true)
 		require.NoError(t, err)
 		require.Equal(t, "txid", txid)
+
+		_, err = wallet.SendToAddress(addr, 0, onchainWallet.MinFeeRate, true)
+		require.Error(t, err)
+		// all outputs will now be marked as spent internally, so no funds should be available
+		balance, err := wallet.GetBalance()
+		require.NoError(t, err)
+		require.Zero(t, balance.Confirmed)
 	})
 }
 

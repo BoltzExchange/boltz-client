@@ -1906,7 +1906,7 @@ func TestAutoSwap(t *testing.T) {
 
 		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.NotEmpty(t, recommendations.Chain[0].Swap.DismissedReasons)
+		require.Nil(t, recommendations.Chain[0].Swap)
 
 		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{Include: boltzrpc.IncludeSwaps_AUTO})
 		require.Len(t, response.ChainSwaps, 1)

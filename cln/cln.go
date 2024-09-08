@@ -324,23 +324,26 @@ func (c *Cln) GetBalance() (*onchain.Balance, error) {
 	return balance, err
 }
 
-func (c *Cln) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
-	response, err := c.Client.Withdraw(context.Background(), &protos.WithdrawRequest{
+func (c *Cln) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
+	request := &protos.WithdrawRequest{
 		Destination: address,
-		Satoshi: &protos.AmountOrAll{
-			Value: &protos.AmountOrAll_Amount{
-				Amount: &protos.Amount{
-					Msat: amount * 1000,
-				},
-			},
-		},
+		Satoshi:     &protos.AmountOrAll{},
 		Feerate: &protos.Feerate{
 			Style: &protos.Feerate_Perkb{
 				// TODO: check this is correct
 				Perkb: uint32(satPerVbyte * 1000),
 			},
 		},
-	})
+	}
+	if sendAll {
+		request.Satoshi.Value = &protos.AmountOrAll_All{All: true}
+	} else {
+		request.Satoshi.Value = &protos.AmountOrAll_Amount{Amount: &protos.Amount{
+			Msat: amount * 1000,
+		}}
+	}
+
+	response, err := c.Client.Withdraw(context.Background(), request)
 
 	if err != nil {
 		return "", err

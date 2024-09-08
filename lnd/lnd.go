@@ -384,11 +384,12 @@ func (lnd *LND) GetBalance() (*onchain.Balance, error) {
 
 }
 
-func (lnd *LND) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
+func (lnd *LND) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
 	response, err := lnd.client.SendCoins(lnd.ctx, &lnrpc.SendCoinsRequest{
 		Addr:        address,
 		Amount:      int64(amount),
 		SatPerVbyte: uint64(satPerVbyte),
+		SendAll:     sendAll,
 	})
 
 	if err != nil {

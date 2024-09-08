@@ -2078,7 +2078,7 @@ func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address st
 		fee = &feeSatPerVbyte
 	}
 	logger.Infof("Using fee of %f sat/vbyte (allowLowball: %v)", *fee, allowLowball)
-	return wallet.SendToAddress(address, amount, *fee)
+	return wallet.SendToAddress(address, amount, *fee, false)
 }
 
 func checkBalance(wallet onchain.Wallet, requiredAmount uint64) error {
