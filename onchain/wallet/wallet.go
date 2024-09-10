@@ -108,12 +108,13 @@ type Subaccount struct {
 
 type Wallet struct {
 	onchain.WalletInfo
-	subaccount     *uint64
-	session        Session
-	connected      bool
-	syncedAccounts []uint64
-	txProvider     onchain.TxProvider
-	spentOutputs   map[string]bool
+	subaccount       *uint64
+	session          Session
+	connected        bool
+	syncedAccounts   []uint64
+	txProvider       onchain.TxProvider
+	spentOutputs     map[string]bool
+	spentOutputsLock sync.RWMutex
 }
 
 type Config struct {
@@ -653,6 +654,8 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, handler), handler, result); err != nil {
 		return nil, err
 	}
+	wallet.spentOutputsLock.Lock()
+	defer wallet.spentOutputsLock.Unlock()
 	for spent, _ := range wallet.spentOutputs {
 		found := false
 		for key, outputs := range result.Unspent {
@@ -742,9 +745,11 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		if err := mapstructure.Decode(result, &signedTx); err != nil {
 			return "", err
 		}
+		wallet.spentOutputsLock.Lock()
 		for _, input := range signedTx.TransactionInputs {
 			wallet.spentOutputs[input.TxId] = true
 		}
+		wallet.spentOutputsLock.Unlock()
 
 		if signedTx.Error != "" {
 			return "", errors.New(signedTx.Error)
@@ -773,6 +778,8 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 }
 
 func (wallet *Wallet) SetSpentOutputs(outputs []string) {
+	wallet.spentOutputsLock.Lock()
+	defer wallet.spentOutputsLock.Unlock()
 	wallet.spentOutputs = make(map[string]bool)
 	for _, output := range outputs {
 		wallet.spentOutputs[output] = true
