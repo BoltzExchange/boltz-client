@@ -56,6 +56,9 @@ func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []
 
 func (service *Service) validateTenant(ctx context.Context, raw string) (context.Context, error) {
 	if raw != "" {
+		if raw == "all" {
+			return ctx, nil
+		}
 		var tenant *database.Tenant
 		id, err := strconv.ParseUint(raw, 10, 64)
 		if err == nil {
