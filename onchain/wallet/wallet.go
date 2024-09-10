@@ -658,6 +658,7 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 		for key, outputs := range result.Unspent {
 			for i, output := range outputs {
 				if output["txhash"] == spent {
+					logger.Debugf("Ignoring output for tx %s since it is marked as spent", spent)
 					result.Unspent[key] = append(outputs[:i], outputs[i+1:]...)
 					found = true
 					break
