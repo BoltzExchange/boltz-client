@@ -199,12 +199,14 @@ func (nursery *Nursery) recoverSwaps() error {
 	}
 
 	for _, lockupTx := range lockupTxs {
-		tx, err := nursery.onchain.GetTransaction(boltz.CurrencyLiquid, lockupTx, nil)
-		if err != nil {
-			return fmt.Errorf("could not get lockup transaction: %w", err)
-		}
-		for _, input := range tx.(*boltz.LiquidTransaction).Inputs {
-			spentTxs = append(spentTxs, chainhash.Hash(input.Hash).String())
+		if lockupTx != "" {
+			tx, err := nursery.onchain.GetTransaction(boltz.CurrencyLiquid, lockupTx, nil)
+			if err != nil {
+				return fmt.Errorf("could not get lockup transaction: %w", err)
+			}
+			for _, input := range tx.(*boltz.LiquidTransaction).Inputs {
+				spentTxs = append(spentTxs, chainhash.Hash(input.Hash).String())
+			}
 		}
 	}
 
