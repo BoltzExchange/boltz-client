@@ -2,13 +2,15 @@ package test
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/database"
 	"math/rand/v2"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/database"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/onchain"
@@ -38,9 +40,12 @@ func run(cmd string) string {
 func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *wallet.Credentials, error) {
 	var err error
 	InitLogger()
+	dataDir := "./test-data"
+
+	os.RemoveAll(dataDir)
 	if !wallet.Initialized() {
 		err = wallet.Init(wallet.Config{
-			DataDir:  "./test-data",
+			DataDir:  dataDir,
 			Network:  boltz.Regtest,
 			Debug:    debug,
 			Electrum: onchain.RegtestElectrumConfig,
@@ -49,6 +54,7 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 			return nil, nil, err
 		}
 	}
+
 	credentials := &wallet.Credentials{
 		WalletInfo: onchain.WalletInfo{
 			Currency: currency,
