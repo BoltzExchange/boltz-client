@@ -355,6 +355,8 @@ func TestMacaroons(t *testing.T) {
 	admin, adminAuto, stop := setup(t, setupOptions{})
 	defer stop()
 	conn := admin.Connection
+	global := admin
+	global.SetTenant("all")
 
 	tenantName := "test"
 
@@ -436,6 +438,11 @@ func TestMacaroons(t *testing.T) {
 		require.NotEmpty(t, info.NodePubkey)
 		require.NotNil(t, info.Tenant)
 
+		info, err = global.GetInfo()
+		require.NoError(t, err)
+		require.NotEmpty(t, info.NodePubkey)
+		require.Nil(t, info.Tenant)
+
 		info, err = readTenant.GetInfo()
 		require.NoError(t, err)
 		require.Empty(t, info.NodePubkey)
@@ -472,6 +479,7 @@ func TestMacaroons(t *testing.T) {
 
 		hasWallets(t, tenant, 1)
 		hasWallets(t, admin, 2)
+		hasWallets(t, global, 3)
 	})
 
 	t.Run("Swaps", func(t *testing.T) {
@@ -502,17 +510,21 @@ func TestMacaroons(t *testing.T) {
 			_, err = tenant.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000, ExternalPay: &externalPay})
 			require.ErrorContains(t, err, "can not create reverse swap without external pay in standalone mode")
 			hasSwaps(t, tenant, 0)
+			externalPay = true
+			_, err = tenant.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000, ExternalPay: &externalPay, Address: test.BtcCli("getnewaddress")})
+			require.NoError(t, err)
+			swaps, err := tenant.ListSwaps(&boltzrpc.ListSwapsRequest{})
+			require.NoError(t, err)
+			require.Len(t, swaps.ReverseSwaps, 1)
 		})
 
 		t.Run("Read", func(t *testing.T) {
-			hasSwaps(t, readTenant, 0)
 			_, err = readTenant.CreateSwap(&boltzrpc.CreateSwapRequest{})
 			requireCode(t, err, codes.PermissionDenied)
 			_, err = readTenant.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{Amount: 100000})
 			requireCode(t, err, codes.PermissionDenied)
 			_, err = readTenant.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{})
 			requireCode(t, err, codes.PermissionDenied)
-			hasSwaps(t, readTenant, 0)
 		})
 	})
 }
