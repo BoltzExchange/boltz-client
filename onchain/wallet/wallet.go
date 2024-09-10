@@ -108,11 +108,13 @@ type Subaccount struct {
 
 type Wallet struct {
 	onchain.WalletInfo
-	subaccount     *uint64
-	session        Session
-	connected      bool
-	syncedAccounts []uint64
-	txProvider     onchain.TxProvider
+	subaccount       *uint64
+	session          Session
+	connected        bool
+	syncedAccounts   []uint64
+	txProvider       onchain.TxProvider
+	spentOutputs     map[string]bool
+	spentOutputsLock sync.RWMutex
 }
 
 type Config struct {
@@ -444,7 +446,7 @@ func Login(credentials *Credentials) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
-	wallet := &Wallet{WalletInfo: credentials.WalletInfo}
+	wallet := &Wallet{WalletInfo: credentials.WalletInfo, spentOutputs: make(map[string]bool)}
 	login := make(map[string]any)
 
 	if credentials.Mnemonic != "" {
@@ -556,25 +558,16 @@ func (wallet *Wallet) NewAddress() (string, error) {
 }
 
 func (wallet *Wallet) getSubaccountBalance(subaccount uint64, includeUnconfirmed bool) (uint64, error) {
-
-	details := map[string]any{"subaccount": subaccount}
-	if includeUnconfirmed {
-		details["num_confs"] = 0
-	} else {
-		details["num_confs"] = 1
-	}
-	detailsJson, free := toJson(details)
-	defer free()
-
-	handler := new(AuthHandler)
-	var balances map[string]uint64
-	err := withAuthHandler(C.GA_get_balance(wallet.session, detailsJson, handler), handler, &balances)
+	outputs, err := wallet.getUnspentOutputs(subaccount, includeUnconfirmed)
 	if err != nil {
 		return 0, err
 	}
 	var sum uint64
-	for _, balance := range balances {
-		sum += balance
+	for _, outputs := range outputs.Unspent {
+		for _, output := range outputs {
+			amount, _ := output["satoshi"].(float64)
+			sum += uint64(amount)
+		}
 	}
 
 	return sum, nil
@@ -642,24 +635,58 @@ func (wallet *Wallet) SearchOutput(txId, address string) (*onchain.Output, error
 	return nil, nil
 }
 
-func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error) {
+type outputs struct {
+	Unspent map[string][]map[string]any `json:"unspent_outputs"`
+}
+
+func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bool) (*outputs, error) {
+	details := map[string]any{"subaccount": subaccount}
+	if includeUnconfirmed {
+		details["num_confs"] = 0
+	} else {
+		details["num_confs"] = 1
+	}
+	params, free := toJson(details)
+	defer free()
+
+	handler := new(AuthHandler)
+	result := &outputs{}
+	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, handler), handler, result); err != nil {
+		return nil, err
+	}
+	wallet.spentOutputsLock.Lock()
+	defer wallet.spentOutputsLock.Unlock()
+	for spent, _ := range wallet.spentOutputs {
+		found := false
+		for key, outputs := range result.Unspent {
+			for i, output := range outputs {
+				if output["txhash"] == spent {
+					logger.Debugf("Ignoring output for tx %s since it is marked as spent", spent)
+					result.Unspent[key] = append(outputs[:i], outputs[i+1:]...)
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			delete(wallet.spentOutputs, spent)
+		}
+	}
+
+	return result, nil
+}
+
+func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
 	if wallet.Readonly {
 		return "", errors.New("wallet is readonly")
 	}
 	if wallet.subaccount == nil {
 		return "", ErrSubAccountNotSet
 	}
-	params, free := toJson(map[string]any{
-		"subaccount": *wallet.subaccount,
-		"num_confs":  1,
-	})
-	defer free()
 	handler := new(AuthHandler)
 
-	var outputs struct {
-		Unspent map[string][]map[string]any `json:"unspent_outputs"`
-	}
-	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, handler), handler, &outputs); err != nil {
+	outputs, err := wallet.getUnspentOutputs(*wallet.subaccount, false)
+	if err != nil {
 		return "", err
 	}
 
@@ -680,9 +707,10 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		"fee_rate": satPerVbyte * 1000,
 		"addressees": []map[string]any{
 			{
-				"address":  address,
-				"satoshi":  amount,
-				"asset_id": asset,
+				"address":   address,
+				"satoshi":   amount,
+				"asset_id":  asset,
+				"is_greedy": sendAll,
 			},
 		},
 		"utxos": outputs.Unspent,
@@ -694,7 +722,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", err
 	}
 
-	params, free = toJson(result)
+	params, free := toJson(result)
 	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, handler), handler, &result); err != nil {
 		return "", err
 	}
@@ -708,12 +736,21 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 
 	if wallet.txProvider != nil {
 		var signedTx struct {
-			Transaction string `json:"transaction"`
-			Error       string `json:"error"`
+			Transaction       string `mapstructure:"transaction"`
+			Error             string `mapstructure:"error"`
+			TransactionInputs []struct {
+				TxId string `mapstructure:"txhash"`
+			} `mapstructure:"transaction_inputs"`
 		}
 		if err := mapstructure.Decode(result, &signedTx); err != nil {
 			return "", err
 		}
+		wallet.spentOutputsLock.Lock()
+		for _, input := range signedTx.TransactionInputs {
+			wallet.spentOutputs[input.TxId] = true
+		}
+		wallet.spentOutputsLock.Unlock()
+
 		if signedTx.Error != "" {
 			return "", errors.New(signedTx.Error)
 		}
@@ -738,6 +775,15 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", errors.New(sendTx.Error)
 	}
 	return sendTx.TxHash, nil
+}
+
+func (wallet *Wallet) SetSpentOutputs(outputs []string) {
+	wallet.spentOutputsLock.Lock()
+	defer wallet.spentOutputsLock.Unlock()
+	wallet.spentOutputs = make(map[string]bool)
+	for _, output := range outputs {
+		wallet.spentOutputs[output] = true
+	}
 }
 
 func (wallet *Wallet) Ready() bool {

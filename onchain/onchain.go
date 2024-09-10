@@ -69,7 +69,7 @@ type AddressProvider interface {
 
 type Wallet interface {
 	NewAddress() (string, error)
-	SendToAddress(address string, amount uint64, satPerVbyte float64) (string, error)
+	SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error)
 	Ready() bool
 	GetBalance() (*Balance, error)
 	GetWalletInfo() WalletInfo
