@@ -12,6 +12,8 @@ import (
 
 var defaultRootKeyID = []byte("abcdef")
 
+const TenantAll = "all"
+
 type Service struct {
 	Database *database.Database
 
@@ -56,7 +58,7 @@ func (service *Service) ValidateMacaroon(macBytes []byte, requiredPermissions []
 
 func (service *Service) validateTenant(ctx context.Context, raw string) (context.Context, error) {
 	if raw != "" {
-		if raw == "all" {
+		if raw == TenantAll {
 			return ctx, nil
 		}
 		var tenant *database.Tenant

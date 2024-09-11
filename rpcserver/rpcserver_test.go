@@ -8,17 +8,19 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/BoltzExchange/boltz-client/macaroons"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
-	"net"
-	"os"
-	"strings"
-	"testing"
-	"time"
 
 	"github.com/BoltzExchange/boltz-client/database"
 
@@ -356,7 +358,7 @@ func TestMacaroons(t *testing.T) {
 	defer stop()
 	conn := admin.Connection
 	global := admin
-	global.SetTenant("all")
+	global.SetTenant(macaroons.TenantAll)
 
 	tenantName := "test"
 
