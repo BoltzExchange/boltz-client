@@ -1,4 +1,20 @@
 
+<a name="v2.1.6"></a>
+## [v2.1.6] - 2024-09-13
+### Feat
+- allow specifying `all` tenant
+- add lock for `spentOutputs`
+- listswaps pagination ([#280](https://github.com/BoltzExchange/boltz-client/issues/280))
+
+### Fix
+- block creation of `all` tenant ([#287](https://github.com/BoltzExchange/boltz-client/issues/287))
+- dont fetch empty lockup txs
+- track unspent tx outputs in gdk
+
+### Refactor
+- add constant for global tenant
+
+
 <a name="v2.1.5"></a>
 ## [v2.1.5] - 2024-09-04
 ### Feat
@@ -379,6 +395,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.5...v2.1.6
 [v2.1.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.4...v2.1.5
 [v2.1.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.3...v2.1.4
 [v2.1.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.2...v2.1.3
