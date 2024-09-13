@@ -372,6 +372,11 @@ func TestMacaroons(t *testing.T) {
 	tenantAuto := client.NewAutoSwapClient(write)
 	readTenant := client.NewBoltzClient(read)
 
+	t.Run("Reserved", func(t *testing.T) {
+		_, err := admin.CreateTenant(macaroons.TenantAll)
+		requireCode(t, err, codes.InvalidArgument)
+	})
+
 	t.Run("SetTenant", func(t *testing.T) {
 		admin := client.NewBoltzClient(conn)
 
