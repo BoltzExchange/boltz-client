@@ -1983,6 +1983,9 @@ func (server *routedBoltzServer) BakeMacaroon(ctx context.Context, request *bolt
 }
 
 func (server *routedBoltzServer) CreateTenant(ctx context.Context, request *boltzrpc.CreateTenantRequest) (*boltzrpc.Tenant, error) {
+	if request.Name == macaroons.TenantAll {
+		return nil, status.Errorf(codes.InvalidArgument, "name is reserved")
+	}
 	tenant := &database.Tenant{Name: request.Name}
 
 	if err := server.database.CreateTenant(tenant); err != nil {
