@@ -2136,7 +2136,6 @@ func TestWalletTransactions(t *testing.T) {
 
 	request := &boltzrpc.ListWalletTransactionsRequest{Id: testWallet.Id}
 	t.Run("Lockup", func(t *testing.T) {
-		t.Parallel()
 		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 			Pair: &boltzrpc.Pair{
 				From: boltzrpc.Currency_LBTC,
@@ -2154,7 +2153,6 @@ func TestWalletTransactions(t *testing.T) {
 	})
 
 	t.Run("Claim", func(t *testing.T) {
-		t.Parallel()
 		swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
 			Pair: &boltzrpc.Pair{
 				From: boltzrpc.Currency_BTC,
@@ -2172,7 +2170,6 @@ func TestWalletTransactions(t *testing.T) {
 	})
 
 	t.Run("Refund", func(t *testing.T) {
-		t.Parallel()
 		toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
 		externalPay := true
 		receive, err := client.WalletReceive(testWallet.Id)
