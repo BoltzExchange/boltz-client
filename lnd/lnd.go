@@ -20,6 +20,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -51,6 +52,7 @@ type LND struct {
 	Macaroon    string `long:"lnd.macaroon" description:"Path to a macaroon file of the LND node or the macaroon encoded in hex"`
 	Certificate string `long:"lnd.certificate" description:"Path to a certificate file of the LND node"`
 	DataDir     string `long:"lnd.datadir" description:"Path to the data directory of the LND node"`
+	Insecure    bool   `long:"lnd.insecure" description:"Connect to lnd without TLS"`
 
 	ctx           context.Context
 	metadata      metadata.MD
@@ -89,16 +91,18 @@ func (lnd *LND) Disconnect() error {
 }
 
 func (lnd *LND) Connect() error {
-	cert, err := filepath.EvalSymlinks(lnd.Certificate)
-	if err != nil {
-		return errors.New(fmt.Sprint("could not eval symlinks: ", err))
-	}
-	creds, err := credentials.NewClientTLSFromFile(cert, "")
+	creds := insecure.NewCredentials()
+	if !lnd.Insecure {
+		cert, err := filepath.EvalSymlinks(lnd.Certificate)
+		if err != nil {
+			return errors.New(fmt.Sprint("could not eval symlinks: ", err))
+		}
+		creds, err = credentials.NewClientTLSFromFile(cert, "")
 
-	if err != nil {
-		return errors.New(fmt.Sprint("could not read LND certificate: ", err))
+		if err != nil {
+			return errors.New(fmt.Sprint("could not read LND certificate: ", err))
+		}
 	}
-
 	con, err := grpc.Dial(lnd.Host+":"+strconv.Itoa(lnd.Port), grpc.WithTransportCredentials(creds))
 
 	if err != nil {
