@@ -48,7 +48,7 @@ var (
 type LND struct {
 	Host        string `long:"lnd.host" description:"gRPC host of the LND node"`
 	Port        int    `long:"lnd.port" description:"gRPC port of the LND node"`
-	Macaroon    string `long:"lnd.macaroon" description:"Path to a macaroon file of the LND node"`
+	Macaroon    string `long:"lnd.macaroon" description:"Path to a macaroon file of the LND node or the macaroon encoded in hex"`
 	Certificate string `long:"lnd.certificate" description:"Path to a certificate file of the LND node"`
 	DataDir     string `long:"lnd.datadir" description:"Path to the data directory of the LND node"`
 
@@ -112,13 +112,16 @@ func (lnd *LND) Connect() error {
 	lnd.chainNotifier = chainrpc.NewChainNotifierClient(con)
 
 	if lnd.ctx == nil {
-		macaroonFile, err := os.ReadFile(lnd.Macaroon)
-
+		macaroon, err := hex.DecodeString(lnd.Macaroon)
 		if err != nil {
-			return errors.New(fmt.Sprint("could not read LND macaroon: ", err))
+			macaroon, err = os.ReadFile(lnd.Macaroon)
+
+			if err != nil {
+				return errors.New(fmt.Sprint("could not read LND macaroon: ", err))
+			}
 		}
 
-		lnd.metadata = metadata.Pairs("macaroon", hex.EncodeToString(macaroonFile))
+		lnd.metadata = metadata.Pairs("macaroon", hex.EncodeToString(macaroon))
 		lnd.ctx = lnd.withParentCtx(context.Background())
 	}
 
