@@ -1206,7 +1206,7 @@ func createChainSwap(ctx *cli.Context) error {
 	fromWallet := ctx.String("from-wallet")
 	externalPay := fromWallet == ""
 	request := &boltzrpc.CreateChainSwapRequest{
-		Amount:         amount,
+		Amount:         &amount,
 		Pair:           pair,
 		ExternalPay:    &externalPay,
 		AcceptZeroConf: &acceptZeroConf,

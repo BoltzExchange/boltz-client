@@ -171,7 +171,7 @@ func (cfg *ChainConfig) execute(swap *ChainSwap) error {
 		logger.Infof("Executing Swap recommendation: %+v", swap)
 		fromWalletId := cfg.fromWallet.GetWalletInfo().Id
 		request := &boltzrpc.CreateChainSwapRequest{
-			Amount:       swap.Amount,
+			Amount:       &swap.Amount,
 			Pair:         utils.SerializePair(cfg.pair),
 			FromWalletId: &fromWalletId,
 		}

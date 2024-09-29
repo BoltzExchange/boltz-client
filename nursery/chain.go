@@ -151,8 +151,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 
 	logger.Infof("Status of Chain Swap %s changed to: %s", swap.Id, parsedStatus)
 
-	handleError := func(err string) {
-		nursery.handleChainSwapError(swap, errors.New(err))
+	handleError := func(format string, args ...any) {
+		nursery.handleChainSwapError(swap, fmt.Errorf(format, args...))
 	}
 
 	if swap.FromData.LockupTransactionId == "" || swap.ToData.LockupTransactionId == "" {
@@ -181,7 +181,45 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 	}
 
+	var quoteError boltz.Error
 	switch parsedStatus {
+	case boltz.TransactionLockupFailed, boltz.TransactionMempool:
+		if swap.FromData.Amount == 0 || parsedStatus == boltz.TransactionLockupFailed {
+			quote, err := nursery.boltz.GetChainSwapQuote(swap.Id)
+			if err != nil {
+				if errors.As(err, &quoteError) {
+					// TODO: store error
+					logger.Infof("Boltz did not give us a new quote for Chain Swap %s: %v", swap.Id, quoteError)
+				} else {
+					handleError("could not get quote: %w", err)
+					return
+				}
+			}
+			if quote != nil {
+				// TODO: sanity check amount
+				_, _, fromAmount, err := nursery.findVout(chainVoutInfo(swap.FromData))
+				if err != nil {
+					handleError(err.Error())
+					return
+				}
+
+				if err := nursery.boltz.AcceptChainSwapQuote(swap.Id, quote); err != nil {
+					handleError("could not accept quote: %w", err)
+					return
+				}
+
+				if err := nursery.database.SetChainSwapAmount(swap.ToData, quote.Amount); err != nil {
+					handleError("could not set to amount in database: %w", err)
+					return
+				}
+
+				if err := nursery.database.SetChainSwapAmount(swap.FromData, fromAmount); err != nil {
+					handleError("could not set from amount in database: %w", err)
+					return
+				}
+			}
+		}
+
 	case boltz.TransactionServerConfirmed, boltz.TransactionServerMempoool:
 		if (parsedStatus == boltz.TransactionServerMempoool && !swap.AcceptZeroConf) || swap.ToData.Transactionid != "" {
 			break
@@ -192,6 +230,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			logger.Infof("Could not claim chain swap output: %s", err)
 			return
 		}
+	default:
 	}
 
 	logger.Debugf("Updating status of Chain Swap %s to %s", swap.Id, parsedStatus)
@@ -218,23 +257,25 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			return
 		}
 	} else if parsedStatus.IsFailedStatus() {
-		logger.Infof("Chain Swap %s failed", swap.Id)
+		// only set to SERVER_ERROR if we are not eligible for a new quote
+		if parsedStatus != boltz.TransactionLockupFailed || quoteError != nil {
+			logger.Infof("Chain Swap %s failed", swap.Id)
 
-		if swap.State == boltzrpc.SwapState_PENDING {
-			if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
-				handleError(err.Error())
-				return
+			if swap.State == boltzrpc.SwapState_PENDING {
+				if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
+					handleError(err.Error())
+					return
+				}
 			}
-		}
 
-		if swap.FromData.LockupTransactionId != "" {
-			if _, err := nursery.RefundSwaps(swap.Pair.From, nil, []*database.ChainSwap{swap}); err != nil {
-				handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
-				return
+			if swap.FromData.LockupTransactionId != "" {
+				if _, err := nursery.RefundSwaps(swap.Pair.From, nil, []*database.ChainSwap{swap}); err != nil {
+					handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
+					return
+				}
 			}
-		}
 
-		return
+		}
 	}
 	nursery.sendChainSwapUpdate(*swap)
 

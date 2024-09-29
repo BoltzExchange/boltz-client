@@ -532,7 +532,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) |  | Amount of satoshis to swap. It is the amount expected to be sent to the lockup address. |
+| `amount` | [`uint64`](#uint64) | optional | Amount of satoshis to swap. It is the amount expected to be sent to the lockup address. If left empty, any amount within the limits will be accepted. |
 | `pair` | [`Pair`](#pair) |  |  |
 | `to_address` | [`string`](#string) | optional | Address where funds will be swept to if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | Address where the coins should be refunded to if the swap fails. |

@@ -56,6 +56,17 @@ func (s HexString) MarshalText() ([]byte, error) {
 
 type Error error
 
+type ResponseError struct {
+	Error string `json:"error"`
+}
+
+func (response ResponseError) ApiError(err error) error {
+	if response.Error != "" {
+		return Error(errors.New(response.Error))
+	}
+	return err
+}
+
 // Types for Boltz API
 type GetVersionResponse struct {
 	Version string `json:"version"`
@@ -635,6 +646,29 @@ func (boltz *Api) GetReverseSwapBip21(invoice string) (*ReverseBip21, error) {
 	}
 
 	return &response, err
+}
+
+type Quote struct {
+	ResponseError
+	Amount uint64 `json:"amount"`
+}
+
+func (boltz *Api) GetChainSwapQuote(swapId string) (*Quote, error) {
+	var response Quote
+	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/chain/%s/quote", swapId), &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Api) AcceptChainSwapQuote(swapId string, quote *Quote) error {
+	var response ResponseError
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/quote", swapId), quote, &response)
+
+	return response.ApiError(err)
 }
 
 func (boltz *Api) sendGetRequest(endpoint string, response interface{}) error {
