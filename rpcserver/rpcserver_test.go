@@ -1334,6 +1334,24 @@ func TestReverseSwap(t *testing.T) {
 			test.MineBlock()
 		})
 
+		t.Run("InvoiceExpiry", func(t *testing.T) {
+			request := getRequest()
+			expiry := uint64(15 * 60)
+			request.InvoiceExpiry = &expiry
+
+			swap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
+
+			decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
+			require.NoError(t, err)
+
+			require.Equal(t, decoded.Expiry(), time.Duration(expiry)*time.Second)
+
+			expiry = 24 * 60 * 60
+			_, err = client.CreateReverseSwap(request)
+			require.Error(t, err)
+		})
+
 	})
 
 	t.Run("ManualClaim", func(t *testing.T) {

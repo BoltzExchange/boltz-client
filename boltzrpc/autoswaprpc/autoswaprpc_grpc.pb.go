@@ -8,10 +8,10 @@ package autoswaprpc
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -48,7 +48,7 @@ type AutoSwapClient interface {
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*Config, error)
 	//
 	//Reloads the configuration from disk.
-	ReloadConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Config, error)
+	ReloadConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error)
 }
 
 type autoSwapClient struct {
@@ -104,7 +104,7 @@ func (c *autoSwapClient) GetConfig(ctx context.Context, in *GetConfigRequest, op
 	return out, nil
 }
 
-func (c *autoSwapClient) ReloadConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Config, error) {
+func (c *autoSwapClient) ReloadConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Config, error) {
 	out := new(Config)
 	err := c.cc.Invoke(ctx, AutoSwap_ReloadConfig_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -133,7 +133,7 @@ type AutoSwapServer interface {
 	GetConfig(context.Context, *GetConfigRequest) (*Config, error)
 	//
 	//Reloads the configuration from disk.
-	ReloadConfig(context.Context, *emptypb.Empty) (*Config, error)
+	ReloadConfig(context.Context, *empty.Empty) (*Config, error)
 	mustEmbedUnimplementedAutoSwapServer()
 }
 
@@ -156,7 +156,7 @@ func (UnimplementedAutoSwapServer) UpdateChainConfig(context.Context, *UpdateCha
 func (UnimplementedAutoSwapServer) GetConfig(context.Context, *GetConfigRequest) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
-func (UnimplementedAutoSwapServer) ReloadConfig(context.Context, *emptypb.Empty) (*Config, error) {
+func (UnimplementedAutoSwapServer) ReloadConfig(context.Context, *empty.Empty) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReloadConfig not implemented")
 }
 func (UnimplementedAutoSwapServer) mustEmbedUnimplementedAutoSwapServer() {}
@@ -263,7 +263,7 @@ func _AutoSwap_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _AutoSwap_ReloadConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func _AutoSwap_ReloadConfig_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: AutoSwap_ReloadConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoSwapServer).ReloadConfig(ctx, req.(*emptypb.Empty))
+		return srv.(AutoSwapServer).ReloadConfig(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

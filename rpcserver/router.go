@@ -981,6 +981,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		ReferralId:      server.referralId,
 		Description:     request.GetDescription(),
 		DescriptionHash: request.GetDescriptionHash(),
+		InvoiceExpiry:   request.GetInvoiceExpiry(),
 	}
 
 	if claimAddress != "" {
