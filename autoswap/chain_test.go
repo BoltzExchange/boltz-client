@@ -127,7 +127,7 @@ func TestChainSwapper(t *testing.T) {
 
 		rpcMock.EXPECT().CreateAutoChainSwap(mock.Anything, mock.Anything).RunAndReturn(func(tenant *database.Tenant, request *boltzrpc.CreateChainSwapRequest) error {
 			require.Equal(t, database.DefaultTenantId, tenant.Id)
-			require.Equal(t, amount, request.Amount)
+			require.Equal(t, amount, request.GetAmount())
 			require.NotNil(t, request.FromWalletId)
 			require.NotZero(t, request.ToAddress)
 			return nil
