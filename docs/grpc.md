@@ -571,6 +571,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `external_pay` | [`bool`](#bool) | optional | If set, the daemon will not pay the invoice of the swap and return the invoice to be paid. This implicitly sets `return_immediately` to true. |
 | `description` | [`string`](#string) | optional | Description of the invoice which will be created for the swap |
 | `description_hash` | [`bytes`](#bytes) | optional | Description hash of the invoice which will be created for the swap. Takes precedence over `description` |
+| `invoice_expiry` | [`uint64`](#uint64) | optional | Expiry of the reverse swap invoice in seconds |
 
 
 

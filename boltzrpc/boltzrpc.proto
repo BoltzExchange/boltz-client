@@ -574,6 +574,8 @@ message CreateReverseSwapRequest {
     optional string description = 9;
     // Description hash of the invoice which will be created for the swap. Takes precedence over `description`
     optional bytes description_hash = 10;
+    // Expiry of the reverse swap invoice in seconds
+    optional uint64 invoice_expiry = 11;
 }
 message CreateReverseSwapResponse {
     string id = 1;
