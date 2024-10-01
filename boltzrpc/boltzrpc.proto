@@ -123,6 +123,11 @@ service Boltz {
     rpc GetWallet (GetWalletRequest) returns (Wallet);
 
     /*
+    Returns recent transactions from a wallet.
+     */
+    rpc ListWalletTransactions (ListWalletTransactionsRequest) returns (ListWalletTransactionsResponse);
+
+    /*
     Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
      */
     rpc GetWalletCredentials (GetWalletCredentialsRequest) returns (WalletCredentials);
@@ -733,6 +738,49 @@ message GetWalletsRequest {
 message GetWalletRequest {
     optional string name = 1;
     optional uint64 id = 2;
+}
+
+message ListWalletTransactionsRequest {
+    uint64 id = 1;
+    optional bool exclude_swap_related = 2;
+    optional uint64 limit = 3;
+    optional uint64 offset = 4;
+}
+
+enum TransactionType {
+    UNKNOWN = 0;
+    LOCKUP = 1;
+    REFUND = 2;
+    CLAIM = 3;
+}
+
+message WalletTransaction {
+    string id = 1;
+    // balance change of the wallet in satoshis.
+    // its the sum of all output values minus the sum of all input values which are controlled by the wallet.
+    // positive values indicate incoming transactions, negative values outgoing transactions
+    int64 balance_change = 2;
+    int64 timestamp = 3;
+    repeated TransactionOutput outputs = 4;
+    uint32 block_height = 6;
+    // swaps which are related to this transaction
+    repeated TransactionSwap swaps = 7;
+}
+
+message TransactionSwap {
+    string id = 1;
+    TransactionType type = 2;
+}
+
+message TransactionOutput {
+    string address = 1;
+    uint64 amount = 2;
+    // wether the address is controlled by the wallet
+    bool is_our_address = 3;
+}
+
+message ListWalletTransactionsResponse {
+    repeated WalletTransaction transactions = 1;
 }
 
 message GetWalletCredentialsRequest {

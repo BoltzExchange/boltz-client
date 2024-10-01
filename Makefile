@@ -8,7 +8,7 @@ PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
 
 GO_BIN := ${GOPATH}/bin
 
-GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v -timeout 3m
+GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v -timeout 5m
 GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
 GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
@@ -63,7 +63,6 @@ ifeq ("$(wildcard regtest/start.sh)","")
 	@$(call print, "Downloading regtest")
 	make submodules
 	cp regtest.override.yml regtest/docker-compose.override.yml
-	cd regtest && git apply ../regtest.patch
 endif
 
 start-regtest: download-regtest

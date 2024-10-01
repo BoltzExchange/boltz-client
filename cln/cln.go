@@ -162,6 +162,10 @@ func (c *Cln) ListChannels() ([]*lightning.LightningChannel, error) {
 	return results, nil
 }
 
+func (c *Cln) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
+	return nil, errors.New("not implemented for cln")
+}
+
 func (c *Cln) SanityCheck() (string, error) {
 	info, err := c.Client.Getinfo(context.Background(), &protos.GetinfoRequest{})
 	if err != nil {

@@ -181,6 +181,14 @@ Returns the current balance and subaccount of a wallet.
 | ------- | -------- |
 | [`GetWalletRequest`](#getwalletrequest) | [`Wallet`](#wallet) |
 
+#### ListWalletTransactions
+
+Returns recent transactions from a wallet.
+
+| Request | Response |
+| ------- | -------- |
+| [`ListWalletTransactionsRequest`](#listwallettransactionsrequest) | [`ListWalletTransactionsResponse`](#listwallettransactionsresponse) |
+
 #### GetWalletCredentials
 
 Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
@@ -1048,6 +1056,35 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### ListWalletTransactionsRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`uint64`](#uint64) |  |  |
+| `exclude_swap_related` | [`bool`](#bool) | optional |  |
+| `limit` | [`uint64`](#uint64) | optional |  |
+| `offset` | [`uint64`](#uint64) | optional |  |
+
+
+
+
+
+#### ListWalletTransactionsResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transactions` | [`WalletTransaction`](#wallettransaction) | repeated |  |
+
+
+
+
+
 #### MacaroonPermissions
 
 
@@ -1288,6 +1325,35 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### TransactionOutput
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [`string`](#string) |  |  |
+| `amount` | [`uint64`](#uint64) |  |  |
+| `is_our_address` | [`bool`](#bool) |  | wether the address is controlled by the wallet |
+
+
+
+
+
+#### TransactionSwap
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `type` | [`TransactionType`](#transactiontype) |  |  |
+
+
+
+
+
 #### UnlockRequest
 
 
@@ -1431,6 +1497,24 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### WalletTransaction
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `balance_change` | [`int64`](#int64) |  | balance change of the wallet in satoshis. its the sum of all output values minus the sum of all input values which are controlled by the wallet. positive values indicate incoming transactions, negative values outgoing transactions |
+| `timestamp` | [`int64`](#int64) |  |  |
+| `outputs` | [`TransactionOutput`](#transactionoutput) | repeated |  |
+| `block_height` | [`uint32`](#uint32) |  |  |
+| `swaps` | [`TransactionSwap`](#transactionswap) | repeated | swaps which are related to this transaction |
+
+
+
+
+
 #### Wallets
 
 
@@ -1502,6 +1586,18 @@ Channel creations are an optional extension to a submarine swap in the data type
 | SUBMARINE | 0 |  |
 | REVERSE | 1 |  |
 | CHAIN | 2 |  |
+
+
+
+#### TransactionType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 |  |
+| LOCKUP | 1 |  |
+| REFUND | 2 |  |
+| CLAIM | 3 |  |
 
 
 

@@ -28,6 +28,20 @@ type Balance struct {
 	Unconfirmed uint64
 }
 
+type TransactionOutput struct {
+	Address      string
+	Amount       uint64
+	IsOurAddress bool
+}
+
+type WalletTransaction struct {
+	Id            string
+	Timestamp     time.Time
+	Outputs       []TransactionOutput
+	BlockHeight   uint32
+	BalanceChange int64
+}
+
 type WalletInfo struct {
 	Id       Id
 	Name     string
@@ -74,6 +88,7 @@ type Wallet interface {
 	GetBalance() (*Balance, error)
 	GetWalletInfo() WalletInfo
 	Disconnect() error
+	GetTransactions(limit, offset uint64) ([]*WalletTransaction, error)
 }
 
 type ElectrumOptions struct {

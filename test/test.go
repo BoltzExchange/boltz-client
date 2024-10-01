@@ -145,6 +145,10 @@ func MineUntil(t *testing.T, cli Cli, height int64) {
 	cli(fmt.Sprintf("-generate %d", blocks))
 }
 
+func GetNewAddress(cli Cli) string {
+	return cli("getnewaddress")
+}
+
 func SendToAddress(cli Cli, address string, amount uint64) string {
 	return cli("sendtoaddress " + address + " " + fmt.Sprint(float64(amount)/1e8))
 }

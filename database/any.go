@@ -3,24 +3,29 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"time"
 )
 
 type AnySwap struct {
-	Id         string
-	Type       boltz.SwapType
-	Pair       boltz.Pair
-	State      boltzrpc.SwapState
-	Error      string
-	Status     boltz.SwapUpdateEvent
-	Amount     uint64
-	IsAuto     bool
-	ServiceFee *uint64
-	OnchainFee *uint64
-	CreatedAt  time.Time
-	TenantId   Id
+	Id                  string
+	Type                boltz.SwapType
+	Pair                boltz.Pair
+	State               boltzrpc.SwapState
+	Error               string
+	Status              boltz.SwapUpdateEvent
+	Amount              uint64
+	IsAuto              bool
+	ServiceFee          *uint64
+	OnchainFee          *uint64
+	CreatedAt           time.Time
+	LockupTransactionid string
+	ClaimTransactionid  string
+	RefundTransactionid string
+	TenantId            Id
 }
 
 func parseAnySwap(rows *sql.Rows) (*AnySwap, error) {
@@ -32,19 +37,22 @@ func parseAnySwap(rows *sql.Rows) (*AnySwap, error) {
 	err := scanRow(
 		rows,
 		map[string]interface{}{
-			"id":           &anySwap.Id,
-			"type":         &anySwap.Type,
-			"amount":       &anySwap.Amount,
-			"fromCurrency": &anySwap.Pair.From,
-			"toCurrency":   &anySwap.Pair.To,
-			"state":        &anySwap.State,
-			"error":        &anySwap.Error,
-			"status":       &status,
-			"isAuto":       &anySwap.IsAuto,
-			"serviceFee":   &serviceFee,
-			"onchainFee":   &onchainFee,
-			"createdAt":    &createdAt,
-			"tenantId":     &anySwap.TenantId,
+			"id":                  &anySwap.Id,
+			"type":                &anySwap.Type,
+			"amount":              &anySwap.Amount,
+			"fromCurrency":        &anySwap.Pair.From,
+			"toCurrency":          &anySwap.Pair.To,
+			"state":               &anySwap.State,
+			"error":               &anySwap.Error,
+			"status":              &status,
+			"isAuto":              &anySwap.IsAuto,
+			"serviceFee":          &serviceFee,
+			"onchainFee":          &onchainFee,
+			"createdAt":           &createdAt,
+			"claimTransactionId":  &anySwap.ClaimTransactionid,
+			"lockupTransactionId": &anySwap.LockupTransactionid,
+			"refundTransactionId": &anySwap.RefundTransactionid,
+			"tenantId":            &anySwap.TenantId,
 		},
 	)
 
@@ -102,5 +110,22 @@ func (database *Database) queryAllSwaps(query string, values ...any) (swaps []*A
 
 func (database *Database) QueryAllSwaps(args SwapQuery) ([]*AnySwap, error) {
 	where, values := args.ToWhereClause()
+	return database.queryAllSwaps("SELECT * FROM allSwaps"+where, values...)
+}
+
+func (database *Database) QuerySwapsByTransactions(args SwapQuery, transactionIds []string) ([]*AnySwap, error) {
+	var placeholders []string
+	for i, _ := range transactionIds {
+		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
+	}
+	placeholder := strings.Join(placeholders, ", ")
+	values := make([]any, len(transactionIds))
+	for i, txId := range transactionIds {
+		values[i] = txId
+	}
+	where, values := args.ToWhereClauseWithExisting(
+		[]string{fmt.Sprintf("lockupTransactionid IN (%s) OR claimTransactionid IN (%s) OR refundTransactionid IN (%s)", placeholder, placeholder, placeholder)},
+		values,
+	)
 	return database.queryAllSwaps("SELECT * FROM allSwaps"+where, values...)
 }

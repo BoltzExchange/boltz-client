@@ -17,7 +17,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 12
+const latestSchemaVersion = 13
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -540,6 +540,11 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 					return err
 				}
 			}
+		}
+
+	case 12:
+		if _, err := tx.Exec(createViews); err != nil {
+			return err
 		}
 
 	case latestSchemaVersion:

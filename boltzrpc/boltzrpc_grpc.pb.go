@@ -20,39 +20,40 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Boltz_GetInfo_FullMethodName              = "/boltzrpc.Boltz/GetInfo"
-	Boltz_GetServiceInfo_FullMethodName       = "/boltzrpc.Boltz/GetServiceInfo"
-	Boltz_GetPairInfo_FullMethodName          = "/boltzrpc.Boltz/GetPairInfo"
-	Boltz_GetPairs_FullMethodName             = "/boltzrpc.Boltz/GetPairs"
-	Boltz_ListSwaps_FullMethodName            = "/boltzrpc.Boltz/ListSwaps"
-	Boltz_GetStats_FullMethodName             = "/boltzrpc.Boltz/GetStats"
-	Boltz_RefundSwap_FullMethodName           = "/boltzrpc.Boltz/RefundSwap"
-	Boltz_ClaimSwaps_FullMethodName           = "/boltzrpc.Boltz/ClaimSwaps"
-	Boltz_GetSwapInfo_FullMethodName          = "/boltzrpc.Boltz/GetSwapInfo"
-	Boltz_GetSwapInfoStream_FullMethodName    = "/boltzrpc.Boltz/GetSwapInfoStream"
-	Boltz_Deposit_FullMethodName              = "/boltzrpc.Boltz/Deposit"
-	Boltz_CreateSwap_FullMethodName           = "/boltzrpc.Boltz/CreateSwap"
-	Boltz_CreateChannel_FullMethodName        = "/boltzrpc.Boltz/CreateChannel"
-	Boltz_CreateReverseSwap_FullMethodName    = "/boltzrpc.Boltz/CreateReverseSwap"
-	Boltz_CreateChainSwap_FullMethodName      = "/boltzrpc.Boltz/CreateChainSwap"
-	Boltz_CreateWallet_FullMethodName         = "/boltzrpc.Boltz/CreateWallet"
-	Boltz_ImportWallet_FullMethodName         = "/boltzrpc.Boltz/ImportWallet"
-	Boltz_SetSubaccount_FullMethodName        = "/boltzrpc.Boltz/SetSubaccount"
-	Boltz_GetSubaccounts_FullMethodName       = "/boltzrpc.Boltz/GetSubaccounts"
-	Boltz_GetWallets_FullMethodName           = "/boltzrpc.Boltz/GetWallets"
-	Boltz_GetWallet_FullMethodName            = "/boltzrpc.Boltz/GetWallet"
-	Boltz_GetWalletCredentials_FullMethodName = "/boltzrpc.Boltz/GetWalletCredentials"
-	Boltz_RemoveWallet_FullMethodName         = "/boltzrpc.Boltz/RemoveWallet"
-	Boltz_WalletSend_FullMethodName           = "/boltzrpc.Boltz/WalletSend"
-	Boltz_WalletReceive_FullMethodName        = "/boltzrpc.Boltz/WalletReceive"
-	Boltz_Stop_FullMethodName                 = "/boltzrpc.Boltz/Stop"
-	Boltz_Unlock_FullMethodName               = "/boltzrpc.Boltz/Unlock"
-	Boltz_VerifyWalletPassword_FullMethodName = "/boltzrpc.Boltz/VerifyWalletPassword"
-	Boltz_ChangeWalletPassword_FullMethodName = "/boltzrpc.Boltz/ChangeWalletPassword"
-	Boltz_CreateTenant_FullMethodName         = "/boltzrpc.Boltz/CreateTenant"
-	Boltz_ListTenants_FullMethodName          = "/boltzrpc.Boltz/ListTenants"
-	Boltz_GetTenant_FullMethodName            = "/boltzrpc.Boltz/GetTenant"
-	Boltz_BakeMacaroon_FullMethodName         = "/boltzrpc.Boltz/BakeMacaroon"
+	Boltz_GetInfo_FullMethodName                = "/boltzrpc.Boltz/GetInfo"
+	Boltz_GetServiceInfo_FullMethodName         = "/boltzrpc.Boltz/GetServiceInfo"
+	Boltz_GetPairInfo_FullMethodName            = "/boltzrpc.Boltz/GetPairInfo"
+	Boltz_GetPairs_FullMethodName               = "/boltzrpc.Boltz/GetPairs"
+	Boltz_ListSwaps_FullMethodName              = "/boltzrpc.Boltz/ListSwaps"
+	Boltz_GetStats_FullMethodName               = "/boltzrpc.Boltz/GetStats"
+	Boltz_RefundSwap_FullMethodName             = "/boltzrpc.Boltz/RefundSwap"
+	Boltz_ClaimSwaps_FullMethodName             = "/boltzrpc.Boltz/ClaimSwaps"
+	Boltz_GetSwapInfo_FullMethodName            = "/boltzrpc.Boltz/GetSwapInfo"
+	Boltz_GetSwapInfoStream_FullMethodName      = "/boltzrpc.Boltz/GetSwapInfoStream"
+	Boltz_Deposit_FullMethodName                = "/boltzrpc.Boltz/Deposit"
+	Boltz_CreateSwap_FullMethodName             = "/boltzrpc.Boltz/CreateSwap"
+	Boltz_CreateChannel_FullMethodName          = "/boltzrpc.Boltz/CreateChannel"
+	Boltz_CreateReverseSwap_FullMethodName      = "/boltzrpc.Boltz/CreateReverseSwap"
+	Boltz_CreateChainSwap_FullMethodName        = "/boltzrpc.Boltz/CreateChainSwap"
+	Boltz_CreateWallet_FullMethodName           = "/boltzrpc.Boltz/CreateWallet"
+	Boltz_ImportWallet_FullMethodName           = "/boltzrpc.Boltz/ImportWallet"
+	Boltz_SetSubaccount_FullMethodName          = "/boltzrpc.Boltz/SetSubaccount"
+	Boltz_GetSubaccounts_FullMethodName         = "/boltzrpc.Boltz/GetSubaccounts"
+	Boltz_GetWallets_FullMethodName             = "/boltzrpc.Boltz/GetWallets"
+	Boltz_GetWallet_FullMethodName              = "/boltzrpc.Boltz/GetWallet"
+	Boltz_ListWalletTransactions_FullMethodName = "/boltzrpc.Boltz/ListWalletTransactions"
+	Boltz_GetWalletCredentials_FullMethodName   = "/boltzrpc.Boltz/GetWalletCredentials"
+	Boltz_RemoveWallet_FullMethodName           = "/boltzrpc.Boltz/RemoveWallet"
+	Boltz_WalletSend_FullMethodName             = "/boltzrpc.Boltz/WalletSend"
+	Boltz_WalletReceive_FullMethodName          = "/boltzrpc.Boltz/WalletReceive"
+	Boltz_Stop_FullMethodName                   = "/boltzrpc.Boltz/Stop"
+	Boltz_Unlock_FullMethodName                 = "/boltzrpc.Boltz/Unlock"
+	Boltz_VerifyWalletPassword_FullMethodName   = "/boltzrpc.Boltz/VerifyWalletPassword"
+	Boltz_ChangeWalletPassword_FullMethodName   = "/boltzrpc.Boltz/ChangeWalletPassword"
+	Boltz_CreateTenant_FullMethodName           = "/boltzrpc.Boltz/CreateTenant"
+	Boltz_ListTenants_FullMethodName            = "/boltzrpc.Boltz/ListTenants"
+	Boltz_GetTenant_FullMethodName              = "/boltzrpc.Boltz/GetTenant"
+	Boltz_BakeMacaroon_FullMethodName           = "/boltzrpc.Boltz/BakeMacaroon"
 )
 
 // BoltzClient is the client API for Boltz service.
@@ -117,6 +118,8 @@ type BoltzClient interface {
 	GetWallets(ctx context.Context, in *GetWalletsRequest, opts ...grpc.CallOption) (*Wallets, error)
 	// Returns the current balance and subaccount of a wallet.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
+	// Returns recent transactions from a wallet.
+	ListWalletTransactions(ctx context.Context, in *ListWalletTransactionsRequest, opts ...grpc.CallOption) (*ListWalletTransactionsResponse, error)
 	// Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
 	GetWalletCredentials(ctx context.Context, in *GetWalletCredentialsRequest, opts ...grpc.CallOption) (*WalletCredentials, error)
 	// Removes a wallet.
@@ -369,6 +372,15 @@ func (c *boltzClient) GetWallet(ctx context.Context, in *GetWalletRequest, opts 
 	return out, nil
 }
 
+func (c *boltzClient) ListWalletTransactions(ctx context.Context, in *ListWalletTransactionsRequest, opts ...grpc.CallOption) (*ListWalletTransactionsResponse, error) {
+	out := new(ListWalletTransactionsResponse)
+	err := c.cc.Invoke(ctx, Boltz_ListWalletTransactions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *boltzClient) GetWalletCredentials(ctx context.Context, in *GetWalletCredentialsRequest, opts ...grpc.CallOption) (*WalletCredentials, error) {
 	out := new(WalletCredentials)
 	err := c.cc.Invoke(ctx, Boltz_GetWalletCredentials_FullMethodName, in, out, opts...)
@@ -539,6 +551,8 @@ type BoltzServer interface {
 	GetWallets(context.Context, *GetWalletsRequest) (*Wallets, error)
 	// Returns the current balance and subaccount of a wallet.
 	GetWallet(context.Context, *GetWalletRequest) (*Wallet, error)
+	// Returns recent transactions from a wallet.
+	ListWalletTransactions(context.Context, *ListWalletTransactionsRequest) (*ListWalletTransactionsResponse, error)
 	// Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
 	GetWalletCredentials(context.Context, *GetWalletCredentialsRequest) (*WalletCredentials, error)
 	// Removes a wallet.
@@ -635,6 +649,9 @@ func (UnimplementedBoltzServer) GetWallets(context.Context, *GetWalletsRequest) 
 }
 func (UnimplementedBoltzServer) GetWallet(context.Context, *GetWalletRequest) (*Wallet, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWallet not implemented")
+}
+func (UnimplementedBoltzServer) ListWalletTransactions(context.Context, *ListWalletTransactionsRequest) (*ListWalletTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWalletTransactions not implemented")
 }
 func (UnimplementedBoltzServer) GetWalletCredentials(context.Context, *GetWalletCredentialsRequest) (*WalletCredentials, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWalletCredentials not implemented")
@@ -1066,6 +1083,24 @@ func _Boltz_GetWallet_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_ListWalletTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWalletTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).ListWalletTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_ListWalletTransactions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).ListWalletTransactions(ctx, req.(*ListWalletTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Boltz_GetWalletCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetWalletCredentialsRequest)
 	if err := dec(in); err != nil {
@@ -1368,6 +1403,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWallet",
 			Handler:    _Boltz_GetWallet_Handler,
+		},
+		{
+			MethodName: "ListWalletTransactions",
+			Handler:    _Boltz_ListWalletTransactions_Handler,
 		},
 		{
 			MethodName: "GetWalletCredentials",
