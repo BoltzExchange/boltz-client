@@ -133,6 +133,16 @@ func TestImportWallet(t *testing.T) {
 				CoreDescriptor: "ct(slip77(099d2fa0d9e56478d00ba3044a55aa9878a2f0e1c0fd1c57962573994771f87a),elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*))#60v4fm2h",
 			},
 		},
+		{
+			name: "CoreDescriptor/Liquid/Multiple",
+			credentials: onchainWallet.Credentials{
+				WalletInfo: onchain.WalletInfo{
+					Currency: boltz.CurrencyLiquid,
+				},
+				CoreDescriptor: "ct(slip77(28edd9ac380841b8ba1bc51e188f45f3db497eca97a81539e7ede3a1eff22049),elwpkh([48aca338/84'/1'/0']tpubDC2Q4xK4XH72GZPMueFxNKSYGJvUWgFFFmMF91ThA23DhC4GUvbQ5Krpxn1SBiTNowRujrfppf7YCqLj8i6X6ggeUPVTKQHCHTMTrJW7SMp/0/*))#vcah5hc6\n" +
+					"ct(slip77(28edd9ac380841b8ba1bc51e188f45f3db497eca97a81539e7ede3a1eff22049),elwpkh([48aca338/84'/1'/0']tpubDC2Q4xK4XH72GZPMueFxNKSYGJvUWgFFFmMF91ThA23DhC4GUvbQ5Krpxn1SBiTNowRujrfppf7YCqLj8i6X6ggeUPVTKQHCHTMTrJW7SMp/1/*))#eenpvgd9",
+			},
+		},
 	}
 
 	for _, tc := range tests {

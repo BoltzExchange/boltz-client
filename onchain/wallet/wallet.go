@@ -460,7 +460,7 @@ func Login(credentials *Credentials) (*Wallet, error) {
 		login["slip132_extended_pubkeys"] = []string{credentials.Xpub}
 		wallet.Readonly = true
 	} else if credentials.CoreDescriptor != "" {
-		login["core_descriptors"] = []string{credentials.CoreDescriptor}
+		login["core_descriptors"] = strings.Split(credentials.CoreDescriptor, "\n")
 		wallet.Readonly = true
 	} else {
 		return nil, errors.New("no login found in credentials")
