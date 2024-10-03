@@ -37,6 +37,10 @@ jobs:
           COMPOSE_PROFILES: ci
         run: make download-regtest && chmod -R 777 regtest && make start-regtest
 
+      - name: Backend logs
+        if: failure()
+        run: docker logs boltz-backend
+
       - name: Integration Tests
         run: make integration
 
