@@ -1187,8 +1187,9 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	if request.ToWalletId != nil {
 		toWallet, err = server.getWallet(ctx, onchain.WalletChecker{
-			Id:       request.ToWalletId,
-			Currency: pair.To,
+			Id:            request.ToWalletId,
+			Currency:      pair.To,
+			AllowReadonly: true,
 		})
 		if err != nil {
 			return nil, err
@@ -1682,7 +1683,7 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 }
 
 func (server *routedBoltzServer) WalletReceive(ctx context.Context, request *boltzrpc.WalletReceiveRequest) (*boltzrpc.WalletReceiveResponse, error) {
-	receiveWallet, err := server.getWallet(ctx, onchain.WalletChecker{Id: &request.Id})
+	receiveWallet, err := server.getWallet(ctx, onchain.WalletChecker{Id: &request.Id, AllowReadonly: true})
 	if err != nil {
 		return nil, err
 	}
