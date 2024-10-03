@@ -836,6 +836,8 @@ message Subaccount {
     Balance balance = 1;
     uint64 pointer = 2;
     string type = 3;
+    // bitcoin core compatible output descriptors.
+    repeated string core_descriptors = 4;
 }
 
 message RemoveWalletResponse {}
