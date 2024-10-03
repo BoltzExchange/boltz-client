@@ -294,7 +294,7 @@ func (onchain *Onchain) RegisterBlockListener(ctx context.Context, currency bolt
 
 	logger.Infof("Connecting to block %s epoch stream", currency)
 	blocks := make(chan *BlockEpoch)
-	blockNotifier := utils.ForwardChannel(blocks, 0, false)
+	blockNotifier := utils.ForwardChannel(make(chan *BlockEpoch), 0, false)
 
 	go func() {
 		defer func() {
@@ -316,8 +316,9 @@ func (onchain *Onchain) RegisterBlockListener(ctx context.Context, currency bolt
 	}()
 
 	go func() {
-		for block := range blockNotifier.Get() {
+		for block := range blocks {
 			chain.blockHeight = block.Height
+			blockNotifier.Send(block)
 		}
 	}()
 
