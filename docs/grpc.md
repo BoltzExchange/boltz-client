@@ -1239,7 +1239,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `balance` | [`Balance`](#balance) |  |  |
 | `pointer` | [`uint64`](#uint64) |  |  |
 | `type` | [`string`](#string) |  |  |
-| `core_descriptors` | [`string`](#string) | repeated | bitcoin core compatible output descriptors. |
+| `descriptors` | [`string`](#string) | repeated |  |
 
 
 
