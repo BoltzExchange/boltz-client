@@ -343,7 +343,7 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 			walletId := *output.walletId
 			address, ok := addresses[walletId]
 			if !ok {
-				wallet, err := nursery.onchain.GetWalletById(walletId)
+				wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Id: &walletId, AllowReadonly: true})
 				if err != nil {
 					handleErr(fmt.Errorf("wallet with id %d could not be found", walletId))
 					continue

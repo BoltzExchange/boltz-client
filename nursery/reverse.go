@@ -307,7 +307,7 @@ func (nursery *Nursery) checkExternalReverseSwaps(currency boltz.Currency, txId 
 
 func (nursery *Nursery) checkSwapWallet(swap *database.ReverseSwap, txId string) (bool, error) {
 	if swap.WalletId != nil {
-		swapWallet, err := nursery.onchain.GetWalletById(*swap.WalletId)
+		swapWallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Id: swap.WalletId, AllowReadonly: true})
 		if err != nil {
 			return false, err
 		}
