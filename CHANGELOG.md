@@ -9,6 +9,7 @@
 - allow insecure lnd connection ([#288](https://github.com/BoltzExchange/boltz-client/issues/288))
 
 ### Fix
+- add missing `AllowReadonly` flags for wallets ([#301](https://github.com/BoltzExchange/boltz-client/issues/301))
 - change test order ([#299](https://github.com/BoltzExchange/boltz-client/issues/299))
 - allow readonly wallets for receiving and chain swap destinations ([#294](https://github.com/BoltzExchange/boltz-client/issues/294))
 - update internal blockHeight state before sending updates to subscribers ([#297](https://github.com/BoltzExchange/boltz-client/issues/297))
