@@ -37,15 +37,19 @@ func run(cmd string) string {
 	return bash(fmt.Sprintf("docker exec -i boltz-scripts bash -c \"source /etc/profile.d/utils.sh && %s\"", cmd))
 }
 
+const walletDataDir = "./test-data"
+
+func ClearWalletDataDir() {
+	os.RemoveAll(walletDataDir)
+}
+
 func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *wallet.Credentials, error) {
 	var err error
 	InitLogger()
-	dataDir := "./test-data"
-
-	os.RemoveAll(dataDir)
+	ClearWalletDataDir()
 	if !wallet.Initialized() {
 		err = wallet.Init(wallet.Config{
-			DataDir:  dataDir,
+			DataDir:  walletDataDir,
 			Network:  boltz.Regtest,
 			Debug:    debug,
 			Electrum: onchain.RegtestElectrumConfig,

@@ -158,6 +158,9 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 
 	logger.Init(cfg.Log)
 
+	// cache leftovers from gdk can cause issues in tests
+	test.ClearWalletDataDir()
+
 	var err error
 	if walletCredentials == nil {
 		var testWallet *wallet.Wallet
