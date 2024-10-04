@@ -255,9 +255,10 @@ func serializeWalletBalance(balance *onchain.Balance) *boltzrpc.Balance {
 
 func serializeWalletSubaccount(subaccount wallet.Subaccount, balance *onchain.Balance) *boltzrpc.Subaccount {
 	return &boltzrpc.Subaccount{
-		Balance: serializeWalletBalance(balance),
-		Pointer: subaccount.Pointer,
-		Type:    subaccount.Type,
+		Balance:     serializeWalletBalance(balance),
+		Pointer:     subaccount.Pointer,
+		Type:        subaccount.Type,
+		Descriptors: subaccount.CoreDescriptors,
 	}
 }
 

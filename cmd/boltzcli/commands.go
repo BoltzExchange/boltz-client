@@ -1540,8 +1540,8 @@ var walletCommands = &cli.Command{
 			Flags:     []cli.Flag{jsonFlag, &cli.BoolFlag{Name: "exclude-swap-related", Usage: "Exclude swap related transactions"}},
 		},
 		{
-			Name:        "subaccount",
-			Usage:       "Select the subaccount for a wallet",
+			Name:        "subaccounts",
+			Usage:       "Show the subaccounts of a wallet",
 			Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
 			ArgsUsage:   "name",
 			Action: requireNArgs(1, func(ctx *cli.Context) error {
@@ -1549,8 +1549,29 @@ var walletCommands = &cli.Command{
 				if err != nil {
 					return err
 				}
-				return selectSubaccount(ctx, *walletId)
+				client := getClient(ctx)
+				subaccounts, err := client.GetSubaccounts(*walletId)
+				if err != nil {
+					return err
+				}
+				printJson(subaccounts)
+				return nil
 			}),
+			Subcommands: []*cli.Command{
+				{
+					Name:        "select",
+					Usage:       "Select the subaccount for a wallet",
+					Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
+					ArgsUsage:   "name",
+					Action: requireNArgs(1, func(ctx *cli.Context) error {
+						walletId, err := getWalletId(ctx, ctx.Args().First())
+						if err != nil {
+							return err
+						}
+						return selectSubaccount(ctx, *walletId)
+					}),
+				},
+			},
 		},
 		{
 			Name:      "remove",

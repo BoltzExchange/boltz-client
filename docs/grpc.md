@@ -1239,6 +1239,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `balance` | [`Balance`](#balance) |  |  |
 | `pointer` | [`uint64`](#uint64) |  |  |
 | `type` | [`string`](#string) |  |  |
+| `descriptors` | [`string`](#string) | repeated |  |
 
 
 
