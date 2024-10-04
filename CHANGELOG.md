@@ -1,4 +1,20 @@
 
+<a name="v2.1.7"></a>
+## [v2.1.7] - 2024-10-04
+### Feat
+- subaccount core descriptors in rpc ([#293](https://github.com/BoltzExchange/boltz-client/issues/293))
+- split core descriptors by new line ([#296](https://github.com/BoltzExchange/boltz-client/issues/296))
+- `ListWalletTransactions` rpc ([#286](https://github.com/BoltzExchange/boltz-client/issues/286))
+- custom reverse swap invoice expiry ([#290](https://github.com/BoltzExchange/boltz-client/issues/290))
+- allow insecure lnd connection ([#288](https://github.com/BoltzExchange/boltz-client/issues/288))
+
+### Fix
+- change test order ([#299](https://github.com/BoltzExchange/boltz-client/issues/299))
+- allow readonly wallets for receiving and chain swap destinations ([#294](https://github.com/BoltzExchange/boltz-client/issues/294))
+- update internal blockHeight state before sending updates to subscribers ([#297](https://github.com/BoltzExchange/boltz-client/issues/297))
+- apply regtest patch ([#298](https://github.com/BoltzExchange/boltz-client/issues/298))
+
+
 <a name="v2.1.6"></a>
 ## [v2.1.6] - 2024-09-13
 ### Feat
@@ -395,6 +411,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.6...v2.1.7
 [v2.1.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.5...v2.1.6
 [v2.1.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.4...v2.1.5
 [v2.1.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.3...v2.1.4
