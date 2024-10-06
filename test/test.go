@@ -138,7 +138,6 @@ func LiquidCli(cmd string) string {
 
 func MineBlock() {
 	BtcCli("-generate 1")
-	LiquidCli("rescanblockchain")
 	LiquidCli("-generate 1")
 }
 
