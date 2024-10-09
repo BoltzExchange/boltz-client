@@ -1,6 +1,6 @@
 PKG := github.com/BoltzExchange/boltz-client
 VERSION := 2.1.7
-GDK_VERSION = 0.72.2
+GDK_VERSION = 0.73.2
 GO_VERSION := 1.23.0
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
@@ -157,6 +157,13 @@ binaries:
 	tar -czvf boltz-client-linux-amd64-v$(VERSION).tar.gz bin/linux_amd64
 	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
+
+gdk-source: submodules
+	cd gdk && git checkout release_$(GDK_VERSION) && git apply ../gdk.patch
+	cp ./gdk/include/gdk.h ./onchain/wallet/include/gdk.h
+
+build-gdk-builder: gdk-source
+	docker buildx build --push -t boltz/gdk-ubuntu-builder:latest -t boltz/gdk-ubuntu-builder:$(GDK_VERSION) $(DOCKER_ARGS) -f ./gdk/docker/ubuntu/Dockerfile ./gdk
 
 build-gdk:
 	docker buildx build --push -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile $(DOCKER_ARGS) .
