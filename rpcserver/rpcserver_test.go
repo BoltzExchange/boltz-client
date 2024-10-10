@@ -442,7 +442,7 @@ func TestMacaroons(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Info", func(t *testing.T) {
+	t.Run("Infos", func(t *testing.T) {
 		info, err := admin.GetInfo()
 		require.NoError(t, err)
 		require.NotEmpty(t, info.NodePubkey)
@@ -1287,11 +1287,11 @@ func TestWalletTransactions(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{})
 	t.Cleanup(stop)
 
-	findSwap := func(t *testing.T, response *boltzrpc.ListWalletTransactionsResponse, id string, transactionType boltzrpc.TransactionType) *boltzrpc.TransactionSwap {
+	findSwap := func(t *testing.T, response *boltzrpc.ListWalletTransactionsResponse, id string, transactionType boltzrpc.TransactionType) *boltzrpc.TransactionInfo {
 		for _, tx := range response.Transactions {
-			if len(tx.Swaps) > 0 && tx.Swaps[0].Id == id {
-				require.Equal(t, transactionType, tx.Swaps[0].Type)
-				return tx.Swaps[0]
+			if len(tx.Infos) > 0 && tx.Infos[0].GetSwapId() == id {
+				require.Equal(t, transactionType, tx.Infos[0].Type)
+				return tx.Infos[0]
 			}
 		}
 		require.Fail(t, "swap not found")
@@ -1354,7 +1354,7 @@ func TestWalletTransactions(t *testing.T) {
 			var sum int64
 			for _, tx := range response.Transactions {
 				sum += tx.BalanceChange
-				require.Empty(t, tx.Swaps)
+				require.Empty(t, tx.Infos)
 			}
 			require.Equal(t, int64(balance.Balance.Total), sum)
 		})

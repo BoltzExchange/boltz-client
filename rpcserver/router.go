@@ -1515,6 +1515,9 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 			BlockHeight:   tx.BlockHeight,
 			BalanceChange: tx.BalanceChange,
 		}
+		if tx.IsConsolidation {
+			result.Infos = append(result.Infos, &boltzrpc.TransactionInfo{Type: boltzrpc.TransactionType_CONSOLIDATION})
+		}
 		for _, output := range tx.Outputs {
 			result.Outputs = append(result.Outputs, &boltzrpc.TransactionOutput{
 				Address:      output.Address,
@@ -1530,7 +1533,7 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 				continue
 			}
 			swap := swaps[i]
-			txSwap := &boltzrpc.TransactionSwap{Id: swap.Id}
+			txSwap := &boltzrpc.TransactionInfo{SwapId: &swap.Id}
 			if swap.RefundTransactionid == tx.Id {
 				txSwap.Type = boltzrpc.TransactionType_REFUND
 			}
@@ -1540,7 +1543,7 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 			if swap.LockupTransactionid == tx.Id {
 				txSwap.Type = boltzrpc.TransactionType_LOCKUP
 			}
-			result.Swaps = append(result.Swaps, txSwap)
+			result.Infos = append(result.Infos, txSwap)
 		}
 		response.Transactions = append(response.Transactions, result)
 	}

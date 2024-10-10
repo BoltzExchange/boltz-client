@@ -752,6 +752,7 @@ enum TransactionType {
     LOCKUP = 1;
     REFUND = 2;
     CLAIM = 3;
+    CONSOLIDATION = 4;
 }
 
 message WalletTransaction {
@@ -763,12 +764,13 @@ message WalletTransaction {
     int64 timestamp = 3;
     repeated TransactionOutput outputs = 4;
     uint32 block_height = 6;
-    // swaps which are related to this transaction
-    repeated TransactionSwap swaps = 7;
+    // additional informations about the tx (type, related swaps etc.)
+    repeated TransactionInfo infos = 7;
 }
 
-message TransactionSwap {
-    string id = 1;
+message TransactionInfo {
+    // will be populated for LOCKUP, REFUND and CLAIM
+    optional string swap_id = 1;
     TransactionType type = 2;
 }
 

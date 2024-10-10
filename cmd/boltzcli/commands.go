@@ -35,7 +35,7 @@ var yellowBold = color.New(color.FgHiYellow, color.Bold)
 
 var getInfoCommand = &cli.Command{
 	Name:     "getinfo",
-	Category: "Info",
+	Category: "Infos",
 	Usage:    "Returns basic information",
 	Action:   getInfo,
 }
@@ -77,7 +77,7 @@ var jsonFlag = &cli.BoolFlag{
 
 var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
-	Category: "Info",
+	Category: "Infos",
 	Usage:    "Lists all swaps",
 	Action:   listSwaps,
 	Flags: []cli.Flag{
@@ -121,7 +121,7 @@ func getIncludeSwaps(ctx *cli.Context) boltzrpc.IncludeSwaps {
 
 var getStatsCommand = &cli.Command{
 	Name:     "stats",
-	Category: "Info",
+	Category: "Infos",
 	Usage:    "Get swap related stats",
 	Action: func(ctx *cli.Context) error {
 		client := getClient(ctx)
@@ -217,7 +217,7 @@ func listSwaps(ctx *cli.Context) error {
 
 var getSwapCommand = &cli.Command{
 	Name:      "swapinfo",
-	Category:  "Info",
+	Category:  "Infos",
 	Usage:     "Gets all available information about a swap",
 	ArgsUsage: "id",
 	Action:    requireNArgs(1, swapInfo),
@@ -238,7 +238,7 @@ func swapInfo(ctx *cli.Context) error {
 
 var swapInfoStreamCommand = &cli.Command{
 	Name:      "swapinfostream",
-	Category:  "Info",
+	Category:  "Infos",
 	Usage:     "Streams updates of a specific swap or of all swaps",
 	ArgsUsage: "[id]",
 	Action: func(ctx *cli.Context) error {

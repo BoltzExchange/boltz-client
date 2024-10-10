@@ -1326,6 +1326,20 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### TransactionInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `swap_id` | [`string`](#string) | optional | will be populated for LOCKUP, REFUND and CLAIM |
+| `type` | [`TransactionType`](#transactiontype) |  |  |
+
+
+
+
+
 #### TransactionOutput
 
 
@@ -1336,20 +1350,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `address` | [`string`](#string) |  |  |
 | `amount` | [`uint64`](#uint64) |  |  |
 | `is_our_address` | [`bool`](#bool) |  | wether the address is controlled by the wallet |
-
-
-
-
-
-#### TransactionSwap
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `id` | [`string`](#string) |  |  |
-| `type` | [`TransactionType`](#transactiontype) |  |  |
 
 
 
@@ -1510,7 +1510,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `timestamp` | [`int64`](#int64) |  |  |
 | `outputs` | [`TransactionOutput`](#transactionoutput) | repeated |  |
 | `block_height` | [`uint32`](#uint32) |  |  |
-| `swaps` | [`TransactionSwap`](#transactionswap) | repeated | swaps which are related to this transaction |
+| `infos` | [`TransactionInfo`](#transactioninfo) | repeated | additional informations about the tx (type, related swaps etc.) |
 
 
 
@@ -1599,6 +1599,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | LOCKUP | 1 |  |
 | REFUND | 2 |  |
 | CLAIM | 3 |  |
+| CONSOLIDATION | 4 |  |
 
 
 
