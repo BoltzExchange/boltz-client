@@ -1298,14 +1298,26 @@ func TestWalletTransactions(t *testing.T) {
 		return nil
 	}
 
-	waitWalletTx := func(t *testing.T) {
+	waitWalletTx := func(t *testing.T, txId string) {
+		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: testWallet.Id})
+		require.NoError(t, err)
+		for _, tx := range response.Transactions {
+			if tx.Id == txId {
+				return
+			}
+		}
 		notifier := wallet.TransactionNotifier.Get()
 		defer wallet.TransactionNotifier.Remove(notifier)
 		timeout := time.After(30 * time.Second)
-		select {
-		case <-notifier:
-		case <-timeout:
-			require.Fail(t, "timedout while waiting for tx")
+		for {
+			select {
+			case notification := <-notifier:
+				if notification.TxId == txId {
+					return
+				}
+			case <-timeout:
+				require.Fail(t, "timed out while waiting for tx")
+			}
 		}
 	}
 
@@ -1360,7 +1372,7 @@ func TestWalletTransactions(t *testing.T) {
 			WalletId:         &testWallet.Id,
 		})
 		require.NoError(t, err)
-		waitWalletTx(t)
+		waitWalletTx(t, swap.TxId)
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
 		findSwap(t, response, swap.Id, boltzrpc.TransactionType_LOCKUP)
@@ -1377,7 +1389,7 @@ func TestWalletTransactions(t *testing.T) {
 			WalletId:       &testWallet.Id,
 		})
 		require.NoError(t, err)
-		waitWalletTx(t)
+		waitWalletTx(t, swap.GetClaimTransactionId())
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
 		findSwap(t, response, swap.Id, boltzrpc.TransactionType_CLAIM)
@@ -1400,7 +1412,9 @@ func TestWalletTransactions(t *testing.T) {
 		})
 		require.NoError(t, err)
 		test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount-1000)
-		waitWalletTx(t)
+		stream, _ := swapStream(t, client, swap.Id)
+		info := stream(boltzrpc.SwapState_REFUNDED)
+		waitWalletTx(t, info.ChainSwap.FromData.GetTransactionId())
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
 		findSwap(t, response, swap.Id, boltzrpc.TransactionType_REFUND)
