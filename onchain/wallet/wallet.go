@@ -33,6 +33,8 @@ import (
 )
 
 const MinFeeRate = 0.01
+const MaxInputs = 256
+const DefaultAutoConsolidateThreshold = 200
 
 type TransactionNotification struct {
 	TxId     string
@@ -119,10 +121,12 @@ type Wallet struct {
 }
 
 type Config struct {
-	DataDir  string
-	Network  *boltz.Network
-	Debug    bool
-	Electrum onchain.ElectrumConfig
+	DataDir                  string
+	Network                  *boltz.Network
+	Debug                    bool
+	Electrum                 onchain.ElectrumConfig
+	AutoConsolidateThreshold uint64
+	MaxInputs                uint64
 }
 
 var config *Config
@@ -229,9 +233,14 @@ func Initialized() bool {
 }
 
 func Init(walletConfig Config) error {
-
 	if config != nil {
 		return errors.New("already initialized")
+	}
+	if walletConfig.AutoConsolidateThreshold == 0 {
+		walletConfig.AutoConsolidateThreshold = DefaultAutoConsolidateThreshold
+	}
+	if walletConfig.MaxInputs == 0 {
+		walletConfig.MaxInputs = MaxInputs
 	}
 	walletConfig.DataDir += "/wallet"
 	params := map[string]any{
@@ -296,6 +305,13 @@ func Init(walletConfig Config) error {
 	return nil
 }
 
+func UpdateConfig(walletConfig Config) {
+	if config != nil {
+		config.AutoConsolidateThreshold = walletConfig.AutoConsolidateThreshold
+		config.MaxInputs = walletConfig.MaxInputs
+	}
+}
+
 func (wallet *Wallet) Connect() error {
 	if wallet.connected {
 		return nil
@@ -351,6 +367,19 @@ func (wallet *Wallet) Connect() error {
 	}
 
 	wallet.connected = true
+
+	go func() {
+		notifer := TransactionNotifier.Get()
+		defer TransactionNotifier.Remove(notifer)
+		for range notifer {
+			if !wallet.connected {
+				return
+			}
+			if err := wallet.autoConsolidate(); err != nil {
+				logger.Errorf("Auto consolidation failed: %v", err)
+			}
+		}
+	}()
 
 	return nil
 }
@@ -673,8 +702,15 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 
 	// Disable RBF
-	for _, outputs := range outputs.Unspent {
-		for _, output := range outputs {
+	for asset, current := range outputs.Unspent {
+		if len(current) > int(config.MaxInputs) {
+			if sendAll {
+				outputs.Unspent[asset] = current[:config.MaxInputs]
+			} else {
+				return "", errors.New("too many inputs")
+			}
+		}
+		for _, output := range current {
 			output["sequence"] = wire.MaxTxInSequenceNum - 1
 		}
 	}
@@ -716,22 +752,23 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 	free()
 
+	var signedTx struct {
+		Transaction       string `mapstructure:"transaction"`
+		Error             string `mapstructure:"error"`
+		TransactionInputs []struct {
+			TxId string `mapstructure:"txhash"`
+		} `mapstructure:"transaction_inputs"`
+	}
+	if err := mapstructure.Decode(result, &signedTx); err != nil {
+		return "", err
+	}
+	wallet.spentOutputsLock.Lock()
+	for _, input := range signedTx.TransactionInputs {
+		wallet.spentOutputs[input.TxId] = true
+	}
+	wallet.spentOutputsLock.Unlock()
+
 	if wallet.txProvider != nil {
-		var signedTx struct {
-			Transaction       string `mapstructure:"transaction"`
-			Error             string `mapstructure:"error"`
-			TransactionInputs []struct {
-				TxId string `mapstructure:"txhash"`
-			} `mapstructure:"transaction_inputs"`
-		}
-		if err := mapstructure.Decode(result, &signedTx); err != nil {
-			return "", err
-		}
-		wallet.spentOutputsLock.Lock()
-		for _, input := range signedTx.TransactionInputs {
-			wallet.spentOutputs[input.TxId] = true
-		}
-		wallet.spentOutputsLock.Unlock()
 
 		if signedTx.Error != "" {
 			return "", errors.New(signedTx.Error)
@@ -824,11 +861,12 @@ func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTr
 			})
 		}
 		transactions = append(transactions, &onchain.WalletTransaction{
-			Id:            tx.TxId,
-			Timestamp:     time.UnixMicro(tx.Timestamp),
-			BlockHeight:   tx.BlockHeight,
-			Outputs:       outputs,
-			BalanceChange: tx.Satoshi[asset],
+			Id:              tx.TxId,
+			Timestamp:       time.UnixMicro(tx.Timestamp),
+			BlockHeight:     tx.BlockHeight,
+			Outputs:         outputs,
+			BalanceChange:   tx.Satoshi[asset],
+			IsConsolidation: tx.Type == "redeposit",
 		})
 	}
 
@@ -842,4 +880,41 @@ func (wallet *Wallet) Ready() bool {
 
 func (wallet *Wallet) GetWalletInfo() onchain.WalletInfo {
 	return wallet.WalletInfo
+}
+
+func (wallet *Wallet) estimateFee() (float64, error) {
+	var output Json
+	var estimates struct {
+		Fees []float64 `json:"fees"`
+	}
+	if err := withOutput(C.GA_get_fee_estimates(wallet.session, &output), output, &estimates); err != nil {
+		return 0, err
+	}
+	return estimates.Fees[0] / 1000, nil
+}
+
+func (wallet *Wallet) autoConsolidate() error {
+	if wallet.subaccount != nil {
+		unspent, err := wallet.getUnspentOutputs(*wallet.subaccount, false)
+		if err != nil {
+			return fmt.Errorf("failed to get unspent outputs: %v", err)
+		}
+		for _, outputs := range unspent.Unspent {
+			if len(outputs) > int(config.AutoConsolidateThreshold) {
+				logger.Infof("Auto consolidating %d utxos", len(outputs))
+				address, err := wallet.NewAddress()
+				if err != nil {
+					return fmt.Errorf("new address: %v", err)
+				}
+				feeRate, err := wallet.estimateFee()
+				if err != nil {
+					return fmt.Errorf("could not get estimate fee: %v", err)
+				}
+				if _, err := wallet.SendToAddress(address, 0, feeRate, true); err != nil {
+					return fmt.Errorf("could not send: %v", err)
+				}
+			}
+		}
+	}
+	return nil
 }

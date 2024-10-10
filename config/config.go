@@ -87,7 +87,8 @@ type Config struct {
 
 	ReferralId string
 
-	MaxZeroConfAmount *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
+	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
+	AutoConsolidateThreshold uint64  `long:"auto-consolidate-threshold" description:"Threshold of UTXOs to trigger auto consolidation"`
 
 	Help *helpOptions `group:"Help Options"`
 }

@@ -377,10 +377,11 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 
 	if !wallet.Initialized() {
 		err := wallet.Init(wallet.Config{
-			DataDir:  cfg.DataDir,
-			Network:  network,
-			Debug:    false,
-			Electrum: electrumConfig,
+			DataDir:                  cfg.DataDir,
+			Network:                  network,
+			Debug:                    false,
+			Electrum:                 electrumConfig,
+			AutoConsolidateThreshold: cfg.AutoConsolidateThreshold,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("could not init wallet: %v", err)

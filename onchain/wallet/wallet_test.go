@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+	"time"
 )
 
 var wallet *onchainWallet.Wallet
@@ -188,4 +189,57 @@ func TestEncryptedCredentials(t *testing.T) {
 	require.Error(t, err)
 
 	require.NoError(t, wallet.Disconnect())
+}
+
+func TestAutoConsolidate(t *testing.T) {
+	var walletConfig = onchainWallet.Config{
+		AutoConsolidateThreshold: 3,
+		MaxInputs:                3,
+	}
+	onchainWallet.UpdateConfig(walletConfig)
+	mnemonic, err := onchainWallet.GenerateMnemonic()
+	require.NoError(t, err)
+	credentials := &onchainWallet.Credentials{
+		WalletInfo: onchain.WalletInfo{
+			Currency: boltz.CurrencyLiquid,
+		},
+		Mnemonic: mnemonic,
+	}
+	wallet, err := onchainWallet.Login(credentials)
+	require.NoError(t, err)
+	_, err = wallet.SetSubaccount(nil)
+	require.NoError(t, err)
+
+	cli := test.LiquidCli
+	numTxns := int(walletConfig.AutoConsolidateThreshold) + 1
+	notifier := onchainWallet.TransactionNotifier.Get()
+	defer onchainWallet.TransactionNotifier.Remove(notifier)
+	for i := 0; i < numTxns; i++ {
+		addr, err := wallet.NewAddress()
+		require.NoError(t, err)
+		test.SendToAddress(cli, addr, 1000)
+	}
+	test.MineBlock()
+	timeout := time.After(15 * time.Second)
+	for i := 0; i < numTxns+1; i++ {
+		select {
+		case <-notifier:
+		case <-timeout:
+			t.Fatal("timeout")
+		}
+		txs, err := wallet.GetTransactions(0, 0)
+		require.NoError(t, err)
+		// wait for all txns to be picked up, including the consolidation txn
+		if len(txs) == numTxns+1 {
+			consolidated := false
+			for _, tx := range txs {
+				if tx.IsConsolidation {
+					consolidated = true
+				}
+			}
+			require.True(t, consolidated)
+			require.Len(t, txs, numTxns+1)
+		}
+	}
+
 }
