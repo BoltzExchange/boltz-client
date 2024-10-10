@@ -33,8 +33,8 @@ import (
 )
 
 const MinFeeRate = 0.01
-const MaxInputs = 256
-const DefaultAutoConsolidateThreshold = 200
+const MaxInputs = uint64(256)
+const DefaultAutoConsolidateThreshold = uint64(200)
 
 type TransactionNotification struct {
 	TxId     string
@@ -236,9 +236,6 @@ func Init(walletConfig Config) error {
 	if config != nil {
 		return errors.New("already initialized")
 	}
-	if walletConfig.AutoConsolidateThreshold == 0 {
-		walletConfig.AutoConsolidateThreshold = DefaultAutoConsolidateThreshold
-	}
 	if walletConfig.MaxInputs == 0 {
 		walletConfig.MaxInputs = MaxInputs
 	}
@@ -368,18 +365,20 @@ func (wallet *Wallet) Connect() error {
 
 	wallet.connected = true
 
-	go func() {
-		notifer := TransactionNotifier.Get()
-		defer TransactionNotifier.Remove(notifer)
-		for range notifer {
-			if !wallet.connected {
-				return
+	if config.AutoConsolidateThreshold > 0 {
+		go func() {
+			notifer := TransactionNotifier.Get()
+			defer TransactionNotifier.Remove(notifer)
+			for range notifer {
+				if !wallet.connected {
+					return
+				}
+				if err := wallet.autoConsolidate(); err != nil {
+					logger.Errorf("Auto consolidation failed: %v", err)
+				}
 			}
-			if err := wallet.autoConsolidate(); err != nil {
-				logger.Errorf("Auto consolidation failed: %v", err)
-			}
-		}
-	}()
+		}()
+	}
 
 	return nil
 }
