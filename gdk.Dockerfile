@@ -1,5 +1,5 @@
 ARG GDK_VERSION
-FROM michael1011/gdk-ubuntu-builder:$GDK_VERSION AS builder
+FROM boltz/gdk-ubuntu-builder:$GDK_VERSION AS builder
 
 ARG GDK_VERSION
 ARG GDK_ARGS
