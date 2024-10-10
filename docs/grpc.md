@@ -1511,6 +1511,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `outputs` | [`TransactionOutput`](#transactionoutput) | repeated |  |
 | `block_height` | [`uint32`](#uint32) |  |  |
 | `swaps` | [`TransactionSwap`](#transactionswap) | repeated | swaps which are related to this transaction |
+| `is_consolidation` | [`bool`](#bool) |  |  |
 
 
 
