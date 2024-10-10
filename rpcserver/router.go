@@ -1510,10 +1510,11 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 	response := &boltzrpc.ListWalletTransactionsResponse{}
 	for _, tx := range transactions {
 		result := &boltzrpc.WalletTransaction{
-			Id:            tx.Id,
-			Timestamp:     tx.Timestamp.Unix(),
-			BlockHeight:   tx.BlockHeight,
-			BalanceChange: tx.BalanceChange,
+			Id:              tx.Id,
+			Timestamp:       tx.Timestamp.Unix(),
+			BlockHeight:     tx.BlockHeight,
+			BalanceChange:   tx.BalanceChange,
+			IsConsolidation: tx.IsConsolidation,
 		}
 		for _, output := range tx.Outputs {
 			result.Outputs = append(result.Outputs, &boltzrpc.TransactionOutput{
