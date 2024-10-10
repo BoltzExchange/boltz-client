@@ -365,7 +365,7 @@ func (wallet *Wallet) Connect() error {
 
 	wallet.connected = true
 
-	if config.AutoConsolidateThreshold > 0 {
+	if config.AutoConsolidateThreshold > 0 && !wallet.Readonly {
 		go func() {
 			notifer := TransactionNotifier.Get()
 			defer TransactionNotifier.Remove(notifer)
