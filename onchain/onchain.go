@@ -35,11 +35,12 @@ type TransactionOutput struct {
 }
 
 type WalletTransaction struct {
-	Id            string
-	Timestamp     time.Time
-	Outputs       []TransactionOutput
-	BlockHeight   uint32
-	BalanceChange int64
+	Id              string
+	Timestamp       time.Time
+	Outputs         []TransactionOutput
+	BlockHeight     uint32
+	BalanceChange   int64
+	IsConsolidation bool
 }
 
 type WalletInfo struct {
