@@ -129,6 +129,23 @@ type Config struct {
 	MaxInputs                uint64
 }
 
+func (c *Config) Validate() error {
+	if c.MaxInputs == 0 {
+		c.MaxInputs = MaxInputs
+	} else if c.MaxInputs > MaxInputs {
+		return fmt.Errorf("max inputs must be less than %d", MaxInputs)
+	}
+	if c.AutoConsolidateThreshold != 0 {
+		if c.AutoConsolidateThreshold < 10 {
+			return errors.New("auto consolidate threshold must be at least 10")
+		}
+		if c.AutoConsolidateThreshold > c.MaxInputs {
+			return fmt.Errorf("auto consolidate threshold must be less than %d", c.MaxInputs)
+		}
+	}
+	return nil
+}
+
 var config *Config
 
 type syncListener struct {
@@ -236,8 +253,8 @@ func Init(walletConfig Config) error {
 	if config != nil {
 		return errors.New("already initialized")
 	}
-	if walletConfig.MaxInputs == 0 {
-		walletConfig.MaxInputs = MaxInputs
+	if err := walletConfig.Validate(); err != nil {
+		return err
 	}
 	walletConfig.DataDir += "/wallet"
 	params := map[string]any{

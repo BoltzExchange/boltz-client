@@ -246,3 +246,55 @@ func TestAutoConsolidate(t *testing.T) {
 	}
 
 }
+
+func TestConfig_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  onchainWallet.Config
+		wantErr bool
+	}{
+		{
+			"Consolidate/Valid",
+			onchainWallet.Config{
+				AutoConsolidateThreshold: 100,
+			},
+			false,
+		},
+		{
+			"Consolidate/Less",
+			onchainWallet.Config{
+				AutoConsolidateThreshold: 5,
+			},
+			true,
+		},
+
+		{
+			"Consolidate/High",
+			onchainWallet.Config{
+				AutoConsolidateThreshold: 1000,
+			},
+			true,
+		},
+		{
+			"Consolidate/Disabled",
+			onchainWallet.Config{
+				AutoConsolidateThreshold: 0,
+			},
+			false,
+		},
+		{
+			"MaxInputs/High",
+			onchainWallet.Config{
+				MaxInputs: 1000,
+			},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.config.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
