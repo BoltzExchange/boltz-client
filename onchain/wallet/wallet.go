@@ -386,10 +386,8 @@ func (wallet *Wallet) Connect() error {
 		go func() {
 			notifer := TransactionNotifier.Get()
 			defer TransactionNotifier.Remove(notifer)
-			for range notifer {
-				if !wallet.connected {
-					return
-				}
+			for wallet.connected {
+				<-notifer
 				if err := wallet.autoConsolidate(); err != nil {
 					logger.Errorf("Auto consolidation failed: %v", err)
 				}
