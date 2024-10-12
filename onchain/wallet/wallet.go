@@ -899,7 +899,7 @@ func (wallet *Wallet) autoConsolidate() error {
 			return fmt.Errorf("failed to get unspent outputs: %v", err)
 		}
 		for _, outputs := range unspent.Unspent {
-			if len(outputs) > int(config.AutoConsolidateThreshold) {
+			if len(outputs) >= int(config.AutoConsolidateThreshold) {
 				logger.Infof("Auto consolidating %d utxos", len(outputs))
 				address, err := wallet.NewAddress()
 				if err != nil {
