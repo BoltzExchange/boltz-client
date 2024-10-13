@@ -78,12 +78,16 @@ restart-regtest: download-regtest
 # Building
 #
 
-build: download-gdk
+build-bolt12:
+	@$(call print, "Building bolt12")
+	cd lightning/lib/bolt12 && cargo build --release
+
+build: download-gdk build-bolt12
 	@$(call print, "Building boltz-client")
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-static: download-gdk
+static: download-gdk build-bolt12
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)

@@ -11,7 +11,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/utils"
-	"github.com/lightningnetwork/lnd/zpay32"
 )
 
 func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
@@ -93,7 +92,7 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 	}
 
 	// Verify that the invoice was actually paid
-	decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+	decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 	if err != nil {
 		return fmt.Errorf("could not decode swap invoice: %w", err)
 	}
@@ -247,7 +246,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 	case boltz.TransactionClaimPending, boltz.TransactionClaimed:
 		// Verify that the invoice was actually paid
-		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 
 		if err != nil {
 			handleError("Could not decode invoice: " + err.Error())
@@ -284,14 +283,13 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 		if err != nil {
 			handleError("Could not decode invoice: " + err.Error())
 			return
 		}
-		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
-		serviceFee := swap.ServiceFeePercent.Calculate(invoiceAmount)
-		boltzOnchainFee := int64(swap.ExpectedAmount - invoiceAmount - serviceFee)
+		serviceFee := swap.ServiceFeePercent.Calculate(decodedInvoice.Amount)
+		boltzOnchainFee := int64(swap.ExpectedAmount - decodedInvoice.Amount - serviceFee)
 		if boltzOnchainFee < 0 {
 			logger.Warnf("Boltz onchain fee seems to be negative")
 			boltzOnchainFee = 0

@@ -138,6 +138,10 @@ func LiquidCli(cmd string) string {
 	return run("elements-cli-sim-server " + cmd)
 }
 
+func ClnCli(cmd string) string {
+	return run("lightning-cli-sim 1 " + cmd)
+}
+
 func MineBlock() {
 	BtcCli("-generate 1")
 	LiquidCli("-generate 1")
@@ -156,6 +160,10 @@ func GetNewAddress(cli Cli) string {
 
 func SendToAddress(cli Cli, address string, amount uint64) string {
 	return cli("sendtoaddress " + address + " " + fmt.Sprint(float64(amount)/1e8))
+}
+
+func GetBolt12Offer() string {
+	return ClnCli("offer any '' | jq -r .bolt12")
 }
 
 type FakeSwaps struct {

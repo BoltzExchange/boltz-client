@@ -620,8 +620,8 @@ func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.
 	}, nil
 }
 
-func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, invoice string) (*boltzrpc.CreateSwapResponse, error) {
-	if pubKey := boltz.FindMagicRoutingHint(decoded); pubKey != nil {
+func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.DecodedInvoice, invoice string) (*boltzrpc.CreateSwapResponse, error) {
+	if pubKey := decoded.Hint; pubKey != nil {
 		logger.Info("Found magic routing hint in invoice")
 		reverseBip21, err := server.boltz.GetReverseSwapBip21(invoice)
 		var boltzErr boltz.Error
@@ -649,7 +649,7 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, 
 		if err != nil {
 			return nil, fmt.Errorf("could not parse bip21 amount: %w", err)
 		}
-		if amount > decoded.MilliSat.ToBTC() {
+		if amount > btcutil.Amount(decoded.Amount).ToBTC() {
 			return nil, errors.New("bip21 amount is higher than invoice amount")
 		}
 
@@ -662,8 +662,8 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, 
 	return nil, nil
 }
 
-func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *zpay32.Invoice) {
-	expiryLeft := time.Until(invoice.Timestamp.Add(invoice.Expiry() - 10*time.Second))
+func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *lightning.DecodedInvoice) {
+	expiryLeft := time.Until(invoice.Expiry.Add(-10 * time.Second))
 	currency := request.Pair.GetFrom()
 	if expiryLeft.Minutes() < boltz.GetBlockTime(utils.ParseCurrency(&currency)) {
 		zeroConf := true
@@ -711,9 +711,27 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 				return nil, err
 			}
 			invoice = payValues.PR
+		} else if offer, err := lightning.DecodeOffer(invoice); err == nil {
+			if request.Amount == 0 {
+				return nil, status.Errorf(codes.InvalidArgument, "amount has to be specified for offer")
+			}
+			if request.Amount < offer.MinAmount {
+				return nil, status.Errorf(codes.InvalidArgument, "amount is below offer minimum: %d < %d", request.Amount, offer.MinAmount)
+			}
+			logger.Infof("Fetching invoice from offer: %s", invoice)
+			bolt12, err := server.boltz.FetchBolt12Invoice(invoice, request.Amount)
+			if err != nil {
+				return nil, fmt.Errorf("could not fetch bolt12 invoice: %w", err)
+			}
+			logger.Infof("Fetched bolt12 invoice: %s", bolt12)
+
+			if !lightning.CheckBolt12Offer(bolt12, invoice) {
+				return nil, status.Errorf(codes.InvalidArgument, "bolt12 offer does not match offer")
+			}
+			invoice = bolt12
 		}
 		logger.Infof("Creating Swap for invoice: %s", invoice)
-		decoded, err := zpay32.Decode(invoice, server.network.Btc)
+		decoded, err := lightning.DecodeInvoice(invoice, server.network.Btc)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid invoice or lnurl: %s", err)
 		}
@@ -725,14 +743,10 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
 		// set amount for balance check
-		if decoded.MilliSat == nil {
-			request.Amount = 0
-		} else {
-			request.Amount = uint64(decoded.MilliSat.ToSatoshis())
-		}
-		if request.Amount == 0 {
+		if decoded.Amount == 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "0 amount invoices are not supported")
 		}
+		request.Amount = decoded.Amount
 	} else if !server.lightningAvailable(ctx) {
 		return nil, errors.New("invoice is required in standalone mode")
 	} else if request.Amount != 0 {
