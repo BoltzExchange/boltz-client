@@ -40,7 +40,7 @@ pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> *mut Invoice 
     };
     let (hrp, data) = match bech32::decode_without_checksum(invoice) {
         Ok(res) => res,
-        Err(err) => return std::ptr::null_mut(),
+        Err(_) => return std::ptr::null_mut(),
     };
     if hrp.as_str() != BECH32_BOLT12_INVOICE_HRP {
         return std::ptr::null_mut();
@@ -48,7 +48,7 @@ pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> *mut Invoice 
 
     let data = match Vec::<u8>::from_base32(&data) {
         Ok(res) => res,
-        Err(err) => return std::ptr::null_mut(),
+        Err(_) => return std::ptr::null_mut(),
     };
     match lightning::offers::invoice::Bolt12Invoice::try_from(data) {
         Ok(invoice) => Box::into_raw(Box::new(Invoice {
@@ -56,7 +56,7 @@ pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> *mut Invoice 
             payment_hash: invoice.payment_hash().0,
             expiry_date: invoice.absolute_expiry().and_then(|d| Some(d.as_secs())).unwrap_or(0)
         })),
-        Err(err) => std::ptr::null_mut(),
+        Err(_) => std::ptr::null_mut(),
     }
 }
 
