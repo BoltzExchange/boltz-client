@@ -2,6 +2,7 @@ PKG := github.com/BoltzExchange/boltz-client
 VERSION := 2.1.11
 GDK_VERSION = 0.73.2
 GO_VERSION := 1.23.0
+RUST_VERSION := 1.81.0
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
 PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
@@ -149,7 +150,8 @@ changelog:
 	git-chglog --output CHANGELOG.md
 
 PLATFORMS := linux/amd64,linux/arm64
-DOCKER_ARGS := --platform $(PLATFORMS) --build-arg GO_VERSION=$(GO_VERSION) --build-arg GDK_VERSION=$(GDK_VERSION)
+DOCKER_CACHE := boltz/boltz-client:buildcache
+DOCKER_ARGS := --platform $(PLATFORMS) --build-arg GO_VERSION=$(GO_VERSION) --build-arg GDK_VERSION=$(GDK_VERSION) --build-arg RUST_VERSION=$(RUST_VERSION) --cache-from type=registry,ref=$(DOCKER_CACHE) --cache-to type=registry,ref=$(DOCKER_CACHE),mode=max
 
 docker:
 	@$(call print, "Building docker image")
