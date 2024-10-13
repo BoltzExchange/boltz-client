@@ -68,7 +68,7 @@ pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> *mut Invoice 
             payment_hash: invoice.payment_hash().0,
             expiry_date: invoice.absolute_expiry().and_then(|d| Some(d.as_secs())).unwrap_or(0),
         })),
-        Err(err) => std::ptr::null_mut(),
+        Err(_) => std::ptr::null_mut(),
     }
 }
 
@@ -104,3 +104,4 @@ pub struct Invoice {
     pub amount: u64,
     pub payment_hash: [u8; 32],
     pub expiry_date: u64,
+}
