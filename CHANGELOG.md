@@ -1,4 +1,14 @@
 
+<a name="v2.1.8"></a>
+## [v2.1.8] - 2024-10-13
+### Feat
+- auto consolidate ([#306](https://github.com/BoltzExchange/boltz-client/issues/306))
+
+### Fix
+- flaky wallet transaction tests ([#307](https://github.com/BoltzExchange/boltz-client/issues/307))
+- remove unnecessary rescan ([#302](https://github.com/BoltzExchange/boltz-client/issues/302))
+
+
 <a name="v2.1.7"></a>
 ## [v2.1.7] - 2024-10-04
 ### Feat
@@ -412,6 +422,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.7...v2.1.8
 [v2.1.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.6...v2.1.7
 [v2.1.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.5...v2.1.6
 [v2.1.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.4...v2.1.5
