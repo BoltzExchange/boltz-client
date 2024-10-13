@@ -118,6 +118,7 @@ type Wallet struct {
 	txProvider       onchain.TxProvider
 	spentOutputs     map[string]bool
 	spentOutputsLock sync.RWMutex
+	txNotifier       <-chan TransactionNotification
 }
 
 type Config struct {
@@ -384,10 +385,8 @@ func (wallet *Wallet) Connect() error {
 
 	if config.AutoConsolidateThreshold > 0 && !wallet.Readonly {
 		go func() {
-			notifer := TransactionNotifier.Get()
-			defer TransactionNotifier.Remove(notifer)
-			for wallet.connected {
-				<-notifer
+			wallet.txNotifier = TransactionNotifier.Get()
+			for range wallet.txNotifier {
 				if err := wallet.autoConsolidate(); err != nil {
 					logger.Errorf("Auto consolidation failed: %v", err)
 				}
@@ -572,7 +571,9 @@ func (wallet *Wallet) Disconnect() error {
 	if !wallet.connected {
 		return nil
 	}
-
+	if wallet.txNotifier != nil {
+		TransactionNotifier.Remove(wallet.txNotifier)
+	}
 	if err := toErr(C.GA_destroy_session(wallet.session)); err != nil {
 		return err
 	}

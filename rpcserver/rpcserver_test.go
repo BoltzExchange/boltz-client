@@ -158,9 +158,6 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 
 	logger.Init(cfg.Log)
 
-	// cache leftovers from gdk can cause issues in tests
-	test.ClearWalletDataDir()
-
 	var err error
 	if walletCredentials == nil {
 		var testWallet *wallet.Wallet
@@ -1361,23 +1358,6 @@ func TestWalletTransactions(t *testing.T) {
 	})
 
 	request := &boltzrpc.ListWalletTransactionsRequest{Id: testWallet.Id}
-	t.Run("Lockup", func(t *testing.T) {
-		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			Pair: &boltzrpc.Pair{
-				From: boltzrpc.Currency_LBTC,
-				To:   boltzrpc.Currency_BTC,
-			},
-			Amount:           100000,
-			SendFromInternal: true,
-			WalletId:         &testWallet.Id,
-		})
-		require.NoError(t, err)
-		waitWalletTx(t, swap.TxId)
-		response, err := client.ListWalletTransactions(request)
-		require.NoError(t, err)
-		findSwap(t, response, swap.Id, boltzrpc.TransactionType_LOCKUP)
-	})
-
 	t.Run("Claim", func(t *testing.T) {
 		swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
 			Pair: &boltzrpc.Pair{
@@ -1418,6 +1398,23 @@ func TestWalletTransactions(t *testing.T) {
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
 		findSwap(t, response, swap.Id, boltzrpc.TransactionType_REFUND)
+	})
+
+	t.Run("Lockup", func(t *testing.T) {
+		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_LBTC,
+				To:   boltzrpc.Currency_BTC,
+			},
+			Amount:           100000,
+			SendFromInternal: true,
+			WalletId:         &testWallet.Id,
+		})
+		require.NoError(t, err)
+		waitWalletTx(t, swap.TxId)
+		response, err := client.ListWalletTransactions(request)
+		require.NoError(t, err)
+		findSwap(t, response, swap.Id, boltzrpc.TransactionType_LOCKUP)
 	})
 
 	test.MineBlock()
