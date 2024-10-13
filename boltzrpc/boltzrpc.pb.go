@@ -3037,7 +3037,10 @@ type CreateSwapRequest struct {
 	RefundAddress *string `protobuf:"bytes,5,opt,name=refund_address,json=refundAddress,proto3,oneof" json:"refund_address,omitempty"`
 	// wallet to pay swap from. only used if `send_from_internal` is set to true
 	WalletId *uint64 `protobuf:"varint,6,opt,name=wallet_id,json=walletId,proto3,oneof" json:"wallet_id,omitempty"`
-	// invoice to use for the swap. if not set, the daemon will get a new invoice from the lightning node
+	// bolt11 invoice, lnurl, or lnaddress to use for the swap.
+	// required in standalone mode.
+	// when connected to a lightning node, a new invoice for `amount` sats will be fetched
+	// the `amount` field has to be populated in case of a lnurl and lnaddress
 	Invoice *string `protobuf:"bytes,7,opt,name=invoice,proto3,oneof" json:"invoice,omitempty"`
 	// Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte;
 	// when `zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions
