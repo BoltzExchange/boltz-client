@@ -927,6 +927,7 @@ func (wallet *Wallet) autoConsolidate() error {
 				}
 				// FIXME: hack around a gdk fee issue
 				feeRate *= 1.02
+				logger.Infof("Using fee rate %f for consolidation", feeRate)
 				if _, err := wallet.SendToAddress(address, 0, feeRate, true); err != nil {
 					return fmt.Errorf("could not send: %v", err)
 				}
