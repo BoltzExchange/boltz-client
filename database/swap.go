@@ -232,6 +232,30 @@ func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
 	return swap, err
 }
 
+func (database *Database) QuerySwapByInvoice(invoice string) (swap *Swap, err error) {
+	database.lock.RLock()
+	defer database.lock.RUnlock()
+	rows, err := database.Query("SELECT * FROM swaps WHERE invoice = '" + invoice + "'")
+
+	if err != nil {
+		return swap, err
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		swap, err = parseSwap(rows)
+
+		if err != nil {
+			return swap, err
+		}
+	} else {
+		return swap, errors.New("could not find Swap with invoice: " + invoice)
+	}
+
+	return swap, err
+}
+
 func (database *Database) querySwaps(query string, args ...any) (swaps []*Swap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()

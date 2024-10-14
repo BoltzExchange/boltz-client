@@ -755,6 +755,22 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		logger.Infof("Using wallet %+v to pay swap", wallet.GetWalletInfo())
 	}
 
+	if createSwap.Invoice != "" {
+		existingSwap, err := server.database.QuerySwapByInvoice(createSwap.Invoice)
+		if err != nil {
+			return nil, err
+		}
+
+		swapResponse = &boltzrpc.CreateSwapResponse{
+			Id:                 existingSwap.Id,
+			Address:            existingSwap.Address,
+			ExpectedAmount:     existingSwap.ExpectedAmount,
+			TimeoutBlockHeight: existingSwap.TimoutBlockHeight,
+			Bip21:              existingSwap.Invoice,
+		}
+
+	}
+
 	if swapResponse == nil {
 
 		response, err := server.boltz.CreateSwap(createSwap)
