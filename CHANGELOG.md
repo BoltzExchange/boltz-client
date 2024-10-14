@@ -1,4 +1,11 @@
 
+<a name="v2.1.9"></a>
+## [v2.1.9] - 2024-10-14
+### Fix
+- slightly increase gdk fee estimation ([#312](https://github.com/BoltzExchange/boltz-client/issues/312))
+- race condition on channel forwarder removal ([#310](https://github.com/BoltzExchange/boltz-client/issues/310))
+
+
 <a name="v2.1.8"></a>
 ## [v2.1.8] - 2024-10-13
 ### Feat
@@ -422,6 +429,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.8...v2.1.9
 [v2.1.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.7...v2.1.8
 [v2.1.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.6...v2.1.7
 [v2.1.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.5...v2.1.6
