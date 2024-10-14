@@ -702,7 +702,7 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 	return result, nil
 }
 
-func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
+func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (tx string, err error) {
 	if wallet.Readonly {
 		return "", errors.New("wallet is readonly")
 	}
@@ -715,6 +715,9 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	if err != nil {
 		return "", err
 	}
+
+	wallet.spentOutputsLock.Lock()
+	defer wallet.spentOutputsLock.Unlock()
 
 	// Disable RBF
 	for asset, current := range outputs.Unspent {
@@ -777,38 +780,37 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	if err := mapstructure.Decode(result, &signedTx); err != nil {
 		return "", err
 	}
-	wallet.spentOutputsLock.Lock()
+	if signedTx.Error != "" {
+		return "", fmt.Errorf("could not sign: %s", signedTx.Error)
+	}
+
+	if wallet.txProvider != nil {
+		tx, err = wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
+	} else {
+		params, free = toJson(result)
+		var sendTx struct {
+			TxHash string `json:"txhash"`
+			Error  string `json:"error"`
+		}
+		if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
+			return "", err
+		}
+		free()
+
+		if sendTx.Error != "" {
+			err = errors.New(sendTx.Error)
+		}
+		tx = sendTx.TxHash
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to broadcast: %w", err)
+	}
+
 	for _, input := range signedTx.TransactionInputs {
 		wallet.spentOutputs[input.TxId] = true
 	}
-	wallet.spentOutputsLock.Unlock()
 
-	if wallet.txProvider != nil {
-
-		if signedTx.Error != "" {
-			return "", errors.New(signedTx.Error)
-		}
-		tx, err := wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
-		if err != nil {
-			return "", err
-		}
-		return tx, nil
-	}
-
-	params, free = toJson(result)
-	var sendTx struct {
-		TxHash string `json:"txhash"`
-		Error  string `json:"error"`
-	}
-	if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
-		return "", err
-	}
-	free()
-
-	if sendTx.Error != "" {
-		return "", errors.New(sendTx.Error)
-	}
-	return sendTx.TxHash, nil
+	return tx, nil
 }
 
 func (wallet *Wallet) SetSpentOutputs(outputs []string) {
