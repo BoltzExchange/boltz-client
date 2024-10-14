@@ -53,6 +53,10 @@ func ForwardChannel[T any](orig chan T, buffer int, saveValues bool) *ChannelFor
 }
 
 func (c *ChannelForwarder[T]) Remove(recv <-chan T) {
+	select {
+	case <-recv:
+	default:
+	}
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
