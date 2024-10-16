@@ -1807,6 +1807,41 @@ func TestSwap(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, paid)
 		})
+
+		t.Run("LNURL", func(t *testing.T) {
+			// provided by clnurl plugin
+			lnurl := "LNURL1DP68GUP69UHNZV3H9CCZUVPWXYARXVPSXQHKZURF9AKXUATJD3CQQKE2EU"
+			amount := uint64(100000)
+
+			t.Run("Invalid", func(t *testing.T) {
+				lnurl := "invalid"
+				_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+					Invoice: &lnurl,
+					Amount:  amount,
+				})
+				requireCode(t, err, codes.InvalidArgument)
+			})
+
+			t.Run("AmountRequired", func(t *testing.T) {
+				_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+					Invoice: &lnurl,
+				})
+				requireCode(t, err, codes.InvalidArgument)
+			})
+
+			t.Run("Valid", func(t *testing.T) {
+				swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+					Invoice: &lnurl,
+					Amount:  amount,
+				})
+				require.NoError(t, err)
+				info, err := client.GetSwapInfo(swap.Id)
+				require.NoError(t, err)
+				invoice, err := zpay32.Decode(info.Swap.Invoice, &chaincfg.RegressionNetParams)
+				require.NoError(t, err)
+				require.Equal(t, amount, uint64(invoice.MilliSat.ToSatoshis()))
+			})
+		})
 	})
 
 	t.Run("Standalone", func(t *testing.T) {

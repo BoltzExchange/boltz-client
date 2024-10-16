@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/fiatjaf/go-lnurl"
 	"math"
 	"net/url"
 	"regexp"
@@ -694,10 +695,26 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	var preimage, preimageHash []byte
 	if invoice := request.GetInvoice(); invoice != "" {
+		_, lnurlParams, err := lnurl.HandleLNURL(invoice)
+		if err == nil {
+			if kind := lnurlParams.LNURLKind(); kind != "lnurl-pay" {
+				return nil, status.Errorf(codes.InvalidArgument, "lnurl is not pay, but: %s", kind)
+			}
+			logger.Infof("Fetching invoice for LNURL: %s", invoice)
+			lnurlPay := lnurlParams.(lnurl.LNURLPayParams)
+			if request.Amount == 0 {
+				return nil, status.Errorf(codes.InvalidArgument, "amount has to be specified for lnurl")
+			}
+			payValues, err := lnurlPay.Call(int64(request.Amount*1000), "", nil)
+			if err != nil {
+				return nil, err
+			}
+			invoice = payValues.PR
+		}
 		logger.Infof("Creating Swap for invoice: %s", invoice)
 		decoded, err := zpay32.Decode(invoice, server.network.Btc)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid invoice: %s", err)
+			return nil, status.Errorf(codes.InvalidArgument, "invalid invoice or lnurl: %s", err)
 		}
 		swapResponse, err = server.checkMagicRoutingHint(decoded, invoice)
 		if err != nil {
