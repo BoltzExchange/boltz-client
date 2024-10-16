@@ -49,6 +49,7 @@ const (
 	stateSyncing          serverState = "syncing"
 	stateLocked           serverState = "locked"
 	stateLightningSyncing serverState = "lightningSyncing"
+	stateStopping         serverState = "stopping"
 )
 
 type routedBoltzServer struct {
@@ -1715,11 +1716,15 @@ func (server *routedBoltzServer) WalletReceive(ctx context.Context, request *bol
 }
 
 func (server *routedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Empty, error) {
+	if server.state == stateStopping {
+		return &empty.Empty{}, nil
+	}
 	if server.nursery != nil {
 		server.nursery.Stop()
 		logger.Debugf("Stopped nursery")
 	}
-	server.stop <- true
+	server.state = stateStopping
+	close(server.stop)
 	return &empty.Empty{}, nil
 }
 

@@ -12,7 +12,7 @@ const retryInterval = 15
 
 var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
 
-func connectLightning(lightning lightning.LightningNode) (*lightning.LightningInfo, error) {
+func connectLightning(stop chan bool, lightning lightning.LightningNode) (*lightning.LightningInfo, error) {
 	err := lightning.Connect()
 	if err != nil {
 		return nil, err
@@ -33,6 +33,15 @@ func connectLightning(lightning lightning.LightningNode) (*lightning.LightningIn
 			logger.Warn("Lightning node not synced yet")
 		}
 		logger.Info(retryMessage)
-		time.Sleep(retryInterval * time.Second)
+		wait := time.After(retryInterval * time.Second)
+		if stop != nil {
+			select {
+			case <-stop:
+				return nil, nil
+			case <-wait:
+			}
+		} else {
+			<-wait
+		}
 	}
 }

@@ -870,7 +870,7 @@ func TestReverseSwap(t *testing.T) {
 		cfg := loadConfig(t)
 		cfg.Standalone = true
 		lnd := cfg.LND
-		_, err := connectLightning(lnd)
+		_, err := connectLightning(nil, lnd)
 		require.NoError(t, err)
 
 		client, _, stop := setup(t, setupOptions{cfg: cfg})
@@ -1109,9 +1109,9 @@ func TestAutoSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	cfg.Node = "CLN"
 
-	_, err := connectLightning(cfg.Cln)
+	_, err := connectLightning(nil, cfg.Cln)
 	require.NoError(t, err)
-	_, err = connectLightning(cfg.LND)
+	_, err = connectLightning(nil, cfg.LND)
 	require.NoError(t, err)
 
 	admin, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
@@ -1766,7 +1766,7 @@ func TestSwap(t *testing.T) {
 		defer stop()
 
 		node := cfg.LND
-		_, err := connectLightning(node)
+		_, err := connectLightning(nil, node)
 		require.NoError(t, err)
 
 		t.Run("Invalid", func(t *testing.T) {
@@ -1849,7 +1849,7 @@ func TestSwap(t *testing.T) {
 		cfg.Standalone = true
 		client, _, stop := setup(t, setupOptions{cfg: cfg})
 		node := cfg.LND
-		_, err := connectLightning(node)
+		_, err := connectLightning(nil, node)
 		require.NoError(t, err)
 		defer stop()
 

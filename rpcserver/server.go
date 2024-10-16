@@ -150,9 +150,13 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		return fmt.Errorf("could not init lightning: %w", err)
 	}
 	if server.lightning != nil {
-		info, err := connectLightning(server.lightning)
+		info, err := connectLightning(server.stop, server.lightning)
 		if err != nil {
 			return err
+		}
+
+		if server.state == stateStopping {
+			return nil
 		}
 
 		if server.lightning.Name() == string(lightning.NodeTypeCln) {
