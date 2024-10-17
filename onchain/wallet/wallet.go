@@ -641,24 +641,23 @@ func (wallet *Wallet) GetBalance() (*onchain.Balance, error) {
 	return wallet.GetSubaccountBalance(*wallet.subaccount)
 }
 
-func (wallet *Wallet) SearchOutput(txId, address string) (*onchain.Output, error) {
+func (wallet *Wallet) GetOutputs(address string) ([]*onchain.Output, error) {
 	transactoins, err := wallet.GetTransactions(0, 0)
 	if err != nil {
 		return nil, err
 	}
+	var result []*onchain.Output
 	for _, tx := range transactoins {
-		if tx.Id == txId || txId == "" {
-			for _, output := range tx.Outputs {
-				if output.Address == address {
-					return &onchain.Output{
-						TxId:  tx.Id,
-						Value: output.Amount,
-					}, nil
-				}
+		for _, output := range tx.Outputs {
+			if output.Address == address {
+				result = append(result, &onchain.Output{
+					TxId:  tx.Id,
+					Value: output.Amount,
+				})
 			}
 		}
 	}
-	return nil, nil
+	return result, nil
 }
 
 type outputs struct {
