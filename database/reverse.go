@@ -244,6 +244,29 @@ func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap,
 	return reverseSwap, err
 }
 
+func (database *Database) QueryReverseSwapByClaimTransaction(txId string) (reverseSwap *ReverseSwap, err error) {
+	database.lock.Lock()
+	defer database.lock.Unlock()
+	rows, err := database.Query("SELECT * FROM reverseSwaps WHERE claimTransactionId = ?", txId)
+
+	if err != nil {
+		return reverseSwap, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		reverseSwap, err = parseReverseSwap(rows)
+
+		if err != nil {
+			return reverseSwap, err
+		}
+	} else {
+		return reverseSwap, sql.ErrNoRows
+	}
+
+	return reverseSwap, err
+}
+
 const claimableSwapsQuery = `
 SELECT * FROM reverseSwaps
 WHERE fromCurrency = ?
