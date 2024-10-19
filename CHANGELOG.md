@@ -1,4 +1,15 @@
 
+<a name="v2.1.10"></a>
+## [v2.1.10] - 2024-10-19
+### Feat
+- support creating swaps with lnurls and lnaddresses ([#308](https://github.com/BoltzExchange/boltz-client/issues/308))
+
+### Fix
+- handle multiple direct payments to same address correctly ([#315](https://github.com/BoltzExchange/boltz-client/issues/315))
+- force reconnect if boltz ws doesnt respond ([#317](https://github.com/BoltzExchange/boltz-client/issues/317))
+- stop server during lightning connection loop aswell ([#314](https://github.com/BoltzExchange/boltz-client/issues/314))
+
+
 <a name="v2.1.9"></a>
 ## [v2.1.9] - 2024-10-14
 ### Fix
@@ -429,6 +440,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.10]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.9...v2.1.10
 [v2.1.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.8...v2.1.9
 [v2.1.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.7...v2.1.8
 [v2.1.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.6...v2.1.7
