@@ -18,7 +18,7 @@ index 247da7e..38991ea 100755
  [liquid]
  symbol = "L-BTC"
 diff --git a/docker-compose.yml b/docker-compose.yml
-index 695f8ce..b121cb3 100644
+index 4d6d839..3ba8cfa 100644
 --- a/docker-compose.yml
 +++ b/docker-compose.yml
 @@ -66,7 +66,6 @@ x-services:
@@ -28,4 +28,4 @@ index 695f8ce..b121cb3 100644
 -      - --plugin=/root/mpay.sh
        - --experimental-offers
        - --clnurl-host=0.0.0.0
-     expose:
+       - --ignore-fee-limits=false
