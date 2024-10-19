@@ -30,6 +30,7 @@ type Websocket struct {
 	subscriptions chan bool
 	conn          *websocket.Conn
 	closed        bool
+	reconnect     bool
 	dialer        *websocket.Dialer
 	swapIds       []string
 }
@@ -111,7 +112,9 @@ func (boltz *Websocket) Connect() error {
 					close(boltz.Updates)
 					return
 				}
-				logger.Error("could not receive message: " + err.Error())
+				if !boltz.reconnect {
+					logger.Error("could not receive message: " + err.Error())
+				}
 				break
 			}
 
@@ -153,8 +156,13 @@ func (boltz *Websocket) Connect() error {
 		}
 		for {
 			pingTicker.Stop()
-			logger.Errorf("lost connection to boltz ws, reconnecting in %s", reconnectInterval)
-			time.Sleep(reconnectInterval)
+			if boltz.reconnect {
+				boltz.reconnect = false
+				return
+			} else {
+				logger.Errorf("lost connection to boltz ws, reconnecting in %s", reconnectInterval)
+				time.Sleep(reconnectInterval)
+			}
 			err := boltz.Connect()
 			if err == nil {
 				return
@@ -194,7 +202,13 @@ func (boltz *Websocket) subscribe(swapIds []string) error {
 
 func (boltz *Websocket) Subscribe(swapIds []string) error {
 	if err := boltz.subscribe(swapIds); err != nil {
-		return err
+		// the connection might be dead, so forcefully reconnect
+		if err := boltz.Reconnect(); err != nil {
+			return fmt.Errorf("could not reconnect boltz ws: %w", err)
+		}
+		if err := boltz.subscribe(swapIds); err != nil {
+			return err
+		}
 	}
 	boltz.swapIds = append(boltz.swapIds, swapIds...)
 	return nil
@@ -210,4 +224,16 @@ func (boltz *Websocket) Unsubscribe(swapId string) {
 func (boltz *Websocket) Close() error {
 	boltz.closed = true
 	return boltz.conn.Close()
+}
+
+func (boltz *Websocket) Reconnect() error {
+	if boltz.closed {
+		return errors.New("websocket is closed")
+	}
+	logger.Infof("Force reconnecting to Boltz ws")
+	boltz.reconnect = true
+	if err := boltz.conn.Close(); err != nil {
+		return fmt.Errorf("could not close boltz ws: %w", err)
+	}
+	return boltz.Connect()
 }
