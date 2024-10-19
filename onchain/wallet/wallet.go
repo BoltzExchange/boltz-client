@@ -35,6 +35,7 @@ import (
 const MinFeeRate = 0.01
 const MaxInputs = uint64(256)
 const DefaultAutoConsolidateThreshold = uint64(200)
+const GapLimit = 100
 
 type TransactionNotification struct {
 	TxId     string
@@ -343,6 +344,7 @@ func (wallet *Wallet) Connect() error {
 	params := map[string]any{
 		// gdk uses sat/kVB
 		"min_fee_rate": MinFeeRate * 1000,
+		"gap_limit":    GapLimit,
 	}
 	var electrum onchain.ElectrumOptions
 	if wallet.Currency == boltz.CurrencyBtc {
