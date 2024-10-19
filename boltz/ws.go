@@ -227,6 +227,10 @@ func (boltz *Websocket) Close() error {
 }
 
 func (boltz *Websocket) Reconnect() error {
+	if boltz.closed {
+		return errors.New("websocket is closed")
+	}
+	logger.Infof("Force reconnecting to Boltz ws")
 	boltz.reconnect = true
 	if err := boltz.conn.Close(); err != nil {
 		return fmt.Errorf("could not close boltz ws: %w", err)
