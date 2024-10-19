@@ -1497,13 +1497,47 @@ func TestUnlock(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestMagicRoutingHints(t *testing.T) {
+func TestDirectReverseSwapPayments(t *testing.T) {
 	cfg := loadConfig(t)
 	maxZeroConfAmount := uint64(100000)
 	cfg.MaxZeroConfAmount = &maxZeroConfAmount
 	chain := getOnchain(t, cfg)
 	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 	defer stop()
+
+	t.Run("Multiple", func(t *testing.T) {
+		externalPay := true
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_BTC,
+				To:   boltzrpc.Currency_LBTC,
+			},
+			ExternalPay: &externalPay,
+			Amount:      maxZeroConfAmount,
+		}
+		firstResponse, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+		_, statusStream := swapStream(t, client, firstResponse.Id)
+		first := statusStream(boltzrpc.SwapState_PENDING, boltz.SwapCreated).ReverseSwap
+		claimAddress := first.ClaimAddress
+
+		request.Address = claimAddress
+		request.AcceptZeroConf = true
+		externalPay = false
+		second, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+		require.NotEmpty(t, second.ClaimTransactionId)
+		test.MineBlock()
+
+		// send a bunch of payments to the address.
+		test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount*2)
+		correct := test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount)
+		test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount/2)
+		first = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect).ReverseSwap
+		claimTx := first.ClaimTransactionId
+		require.NotEqualf(t, claimTx, second.ClaimTransactionId, "transactions are the same")
+		require.Equal(t, correct, claimTx)
+	})
 
 	tt := []struct {
 		desc     string
