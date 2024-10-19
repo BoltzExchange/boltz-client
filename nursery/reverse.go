@@ -338,25 +338,23 @@ func (nursery *Nursery) checkSwapsWallet(swaps []*database.ReverseSwap) (bool, e
 				return cmp.Compare(a.Value, b.Value)
 			})
 			for _, swap := range swaps {
-				outputs = slices.DeleteFunc(outputs, func(output *onchain.Output) bool {
-					_, err = nursery.database.QueryReverseSwapByClaimTransaction(output.TxId)
-					if err != nil {
-						if errors.Is(err, sql.ErrNoRows) {
-							return false
-						}
-						logger.Errorf("couldnt query swap by claim tx: %s", err)
-					}
-					return true
-				})
 				if len(outputs) == 0 {
 					return true, nil
 				}
-				chosenOutput := outputs[0]
+				var chosenOutput *onchain.Output
 				for _, output := range outputs {
-					if output.Value <= swap.OnchainAmount {
+					found, err := nursery.database.QueryReverseSwapByClaimTransaction(output.TxId)
+					if err == nil && found.Id != swap.Id {
+						continue
+					} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
+						logger.Errorf("couldnt query swap by claim tx: %s", err)
+					}
+					if output.Value <= swap.OnchainAmount || chosenOutput == nil {
 						// try to go match as close possible to the output value
 						// its important that we sorted both swaps and outputs by amount above
 						chosenOutput = output
+					} else {
+						break
 					}
 				}
 				nursery.handleReverseSwapDirectPayment(swap, chosenOutput)
