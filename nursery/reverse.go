@@ -308,7 +308,7 @@ func (nursery *Nursery) checkExternalReverseSwaps(currency boltz.Currency, txId 
 				return err
 			}
 			if len(swaps) > 1 {
-				logger.Warnf("Multiple swaps for external claim address %s cant tell which one to use", claimAddress)
+				logger.Warnf("Multiple swaps for external claim address %s, can not tell which one to use", claimAddress)
 			} else {
 				for _, output := range outputs {
 					nursery.handleReverseSwapDirectPayment(swaps[0], output)
@@ -347,7 +347,7 @@ func (nursery *Nursery) checkSwapsWallet(swaps []*database.ReverseSwap) (bool, e
 					if err == nil && found.Id != swap.Id {
 						continue
 					} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
-						logger.Errorf("couldnt query swap by claim tx: %s", err)
+						logger.Errorf("could not query swap by claim tx: %s", err)
 					}
 					if output.Value <= swap.OnchainAmount || chosenOutput == nil {
 						// try to go match as close possible to the output value
