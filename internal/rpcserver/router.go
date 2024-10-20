@@ -1681,7 +1681,7 @@ func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *
 	}
 	feeRate := request.GetSatPerVbyte()
 	if feeRate == 0 {
-		feeRate, err = server.onchain.EstimateFee(ownWallet.Currency, request.GetIsSwapAddress())
+		feeRate, err = server.onchain.EstimateFee(ownWallet.Currency)
 		if err != nil {
 			return nil, err
 		}
@@ -2262,7 +2262,7 @@ func (server *routedBoltzServer) estimateFee(requested float64, currency boltz.C
 			logger.Infof("Amount %d exceeds maximal zero conf amount %d, allowing lowball", amount, maxZeroConfAmount)
 			allowLowball = true
 		}
-		feeSatPerVbyte, err := server.onchain.EstimateFee(currency, allowLowball)
+		feeSatPerVbyte, err := server.onchain.EstimateFee(currency)
 		if err != nil {
 			return 0, err
 		}

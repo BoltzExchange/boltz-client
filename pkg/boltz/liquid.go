@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math"
-
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/vulpemventures/go-elements/address"
@@ -79,8 +77,7 @@ func (transaction *LiquidTransaction) VoutValue(vout uint32) (uint64, error) {
 }
 
 func (transaction *LiquidTransaction) VSize() uint64 {
-	witnessSize := transaction.SerializeSize(true, true) - transaction.SerializeSize(false, true)
-	return uint64(transaction.SerializeSize(false, true)) + uint64(math.Ceil(float64(witnessSize)/4))
+	return uint64(transaction.DiscountVirtualSize())
 }
 
 func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outputs []OutputDetails, index int, cooperative bool) []byte {

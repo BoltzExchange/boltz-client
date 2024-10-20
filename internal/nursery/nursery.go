@@ -292,7 +292,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 		return id, err
 	}
 
-	feeSatPerVbyte, err := nursery.onchain.EstimateFee(currency, true)
+	feeSatPerVbyte, err := nursery.onchain.EstimateFee(currency)
 	if err != nil {
 		return handleErr(fmt.Errorf("could not get fee estimation: %w", err))
 	}
@@ -372,11 +372,11 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 
 func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {
 	fees := make(boltz.FeeEstimations)
-	fees[boltz.CurrencyLiquid], err = nursery.onchain.EstimateFee(boltz.CurrencyLiquid, true)
+	fees[boltz.CurrencyLiquid], err = nursery.onchain.EstimateFee(boltz.CurrencyLiquid)
 	if err != nil {
 		return err
 	}
-	fees[boltz.CurrencyBtc], err = nursery.onchain.EstimateFee(boltz.CurrencyBtc, true)
+	fees[boltz.CurrencyBtc], err = nursery.onchain.EstimateFee(boltz.CurrencyBtc)
 	if err != nil {
 		return err
 	}
