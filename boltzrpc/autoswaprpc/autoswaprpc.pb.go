@@ -323,11 +323,11 @@ type ChainRecommendation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Populated when a swap is recommended based on the current balance of the configured `from_wallet`
+	// Populated when a swap is recommended based on the configured `wallet_balance`
+	// of the configured `from_wallet` exceeds the currently configured `max_balance`
 	Swap          *ChainSwap        `protobuf:"bytes,1,opt,name=swap,proto3,oneof" json:"swap,omitempty"`
 	WalletBalance *boltzrpc.Balance `protobuf:"bytes,2,opt,name=wallet_balance,json=walletBalance,proto3" json:"wallet_balance,omitempty"`
-	// Currently configured max_balance
-	MaxBalance uint64 `protobuf:"varint,3,opt,name=max_balance,json=maxBalance,proto3" json:"max_balance,omitempty"`
+	MaxBalance    uint64            `protobuf:"varint,3,opt,name=max_balance,json=maxBalance,proto3" json:"max_balance,omitempty"`
 }
 
 func (x *ChainRecommendation) Reset() {
