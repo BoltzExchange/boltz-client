@@ -33,7 +33,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/vektra/mockery v1.1.2
-	github.com/vulpemventures/go-elements v0.5.3
+	github.com/vulpemventures/go-elements v0.5.5
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	golang.org/x/sync v0.10.0
@@ -60,7 +60,7 @@ require (
 	github.com/aokoli/goutils v1.0.1 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/btcsuite/btcd/btcutil/psbt v1.1.8 // indirect
+	github.com/btcsuite/btcd/btcutil/psbt v1.1.9 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
 	github.com/btcsuite/btcwallet v0.16.10-0.20240404104514-b2f31f9045fb // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.4 // indirect
