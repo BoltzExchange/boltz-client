@@ -868,8 +868,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 				wallet,
 				swapResponse.Address,
 				swapResponse.ExpectedAmount,
-				!request.GetZeroConf(),
-				submarinePair.Limits.MaximalZeroConfAmount,
 				request.SatPerVbyte,
 			)
 			if err != nil {
@@ -888,8 +886,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			wallet,
 			swapResponse.Address,
 			swapResponse.ExpectedAmount,
-			false,
-			submarinePair.Limits.MaximalZeroConfAmount,
 			request.SatPerVbyte,
 		)
 		if err != nil {
@@ -1320,8 +1316,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 			fromWallet,
 			from.LockupAddress,
 			from.Amount,
-			!request.GetLockupZeroConf(),
-			chainPair.Limits.MaximalZeroConfAmount,
 			request.SatPerVbyte,
 		)
 		if err != nil {
@@ -1339,19 +1333,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	return serializeChainSwap(&chainSwap), nil
 }
 
-func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*wallet.Wallet, error) {
-	chain, err := server.onchain.GetCurrency(credentials.Currency)
-	if err != nil {
-		return nil, err
-	}
-	result, err := wallet.Login(credentials)
-	if err != nil {
-		return nil, err
-	}
-	result.SetTxProvider(chain.Tx)
-	return result, nil
-}
-
 func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *wallet.Credentials, password string) error {
 	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
@@ -1367,7 +1348,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 	}
 
-	wallet, err := server.loginWallet(credentials)
+	wallet, err := wallet.Login(credentials)
 	if err != nil {
 		return errors.New("could not login: " + err.Error())
 	}
@@ -1696,7 +1677,7 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if err != nil {
 		return nil, err
 	}
-	txId, err := server.sendToAddress(sendWallet, request.Address, request.Amount, true, 0, request.SatPerVbyte)
+	txId, err := server.sendToAddress(sendWallet, request.Address, request.Amount, request.SatPerVbyte)
 	if err != nil {
 		return nil, err
 	}
@@ -1830,7 +1811,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			creds := creds
 			go func() {
 				defer wg.Done()
-				wallet, err := server.loginWallet(creds)
+				wallet, err := wallet.Login(creds)
 				if err != nil {
 					logger.Errorf("could not login to wallet: %v", err)
 				} else {
@@ -2153,19 +2134,15 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 		}, nil
 }
 
-func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, allowLowball bool, maxZeroConfAmount uint64, fee *float64) (string, error) {
-	if amount > maxZeroConfAmount && !allowLowball {
-		logger.Infof("Amount %d exceeds maximal zero conf amount %d, allowing lowball", amount, maxZeroConfAmount)
-		allowLowball = true
-	}
+func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, fee *float64) (string, error) {
 	if fee == nil {
-		feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency, allowLowball)
+		feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency)
 		if err != nil {
 			return "", err
 		}
 		fee = &feeSatPerVbyte
 	}
-	logger.Infof("Using fee of %f sat/vbyte (allowLowball: %v)", *fee, allowLowball)
+	logger.Infof("Using fee of %f sat/vbyte", *fee)
 	return wallet.SendToAddress(address, amount, *fee, false)
 }
 
