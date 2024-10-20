@@ -868,8 +868,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 				wallet,
 				swapResponse.Address,
 				swapResponse.ExpectedAmount,
-				!request.GetZeroConf(),
-				submarinePair.Limits.MaximalZeroConfAmount,
 				request.SatPerVbyte,
 			)
 			if err != nil {
@@ -888,8 +886,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			wallet,
 			swapResponse.Address,
 			swapResponse.ExpectedAmount,
-			false,
-			submarinePair.Limits.MaximalZeroConfAmount,
 			request.SatPerVbyte,
 		)
 		if err != nil {
@@ -1320,8 +1316,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 			fromWallet,
 			from.LockupAddress,
 			from.Amount,
-			!request.GetLockupZeroConf(),
-			chainPair.Limits.MaximalZeroConfAmount,
 			request.SatPerVbyte,
 		)
 		if err != nil {
@@ -1696,7 +1690,7 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if err != nil {
 		return nil, err
 	}
-	txId, err := server.sendToAddress(sendWallet, request.Address, request.Amount, true, 0, request.SatPerVbyte)
+	txId, err := server.sendToAddress(sendWallet, request.Address, request.Amount, request.SatPerVbyte)
 	if err != nil {
 		return nil, err
 	}
@@ -2153,19 +2147,15 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 		}, nil
 }
 
-func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, allowLowball bool, maxZeroConfAmount uint64, fee *float64) (string, error) {
-	if amount > maxZeroConfAmount && !allowLowball {
-		logger.Infof("Amount %d exceeds maximal zero conf amount %d, allowing lowball", amount, maxZeroConfAmount)
-		allowLowball = true
-	}
+func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, fee *float64) (string, error) {
 	if fee == nil {
-		feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency, allowLowball)
+		feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency)
 		if err != nil {
 			return "", err
 		}
 		fee = &feeSatPerVbyte
 	}
-	logger.Infof("Using fee of %f sat/vbyte (allowLowball: %v)", *fee, allowLowball)
+	logger.Infof("Using fee of %f sat/vbyte", *fee)
 	return wallet.SendToAddress(address, amount, *fee, false)
 }
 
