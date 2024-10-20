@@ -543,9 +543,7 @@ message CreateSwapRequest {
     // when connected to a lightning node, a new invoice for `amount` sats will be fetched
     // the `amount` field has to be populated in case of a lnurl and lnaddress
     optional string invoice = 7;
-    // Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte;
-    // when `zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions
-    optional bool zero_conf = 8;
+    optional bool zero_conf = 8 [deprecated = true];
     // Fee rate to use when sending from internal wallet
     optional double sat_per_vbyte = 9;
     // Rates to accept for the swap. Queries latest from boltz otherwise
@@ -633,9 +631,7 @@ message CreateChainSwapRequest {
     optional bool accept_zero_conf = 7;
     // If set, the daemon will not pay the swap from an internal wallet.
     optional bool external_pay = 8;
-    // Boltz does not accept 0-conf for Liquid transactions with a fee of 0.01 sat/vByte;
-    // when `lockup_zero_conf` is enabled, a fee of 0.1 sat/vByte will be used for Liquid lockup transactions
-    optional bool lockup_zero_conf = 9;
+    optional bool lockup_zero_conf = 9 [deprecated = true];
     // Fee rate to use when sending from internal wallet
     optional double sat_per_vbyte = 10;
     // Rates to accept for the swap. Queries latest from boltz otherwise
