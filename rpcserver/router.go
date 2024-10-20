@@ -662,13 +662,10 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *zpay32.Invoice, 
 	return nil, nil
 }
 
-func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *zpay32.Invoice) {
+func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *zpay32.Invoice) bool {
 	expiryLeft := time.Until(invoice.Timestamp.Add(invoice.Expiry() - 10*time.Second))
 	currency := request.Pair.GetFrom()
-	if expiryLeft.Minutes() < boltz.GetBlockTime(utils.ParseCurrency(&currency)) {
-		zeroConf := true
-		request.ZeroConf = &zeroConf
-	}
+	return expiryLeft.Minutes() > boltz.GetBlockTime(utils.ParseCurrency(&currency))
 }
 
 // TODO: custom refund address
@@ -721,7 +718,9 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, err
 		}
-		checkInvoiceExpiry(request, decoded)
+		if !checkInvoiceExpiry(request, decoded) {
+			return nil, status.Errorf(codes.InvalidArgument, "invoice is about to expire")
+		}
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
 		// set amount for balance check
@@ -1333,19 +1332,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	return serializeChainSwap(&chainSwap), nil
 }
 
-func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*wallet.Wallet, error) {
-	chain, err := server.onchain.GetCurrency(credentials.Currency)
-	if err != nil {
-		return nil, err
-	}
-	result, err := wallet.Login(credentials)
-	if err != nil {
-		return nil, err
-	}
-	result.SetTxProvider(chain.Tx)
-	return result, nil
-}
-
 func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *wallet.Credentials, password string) error {
 	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
@@ -1361,7 +1347,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 	}
 
-	wallet, err := server.loginWallet(credentials)
+	wallet, err := wallet.Login(credentials)
 	if err != nil {
 		return errors.New("could not login: " + err.Error())
 	}
@@ -1824,7 +1810,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			creds := creds
 			go func() {
 				defer wg.Done()
-				wallet, err := server.loginWallet(creds)
+				wallet, err := wallet.Login(creds)
 				if err != nil {
 					logger.Errorf("could not login to wallet: %v", err)
 				} else {
