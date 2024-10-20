@@ -32,7 +32,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
-const MinFeeRate = 0.01
+const MinFeeRate = 0.1
 const MaxInputs = uint64(256)
 const DefaultAutoConsolidateThreshold = uint64(200)
 const GapLimit = 100
