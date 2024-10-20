@@ -1333,19 +1333,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	return serializeChainSwap(&chainSwap), nil
 }
 
-func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*wallet.Wallet, error) {
-	chain, err := server.onchain.GetCurrency(credentials.Currency)
-	if err != nil {
-		return nil, err
-	}
-	result, err := wallet.Login(credentials)
-	if err != nil {
-		return nil, err
-	}
-	result.SetTxProvider(chain.Tx)
-	return result, nil
-}
-
 func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *wallet.Credentials, password string) error {
 	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
@@ -1361,7 +1348,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 	}
 
-	wallet, err := server.loginWallet(credentials)
+	wallet, err := wallet.Login(credentials)
 	if err != nil {
 		return errors.New("could not login: " + err.Error())
 	}
@@ -1824,7 +1811,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			creds := creds
 			go func() {
 				defer wg.Done()
-				wallet, err := server.loginWallet(creds)
+				wallet, err := wallet.Login(creds)
 				if err != nil {
 					logger.Errorf("could not login to wallet: %v", err)
 				} else {
