@@ -195,12 +195,7 @@ func (onchain *Onchain) GetWallets(checker WalletChecker) []Wallet {
 	return wallets
 }
 
-func (onchain *Onchain) EstimateFee(currency boltz.Currency, allowLowball bool) (float64, error) {
-	if currency == boltz.CurrencyLiquid && onchain.Network == boltz.MainNet && allowLowball {
-		if boltzProvider, ok := onchain.Liquid.Tx.(*BoltzTxProvider); ok {
-			return boltzProvider.GetFeeEstimation(boltz.CurrencyLiquid)
-		}
-	}
+func (onchain *Onchain) EstimateFee(currency boltz.Currency) (float64, error) {
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return 0, err
