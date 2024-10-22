@@ -1,4 +1,10 @@
 
+<a name="v2.1.11"></a>
+## [v2.1.11] - 2024-10-22
+### Fix
+- check if chosenOutput is nil when looking for direct payments ([#319](https://github.com/BoltzExchange/boltz-client/issues/319))
+
+
 <a name="v2.1.10"></a>
 ## [v2.1.10] - 2024-10-19
 ### Feat
@@ -440,6 +446,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.1.11]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.10...v2.1.11
 [v2.1.10]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.9...v2.1.10
 [v2.1.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.8...v2.1.9
 [v2.1.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.7...v2.1.8
