@@ -338,9 +338,6 @@ func (nursery *Nursery) checkSwapsWallet(swaps []*database.ReverseSwap) (bool, e
 				return cmp.Compare(a.Value, b.Value)
 			})
 			for _, swap := range swaps {
-				if len(outputs) == 0 {
-					return true, nil
-				}
 				var chosenOutput *onchain.Output
 				for _, output := range outputs {
 					found, err := nursery.database.QueryReverseSwapByClaimTransaction(output.TxId)
@@ -356,6 +353,9 @@ func (nursery *Nursery) checkSwapsWallet(swaps []*database.ReverseSwap) (bool, e
 					} else {
 						break
 					}
+				}
+				if chosenOutput == nil {
+					return true, nil
 				}
 				nursery.handleReverseSwapDirectPayment(swap, chosenOutput)
 			}
