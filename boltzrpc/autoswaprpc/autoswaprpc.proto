@@ -51,11 +51,18 @@ message LightningSwap {
   repeated string dismissed_reasons = 4;
 }
 
+message LightningThresholds {
+  optional uint64 inbound = 1;
+  optional uint64 outbound = 2;
+}
+
 message LightningRecommendation {
   // Populated when a swap is recommended for the associated `channel`,
   // otherwise, the current balances are below the configured thresholds
   optional LightningSwap swap = 1;
   boltzrpc.LightningChannel channel = 2;
+  // the thresholds for a swap to be recommended for the `channel`
+  LightningThresholds thresholds = 3;
 }
 
 message ChainSwap {

@@ -53,8 +53,9 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *a
 
 		for _, recommendation := range recommendations {
 			response.Lightning = append(response.Lightning, &autoswaprpc.LightningRecommendation{
-				Swap:    serializeLightningSwap(recommendation.Swap),
-				Channel: serializeLightningChannel(recommendation.Channel),
+				Swap:       serializeLightningSwap(recommendation.Swap),
+				Channel:    serializeLightningChannel(recommendation.Channel),
+				Thresholds: recommendation.Thresholds,
 			})
 		}
 	}

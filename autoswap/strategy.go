@@ -1,9 +1,11 @@
 package autoswap
 
 import (
+	"math"
+
+	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
-	"math"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
@@ -19,7 +21,14 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 		return nil
 	}
 
-	recommendation := &LightningRecommendation{Channel: channel}
+	thresholds := &autoswaprpc.LightningThresholds{}
+	if outbound > 0 {
+		thresholds.Outbound = &outbound
+	}
+	if inbound > 0 {
+		thresholds.Inbound = &inbound
+	}
+	recommendation := &LightningRecommendation{Channel: channel, Thresholds: thresholds}
 	swap := &LightningSwap{}
 	if channel.OutboundSat < outbound {
 		swap.Type = boltz.NormalSwap
