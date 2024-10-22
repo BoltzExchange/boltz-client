@@ -7,9 +7,9 @@
 package boltzrpc
 
 import (
-	empty "github.com/golang/protobuf/ptypes/empty"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -7108,7 +7108,7 @@ var file_boltzrpc_proto_goTypes = []interface{}{
 	(*VerifyWalletPasswordRequest)(nil),    // 83: boltzrpc.VerifyWalletPasswordRequest
 	(*VerifyWalletPasswordResponse)(nil),   // 84: boltzrpc.VerifyWalletPasswordResponse
 	(*ChangeWalletPasswordRequest)(nil),    // 85: boltzrpc.ChangeWalletPasswordRequest
-	(*empty.Empty)(nil),                    // 86: google.protobuf.Empty
+	(*emptypb.Empty)(nil),                  // 86: google.protobuf.Empty
 }
 var file_boltzrpc_proto_depIdxs = []int32{
 	10,  // 0: boltzrpc.ListTenantsResponse.tenants:type_name -> boltzrpc.Tenant

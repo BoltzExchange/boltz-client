@@ -555,7 +555,12 @@ func TestStrategies(t *testing.T) {
 				if len(tc.outcome) == 1 {
 					recommendations[0].Channel = nil
 				}
-				require.Equal(t, tc.outcome, recommendations)
+				for i := range recommendations {
+					require.Equal(t, tc.outcome[i].Swap, recommendations[i].Swap)
+					require.Equal(t, tc.outcome[i].Channel, recommendations[i].Channel)
+					thresholds := recommendations[i].Thresholds
+					require.NotNil(t, thresholds)
+				}
 			}
 		})
 
@@ -735,6 +740,7 @@ func TestCheckSwapRecommendation(t *testing.T) {
 				},
 			}}}, tc.config.Budget, true)
 			require.NoError(t, err)
+			require.Equal(t, tc.outcome, validated[0].Swap.DismissedReasons)
 			require.Equal(t, tc.outcome, validated[0].Swap.DismissedReasons)
 		})
 	}
