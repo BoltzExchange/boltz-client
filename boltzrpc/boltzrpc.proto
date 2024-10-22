@@ -123,6 +123,11 @@ service Boltz {
     rpc GetWallet (GetWalletRequest) returns (Wallet);
 
     /*
+    Returns the current balance and subaccount of a wallet.
+     */
+    rpc GetWalletWithdrawBalance (GetWalletRequest) returns (Wallet);
+
+    /*
     Returns recent transactions from a wallet.
      */
     rpc ListWalletTransactions (ListWalletTransactionsRequest) returns (ListWalletTransactionsResponse);
@@ -741,6 +746,16 @@ message GetWalletsRequest {
 message GetWalletRequest {
     optional string name = 1;
     optional uint64 id = 2;
+}
+
+message GetWalletWithdrawableAmounteRequest {
+    optional uint64 id = 1;
+}
+
+message WalletWithdrawableAmount {
+    uint64 amount = 1;
+    // the fee rate used for the estimation in sat/vbyte
+    double fee_rate = 2;
 }
 
 message ListWalletTransactionsRequest {
