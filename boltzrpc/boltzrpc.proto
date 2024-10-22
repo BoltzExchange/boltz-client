@@ -123,6 +123,13 @@ service Boltz {
     rpc GetWallet (GetWalletRequest) returns (Wallet);
 
     /*
+    Calculates the fee for an equivalent `WalletSend` request.
+    The `address` can be left empty if `is_swap_address` is set to true. A dummy swap address will be used in this case.
+    This allows for a fee estimation of a swap lockup transaction.
+     */
+    rpc GetWalletSendFee (WalletSendRequest) returns (WalletSendFee);
+
+    /*
     Returns recent transactions from a wallet.
      */
     rpc ListWalletTransactions (ListWalletTransactionsRequest) returns (ListWalletTransactionsResponse);
@@ -743,6 +750,14 @@ message GetWalletRequest {
     optional uint64 id = 2;
 }
 
+message WalletSendFee {
+    // amount of sats which would be sent
+    uint64 amount = 1;
+    uint64 fee = 2;
+    // the fee rate used for the estimation in sat/vbyte
+    double fee_rate = 3;
+}
+
 message ListWalletTransactionsRequest {
     uint64 id = 1;
     optional bool exclude_swap_related = 2;
@@ -800,9 +815,14 @@ message RemoveWalletRequest {
 message WalletSendRequest {
     uint64 id = 1;
     string address = 2;
+    // Amount of satoshis to be sent to 'address`
     uint64 amount = 3;
     // Fee rate to use for the transaction
     optional double sat_per_vbyte = 4;
+    // Sends all available funds to the address. The `amount` field is ignored.
+    optional bool send_all = 5;
+    // whether `address` is the lockup of a swap.
+    optional bool is_swap_address = 6;
 }
 
 message WalletSendResponse {

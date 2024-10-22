@@ -181,6 +181,14 @@ Returns the current balance and subaccount of a wallet.
 | ------- | -------- |
 | [`GetWalletRequest`](#getwalletrequest) | [`Wallet`](#wallet) |
 
+#### GetWalletSendFee
+
+Calculates the fee for an equivalent `WalletSend` request. The `address` can be left empty if `is_swap_address` is set to true. A dummy swap address will be used in this case. This allows for a fee estimation of a swap lockup transaction.
+
+| Request | Response |
+| ------- | -------- |
+| [`WalletSendRequest`](#walletsendrequest) | [`WalletSendFee`](#walletsendfee) |
+
 #### ListWalletTransactions
 
 Returns recent transactions from a wallet.
@@ -1469,6 +1477,21 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### WalletSendFee
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `amount` | [`uint64`](#uint64) |  | amount of sats which would be sent |
+| `fee` | [`uint64`](#uint64) |  |  |
+| `fee_rate` | [`double`](#double) |  | the fee rate used for the estimation in sat/vbyte |
+
+
+
+
+
 #### WalletSendRequest
 
 
@@ -1478,8 +1501,10 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `id` | [`uint64`](#uint64) |  |  |
 | `address` | [`string`](#string) |  |  |
-| `amount` | [`uint64`](#uint64) |  |  |
+| `amount` | [`uint64`](#uint64) |  | Amount of satoshis to be sent to 'address` |
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use for the transaction |
+| `send_all` | [`bool`](#bool) | optional | Sends all available funds to the address. The `amount` field is ignored. |
+| `is_swap_address` | [`bool`](#bool) | optional | whether `address` is the lockup of a swap. |
 
 
 
