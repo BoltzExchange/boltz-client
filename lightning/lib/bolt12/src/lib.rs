@@ -39,7 +39,7 @@ impl<T> CResult<T> {
             },
             Err(err) => CResult {
                 result: unsafe { std::mem::zeroed() },
-                error: CString::new(err).unwrap().into_raw(),
+                error: CString::new(err).unwrap_or(CString::default()).into_raw(),
             },
         }
     }
