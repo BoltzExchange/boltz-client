@@ -10,6 +10,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/lightningnetwork/lnd/zpay32"
 )
@@ -31,18 +32,18 @@ func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
 type Output struct {
 	*boltz.OutputDetails
 	walletId *database.Id
-	voutInfo voutInfo
+	voutInfo onchain.VoutArgs
 
 	setTransaction func(transactionId string, fee uint64) error
 	setError       func(err error)
 }
 
-func swapVoutInfo(swap *database.Swap) voutInfo {
-	return voutInfo{
-		transactionId: swap.LockupTransactionId,
-		currency:      swap.Pair.From,
-		address:       swap.Address,
-		blindingKey:   swap.BlindingKey,
+func swapVoutInfo(swap *database.Swap) onchain.VoutArgs {
+	return onchain.VoutArgs{
+		TransactionId: swap.LockupTransactionId,
+		Currency:      swap.Pair.From,
+		Address:       swap.Address,
+		BlindingKey:   swap.BlindingKey,
 	}
 }
 
@@ -161,7 +162,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				return
 			}
 
-			lockupTransaction, _, value, err := nursery.findVout(swapVoutInfo(swap))
+			result, err := nursery.onchain.FindVout(swapVoutInfo(swap))
 			if err != nil {
 				handleError(err.Error())
 				return
@@ -169,7 +170,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 			logger.Infof("Got lockup transaction of Swap %s: %s", swap.Id, lockupTransaction.Hash())
 
-			if err := nursery.database.SetSwapExpectedAmount(swap, value); err != nil {
+			if err := nursery.database.SetSwapExpectedAmount(swap, result.Value); err != nil {
 				handleError("Could not set expected amount in database: " + err.Error())
 				return
 			}
