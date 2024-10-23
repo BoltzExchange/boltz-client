@@ -242,8 +242,9 @@ func (lightningSwap *LightningSwap) GetAmount() uint64 {
 }
 
 type LightningRecommendation struct {
-	Swap    *LightningSwap
-	Channel *lightning.LightningChannel
+	Swap       *LightningSwap
+	Channel    *lightning.LightningChannel
+	Thresholds *autoswaprpc.LightningThresholds
 }
 
 func (cfg *LightningConfig) validateRecommendations(
