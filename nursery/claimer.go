@@ -6,6 +6,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
+	"slices"
 	"time"
 )
 
@@ -13,14 +14,16 @@ type Claimer struct {
 	ExpiryTolerance time.Duration    `long:"expiry-tolerance" description:"Time before a swap expires that it should be claimed"`
 	Symbols         []boltz.Currency `long:"deferred-symbols" description:"Symbols for which swaps should be deferred" default:"liquid"`
 	Interval        time.Duration    `long:"claim-interval" description:"Interval at which the claimer should check for deferred swaps"`
+	MaxCount        int              `long:"max-count" description:"Maximum number of outputs to claim in a single transaction" default:"200"`
+	MaxBalance      uint64           `long:"max-balance" description:"Maximum number of outputs to claim in a single transaction" default:"200"`
 
 	onchain *onchain.Onchain
+	outputs map[boltz.Currency][]*Output
 }
 
 func (nursery *Nursery) startClaimer() {
 	// sweep everything at startup, because previously deferred swaps might have expired
-	nursery.SweepAll([]boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid})
-
+	nursery.SweepAll(ReasonForced, []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid})
 	if nursery.claimer.Interval == 0 {
 		logger.Infof("Deferred Claimer disabled")
 		return
@@ -35,7 +38,7 @@ func (nursery *Nursery) startClaimer() {
 		for {
 			select {
 			case <-ticker.C:
-				nursery.SweepAll(nursery.claimer.Symbols)
+				nursery.SweepAll(ReasonInterval, nursery.claimer.Symbols)
 			case <-nursery.ctx.Done():
 				return
 			}
@@ -43,37 +46,64 @@ func (nursery *Nursery) startClaimer() {
 	}()
 }
 
-func (nursery *Nursery) checkSweep(tenantId database.Id, currency boltz.Currency, timeoutBlockHeight uint32) error {
-	if nursery.claimer.shouldSweep(currency, timeoutBlockHeight) {
-		_, err := nursery.Sweep(&tenantId, currency)
+func (nursery *Nursery) checkSweep(output *Output) error {
+	if reason := nursery.claimer.shouldSweep(output); reason != ReasonNone {
+		_, err := nursery.sweep(reason, nil, output.voutInfo.Currency)
 		return err
 	}
 	return nil
 }
 
-func (nursery *Claimer) shouldSweep(currency boltz.Currency, timeoutBlockHeight uint32) bool {
-	if nursery.Interval == 0 {
-		return true
+type SweepReason string
+
+const (
+	ReasonNone     SweepReason = "none"
+	ReasonExpiry   SweepReason = "expiry"
+	ReasonCount    SweepReason = "count"
+	ReasonAmount   SweepReason = "amount"
+	ReasonInterval SweepReason = "interval"
+	ReasonForced   SweepReason = "forced"
+)
+
+func (claimer *Claimer) shouldSweep(output *Output) SweepReason {
+	currency := output.voutInfo.Currency
+	outputs := claimer.outputs[currency]
+	if !slices.ContainsFunc(outputs, func(existing *Output) bool {
+		return existing.SwapId == output.SwapId
+	}) {
+		claimer.outputs[currency] = append(outputs, output)
 	}
-	blockHeight, err := nursery.onchain.GetBlockHeight(currency)
+	if claimer.Interval == 0 {
+		return ReasonForced
+	}
+	blockHeight, err := claimer.onchain.GetBlockHeight(currency)
 	if err != nil {
 		logger.Warnf("Could not get block height for %s, forcing sweep: %s", currency, err)
-		return true
+		return ReasonForced
 	}
-	blocks := timeoutBlockHeight - blockHeight
+	blocks := output.TimeoutBlockHeight - blockHeight
 	timeout := time.Duration(boltz.BlocksToHours(blocks, currency) * float64(time.Hour))
-	return timeout > nursery.ExpiryTolerance
+	if timeout > claimer.ExpiryTolerance {
+		return ReasonExpiry
+	}
+	if len(claimer.outputs[currency]) > claimer.MaxCount {
+		return ReasonCount
+	}
+	if claimer.SweepableBalance(currency, nil) > claimer.MaxBalance {
+		return ReasonAmount
+	}
+	return ReasonNone
 }
 
-func (nursery *Nursery) SweepAll(symbols []boltz.Currency) {
+func (nursery *Nursery) SweepAll(reason SweepReason, symbols []boltz.Currency) {
 	for _, currency := range symbols {
-		if _, err := nursery.Sweep(nil, currency); err != nil {
+		if _, err := nursery.sweep(reason, nil, currency); err != nil {
 			logger.Errorf("could not sweep %s: %s", currency, err)
 		}
 	}
 }
 
-func (nursery *Nursery) queryAllClaimableOutputs(tenantId *database.Id, currency boltz.Currency) ([]*Output, error) {
+func (nursery *Nursery) getAllOutputs(tenantId *database.Id, currency boltz.Currency) ([]*Output, error) {
 	currentHeight, err := nursery.onchain.GetBlockHeight(currency)
 	if err != nil {
 		return nil, fmt.Errorf("could not get block height: %w", err)
@@ -110,30 +140,57 @@ func (nursery *Nursery) queryAllClaimableOutputs(tenantId *database.Id, currency
 }
 
 func (nursery *Nursery) Sweep(tenantId *database.Id, currency boltz.Currency) (string, error) {
-	outputs, err := nursery.queryAllClaimableOutputs(tenantId, currency)
+	outputs, err := nursery.getAllOutputs(nil, currency)
 	if err != nil {
 		return "", fmt.Errorf("could not query claimable outputs: %w", err)
 	}
+	nursery.claimer.outputs[currency] = outputs
+	return nursery.sweep(ReasonForced, tenantId, currency)
+}
 
+func (nursery *Nursery) sweep(reason SweepReason, tenantId *database.Id, currency boltz.Currency) (string, error) {
+	outputs := nursery.claimer.outputs[currency]
+	currentHeight, err := nursery.onchain.GetBlockHeight(currency)
+	if err != nil {
+		return "", fmt.Errorf("could not get block height: %w", err)
+	}
+	for _, output := range outputs {
+		output.Cooperative = output.TimeoutBlockHeight > currentHeight
+		logger.Debugf(
+			"Output for swap %s cooperative: %t (%d > %d)",
+			output.SwapId, output.Cooperative, output.TimeoutBlockHeight, currentHeight,
+		)
+	}
 	if len(outputs) > 0 {
-		logger.Infof("Sweeping %d outputs for currency %s", len(outputs), currency)
-		return nursery.createTransaction(currency, outputs)
+		logger.Infof("Sweeping %d outputs for currency %s (reason: %s)", len(outputs), currency, reason)
+		txId, err := nursery.createTransaction(currency, outputs)
+		if err != nil {
+			return "", err
+		}
+		nursery.claimer.outputs[currency] = nil
+		return txId, nil
 	}
 	return "", nil
 }
 
-/*
-func (nursery *Nursery) SweepableBalance(walletId *database.Id) (uint64, error) {
-	outputs, err := nursery.queryAllClaimableOutputs(boltz.CurrencyBtc)
-	if err != nil {
-		return 0, fmt.Errorf("could not query claimable outputs: %w", err)
-	}
+func (claimer *Claimer) SweepableBalance(currency boltz.Currency, walletId *database.Id) uint64 {
 	var balance uint64
-	for _, output := range outputs {
+	for _, output := range claimer.outputs[currency] {
 		if walletId == nil || (output.walletId != nil && *output.walletId == *walletId) {
-			//balance += output.voutInfo.valu
+			balance += output.voutInfo.ExpectedAmount
 		}
 	}
 	return balance
 }
-*/
+
+func (nursery *Nursery) SweepableBalance(tenantId *database.Id, currency boltz.Currency) (map[*database.Id]uint64, error) {
+	outputs, err := nursery.getAllOutputs(tenantId, currency)
+	if err != nil {
+		return nil, fmt.Errorf("could not query claimable outputs: %w", err)
+	}
+	var balances = make(map[*database.Id]uint64)
+	for _, output := range outputs {
+		balances[output.walletId] += output.voutInfo.ExpectedAmount
+	}
+	return balances, nil
+}

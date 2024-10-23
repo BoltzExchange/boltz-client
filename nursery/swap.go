@@ -318,8 +318,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 		logger.Infof("Swap %s failed", swap.Id)
-		if err := nursery.checkSweep(swap.TenantId, swap.Pair.From, swap.TimoutBlockHeight); err != nil {
-			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
+		if err := nursery.checkSweep(nursery.getRefundOutput(swap)); err != nil {
 			return
 		}
 		return

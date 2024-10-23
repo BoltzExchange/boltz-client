@@ -107,7 +107,6 @@ func (nursery *Nursery) Init(
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
 	nursery.boltzWs = boltzClient.NewWebsocket()
-	claimer.onchain = chain
 	nursery.claimer = claimer
 
 	logger.Info("Starting nursery")
@@ -118,6 +117,9 @@ func (nursery *Nursery) Init(
 
 	nursery.BtcBlocks = nursery.startBlockListener(boltz.CurrencyBtc)
 	nursery.LiquidBlocks = nursery.startBlockListener(boltz.CurrencyLiquid)
+
+	nursery.claimer.onchain = nursery.onchain
+	nursery.claimer.outputs = make(map[boltz.Currency][]*Output)
 	nursery.startClaimer()
 
 	nursery.startSwapListener()
