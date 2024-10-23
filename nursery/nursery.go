@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
-
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"sync"
 
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -38,6 +37,7 @@ type Nursery struct {
 	eventListenersLock sync.RWMutex
 	globalListener     swapListener
 	waitGroup          sync.WaitGroup
+	claimer            *Claimer
 
 	MaxZeroConfAmount uint64
 
@@ -96,6 +96,7 @@ func (nursery *Nursery) Init(
 	chain *onchain.Onchain,
 	boltzClient *boltz.Api,
 	database *database.Database,
+	claimer *Claimer,
 ) error {
 	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())
 	nursery.network = network
@@ -106,6 +107,8 @@ func (nursery *Nursery) Init(
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
 	nursery.boltzWs = boltzClient.NewWebsocket()
+	claimer.onchain = chain
+	nursery.claimer = claimer
 
 	logger.Info("Starting nursery")
 
@@ -115,6 +118,7 @@ func (nursery *Nursery) Init(
 
 	nursery.BtcBlocks = nursery.startBlockListener(boltz.CurrencyBtc)
 	nursery.LiquidBlocks = nursery.startBlockListener(boltz.CurrencyLiquid)
+	nursery.startClaimer()
 
 	nursery.startSwapListener()
 
@@ -334,11 +338,7 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 			logger.Warnf("swap %s can not be %sed automatically: %s", output.SwapId, verb, err)
 			output.setError(err)
 		}
-		if output.Address == "" {
-			if output.walletId == nil {
-				handleErr(errors.New("no address or wallet set"))
-				continue
-			}
+		if output.walletId != nil {
 			walletId := *output.walletId
 			address, ok := addresses[walletId]
 			if !ok {
@@ -355,6 +355,9 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 				addresses[walletId] = address
 			}
 			output.Address = address
+		} else if output.Address == "" {
+			handleErr(errors.New("no address or wallet set"))
+			continue
 		}
 		var err error
 		result, err := nursery.onchain.FindOutput(output.outputArgs)
@@ -381,15 +384,4 @@ func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, s
 		return err
 	}
 	return boltz.CheckAmounts(swapType, pair, sendAmount, receiveAmount, serviceFee, fees, false)
-}
-
-func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
-	var outputs []*Output
-	for _, swap := range reverseSwaps {
-		outputs = append(outputs, nursery.getReverseSwapClaimOutput(swap))
-	}
-	for _, swap := range chainSwaps {
-		outputs = append(outputs, nursery.getChainSwapClaimOutput(swap))
-	}
-	return nursery.createTransaction(currency, outputs)
 }

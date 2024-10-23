@@ -51,6 +51,12 @@ service Boltz {
     rpc ClaimSwaps (ClaimSwapsRequest) returns (ClaimSwapsResponse);
 
     /*
+      Sweep swaps manually.
+      This is only required when no claim address has been set and the swap does not have an associated wallet.
+    */
+    rpc SweepSwaps (SweepSwapsRequest) returns (SweepSwapsResponse);
+
+    /*
     Gets all available information about a swap from the database.
     */
     rpc GetSwapInfo (GetSwapInfoRequest) returns (GetSwapInfoResponse);
@@ -495,6 +501,14 @@ message ClaimSwapsRequest {
 }
 
 message ClaimSwapsResponse {
+    string transaction_id = 1;
+}
+
+message SweepSwapsRequest {
+    Currency currency = 1;
+}
+
+message SweepSwapsResponse {
     string transaction_id = 1;
 }
 

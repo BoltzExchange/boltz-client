@@ -169,10 +169,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
 
-		output := nursery.getReverseSwapClaimOutput(reverseSwap)
-
-		if _, err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output}); err != nil {
-			logger.Info("Could not claim: " + err.Error())
+		if err := nursery.checkSweep(reverseSwap.TenantId, reverseSwap.Pair.To, reverseSwap.TimeoutBlockHeight); err != nil {
 			return
 		}
 	}
