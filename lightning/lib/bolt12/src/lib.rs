@@ -12,12 +12,16 @@ use lightning::offers::offer::Offer as LnOffer;
 
 const BECH32_BOLT12_INVOICE_HRP: &str = "lni";
 
-fn parse_offer(offer: *const c_char) -> Result<LnOffer, String> {
-    let raw = unsafe { CStr::from_ptr(offer) };
-    match raw.to_str() {
-        Ok(res) => res.parse::<LnOffer>().map_err(|err| format!("{:?}", err).to_string()),
-        Err(err) => Err(err.to_string()),
-    }
+#[repr(C)]
+pub struct Offer {
+    pub min_amount: u64,
+}
+
+#[repr(C)]
+pub struct Invoice {
+    pub amount: u64,
+    pub payment_hash: [u8; 32],
+    pub expiry_date: u64,
 }
 
 #[repr(C)]
@@ -40,6 +44,14 @@ impl<T> CResult<T> {
                 }
             }
         }
+    }
+}
+
+fn parse_offer(offer: *const c_char) -> Result<LnOffer, String> {
+    let raw = unsafe { CStr::from_ptr(offer) };
+    match raw.to_str() {
+        Ok(res) => res.parse::<LnOffer>().map_err(|err| format!("{:?}", err).to_string()),
+        Err(err) => Err(err.to_string()),
     }
 }
 
@@ -122,15 +134,3 @@ pub extern "C" fn free_c_string(s: *mut c_char) {
     }
 }
 
-
-#[repr(C)]
-pub struct Offer {
-    pub min_amount: u64,
-}
-
-#[repr(C)]
-pub struct Invoice {
-    pub amount: u64,
-    pub payment_hash: [u8; 32],
-    pub expiry_date: u64,
-}
