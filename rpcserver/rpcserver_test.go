@@ -1803,6 +1803,18 @@ func TestSwap(t *testing.T) {
 		_, err := connectLightning(nil, node)
 		require.NoError(t, err)
 
+		t.Run("Offer", func(t *testing.T) {
+			offer := test.GetBolt12Offer()
+			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Invoice: &offer,
+				Amount:  100000,
+			})
+			require.NoError(t, err)
+			_, statusStream := swapStream(t, client, swap.Id)
+			info := statusStream(boltzrpc.SwapState_PENDING, boltz.InvoiceSet)
+			require.NotEmpty(t, info.Swap.Invoice)
+		})
+
 		t.Run("Invalid", func(t *testing.T) {
 			invoice := "invalid"
 			_, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{

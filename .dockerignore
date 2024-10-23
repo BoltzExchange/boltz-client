@@ -2,3 +2,4 @@
 *.a
 vendor
 bin
+target

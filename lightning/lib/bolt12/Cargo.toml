@@ -1,0 +1,23 @@
+[package]
+name = "bolt12"
+version = "0.1.0"
+build = "build.rs"
+edition = "2021"
+
+[lib]
+# If you only wanted dynamic library, you'd use only "cdylib".
+# If you only wanted static library, you'd use only "staticlib".
+# This demo shows both. See https://doc.rust-lang.org/reference/linkage.html
+# for more information.
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+bech32 = { version = "0.9.1", default-features = false }
+lightning = { version = "0.0.124", features = ["no-std"], default-features = false }
+
+[profile.release]
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"
+
+[build-dependencies]
+cbindgen = "0.27.0"
