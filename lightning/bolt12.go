@@ -21,12 +21,13 @@ func DecodeOffer(offer string) (*Offer, error) {
 	offerPtr := C.CString(offer)
 	defer C.free(unsafe.Pointer(offerPtr))
 	ptr := C.decode_offer(offerPtr)
-	if ptr == nil {
-		return nil, errors.New("invalid offer")
+	if ptr.error != nil {
+		defer C.free_c_string(ptr.error)
+		return nil, errors.New(C.GoString(ptr.error))
 	}
-	defer C.free(unsafe.Pointer(ptr))
+	defer C.free(unsafe.Pointer(ptr.result))
 	return &Offer{
-		MinAmount: uint64(ptr.min_amount),
+		MinAmount: uint64(ptr.result.min_amount),
 	}, nil
 }
 
@@ -34,14 +35,16 @@ func DecodeBolt12(bolt12 string) (*DecodedInvoice, error) {
 	offerPtr := C.CString(bolt12)
 	defer C.free(unsafe.Pointer(offerPtr))
 	ptr := C.decode_invoice(offerPtr)
-	if ptr == nil {
-		return nil, errors.New("invalid invoice")
+	if ptr.error != nil {
+		defer C.free_c_string(ptr.error)
+		return nil, errors.New(C.GoString(ptr.error))
 	}
-	defer C.free(unsafe.Pointer(ptr))
+	defer C.free(unsafe.Pointer(ptr.result))
+	invoice := ptr.result
 	return &DecodedInvoice{
-		Amount:      uint64(ptr.amount),
-		PaymentHash: *(*[32]byte)(unsafe.Pointer(&ptr.payment_hash)),
-		Expiry:      time.Unix(int64(ptr.expiry_date), 0),
+		Amount:      uint64(invoice.amount),
+		PaymentHash: *(*[32]byte)(unsafe.Pointer(&invoice.payment_hash)),
+		Expiry:      time.Unix(int64(invoice.expiry_date), 0),
 	}, nil
 }
 

@@ -2,39 +2,60 @@ extern crate lightning;
 extern crate bech32;
 
 use std::convert::TryFrom;
-use std::ffi::{c_char, CStr};
+use std::ffi::{c_char, CStr, CString};
+use std::ptr::null;
 use lightning::offers::offer::Amount;
 use bech32::FromBase32;
 use lightning::bitcoin::secp256k1::PublicKey;
 use lightning::offers::invoice::Bolt12Invoice;
+use lightning::offers::offer::Offer as LnOffer;
 
 const BECH32_BOLT12_INVOICE_HRP: &str = "lni";
 
-fn parse_offer(offer: *const c_char) -> Result<lightning::offers::offer::Offer, String> {
+fn parse_offer(offer: *const c_char) -> Result<LnOffer, String> {
     let raw = unsafe { CStr::from_ptr(offer) };
     match raw.to_str() {
-        Ok(res) => res.parse::<lightning::offers::offer::Offer>().map_err(|_| "Failed to parse offer".to_string()),
+        Ok(res) => res.parse::<LnOffer>().map_err(|err| format!("{:?}", err).to_string()),
         Err(err) => Err(err.to_string()),
     }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn decode_offer(offer: *const c_char) -> *mut Offer {
-    match parse_offer(offer) {
-        Ok(offer) =>
-            Box::into_raw(Box::new(Offer {
-                min_amount:
-                match offer.amount() {
-                    Some(amount) => match amount {
-                        Amount::Bitcoin { amount_msats } => amount_msats / 1000,
-                        Amount::Currency { .. } => 0,
-                    },
-                    None => 0,
-                },
-            }))
-        ,
-        Err(_) => std::ptr::null_mut(),
+#[repr(C)]
+pub struct CResult<T> {
+    pub result: T,
+    pub error: *const c_char,
+}
+
+impl<T> CResult<T> {
+    pub fn from_result(res: Result<T, String>) -> Self {
+        match res {
+            Ok(value) => CResult {
+                result: value,
+                error: null(),
+            },
+            Err(err) => {
+                CResult {
+                    result: unsafe { std::mem::zeroed() },
+                    error: CString::new(err).unwrap().into_raw(),
+                }
+            }
+        }
     }
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn decode_offer(offer: *const c_char) -> CResult<*mut Offer> {
+    CResult::from_result(parse_offer(offer).map(|offer| Box::into_raw(Box::new(Offer {
+        min_amount:
+        match offer.amount() {
+            Some(amount) => match amount {
+                Amount::Bitcoin { amount_msats } => amount_msats / 1000,
+                Amount::Currency { .. } => 0,
+            },
+            None => 0,
+        },
+    }))))
 }
 
 fn parse_invoice(invoice: *const c_char) -> Result<Bolt12Invoice, String> {
@@ -48,7 +69,7 @@ fn parse_invoice(invoice: *const c_char) -> Result<Bolt12Invoice, String> {
         Err(err) => return Err(err.to_string()),
     };
     if hrp.as_str() != BECH32_BOLT12_INVOICE_HRP {
-        return Err("Invalid HRP".to_string());
+        return Err("invalid HRP".to_string());
     }
     let data = match Vec::<u8>::from_base32(&data) {
         Ok(res) => res,
@@ -56,20 +77,19 @@ fn parse_invoice(invoice: *const c_char) -> Result<Bolt12Invoice, String> {
     };
     match lightning::offers::invoice::Bolt12Invoice::try_from(data) {
         Ok(res) => Ok(res),
-        Err(_) => Err("Failed to parse invoice".to_string()),
+        Err(err) => Err(format!("{:?}", err).to_string()),
     }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> *mut Invoice {
-    match parse_invoice(invoice) {
-        Ok(invoice) => Box::into_raw(Box::new(Invoice {
+pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> CResult<*mut Invoice> {
+    CResult::from_result(
+        parse_invoice(invoice).map(|invoice| Box::into_raw(Box::new(Invoice {
             amount: invoice.amount_msats() / 1000,
             payment_hash: invoice.payment_hash().0,
             expiry_date: invoice.absolute_expiry().and_then(|d| Some(d.as_secs())).unwrap_or(0),
-        })),
-        Err(_) => std::ptr::null_mut(),
-    }
+        })))
+    )
 }
 
 #[no_mangle]
@@ -93,6 +113,15 @@ pub unsafe extern "C" fn check_invoice_offer(invoice: *const c_char, offer: *con
     }
     possible_signers.contains(&invoice.signing_pubkey())
 }
+
+#[no_mangle]
+pub extern "C" fn free_c_string(s: *mut c_char) {
+    if s.is_null() { return; }
+    unsafe {
+        let _ = CString::from_raw(s); // This will automatically deallocate the string
+    }
+}
+
 
 #[repr(C)]
 pub struct Offer {
