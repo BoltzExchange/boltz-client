@@ -70,17 +70,18 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 	info.ExpectedAmount = swap.ToData.Amount
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
-			SwapId:         swap.Id,
-			SwapType:       boltz.ChainSwap,
-			Preimage:       swap.Preimage,
-			PrivateKey:     swap.ToData.PrivateKey,
-			SwapTree:       swap.ToData.Tree,
-			Cooperative:    true,
-			RefundSwapTree: swap.FromData.Tree,
-			Address:        swap.ToData.Address,
+			SwapId:             swap.Id,
+			SwapType:           boltz.ChainSwap,
+			Preimage:           swap.Preimage,
+			PrivateKey:         swap.ToData.PrivateKey,
+			SwapTree:           swap.ToData.Tree,
+			Cooperative:        true,
+			RefundSwapTree:     swap.FromData.Tree,
+			Address:            swap.ToData.Address,
+			TimeoutBlockHeight: swap.ToData.TimeoutBlockHeight,
 		},
-		walletId:   swap.ToData.WalletId,
-		outputArgs: info,
+		walletId: swap.ToData.WalletId,
+		findArgs: info,
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.ToData, transactionId); err != nil {
 				return fmt.Errorf("Could not set lockup transaction in database: %w", err)
@@ -236,7 +237,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			break
 		}
 
-		nursery.checkSweep(swap.TenantId, swap.ToData.Currency, swap.ToData.TimeoutBlockHeight)
+		nursery.checkSweep(nursery.getChainSwapClaimOutput(swap))
 	}
 
 	logger.Debugf("Updating status of Chain Swap %s to %s", swap.Id, parsedStatus)
@@ -275,7 +276,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			}
 
 			if swap.FromData.LockupTransactionId != "" {
-				if err := nursery.checkSweep(swap.TenantId, swap.FromData.Currency, swap.FromData.TimeoutBlockHeight); err != nil {
+				if err := nursery.checkSweep(nursery.getChainSwapRefundOutput(swap)); err != nil {
 					handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 					return
 				}

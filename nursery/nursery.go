@@ -107,7 +107,6 @@ func (nursery *Nursery) Init(
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
 	nursery.boltzWs = boltzClient.NewWebsocket()
-	claimer.onchain = chain
 	nursery.claimer = claimer
 
 	logger.Info("Starting nursery")
@@ -118,6 +117,8 @@ func (nursery *Nursery) Init(
 
 	nursery.BtcBlocks = nursery.startBlockListener(boltz.CurrencyBtc)
 	nursery.LiquidBlocks = nursery.startBlockListener(boltz.CurrencyLiquid)
+
+	nursery.claimer.Init(nursery.onchain)
 	nursery.startClaimer()
 
 	nursery.startSwapListener()
@@ -278,7 +279,7 @@ func (nursery *Nursery) removeSwapListener(id string) {
 	}
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (id string, err error) {
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*CheckedOutput) (id string, err error) {
 	outputs, details := nursery.populateOutputs(outputs)
 	if len(details) == 0 {
 		return "", errors.New("all outputs invalid")
@@ -327,7 +328,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 	return handleErr(nil)
 }
 
-func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
+func (nursery *Nursery) populateOutputs(outputs []*CheckedOutput) (valid []*CheckedOutput, details []boltz.OutputDetails) {
 	addresses := make(map[database.Id]string)
 	for _, output := range outputs {
 		handleErr := func(err error) {
@@ -360,7 +361,7 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 			continue
 		}
 		var err error
-		result, err := nursery.onchain.FindOutput(output.outputArgs)
+		result, err := nursery.onchain.FindOutput(output.findArgs)
 		if err != nil {
 			handleErr(err)
 			continue

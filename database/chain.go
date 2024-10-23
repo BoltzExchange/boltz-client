@@ -202,7 +202,7 @@ func (database *Database) SetChainSwapLockupTransactionId(swapData *ChainSwapDat
 
 func (database *Database) SetChainSwapAddress(swapData *ChainSwapData, address string) error {
 	swapData.Address = address
-	_, err := database.Exec("UPDATE chainSwapsData SET address = ? WHERE id = ? AND currency = ?", address, swapData.Id, swapData.Currency)
+	_, err := database.Exec("UPDATE chainSwapsData SET address = ?, walletId = NULL WHERE id = ? AND currency = ?", address, swapData.Id, swapData.Currency)
 	return err
 }
 
