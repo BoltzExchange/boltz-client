@@ -57,8 +57,8 @@ func (boltz *Boltz) RefundSwap(request *boltzrpc.RefundSwapRequest) (*boltzrpc.G
 	return boltz.Client.RefundSwap(boltz.Ctx, request)
 }
 
-func (boltz *Boltz) ClaimSwaps(request *boltzrpc.ClaimSwapsRequest) (*boltzrpc.ClaimSwapsResponse, error) {
-	return boltz.Client.ClaimSwaps(boltz.Ctx, request)
+func (boltz *Boltz) SweepSwaps(currency boltzrpc.Currency) (*boltzrpc.SweepSwapsResponse, error) {
+	return boltz.Client.SweepSwaps(boltz.Ctx, &boltzrpc.SweepSwapsRequest{Currency: currency})
 }
 
 func (boltz *Boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error) {

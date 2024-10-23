@@ -2,11 +2,9 @@ package nursery
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"sync"
-
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"sync"
 
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -38,6 +36,7 @@ type Nursery struct {
 	eventListenersLock sync.RWMutex
 	globalListener     swapListener
 	waitGroup          sync.WaitGroup
+	claimer            *Claimer
 
 	MaxZeroConfAmount uint64
 
@@ -96,6 +95,7 @@ func (nursery *Nursery) Init(
 	chain *onchain.Onchain,
 	boltzClient *boltz.Api,
 	database *database.Database,
+	claimer *Claimer,
 ) error {
 	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())
 	nursery.network = network
@@ -106,6 +106,7 @@ func (nursery *Nursery) Init(
 	nursery.eventListeners = make(map[string]swapListener)
 	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
 	nursery.boltzWs = boltzClient.NewWebsocket()
+	nursery.claimer = claimer
 
 	logger.Info("Starting nursery")
 
@@ -115,6 +116,9 @@ func (nursery *Nursery) Init(
 
 	nursery.BtcBlocks = nursery.startBlockListener(boltz.CurrencyBtc)
 	nursery.LiquidBlocks = nursery.startBlockListener(boltz.CurrencyLiquid)
+
+	nursery.claimer.Init(nursery.onchain)
+	nursery.startClaimer()
 
 	nursery.startSwapListener()
 
@@ -274,22 +278,40 @@ func (nursery *Nursery) removeSwapListener(id string) {
 	}
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (id string, err error) {
-	outputs, details := nursery.populateOutputs(outputs)
-	if len(details) == 0 {
-		return "", errors.New("all outputs invalid")
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*CheckedOutput) boltz.ConstructResult {
+	details := make([]boltz.OutputDetails, 0, len(outputs))
+	addresses := make(map[database.Id]string)
+	for _, output := range outputs {
+		if output.walletId != nil {
+			walletId := *output.walletId
+			address, ok := addresses[walletId]
+			if ok {
+				output.Address = address
+			} else {
+				addresses[walletId] = output.Address
+			}
+		} else if output.Address == "" {
+			logger.Warnf("no address or wallet set for swap %s", output.SwapId)
+		}
+		details = append(details, *output.OutputDetails)
 	}
 
-	results := make(boltz.Results)
+	var result boltz.ConstructResult
 
-	handleErr := func(err error) (string, error) {
+	handleErr := func(err error) boltz.ConstructResult {
+		result.Err = err
 		for _, output := range outputs {
-			results.SetErr(output.SwapId, err)
-			if err := results[output.SwapId].Err; err != nil {
-				output.setError(results[output.SwapId].Err)
+			details := result.SwapResult(output.SwapId)
+			if details.Err != nil {
+				output.setError(result.Err)
+			} else {
+				if err := output.setTransaction(result.TransactionId, details.Fee); err != nil {
+					logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
+					continue
+				}
 			}
 		}
-		return id, err
+		return result
 	}
 
 	feeSatPerVbyte, err := nursery.onchain.EstimateFee(currency, true)
@@ -299,75 +321,17 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 
 	logger.Infof("Using fee of %v sat/vbyte for transaction", feeSatPerVbyte)
 
-	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
-	if err != nil {
-		return handleErr(fmt.Errorf("construct: %w", err))
-	}
+	result = boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
 
-	id, err = nursery.onchain.BroadcastTransaction(transaction)
-	if err != nil {
-		return handleErr(fmt.Errorf("broadcast: %w", err))
-	}
-	logger.Infof("Broadcast transaction: %s", id)
-
-	for _, output := range outputs {
-		result := results[output.SwapId]
-		if result.Err == nil {
-			if err := output.setTransaction(id, result.Fee); err != nil {
-				logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
-				continue
-			}
+	if result.Transaction != nil {
+		_, err := nursery.onchain.BroadcastTransaction(result.Transaction)
+		if err != nil {
+			return handleErr(err)
 		}
+		logger.Infof("Broadcast transaction: %s", result.Transaction.Hash())
 	}
 
 	return handleErr(nil)
-}
-
-func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
-	addresses := make(map[database.Id]string)
-	for _, output := range outputs {
-		handleErr := func(err error) {
-			verb := "claim"
-			if output.IsRefund() {
-				verb = "refund"
-			}
-			logger.Warnf("swap %s can not be %sed automatically: %s", output.SwapId, verb, err)
-			output.setError(err)
-		}
-		if output.Address == "" {
-			if output.walletId == nil {
-				handleErr(errors.New("no address or wallet set"))
-				continue
-			}
-			walletId := *output.walletId
-			address, ok := addresses[walletId]
-			if !ok {
-				wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Id: &walletId, AllowReadonly: true})
-				if err != nil {
-					handleErr(fmt.Errorf("wallet with id %d could not be found", walletId))
-					continue
-				}
-				address, err = wallet.NewAddress()
-				if err != nil {
-					handleErr(fmt.Errorf("could not get address from wallet %s: %w", wallet.GetWalletInfo().Name, err))
-					continue
-				}
-				addresses[walletId] = address
-			}
-			output.Address = address
-		}
-		var err error
-		result, err := nursery.onchain.FindOutput(output.outputArgs)
-		if err != nil {
-			handleErr(err)
-			continue
-		}
-		output.LockupTransaction = result.Transaction
-		output.Vout = result.Vout
-		valid = append(valid, output)
-		details = append(details, *output.OutputDetails)
-	}
-	return
 }
 
 func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {
@@ -381,15 +345,4 @@ func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, s
 		return err
 	}
 	return boltz.CheckAmounts(swapType, pair, sendAmount, receiveAmount, serviceFee, fees, false)
-}
-
-func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
-	var outputs []*Output
-	for _, swap := range reverseSwaps {
-		outputs = append(outputs, nursery.getReverseSwapClaimOutput(swap))
-	}
-	for _, swap := range chainSwaps {
-		outputs = append(outputs, nursery.getChainSwapClaimOutput(swap))
-	}
-	return nursery.createTransaction(currency, outputs)
 }

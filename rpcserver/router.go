@@ -62,6 +62,7 @@ type routedBoltzServer struct {
 	lightning         lightning.LightningNode
 	boltz             *boltz.Api
 	nursery           *nursery.Nursery
+	claimer           *nursery.Claimer
 	database          *database.Database
 	swapper           *autoswap.AutoSwap
 	macaroon          *macaroons.Service
@@ -453,22 +454,30 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 		if err := boltz.ValidateAddress(server.network, destination.Address, currency); err != nil {
 			return nil, ErrInvalidAddress
 		}
-		err = setAddress(destination.Address)
+		if err = setAddress(destination.Address); err != nil {
+			return nil, err
+		}
 	}
 
 	if destination, ok := request.Destination.(*boltzrpc.RefundSwapRequest_WalletId); ok {
-		_, err = server.getWallet(ctx, onchain.WalletChecker{Id: &destination.WalletId, AllowReadonly: true})
+		wallet, err := server.getWallet(ctx, onchain.WalletChecker{Id: &destination.WalletId, AllowReadonly: true})
 		if err != nil {
 			return nil, err
 		}
 		err = setWallet(destination.WalletId)
+		if err != nil {
+			return nil, err
+		}
+		address, err := wallet.NewAddress()
+		if err != nil {
+			return nil, err
+		}
+		if err = setAddress(address); err != nil {
+			return nil, err
+		}
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := server.nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
+	if _, err := server.nursery.Sweep(currency); err != nil {
 		return nil, err
 	}
 
@@ -536,12 +545,19 @@ func (server *routedBoltzServer) ClaimSwaps(ctx context.Context, request *boltzr
 		}
 	}
 
-	transactionId, err := server.nursery.ClaimSwaps(currency, reverseSwaps, chainSwaps)
+	transactionId, err := server.nursery.Sweep(currency)
 	if err != nil {
 		return nil, err
 	}
-
 	return &boltzrpc.ClaimSwapsResponse{TransactionId: transactionId}, nil
+}
+
+func (server *routedBoltzServer) SweepSwaps(_ context.Context, request *boltzrpc.SweepSwapsRequest) (*boltzrpc.SweepSwapsResponse, error) {
+	txId, err := server.nursery.Sweep(serializers.ParseCurrency(&request.Currency))
+	if err != nil {
+		return nil, err
+	}
+	return &boltzrpc.SweepSwapsResponse{TransactionId: txId}, nil
 }
 
 func (server *routedBoltzServer) GetSwapInfo(ctx context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
@@ -991,11 +1007,9 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		logger.Infof("Using wallet %+v as reverse swap destination", info)
 		walletId = &info.Id
 
-		if externalPay {
-			claimAddress, err = wallet.NewAddress()
-			if err != nil {
-				return nil, fmt.Errorf("could not claim address from wallet: %w", err)
-			}
+		claimAddress, err = wallet.NewAddress()
+		if err != nil {
+			return nil, fmt.Errorf("could not claim address from wallet: %w", err)
 		}
 	}
 
@@ -1258,6 +1272,11 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 			return nil, err
 		}
 		logger.Infof("Using wallet %+v as chain swap destination", toWallet.GetWalletInfo())
+		address, err := toWallet.NewAddress()
+		if err != nil {
+			return nil, err
+		}
+		request.ToAddress = &address
 	} else if request.ToAddress != nil {
 		logger.Infof("Using address %+v as chain swap destination", request.GetToAddress())
 	} else {
@@ -1923,6 +1942,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			server.onchain,
 			server.boltz,
 			server.database,
+			server.claimer,
 		)
 		if err != nil {
 			logger.Fatalf("could not start nursery: %v", err)
