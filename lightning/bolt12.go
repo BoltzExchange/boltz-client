@@ -48,10 +48,10 @@ func DecodeBolt12(bolt12 string) (*DecodedInvoice, error) {
 	}, nil
 }
 
-func CheckBolt12Offer(bolt12 string, offer string) bool {
+func CheckInvoiceIsForOffer(invoice string, offer string) bool {
 	offerPtr := C.CString(offer)
-	invoicePtr := C.CString(bolt12)
+	invoicePtr := C.CString(invoice)
 	defer C.free(unsafe.Pointer(offerPtr))
 	defer C.free(unsafe.Pointer(invoicePtr))
-	return bool(C.check_invoice_offer(invoicePtr, offerPtr))
+	return bool(C.check_invoice_is_for_offer(invoicePtr, offerPtr))
 }

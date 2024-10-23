@@ -725,7 +725,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			}
 			logger.Infof("Fetched bolt12 invoice: %s", bolt12)
 
-			if !lightning.CheckBolt12Offer(bolt12, invoice) {
+			if !lightning.CheckInvoiceIsForOffer(bolt12, invoice) {
 				return nil, status.Errorf(codes.InvalidArgument, "bolt12 offer does not match offer")
 			}
 			invoice = bolt12

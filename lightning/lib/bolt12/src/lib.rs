@@ -112,7 +112,7 @@ pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> CResult<*mut 
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn check_invoice_offer(invoice: *const c_char, offer: *const c_char) -> bool {
+pub unsafe extern "C" fn check_invoice_is_for_offer(invoice: *const c_char, offer: *const c_char) -> bool {
     let invoice = match parse_invoice(invoice) {
         Ok(res) => res,
         Err(_) => return false,
