@@ -32,7 +32,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 )
 
-const MinFeeRate = 0.01
 const MaxInputs = uint64(256)
 const DefaultAutoConsolidateThreshold = uint64(200)
 const GapLimit = 100
@@ -342,9 +341,7 @@ func (wallet *Wallet) Connect() error {
 	}
 
 	params := map[string]any{
-		// gdk uses sat/kVB
-		"min_fee_rate": MinFeeRate * 1000,
-		"gap_limit":    GapLimit,
+		"gap_limit": GapLimit,
 	}
 	var electrum onchain.ElectrumOptions
 	if wallet.Currency == boltz.CurrencyBtc {
@@ -785,33 +782,25 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", fmt.Errorf("could not sign: %s", signedTx.Error)
 	}
 
-	if wallet.txProvider != nil {
-		tx, err = wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
-	} else {
-		params, free = toJson(result)
-		var sendTx struct {
-			TxHash string `json:"txhash"`
-			Error  string `json:"error"`
-		}
-		if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
-			return "", err
-		}
-		free()
-
-		if sendTx.Error != "" {
-			err = errors.New(sendTx.Error)
-		}
-		tx = sendTx.TxHash
+	params, free = toJson(result)
+	var sendTx struct {
+		TxHash string `json:"txhash"`
+		Error  string `json:"error"`
 	}
-	if err != nil {
-		return "", fmt.Errorf("failed to broadcast: %w", err)
+	if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
+		return "", err
+	}
+	free()
+
+	if sendTx.Error != "" {
+		return "", fmt.Errorf("failed to broadcast: %s", sendTx.Error)
 	}
 
 	for _, input := range signedTx.TransactionInputs {
 		wallet.spentOutputs[input.TxId] = true
 	}
 
-	return tx, nil
+	return sendTx.TxHash, nil
 }
 
 func (wallet *Wallet) SetSpentOutputs(outputs []string) {

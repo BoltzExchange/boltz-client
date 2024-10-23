@@ -293,7 +293,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 		return id, err
 	}
 
-	feeSatPerVbyte, err := nursery.onchain.EstimateFee(currency, true)
+	feeSatPerVbyte, err := nursery.onchain.EstimateFee(currency)
 	if err != nil {
 		return handleErr(fmt.Errorf("could not get fee estimation: %w", err))
 	}
