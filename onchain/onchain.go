@@ -390,6 +390,54 @@ func (onchain *Onchain) GetUnspentOutputs(currency boltz.Currency, address strin
 	return chain.Blocks.GetUnspentOutputs(address)
 }
 
+type VoutArgs struct {
+	TransactionId    string
+	Currency         boltz.Currency
+	Address          string
+	BlindingKey      *btcec.PrivateKey
+	ExpectedAmount   uint64
+	RequireConfirmed bool
+}
+
+type VoutResult struct {
+	Transaction boltz.Transaction
+	Vout        uint32
+	Value       uint64
+}
+
+var ErrNotConfirmed = errors.New("lockup transaction not confirmed")
+
+func (onchain *Onchain) FindVout(info VoutArgs) (*VoutResult, error) {
+	lockupTransaction, err := onchain.GetTransaction(info.Currency, info.TransactionId, info.BlindingKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not decode lockup transaction: %w", err)
+	}
+
+	vout, value, err := lockupTransaction.FindVout(onchain.Network, info.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	if info.ExpectedAmount != 0 && value < info.ExpectedAmount {
+		return nil, fmt.Errorf("locked up less onchain coins than expected: %d < %d", value, info.ExpectedAmount)
+	}
+	if info.RequireConfirmed {
+		confirmed, err := onchain.IsTransactionConfirmed(info.Currency, info.TransactionId)
+		if err != nil {
+			return nil, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
+		}
+		if !confirmed {
+			return nil, ErrNotConfirmed
+		}
+	}
+
+	return &VoutResult{
+		Transaction: lockupTransaction,
+		Vout:        vout,
+		Value:       value,
+	}, nil
+}
+
 func (onchain *Onchain) Disconnect() {
 	onchain.OnWalletChange.Close()
 	onchain.Btc.Blocks.Disconnect()

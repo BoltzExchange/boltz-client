@@ -7,6 +7,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
 )
 
 func (nursery *Nursery) sendChainSwapUpdate(swap database.ChainSwap) {
@@ -31,7 +32,7 @@ func (nursery *Nursery) RegisterChainSwap(chainSwap database.ChainSwap) error {
 
 func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, data *database.ChainSwapData, transactionId string) error {
 	data.LockupTransactionId = transactionId
-	_, _, _, err := nursery.findVout(chainVoutInfo(data))
+	_, err := nursery.onchain.FindVout(chainVoutInfo(data))
 	if err != nil {
 		return fmt.Errorf("could not find lockup vout: %s", err)
 	}
@@ -53,20 +54,20 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	return nil
 }
 
-func chainVoutInfo(data *database.ChainSwapData) voutInfo {
-	info := voutInfo{
-		transactionId: data.LockupTransactionId,
-		currency:      data.Currency,
-		address:       data.LockupAddress,
-		blindingKey:   data.BlindingKey,
+func chainVoutInfo(data *database.ChainSwapData) onchain.VoutArgs {
+	info := onchain.VoutArgs{
+		TransactionId: data.LockupTransactionId,
+		Currency:      data.Currency,
+		Address:       data.LockupAddress,
+		BlindingKey:   data.BlindingKey,
 	}
 	return info
 }
 
 func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Output {
 	info := chainVoutInfo(swap.ToData)
-	info.requireConfirmed = !swap.AcceptZeroConf
-	info.expectedAmount = swap.ToData.Amount
+	info.RequireConfirmed = !swap.AcceptZeroConf
+	info.ExpectedAmount = swap.ToData.Amount
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
 			SwapId:         swap.Id,
