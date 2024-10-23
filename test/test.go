@@ -5,7 +5,6 @@ import (
 	"math/rand/v2"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -143,11 +142,8 @@ func MineBlock() {
 	LiquidCli("-generate 1")
 }
 
-func MineUntil(t *testing.T, cli Cli, height int64) {
-	blockHeight, err := strconv.ParseInt(cli("getblockcount"), 10, 64)
-	require.NoError(t, err)
-	blocks := height - blockHeight
-	cli(fmt.Sprintf("-generate %d", blocks))
+func MineBlocks(cli Cli, amount uint32) {
+	cli(fmt.Sprintf("-generate %d", amount))
 }
 
 func GetNewAddress(cli Cli) string {

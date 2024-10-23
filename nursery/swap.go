@@ -317,8 +317,8 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			}
 		}
 
-		logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
-		if _, err := nursery.RefundSwaps(swap.Pair.From, []*database.Swap{swap}, nil); err != nil {
+		logger.Infof("Swap %s failed", swap.Id)
+		if err := nursery.checkSweep(swap.TenantId, swap.Pair.From, swap.TimoutBlockHeight); err != nil {
 			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 			return
 		}

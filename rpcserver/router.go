@@ -61,6 +61,7 @@ type routedBoltzServer struct {
 	lightning         lightning.LightningNode
 	boltz             *boltz.Api
 	nursery           *nursery.Nursery
+	claimer           *nursery.Claimer
 	database          *database.Database
 	swapper           *autoswap.AutoSwap
 	macaroon          *macaroons.Service
@@ -478,7 +479,7 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 		return nil, err
 	}
 
-	if _, err := server.nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
+	if _, err := server.nursery.Sweep(macaroons.TenantIdFromContext(ctx), currency); err != nil {
 		return nil, err
 	}
 
@@ -551,12 +552,19 @@ func (server *routedBoltzServer) ClaimSwaps(ctx context.Context, request *boltzr
 		}
 	}
 
-	transactionId, err := server.nursery.ClaimSwaps(currency, reverseSwaps, chainSwaps)
+	transactionId, err := server.nursery.Sweep(macaroons.TenantIdFromContext(ctx), currency)
 	if err != nil {
 		return nil, err
 	}
-
 	return &boltzrpc.ClaimSwapsResponse{TransactionId: transactionId}, nil
+}
+
+func (server *routedBoltzServer) SweepSwaps(ctx context.Context, request *boltzrpc.SweepSwapsRequest) (*boltzrpc.SweepSwapsResponse, error) {
+	txId, err := server.nursery.Sweep(macaroons.TenantIdFromContext(ctx), utils.ParseCurrency(&request.Currency))
+	if err != nil {
+		return nil, err
+	}
+	return &boltzrpc.SweepSwapsResponse{TransactionId: txId}, nil
 }
 
 func (server *routedBoltzServer) GetSwapInfo(ctx context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
@@ -1848,6 +1856,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			server.onchain,
 			server.boltz,
 			server.database,
+			server.claimer,
 		)
 		if err != nil {
 			logger.Fatalf("could not start nursery: %v", err)
