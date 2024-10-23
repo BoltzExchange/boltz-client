@@ -2,7 +2,7 @@ PKG := github.com/BoltzExchange/boltz-client
 VERSION := 2.1.11
 GDK_VERSION = 0.73.2
 GO_VERSION := 1.23.0
-RUST_VERSION := 1.81.0
+RUST_VERSION := 1.82.0
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
 PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
