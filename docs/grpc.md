@@ -77,6 +77,14 @@ Claim swaps manually. This is only required when no claim address has been set a
 | ------- | -------- |
 | [`ClaimSwapsRequest`](#claimswapsrequest) | [`ClaimSwapsResponse`](#claimswapsresponse) |
 
+#### SweepSwaps
+
+Claim swaps manually. This is only required when no claim address has been set and the swap does not have an associated wallet.
+
+| Request | Response |
+| ------- | -------- |
+| [`SweepSwapsRequest`](#sweepswapsrequest) | [`SweepSwapsResponse`](#sweepswapsresponse) |
+
 #### GetSwapInfo
 
 Gets all available information about a swap from the database.
@@ -1307,6 +1315,32 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `avg_amount` | [`uint64`](#uint64) |  |  |
 | `count` | [`uint64`](#uint64) |  |  |
 | `success_count` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### SweepSwapsRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `currency` | [`Currency`](#currency) |  |  |
+
+
+
+
+
+#### SweepSwapsResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transaction_id` | [`string`](#string) |  |  |
 
 
 

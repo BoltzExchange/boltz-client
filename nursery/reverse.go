@@ -94,13 +94,14 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
-			SwapId:      reverseSwap.Id,
-			SwapType:    boltz.ReverseSwap,
-			Address:     reverseSwap.ClaimAddress,
-			PrivateKey:  reverseSwap.PrivateKey,
-			Preimage:    reverseSwap.Preimage,
-			SwapTree:    reverseSwap.SwapTree,
-			Cooperative: true,
+			SwapId:             reverseSwap.Id,
+			SwapType:           boltz.ReverseSwap,
+			Address:            reverseSwap.ClaimAddress,
+			PrivateKey:         reverseSwap.PrivateKey,
+			Preimage:           reverseSwap.Preimage,
+			SwapTree:           reverseSwap.SwapTree,
+			Cooperative:        true,
+			TimeoutBlockHeight: reverseSwap.TimeoutBlockHeight,
 		},
 		walletId: reverseSwap.WalletId,
 		voutInfo: onchain.VoutArgs{
@@ -169,10 +170,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
 
-		output := nursery.getReverseSwapClaimOutput(reverseSwap)
-
-		if _, err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output}); err != nil {
-			logger.Info("Could not claim: " + err.Error())
+		if err := nursery.checkSweep(nursery.getReverseSwapClaimOutput(reverseSwap)); err != nil {
 			return
 		}
 	}

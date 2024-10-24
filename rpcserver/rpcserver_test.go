@@ -1736,6 +1736,28 @@ func TestChangePassword(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func mineUntilTimeout(t *testing.T, currency boltzrpc.Currency, chain *onchain.Onchain, timeoutBlockHeight uint32) {
+	parsed := parseCurrency(currency)
+	height, err := chain.GetBlockHeight(parsed)
+	require.NoError(t, err)
+	test.MineBlocks(getCli(currency), timeoutBlockHeight-height)
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			height, err = chain.GetBlockHeight(parsed)
+			require.NoError(t, err)
+			if height >= timeoutBlockHeight {
+				return
+			}
+		case <-timeout:
+			t.Fatal("timeout while waiting for block")
+		}
+	}
+}
+
 // the order of tests is important here.
 // since the refund tests mine a lot of blocks at once, channel force closes can happen
 // so after these are finished, other tests which do LN payments might fail
@@ -1922,12 +1944,13 @@ func TestSwap(t *testing.T) {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
 					boltzApi := getBoltz(t, cfg)
+					chain := getOnchain(t, cfg)
 					cfg.Node = "LND"
 					pair := &boltzrpc.Pair{
 						From: tc.from,
 						To:   boltzrpc.Currency_BTC,
 					}
-					admin, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
+					admin, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi, chain: chain})
 					defer stop()
 
 					_, write, _ := createTenant(t, admin, "test")
@@ -2013,12 +2036,12 @@ func TestSwap(t *testing.T) {
 
 							swap := withStream(boltzrpc.SwapState_ERROR).Swap
 
-							test.MineUntil(t, cli, int64(swap.TimeoutBlockHeight))
+							mineUntilTimeout(t, pair.From, chain, swap.TimeoutBlockHeight)
+							_, err = admin.SweepSwaps(pair.From)
 
 							swap = withStream(boltzrpc.SwapState_REFUNDED).Swap
 
 							from := parseCurrency(pair.From)
-
 							refundFee, err := chain.GetTransactionFee(from, swap.RefundTransactionId)
 							require.NoError(t, err)
 
@@ -2229,7 +2252,8 @@ func TestChainSwap(t *testing.T) {
 			}
 			cfg := loadConfig(t)
 			boltzApi := getBoltz(t, cfg)
-			client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
+			chain := getOnchain(t, cfg)
+			client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi, chain: chain})
 			defer stop()
 
 			fromCli := getCli(tc.from)
@@ -2360,7 +2384,8 @@ func TestChainSwap(t *testing.T) {
 
 					stream, statusStream := createFailed(t, refundAddress)
 					info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).ChainSwap
-					test.MineUntil(t, fromCli, int64(info.FromData.TimeoutBlockHeight))
+					mineUntilTimeout(t, pair.From, chain, info.FromData.TimeoutBlockHeight)
+					_, err := client.SweepSwaps(pair.From)
 					info = stream(boltzrpc.SwapState_REFUNDED).ChainSwap
 
 					from := parseCurrency(pair.From)
