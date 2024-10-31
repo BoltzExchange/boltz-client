@@ -928,9 +928,7 @@ func (wallet *Wallet) autoConsolidate() error {
 				if err != nil {
 					return fmt.Errorf("could not get estimate fee: %v", err)
 				}
-				// FIXME: hack around a gdk fee issue
-				feeRate *= 1.02
-				logger.Infof("Using fee rate %f for consolidation", feeRate)
+				logger.Infof("Using fee rate of %f sat/vbyte for consolidation", feeRate)
 				if _, err := wallet.SendToAddress(address, 0, feeRate, true); err != nil {
 					return fmt.Errorf("could not send: %v", err)
 				}
