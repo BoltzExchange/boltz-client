@@ -621,7 +621,7 @@ func (server *routedBoltzServer) Deposit(ctx context.Context, request *boltzrpc.
 }
 
 func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.DecodedInvoice, invoice string) (*boltzrpc.CreateSwapResponse, error) {
-	if pubKey := decoded.Hint; pubKey != nil {
+	if pubKey := decoded.MagicRoutingHint; pubKey != nil {
 		logger.Info("Found magic routing hint in invoice")
 		reverseBip21, err := server.boltz.GetReverseSwapBip21(invoice)
 		var boltzErr boltz.Error
@@ -649,7 +649,7 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.Decode
 		if err != nil {
 			return nil, fmt.Errorf("could not parse bip21 amount: %w", err)
 		}
-		if amount > btcutil.Amount(decoded.Amount).ToBTC() {
+		if amount > btcutil.Amount(decoded.AmountSat).ToBTC() {
 			return nil, errors.New("bip21 amount is higher than invoice amount")
 		}
 
@@ -715,8 +715,8 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			if request.Amount == 0 {
 				return nil, status.Errorf(codes.InvalidArgument, "amount has to be specified for offer")
 			}
-			if request.Amount < offer.MinAmount {
-				return nil, status.Errorf(codes.InvalidArgument, "amount is below offer minimum: %d < %d", request.Amount, offer.MinAmount)
+			if request.Amount < offer.MinAmountSat {
+				return nil, status.Errorf(codes.InvalidArgument, "amount is below offer minimum: %d < %d", request.Amount, offer.MinAmountSat)
 			}
 			logger.Infof("Fetching invoice from offer: %s", invoice)
 			bolt12, err := server.boltz.FetchBolt12Invoice(invoice, request.Amount)
@@ -743,10 +743,10 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
 		// set amount for balance check
-		if decoded.Amount == 0 {
+		if decoded.AmountSat == 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "0 amount invoices are not supported")
 		}
-		request.Amount = decoded.Amount
+		request.Amount = decoded.AmountSat
 	} else if !server.lightningAvailable(ctx) {
 		return nil, errors.New("invoice is required in standalone mode")
 	} else if request.Amount != 0 {

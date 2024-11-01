@@ -11,10 +11,8 @@ import (
 	"unsafe"
 )
 
-type Invoice = C.Invoice
-
 type Offer struct {
-	MinAmount uint64
+	MinAmountSat uint64
 }
 
 func DecodeOffer(offer string) (*Offer, error) {
@@ -27,11 +25,11 @@ func DecodeOffer(offer string) (*Offer, error) {
 	}
 	defer C.free(unsafe.Pointer(ptr.result))
 	return &Offer{
-		MinAmount: uint64(ptr.result.min_amount),
+		MinAmountSat: uint64(ptr.result.min_amount_sat),
 	}, nil
 }
 
-func DecodeBolt12(bolt12 string) (*DecodedInvoice, error) {
+func DecodeBolt12Invoice(bolt12 string) (*DecodedInvoice, error) {
 	offerPtr := C.CString(bolt12)
 	defer C.free(unsafe.Pointer(offerPtr))
 	ptr := C.decode_invoice(offerPtr)
@@ -42,7 +40,7 @@ func DecodeBolt12(bolt12 string) (*DecodedInvoice, error) {
 	defer C.free(unsafe.Pointer(ptr.result))
 	invoice := ptr.result
 	return &DecodedInvoice{
-		Amount:      uint64(invoice.amount),
+		AmountSat:   uint64(invoice.amount_sat),
 		PaymentHash: *(*[32]byte)(unsafe.Pointer(&invoice.payment_hash)),
 		Expiry:      time.Unix(int64(invoice.expiry_date), 0),
 	}, nil

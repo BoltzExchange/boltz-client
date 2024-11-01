@@ -10,10 +10,10 @@ import (
 )
 
 type DecodedInvoice struct {
-	Amount      uint64
-	PaymentHash [32]byte
-	Expiry      time.Time
-	Hint        *btcec.PublicKey
+	AmountSat        uint64
+	PaymentHash      [32]byte
+	Expiry           time.Time
+	MagicRoutingHint *btcec.PublicKey
 }
 
 func DecodeInvoice(invoice string, network *chaincfg.Params) (*DecodedInvoice, error) {
@@ -24,11 +24,11 @@ func DecodeInvoice(invoice string, network *chaincfg.Params) (*DecodedInvoice, e
 			amount = uint64(bolt11.MilliSat.ToSatoshis())
 		}
 		return &DecodedInvoice{
-			Amount:      amount,
-			PaymentHash: *bolt11.PaymentHash,
-			Expiry:      bolt11.Timestamp.Add(bolt11.Expiry()),
-			Hint:        boltz.FindMagicRoutingHint(bolt11),
+			AmountSat:        amount,
+			PaymentHash:      *bolt11.PaymentHash,
+			Expiry:           bolt11.Timestamp.Add(bolt11.Expiry()),
+			MagicRoutingHint: boltz.FindMagicRoutingHint(bolt11),
 		}, nil
 	}
-	return DecodeBolt12(invoice)
+	return DecodeBolt12Invoice(invoice)
 }

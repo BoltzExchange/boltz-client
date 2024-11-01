@@ -288,8 +288,8 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			handleError("Could not decode invoice: " + err.Error())
 			return
 		}
-		serviceFee := swap.ServiceFeePercent.Calculate(decodedInvoice.Amount)
-		boltzOnchainFee := int64(swap.ExpectedAmount - decodedInvoice.Amount - serviceFee)
+		serviceFee := swap.ServiceFeePercent.Calculate(decodedInvoice.AmountSat)
+		boltzOnchainFee := int64(swap.ExpectedAmount - decodedInvoice.AmountSat - serviceFee)
 		if boltzOnchainFee < 0 {
 			logger.Warnf("Boltz onchain fee seems to be negative")
 			boltzOnchainFee = 0

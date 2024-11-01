@@ -14,19 +14,19 @@ const BECH32_BOLT12_INVOICE_HRP: &str = "lni";
 
 #[repr(C)]
 pub struct Offer {
-    pub min_amount: u64,
+    pub min_amount_sat: u64,
 }
 
 #[repr(C)]
 pub struct Invoice {
-    pub amount: u64,
+    pub amount_sat: u64,
     pub payment_hash: [u8; 32],
     pub expiry_date: u64,
 }
 
 #[repr(C)]
 pub struct CResult<T> {
-    pub result: T,
+    pub result: *const T,
     pub error: *const c_char,
 }
 
@@ -34,11 +34,11 @@ impl<T> CResult<T> {
     pub fn from_result(res: Result<T, String>) -> Self {
         match res {
             Ok(value) => CResult {
-                result: value,
+                result: Box::into_raw(Box::new(value)),
                 error: null(),
             },
             Err(err) => CResult {
-                result: unsafe { std::mem::zeroed() },
+                result: null(),
                 error: CString::new(err).unwrap_or(CString::default()).into_raw(),
             },
         }
@@ -60,17 +60,15 @@ fn parse_offer(offer: *const c_char) -> Result<LnOffer, String> {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn decode_offer(offer: *const c_char) -> CResult<*mut Offer> {
-    CResult::from_result(parse_offer(offer).map(|offer| {
-        Box::into_raw(Box::new(Offer {
-            min_amount: match offer.amount() {
-                Some(amount) => match amount {
-                    Amount::Bitcoin { amount_msats } => convert_msats_to_sats(amount_msats),
-                    Amount::Currency { .. } => 0,
-                },
-                None => 0,
+pub unsafe extern "C" fn decode_offer(offer: *const c_char) -> CResult<Offer> {
+    CResult::from_result(parse_offer(offer).map(|offer| Offer {
+        min_amount_sat: match offer.amount() {
+            Some(amount) => match amount {
+                Amount::Bitcoin { amount_msats } => convert_msats_to_sats(amount_msats),
+                Amount::Currency { .. } => 0,
             },
-        }))
+            None => 0,
+        },
     }))
 }
 
@@ -98,21 +96,24 @@ fn parse_invoice(invoice: *const c_char) -> Result<Bolt12Invoice, String> {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> CResult<*mut Invoice> {
+pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> CResult<Invoice> {
     CResult::from_result(parse_invoice(invoice).map(|invoice| {
-        Box::into_raw(Box::new(Invoice {
-            amount: convert_msats_to_sats(invoice.amount_msats()),
+        Invoice {
+            amount_sat: convert_msats_to_sats(invoice.amount_msats()),
             payment_hash: invoice.payment_hash().0,
             expiry_date: invoice
                 .absolute_expiry()
                 .and_then(|d| Some(d.as_secs()))
                 .unwrap_or(0),
-        }))
+        }
     }))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn check_invoice_is_for_offer(invoice: *const c_char, offer: *const c_char) -> bool {
+pub unsafe extern "C" fn check_invoice_is_for_offer(
+    invoice: *const c_char,
+    offer: *const c_char,
+) -> bool {
     let invoice = match parse_invoice(invoice) {
         Ok(res) => res,
         Err(_) => return false,
@@ -139,6 +140,7 @@ pub extern "C" fn free_c_string(s: *mut c_char) {
         return;
     }
     unsafe {
-        let _ = CString::from_raw(s); // This will automatically deallocate the string
+        let str = CString::from_raw(s);
+        drop(str);
     }
 }
