@@ -357,7 +357,7 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 			output.Address = address
 		}
 		var err error
-		result, err := nursery.onchain.FindVout(output.voutInfo)
+		result, err := nursery.onchain.FindOutput(output.outputArgs)
 		if err != nil {
 			handleErr(err)
 			continue

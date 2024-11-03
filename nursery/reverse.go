@@ -103,7 +103,7 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 			Cooperative: true,
 		},
 		walletId: reverseSwap.WalletId,
-		voutInfo: onchain.VoutArgs{
+		outputArgs: onchain.OutputArgs{
 			TransactionId:    reverseSwap.LockupTransactionId,
 			Currency:         reverseSwap.Pair.To,
 			Address:          lockupAddress,

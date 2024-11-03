@@ -32,7 +32,7 @@ func (nursery *Nursery) RegisterChainSwap(chainSwap database.ChainSwap) error {
 
 func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, data *database.ChainSwapData, transactionId string) error {
 	data.LockupTransactionId = transactionId
-	_, err := nursery.onchain.FindVout(chainVoutInfo(data))
+	_, err := nursery.onchain.FindOutput(chainOutputArgs(data))
 	if err != nil {
 		return fmt.Errorf("could not find lockup vout: %s", err)
 	}
@@ -54,8 +54,8 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	return nil
 }
 
-func chainVoutInfo(data *database.ChainSwapData) onchain.VoutArgs {
-	info := onchain.VoutArgs{
+func chainOutputArgs(data *database.ChainSwapData) onchain.OutputArgs {
+	info := onchain.OutputArgs{
 		TransactionId: data.LockupTransactionId,
 		Currency:      data.Currency,
 		Address:       data.LockupAddress,
@@ -65,7 +65,7 @@ func chainVoutInfo(data *database.ChainSwapData) onchain.VoutArgs {
 }
 
 func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Output {
-	info := chainVoutInfo(swap.ToData)
+	info := chainOutputArgs(swap.ToData)
 	info.RequireConfirmed = !swap.AcceptZeroConf
 	info.ExpectedAmount = swap.ToData.Amount
 	return &Output{
@@ -79,8 +79,8 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 			RefundSwapTree: swap.FromData.Tree,
 			Address:        swap.ToData.Address,
 		},
-		walletId: swap.ToData.WalletId,
-		voutInfo: info,
+		walletId:   swap.ToData.WalletId,
+		outputArgs: info,
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.ToData, transactionId); err != nil {
 				return fmt.Errorf("Could not set lockup transaction in database: %w", err)
@@ -110,7 +110,7 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 			Address:            swap.FromData.Address,
 		},
 		swap.FromData.WalletId,
-		chainVoutInfo(swap.FromData),
+		chainOutputArgs(swap.FromData),
 		func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.FromData, transactionId); err != nil {
 				return fmt.Errorf("could not set refund transaction id in database: %s", err)

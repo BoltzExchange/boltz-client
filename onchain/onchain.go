@@ -390,7 +390,7 @@ func (onchain *Onchain) GetUnspentOutputs(currency boltz.Currency, address strin
 	return chain.Blocks.GetUnspentOutputs(address)
 }
 
-type VoutArgs struct {
+type OutputArgs struct {
 	TransactionId    string
 	Currency         boltz.Currency
 	Address          string
@@ -399,7 +399,7 @@ type VoutArgs struct {
 	RequireConfirmed bool
 }
 
-type VoutResult struct {
+type OutputResult struct {
 	Transaction boltz.Transaction
 	Vout        uint32
 	Value       uint64
@@ -407,7 +407,7 @@ type VoutResult struct {
 
 var ErrNotConfirmed = errors.New("lockup transaction not confirmed")
 
-func (onchain *Onchain) FindVout(info VoutArgs) (*VoutResult, error) {
+func (onchain *Onchain) FindOutput(info OutputArgs) (*OutputResult, error) {
 	lockupTransaction, err := onchain.GetTransaction(info.Currency, info.TransactionId, info.BlindingKey)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode lockup transaction: %w", err)
@@ -431,7 +431,7 @@ func (onchain *Onchain) FindVout(info VoutArgs) (*VoutResult, error) {
 		}
 	}
 
-	return &VoutResult{
+	return &OutputResult{
 		Transaction: lockupTransaction,
 		Vout:        vout,
 		Value:       value,

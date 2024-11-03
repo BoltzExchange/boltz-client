@@ -31,15 +31,15 @@ func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
 
 type Output struct {
 	*boltz.OutputDetails
-	walletId *database.Id
-	voutInfo onchain.VoutArgs
+	walletId   *database.Id
+	outputArgs onchain.OutputArgs
 
 	setTransaction func(transactionId string, fee uint64) error
 	setError       func(err error)
 }
 
-func swapVoutInfo(swap *database.Swap) onchain.VoutArgs {
-	return onchain.VoutArgs{
+func swapOutputArgs(swap *database.Swap) onchain.OutputArgs {
+	return onchain.OutputArgs{
 		TransactionId: swap.LockupTransactionId,
 		Currency:      swap.Pair.From,
 		Address:       swap.Address,
@@ -60,8 +60,8 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *Output {
 			// TODO: remember if cooperative fails and set this to false
 			Cooperative: true,
 		},
-		walletId: swap.WalletId,
-		voutInfo: swapVoutInfo(swap),
+		walletId:   swap.WalletId,
+		outputArgs: swapOutputArgs(swap),
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetSwapRefundTransactionId(swap, transactionId, fee); err != nil {
 				return err
@@ -162,7 +162,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				return
 			}
 
-			result, err := nursery.onchain.FindVout(swapVoutInfo(swap))
+			result, err := nursery.onchain.FindOutput(swapOutputArgs(swap))
 			if err != nil {
 				handleError(err.Error())
 				return
