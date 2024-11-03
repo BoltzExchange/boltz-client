@@ -33,26 +33,18 @@ func NewClient(options onchain.ElectrumOptions) (*Client, error) {
 	// Making sure connection is not closed with timed "client.ping" call
 	go func() {
 		for !c.client.IsShutdown() {
-			ctx, cancel := c.timeoutContext()
-			if err := c.client.Ping(ctx); err != nil {
+			if err := c.client.Ping(c.ctx); err != nil {
 				logger.Errorf("failed to ping electrum server: %s", err)
 			}
-			cancel()
 			time.Sleep(60 * time.Second)
 		}
 	}()
 
-	ctx, cancel := c.timeoutContext()
-	defer cancel()
 	// Making sure we declare to the server what protocol we want to use
-	if _, _, err := c.client.ServerVersion(ctx); err != nil {
+	if _, _, err := c.client.ServerVersion(c.ctx); err != nil {
 		return nil, err
 	}
 	return c, nil
-}
-
-func (c *Client) timeoutContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(c.ctx, 3*time.Second)
 }
 
 func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
@@ -75,22 +67,16 @@ func (c *Client) GetBlockHeight() (uint32, error) {
 }
 
 func (c *Client) EstimateFee() (float64, error) {
-	ctx, cancel := c.timeoutContext()
-	defer cancel()
-	fee, err := c.client.GetFee(ctx, 2)
+	fee, err := c.client.GetFee(c.ctx, 2)
 	return float64(fee), err
 }
 
 func (c *Client) GetRawTransaction(txId string) (string, error) {
-	ctx, cancel := c.timeoutContext()
-	defer cancel()
-	return c.client.GetRawTransaction(ctx, txId)
+	return c.client.GetRawTransaction(c.ctx, txId)
 }
 
 func (c *Client) BroadcastTransaction(txHex string) (string, error) {
-	ctx, cancel := c.timeoutContext()
-	defer cancel()
-	return c.client.BroadcastTransaction(ctx, txHex)
+	return c.client.BroadcastTransaction(c.ctx, txHex)
 }
 
 func (c *Client) Disconnect() {
@@ -98,9 +84,7 @@ func (c *Client) Disconnect() {
 }
 
 func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
-	ctx, cancel := c.timeoutContext()
-	defer cancel()
-	transaction, err := c.client.GetTransaction(ctx, txId)
+	transaction, err := c.client.GetTransaction(c.ctx, txId)
 	if err != nil {
 		return false, err
 	}
@@ -108,13 +92,11 @@ func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
 }
 
 func (c *Client) GetUnspentOutputs(address string) ([]*onchain.Output, error) {
-	ctx, cancel := c.timeoutContext()
-	defer cancel()
 	sh, err := electrum.AddressToElectrumScriptHash(address)
 	if err != nil {
 		return nil, err
 	}
-	unspent, err := c.client.ListUnspent(ctx, sh)
+	unspent, err := c.client.ListUnspent(c.ctx, sh)
 	if err != nil {
 		return nil, err
 	}
