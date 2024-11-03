@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"github.com/checksum0/go-electrum/electrum"
 	"math/rand/v2"
 	"os"
 	"os/exec"
@@ -123,6 +124,7 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 }
 
 func InitLogger() {
+	electrum.DebugMode = true
 	logger.Init(logger.Options{Level: "debug"})
 }
 

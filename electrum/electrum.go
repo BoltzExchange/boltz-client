@@ -52,7 +52,7 @@ func NewClient(options onchain.ElectrumOptions) (*Client, error) {
 }
 
 func (c *Client) timeoutContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(c.ctx, 3*time.Second)
+	return context.WithTimeout(c.ctx, 5*time.Second)
 }
 
 func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
