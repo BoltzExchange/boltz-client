@@ -1837,6 +1837,7 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `swap` | [`LightningSwap`](#lightningswap) | optional | Populated when a swap is recommended for the associated `channel`, otherwise, the current balances are below the configured thresholds |
 | `channel` | [`boltzrpc.LightningChannel`](#boltzrpc.lightningchannel) |  |  |
+| `thresholds` | [`LightningThresholds`](#lightningthresholds) |  | the thresholds for a swap to be recommended for the `channel` |
 
 
 
@@ -1853,6 +1854,20 @@ Reloads the configuration from disk.
 | `fee_estimate` | [`uint64`](#uint64) |  |  |
 | `type` | [`boltzrpc.SwapType`](#boltzrpc.swaptype) |  |  |
 | `dismissed_reasons` | [`string`](#string) | repeated | Reasons for which the swap is not being executed |
+
+
+
+
+
+#### LightningThresholds
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `inbound` | [`uint64`](#uint64) | optional |  |
+| `outbound` | [`uint64`](#uint64) | optional |  |
 
 
 

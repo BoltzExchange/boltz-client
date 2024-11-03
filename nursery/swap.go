@@ -10,8 +10,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
-	"github.com/lightningnetwork/lnd/zpay32"
 )
 
 func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
@@ -30,19 +30,19 @@ func (nursery *Nursery) sendSwapUpdate(swap database.Swap) {
 
 type Output struct {
 	*boltz.OutputDetails
-	walletId *database.Id
-	voutInfo voutInfo
+	walletId   *database.Id
+	outputArgs onchain.OutputArgs
 
 	setTransaction func(transactionId string, fee uint64) error
 	setError       func(err error)
 }
 
-func swapVoutInfo(swap *database.Swap) voutInfo {
-	return voutInfo{
-		transactionId: swap.LockupTransactionId,
-		currency:      swap.Pair.From,
-		address:       swap.Address,
-		blindingKey:   swap.BlindingKey,
+func swapOutputArgs(swap *database.Swap) onchain.OutputArgs {
+	return onchain.OutputArgs{
+		TransactionId: swap.LockupTransactionId,
+		Currency:      swap.Pair.From,
+		Address:       swap.Address,
+		BlindingKey:   swap.BlindingKey,
 	}
 }
 
@@ -59,8 +59,8 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *Output {
 			// TODO: remember if cooperative fails and set this to false
 			Cooperative: true,
 		},
-		walletId: swap.WalletId,
-		voutInfo: swapVoutInfo(swap),
+		walletId:   swap.WalletId,
+		outputArgs: swapOutputArgs(swap),
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetSwapRefundTransactionId(swap, transactionId, fee); err != nil {
 				return err
@@ -93,7 +93,7 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 	}
 
 	// Verify that the invoice was actually paid
-	decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+	decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 	if err != nil {
 		return fmt.Errorf("could not decode swap invoice: %w", err)
 	}
@@ -161,7 +161,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				return
 			}
 
-			lockupTransaction, _, value, err := nursery.findVout(swapVoutInfo(swap))
+			result, err := nursery.onchain.FindOutput(swapOutputArgs(swap))
 			if err != nil {
 				handleError(err.Error())
 				return
@@ -169,7 +169,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 			logger.Infof("Got lockup transaction of Swap %s: %s", swap.Id, lockupTransaction.Hash())
 
-			if err := nursery.database.SetSwapExpectedAmount(swap, value); err != nil {
+			if err := nursery.database.SetSwapExpectedAmount(swap, result.Value); err != nil {
 				handleError("Could not set expected amount in database: " + err.Error())
 				return
 			}
@@ -247,7 +247,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 	case boltz.TransactionClaimPending, boltz.TransactionClaimed:
 		// Verify that the invoice was actually paid
-		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 
 		if err != nil {
 			handleError("Could not decode invoice: " + err.Error())
@@ -284,14 +284,13 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		decodedInvoice, err := zpay32.Decode(swap.Invoice, nursery.network.Btc)
+		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 		if err != nil {
 			handleError("Could not decode invoice: " + err.Error())
 			return
 		}
-		invoiceAmount := uint64(decodedInvoice.MilliSat.ToSatoshis())
-		serviceFee := swap.ServiceFeePercent.Calculate(invoiceAmount)
-		boltzOnchainFee := int64(swap.ExpectedAmount - invoiceAmount - serviceFee)
+		serviceFee := swap.ServiceFeePercent.Calculate(decodedInvoice.AmountSat)
+		boltzOnchainFee := int64(swap.ExpectedAmount - decodedInvoice.AmountSat - serviceFee)
 		if boltzOnchainFee < 0 {
 			logger.Warnf("Boltz onchain fee seems to be negative")
 			boltzOnchainFee = 0

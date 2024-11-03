@@ -9,7 +9,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 
 	"github.com/BoltzExchange/boltz-client/utils"
@@ -358,55 +357,18 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 			output.Address = address
 		}
 		var err error
-		output.LockupTransaction, output.Vout, _, err = nursery.findVout(output.voutInfo)
+		result, err := nursery.onchain.FindOutput(output.outputArgs)
 		if err != nil {
 			handleErr(err)
 			continue
 		}
+		output.LockupTransaction = result.Transaction
+		output.Vout = result.Vout
 		valid = append(valid, output)
 		details = append(details, *output.OutputDetails)
 	}
 	return
 }
-
-type voutInfo struct {
-	transactionId    string
-	currency         boltz.Currency
-	address          string
-	blindingKey      *btcec.PrivateKey
-	expectedAmount   uint64
-	requireConfirmed bool
-}
-
-var ErrNotConfirmed = errors.New("lockup transaction not confirmed")
-
-func (nursery *Nursery) findVout(info voutInfo) (boltz.Transaction, uint32, uint64, error) {
-	lockupTransaction, err := nursery.onchain.GetTransaction(info.currency, info.transactionId, info.blindingKey)
-	if err != nil {
-		return nil, 0, 0, errors.New("Could not decode lockup transaction: " + err.Error())
-	}
-
-	vout, value, err := lockupTransaction.FindVout(nursery.network, info.address)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-
-	if info.expectedAmount != 0 && value < info.expectedAmount {
-		return nil, 0, 0, fmt.Errorf("locked up less onchain coins than expected: %d < %d", value, info.expectedAmount)
-	}
-	if info.requireConfirmed {
-		confirmed, err := nursery.onchain.IsTransactionConfirmed(info.currency, info.transactionId)
-		if err != nil {
-			return nil, 0, 0, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
-		}
-		if !confirmed {
-			return nil, 0, 0, ErrNotConfirmed
-		}
-	}
-
-	return lockupTransaction, vout, value, nil
-}
-
 func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
 	var outputs []*Output
 	for _, swap := range reverseSwaps {

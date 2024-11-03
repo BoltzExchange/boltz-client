@@ -2,8 +2,7 @@ package rpcserver
 
 import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/lightningnetwork/lnd/zpay32"
+	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -72,16 +71,10 @@ func TestCheckInvoiceExpiry(t *testing.T) {
 					To:   boltzrpc.Currency_BTC,
 				},
 			}
-			invoice, err := zpay32.NewInvoice(
-				&chaincfg.RegressionNetParams,
-				[32]byte{},
-				time.Now().Add(-tt.age),
-				zpay32.Expiry(tt.expiry),
-				zpay32.Description("test"),
-			)
-			require.NoError(t, err)
 
-			checkInvoiceExpiry(request, invoice)
+			checkInvoiceExpiry(request, &lightning.DecodedInvoice{
+				Expiry: time.Now().Add(-tt.age).Add(tt.expiry),
+			})
 
 			require.Equal(t, tt.afterZeroConf, *request.ZeroConf)
 		})

@@ -671,6 +671,22 @@ func (boltz *Api) AcceptChainSwapQuote(swapId string, quote *Quote) error {
 	return response.ApiError(err)
 }
 
+func (boltz *Api) FetchBolt12Invoice(offer string, amountSat uint64) (string, error) {
+	var response struct {
+		Invoice string `json:"invoice"`
+	}
+	request := struct {
+		Offer  string `json:"offer"`
+		Amount uint64 `json:"amount"`
+	}{
+		Offer:  offer,
+		Amount: amountSat,
+	}
+	err := boltz.sendPostRequest("/v2/lightning/BTC/bolt12/fetch", &request, &response)
+
+	return response.Invoice, err
+}
+
 func (boltz *Api) sendGetRequest(endpoint string, response interface{}) error {
 	res, err := boltz.Client.Get(boltz.URL + endpoint)
 

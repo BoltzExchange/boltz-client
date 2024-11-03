@@ -1,7 +1,8 @@
 PKG := github.com/BoltzExchange/boltz-client
 VERSION := 2.1.11
-GDK_VERSION = 0.73.2
+GDK_VERSION = 0.73.3
 GO_VERSION := 1.23.0
+RUST_VERSION := 1.82.0
 
 PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
 PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
@@ -78,12 +79,16 @@ restart-regtest: download-regtest
 # Building
 #
 
-build: download-gdk
+build-bolt12:
+	@$(call print, "Building bolt12")
+	cd lightning/lib/bolt12 && cargo build --release
+
+build: download-gdk build-bolt12
 	@$(call print, "Building boltz-client")
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-static: download-gdk
+static: download-gdk build-bolt12
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
@@ -145,7 +150,8 @@ changelog:
 	git-chglog --output CHANGELOG.md
 
 PLATFORMS := linux/amd64,linux/arm64
-DOCKER_ARGS := --platform $(PLATFORMS) --build-arg GO_VERSION=$(GO_VERSION) --build-arg GDK_VERSION=$(GDK_VERSION)
+DOCKER_CACHE := boltz/boltz-client:buildcache
+DOCKER_ARGS := --platform $(PLATFORMS) --build-arg GO_VERSION=$(GO_VERSION) --build-arg GDK_VERSION=$(GDK_VERSION) --build-arg RUST_VERSION=$(RUST_VERSION) --cache-from type=registry,ref=$(DOCKER_CACHE) --cache-to type=registry,ref=$(DOCKER_CACHE),mode=max
 
 docker:
 	@$(call print, "Building docker image")
