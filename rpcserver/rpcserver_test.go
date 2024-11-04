@@ -2152,12 +2152,14 @@ func TestChainSwap(t *testing.T) {
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 
 		externalPay := true
+		acceptZeroConf := true
 		to := test.LiquidCli("getnewaddress")
 		swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-			Amount:      100000,
-			Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
-			ExternalPay: &externalPay,
-			ToAddress:   &to,
+			Amount:         100000,
+			Pair:           &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
+			ExternalPay:    &externalPay,
+			ToAddress:      &to,
+			AcceptZeroConf: &acceptZeroConf,
 		})
 		require.NoError(t, err)
 		stop()
