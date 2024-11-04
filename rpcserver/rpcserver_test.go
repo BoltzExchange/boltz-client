@@ -1530,9 +1530,8 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 		test.MineBlock()
 
 		// send a bunch of payments to the address.
-		test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount*2)
-		correct := test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount)
 		test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount/2)
+		correct := test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount)
 		first = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect).ReverseSwap
 		claimTx := first.ClaimTransactionId
 		require.NotEqualf(t, claimTx, second.ClaimTransactionId, "transactions are the same")
@@ -2164,12 +2163,14 @@ func TestChainSwap(t *testing.T) {
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 
 		externalPay := true
+		acceptZeroConf := true
 		to := test.LiquidCli("getnewaddress")
 		swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-			Amount:      100000,
-			Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
-			ExternalPay: &externalPay,
-			ToAddress:   &to,
+			Amount:         100000,
+			Pair:           &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
+			ExternalPay:    &externalPay,
+			ToAddress:      &to,
+			AcceptZeroConf: &acceptZeroConf,
 		})
 		require.NoError(t, err)
 		stop()
