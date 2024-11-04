@@ -1329,32 +1329,6 @@ func refundSwap(ctx *cli.Context) error {
 	return nil
 }
 
-var claimSwapsCommand = &cli.Command{
-	Name:      "claimswaps",
-	Category:  "Swaps",
-	Usage:     "Claim x-to-chain swaps manually",
-	ArgsUsage: "addresss|wallet ids...",
-	Action:    requireNArgs(2, claimSwaps),
-}
-
-func claimSwaps(ctx *cli.Context) error {
-	client := getClient(ctx)
-	request := &boltzrpc.ClaimSwapsRequest{SwapIds: ctx.Args().Tail()}
-	address := ctx.Args().First()
-	walletId, err := getWalletId(ctx, address)
-	if err == nil {
-		request.Destination = &boltzrpc.ClaimSwapsRequest_WalletId{WalletId: *walletId}
-	} else {
-		request.Destination = &boltzrpc.ClaimSwapsRequest_Address{Address: address}
-	}
-	response, err := client.ClaimSwaps(request)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Claim transaction ID: " + response.TransactionId)
-	return nil
-}
-
 var createReverseSwapCommand = &cli.Command{
 	Name:      "createreverseswap",
 	Category:  "Swaps",

@@ -76,20 +76,27 @@ type OutputResult struct {
 	Fee uint64
 }
 
-type Results map[string]OutputResult
-
-func (results Results) SetErr(id string, err error) {
-	if results[id].Err == nil {
-		results[id] = OutputResult{Err: err}
-	}
+type ConstructResult struct {
+	Transaction   Transaction
+	Details       map[string]OutputResult
+	Err           error
+	TransactionId string
 }
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Api) (Transaction, Results, error) {
+func (result ConstructResult) SwapResult(id string) OutputResult {
+	details := result.Details[id]
+	if result.Err != nil && details.Err == nil {
+		return OutputResult{Err: result.Err}
+	}
+	return details
+}
+
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Api) ConstructResult {
 	construct := constructBtcTransaction
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
 	}
-	results := make(Results, len(outputs))
+	swapErrors := make(map[string]OutputResult, len(outputs))
 
 	getOutValues := func(fee uint64) map[string]uint64 {
 		outValues := make(map[string]uint64)
@@ -104,31 +111,32 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 			feeRemainder = 0
 
 			value, err := output.LockupTransaction.VoutValue(output.Vout)
-			if err != nil {
-				results.SetErr(output.SwapId, err)
-				continue
+			if err == nil {
+				if value < output.Fee {
+					err = fmt.Errorf("value less than fee: %d < %d", value, output.Fee)
+				}
 			}
-			if value < output.Fee {
-				results.SetErr(output.SwapId, fmt.Errorf("value less than fee: %d < %d", value, output.Fee))
-				continue
+			if err != nil {
+				swapErrors[output.SwapId] = OutputResult{Err: err}
+			} else {
+				swapErrors[output.SwapId] = OutputResult{Fee: output.Fee}
+				outValues[output.Address] += value - output.Fee
 			}
 
-			results[output.SwapId] = OutputResult{Fee: output.Fee}
-			outValues[output.Address] += value - output.Fee
 		}
 		return outValues
 	}
 
 	noFeeTransaction, err := construct(network, outputs, getOutValues(0))
 	if err != nil {
-		return nil, nil, err
+		return ConstructResult{Err: err}
 	}
 
 	fee := uint64(math.Ceil(float64(noFeeTransaction.VSize()) * satPerVbyte))
 
 	transaction, err := construct(network, outputs, getOutValues(fee))
 	if err != nil {
-		return nil, nil, err
+		return ConstructResult{Err: err}
 	}
 
 	var valid []OutputDetails
@@ -209,7 +217,7 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 		}()
 		if err != nil {
 			if output.IsRefund() {
-				results[output.SwapId] = OutputResult{Err: err}
+				swapErrors[output.SwapId] = OutputResult{Err: err}
 				reconstruct = true
 			} else {
 				nonCoop := outputs[i]
@@ -222,20 +230,18 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 		}
 	}
 
-	if len(valid) == 0 {
-		return nil, results, fmt.Errorf("all outputs invalid")
+	if reconstruct && len(valid) > 0 {
+		newResult := ConstructTransaction(network, currency, valid, satPerVbyte, boltzApi)
+		if newResult.Err != nil {
+			return newResult
+		}
+		for id, result := range swapErrors {
+			if _, ok := newResult.Details[id]; !ok {
+				newResult.Details[id] = result
+			}
+		}
+		return newResult
 	}
 
-	if reconstruct {
-		transaction, newResults, err := ConstructTransaction(network, currency, valid, satPerVbyte, boltzApi)
-		if err != nil {
-			return nil, nil, err
-		}
-		for id, result := range newResults {
-			results[id] = result
-		}
-		return transaction, results, nil
-	}
-
-	return transaction, results, err
+	return ConstructResult{Transaction: transaction, Details: swapErrors, TransactionId: transaction.Hash()}
 }

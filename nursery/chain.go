@@ -237,7 +237,9 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			break
 		}
 
-		nursery.checkSweep(nursery.getChainSwapClaimOutput(swap))
+		if nursery.checkSweep(nursery.getChainSwapClaimOutput(swap)) {
+			return
+		}
 	}
 
 	logger.Debugf("Updating status of Chain Swap %s to %s", swap.Id, parsedStatus)
@@ -276,8 +278,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			}
 
 			if swap.FromData.LockupTransactionId != "" {
-				if err := nursery.checkSweep(nursery.getChainSwapRefundOutput(swap)); err != nil {
-					handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
+				if nursery.checkSweep(nursery.getChainSwapRefundOutput(swap)) {
 					return
 				}
 			}
@@ -285,5 +286,4 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 	}
 	nursery.sendChainSwapUpdate(*swap)
-
 }

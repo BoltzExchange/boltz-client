@@ -170,7 +170,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
 
-		if err := nursery.checkSweep(nursery.getReverseSwapClaimOutput(reverseSwap)); err != nil {
+		if nursery.checkSweep(nursery.getReverseSwapClaimOutput(reverseSwap)) {
 			return
 		}
 	}

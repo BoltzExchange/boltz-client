@@ -56,8 +56,16 @@ type CheckedOutput struct {
 	outputResult *onchain.OutputResult
 }
 
-func (nursery *Nursery) checkOutput(output *Output) *CheckedOutput {
-	result, err := nursery.onchain.FindOutput(output.findArgs)
+func (claimer *Claimer) checkOutput(output *Output) *CheckedOutput {
+	if output.Address == "" {
+		verb := "claimed"
+		if output.IsRefund() {
+			verb = "refunded"
+		}
+		output.setError(fmt.Errorf("swap %s can not be %s, no address set", output.SwapId, verb))
+		return nil
+	}
+	result, err := claimer.onchain.FindOutput(output.findArgs)
 	if err != nil {
 		output.setError(err)
 		return nil
@@ -67,14 +75,15 @@ func (nursery *Nursery) checkOutput(output *Output) *CheckedOutput {
 	return &CheckedOutput{Output: output, outputResult: result}
 }
 
-func (nursery *Nursery) checkSweep(output *Output) (err error) {
-	if checked := nursery.checkOutput(output); checked != nil {
+func (nursery *Nursery) checkSweep(output *Output) bool {
+	if checked := nursery.claimer.checkOutput(output); checked != nil {
 		if reason := nursery.claimer.shouldSweep(checked); reason != ReasonNone {
-			_, err := nursery.sweep(reason, nil, output.findArgs.Currency)
-			return err
+			result := nursery.sweep(reason, output.findArgs.Currency)
+			return result.SwapResult(output.SwapId).Err != nil
 		}
+		return false
 	}
-	return nil
+	return true
 }
 
 type SweepReason string
@@ -120,8 +129,8 @@ func (claimer *Claimer) shouldSweep(output *CheckedOutput) SweepReason {
 
 func (nursery *Nursery) SweepAll(reason SweepReason, symbols []boltz.Currency) {
 	for _, currency := range symbols {
-		if _, err := nursery.sweep(reason, nil, currency); err != nil {
-			logger.Errorf("could not sweep %s: %s", currency, err)
+		if result := nursery.sweep(reason, currency); result.Err != nil {
+			logger.Errorf("could not sweep %s: %s", currency, result.Err)
 		}
 	}
 }
@@ -152,30 +161,33 @@ func (nursery *Nursery) getAllOutputs(tenantId *database.Id, currency boltz.Curr
 	for _, swap := range refundableChain {
 		outputs = append(outputs, nursery.getChainSwapRefundOutput(swap))
 	}
-	var checked []*CheckedOutput
+	var result []*CheckedOutput
 	for _, output := range outputs {
-		checked = append(checked, nursery.checkOutput(output))
+		if checked := nursery.claimer.checkOutput(output); checked != nil {
+			result = append(result, checked)
+		}
 	}
-	return checked, nil
+	return result, nil
 }
 
-func (nursery *Nursery) Sweep(tenantId *database.Id, currency boltz.Currency) (string, error) {
+func (nursery *Nursery) Sweep(currency boltz.Currency) (string, error) {
 	outputs, err := nursery.getAllOutputs(nil, currency)
 	if err != nil {
 		return "", fmt.Errorf("could not query claimable outputs: %w", err)
 	}
 	nursery.claimer.outputs[currency] = outputs
-	return nursery.sweep(ReasonForced, tenantId, currency)
+	result := nursery.sweep(ReasonForced, currency)
+	return result.TransactionId, result.Err
 }
 
-func (nursery *Nursery) sweep(reason SweepReason, tenantId *database.Id, currency boltz.Currency) (string, error) {
+func (nursery *Nursery) sweep(reason SweepReason, currency boltz.Currency) boltz.ConstructResult {
 	outputs := nursery.claimer.outputs[currency]
 	currentHeight, err := nursery.onchain.GetBlockHeight(currency)
 	if err != nil {
-		return "", fmt.Errorf("could not get block height: %w", err)
+		logger.Warnf("Could not get block height for %s sweep, assuming all outputs to be non-coop: %s", currency, err)
 	}
 	for _, output := range outputs {
-		output.Cooperative = output.TimeoutBlockHeight > currentHeight
+		output.Cooperative = currentHeight != 0 && output.TimeoutBlockHeight > currentHeight
 		logger.Debugf(
 			"Output for swap %s cooperative: %t (%d > %d)",
 			output.SwapId, output.Cooperative, output.TimeoutBlockHeight, currentHeight,
@@ -183,14 +195,13 @@ func (nursery *Nursery) sweep(reason SweepReason, tenantId *database.Id, currenc
 	}
 	if len(outputs) > 0 {
 		logger.Infof("Sweeping %d outputs for currency %s (reason: %s)", len(outputs), currency, reason)
-		txId, err := nursery.createTransaction(currency, outputs)
-		if err != nil {
-			return "", err
+		result := nursery.createTransaction(currency, outputs)
+		if result.Err == nil {
+			nursery.claimer.outputs[currency] = nil
 		}
-		nursery.claimer.outputs[currency] = nil
-		return txId, nil
+		return result
 	}
-	return "", nil
+	return boltz.ConstructResult{}
 }
 
 func (claimer *Claimer) SweepableBalance(currency boltz.Currency, walletId *database.Id) uint64 {

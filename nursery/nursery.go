@@ -2,7 +2,6 @@ package nursery
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 	"sync"
@@ -279,22 +278,40 @@ func (nursery *Nursery) removeSwapListener(id string) {
 	}
 }
 
-func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*CheckedOutput) (id string, err error) {
-	outputs, details := nursery.populateOutputs(outputs)
-	if len(details) == 0 {
-		return "", errors.New("all outputs invalid")
+func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*CheckedOutput) boltz.ConstructResult {
+	details := make([]boltz.OutputDetails, 0, len(outputs))
+	addresses := make(map[database.Id]string)
+	for _, output := range outputs {
+		if output.walletId != nil {
+			walletId := *output.walletId
+			address, ok := addresses[walletId]
+			if ok {
+				output.Address = address
+			} else {
+				addresses[walletId] = output.Address
+			}
+		} else if output.Address == "" {
+			logger.Warnf("no address or wallet set for swap %s", output.SwapId)
+		}
+		details = append(details, *output.OutputDetails)
 	}
 
-	results := make(boltz.Results)
+	var result boltz.ConstructResult
 
-	handleErr := func(err error) (string, error) {
+	handleErr := func(err error) boltz.ConstructResult {
+		result.Err = err
 		for _, output := range outputs {
-			results.SetErr(output.SwapId, err)
-			if err := results[output.SwapId].Err; err != nil {
-				output.setError(results[output.SwapId].Err)
+			details := result.SwapResult(output.SwapId)
+			if details.Err != nil {
+				output.setError(result.Err)
+			} else {
+				if err := output.setTransaction(result.TransactionId, details.Fee); err != nil {
+					logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
+					continue
+				}
 			}
 		}
-		return id, err
+		return result
 	}
 
 	feeSatPerVbyte, err := nursery.onchain.EstimateFee(currency, true)
@@ -304,74 +321,17 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ch
 
 	logger.Infof("Using fee of %v sat/vbyte for transaction", feeSatPerVbyte)
 
-	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
-	if err != nil {
-		return handleErr(fmt.Errorf("construct: %w", err))
-	}
+	result = boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
 
-	id, err = nursery.onchain.BroadcastTransaction(transaction)
-	if err != nil {
-		return handleErr(fmt.Errorf("broadcast: %w", err))
-	}
-	logger.Infof("Broadcast transaction: %s", id)
-
-	for _, output := range outputs {
-		result := results[output.SwapId]
-		if result.Err == nil {
-			if err := output.setTransaction(id, result.Fee); err != nil {
-				logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
-				continue
-			}
+	if result.Transaction != nil {
+		_, err := nursery.onchain.BroadcastTransaction(result.Transaction)
+		if err != nil {
+			return handleErr(err)
 		}
+		logger.Infof("Broadcast transaction: %s", result.Transaction.Hash())
 	}
 
 	return handleErr(nil)
-}
-
-func (nursery *Nursery) populateOutputs(outputs []*CheckedOutput) (valid []*CheckedOutput, details []boltz.OutputDetails) {
-	addresses := make(map[database.Id]string)
-	for _, output := range outputs {
-		handleErr := func(err error) {
-			verb := "claim"
-			if output.IsRefund() {
-				verb = "refund"
-			}
-			logger.Warnf("swap %s can not be %sed automatically: %s", output.SwapId, verb, err)
-			output.setError(err)
-		}
-		if output.walletId != nil {
-			walletId := *output.walletId
-			address, ok := addresses[walletId]
-			if !ok {
-				wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Id: &walletId, AllowReadonly: true})
-				if err != nil {
-					handleErr(fmt.Errorf("wallet with id %d could not be found", walletId))
-					continue
-				}
-				address, err = wallet.NewAddress()
-				if err != nil {
-					handleErr(fmt.Errorf("could not get address from wallet %s: %w", wallet.GetWalletInfo().Name, err))
-					continue
-				}
-				addresses[walletId] = address
-			}
-			output.Address = address
-		} else if output.Address == "" {
-			handleErr(errors.New("no address or wallet set"))
-			continue
-		}
-		var err error
-		result, err := nursery.onchain.FindOutput(output.findArgs)
-		if err != nil {
-			handleErr(err)
-			continue
-		}
-		output.LockupTransaction = result.Transaction
-		output.Vout = result.Vout
-		valid = append(valid, output)
-		details = append(details, *output.OutputDetails)
-	}
-	return
 }
 
 func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {

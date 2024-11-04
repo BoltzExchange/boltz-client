@@ -321,10 +321,9 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 		logger.Infof("Swap %s failed", swap.Id)
-		if err := nursery.checkSweep(nursery.getRefundOutput(swap)); err != nil {
+		if nursery.checkSweep(nursery.getRefundOutput(swap)) {
 			return
 		}
-		return
 	}
 	nursery.sendSwapUpdate(*swap)
 }
