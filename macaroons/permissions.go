@@ -133,6 +133,10 @@ var (
 			Entity: "wallet",
 			Action: "read",
 		}},
+		"/boltzrpc.Boltz/GetWalletSendFee": {{
+			Entity: "wallet",
+			Action: "read",
+		}},
 		"/boltzrpc.Boltz/RemoveWallet": {{
 			Entity: "wallet",
 			Action: "write",

@@ -1648,6 +1648,53 @@ func TestWalletSendReceive(t *testing.T) {
 	response, err := client.WalletReceive(otherWallet.Wallet.Id)
 	require.NoError(t, err)
 
+	t.Run("SendFee", func(t *testing.T) {
+		swapRelated := true
+		sendAll := true
+		t.Run("NodeWallet", func(t *testing.T) {
+			_, err := client.GetSendFee(&boltzrpc.WalletSendRequest{
+				Id:            nodeWallet.Id,
+				SendAll:       &sendAll,
+				IsSwapAddress: &swapRelated,
+			})
+			require.Error(t, err)
+		})
+
+		t.Run("AddressRequired", func(t *testing.T) {
+			swapRelated := false
+			_, err := client.GetSendFee(&boltzrpc.WalletSendRequest{
+				Id:            nodeWallet.Id,
+				SendAll:       &sendAll,
+				IsSwapAddress: &swapRelated,
+			})
+			require.Error(t, err)
+		})
+
+		t.Run("Normal", func(t *testing.T) {
+			response, err := client.GetSendFee(&boltzrpc.WalletSendRequest{
+				Id:            testWallet.Id,
+				SendAll:       &sendAll,
+				IsSwapAddress: &swapRelated,
+			})
+			require.NoError(t, err)
+			require.NotZero(t, response.Fee)
+			require.NotZero(t, response.FeeRate)
+		})
+
+		t.Run("CustomFee", func(t *testing.T) {
+			satPerVbyte := 10.0
+			response, err := client.GetSendFee(&boltzrpc.WalletSendRequest{
+				Id:            testWallet.Id,
+				SendAll:       &sendAll,
+				IsSwapAddress: &swapRelated,
+				SatPerVbyte:   &satPerVbyte,
+			})
+			require.NoError(t, err)
+			require.NotZero(t, response.Fee)
+			require.Equal(t, satPerVbyte, response.FeeRate)
+		})
+	})
+
 	amount := uint64(100000)
 	send := func(satPerVbyte *float64) uint64 {
 		request := &boltzrpc.WalletSendRequest{
