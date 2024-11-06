@@ -3,6 +3,7 @@ package boltz
 import (
 	"errors"
 	"fmt"
+	"math"
 )
 
 type TxSizes struct {
@@ -29,26 +30,35 @@ var Sizes = map[Currency]TxSizes{
 
 type FeeEstimations map[Currency]float64
 
-func calcNetworkFee(swapType SwapType, pair Pair, estimations FeeEstimations, includeClaim bool) float64 {
+func calcNetworkFee(swapType SwapType, pair Pair, estimations FeeEstimations, includeClaim bool) uint64 {
+	result := 0.0
 	switch swapType {
 	case NormalSwap:
-		return float64(Sizes[pair.From].NormalClaim) * estimations[pair.From]
+		result = float64(Sizes[pair.From].NormalClaim) * estimations[pair.From]
 	case ReverseSwap:
 		size := Sizes[pair.To].ReverseLockup
 		if includeClaim {
 			size += Sizes[pair.To].ReverseClaim
 		}
-		return float64(size) * estimations[pair.To]
+		result = float64(size) * estimations[pair.To]
 	case ChainSwap:
 		return calcNetworkFee(NormalSwap, pair, estimations, includeClaim) + calcNetworkFee(ReverseSwap, pair, estimations, includeClaim)
-	default:
-		return 0
 	}
+	return uint64(math.Ceil(result))
 }
 
 var ErrInvalidOnchainFee = errors.New("onchain fee way above expectation")
 
-const FeeTolerance = 1.25
+const RelativeFeeTolerance = Percentage(25)
+const AbsoluteFeeToleranceSat = 1500
+
+func checkTolerance(expected uint64, actual uint64) error {
+	tolerance := max(AbsoluteFeeToleranceSat, RelativeFeeTolerance.Calculate(expected))
+	if actual > expected+tolerance {
+		return fmt.Errorf("%w: %d > %d+%d", ErrInvalidOnchainFee, actual, expected, tolerance)
+	}
+	return nil
+}
 
 func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount uint64, serviceFee Percentage, estimations FeeEstimations, includeClaim bool) error {
 	totalFees := sendAmount - receiveAmount
@@ -58,12 +68,5 @@ func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount
 	} else {
 		onchainFees -= serviceFee.Calculate(sendAmount)
 	}
-	expected := calcNetworkFee(swapType, pair, estimations, includeClaim)
-	if float64(onchainFees) > expected*FeeTolerance {
-		return fmt.Errorf(
-			"%w: %d > %d*%.2f (service fee: %s, totalFees: %d)",
-			ErrInvalidOnchainFee, onchainFees, uint64(expected), FeeTolerance, serviceFee, totalFees,
-		)
-	}
-	return nil
+	return checkTolerance(calcNetworkFee(swapType, pair, estimations, includeClaim), onchainFees)
 }

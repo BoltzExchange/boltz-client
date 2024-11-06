@@ -1,6 +1,7 @@
 package boltz
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -103,9 +104,66 @@ func TestCheckFees(t *testing.T) {
 			require.NoError(t, CheckAmounts(tt.args.swapType, tt.args.pair, tt.args.sendAmount, tt.args.receiveAmount, tt.args.serviceFee, tt.args.feeEstimations, includeClaim))
 
 			// boltz trying to scam us
-			netFee := calcNetworkFee(tt.args.swapType, tt.args.pair, tt.args.feeEstimations, includeClaim)
-			tt.args.receiveAmount -= uint64(netFee*(FeeTolerance-1)) + 1
+			tt.args.receiveAmount -= AbsoluteFeeToleranceSat + 100
 			require.Error(t, CheckAmounts(tt.args.swapType, tt.args.pair, tt.args.sendAmount, tt.args.receiveAmount, tt.args.serviceFee, tt.args.feeEstimations, includeClaim))
+		})
+	}
+}
+
+func Test_checkTolerance(t *testing.T) {
+	type args struct {
+		expected uint64
+		actual   uint64
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "Equal",
+			args: args{
+				expected: 100,
+				actual:   100,
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "Absolute/Within",
+			args: args{
+				expected: 25,
+				actual:   100,
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "Absolute/Outside",
+			args: args{
+				expected: AbsoluteFeeToleranceSat,
+				actual:   AbsoluteFeeToleranceSat * 3,
+			},
+			wantErr: assert.Error,
+		},
+		{
+			name: "Relative/Within",
+			args: args{
+				expected: 100000 - AbsoluteFeeToleranceSat*2,
+				actual:   100000,
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "Relative/Outside",
+			args: args{
+				expected: 70000,
+				actual:   100000,
+			},
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.wantErr(t, checkTolerance(tt.args.expected, tt.args.actual), fmt.Sprintf("checkTolerance(%v, %v)", tt.args.expected, tt.args.actual))
 		})
 	}
 }
