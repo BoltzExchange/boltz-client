@@ -190,7 +190,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			if err != nil {
 				if errors.As(err, &quoteError) {
 					// TODO: store error
-					logger.Infof("Boltz did not give us a new quote for Chain Swap %s: %v", swap.Id, quoteError)
+					logger.Warnf("Boltz did not give us a new quote for Chain Swap %s: %v", swap.Id, quoteError)
 				} else {
 					handleError("could not get quote: %w", err)
 					return
@@ -209,15 +209,21 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 					return
 				}
 
-				if err := nursery.database.SetChainSwapAmount(swap.ToData, quote.Amount); err != nil {
-					handleError("could not set to amount in database: %w", err)
+				err = nursery.database.RunTx(func(tx *database.Transaction) error {
+					if err := tx.SetChainSwapAmount(swap.ToData, quote.Amount); err != nil {
+						return fmt.Errorf("to amount: %w", err)
+					}
+
+					if err := tx.SetChainSwapAmount(swap.FromData, result.Value); err != nil {
+						return fmt.Errorf("from amount: %w", err)
+					}
+					return nil
+				})
+				if err != nil {
+					handleError("could not update chain swap amounts in database: %w", err)
 					return
 				}
 
-				if err := nursery.database.SetChainSwapAmount(swap.FromData, result.Value); err != nil {
-					handleError("could not set from amount in database: %w", err)
-					return
-				}
 			}
 		}
 
