@@ -62,11 +62,11 @@ func checkTolerance(expected uint64, actual uint64) error {
 
 func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount uint64, serviceFee Percentage, estimations FeeEstimations, includeClaim bool) error {
 	totalFees := sendAmount - receiveAmount
-	onchainFees := totalFees
+	networkFees := totalFees
 	if swapType == NormalSwap {
-		onchainFees -= serviceFee.Calculate(receiveAmount)
+		networkFees -= serviceFee.Calculate(receiveAmount)
 	} else {
-		onchainFees -= serviceFee.Calculate(sendAmount)
+		networkFees -= serviceFee.Calculate(sendAmount)
 	}
-	return checkTolerance(calcNetworkFee(swapType, pair, estimations, includeClaim), onchainFees)
+	return checkTolerance(calcNetworkFee(swapType, pair, estimations, includeClaim), networkFees)
 }
