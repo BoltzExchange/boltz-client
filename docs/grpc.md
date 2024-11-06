@@ -183,7 +183,7 @@ Returns the current balance and subaccount of a wallet.
 
 #### GetWalletSendFee
 
-Calculates the fee for an equivalent `WalletSend` request. The `address` can be left empty if `is_swap_address` is set to true. A dummy swap address will be used in this case. This allows for a fee estimation of a swap lockup transaction.
+Calculates the fee for an equivalent `WalletSend` request. If `address` is left empty, a dummy swap address will be used, allowing for a fee estimation of a swap lockup transaction.
 
 | Request | Response |
 | ------- | -------- |

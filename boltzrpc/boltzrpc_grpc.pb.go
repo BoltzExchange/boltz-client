@@ -120,8 +120,7 @@ type BoltzClient interface {
 	// Returns the current balance and subaccount of a wallet.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
 	// Calculates the fee for an equivalent `WalletSend` request.
-	// The `address` can be left empty if `is_swap_address` is set to true. A dummy swap address will be used in this case.
-	// This allows for a fee estimation of a swap lockup transaction.
+	// If `address` is left empty, a dummy swap address will be used, allowing for a fee estimation of a swap lockup transaction.
 	GetWalletSendFee(ctx context.Context, in *WalletSendRequest, opts ...grpc.CallOption) (*WalletSendFee, error)
 	// Returns recent transactions from a wallet.
 	ListWalletTransactions(ctx context.Context, in *ListWalletTransactionsRequest, opts ...grpc.CallOption) (*ListWalletTransactionsResponse, error)
@@ -566,8 +565,7 @@ type BoltzServer interface {
 	// Returns the current balance and subaccount of a wallet.
 	GetWallet(context.Context, *GetWalletRequest) (*Wallet, error)
 	// Calculates the fee for an equivalent `WalletSend` request.
-	// The `address` can be left empty if `is_swap_address` is set to true. A dummy swap address will be used in this case.
-	// This allows for a fee estimation of a swap lockup transaction.
+	// If `address` is left empty, a dummy swap address will be used, allowing for a fee estimation of a swap lockup transaction.
 	GetWalletSendFee(context.Context, *WalletSendRequest) (*WalletSendFee, error)
 	// Returns recent transactions from a wallet.
 	ListWalletTransactions(context.Context, *ListWalletTransactionsRequest) (*ListWalletTransactionsResponse, error)
