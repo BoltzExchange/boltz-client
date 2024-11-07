@@ -29,7 +29,7 @@ type ChainConfig struct {
 	shared
 
 	tenant         *database.Tenant
-	maxFeePercent  utils.Percentage
+	maxFeePercent  boltz.Percentage
 	reserveBalance uint64
 	fromWallet     onchain.Wallet
 	toWallet       onchain.Wallet
@@ -66,7 +66,7 @@ func (cfg *ChainConfig) Init() (err error) {
 			return fmt.Errorf("could not get tenant: %w", err)
 		}
 	}
-	cfg.maxFeePercent = utils.Percentage(cfg.MaxFeePercent)
+	cfg.maxFeePercent = boltz.Percentage(cfg.MaxFeePercent)
 	if cfg.MaxBalance == 0 {
 		return errors.New("MaxBalance must be set")
 	}

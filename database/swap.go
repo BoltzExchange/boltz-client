@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/utils"
-
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
@@ -38,7 +36,7 @@ type Swap struct {
 	BlindingKey         *btcec.PrivateKey
 	IsAuto              bool
 	ServiceFee          *uint64
-	ServiceFeePercent   utils.Percentage
+	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	WalletId            *Id
 	TenantId            Id
@@ -66,7 +64,7 @@ type SwapSerialized struct {
 	BlindingKey         string
 	IsAuto              bool
 	ServiceFee          *uint64
-	ServiceFeePercent   utils.Percentage
+	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	WalletId            *Id
 	TenantId            Id

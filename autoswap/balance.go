@@ -1,12 +1,13 @@
 package autoswap
 
 import (
+	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/utils"
 )
 
 type Balance struct {
 	Absolute uint64
-	Relative utils.Percentage
+	Relative boltz.Percentage
 }
 
 func (b Balance) IsZero() bool {
