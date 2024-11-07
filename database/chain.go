@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"time"
 )
@@ -22,7 +21,7 @@ type ChainSwap struct {
 	Preimage          []byte
 	IsAuto            bool
 	ServiceFee        *uint64
-	ServiceFeePercent utils.Percentage
+	ServiceFeePercent boltz.Percentage
 	OnchainFee        *uint64
 	CreatedAt         time.Time
 	TenantId          Id
@@ -58,7 +57,7 @@ type ChainSwapSerialized struct {
 	Preimage          string
 	IsAuto            bool
 	ServiceFee        *uint64
-	ServiceFeePercent utils.Percentage
+	ServiceFeePercent boltz.Percentage
 	OnchainFee        *uint64
 	CreatedAt         int64
 	TenantId          Id
@@ -210,6 +209,12 @@ func (database *Database) SetChainSwapAddress(swapData *ChainSwapData, address s
 func (database *Database) SetChainSwapWallet(swapData *ChainSwapData, walletId Id) error {
 	swapData.WalletId = &walletId
 	_, err := database.Exec("UPDATE chainSwapsData SET walletId = ? WHERE id = ? AND currency = ?", walletId, swapData.Id, swapData.Currency)
+	return err
+}
+
+func (database *Database) SetChainSwapAmount(swapData *ChainSwapData, amount uint64) error {
+	swapData.Amount = amount
+	_, err := database.Exec("UPDATE chainSwapsData SET amount = ? WHERE id = ? AND currency = ?", swapData.Amount, swapData.Id, swapData.Currency)
 	return err
 }
 

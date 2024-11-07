@@ -113,6 +113,7 @@ var password = "password"
 var walletParams = &boltzrpc.WalletParams{Currency: boltzrpc.Currency_LBTC, Name: walletName}
 var walletCredentials *wallet.Credentials
 var testWallet *database.Wallet
+var swapAmount = uint64(100000)
 
 type setupOptions struct {
 	cfg       *config.Config
@@ -590,7 +591,7 @@ func TestSwapInfo(t *testing.T) {
 	check(t, reverseSwap.Id)
 
 	chainSwap, err := admin.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-		Amount:      100000,
+		Amount:      &swapAmount,
 		Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
 		ExternalPay: &externalPay,
 		ToWalletId:  &testWallet.Id,
@@ -1380,12 +1381,16 @@ func TestWalletTransactions(t *testing.T) {
 		externalPay := true
 		receive, err := client.WalletReceive(testWallet.Id)
 		require.NoError(t, err)
+		pair := &boltzrpc.Pair{
+			From: boltzrpc.Currency_LBTC,
+			To:   boltzrpc.Currency_BTC,
+		}
+		pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
+		require.NoError(t, err)
+		amount := pairInfo.Limits.Minimal
 		swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-			Pair: &boltzrpc.Pair{
-				From: boltzrpc.Currency_LBTC,
-				To:   boltzrpc.Currency_BTC,
-			},
-			Amount:        100000,
+			Pair:          pair,
+			Amount:        &amount,
 			ExternalPay:   &externalPay,
 			RefundAddress: &receive.Address,
 			ToWalletId:    &toWalletId,
@@ -2213,7 +2218,7 @@ func TestChainSwap(t *testing.T) {
 		acceptZeroConf := true
 		to := test.LiquidCli("getnewaddress")
 		swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-			Amount:         100000,
+			Amount:         &swapAmount,
 			Pair:           &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
 			ExternalPay:    &externalPay,
 			ToAddress:      &to,
@@ -2232,6 +2237,98 @@ func TestChainSwap(t *testing.T) {
 		update := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
 		require.Equal(t, swap.Id, update.Id)
 		checkTxOutAddress(t, chain, boltz.CurrencyLiquid, update.ToData.GetTransactionId(), update.ToData.GetAddress(), true)
+	})
+
+	t.Run("Quote", func(t *testing.T) {
+		client, _, stop := setup(t, setupOptions{})
+		defer stop()
+
+		externalPay := true
+		acceptZeroConf := true
+		to := test.LiquidCli("getnewaddress")
+		pair := &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC}
+		pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
+		require.NoError(t, err)
+		t.Run("WithinLimits", func(t *testing.T) {
+			swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+				Amount:         &swapAmount,
+				Pair:           pair,
+				ExternalPay:    &externalPay,
+				ToAddress:      &to,
+				AcceptZeroConf: &acceptZeroConf,
+			})
+			require.NoError(t, err)
+
+			newAmount := swap.FromData.Amount - 10
+
+			test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, newAmount)
+			test.MineBlock()
+
+			stream, statusStream := swapStream(t, client, swap.Id)
+			info := statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionLockupFailed)
+			require.Equal(t, newAmount, info.ChainSwap.FromData.Amount)
+
+			update := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
+			require.Equal(t, swap.Id, update.Id)
+			checkTxOutAddress(t, chain, boltz.CurrencyLiquid, update.ToData.GetTransactionId(), update.ToData.GetAddress(), true)
+		})
+
+		t.Run("OutofLimits", func(t *testing.T) {
+			swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+				Amount:         &swapAmount,
+				Pair:           pair,
+				ExternalPay:    &externalPay,
+				ToAddress:      &to,
+				AcceptZeroConf: &acceptZeroConf,
+			})
+			require.NoError(t, err)
+
+			test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, pairInfo.Limits.Minimal-10)
+			test.MineBlock()
+
+			_, statusStream := swapStream(t, client, swap.Id)
+			info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed)
+			require.NotEmpty(t, info.ChainSwap.Error)
+		})
+
+		t.Run("Amountless", func(t *testing.T) {
+			swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+				Pair:           pair,
+				ExternalPay:    &externalPay,
+				ToAddress:      &to,
+				AcceptZeroConf: &acceptZeroConf,
+			})
+			require.NoError(t, err)
+
+			amount := pairInfo.Limits.Minimal
+			test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, amount)
+			test.MineBlock()
+
+			stream, _ := swapStream(t, client, swap.Id)
+
+			update := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
+			require.Equal(t, amount, update.FromData.Amount)
+			require.Equal(t, swap.Id, update.Id)
+			checkTxOutAddress(t, chain, boltz.CurrencyLiquid, update.ToData.GetTransactionId(), update.ToData.GetAddress(), true)
+		})
+
+		t.Run("InvalidServiceFee", func(t *testing.T) {
+			pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
+			require.NoError(t, err)
+
+			pairInfo.Fees.Percentage = 0
+			amount := uint64(10000000)
+
+			_, err = client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+				Pair:           pair,
+				ExternalPay:    &externalPay,
+				ToAddress:      &to,
+				AcceptZeroConf: &acceptZeroConf,
+				AcceptedPair:   pairInfo,
+				Amount:         &amount,
+			})
+			require.Error(t, err)
+		})
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
@@ -2258,7 +2355,7 @@ func TestChainSwap(t *testing.T) {
 				toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
 				swap, err := client.CreateChainSwap(
 					&boltzrpc.CreateChainSwapRequest{
-						Amount:      100000,
+						Amount:      &swapAmount,
 						ExternalPay: &externalPay,
 						ToWalletId:  &toWalletId,
 						Pair: &boltzrpc.Pair{
@@ -2332,7 +2429,7 @@ func TestChainSwap(t *testing.T) {
 
 					zeroConf := true
 					swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-						Amount:         100000,
+						Amount:         &swapAmount,
 						Pair:           pair,
 						ToWalletId:     &toWalletId,
 						FromWalletId:   &fromWalletId,
@@ -2358,7 +2455,7 @@ func TestChainSwap(t *testing.T) {
 				t.Run("NoBalance", func(t *testing.T) {
 					emptyWalletId := emptyWallet(t, client, tc.from)
 					_, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-						Amount:       100000,
+						Amount:       &swapAmount,
 						Pair:         pair,
 						ToWalletId:   &toWalletId,
 						FromWalletId: &emptyWalletId,
@@ -2370,7 +2467,7 @@ func TestChainSwap(t *testing.T) {
 			t.Run("External", func(t *testing.T) {
 				externalPay := true
 				swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-					Amount:      100000,
+					Amount:      &swapAmount,
 					Pair:        pair,
 					ExternalPay: &externalPay,
 					ToAddress:   &toAddress,
@@ -2400,18 +2497,18 @@ func TestChainSwap(t *testing.T) {
 				require.NoError(t, err)
 
 				createFailed := func(t *testing.T, refundAddress string) (streamFunc, streamStatusFunc) {
-					amount := chainPair.Limits.Minimal + 100
+					amount := chainPair.Limits.Minimal
 					externalPay := true
 					swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
 						Pair:          pair,
 						RefundAddress: &refundAddress,
 						ToAddress:     &toAddress,
-						Amount:        amount + 100,
+						Amount:        &amount,
 						ExternalPay:   &externalPay,
 					})
 					require.NoError(t, err)
 
-					test.SendToAddress(fromCli, swap.FromData.LockupAddress, amount)
+					test.SendToAddress(fromCli, swap.FromData.LockupAddress, amount-100)
 					return swapStream(t, client, swap.Id)
 				}
 
@@ -2539,7 +2636,7 @@ func TestChainSwap(t *testing.T) {
 							Pair:        pair,
 							ExternalPay: &externalPay,
 							ToWalletId:  &response.Wallet.Id,
-							Amount:      100000,
+							Amount:      &swapAmount,
 						})
 						require.NoError(t, err)
 

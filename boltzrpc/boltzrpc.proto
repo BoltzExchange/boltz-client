@@ -543,6 +543,9 @@ message CreateSwapRequest {
     optional bool zero_conf = 8;
     // Fee rate to use when sending from internal wallet
     optional double sat_per_vbyte = 9;
+    // Rates to accept for the swap. Queries latest from boltz otherwise
+    // The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
+    optional PairInfo accepted_pair = 10;
 }
 message CreateSwapResponse {
     string id = 1;
@@ -590,6 +593,9 @@ message CreateReverseSwapRequest {
     optional bytes description_hash = 10;
     // Expiry of the reverse swap invoice in seconds
     optional uint64 invoice_expiry = 11;
+    // Rates to accept for the swap. Queries latest from boltz otherwise
+    // The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
+    optional PairInfo accepted_pair = 12;
 }
 message CreateReverseSwapResponse {
     string id = 1;
@@ -605,7 +611,8 @@ message CreateReverseSwapResponse {
 
 message CreateChainSwapRequest {
     // Amount of satoshis to swap. It is the amount expected to be sent to the lockup address.
-    uint64 amount = 1;
+    // If left empty, any amount within the limits will be accepted.
+    optional uint64 amount = 1;
     Pair pair = 2;
     // Address where funds will be swept to if the swap succeeds
     optional string to_address = 3;
@@ -626,6 +633,9 @@ message CreateChainSwapRequest {
     optional bool lockup_zero_conf = 9;
     // Fee rate to use when sending from internal wallet
     optional double sat_per_vbyte = 10;
+    // Rates to accept for the swap. Queries latest from boltz otherwise
+    // The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
+    optional PairInfo accepted_pair = 11;
 }
 
 message ChainSwapInfo {

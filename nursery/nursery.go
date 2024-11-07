@@ -369,6 +369,20 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 	}
 	return
 }
+
+func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {
+	fees := make(boltz.FeeEstimations)
+	fees[boltz.CurrencyLiquid], err = nursery.onchain.EstimateFee(boltz.CurrencyLiquid, true)
+	if err != nil {
+		return err
+	}
+	fees[boltz.CurrencyBtc], err = nursery.onchain.EstimateFee(boltz.CurrencyBtc, true)
+	if err != nil {
+		return err
+	}
+	return boltz.CheckAmounts(swapType, pair, sendAmount, receiveAmount, serviceFee, fees, false)
+}
+
 func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
 	var outputs []*Output
 	for _, swap := range reverseSwaps {

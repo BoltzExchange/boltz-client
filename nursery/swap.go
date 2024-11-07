@@ -205,6 +205,11 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			return
 		}
 
+		if err := nursery.CheckAmounts(boltz.NormalSwap, swap.Pair, swap.ExpectedAmount, swapRates.InvoiceAmount, swap.ServiceFeePercent); err != nil {
+			handleError(fmt.Sprintf("not accepting invoice amount %d from boltz: %s", swapRates.InvoiceAmount, err))
+			return
+		}
+
 		blockHeight, err := nursery.onchain.GetBlockHeight(swap.Pair.From)
 
 		if err != nil {

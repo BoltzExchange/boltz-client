@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -55,6 +57,46 @@ func (s HexString) MarshalText() ([]byte, error) {
 }
 
 type Error error
+
+type ResponseError struct {
+	Error string `json:"error"`
+}
+
+func (response ResponseError) ApiError(err error) error {
+	if response.Error != "" {
+		return Error(errors.New(response.Error))
+	}
+	return err
+}
+
+func StripQuotes(text []byte) string {
+	return string(bytes.Trim(text, "\""))
+}
+
+type Percentage float64
+
+func (p Percentage) String() string {
+	return fmt.Sprintf("%.2f%%", float64(p))
+}
+
+func (p Percentage) Ratio() float64 {
+	return float64(p / 100)
+}
+
+func (p Percentage) Calculate(value uint64) uint64 {
+	return uint64(math.Ceil(float64(value) * p.Ratio()))
+}
+
+func (p *Percentage) UnmarshalJSON(text []byte) error {
+	str := StripQuotes(text)
+
+	parsed, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		return err
+	}
+	*p = Percentage(parsed)
+	return nil
+}
 
 // Types for Boltz API
 type GetVersionResponse struct {
@@ -635,6 +677,29 @@ func (boltz *Api) GetReverseSwapBip21(invoice string) (*ReverseBip21, error) {
 	}
 
 	return &response, err
+}
+
+type Quote struct {
+	ResponseError
+	Amount uint64 `json:"amount"`
+}
+
+func (boltz *Api) GetChainSwapQuote(swapId string) (*Quote, error) {
+	var response Quote
+	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/chain/%s/quote", swapId), &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Api) AcceptChainSwapQuote(swapId string, quote *Quote) error {
+	var response ResponseError
+	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/quote", swapId), quote, &response)
+
+	return response.ApiError(err)
 }
 
 func (boltz *Api) FetchBolt12Invoice(offer string, amountSat uint64) (string, error) {
