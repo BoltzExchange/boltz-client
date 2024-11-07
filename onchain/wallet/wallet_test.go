@@ -49,6 +49,15 @@ func TestSend(t *testing.T) {
 		test.MineBlock()
 	})
 
+	t.Run("SendFee", func(t *testing.T) {
+		amount, fee, err := wallet.GetSendFee(addr, 0, onchainWallet.MinFeeRate, true)
+		require.NoError(t, err)
+
+		balance, err := wallet.GetBalance()
+		require.NoError(t, err)
+		require.Equal(t, balance.Confirmed, amount+fee)
+	})
+
 	t.Run("TxProvider", func(t *testing.T) {
 		t.Cleanup(func() {
 			wallet.SetTxProvider(nil)

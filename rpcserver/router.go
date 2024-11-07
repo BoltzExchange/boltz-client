@@ -1624,6 +1624,28 @@ func (server *routedBoltzServer) GetWallet(ctx context.Context, request *boltzrp
 	return server.serializeWallet(wallet)
 }
 
+func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error) {
+	ownWallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.Id})
+	if err != nil {
+		return nil, err
+	}
+	feeRate := request.GetSatPerVbyte()
+	if feeRate == 0 {
+		feeRate, err = server.onchain.EstimateFee(ownWallet.Currency, request.GetIsSwapAddress())
+		if err != nil {
+			return nil, err
+		}
+	}
+	if request.GetIsSwapAddress() {
+		request.Address = server.network.DummyLockupAddress[ownWallet.Currency]
+	}
+	amount, fee, err := ownWallet.GetSendFee(request.Address, request.Amount, feeRate, request.GetSendAll())
+	if err != nil {
+		return nil, err
+	}
+	return &boltzrpc.WalletSendFee{Amount: amount, Fee: fee, FeeRate: feeRate}, nil
+}
+
 func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzrpc.GetWalletsRequest) (*boltzrpc.Wallets, error) {
 	var response boltzrpc.Wallets
 	checker := onchain.WalletChecker{

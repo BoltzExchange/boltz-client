@@ -703,22 +703,19 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 	return result, nil
 }
 
-func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (tx string, err error) {
+func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVbyte float64, sendAll bool) (map[string]any, error) {
 	if wallet.Readonly {
-		return "", errors.New("wallet is readonly")
+		return nil, errors.New("wallet is readonly")
 	}
 	if wallet.subaccount == nil {
-		return "", ErrSubAccountNotSet
+		return nil, ErrSubAccountNotSet
 	}
 	handler := new(AuthHandler)
 
 	outputs, err := wallet.getUnspentOutputs(*wallet.subaccount, false)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
 
 	// Disable RBF
 	for asset, current := range outputs.Unspent {
@@ -726,7 +723,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 			if sendAll {
 				outputs.Unspent[asset] = current[:config.MaxInputs]
 			} else {
-				return "", errors.New("too many inputs")
+				return nil, errors.New("too many inputs")
 			}
 		}
 		for _, output := range current {
@@ -754,11 +751,44 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	})
 	defer free()
 
-	var result any
+	var result map[string]any
 	if err := withAuthHandler(C.GA_create_transaction(wallet.session, transactionDetails, handler), handler, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (wallet *Wallet) GetSendFee(address string, amount uint64, satPerVbyte float64, sendAll bool) (send uint64, fee uint64, err error) {
+	result, err := wallet.createTransaction(address, amount, satPerVbyte, sendAll)
+	if err != nil {
+		return 0, 0, err
+	}
+	var createTx struct {
+		Fee        uint64
+		Addressees []struct {
+			Satoshi uint64
+		}
+		Error string
+	}
+	if err := mapstructure.Decode(result, &createTx); err != nil {
+		return 0, 0, err
+	}
+	if createTx.Error != "" {
+		return 0, 0, errors.New(createTx.Error)
+	}
+	return createTx.Addressees[0].Satoshi, createTx.Fee, nil
+}
+
+func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (tx string, err error) {
+
+	result, err := wallet.createTransaction(address, amount, satPerVbyte, sendAll)
+	if err != nil {
 		return "", err
 	}
 
+	wallet.spentOutputsLock.Lock()
+	defer wallet.spentOutputsLock.Unlock()
+	handler := new(AuthHandler)
 	params, free := toJson(result)
 	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, handler), handler, &result); err != nil {
 		return "", err
