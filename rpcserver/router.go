@@ -1168,8 +1168,8 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	}
 
 	pair := utils.ParsePair(request.Pair)
-
-	logger.Infof("Creating Chain Swap for %d sats from %s to %s", request.Amount, pair.From, pair.To)
+	amount := request.GetAmount()
+	logger.Infof("Creating Chain Swap for %d sats from %s to %s", amount, pair.From, pair.To)
 
 	if request.AcceptedPair == nil {
 		request.AcceptedPair, err = server.getChainPair(request.Pair)
@@ -1181,7 +1181,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	createChainSwap := boltz.ChainRequest{
 		From:            pair.From,
 		To:              pair.To,
-		UserLockAmount:  request.GetAmount(),
+		UserLockAmount:  amount,
 		PairHash:        request.AcceptedPair.Hash,
 		ClaimPublicKey:  claimPub.SerializeCompressed(),
 		RefundPublicKey: refundPub.SerializeCompressed(),
@@ -1196,7 +1196,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	logger.Debugf("Creating Chain Swap with preimage hash: %x", preimageHash)
 
 	createChainSwap.PreimageHash = preimageHash
-	if request.Amount == nil {
+	if amount == 0 {
 		if !request.GetExternalPay() {
 			return nil, errors.New("cannot auto send if amount is 0")
 		}
@@ -1212,7 +1212,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		if err != nil {
 			return nil, err
 		}
-		if err := checkBalance(fromWallet, request.GetAmount()); err != nil {
+		if err := checkBalance(fromWallet, amount); err != nil {
 			return nil, err
 		}
 		logger.Infof("Using wallet %+v to pay chain swap", fromWallet.GetWalletInfo())

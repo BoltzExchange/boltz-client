@@ -2311,6 +2311,24 @@ func TestChainSwap(t *testing.T) {
 			require.Equal(t, swap.Id, update.Id)
 			checkTxOutAddress(t, chain, boltz.CurrencyLiquid, update.ToData.GetTransactionId(), update.ToData.GetAddress(), true)
 		})
+
+		t.Run("InvalidServiceFee", func(t *testing.T) {
+			pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
+			require.NoError(t, err)
+
+			pairInfo.Fees.Percentage = 0
+			amount := uint64(10000000)
+
+			_, err = client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+				Pair:           pair,
+				ExternalPay:    &externalPay,
+				ToAddress:      &to,
+				AcceptZeroConf: &acceptZeroConf,
+				AcceptedPair:   pairInfo,
+				Amount:         &amount,
+			})
+			require.Error(t, err)
+		})
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
