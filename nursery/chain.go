@@ -197,7 +197,6 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 				}
 			}
 			if quote != nil {
-				// TODO: sanity check amount
 				result, err := nursery.onchain.FindOutput(chainOutputArgs(swap.FromData))
 				if err != nil {
 					handleError(err.Error())
