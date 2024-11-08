@@ -2,7 +2,7 @@ package test
 
 import (
 	"fmt"
-	"github.com/checksum0/go-electrum/electrum"
+	"github.com/BoltzExchange/go-electrum/electrum"
 	"math/rand/v2"
 	"os"
 	"os/exec"
