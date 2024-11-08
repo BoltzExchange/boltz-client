@@ -1,4 +1,20 @@
 
+<a name="v2.2.0"></a>
+## [v2.2.0] - 2024-11-08
+### Feat
+- amountless chain swaps ([#291](https://github.com/BoltzExchange/boltz-client/issues/291))
+- `GetSendFee` rpc ([#325](https://github.com/BoltzExchange/boltz-client/issues/325))
+- bolt12 support for submarine swaps ([#309](https://github.com/BoltzExchange/boltz-client/issues/309))
+
+### Fix
+- flaky direct payment test
+- flaky recovery test
+- make sure channel is being received on in remove call
+
+### Refactor
+- move `findVout` function to onchain package ([#321](https://github.com/BoltzExchange/boltz-client/issues/321))
+
+
 <a name="v2.1.11"></a>
 ## [v2.1.11] - 2024-10-22
 ### Fix
@@ -446,6 +462,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.2.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.11...v2.2.0
 [v2.1.11]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.10...v2.1.11
 [v2.1.10]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.9...v2.1.10
 [v2.1.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.8...v2.1.9
