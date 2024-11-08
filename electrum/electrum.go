@@ -7,7 +7,7 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/checksum0/go-electrum/electrum"
+	"github.com/BoltzExchange/go-electrum/electrum"
 )
 
 type Client struct {

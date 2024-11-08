@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
+	github.com/BoltzExchange/go-electrum v0.0.0-20241108085421-d6484ac8e978
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Masterminds/semver v1.5.0
 	github.com/briandowns/spinner v1.23.0
@@ -12,7 +13,6 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
-	github.com/checksum0/go-electrum v0.0.0-20220912200153-b862ac442cf9
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0
 	github.com/fatih/color v1.15.0
 	github.com/fiatjaf/go-lnurl v1.13.1
