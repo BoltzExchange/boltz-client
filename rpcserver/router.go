@@ -1744,7 +1744,7 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if err != nil {
 		return nil, err
 	}
-	txId, err := server.sendToAddress(sendWallet, request.Address, request.Amount, true, 0, request.SatPerVbyte, request.GetSendAll())
+	txId, err := server.sendToAddress(sendWallet, request.Address, request.Amount, false, 0, request.SatPerVbyte, request.GetSendAll())
 	if err != nil {
 		return nil, err
 	}
