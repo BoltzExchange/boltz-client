@@ -1700,49 +1700,63 @@ func TestWalletSendReceive(t *testing.T) {
 		})
 	})
 
-	amount := uint64(100000)
-	send := func(satPerVbyte *float64) uint64 {
-		request := &boltzrpc.WalletSendRequest{
-			Id:          nodeWallet.Id,
-			Address:     response.Address,
-			Amount:      amount,
-			SatPerVbyte: satPerVbyte,
-		}
-		response, err := client.WalletSend(request)
-		require.NoError(t, err)
-		require.NotEmpty(t, response)
-
-		txFee, err := chain.GetTransactionFee(boltz.CurrencyBtc, response.TxId)
-		require.NoError(t, err)
-		return txFee
-	}
-
-	defaultFee := send(nil)
-	feeRate := float64(10)
-	highFee := send(&feeRate)
-
-	require.Greater(t, highFee, defaultFee)
-
-	test.MineBlock()
-
-	timeout := time.After(10 * time.Second)
-	ticker := time.NewTicker(200 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			wallet, err := client.GetWalletById(otherWallet.Wallet.Id)
+	t.Run("Send", func(t *testing.T) {
+		amount := uint64(100000)
+		send := func(satPerVbyte *float64) uint64 {
+			request := &boltzrpc.WalletSendRequest{
+				Id:          nodeWallet.Id,
+				Address:     response.Address,
+				Amount:      amount,
+				SatPerVbyte: satPerVbyte,
+			}
+			response, err := client.WalletSend(request)
 			require.NoError(t, err)
-			if wallet.Balance.Total == amount*2 {
+			require.NotEmpty(t, response)
+
+			txFee, err := chain.GetTransactionFee(boltz.CurrencyBtc, response.TxId)
+			require.NoError(t, err)
+			return txFee
+		}
+
+		defaultFee := send(nil)
+		feeRate := float64(10)
+		highFee := send(&feeRate)
+
+		require.Greater(t, highFee, defaultFee)
+
+		test.MineBlock()
+
+		timeout := time.After(10 * time.Second)
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
+		var balance uint64
+		for balance != amount*2 {
+			select {
+			case <-ticker.C:
+				walletResponse, err := client.GetWalletById(otherWallet.Wallet.Id)
+				require.NoError(t, err)
+				balance = walletResponse.Balance.Confirmed
+			case <-timeout:
+				t.Fatal("timeout while waiting for balance")
 				return
 			}
-		case <-timeout:
-			t.Fatal("timeout while waiting for balance")
-			return
 		}
 
-	}
+		nodeReceive, err := client.WalletReceive(nodeWallet.Id)
+		require.NoError(t, err)
 
+		sendAll := true
+		_, err = client.WalletSend(&boltzrpc.WalletSendRequest{
+			Id:      otherWallet.Wallet.Id,
+			Address: nodeReceive.Address,
+			SendAll: &sendAll,
+		})
+		require.NoError(t, err)
+
+		otherWallet, err := client.GetWalletById(otherWallet.Wallet.Id)
+		require.NoError(t, err)
+		require.Zero(t, otherWallet.Balance.Total)
+	})
 }
 
 func TestImportDuplicateCredentials(t *testing.T) {
