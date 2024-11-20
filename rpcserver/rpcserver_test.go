@@ -1766,10 +1766,14 @@ func TestImportDuplicateCredentials(t *testing.T) {
 	credentials, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
-	// after creating one with a password, the first one will be encrypted as well
-	second := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_BTC}
+	// duplicates are only allowed for different currencies
+	second := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}
 	_, err = client.ImportWallet(second, credentials)
 	require.Error(t, err)
+
+	second.Currency = boltzrpc.Currency_BTC
+	_, err = client.ImportWallet(second, credentials)
+	require.NoError(t, err)
 }
 
 func TestChangePassword(t *testing.T) {

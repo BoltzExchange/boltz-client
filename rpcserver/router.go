@@ -1388,7 +1388,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		if existing.Name == credentials.Name && existing.TenantId == credentials.TenantId {
 			return status.Errorf(codes.InvalidArgument, "wallet %s already exists", existing.Name)
 		}
-		if existing.Mnemonic == credentials.Mnemonic && existing.Xpub == credentials.Xpub && existing.CoreDescriptor == credentials.CoreDescriptor {
+		if existing.Currency == credentials.Currency && existing.Mnemonic == credentials.Mnemonic && existing.Xpub == credentials.Xpub && existing.CoreDescriptor == credentials.CoreDescriptor {
 			return status.Errorf(codes.InvalidArgument, "wallet %s has the same credentials", existing.Name)
 		}
 	}
