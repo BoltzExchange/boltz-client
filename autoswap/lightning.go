@@ -35,8 +35,10 @@ type LightningConfig struct {
 	walletId        *database.Id
 }
 
+const DefaultReserve = boltz.Percentage(10)
+
 func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
-	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: boltz.Percentage(2)}
+	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: DefaultReserve}
 }
 
 func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {
