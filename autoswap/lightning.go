@@ -119,8 +119,9 @@ func (cfg *LightningConfig) Init() error {
 		cfg.description += fmt.Sprintf(" with static address %s (%s)", cfg.StaticAddress, cfg.currency)
 	}
 
-	if cfg.Enabled {
-		return cfg.InitWallet()
+	// don't require a wallet if the config is disabled to allow for easier testing
+	if err := cfg.InitWallet(); err != nil && cfg.Enabled {
+		return err
 	}
 
 	return nil
