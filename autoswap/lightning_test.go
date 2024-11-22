@@ -678,10 +678,12 @@ func TestCheckSwapRecommendation(t *testing.T) {
 	pairInfo := newPairInfo()
 
 	tests := []struct {
-		name    string
-		config  *SerializedLnConfig
-		amount  uint64
-		outcome []string
+		name     string
+		config   *SerializedLnConfig
+		amount   uint64
+		wallets  []*mockedWallet
+		outcome  []string
+		swapType boltz.SwapType
 	}{
 		{
 			name: "MaxFeePercent/High",
@@ -724,6 +726,51 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			amount:  10000,
 			outcome: []string{ReasonBudgetExceeded},
 		},
+		{
+			name: "InsufficientFunds/NormalSwap",
+			config: &SerializedLnConfig{
+				MaxFeePercent: 25,
+				Wallet:        "test",
+			},
+			wallets: []*mockedWallet{
+				{
+					info:    onchain.WalletInfo{Currency: boltz.CurrencyBtc, Name: "test"},
+					balance: &onchain.Balance{Confirmed: 5000, Unconfirmed: 10000, Total: 15000},
+				},
+			},
+			swapType: boltz.NormalSwap,
+			amount:   10000,
+			outcome:  []string{ReasonInsufficientFunds},
+		},
+		{
+			name: "InsufficientFunds/ReverseSwap",
+			config: &SerializedLnConfig{
+				MaxFeePercent: 25,
+				Wallet:        "test",
+			},
+			wallets: []*mockedWallet{
+				{
+					info:    onchain.WalletInfo{Currency: boltz.CurrencyBtc, Name: "test"},
+					balance: &onchain.Balance{Confirmed: 5000, Unconfirmed: 10000, Total: 15000},
+				},
+			},
+			swapType: boltz.ReverseSwap,
+			amount:   10000,
+		},
+		{
+			name: "SufficientFunds",
+			config: &SerializedLnConfig{
+				MaxFeePercent: 25,
+				Wallet:        "test",
+			},
+			wallets: []*mockedWallet{
+				{
+					info:    onchain.WalletInfo{Currency: boltz.CurrencyBtc, Name: "test"},
+					balance: &onchain.Balance{Confirmed: 15000, Total: 15000},
+				},
+			},
+			amount: 10000,
+		},
 	}
 
 	for _, tc := range tests {
@@ -735,14 +782,20 @@ func TestCheckSwapRecommendation(t *testing.T) {
 				tc.config.Budget = tc.amount
 			}
 			chain := getOnchain()
+			for _, w := range tc.wallets {
+				chain.AddWallet(w.Create(t))
+			}
 
 			cfg, rpc := getLnConfig(t, tc.config, chain)
 			require.NoError(t, cfg.Init())
 
 			rpc.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
 
+			if tc.swapType == "" {
+				tc.swapType = boltz.NormalSwap
+			}
 			validated, err := cfg.validateRecommendations([]*LightningRecommendation{{Swap: &LightningSwap{
-				Type: boltz.NormalSwap,
+				Type: tc.swapType,
 				checks: checks{
 					Amount: tc.amount,
 				},
