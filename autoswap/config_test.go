@@ -33,12 +33,6 @@ func TestGetPair(t *testing.T) {
 }
 
 func TestLightningConfig(t *testing.T) {
-	enabled := func(cfg *SerializedLnConfig) *SerializedLnConfig {
-		cfg.Enabled = true
-		cfg.InboundBalancePercent = 25
-		cfg.OutboundBalancePercent = 25
-		return cfg
-	}
 	tt := []struct {
 		name    string
 		cfg     *SerializedLnConfig
@@ -80,64 +74,79 @@ func TestLightningConfig(t *testing.T) {
 		},
 		{
 			name: "StaticAddress/Invalid",
-			cfg: enabled(&SerializedLnConfig{
+			cfg: &SerializedLnConfig{
 				Currency:      boltzrpc.Currency_BTC,
 				StaticAddress: "invalid",
 				SwapType:      "reverse",
-			}),
+				Enabled:       true,
+			},
 			err: true,
 		},
 		{
 			name: "StaticAddress/Valid",
-			cfg: enabled(&SerializedLnConfig{
+			cfg: &SerializedLnConfig{
 				Currency:      boltzrpc.Currency_BTC,
 				StaticAddress: "bcrt1q3287hr2zmlqgj7pdnj7vt2sx3glpnfruq7uc2s",
 				SwapType:      "reverse",
-			}),
+				Enabled:       true,
+			},
 			err: false,
 		},
 		{
 			name: "Wallet/Valid",
-			cfg: enabled(&SerializedLnConfig{
+			cfg: &SerializedLnConfig{
 				Wallet:   "test",
 				Currency: boltzrpc.Currency_BTC,
-			}),
+				Enabled:  true,
+			},
 			wallets: []onchain.WalletInfo{{Id: 1, Name: "test", Currency: boltz.CurrencyBtc}},
 			err:     false,
 		},
 		{
-			name: "Wallet/Invalid/Currency",
-			cfg: enabled(&SerializedLnConfig{
+			name: "Wallet/Invalid/Disabled",
+			cfg: &SerializedLnConfig{
 				Wallet:   "test",
 				Currency: boltzrpc.Currency_BTC,
-			}),
+			},
+			err: false,
+		},
+		{
+			name: "Wallet/Invalid/Currency",
+			cfg: &SerializedLnConfig{
+				Wallet:   "test",
+				Currency: boltzrpc.Currency_BTC,
+				Enabled:  true,
+			},
 			wallets: []onchain.WalletInfo{{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid}},
 			err:     true,
 		},
 		{
 			name: "Wallet/Invalid/Name",
-			cfg: enabled(&SerializedLnConfig{
+			cfg: &SerializedLnConfig{
 				Wallet:   "test",
 				Currency: boltzrpc.Currency_BTC,
-			}),
+				Enabled:  true,
+			},
 			err: true,
 		},
 		{
 			name: "Wallet/Readonly",
-			cfg: enabled(&SerializedLnConfig{
+			cfg: &SerializedLnConfig{
 				Wallet:   "test",
 				Currency: boltzrpc.Currency_LBTC,
 				SwapType: "reverse",
-			}),
+				Enabled:  true,
+			},
 			wallets: []onchain.WalletInfo{{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid, Readonly: true}},
 			err:     false,
 		},
 		{
 			name: "Wallet/NoReadonly",
-			cfg: enabled(&SerializedLnConfig{
+			cfg: &SerializedLnConfig{
 				Wallet:   "test",
 				Currency: boltzrpc.Currency_LBTC,
-			}),
+				Enabled:  true,
+			},
 			wallets: []onchain.WalletInfo{{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid, Readonly: true}},
 			err:     true,
 		},
@@ -147,9 +156,9 @@ func TestLightningConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			shared := getShared(t)
 			for _, wallet := range tc.wallets {
-				shared.onchain.AddWallet(mockedWallet(t, wallet))
+				shared.onchain.AddWallet(mockedWallet{info: wallet}.Create(t))
 			}
-			cfg := NewLightningConfig(tc.cfg, shared)
+			cfg := NewLightningConfig(withThresholds(tc.cfg), shared)
 			err := cfg.Init()
 			if tc.err {
 				require.Error(t, err)
@@ -300,7 +309,7 @@ func TestChainConfig(t *testing.T) {
 				if tc.setTenant {
 					info.TenantId = tenant.Id
 				}
-				shared.onchain.AddWallet(mockedWallet(t, info))
+				shared.onchain.AddWallet(mockedWallet{info: info}.Create(t))
 			}
 
 			chainConfig := NewChainConfig(tc.config, shared)

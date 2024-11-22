@@ -1,6 +1,7 @@
 package autoswap
 
 import (
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/test"
 	"testing"
 	"time"
@@ -15,14 +16,19 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-func getLnSwapper(t *testing.T, cfg *SerializedLnConfig) (*LightningSwapper, *MockRpcProvider) {
-	swapper, mockProvider := getSwapper(t)
+func withThresholds(cfg *SerializedLnConfig) *SerializedLnConfig {
 	if cfg.InboundBalancePercent == 0 && cfg.OutboundBalancePercent == 0 {
 		cfg.OutboundBalancePercent = 25
 		cfg.InboundBalancePercent = 25
 	}
-	require.NoError(t, swapper.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: cfg}))
-	return swapper.lnSwapper, mockProvider
+	return cfg
+}
+
+func getLnConfig(t *testing.T, cfg *SerializedLnConfig, chain *onchain.Onchain) (*LightningConfig, *MockRpcProvider) {
+	rpc := NewMockRpcProvider(t)
+	ln := NewLightningConfig(withThresholds(cfg), shared{onchain: chain, rpc: rpc, database: getTestDb(t)})
+	require.NoError(t, ln.Init())
+	return ln, rpc
 }
 
 func TestSetLnConfig(t *testing.T) {
@@ -330,8 +336,8 @@ func TestBudget(t *testing.T) {
 	}
 
 	t.Run("Missing", func(t *testing.T) {
-		swapper, _ := getLnSwapper(t, &SerializedLnConfig{})
-		budget, err := swapper.cfg.GetCurrentBudget(false)
+		cfg, _ := getLnConfig(t, &SerializedLnConfig{}, getOnchain())
+		budget, err := cfg.GetCurrentBudget(false)
 		require.NoError(t, err)
 		require.Nil(t, budget)
 	})
@@ -655,12 +661,12 @@ func TestDismissedChannels(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			swapper, _ := getLnSwapper(t, tc.config)
-			db := swapper.database
+			cfg, _ := getLnConfig(t, tc.config, getOnchain())
+			db := cfg.database
 
 			tc.fakeSwaps.Create(t, db)
 
-			dismissed, err := swapper.cfg.getDismissedChannels()
+			dismissed, err := cfg.getDismissedChannels()
 			require.NoError(t, err)
 			require.Equal(t, tc.dismissed, dismissed)
 		})
@@ -728,11 +734,14 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			if tc.config.Budget == 0 {
 				tc.config.Budget = tc.amount
 			}
+			chain := getOnchain()
 
-			swapper, ln := getLnSwapper(t, tc.config)
-			ln.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
+			cfg, rpc := getLnConfig(t, tc.config, chain)
+			require.NoError(t, cfg.Init())
 
-			validated, err := swapper.cfg.validateRecommendations([]*LightningRecommendation{{Swap: &LightningSwap{
+			rpc.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
+
+			validated, err := cfg.validateRecommendations([]*LightningRecommendation{{Swap: &LightningSwap{
 				Type: boltz.NormalSwap,
 				checks: checks{
 					Amount: tc.amount,
