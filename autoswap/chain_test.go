@@ -10,6 +10,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/test"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"testing"
 	"time"
@@ -47,23 +49,23 @@ func newPairInfo() *boltzrpc.PairInfo {
 }
 
 func TestChainSwapper(t *testing.T) {
-	setup := func(t *testing.T) (*AutoSwap, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
-		name := database.DefaultTenantName
-		config := &SerializedChainConfig{
-			MaxBalance:     100000,
-			ReserveBalance: 50000,
-			FromWallet:     "test",
-			ToAddress:      "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
-			MaxFeePercent:  10,
-			Tenant:         &name,
+	walletInfo := onchain.WalletInfo{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid}
+	baseConfig := func() *SerializedChainConfig {
+		return &SerializedChainConfig{
+			MaxBalance:    100000,
+			FromWallet:    "test",
+			ToAddress:     "bcrt1q2q5f9te4va7xet4c93awrurux04h0pfwcuzzcu",
+			MaxFeePercent: 10,
 		}
+	}
 
+	setup := func(t *testing.T) (*AutoSwap, *ChainSwapper, *MockRpcProvider, *onchainmock.MockWallet) {
 		fromWallet := mockedWallet{info: onchain.WalletInfo{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid}}.Create(t)
 
 		swapper, mockProvider := getSwapper(t)
 		swapper.onchain.AddWallet(fromWallet)
 
-		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: config}, database.DefaultTenant)
+		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: baseConfig()}, database.DefaultTenant)
 		require.NoError(t, err)
 
 		return swapper, swapper.GetChainSwapper(database.DefaultTenantId), mockProvider, fromWallet
@@ -74,58 +76,152 @@ func TestChainSwapper(t *testing.T) {
 	defaultBalance := onchain.Balance{Total: 200000, Confirmed: 200000, Unconfirmed: 0}
 
 	t.Run("GetRecommendation", func(t *testing.T) {
-		_, chainSwapper, rpcMock, fromWallet := setup(t)
-		chainConfig := chainSwapper.cfg
-		pairInfo := newPairInfo()
-		rpcMock.EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(pairInfo, nil)
 
-		balance := defaultBalance
-		fromWallet.EXPECT().GetBalance().Return(&balance, nil)
+		testTenantName := "test"
 
-		expectedAmount := balance.Confirmed - chainConfig.reserveBalance
-
-		t.Run("Valid", func(t *testing.T) {
-			tenant := &database.Tenant{Name: "test"}
-			require.NoError(t, chainSwapper.database.CreateTenant(tenant))
-			test.FakeSwaps{ChainSwaps: []database.ChainSwap{
-				{
-					TenantId: tenant.Id,
+		tests := []struct {
+			name                     string
+			config                   *SerializedChainConfig
+			balance                  onchain.Balance
+			expectedAmount           uint64
+			expectedDismissedReasons []string
+			tenantId                 database.Id
+			setup                    func(t *testing.T, shared shared)
+		}{
+			{
+				name: "Valid",
+				config: &SerializedChainConfig{
+					ReserveBalance: MinReserve,
 				},
-			}}.Create(t, chainSwapper.database)
-
-			recommendation, err := chainConfig.GetRecommendation()
-			require.NoError(t, err)
-			require.NotZero(t, recommendation.Swap.FeeEstimate)
-			require.Empty(t, recommendation.Swap.DismissedReasons)
-			require.Equal(t, expectedAmount, recommendation.Swap.Amount)
-		})
-
-		t.Run("Dismissed", func(t *testing.T) {
-			test.FakeSwaps{ChainSwaps: []database.ChainSwap{
-				{
-					TenantId: chainConfig.tenant.Id,
+				balance:                  defaultBalance,
+				expectedAmount:           defaultBalance.Confirmed - MinReserve,
+				expectedDismissedReasons: nil,
+			},
+			{
+				name:                     "NoBalance",
+				config:                   &SerializedChainConfig{},
+				balance:                  onchain.Balance{Total: 100, Confirmed: 100, Unconfirmed: 0},
+				expectedAmount:           0,
+				expectedDismissedReasons: nil,
+			},
+			{
+				name:           "Dismissed/Checks",
+				config:         &SerializedChainConfig{},
+				balance:        defaultBalance,
+				expectedAmount: defaultBalance.Confirmed,
+				expectedDismissedReasons: []string{
+					ReasonAmountBelowMin,
+					ReasonMaxFeePercent,
+					ReasonBudgetExceeded,
 				},
-			}}.Create(t, chainSwapper.database)
+				setup: func(t *testing.T, shared shared) {
+					mockRpc(shared).EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(&boltzrpc.PairInfo{
+						Limits: &boltzrpc.Limits{
+							Minimal: 100000000,
+							Maximal: 1000000000,
+						},
+						Fees: &boltzrpc.SwapFees{
+							MinerFees:  1000000,
+							Percentage: 1,
+						},
+					}, nil)
+				},
+			},
+			{
+				name: "PendingSwap/SameTenant",
+				config: &SerializedChainConfig{
+					ReserveBalance: 0,
+				},
+				balance:        defaultBalance,
+				expectedAmount: defaultBalance.Confirmed,
+				setup: func(t *testing.T, shared shared) {
+					fakeSwaps := test.FakeSwaps{ChainSwaps: []database.ChainSwap{
+						{
+							State: boltzrpc.SwapState_PENDING,
+						},
+					}}
+					fakeSwaps.Create(t, shared.database)
+				},
+				expectedDismissedReasons: []string{ReasonPendingSwap},
+			},
+			{
+				name: "PendingSwap/OtherTenant",
+				config: &SerializedChainConfig{
+					ReserveBalance: 0,
+				},
+				balance:        defaultBalance,
+				expectedAmount: defaultBalance.Confirmed,
+				setup: func(t *testing.T, shared shared) {
+					tenant := &database.Tenant{Name: testTenantName}
+					require.NoError(t, shared.database.CreateTenant(tenant))
+					fakeSwaps := test.FakeSwaps{ChainSwaps: []database.ChainSwap{
+						{
+							TenantId: tenant.Id,
+							State:    boltzrpc.SwapState_PENDING,
+						},
+					}}
+					fakeSwaps.Create(t, shared.database)
+				},
+				expectedDismissedReasons: nil,
+			},
+			{
+				name: "Sweep/SendFee",
+				config: &SerializedChainConfig{
+					ReserveBalance: 0,
+				},
+				balance:        defaultBalance,
+				expectedAmount: 5000,
+				setup: func(t *testing.T, shared shared) {
+					mockRpc(shared).EXPECT().WalletSendFee(mock.Anything).RunAndReturn(func(request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error) {
+						require.True(t, request.GetSendAll())
+						return &boltzrpc.WalletSendFee{Amount: 5000}, nil
+					})
+				},
+			},
+			{
+				name: "Sweep/NoSendFee",
+				config: &SerializedChainConfig{
+					ReserveBalance: 0,
+				},
+				balance:        defaultBalance,
+				expectedAmount: defaultBalance.Confirmed - MinReserve,
+				setup: func(t *testing.T, shared shared) {
+					mockRpc(shared).EXPECT().WalletSendFee(mock.Anything).RunAndReturn(func(request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error) {
+						require.True(t, request.GetSendAll())
+						return nil, status.Errorf(codes.InvalidArgument, "error")
+					})
+				},
+			},
+		}
 
-			pairInfo.Fees.MinerFees = 1000000
-			pairInfo.Limits.Minimal = 2 * expectedAmount
-			recommendation, err := chainConfig.GetRecommendation()
-			require.NoError(t, err)
-			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonBudgetExceeded)
-			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonMaxFeePercent)
-			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonAmountBelowMin)
-			require.Contains(t, recommendation.Swap.DismissedReasons, ReasonPendingSwap)
-			require.Equal(t, expectedAmount, recommendation.Swap.Amount)
-		})
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				shared := getShared(t)
+				shared.onchain.AddWallet(mockedWallet{info: walletInfo, balance: &tc.balance}.Create(t))
+				if tc.setup != nil {
+					tc.setup(t, shared)
+				}
 
-		t.Run("NoBalance", func(t *testing.T) {
-			balance.Total = 100
-			balance.Confirmed = 100
-			recommendation, err := chainConfig.GetRecommendation()
-			require.NoError(t, err)
-			require.Nil(t, recommendation.Swap)
-		})
+				mockRpc(shared).EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(newPairInfo(), nil)
+				mockRpc(shared).EXPECT().WalletSendFee(mock.Anything).RunAndReturn(func(request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error) {
+					return &boltzrpc.WalletSendFee{Amount: request.Amount}, nil
+				}).Maybe()
 
+				chainConfig := NewChainConfig(merge(baseConfig(), tc.config), shared)
+				require.NoError(t, chainConfig.Init())
+
+				result, err := chainConfig.GetRecommendation()
+				require.NoError(t, err)
+				swap := result.Swap
+				if tc.expectedAmount == 0 {
+					require.Nil(t, swap)
+				} else {
+					require.NotZero(t, swap.FeeEstimate)
+					require.Equal(t, tc.expectedDismissedReasons, swap.DismissedReasons)
+					require.Equal(t, tc.expectedAmount, swap.Amount)
+				}
+			})
+		}
 	})
 
 	t.Run("Execute", func(t *testing.T) {
@@ -152,6 +248,9 @@ func TestChainSwapper(t *testing.T) {
 		pairInfo := newPairInfo()
 		rpcMock.EXPECT().GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, mock.Anything).Return(pairInfo, nil).Once()
 		rpcMock.EXPECT().CreateAutoChainSwap(mock.Anything, mock.Anything).Return(nil).Once()
+		rpcMock.EXPECT().WalletSendFee(mock.Anything).RunAndReturn(func(request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error) {
+			return &boltzrpc.WalletSendFee{Amount: request.Amount}, nil
+		}).Maybe()
 
 		balance := defaultBalance
 		fromWallet.EXPECT().GetBalance().Return(&balance, nil)

@@ -44,6 +44,7 @@ type RpcProvider interface {
 	GetAutoSwapPairInfo(swapType boltzrpc.SwapType, pair *boltzrpc.Pair) (*boltzrpc.PairInfo, error)
 	GetLightningChannels() ([]*lightning.LightningChannel, error)
 	GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func())
+	WalletSendFee(request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error)
 
 	CreateAutoSwap(tenant *database.Tenant, request *boltzrpc.CreateSwapRequest) error
 	CreateAutoReverseSwap(tenant *database.Tenant, request *boltzrpc.CreateReverseSwapRequest) error

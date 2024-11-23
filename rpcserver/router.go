@@ -115,6 +115,10 @@ func (server *routedBoltzServer) CreateAutoChainSwap(tenant *database.Tenant, re
 	return err
 }
 
+func (server *routedBoltzServer) WalletSendFee(request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error) {
+	return server.GetWalletSendFee(context.Background(), request)
+}
+
 func handleError(err error) error {
 	if err != nil && status.Code(err) == codes.Unknown {
 		logger.Warn("RPC request failed: " + err.Error())
@@ -1979,7 +1983,7 @@ func (server *routedBoltzServer) getOwnWallet(ctx context.Context, checker oncha
 	}
 	wallet, ok := existing.(*wallet.Wallet)
 	if !ok {
-		return nil, fmt.Errorf("wallet %s can not be modified", existing.GetWalletInfo().Name)
+		return nil, status.Errorf(codes.InvalidArgument, "wallet %s can not be modified", existing.GetWalletInfo().Name)
 	}
 	return wallet, nil
 }
