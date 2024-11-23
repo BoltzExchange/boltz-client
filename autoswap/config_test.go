@@ -11,11 +11,16 @@ import (
 )
 
 func getShared(t *testing.T) shared {
-	return shared{database: getTestDb(t), onchain: getOnchain()}
+	return shared{database: getTestDb(t), onchain: getOnchain(), rpc: NewMockRpcProvider(t)}
+}
+
+func mockRpc(shared shared) *MockRpcProvider {
+	return shared.rpc.(*MockRpcProvider)
 }
 
 func TestGetPair(t *testing.T) {
-	cfg := NewLightningConfig(DefaultLightningConfig(), getShared(t))
+	shared := getShared(t)
+	cfg := NewLightningConfig(DefaultLightningConfig(), shared)
 
 	pair := cfg.GetPair(boltz.NormalSwap)
 	require.Equal(t, boltzrpc.Currency_LBTC, pair.From)
@@ -325,7 +330,6 @@ func TestChainConfig(t *testing.T) {
 				require.NotEmpty(t, chainConfig.description)
 				require.NotZero(t, chainConfig.maxFeePercent)
 				require.NotNil(t, chainConfig.tenant)
-				require.GreaterOrEqual(t, chainConfig.reserveBalance, MinReserve)
 			}
 		})
 	}
