@@ -341,7 +341,7 @@ var PendingSwapQuery = SwapQuery{
 }
 
 var FailedSwapQuery = SwapQuery{
-	States: []boltzrpc.SwapState{boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SERVER_ERROR},
+	States: []boltzrpc.SwapState{boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_REFUNDED},
 }
 
 func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []any) (string, []any) {
