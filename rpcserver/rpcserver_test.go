@@ -1907,6 +1907,13 @@ func TestSwap(t *testing.T) {
 			})
 			require.NoError(t, err)
 
+			// cant  create multiple swaps with the same invoice
+			_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Invoice:          &invoice.PaymentRequest,
+				SendFromInternal: true,
+			})
+			requireCode(t, err, codes.AlreadyExists)
+
 			stream, _ := swapStream(t, client, swap.Id)
 			info := stream(boltzrpc.SwapState_PENDING)
 			require.Equal(t, invoice.PaymentRequest, info.Swap.Invoice)
