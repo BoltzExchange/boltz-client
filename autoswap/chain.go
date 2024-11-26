@@ -10,6 +10,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type ChainSwap = checks
@@ -28,13 +30,12 @@ type ChainConfig struct {
 	*SerializedChainConfig
 	shared
 
-	tenant         *database.Tenant
-	maxFeePercent  boltz.Percentage
-	reserveBalance uint64
-	fromWallet     onchain.Wallet
-	toWallet       onchain.Wallet
-	pair           boltz.Pair
-	description    string
+	tenant        *database.Tenant
+	maxFeePercent boltz.Percentage
+	fromWallet    onchain.Wallet
+	toWallet      onchain.Wallet
+	pair          boltz.Pair
+	description   string
 }
 
 func (cfg *ChainConfig) GetTenantId() database.Id {
@@ -71,11 +72,8 @@ func (cfg *ChainConfig) Init() (err error) {
 		return errors.New("MaxBalance must be set")
 	}
 
-	// TODO: properly sweep wallet if no reserve balance is set
-	cfg.reserveBalance = max(MinReserve, cfg.ReserveBalance)
-
-	if cfg.MaxBalance < cfg.reserveBalance {
-		return fmt.Errorf("reserve balance %d is greater than max balance %d", cfg.reserveBalance, cfg.MaxBalance)
+	if cfg.MaxBalance < cfg.ReserveBalance {
+		return fmt.Errorf("reserve balance %d is greater than max balance %d", cfg.ReserveBalance, cfg.MaxBalance)
 	}
 
 	cfg.fromWallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
@@ -143,7 +141,20 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 
 	recommendation := &ChainRecommendation{FromBalance: balance}
 	if balance.Confirmed > cfg.MaxBalance {
-		amount := balance.Confirmed - cfg.reserveBalance
+		sendAll := cfg.ReserveBalance == 0
+		amount := balance.Confirmed - cfg.ReserveBalance
+		sendFee, err := cfg.rpc.WalletSendFee(&boltzrpc.WalletSendRequest{SendAll: &sendAll, Amount: amount, Id: cfg.fromWallet.GetWalletInfo().Id})
+		if err != nil {
+			if status.Code(err) == codes.InvalidArgument {
+				if sendAll {
+					amount -= MinReserve
+				}
+			} else {
+				return nil, fmt.Errorf("could not get send fee: %w", err)
+			}
+		} else {
+			amount = sendFee.Amount
+		}
 
 		checked := check(amount, checkParams{Pair: pairInfo, MaxFeePercent: cfg.maxFeePercent, Budget: &budget.Amount})
 
