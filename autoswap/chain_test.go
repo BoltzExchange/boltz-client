@@ -15,13 +15,21 @@ import (
 	"time"
 )
 
-func mockedWallet(t *testing.T, info onchain.WalletInfo) *onchainmock.MockWallet {
-	if info.TenantId == 0 {
-		info.TenantId = database.DefaultTenantId
+type mockedWallet struct {
+	info    onchain.WalletInfo
+	balance *onchain.Balance
+}
+
+func (m mockedWallet) Create(t *testing.T) *onchainmock.MockWallet {
+	if m.info.TenantId == 0 {
+		m.info.TenantId = database.DefaultTenantId
 	}
 	wallet := onchainmock.NewMockWallet(t)
-	wallet.EXPECT().Ready().Return(true)
-	wallet.EXPECT().GetWalletInfo().Return(info)
+	wallet.EXPECT().Ready().Return(true).Maybe()
+	wallet.EXPECT().GetWalletInfo().Return(m.info)
+	if m.balance != nil {
+		wallet.EXPECT().GetBalance().Return(m.balance, nil)
+	}
 	return wallet
 }
 
@@ -50,7 +58,7 @@ func TestChainSwapper(t *testing.T) {
 			Tenant:         &name,
 		}
 
-		fromWallet := mockedWallet(t, onchain.WalletInfo{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid})
+		fromWallet := mockedWallet{info: onchain.WalletInfo{Id: 1, Name: "test", Currency: boltz.CurrencyLiquid}}.Create(t)
 
 		swapper, mockProvider := getSwapper(t)
 		swapper.onchain.AddWallet(fromWallet)

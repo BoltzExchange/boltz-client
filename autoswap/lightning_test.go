@@ -1,6 +1,7 @@
 package autoswap
 
 import (
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/test"
 	"testing"
 	"time"
@@ -15,14 +16,19 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-func getLnSwapper(t *testing.T, cfg *SerializedLnConfig) (*LightningSwapper, *MockRpcProvider) {
-	swapper, mockProvider := getSwapper(t)
+func withThresholds(cfg *SerializedLnConfig) *SerializedLnConfig {
 	if cfg.InboundBalancePercent == 0 && cfg.OutboundBalancePercent == 0 {
 		cfg.OutboundBalancePercent = 25
 		cfg.InboundBalancePercent = 25
 	}
-	require.NoError(t, swapper.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: cfg}))
-	return swapper.lnSwapper, mockProvider
+	return cfg
+}
+
+func getLnConfig(t *testing.T, cfg *SerializedLnConfig, chain *onchain.Onchain) (*LightningConfig, *MockRpcProvider) {
+	rpc := NewMockRpcProvider(t)
+	ln := NewLightningConfig(withThresholds(cfg), shared{onchain: chain, rpc: rpc, database: getTestDb(t)})
+	require.NoError(t, ln.Init())
+	return ln, rpc
 }
 
 func TestSetLnConfig(t *testing.T) {
@@ -330,8 +336,8 @@ func TestBudget(t *testing.T) {
 	}
 
 	t.Run("Missing", func(t *testing.T) {
-		swapper, _ := getLnSwapper(t, &SerializedLnConfig{})
-		budget, err := swapper.cfg.GetCurrentBudget(false)
+		cfg, _ := getLnConfig(t, &SerializedLnConfig{}, getOnchain())
+		budget, err := cfg.GetCurrentBudget(false)
 		require.NoError(t, err)
 		require.Nil(t, budget)
 	})
@@ -661,12 +667,12 @@ func TestDismissedChannels(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			swapper, _ := getLnSwapper(t, tc.config)
-			db := swapper.database
+			cfg, _ := getLnConfig(t, tc.config, getOnchain())
+			db := cfg.database
 
 			tc.fakeSwaps.Create(t, db)
 
-			dismissed, err := swapper.cfg.getDismissedChannels()
+			dismissed, err := cfg.getDismissedChannels()
 			require.NoError(t, err)
 			require.Equal(t, tc.dismissed, dismissed)
 		})
@@ -678,10 +684,12 @@ func TestCheckSwapRecommendation(t *testing.T) {
 	pairInfo := newPairInfo()
 
 	tests := []struct {
-		name    string
-		config  *SerializedLnConfig
-		amount  uint64
-		outcome []string
+		name     string
+		config   *SerializedLnConfig
+		amount   uint64
+		wallets  []*mockedWallet
+		outcome  []string
+		swapType boltz.SwapType
 	}{
 		{
 			name: "MaxFeePercent/High",
@@ -724,6 +732,51 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			amount:  10000,
 			outcome: []string{ReasonBudgetExceeded},
 		},
+		{
+			name: "InsufficientFunds/NormalSwap",
+			config: &SerializedLnConfig{
+				MaxFeePercent: 25,
+				Wallet:        "test",
+			},
+			wallets: []*mockedWallet{
+				{
+					info:    onchain.WalletInfo{Currency: boltz.CurrencyBtc, Name: "test"},
+					balance: &onchain.Balance{Confirmed: 5000, Unconfirmed: 10000, Total: 15000},
+				},
+			},
+			swapType: boltz.NormalSwap,
+			amount:   10000,
+			outcome:  []string{ReasonInsufficientFunds},
+		},
+		{
+			name: "InsufficientFunds/ReverseSwap",
+			config: &SerializedLnConfig{
+				MaxFeePercent: 25,
+				Wallet:        "test",
+			},
+			wallets: []*mockedWallet{
+				{
+					info:    onchain.WalletInfo{Currency: boltz.CurrencyBtc, Name: "test"},
+					balance: &onchain.Balance{Confirmed: 5000, Unconfirmed: 10000, Total: 15000},
+				},
+			},
+			swapType: boltz.ReverseSwap,
+			amount:   10000,
+		},
+		{
+			name: "SufficientFunds",
+			config: &SerializedLnConfig{
+				MaxFeePercent: 25,
+				Wallet:        "test",
+			},
+			wallets: []*mockedWallet{
+				{
+					info:    onchain.WalletInfo{Currency: boltz.CurrencyBtc, Name: "test"},
+					balance: &onchain.Balance{Confirmed: 15000, Total: 15000},
+				},
+			},
+			amount: 10000,
+		},
 	}
 
 	for _, tc := range tests {
@@ -734,12 +787,21 @@ func TestCheckSwapRecommendation(t *testing.T) {
 			if tc.config.Budget == 0 {
 				tc.config.Budget = tc.amount
 			}
+			chain := getOnchain()
+			for _, w := range tc.wallets {
+				chain.AddWallet(w.Create(t))
+			}
 
-			swapper, ln := getLnSwapper(t, tc.config)
-			ln.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
+			cfg, rpc := getLnConfig(t, tc.config, chain)
+			require.NoError(t, cfg.Init())
 
-			validated, err := swapper.cfg.validateRecommendations([]*LightningRecommendation{{Swap: &LightningSwap{
-				Type: boltz.NormalSwap,
+			rpc.EXPECT().GetAutoSwapPairInfo(mock.Anything, mock.Anything).Return(pairInfo, nil)
+
+			if tc.swapType == "" {
+				tc.swapType = boltz.NormalSwap
+			}
+			validated, err := cfg.validateRecommendations([]*LightningRecommendation{{Swap: &LightningSwap{
+				Type: tc.swapType,
 				checks: checks{
 					Amount: tc.amount,
 				},

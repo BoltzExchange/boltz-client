@@ -32,7 +32,7 @@ type LightningConfig struct {
 	inboundBalance  Balance
 	strategy        Strategy
 	description     string
-	walletId        *database.Id
+	wallet          onchain.Wallet
 }
 
 const DefaultReserve = boltz.Percentage(10)
@@ -121,8 +121,9 @@ func (cfg *LightningConfig) Init() error {
 		cfg.description += fmt.Sprintf(" with static address %s (%s)", cfg.StaticAddress, cfg.currency)
 	}
 
-	if cfg.Enabled {
-		return cfg.InitWallet()
+	// don't require a wallet if the config is disabled to allow for easier testing
+	if err := cfg.InitWallet(); err != nil && cfg.Enabled {
+		return err
 	}
 
 	return nil
@@ -132,18 +133,14 @@ func (cfg *LightningConfig) InitWallet() (err error) {
 	if cfg.onchain == nil {
 		return errors.New("can not initialize wallet without onchain")
 	}
-	var wallet onchain.Wallet
 	if cfg.Wallet != "" {
-		wallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
+		cfg.wallet, err = cfg.onchain.GetAnyWallet(onchain.WalletChecker{
 			Name:          &cfg.Wallet,
 			Currency:      cfg.currency,
 			AllowReadonly: !cfg.AllowNormalSwaps(),
 		})
 		if err != nil {
 			err = fmt.Errorf("could not find wallet: %s", err)
-		} else {
-			id := wallet.GetWalletInfo().Id
-			cfg.walletId = &id
 		}
 	} else if cfg.AllowNormalSwaps() {
 		err = errors.New("wallet name must be set for normal swaps")
@@ -261,6 +258,15 @@ func (cfg *LightningConfig) validateRecommendations(
 
 	logger.Debugf("Dismissed channels: %v", dismissedChannels)
 
+	var balance *onchain.Balance
+	if cfg.wallet != nil {
+		balance, err = cfg.wallet.GetBalance()
+		if err != nil {
+			return nil, errors.New("Could not get wallet balance: " + err.Error())
+		}
+		logger.Debugf("Wallet balance: %+v", balance)
+	}
+
 	// we might be able to fit more swaps in the budget if we sort by amount
 	slices.SortFunc(recommendations, func(a, b *LightningRecommendation) int {
 		return int(a.Swap.GetAmount() - b.Swap.GetAmount())
@@ -282,7 +288,10 @@ func (cfg *LightningConfig) validateRecommendations(
 				Pair:             pairInfo,
 				DismissedReasons: dismissedChannels[recommendation.Channel.GetId()],
 			}
-			recommendation.Swap.checks = check(recommendation.Swap.GetAmount(), params)
+			swap.checks = check(swap.GetAmount(), params)
+			if balance != nil && swap.Type == boltz.NormalSwap && swap.Amount > balance.Confirmed {
+				swap.Dismiss(ReasonInsufficientFunds)
+			}
 		}
 
 		if includeAll || swap != nil {
@@ -320,6 +329,14 @@ func (cfg *LightningConfig) GetCurrentBudget(createIfMissing bool) (*Budget, err
 	)
 }
 
+func (cfg *LightningConfig) walletId() *database.Id {
+	if cfg.wallet != nil {
+		id := cfg.wallet.GetWalletInfo().Id
+		return &id
+	}
+	return nil
+}
+
 func (cfg *LightningConfig) execute(recommendation *LightningRecommendation) error {
 	var chanIds []string
 	if chanId := recommendation.Channel.GetId(); chanId != 0 {
@@ -335,7 +352,7 @@ func (cfg *LightningConfig) execute(recommendation *LightningRecommendation) err
 			AcceptZeroConf: cfg.AcceptZeroConf,
 			Pair:           pair,
 			ChanIds:        chanIds,
-			WalletId:       cfg.walletId,
+			WalletId:       cfg.walletId(),
 		})
 	} else if swap.Type == boltz.NormalSwap {
 		err = cfg.rpc.CreateAutoSwap(&database.DefaultTenant, &boltzrpc.CreateSwapRequest{
@@ -343,7 +360,7 @@ func (cfg *LightningConfig) execute(recommendation *LightningRecommendation) err
 			Pair:   pair,
 			//ChanIds:          chanIds,
 			SendFromInternal: true,
-			WalletId:         cfg.walletId,
+			WalletId:         cfg.walletId(),
 		})
 	}
 	return err

@@ -262,7 +262,7 @@ func (autoSwap *AutoSwap) saveConfig() error {
 
 func (autoSwap *AutoSwap) WalletUsed(id database.Id) bool {
 	if autoSwap.lnSwapper != nil {
-		used := autoSwap.lnSwapper.cfg.walletId
+		used := autoSwap.lnSwapper.cfg.walletId()
 		if used != nil && *used == id {
 			return true
 		}

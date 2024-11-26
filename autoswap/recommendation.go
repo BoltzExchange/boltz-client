@@ -15,11 +15,12 @@ type checks struct {
 }
 
 const (
-	ReasonMaxFeePercent  = "fee exceeds maximum percentage"
-	ReasonAmountBelowMin = "amount below minimal"
-	ReasonBudgetExceeded = "budget exceeded"
-	ReasonPendingSwap    = "pending swap"
-	ReasonFailedSwap     = "failed swap"
+	ReasonMaxFeePercent     = "fee exceeds maximum percentage"
+	ReasonAmountBelowMin    = "amount below minimal"
+	ReasonBudgetExceeded    = "budget exceeded"
+	ReasonPendingSwap       = "pending swap"
+	ReasonFailedSwap        = "failed swap"
+	ReasonInsufficientFunds = "insufficient funds"
 )
 
 func (recommendation *checks) Dismiss(reason string) {
