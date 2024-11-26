@@ -237,9 +237,9 @@ func TestChainSwapper(t *testing.T) {
 			return nil
 		}).Once()
 
-		require.NoError(t, chainSwapper.cfg.execute(&ChainSwap{Amount: amount}))
-		require.NoError(t, chainSwapper.cfg.execute(nil))
-		require.NoError(t, chainSwapper.cfg.execute(&ChainSwap{Amount: amount, DismissedReasons: []string{ReasonBudgetExceeded}}))
+		require.NoError(t, chainSwapper.cfg.Execute(&autoswaprpc.ChainSwap{Amount: amount}))
+		require.NoError(t, chainSwapper.cfg.Execute(nil))
+		require.NoError(t, chainSwapper.cfg.Execute(&autoswaprpc.ChainSwap{Amount: amount, DismissedReasons: []string{ReasonBudgetExceeded}}))
 	})
 
 	t.Run("Start", func(t *testing.T) {

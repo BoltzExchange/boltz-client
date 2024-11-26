@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
 	"google.golang.org/protobuf/proto"
 	"io"
 	"os"
@@ -1223,7 +1224,7 @@ func createChainSwap(ctx *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		pair.To = utils.SerializeCurrency(to)
+		pair.To = serializers.SerializeCurrency(to)
 		request.ToAddress = &toAddress
 	}
 
@@ -1232,7 +1233,7 @@ func createChainSwap(ctx *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		pair.From = utils.SerializeCurrency(from)
+		pair.From = serializers.SerializeCurrency(from)
 		request.RefundAddress = &refundAddress
 	}
 
@@ -1288,7 +1289,7 @@ func createChainSwap(ctx *cli.Context) error {
 			height = info.BlockHeights.GetLiquid()
 		}
 		timeout := swap.FromData.TimeoutBlockHeight
-		timeoutHours := boltz.BlocksToHours(timeout-height, utils.ParseCurrency(&pair.From))
+		timeoutHours := boltz.BlocksToHours(timeout-height, serializers.ParseCurrency(&pair.From))
 		printDeposit(amount, swap.FromData.LockupAddress, float32(timeoutHours), uint64(timeout), pairInfo.Limits)
 		fmt.Println()
 	}

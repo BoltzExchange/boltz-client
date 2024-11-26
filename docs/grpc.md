@@ -1647,6 +1647,14 @@ Returns a list of swaps which are currently recommended by autoswap. Also works 
 | ------- | -------- |
 | [`GetRecommendationsRequest`](#getrecommendationsrequest) | [`GetRecommendationsResponse`](#getrecommendationsresponse) |
 
+#### ExecuteRecommendations
+
+Executes recommendations previously returned by `GetRecommendations`. Intended to be used when autoswap is fully configured but not enabled to allow for manual approval.
+
+| Request | Response |
+| ------- | -------- |
+| [`ExecuteRecommendationsRequest`](#executerecommendationsrequest) | [`ExecuteRecommendationsResponse`](#executerecommendationsresponse) |
+
 #### GetStatus
 
 Returns the current budget of autoswap and some relevant stats.
@@ -1769,6 +1777,28 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `chain` | [`ChainConfig`](#chainconfig) | repeated |  |
 | `lightning` | [`LightningConfig`](#lightningconfig) | repeated |  |
+
+
+
+
+
+#### ExecuteRecommendationsRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `lightning` | [`LightningRecommendation`](#lightningrecommendation) | repeated |  |
+| `chain` | [`ChainRecommendation`](#chainrecommendation) | repeated |  |
+
+
+
+
+
+#### ExecuteRecommendationsResponse
+
+
 
 
 

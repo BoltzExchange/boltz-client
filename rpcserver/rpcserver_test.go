@@ -8,7 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
 	"net"
 	"os"
 	"strings"
@@ -1148,7 +1148,12 @@ func TestAutoSwap(t *testing.T) {
 		require.Len(t, recommendations.Chain, 1)
 
 		stream, _ := swapStream(t, admin, "")
-		test.MineBlock()
+
+		_, err = autoSwap.ExecuteRecommendations(&autoswaprpc.ExecuteRecommendationsRequest{
+			Chain: recommendations.Chain,
+		})
+		require.NoError(t, err)
+
 		info := stream(boltzrpc.SwapState_PENDING)
 		require.NotNil(t, info.ChainSwap)
 		id := info.ChainSwap.Id
@@ -1231,25 +1236,41 @@ func TestAutoSwap(t *testing.T) {
 			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
 			require.NoError(t, err)
 
-			recommendations, err := autoSwap.GetRecommendations()
-			require.NoError(t, err)
-			recommendation := recommendations.Lightning[0]
-			require.Nil(t, recommendation.Swap)
-			offset := uint64(100000)
-			swapCfg.InboundBalance = recommendation.Channel.InboundSat + offset
-			swapCfg.OutboundBalance = recommendation.Channel.OutboundSat - offset
+			setupRecommendation := func(t *testing.T) {
+				recommendations, err := autoSwap.GetRecommendations()
+				require.NoError(t, err)
+				recommendation := recommendations.Lightning[0]
+				if recommendation.Swap == nil {
+					offset := uint64(100000)
+					swapCfg.InboundBalance = recommendation.Channel.InboundSat + offset
+					swapCfg.OutboundBalance = recommendation.Channel.OutboundSat - offset
 
-			_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
-			require.NoError(t, err)
+					_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
+					require.NoError(t, err)
+				}
+			}
 
 			t.Run("Recommendations", func(t *testing.T) {
+				setupRecommendation(t)
+
 				recommendations, err := autoSwap.GetRecommendations()
 				require.NoError(t, err)
 				require.Len(t, recommendations.Lightning, 1)
 				require.Equal(t, boltzrpc.SwapType_REVERSE, recommendations.Lightning[0].Swap.Type)
+
+				stream, _ := swapStream(t, admin, "")
+				_, err = autoSwap.ExecuteRecommendations(&autoswaprpc.ExecuteRecommendationsRequest{
+					Lightning: recommendations.Lightning,
+				})
+				require.NoError(t, err)
+				info := stream(boltzrpc.SwapState_PENDING)
+				require.NotNil(t, info.ReverseSwap)
+				require.True(t, info.ReverseSwap.IsAuto)
 			})
 
 			t.Run("Auto", func(t *testing.T) {
+				setupRecommendation(t)
+
 				_, err := autoSwap.Enable()
 				require.NoError(t, err)
 
@@ -1269,7 +1290,7 @@ func TestAutoSwap(t *testing.T) {
 				status, err := autoSwap.GetStatus()
 				budget := status.Lightning.Budget
 				require.NoError(t, err)
-				require.Equal(t, 1, int(budget.Stats.Count))
+				require.NotZero(t, budget.Stats.Count)
 				require.Less(t, budget.Remaining, budget.Total)
 				require.NotZero(t, budget.Stats.TotalFees)
 				require.NotZero(t, budget.Stats.TotalAmount)
@@ -1557,7 +1578,7 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 
 			confirmed := false
 			if !tc.zeroconf || tc.currency == boltzrpc.Currency_BTC {
-				currency, _ := chain.GetCurrency(utils.ParseCurrency(&tc.currency))
+				currency, _ := chain.GetCurrency(serializers.ParseCurrency(&tc.currency))
 				mockTx := onchainmock.NewMockTxProvider(t)
 				mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
 					return confirmed, nil

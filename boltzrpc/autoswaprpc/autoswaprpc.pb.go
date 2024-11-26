@@ -508,6 +508,99 @@ func (x *GetRecommendationsResponse) GetChain() []*ChainRecommendation {
 	return nil
 }
 
+type ExecuteRecommendationsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Lightning []*LightningRecommendation `protobuf:"bytes,1,rep,name=lightning,proto3" json:"lightning,omitempty"`
+	Chain     []*ChainRecommendation     `protobuf:"bytes,2,rep,name=chain,proto3" json:"chain,omitempty"`
+}
+
+func (x *ExecuteRecommendationsRequest) Reset() {
+	*x = ExecuteRecommendationsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecuteRecommendationsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecuteRecommendationsRequest) ProtoMessage() {}
+
+func (x *ExecuteRecommendationsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecuteRecommendationsRequest.ProtoReflect.Descriptor instead.
+func (*ExecuteRecommendationsRequest) Descriptor() ([]byte, []int) {
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ExecuteRecommendationsRequest) GetLightning() []*LightningRecommendation {
+	if x != nil {
+		return x.Lightning
+	}
+	return nil
+}
+
+func (x *ExecuteRecommendationsRequest) GetChain() []*ChainRecommendation {
+	if x != nil {
+		return x.Chain
+	}
+	return nil
+}
+
+type ExecuteRecommendationsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ExecuteRecommendationsResponse) Reset() {
+	*x = ExecuteRecommendationsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecuteRecommendationsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecuteRecommendationsResponse) ProtoMessage() {}
+
+func (x *ExecuteRecommendationsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecuteRecommendationsResponse.ProtoReflect.Descriptor instead.
+func (*ExecuteRecommendationsResponse) Descriptor() ([]byte, []int) {
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{9}
+}
+
 type GetStatusRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -517,7 +610,7 @@ type GetStatusRequest struct {
 func (x *GetStatusRequest) Reset() {
 	*x = GetStatusRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[8]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -530,7 +623,7 @@ func (x *GetStatusRequest) String() string {
 func (*GetStatusRequest) ProtoMessage() {}
 
 func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[8]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -543,7 +636,7 @@ func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetStatusRequest) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{8}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{10}
 }
 
 type Status struct {
@@ -560,7 +653,7 @@ type Status struct {
 func (x *Status) Reset() {
 	*x = Status{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[9]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -573,7 +666,7 @@ func (x *Status) String() string {
 func (*Status) ProtoMessage() {}
 
 func (x *Status) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[9]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -586,7 +679,7 @@ func (x *Status) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Status.ProtoReflect.Descriptor instead.
 func (*Status) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{9}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Status) GetRunning() bool {
@@ -629,7 +722,7 @@ type GetStatusResponse struct {
 func (x *GetStatusResponse) Reset() {
 	*x = GetStatusResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[10]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -642,7 +735,7 @@ func (x *GetStatusResponse) String() string {
 func (*GetStatusResponse) ProtoMessage() {}
 
 func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[10]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -655,7 +748,7 @@ func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusResponse.ProtoReflect.Descriptor instead.
 func (*GetStatusResponse) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{10}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetStatusResponse) GetLightning() *Status {
@@ -681,7 +774,7 @@ type GetConfigRequest struct {
 func (x *GetConfigRequest) Reset() {
 	*x = GetConfigRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[11]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -694,7 +787,7 @@ func (x *GetConfigRequest) String() string {
 func (*GetConfigRequest) ProtoMessage() {}
 
 func (x *GetConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[11]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -707,7 +800,7 @@ func (x *GetConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConfigRequest.ProtoReflect.Descriptor instead.
 func (*GetConfigRequest) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{11}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{13}
 }
 
 type UpdateLightningConfigRequest struct {
@@ -723,7 +816,7 @@ type UpdateLightningConfigRequest struct {
 func (x *UpdateLightningConfigRequest) Reset() {
 	*x = UpdateLightningConfigRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[12]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -736,7 +829,7 @@ func (x *UpdateLightningConfigRequest) String() string {
 func (*UpdateLightningConfigRequest) ProtoMessage() {}
 
 func (x *UpdateLightningConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[12]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -749,7 +842,7 @@ func (x *UpdateLightningConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLightningConfigRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLightningConfigRequest) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{12}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *UpdateLightningConfigRequest) GetConfig() *LightningConfig {
@@ -786,7 +879,7 @@ type UpdateChainConfigRequest struct {
 func (x *UpdateChainConfigRequest) Reset() {
 	*x = UpdateChainConfigRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[13]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -799,7 +892,7 @@ func (x *UpdateChainConfigRequest) String() string {
 func (*UpdateChainConfigRequest) ProtoMessage() {}
 
 func (x *UpdateChainConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[13]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -812,7 +905,7 @@ func (x *UpdateChainConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChainConfigRequest.ProtoReflect.Descriptor instead.
 func (*UpdateChainConfigRequest) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{13}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *UpdateChainConfigRequest) GetConfig() *ChainConfig {
@@ -848,7 +941,7 @@ type Config struct {
 func (x *Config) Reset() {
 	*x = Config{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[14]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -861,7 +954,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[14]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -874,7 +967,7 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config.ProtoReflect.Descriptor instead.
 func (*Config) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{14}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Config) GetChain() []*ChainConfig {
@@ -911,7 +1004,7 @@ type ChainConfig struct {
 func (x *ChainConfig) Reset() {
 	*x = ChainConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[15]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -924,7 +1017,7 @@ func (x *ChainConfig) String() string {
 func (*ChainConfig) ProtoMessage() {}
 
 func (x *ChainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[15]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -937,7 +1030,7 @@ func (x *ChainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChainConfig.ProtoReflect.Descriptor instead.
 func (*ChainConfig) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{15}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ChainConfig) GetEnabled() bool {
@@ -1038,7 +1131,7 @@ type LightningConfig struct {
 func (x *LightningConfig) Reset() {
 	*x = LightningConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[16]
+		mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1051,7 +1144,7 @@ func (x *LightningConfig) String() string {
 func (*LightningConfig) ProtoMessage() {}
 
 func (x *LightningConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[16]
+	mi := &file_autoswaprpc_autoswaprpc_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1064,7 +1157,7 @@ func (x *LightningConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LightningConfig.ProtoReflect.Descriptor instead.
 func (*LightningConfig) Descriptor() ([]byte, []int) {
-	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{16}
+	return file_autoswaprpc_autoswaprpc_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *LightningConfig) GetEnabled() bool {
@@ -1272,7 +1365,19 @@ var file_autoswaprpc_autoswaprpc_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x67, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x18, 0x02, 0x20, 0x03,
 	0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63,
 	0x2e, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x05, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x22, 0x12, 0x0a, 0x10, 0x47,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x05, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x22, 0x9b, 0x01, 0x0a, 0x1d,
+	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x42, 0x0a,
+	0x09, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x24, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x4c,
+	0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e,
+	0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x09, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e,
+	0x67, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x20, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43,
+	0x68, 0x61, 0x69, 0x6e, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x05, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x22, 0x20, 0x0a, 0x1e, 0x45, 0x78, 0x65,
+	0x63, 0x75, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x12, 0x0a, 0x10, 0x47,
 	0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22,
 	0xa6, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x72, 0x75,
 	0x6e, 0x6e, 0x69, 0x6e, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x72, 0x75, 0x6e,
@@ -1395,42 +1500,49 @@ var file_autoswaprpc_autoswaprpc_proto_rawDesc = []byte{
 	0x6d, 0x61, 0x78, 0x53, 0x77, 0x61, 0x70, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x1b, 0x0a,
 	0x06, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x18, 0x12, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52,
 	0x06, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x88, 0x01, 0x01, 0x42, 0x09, 0x0a, 0x07, 0x5f, 0x74,
-	0x65, 0x6e, 0x61, 0x6e, 0x74, 0x32, 0xe5, 0x03, 0x0a, 0x08, 0x41, 0x75, 0x74, 0x6f, 0x53, 0x77,
+	0x65, 0x6e, 0x61, 0x6e, 0x74, 0x32, 0xd8, 0x04, 0x0a, 0x08, 0x41, 0x75, 0x74, 0x6f, 0x53, 0x77,
 	0x61, 0x70, 0x12, 0x65, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65,
 	0x6e, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x26, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73,
 	0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d,
 	0x65, 0x6e, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x1a, 0x27, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x47,
 	0x65, 0x74, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4a, 0x0a, 0x09, 0x47, 0x65, 0x74,
-	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1d, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61,
-	0x70, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70,
-	0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x57, 0x0a, 0x15, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4c,
-	0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x29,
-	0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x70, 0x64,
-	0x61, 0x74, 0x65, 0x4c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x61, 0x75, 0x74, 0x6f,
-	0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x4f,
-	0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x43, 0x6f, 0x6e,
-	0x66, 0x69, 0x67, 0x12, 0x25, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70,
-	0x63, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x43, 0x6f, 0x6e,
-	0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x61, 0x75, 0x74,
-	0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12,
-	0x3f, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x1d, 0x2e, 0x61,
-	0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x61, 0x75,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x71, 0x0a, 0x16, 0x45, 0x78, 0x65,
+	0x63, 0x75, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x12, 0x2a, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70,
+	0x63, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65,
+	0x6e, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x2b, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x45, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4a, 0x0a, 0x09,
+	0x47, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1d, 0x2e, 0x61, 0x75, 0x74, 0x6f,
+	0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73,
+	0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x57, 0x0a, 0x15, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x4c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x12, 0x29, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e,
+	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4c, 0x69, 0x67, 0x68, 0x74, 0x6e, 0x69, 0x6e, 0x67, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e, 0x61,
+	0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x12, 0x4f, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x69, 0x6e,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x25, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61,
+	0x70, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x69, 0x6e,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e,
+	0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x12, 0x3f, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12,
+	0x1d, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x47, 0x65,
+	0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13,
+	0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x12, 0x3b, 0x0a, 0x0c, 0x52, 0x65, 0x6c, 0x6f, 0x61, 0x64, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x13, 0x2e, 0x61, 0x75,
 	0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x12, 0x3b, 0x0a, 0x0c, 0x52, 0x65, 0x6c, 0x6f, 0x61, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
-	0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x13, 0x2e, 0x61, 0x75, 0x74, 0x6f, 0x73,
-	0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x42, 0x3c, 0x5a,
-	0x3a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x42, 0x6f, 0x6c, 0x74,
-	0x7a, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x2f, 0x62, 0x6f, 0x6c, 0x74, 0x7a, 0x2d,
-	0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2f, 0x62, 0x6f, 0x6c, 0x74, 0x7a, 0x72, 0x70, 0x63, 0x2f,
-	0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x42, 0x3c, 0x5a, 0x3a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x42,
+	0x6f, 0x6c, 0x74, 0x7a, 0x45, 0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x2f, 0x62, 0x6f, 0x6c,
+	0x74, 0x7a, 0x2d, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2f, 0x62, 0x6f, 0x6c, 0x74, 0x7a, 0x72,
+	0x70, 0x63, 0x2f, 0x61, 0x75, 0x74, 0x6f, 0x73, 0x77, 0x61, 0x70, 0x72, 0x70, 0x63, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1445,70 +1557,76 @@ func file_autoswaprpc_autoswaprpc_proto_rawDescGZIP() []byte {
 	return file_autoswaprpc_autoswaprpc_proto_rawDescData
 }
 
-var file_autoswaprpc_autoswaprpc_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_autoswaprpc_autoswaprpc_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_autoswaprpc_autoswaprpc_proto_goTypes = []interface{}{
-	(*GetRecommendationsRequest)(nil),    // 0: autoswaprpc.GetRecommendationsRequest
-	(*LightningSwap)(nil),                // 1: autoswaprpc.LightningSwap
-	(*LightningThresholds)(nil),          // 2: autoswaprpc.LightningThresholds
-	(*LightningRecommendation)(nil),      // 3: autoswaprpc.LightningRecommendation
-	(*ChainSwap)(nil),                    // 4: autoswaprpc.ChainSwap
-	(*ChainRecommendation)(nil),          // 5: autoswaprpc.ChainRecommendation
-	(*Budget)(nil),                       // 6: autoswaprpc.Budget
-	(*GetRecommendationsResponse)(nil),   // 7: autoswaprpc.GetRecommendationsResponse
-	(*GetStatusRequest)(nil),             // 8: autoswaprpc.GetStatusRequest
-	(*Status)(nil),                       // 9: autoswaprpc.Status
-	(*GetStatusResponse)(nil),            // 10: autoswaprpc.GetStatusResponse
-	(*GetConfigRequest)(nil),             // 11: autoswaprpc.GetConfigRequest
-	(*UpdateLightningConfigRequest)(nil), // 12: autoswaprpc.UpdateLightningConfigRequest
-	(*UpdateChainConfigRequest)(nil),     // 13: autoswaprpc.UpdateChainConfigRequest
-	(*Config)(nil),                       // 14: autoswaprpc.Config
-	(*ChainConfig)(nil),                  // 15: autoswaprpc.ChainConfig
-	(*LightningConfig)(nil),              // 16: autoswaprpc.LightningConfig
-	(boltzrpc.SwapType)(0),               // 17: boltzrpc.SwapType
-	(*boltzrpc.LightningChannel)(nil),    // 18: boltzrpc.LightningChannel
-	(*boltzrpc.Balance)(nil),             // 19: boltzrpc.Balance
-	(*boltzrpc.SwapStats)(nil),           // 20: boltzrpc.SwapStats
-	(*field_mask.FieldMask)(nil),         // 21: google.protobuf.FieldMask
-	(boltzrpc.Currency)(0),               // 22: boltzrpc.Currency
-	(*empty.Empty)(nil),                  // 23: google.protobuf.Empty
+	(*GetRecommendationsRequest)(nil),      // 0: autoswaprpc.GetRecommendationsRequest
+	(*LightningSwap)(nil),                  // 1: autoswaprpc.LightningSwap
+	(*LightningThresholds)(nil),            // 2: autoswaprpc.LightningThresholds
+	(*LightningRecommendation)(nil),        // 3: autoswaprpc.LightningRecommendation
+	(*ChainSwap)(nil),                      // 4: autoswaprpc.ChainSwap
+	(*ChainRecommendation)(nil),            // 5: autoswaprpc.ChainRecommendation
+	(*Budget)(nil),                         // 6: autoswaprpc.Budget
+	(*GetRecommendationsResponse)(nil),     // 7: autoswaprpc.GetRecommendationsResponse
+	(*ExecuteRecommendationsRequest)(nil),  // 8: autoswaprpc.ExecuteRecommendationsRequest
+	(*ExecuteRecommendationsResponse)(nil), // 9: autoswaprpc.ExecuteRecommendationsResponse
+	(*GetStatusRequest)(nil),               // 10: autoswaprpc.GetStatusRequest
+	(*Status)(nil),                         // 11: autoswaprpc.Status
+	(*GetStatusResponse)(nil),              // 12: autoswaprpc.GetStatusResponse
+	(*GetConfigRequest)(nil),               // 13: autoswaprpc.GetConfigRequest
+	(*UpdateLightningConfigRequest)(nil),   // 14: autoswaprpc.UpdateLightningConfigRequest
+	(*UpdateChainConfigRequest)(nil),       // 15: autoswaprpc.UpdateChainConfigRequest
+	(*Config)(nil),                         // 16: autoswaprpc.Config
+	(*ChainConfig)(nil),                    // 17: autoswaprpc.ChainConfig
+	(*LightningConfig)(nil),                // 18: autoswaprpc.LightningConfig
+	(boltzrpc.SwapType)(0),                 // 19: boltzrpc.SwapType
+	(*boltzrpc.LightningChannel)(nil),      // 20: boltzrpc.LightningChannel
+	(*boltzrpc.Balance)(nil),               // 21: boltzrpc.Balance
+	(*boltzrpc.SwapStats)(nil),             // 22: boltzrpc.SwapStats
+	(*field_mask.FieldMask)(nil),           // 23: google.protobuf.FieldMask
+	(boltzrpc.Currency)(0),                 // 24: boltzrpc.Currency
+	(*empty.Empty)(nil),                    // 25: google.protobuf.Empty
 }
 var file_autoswaprpc_autoswaprpc_proto_depIdxs = []int32{
-	17, // 0: autoswaprpc.LightningSwap.type:type_name -> boltzrpc.SwapType
+	19, // 0: autoswaprpc.LightningSwap.type:type_name -> boltzrpc.SwapType
 	1,  // 1: autoswaprpc.LightningRecommendation.swap:type_name -> autoswaprpc.LightningSwap
-	18, // 2: autoswaprpc.LightningRecommendation.channel:type_name -> boltzrpc.LightningChannel
+	20, // 2: autoswaprpc.LightningRecommendation.channel:type_name -> boltzrpc.LightningChannel
 	2,  // 3: autoswaprpc.LightningRecommendation.thresholds:type_name -> autoswaprpc.LightningThresholds
 	4,  // 4: autoswaprpc.ChainRecommendation.swap:type_name -> autoswaprpc.ChainSwap
-	19, // 5: autoswaprpc.ChainRecommendation.wallet_balance:type_name -> boltzrpc.Balance
-	20, // 6: autoswaprpc.Budget.stats:type_name -> boltzrpc.SwapStats
+	21, // 5: autoswaprpc.ChainRecommendation.wallet_balance:type_name -> boltzrpc.Balance
+	22, // 6: autoswaprpc.Budget.stats:type_name -> boltzrpc.SwapStats
 	3,  // 7: autoswaprpc.GetRecommendationsResponse.lightning:type_name -> autoswaprpc.LightningRecommendation
 	5,  // 8: autoswaprpc.GetRecommendationsResponse.chain:type_name -> autoswaprpc.ChainRecommendation
-	6,  // 9: autoswaprpc.Status.budget:type_name -> autoswaprpc.Budget
-	9,  // 10: autoswaprpc.GetStatusResponse.lightning:type_name -> autoswaprpc.Status
-	9,  // 11: autoswaprpc.GetStatusResponse.chain:type_name -> autoswaprpc.Status
-	16, // 12: autoswaprpc.UpdateLightningConfigRequest.config:type_name -> autoswaprpc.LightningConfig
-	21, // 13: autoswaprpc.UpdateLightningConfigRequest.field_mask:type_name -> google.protobuf.FieldMask
-	15, // 14: autoswaprpc.UpdateChainConfigRequest.config:type_name -> autoswaprpc.ChainConfig
-	21, // 15: autoswaprpc.UpdateChainConfigRequest.field_mask:type_name -> google.protobuf.FieldMask
-	15, // 16: autoswaprpc.Config.chain:type_name -> autoswaprpc.ChainConfig
-	16, // 17: autoswaprpc.Config.lightning:type_name -> autoswaprpc.LightningConfig
-	22, // 18: autoswaprpc.LightningConfig.currency:type_name -> boltzrpc.Currency
-	0,  // 19: autoswaprpc.AutoSwap.GetRecommendations:input_type -> autoswaprpc.GetRecommendationsRequest
-	8,  // 20: autoswaprpc.AutoSwap.GetStatus:input_type -> autoswaprpc.GetStatusRequest
-	12, // 21: autoswaprpc.AutoSwap.UpdateLightningConfig:input_type -> autoswaprpc.UpdateLightningConfigRequest
-	13, // 22: autoswaprpc.AutoSwap.UpdateChainConfig:input_type -> autoswaprpc.UpdateChainConfigRequest
-	11, // 23: autoswaprpc.AutoSwap.GetConfig:input_type -> autoswaprpc.GetConfigRequest
-	23, // 24: autoswaprpc.AutoSwap.ReloadConfig:input_type -> google.protobuf.Empty
-	7,  // 25: autoswaprpc.AutoSwap.GetRecommendations:output_type -> autoswaprpc.GetRecommendationsResponse
-	10, // 26: autoswaprpc.AutoSwap.GetStatus:output_type -> autoswaprpc.GetStatusResponse
-	14, // 27: autoswaprpc.AutoSwap.UpdateLightningConfig:output_type -> autoswaprpc.Config
-	14, // 28: autoswaprpc.AutoSwap.UpdateChainConfig:output_type -> autoswaprpc.Config
-	14, // 29: autoswaprpc.AutoSwap.GetConfig:output_type -> autoswaprpc.Config
-	14, // 30: autoswaprpc.AutoSwap.ReloadConfig:output_type -> autoswaprpc.Config
-	25, // [25:31] is the sub-list for method output_type
-	19, // [19:25] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	3,  // 9: autoswaprpc.ExecuteRecommendationsRequest.lightning:type_name -> autoswaprpc.LightningRecommendation
+	5,  // 10: autoswaprpc.ExecuteRecommendationsRequest.chain:type_name -> autoswaprpc.ChainRecommendation
+	6,  // 11: autoswaprpc.Status.budget:type_name -> autoswaprpc.Budget
+	11, // 12: autoswaprpc.GetStatusResponse.lightning:type_name -> autoswaprpc.Status
+	11, // 13: autoswaprpc.GetStatusResponse.chain:type_name -> autoswaprpc.Status
+	18, // 14: autoswaprpc.UpdateLightningConfigRequest.config:type_name -> autoswaprpc.LightningConfig
+	23, // 15: autoswaprpc.UpdateLightningConfigRequest.field_mask:type_name -> google.protobuf.FieldMask
+	17, // 16: autoswaprpc.UpdateChainConfigRequest.config:type_name -> autoswaprpc.ChainConfig
+	23, // 17: autoswaprpc.UpdateChainConfigRequest.field_mask:type_name -> google.protobuf.FieldMask
+	17, // 18: autoswaprpc.Config.chain:type_name -> autoswaprpc.ChainConfig
+	18, // 19: autoswaprpc.Config.lightning:type_name -> autoswaprpc.LightningConfig
+	24, // 20: autoswaprpc.LightningConfig.currency:type_name -> boltzrpc.Currency
+	0,  // 21: autoswaprpc.AutoSwap.GetRecommendations:input_type -> autoswaprpc.GetRecommendationsRequest
+	8,  // 22: autoswaprpc.AutoSwap.ExecuteRecommendations:input_type -> autoswaprpc.ExecuteRecommendationsRequest
+	10, // 23: autoswaprpc.AutoSwap.GetStatus:input_type -> autoswaprpc.GetStatusRequest
+	14, // 24: autoswaprpc.AutoSwap.UpdateLightningConfig:input_type -> autoswaprpc.UpdateLightningConfigRequest
+	15, // 25: autoswaprpc.AutoSwap.UpdateChainConfig:input_type -> autoswaprpc.UpdateChainConfigRequest
+	13, // 26: autoswaprpc.AutoSwap.GetConfig:input_type -> autoswaprpc.GetConfigRequest
+	25, // 27: autoswaprpc.AutoSwap.ReloadConfig:input_type -> google.protobuf.Empty
+	7,  // 28: autoswaprpc.AutoSwap.GetRecommendations:output_type -> autoswaprpc.GetRecommendationsResponse
+	9,  // 29: autoswaprpc.AutoSwap.ExecuteRecommendations:output_type -> autoswaprpc.ExecuteRecommendationsResponse
+	12, // 30: autoswaprpc.AutoSwap.GetStatus:output_type -> autoswaprpc.GetStatusResponse
+	16, // 31: autoswaprpc.AutoSwap.UpdateLightningConfig:output_type -> autoswaprpc.Config
+	16, // 32: autoswaprpc.AutoSwap.UpdateChainConfig:output_type -> autoswaprpc.Config
+	16, // 33: autoswaprpc.AutoSwap.GetConfig:output_type -> autoswaprpc.Config
+	16, // 34: autoswaprpc.AutoSwap.ReloadConfig:output_type -> autoswaprpc.Config
+	28, // [28:35] is the sub-list for method output_type
+	21, // [21:28] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_autoswaprpc_autoswaprpc_proto_init() }
@@ -1614,7 +1732,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetStatusRequest); i {
+			switch v := v.(*ExecuteRecommendationsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1626,7 +1744,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Status); i {
+			switch v := v.(*ExecuteRecommendationsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1638,7 +1756,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetStatusResponse); i {
+			switch v := v.(*GetStatusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1650,7 +1768,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetConfigRequest); i {
+			switch v := v.(*Status); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1662,7 +1780,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UpdateLightningConfigRequest); i {
+			switch v := v.(*GetStatusResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1674,7 +1792,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UpdateChainConfigRequest); i {
+			switch v := v.(*GetConfigRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1686,7 +1804,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Config); i {
+			switch v := v.(*UpdateLightningConfigRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1698,7 +1816,7 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ChainConfig); i {
+			switch v := v.(*UpdateChainConfigRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1710,6 +1828,30 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 			}
 		}
 		file_autoswaprpc_autoswaprpc_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Config); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_autoswaprpc_autoswaprpc_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ChainConfig); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_autoswaprpc_autoswaprpc_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*LightningConfig); i {
 			case 0:
 				return &v.state
@@ -1726,19 +1868,19 @@ func file_autoswaprpc_autoswaprpc_proto_init() {
 	file_autoswaprpc_autoswaprpc_proto_msgTypes[3].OneofWrappers = []interface{}{}
 	file_autoswaprpc_autoswaprpc_proto_msgTypes[5].OneofWrappers = []interface{}{}
 	file_autoswaprpc_autoswaprpc_proto_msgTypes[6].OneofWrappers = []interface{}{}
-	file_autoswaprpc_autoswaprpc_proto_msgTypes[9].OneofWrappers = []interface{}{}
-	file_autoswaprpc_autoswaprpc_proto_msgTypes[10].OneofWrappers = []interface{}{}
+	file_autoswaprpc_autoswaprpc_proto_msgTypes[11].OneofWrappers = []interface{}{}
 	file_autoswaprpc_autoswaprpc_proto_msgTypes[12].OneofWrappers = []interface{}{}
-	file_autoswaprpc_autoswaprpc_proto_msgTypes[13].OneofWrappers = []interface{}{}
+	file_autoswaprpc_autoswaprpc_proto_msgTypes[14].OneofWrappers = []interface{}{}
 	file_autoswaprpc_autoswaprpc_proto_msgTypes[15].OneofWrappers = []interface{}{}
-	file_autoswaprpc_autoswaprpc_proto_msgTypes[16].OneofWrappers = []interface{}{}
+	file_autoswaprpc_autoswaprpc_proto_msgTypes[17].OneofWrappers = []interface{}{}
+	file_autoswaprpc_autoswaprpc_proto_msgTypes[18].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_autoswaprpc_autoswaprpc_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
