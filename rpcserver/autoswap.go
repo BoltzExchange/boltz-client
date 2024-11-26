@@ -71,7 +71,7 @@ func (server *routedAutoSwapServer) ExecuteRecommendations(ctx context.Context, 
 	if len(request.Lightning) > 0 {
 		if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
 			for _, recommendation := range request.Lightning {
-				err := lnSwapper.GetConfig().Execute(recommendation)
+				err := lnSwapper.GetConfig().Execute(recommendation, request.GetForce())
 				if err != nil {
 					return nil, err
 				}
@@ -84,7 +84,7 @@ func (server *routedAutoSwapServer) ExecuteRecommendations(ctx context.Context, 
 	if len(request.Chain) > 0 {
 		if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
 			for _, recommendation := range request.Chain {
-				err := chainSwapper.GetConfig().Execute(recommendation.Swap)
+				err := chainSwapper.GetConfig().Execute(recommendation.Swap, request.GetForce())
 				if err != nil {
 					return nil, err
 				}

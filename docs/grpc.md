@@ -1791,6 +1791,7 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `lightning` | [`LightningRecommendation`](#lightningrecommendation) | repeated |  |
 | `chain` | [`ChainRecommendation`](#chainrecommendation) | repeated |  |
+| `force` | [`bool`](#bool) | optional | Forcefully execute all recommendations, even ones which are dismissed. |
 
 
 

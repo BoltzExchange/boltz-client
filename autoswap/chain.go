@@ -176,9 +176,9 @@ func (cfg *ChainConfig) GetRecommendation() (*autoswaprpc.ChainRecommendation, e
 	}, nil
 }
 
-func (cfg *ChainConfig) Execute(swap *autoswaprpc.ChainSwap) error {
+func (cfg *ChainConfig) Execute(swap *autoswaprpc.ChainSwap, force bool) error {
 	if swap != nil {
-		if len(swap.DismissedReasons) > 0 {
+		if !force && len(swap.DismissedReasons) > 0 {
 			logger.Debugf("Skipping swap recommendation %+v", swap)
 			return nil
 		}
@@ -217,7 +217,7 @@ func (cfg *ChainConfig) run(stop <-chan bool) {
 					continue
 				}
 
-				if err := cfg.Execute(recommendation.Swap); err != nil {
+				if err := cfg.Execute(recommendation.Swap, false); err != nil {
 					logger.Errorf("Could not act on swap recommendation: %s", err)
 				}
 			}

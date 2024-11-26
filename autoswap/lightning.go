@@ -351,8 +351,8 @@ func (cfg *LightningConfig) walletId() *database.Id {
 	return nil
 }
 
-func (cfg *LightningConfig) Execute(recommendation *autoswaprpc.LightningRecommendation) error {
-	if len(recommendation.Swap.DismissedReasons) > 0 {
+func (cfg *LightningConfig) Execute(recommendation *autoswaprpc.LightningRecommendation, force bool) error {
+	if !force && len(recommendation.Swap.DismissedReasons) > 0 {
 		logger.Infof("Skipping swap recommendation %+v", recommendation.Swap)
 		return nil
 	}
@@ -396,7 +396,7 @@ func (cfg *LightningConfig) run(stop <-chan bool) {
 			logger.Warnf("Could not fetch swap recommendations: %v", err)
 		}
 		for _, recommendation := range recommendations {
-			if err := cfg.Execute(recommendation); err != nil {
+			if err := cfg.Execute(recommendation, false); err != nil {
 				logger.Error("Could not act on swap recommendation : " + err.Error())
 			}
 		}
