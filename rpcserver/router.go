@@ -782,6 +782,16 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	if swapResponse == nil {
 
+		if createSwap.Invoice != "" {
+			existing, err := server.database.QuerySwapByInvoice(createSwap.Invoice)
+			if err != nil {
+				return nil, fmt.Errorf("could not query existing swap: %w", err)
+			}
+			if existing != nil {
+				return nil, status.Errorf(codes.AlreadyExists, "swap %s has the same invoice", existing.Id)
+			}
+		}
+
 		response, err := server.boltz.CreateSwap(createSwap)
 
 		if err != nil {

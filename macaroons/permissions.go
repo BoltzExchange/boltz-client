@@ -201,6 +201,10 @@ var (
 			Entity: "autoswap",
 			Action: "read",
 		}},
+		"/autoswaprpc.AutoSwap/ExecuteRecommendations": {{
+			Entity: "autoswap",
+			Action: "write",
+		}},
 		"/autoswaprpc.AutoSwap/GetStatus": {{
 			Entity: "autoswap",
 			Action: "read",
