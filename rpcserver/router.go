@@ -1643,7 +1643,7 @@ func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *
 			return nil, err
 		}
 	}
-	if request.GetIsSwapAddress() {
+	if request.Address == "" {
 		request.Address = server.network.DummyLockupAddress[ownWallet.Currency]
 	}
 	amount, fee, err := ownWallet.GetSendFee(request.Address, request.Amount, feeRate, request.GetSendAll())
