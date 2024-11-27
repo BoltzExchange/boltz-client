@@ -33,7 +33,7 @@ import (
 )
 
 const MinFeeRate = 0.01
-const MaxInputs = uint64(256)
+const MaxInputs = uint64(255) // TODO: change back to 256 when gdk is fixed
 const DefaultAutoConsolidateThreshold = uint64(200)
 const GapLimit = 100
 
