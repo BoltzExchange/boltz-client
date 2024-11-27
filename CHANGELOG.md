@@ -1,4 +1,18 @@
 
+<a name="v2.2.2"></a>
+## [v2.2.2] - 2024-11-27
+### Fix
+- decrease `MaxInputs` by 1 ([#343](https://github.com/BoltzExchange/boltz-client/issues/343))
+- add gdk fee floor ([#344](https://github.com/BoltzExchange/boltz-client/issues/344))
+
+
+<a name="v2.2.1"></a>
+## [v2.2.1] - 2024-11-15
+### Fix
+- respect `send_all` rpc param in `WalletSend` ([#333](https://github.com/BoltzExchange/boltz-client/issues/333))
+- dont allow lowball in `WalletSend` ([#332](https://github.com/BoltzExchange/boltz-client/issues/332))
+
+
 <a name="v2.2.0"></a>
 ## [v2.2.0] - 2024-11-08
 ### Feat
@@ -462,6 +476,8 @@
 - improve Channel Creation enforcement
 
 
+[v2.2.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.1...v2.2.2
+[v2.2.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.0...v2.2.1
 [v2.2.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.11...v2.2.0
 [v2.1.11]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.10...v2.1.11
 [v2.1.10]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.9...v2.1.10
