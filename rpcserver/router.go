@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
 	"github.com/fiatjaf/go-lnurl"
 	"math"
 	"net/url"
@@ -331,12 +332,12 @@ func (server *routedBoltzServer) ListSwaps(ctx context.Context, request *boltzrp
 	}
 
 	if request.From != nil {
-		parsed := utils.ParseCurrency(request.From)
+		parsed := serializers.ParseCurrency(request.From)
 		args.From = &parsed
 	}
 
 	if request.To != nil {
-		parsed := utils.ParseCurrency(request.To)
+		parsed := serializers.ParseCurrency(request.To)
 		args.To = &parsed
 	}
 
@@ -656,7 +657,7 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.Decode
 func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *lightning.DecodedInvoice) {
 	expiryLeft := time.Until(invoice.Expiry.Add(-10 * time.Second))
 	currency := request.Pair.GetFrom()
-	if expiryLeft.Minutes() < boltz.GetBlockTime(utils.ParseCurrency(&currency)) {
+	if expiryLeft.Minutes() < boltz.GetBlockTime(serializers.ParseCurrency(&currency)) {
 		zeroConf := true
 		request.ZeroConf = &zeroConf
 	}
@@ -669,7 +670,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		return nil, err
 	}
 
-	pair := utils.ParsePair(request.Pair)
+	pair := serializers.ParsePair(request.Pair)
 
 	if request.AcceptedPair == nil {
 		request.AcceptedPair, err = server.getSubmarinePair(request.Pair)
@@ -946,7 +947,7 @@ func requireTenantId(ctx context.Context) database.Id {
 }
 
 func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateReverseSwapRequest) (*boltzrpc.CreateReverseSwapResponse, error) {
-	pair := utils.ParsePair(request.Pair)
+	pair := serializers.ParsePair(request.Pair)
 	logger.Infof("Creating Reverse Swap for %d sats to %s", request.Amount, pair.To)
 
 	externalPay := request.GetExternalPay()
@@ -1183,7 +1184,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		return nil, err
 	}
 
-	pair := utils.ParsePair(request.Pair)
+	pair := serializers.ParsePair(request.Pair)
 	amount := request.GetAmount()
 	logger.Infof("Creating Chain Swap for %d sats from %s to %s", amount, pair.From, pair.To)
 
@@ -1449,7 +1450,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 		return nil, err
 	}
 
-	currency := utils.ParseCurrency(&request.Params.Currency)
+	currency := serializers.ParseCurrency(&request.Params.Currency)
 	credentials := &wallet.Credentials{
 		WalletInfo: onchain.WalletInfo{
 			Name:     request.Params.Name,
@@ -1623,7 +1624,7 @@ func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.
 			return nil, fmt.Errorf("could not get balance for wallet %s: %w", info.Name, err)
 		}
 	} else {
-		result.Balance = serializeWalletBalance(balance)
+		result.Balance = serializers.SerializeWalletBalance(balance)
 	}
 	return result, nil
 }
@@ -1666,7 +1667,7 @@ func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *
 func (server *routedBoltzServer) GetWallets(ctx context.Context, request *boltzrpc.GetWalletsRequest) (*boltzrpc.Wallets, error) {
 	var response boltzrpc.Wallets
 	checker := onchain.WalletChecker{
-		Currency:      utils.ParseCurrency(request.Currency),
+		Currency:      serializers.ParseCurrency(request.Currency),
 		AllowReadonly: request.GetIncludeReadonly(),
 		TenantId:      macaroons.TenantIdFromContext(ctx),
 	}
@@ -2003,7 +2004,7 @@ func (server *routedBoltzServer) getSubmarinePair(request *boltzrpc.Pair) (*bolt
 	if err != nil {
 		return nil, err
 	}
-	pair := utils.ParsePair(request)
+	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
 	return serializeSubmarinePair(pair, found), err
 }
@@ -2013,7 +2014,7 @@ func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltzr
 	if err != nil {
 		return nil, err
 	}
-	pair := utils.ParsePair(request)
+	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
 	return serializeReversePair(pair, found), err
 }
@@ -2023,7 +2024,7 @@ func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltzrpc
 	if err != nil {
 		return nil, err
 	}
-	pair := utils.ParsePair(request)
+	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
 	return serializeChainPair(pair, found), err
 }

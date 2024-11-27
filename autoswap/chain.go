@@ -6,10 +6,10 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -123,13 +123,13 @@ func (cfg *ChainConfig) GetCurrentBudget(createIfMissing bool) (*Budget, error) 
 	return cfg.shared.GetCurrentBudget(createIfMissing, Chain, cfg, cfg.tenant.Id)
 }
 
-func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
+func (cfg *ChainConfig) GetRecommendation() (*autoswaprpc.ChainRecommendation, error) {
 	balance, err := cfg.fromWallet.GetBalance()
 	if err != nil {
 		return nil, fmt.Errorf("could not get wallet balance: %w", err)
 	}
 
-	pairInfo, err := cfg.rpc.GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, utils.SerializePair(cfg.pair))
+	pairInfo, err := cfg.rpc.GetAutoSwapPairInfo(boltzrpc.SwapType_CHAIN, serializers.SerializePair(cfg.pair))
 	if err != nil {
 		return nil, fmt.Errorf("could not get pair info: %w", err)
 	}
@@ -170,12 +170,15 @@ func (cfg *ChainConfig) GetRecommendation() (*ChainRecommendation, error) {
 		}
 		recommendation.Swap = &checked
 	}
-	return recommendation, nil
+	return &autoswaprpc.ChainRecommendation{
+		Swap:          serializeAutoChainSwap(recommendation.Swap),
+		WalletBalance: serializers.SerializeWalletBalance(recommendation.FromBalance),
+	}, nil
 }
 
-func (cfg *ChainConfig) execute(swap *ChainSwap) error {
+func (cfg *ChainConfig) Execute(swap *autoswaprpc.ChainSwap, force bool) error {
 	if swap != nil {
-		if swap.Dismissed() {
+		if !force && len(swap.DismissedReasons) > 0 {
 			logger.Debugf("Skipping swap recommendation %+v", swap)
 			return nil
 		}
@@ -183,7 +186,7 @@ func (cfg *ChainConfig) execute(swap *ChainSwap) error {
 		fromWalletId := cfg.fromWallet.GetWalletInfo().Id
 		request := &boltzrpc.CreateChainSwapRequest{
 			Amount:       &swap.Amount,
-			Pair:         utils.SerializePair(cfg.pair),
+			Pair:         serializers.SerializePair(cfg.pair),
 			FromWalletId: &fromWalletId,
 		}
 		if cfg.ToAddress != "" {
@@ -214,7 +217,7 @@ func (cfg *ChainConfig) run(stop <-chan bool) {
 					continue
 				}
 
-				if err := cfg.execute(recommendation.Swap); err != nil {
+				if err := cfg.Execute(recommendation.Swap, false); err != nil {
 					logger.Errorf("Could not act on swap recommendation: %s", err)
 				}
 			}

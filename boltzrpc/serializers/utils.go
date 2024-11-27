@@ -1,8 +1,10 @@
-package utils
+package serializers
 
 import (
 	"github.com/BoltzExchange/boltz-client/boltz"
 	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/onchain"
 )
 
 func ParseCurrency(grpcCurrency *boltzrpc.Currency) boltz.Currency {
@@ -47,5 +49,45 @@ func SerializePair(pair boltz.Pair) *boltzrpc.Pair {
 	return &boltzrpc.Pair{
 		From: SerializeCurrency(pair.From),
 		To:   SerializeCurrency(pair.To),
+	}
+}
+
+func SerializeChanId(chanId lightning.ChanId) *boltzrpc.ChannelId {
+	if chanId != 0 {
+		return &boltzrpc.ChannelId{
+			Cln: chanId.ToCln(),
+			Lnd: chanId.ToLnd(),
+		}
+	}
+	return nil
+}
+
+func SerializeChanIds(chanIds []lightning.ChanId) (result []*boltzrpc.ChannelId) {
+	for _, chanId := range chanIds {
+		result = append(result, SerializeChanId(chanId))
+	}
+	return result
+}
+
+func SerializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.LightningChannel {
+	if channel == nil {
+		return nil
+	}
+	return &boltzrpc.LightningChannel{
+		Id:          SerializeChanId(channel.Id),
+		Capacity:    channel.Capacity,
+		OutboundSat: channel.OutboundSat,
+		InboundSat:  channel.InboundSat,
+		PeerId:      channel.PeerId,
+	}
+}
+func SerializeWalletBalance(balance *onchain.Balance) *boltzrpc.Balance {
+	if balance == nil {
+		return nil
+	}
+	return &boltzrpc.Balance{
+		Confirmed:   balance.Confirmed,
+		Total:       balance.Total,
+		Unconfirmed: balance.Unconfirmed,
 	}
 }

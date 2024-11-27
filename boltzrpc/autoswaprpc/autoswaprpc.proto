@@ -14,6 +14,12 @@ service AutoSwap {
   rpc GetRecommendations (GetRecommendationsRequest) returns (GetRecommendationsResponse);
 
   /*
+  Executes recommendations previously returned by `GetRecommendations`.
+  Intended to be used when autoswap is fully configured but not enabled to allow for manual approval.
+  */
+  rpc ExecuteRecommendations (ExecuteRecommendationsRequest) returns (ExecuteRecommendationsResponse);
+
+  /*
   Returns the current budget of autoswap and some relevant stats.
    */
   rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
@@ -90,6 +96,14 @@ message GetRecommendationsResponse {
   repeated LightningRecommendation lightning = 1;
   repeated ChainRecommendation chain = 2;
 }
+
+message ExecuteRecommendationsRequest {
+  repeated LightningRecommendation lightning = 1;
+  repeated ChainRecommendation chain = 2;
+  // Forcefully execute all recommendations, even ones which are dismissed.
+  optional bool force = 3;
+}
+message ExecuteRecommendationsResponse {}
 
 message GetStatusRequest {}
 

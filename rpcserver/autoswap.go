@@ -9,6 +9,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/macaroons"
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type routedAutoSwapServer struct {
@@ -46,33 +48,53 @@ func (server *routedAutoSwapServer) GetRecommendations(ctx context.Context, _ *a
 	response := &autoswaprpc.GetRecommendationsResponse{}
 	if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
 		recommendations, err := lnSwapper.GetConfig().GetSwapRecommendations(true)
-
 		if err != nil {
 			return nil, err
 		}
-
-		for _, recommendation := range recommendations {
-			response.Lightning = append(response.Lightning, &autoswaprpc.LightningRecommendation{
-				Swap:       serializeLightningSwap(recommendation.Swap),
-				Channel:    serializeLightningChannel(recommendation.Channel),
-				Thresholds: recommendation.Thresholds,
-			})
-		}
+		response.Lightning = recommendations
 	}
 	if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
 		recommendation, err := chainSwapper.GetConfig().GetRecommendation()
 		if err != nil {
 			return nil, err
 		}
-		if recommendation != nil {
-			response.Chain = append(response.Chain, &autoswaprpc.ChainRecommendation{
-				Swap:          serializeAutoChainSwap(recommendation.Swap),
-				WalletBalance: serializeWalletBalance(recommendation.FromBalance),
-			})
-		}
+		response.Chain = append(response.Chain, recommendation)
 	}
 
 	return response, nil
+}
+func (server *routedAutoSwapServer) ExecuteRecommendations(ctx context.Context, request *autoswaprpc.ExecuteRecommendationsRequest) (*autoswaprpc.ExecuteRecommendationsResponse, error) {
+	if err := server.requireSwapper(ctx); err != nil {
+		return nil, err
+	}
+
+	if len(request.Lightning) > 0 {
+		if lnSwapper := server.lnSwapper(ctx); lnSwapper != nil {
+			for _, recommendation := range request.Lightning {
+				err := lnSwapper.GetConfig().Execute(recommendation, request.GetForce())
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			return nil, status.Errorf(codes.InvalidArgument, "lightning swaps not configured")
+		}
+	}
+
+	if len(request.Chain) > 0 {
+		if chainSwapper := server.chainSwapper(ctx); chainSwapper != nil {
+			for _, recommendation := range request.Chain {
+				err := chainSwapper.GetConfig().Execute(recommendation.Swap, request.GetForce())
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			return nil, status.Errorf(codes.InvalidArgument, "chain swaps not configured")
+		}
+	}
+
+	return &autoswaprpc.ExecuteRecommendationsResponse{}, nil
 }
 
 func serializeBudget(budget *autoswap.Budget) *autoswaprpc.Budget {

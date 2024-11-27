@@ -27,6 +27,10 @@ func (autoSwap *AutoSwap) GetRecommendations() (*autoswaprpc.GetRecommendationsR
 	return autoSwap.Client.GetRecommendations(autoSwap.Ctx, &autoswaprpc.GetRecommendationsRequest{})
 }
 
+func (autoSwap *AutoSwap) ExecuteRecommendations(request *autoswaprpc.ExecuteRecommendationsRequest) (*autoswaprpc.ExecuteRecommendationsResponse, error) {
+	return autoSwap.Client.ExecuteRecommendations(autoSwap.Ctx, request)
+}
+
 func (autoSwap *AutoSwap) GetStatus() (*autoswaprpc.GetStatusResponse, error) {
 	return autoSwap.Client.GetStatus(autoSwap.Ctx, &autoswaprpc.GetStatusRequest{})
 }

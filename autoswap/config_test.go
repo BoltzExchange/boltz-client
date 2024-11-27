@@ -22,17 +22,17 @@ func TestGetPair(t *testing.T) {
 	shared := getShared(t)
 	cfg := NewLightningConfig(DefaultLightningConfig(), shared)
 
-	pair := cfg.GetPair(boltz.NormalSwap)
+	pair := cfg.GetPair(boltzrpc.SwapType_SUBMARINE)
 	require.Equal(t, boltzrpc.Currency_LBTC, pair.From)
 	require.Equal(t, boltzrpc.Currency_BTC, pair.To)
 
-	pair = cfg.GetPair(boltz.ReverseSwap)
+	pair = cfg.GetPair(boltzrpc.SwapType_REVERSE)
 	require.Equal(t, boltzrpc.Currency_LBTC, pair.To)
 	require.Equal(t, boltzrpc.Currency_BTC, pair.From)
 
 	cfg.Currency = boltzrpc.Currency_BTC
 
-	pair = cfg.GetPair(boltz.ReverseSwap)
+	pair = cfg.GetPair(boltzrpc.SwapType_REVERSE)
 	require.Equal(t, boltzrpc.Currency_BTC, pair.To)
 	require.Equal(t, boltzrpc.Currency_BTC, pair.From)
 }

@@ -20,12 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AutoSwap_GetRecommendations_FullMethodName    = "/autoswaprpc.AutoSwap/GetRecommendations"
-	AutoSwap_GetStatus_FullMethodName             = "/autoswaprpc.AutoSwap/GetStatus"
-	AutoSwap_UpdateLightningConfig_FullMethodName = "/autoswaprpc.AutoSwap/UpdateLightningConfig"
-	AutoSwap_UpdateChainConfig_FullMethodName     = "/autoswaprpc.AutoSwap/UpdateChainConfig"
-	AutoSwap_GetConfig_FullMethodName             = "/autoswaprpc.AutoSwap/GetConfig"
-	AutoSwap_ReloadConfig_FullMethodName          = "/autoswaprpc.AutoSwap/ReloadConfig"
+	AutoSwap_GetRecommendations_FullMethodName     = "/autoswaprpc.AutoSwap/GetRecommendations"
+	AutoSwap_ExecuteRecommendations_FullMethodName = "/autoswaprpc.AutoSwap/ExecuteRecommendations"
+	AutoSwap_GetStatus_FullMethodName              = "/autoswaprpc.AutoSwap/GetStatus"
+	AutoSwap_UpdateLightningConfig_FullMethodName  = "/autoswaprpc.AutoSwap/UpdateLightningConfig"
+	AutoSwap_UpdateChainConfig_FullMethodName      = "/autoswaprpc.AutoSwap/UpdateChainConfig"
+	AutoSwap_GetConfig_FullMethodName              = "/autoswaprpc.AutoSwap/GetConfig"
+	AutoSwap_ReloadConfig_FullMethodName           = "/autoswaprpc.AutoSwap/ReloadConfig"
 )
 
 // AutoSwapClient is the client API for AutoSwap service.
@@ -35,6 +36,10 @@ type AutoSwapClient interface {
 	//
 	//Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
 	GetRecommendations(ctx context.Context, in *GetRecommendationsRequest, opts ...grpc.CallOption) (*GetRecommendationsResponse, error)
+	//
+	//Executes recommendations previously returned by `GetRecommendations`.
+	//Intended to be used when autoswap is fully configured but not enabled to allow for manual approval.
+	ExecuteRecommendations(ctx context.Context, in *ExecuteRecommendationsRequest, opts ...grpc.CallOption) (*ExecuteRecommendationsResponse, error)
 	//
 	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
@@ -62,6 +67,15 @@ func NewAutoSwapClient(cc grpc.ClientConnInterface) AutoSwapClient {
 func (c *autoSwapClient) GetRecommendations(ctx context.Context, in *GetRecommendationsRequest, opts ...grpc.CallOption) (*GetRecommendationsResponse, error) {
 	out := new(GetRecommendationsResponse)
 	err := c.cc.Invoke(ctx, AutoSwap_GetRecommendations_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *autoSwapClient) ExecuteRecommendations(ctx context.Context, in *ExecuteRecommendationsRequest, opts ...grpc.CallOption) (*ExecuteRecommendationsResponse, error) {
+	out := new(ExecuteRecommendationsResponse)
+	err := c.cc.Invoke(ctx, AutoSwap_ExecuteRecommendations_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +135,10 @@ type AutoSwapServer interface {
 	//Returns a list of swaps which are currently recommended by autoswap. Also works when autoswap is not running.
 	GetRecommendations(context.Context, *GetRecommendationsRequest) (*GetRecommendationsResponse, error)
 	//
+	//Executes recommendations previously returned by `GetRecommendations`.
+	//Intended to be used when autoswap is fully configured but not enabled to allow for manual approval.
+	ExecuteRecommendations(context.Context, *ExecuteRecommendationsRequest) (*ExecuteRecommendationsResponse, error)
+	//
 	//Returns the current budget of autoswap and some relevant stats.
 	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	// Updates the lightning configuration entirely or partially. Autoswap will reload the configuration after this call.
@@ -143,6 +161,9 @@ type UnimplementedAutoSwapServer struct {
 
 func (UnimplementedAutoSwapServer) GetRecommendations(context.Context, *GetRecommendationsRequest) (*GetRecommendationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecommendations not implemented")
+}
+func (UnimplementedAutoSwapServer) ExecuteRecommendations(context.Context, *ExecuteRecommendationsRequest) (*ExecuteRecommendationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteRecommendations not implemented")
 }
 func (UnimplementedAutoSwapServer) GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
@@ -186,6 +207,24 @@ func _AutoSwap_GetRecommendations_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AutoSwapServer).GetRecommendations(ctx, req.(*GetRecommendationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AutoSwap_ExecuteRecommendations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExecuteRecommendationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AutoSwapServer).ExecuteRecommendations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AutoSwap_ExecuteRecommendations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AutoSwapServer).ExecuteRecommendations(ctx, req.(*ExecuteRecommendationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -290,6 +329,10 @@ var AutoSwap_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRecommendations",
 			Handler:    _AutoSwap_GetRecommendations_Handler,
+		},
+		{
+			MethodName: "ExecuteRecommendations",
+			Handler:    _AutoSwap_ExecuteRecommendations_Handler,
 		},
 		{
 			MethodName: "GetStatus",

@@ -1,13 +1,10 @@
 package rpcserver
 
 import (
-	"github.com/BoltzExchange/boltz-client/autoswap"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/lightning"
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/onchain/wallet"
 
@@ -21,23 +18,6 @@ func serializeOptionalString(value string) *string {
 	}
 
 	return &value
-}
-
-func serializeChanId(chanId lightning.ChanId) *boltzrpc.ChannelId {
-	if chanId != 0 {
-		return &boltzrpc.ChannelId{
-			Cln: chanId.ToCln(),
-			Lnd: chanId.ToLnd(),
-		}
-	}
-	return nil
-}
-
-func serializeChanIds(chanIds []lightning.ChanId) (result []*boltzrpc.ChannelId) {
-	for _, chanId := range chanIds {
-		result = append(result, serializeChanId(chanId))
-	}
-	return result
 }
 
 func serializeCurrency(currency boltz.Currency) boltzrpc.Currency {
@@ -64,7 +44,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	serialized := &boltzrpc.SwapInfo{
 		Id:                  serializedSwap.Id,
 		Pair:                serializePair(swap.Pair),
-		ChanIds:             serializeChanIds(swap.ChanIds),
+		ChanIds:             serializers.SerializeChanIds(swap.ChanIds),
 		State:               swap.State,
 		Error:               serializedSwap.Error,
 		Status:              serializedSwap.Status,
@@ -100,7 +80,7 @@ func serializeAnySwap(swap *database.AnySwap) *boltzrpc.AnySwapInfo {
 	}
 	return &boltzrpc.AnySwapInfo{
 		Id:         swap.Id,
-		Type:       utils.SerializeSwapType(swap.Type),
+		Type:       serializers.SerializeSwapType(swap.Type),
 		Pair:       serializePair(swap.Pair),
 		State:      swap.State,
 		Error:      serializeOptionalString(swap.Error),
@@ -124,7 +104,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 	return &boltzrpc.ReverseSwapInfo{
 		Id:                  serializedReverseSwap.Id,
 		Pair:                serializePair(reverseSwap.Pair),
-		ChanIds:             serializeChanIds(reverseSwap.ChanIds),
+		ChanIds:             serializers.SerializeChanIds(reverseSwap.ChanIds),
 		State:               reverseSwap.State,
 		Error:               serializedReverseSwap.Error,
 		Status:              serializedReverseSwap.Status,
@@ -242,20 +222,9 @@ func serializeChainPair(pair boltz.Pair, chainPair *boltz.ChainPair) *boltzrpc.P
 	}
 }
 
-func serializeWalletBalance(balance *onchain.Balance) *boltzrpc.Balance {
-	if balance == nil {
-		return nil
-	}
-	return &boltzrpc.Balance{
-		Confirmed:   balance.Confirmed,
-		Total:       balance.Total,
-		Unconfirmed: balance.Unconfirmed,
-	}
-}
-
 func serializeWalletSubaccount(subaccount wallet.Subaccount, balance *onchain.Balance) *boltzrpc.Subaccount {
 	return &boltzrpc.Subaccount{
-		Balance:     serializeWalletBalance(balance),
+		Balance:     serializers.SerializeWalletBalance(balance),
 		Pointer:     subaccount.Pointer,
 		Type:        subaccount.Type,
 		Descriptors: subaccount.CoreDescriptors,
@@ -281,42 +250,6 @@ func serializeOptionalTime(t time.Time) *int64 {
 	}
 	unix := t.UTC().Unix()
 	return &unix
-}
-
-func serializeLightningSwap(swap *autoswap.LightningSwap) *autoswaprpc.LightningSwap {
-	if swap == nil {
-		return nil
-	}
-	return &autoswaprpc.LightningSwap{
-		Amount:           swap.Amount,
-		Type:             utils.SerializeSwapType(swap.Type),
-		FeeEstimate:      swap.FeeEstimate,
-		DismissedReasons: swap.DismissedReasons,
-	}
-}
-
-func serializeAutoChainSwap(swap *autoswap.ChainSwap) *autoswaprpc.ChainSwap {
-	if swap == nil {
-		return nil
-	}
-	return &autoswaprpc.ChainSwap{
-		Amount:           swap.Amount,
-		FeeEstimate:      swap.FeeEstimate,
-		DismissedReasons: swap.DismissedReasons,
-	}
-}
-
-func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.LightningChannel {
-	if channel == nil {
-		return nil
-	}
-	return &boltzrpc.LightningChannel{
-		Id:          serializeChanId(channel.Id),
-		Capacity:    channel.Capacity,
-		OutboundSat: channel.OutboundSat,
-		InboundSat:  channel.InboundSat,
-		PeerId:      channel.PeerId,
-	}
 }
 
 func serializeTenant(tenant *database.Tenant) *boltzrpc.Tenant {
