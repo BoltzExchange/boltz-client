@@ -387,6 +387,9 @@ func (wallet *Wallet) Connect() error {
 
 	if config.AutoConsolidateThreshold > 0 && !wallet.Readonly {
 		go func() {
+			if err := wallet.autoConsolidate(); err != nil {
+				logger.Errorf("Auto consolidation failed: %v", err)
+			}
 			wallet.txNotifier = TransactionNotifier.Get()
 			for range wallet.txNotifier {
 				if err := wallet.autoConsolidate(); err != nil {
