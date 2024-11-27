@@ -515,7 +515,7 @@ type ExecuteRecommendationsRequest struct {
 
 	Lightning []*LightningRecommendation `protobuf:"bytes,1,rep,name=lightning,proto3" json:"lightning,omitempty"`
 	Chain     []*ChainRecommendation     `protobuf:"bytes,2,rep,name=chain,proto3" json:"chain,omitempty"`
-	// Forcefully execute all recommendations, even ones which are dismissed.
+	// Forcefully execute all recommendations, even ones that have dismissal reasons.
 	Force *bool `protobuf:"varint,3,opt,name=force,proto3,oneof" json:"force,omitempty"`
 }
 

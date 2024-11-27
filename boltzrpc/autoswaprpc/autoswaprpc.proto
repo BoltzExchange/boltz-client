@@ -100,7 +100,7 @@ message GetRecommendationsResponse {
 message ExecuteRecommendationsRequest {
   repeated LightningRecommendation lightning = 1;
   repeated ChainRecommendation chain = 2;
-  // Forcefully execute all recommendations, even ones which are dismissed.
+  // Forcefully execute all recommendations, even ones that have dismissal reasons.
   optional bool force = 3;
 }
 message ExecuteRecommendationsResponse {}
