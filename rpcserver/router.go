@@ -765,6 +765,17 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		createSwap.PreimageHash = preimageHash
 	}
 
+	feeRate, err := server.estimateFee(
+		request.GetSatPerVbyte(),
+		pair.From,
+		request.Amount,
+		!request.GetZeroConf(),
+		request.AcceptedPair.Limits.MaximalZeroConfAmount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
 		Currency:      pair.From,
 		Id:            request.WalletId,
@@ -774,7 +785,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, err
 		}
-		if err := checkBalance(wallet, request.Amount+utils.CalculateFeeEstimate(request.AcceptedPair.Fees, request.Amount)); err != nil {
+		if err := server.checkBalance(wallet, request.Amount, request.AcceptedPair.Fees, feeRate); err != nil {
 			return nil, err
 		}
 		logger.Infof("Using wallet %+v to pay swap", wallet.GetWalletInfo())
@@ -887,13 +898,10 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		}
 
 		if request.SendFromInternal {
-			swapResponse.TxId, err = server.sendToAddress(
-				wallet,
+			swapResponse.TxId, err = wallet.SendToAddress(
 				swapResponse.Address,
 				swapResponse.ExpectedAmount,
-				!request.GetZeroConf(),
-				request.AcceptedPair.Limits.MaximalZeroConfAmount,
-				request.SatPerVbyte,
+				feeRate,
 				false,
 			)
 			if err != nil {
@@ -908,13 +916,10 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			return nil, err
 		}
 	} else if request.SendFromInternal {
-		swapResponse.TxId, err = server.sendToAddress(
-			wallet,
+		swapResponse.TxId, err = wallet.SendToAddress(
 			swapResponse.Address,
 			swapResponse.ExpectedAmount,
-			false,
-			request.AcceptedPair.Limits.MaximalZeroConfAmount,
-			request.SatPerVbyte,
+			feeRate,
 			false,
 		)
 		if err != nil {
@@ -1218,6 +1223,17 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		}
 	}
 
+	feeRate, err := server.estimateFee(
+		request.GetSatPerVbyte(),
+		pair.From,
+		amount,
+		!request.GetLockupZeroConf(),
+		request.AcceptedPair.Limits.MaximalZeroConfAmount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	externalPay := request.GetExternalPay()
 	var fromWallet, toWallet onchain.Wallet
 	if request.FromWalletId != nil {
@@ -1228,7 +1244,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		if err != nil {
 			return nil, err
 		}
-		if err := checkBalance(fromWallet, amount); err != nil {
+		if err := server.checkBalance(fromWallet, amount, request.AcceptedPair.Fees, feeRate); err != nil {
 			return nil, err
 		}
 		logger.Infof("Using wallet %+v to pay chain swap", fromWallet.GetWalletInfo())
@@ -1355,13 +1371,10 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	if !externalPay {
 		from := chainSwap.FromData
-		from.LockupTransactionId, err = server.sendToAddress(
-			fromWallet,
+		from.LockupTransactionId, err = fromWallet.SendToAddress(
 			from.LockupAddress,
 			from.Amount,
-			!request.GetLockupZeroConf(),
-			request.AcceptedPair.Limits.MaximalZeroConfAmount,
-			request.SatPerVbyte,
+			feeRate,
 			false,
 		)
 		if err != nil {
@@ -1758,7 +1771,11 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if err != nil {
 		return nil, err
 	}
-	txId, err := server.sendToAddress(sendWallet, request.Address, request.Amount, false, 0, request.SatPerVbyte, request.GetSendAll())
+	feeRate, err := server.estimateFee(request.GetSatPerVbyte(), sendWallet.GetWalletInfo().Currency, request.Amount, false, 0)
+	if err != nil {
+		return nil, err
+	}
+	txId, err := sendWallet.SendToAddress(request.Address, request.Amount, feeRate, request.GetSendAll())
 	if err != nil {
 		return nil, err
 	}
@@ -2218,29 +2235,37 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 		}, nil
 }
 
-func (server *routedBoltzServer) sendToAddress(wallet onchain.Wallet, address string, amount uint64, allowLowball bool, maxZeroConfAmount uint64, fee *float64, sendAll bool) (string, error) {
-	if amount > maxZeroConfAmount && !allowLowball {
-		logger.Infof("Amount %d exceeds maximal zero conf amount %d, allowing lowball", amount, maxZeroConfAmount)
-		allowLowball = true
-	}
-	if fee == nil {
-		feeSatPerVbyte, err := server.onchain.EstimateFee(wallet.GetWalletInfo().Currency, allowLowball)
-		if err != nil {
-			return "", err
+func (server *routedBoltzServer) estimateFee(requested float64, currency boltz.Currency, amount uint64, allowLowball bool, maxZeroConfAmount uint64) (float64, error) {
+	if requested == 0 {
+		if amount > maxZeroConfAmount && !allowLowball {
+			logger.Infof("Amount %d exceeds maximal zero conf amount %d, allowing lowball", amount, maxZeroConfAmount)
+			allowLowball = true
 		}
-		fee = &feeSatPerVbyte
+		feeSatPerVbyte, err := server.onchain.EstimateFee(currency, allowLowball)
+		if err != nil {
+			return 0, err
+		}
+		logger.Infof("Using fee of %f sat/vbyte (allowLowball: %v)", feeSatPerVbyte, allowLowball)
+		return feeSatPerVbyte, nil
 	}
-	logger.Infof("Using fee of %f sat/vbyte (allowLowball: %v)", *fee, allowLowball)
-	return wallet.SendToAddress(address, amount, *fee, sendAll)
+	return requested, nil
 }
 
-func checkBalance(wallet onchain.Wallet, requiredAmount uint64) error {
-	balance, err := wallet.GetBalance()
+func (server *routedBoltzServer) checkBalance(check onchain.Wallet, expectedAmount uint64, swapFees *boltzrpc.SwapFees, feeRate float64) error {
+	expectedAmount += utils.CalculateFeeEstimate(swapFees, expectedAmount)
+	balance, err := check.GetBalance()
 	if err != nil {
 		return err
 	}
-	if balance.Confirmed < requiredAmount {
-		return fmt.Errorf("wallet %s has insufficient balance: %d < %d", wallet.GetWalletInfo().Name, balance.Confirmed, requiredAmount)
+	info := check.GetWalletInfo()
+	if ownWallet, ok := check.(*wallet.Wallet); ok {
+		dummyAddress := server.network.DummyLockupAddress[info.Currency]
+		// this call implicitly checks the balance aswell
+		_, _, err := ownWallet.GetSendFee(dummyAddress, expectedAmount, feeRate, false)
+		return err
+	}
+	if balance.Confirmed < expectedAmount {
+		return info.InsufficientBalanceError(expectedAmount)
 	}
 	return nil
 }
