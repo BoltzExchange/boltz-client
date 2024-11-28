@@ -51,6 +51,10 @@ type WalletInfo struct {
 	TenantId Id
 }
 
+func (info WalletInfo) InsufficientBalanceError(amount uint64) error {
+	return fmt.Errorf("wallet %s has insufficient balance for sending %d sats", info.Name, amount)
+}
+
 type WalletChecker struct {
 	Id            *Id
 	Name          *string

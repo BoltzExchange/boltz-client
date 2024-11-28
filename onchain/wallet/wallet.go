@@ -758,6 +758,11 @@ func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVby
 	if err := withAuthHandler(C.GA_create_transaction(wallet.session, transactionDetails, handler), handler, &result); err != nil {
 		return nil, err
 	}
+	if err, ok := result["error"].(string); ok {
+		if strings.Contains(err, "id_insufficient_funds") {
+			return nil, wallet.InsufficientBalanceError(amount)
+		}
+	}
 	return result, nil
 }
 
