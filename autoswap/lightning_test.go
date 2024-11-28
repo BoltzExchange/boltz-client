@@ -812,3 +812,132 @@ func TestCheckSwapRecommendation(t *testing.T) {
 		})
 	}
 }
+
+func Test_checkAccepted(t *testing.T) {
+	chanId := &boltzrpc.ChannelId{Lnd: 123123, Cln: "123123"}
+
+	type args struct {
+		recommendation *autoswaprpc.LightningRecommendation
+		accepted       []*autoswaprpc.LightningRecommendation
+	}
+	tests := []struct {
+		name       string
+		args       args
+		requireErr require.ErrorAssertionFunc
+	}{
+		{
+			name: "NoPrevious",
+			args: args{
+				recommendation: &autoswaprpc.LightningRecommendation{
+					Swap: &autoswaprpc.LightningSwap{
+						Type: boltzrpc.SwapType_SUBMARINE,
+					},
+				},
+				accepted: nil,
+			},
+			requireErr: require.NoError,
+		},
+		{
+			name: "Valid/SameChannel",
+			args: args{
+				recommendation: &autoswaprpc.LightningRecommendation{
+					Swap: &autoswaprpc.LightningSwap{
+						Type: boltzrpc.SwapType_SUBMARINE,
+					},
+					Channel: &boltzrpc.LightningChannel{
+						Id: chanId,
+					},
+				},
+				accepted: []*autoswaprpc.LightningRecommendation{
+					{
+						Swap: &autoswaprpc.LightningSwap{
+							Type: boltzrpc.SwapType_SUBMARINE,
+						},
+						Channel: &boltzrpc.LightningChannel{
+							Id: chanId,
+						},
+					},
+				},
+			},
+			requireErr: require.NoError,
+		},
+		{
+			name: "Invalid/DifferentChannel",
+			args: args{
+				recommendation: &autoswaprpc.LightningRecommendation{
+					Swap: &autoswaprpc.LightningSwap{
+						Type: boltzrpc.SwapType_SUBMARINE,
+					},
+					Channel: &boltzrpc.LightningChannel{
+						Id: nil,
+					},
+				},
+				accepted: []*autoswaprpc.LightningRecommendation{
+					{
+						Swap: &autoswaprpc.LightningSwap{
+							Type: boltzrpc.SwapType_SUBMARINE,
+						},
+						Channel: &boltzrpc.LightningChannel{
+							Id: chanId,
+						},
+					},
+				},
+			},
+			requireErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.ErrorIs(t, err, errNotInAccepted, i...)
+			},
+		},
+		{
+			name: "Invalid/Dismissed",
+			args: args{
+				recommendation: &autoswaprpc.LightningRecommendation{
+					Swap: &autoswaprpc.LightningSwap{
+						Type:             boltzrpc.SwapType_SUBMARINE,
+						DismissedReasons: []string{ReasonMaxFeePercent},
+					},
+					Channel: &boltzrpc.LightningChannel{
+						Id: nil,
+					},
+				},
+				accepted: []*autoswaprpc.LightningRecommendation{
+					{
+						Swap: &autoswaprpc.LightningSwap{
+							Type: boltzrpc.SwapType_SUBMARINE,
+						},
+						Channel: &boltzrpc.LightningChannel{
+							Id: nil,
+						},
+					},
+				},
+			},
+			requireErr: require.Error,
+		},
+		{
+			name: "Invalid/NoSwap",
+			args: args{
+				recommendation: &autoswaprpc.LightningRecommendation{
+					Swap: &autoswaprpc.LightningSwap{
+						Type: boltzrpc.SwapType_SUBMARINE,
+					},
+					Channel: &boltzrpc.LightningChannel{
+						Id: nil,
+					},
+				},
+				accepted: []*autoswaprpc.LightningRecommendation{
+					{
+						Channel: &boltzrpc.LightningChannel{
+							Id: nil,
+						},
+					},
+				},
+			},
+			requireErr: require.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := checkAccepted(tt.args.recommendation, tt.args.accepted)
+			tt.requireErr(t, err)
+		})
+	}
+}

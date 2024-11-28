@@ -76,3 +76,55 @@ func TestOldConfig(t *testing.T) {
 	require.NotEmpty(t, swapper.cfg.Lightning)
 	require.True(t, swapper.cfg.Lightning[0].AcceptZeroConf)
 }
+
+func Test_checkAcceptedReasons(t *testing.T) {
+	type args struct {
+		accepted []string
+		current  []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"empty",
+			args{
+				accepted: []string{},
+				current:  []string{},
+			},
+			false,
+		},
+		{
+			"less",
+			args{
+				accepted: []string{ReasonBudgetExceeded, ReasonMaxFeePercent},
+				current:  []string{ReasonMaxFeePercent},
+			},
+			false,
+		},
+		{
+			"different",
+			args{
+				accepted: []string{ReasonBudgetExceeded},
+				current:  []string{ReasonMaxFeePercent},
+			},
+			true,
+		},
+		{
+			"different",
+			args{
+				accepted: []string{},
+				current:  []string{ReasonMaxFeePercent},
+			},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := checkAcceptedReasons(tt.args.accepted, tt.args.current); (err != nil) != tt.wantErr {
+				t.Errorf("checkAcceptedReasons() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
