@@ -12,6 +12,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/onchain"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"sync"
 )
 
 type ChainSwap = checks
@@ -36,6 +37,8 @@ type ChainConfig struct {
 	toWallet      onchain.Wallet
 	pair          boltz.Pair
 	description   string
+
+	executeLock sync.Mutex
 }
 
 func (cfg *ChainConfig) GetTenantId() database.Id {
@@ -124,6 +127,12 @@ func (cfg *ChainConfig) GetCurrentBudget(createIfMissing bool) (*Budget, error) 
 }
 
 func (cfg *ChainConfig) GetRecommendation() (*autoswaprpc.ChainRecommendation, error) {
+	cfg.executeLock.Lock()
+	defer cfg.executeLock.Unlock()
+	return cfg.getRecommendation()
+}
+
+func (cfg *ChainConfig) getRecommendation() (*autoswaprpc.ChainRecommendation, error) {
 	balance, err := cfg.fromWallet.GetBalance()
 	if err != nil {
 		return nil, fmt.Errorf("could not get wallet balance: %w", err)
@@ -176,8 +185,24 @@ func (cfg *ChainConfig) GetRecommendation() (*autoswaprpc.ChainRecommendation, e
 	}, nil
 }
 
-func (cfg *ChainConfig) Execute(swap *autoswaprpc.ChainSwap, force bool) error {
+func (cfg *ChainConfig) CheckAndExecute(accepted *autoswaprpc.ChainSwap, force bool) error {
+	cfg.executeLock.Lock()
+	defer cfg.executeLock.Unlock()
+	logger.Debugf("Checking for chain swap recommendation")
+	recommendation, err := cfg.getRecommendation()
+	if err != nil {
+		return fmt.Errorf("could not get swap recommendation: %w", err)
+	}
+	return cfg.execute(recommendation.Swap, accepted, force)
+}
+
+func (cfg *ChainConfig) execute(swap *autoswaprpc.ChainSwap, accepted *autoswaprpc.ChainSwap, force bool) error {
 	if swap != nil {
+		if accepted != nil {
+			if err := checkAcceptedReasons(accepted.DismissedReasons, swap.DismissedReasons); err != nil {
+				return err
+			}
+		}
 		if !force && len(swap.DismissedReasons) > 0 {
 			logger.Debugf("Skipping swap recommendation %+v", swap)
 			return nil
@@ -210,15 +235,8 @@ func (cfg *ChainConfig) run(stop <-chan bool) {
 			return
 		case _, ok := <-updates:
 			if ok {
-				logger.Debugf("Checking for chain swap recommendation")
-				recommendation, err := cfg.GetRecommendation()
-				if err != nil {
-					logger.Warn("Could not get swap recommendation: " + err.Error())
-					continue
-				}
-
-				if err := cfg.Execute(recommendation.Swap, false); err != nil {
-					logger.Errorf("Could not act on swap recommendation: %s", err)
+				if err := cfg.CheckAndExecute(nil, false); err != nil {
+					logger.Errorf("Chain autoswap: %s", err)
 				}
 			}
 		}

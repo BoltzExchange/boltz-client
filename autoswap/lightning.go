@@ -7,7 +7,9 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/onchain"
+	"google.golang.org/protobuf/proto"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -33,6 +35,8 @@ type LightningConfig struct {
 	strategy        Strategy
 	description     string
 	wallet          onchain.Wallet
+
+	executeLock sync.Mutex
 }
 
 const DefaultReserve = boltz.Percentage(10)
@@ -304,6 +308,12 @@ func (cfg *LightningConfig) validateRecommendations(
 }
 
 func (cfg *LightningConfig) GetSwapRecommendations(includeAll bool) ([]*autoswaprpc.LightningRecommendation, error) {
+	cfg.executeLock.Lock()
+	defer cfg.executeLock.Unlock()
+	return cfg.getSwapRecommendations(includeAll)
+}
+
+func (cfg *LightningConfig) getSwapRecommendations(includeAll bool) ([]*autoswaprpc.LightningRecommendation, error) {
 	channels, err := cfg.rpc.GetLightningChannels()
 	if err != nil {
 		return nil, err
@@ -351,7 +361,29 @@ func (cfg *LightningConfig) walletId() *database.Id {
 	return nil
 }
 
-func (cfg *LightningConfig) Execute(recommendation *autoswaprpc.LightningRecommendation, force bool) error {
+func (cfg *LightningConfig) CheckAndExecute(accepted []*autoswaprpc.LightningRecommendation, force bool) error {
+	cfg.executeLock.Lock()
+	defer cfg.executeLock.Unlock()
+	logger.Debugf("Checking for lightning swap recommendation")
+	recommendations, err := cfg.getSwapRecommendations(false)
+	if err != nil {
+		return fmt.Errorf("could not fetch swap recommendations: %w", err)
+	}
+	for _, recommendation := range recommendations {
+		if err := checkAccepted(recommendation, accepted); err != nil {
+			if errors.Is(err, errNotInAccepted) {
+				continue
+			}
+			return err
+		}
+		if err := cfg.execute(recommendation, force); err != nil {
+			return fmt.Errorf("could not execute recommendation: %w", err)
+		}
+	}
+	return nil
+}
+
+func (cfg *LightningConfig) execute(recommendation *autoswaprpc.LightningRecommendation, force bool) error {
 	if !force && len(recommendation.Swap.DismissedReasons) > 0 {
 		logger.Infof("Skipping swap recommendation %+v", recommendation.Swap)
 		return nil
@@ -390,15 +422,8 @@ func (cfg *LightningConfig) run(stop <-chan bool) {
 	ticker := time.NewTicker(time.Duration(cfg.ChannelPollInterval) * time.Second)
 
 	for {
-		logger.Debugf("Checking for lightning swap recommendation")
-		recommendations, err := cfg.GetSwapRecommendations(false)
-		if err != nil {
-			logger.Warnf("Could not fetch swap recommendations: %v", err)
-		}
-		for _, recommendation := range recommendations {
-			if err := cfg.Execute(recommendation, false); err != nil {
-				logger.Error("Could not act on swap recommendation : " + err.Error())
-			}
+		if err := cfg.CheckAndExecute(nil, false); err != nil {
+			logger.Errorf("Lightning autoswap: %s", err)
 		}
 		// wait for ticker after executing so that it runs immediately upon startup
 		select {
@@ -408,4 +433,18 @@ func (cfg *LightningConfig) run(stop <-chan bool) {
 			return
 		}
 	}
+}
+
+var errNotInAccepted = errors.New("not in accepted")
+
+func checkAccepted(recommendation *autoswaprpc.LightningRecommendation, accepted []*autoswaprpc.LightningRecommendation) error {
+	if len(accepted) > 0 {
+		for _, check := range accepted {
+			if check.GetSwap() != nil && proto.Equal(recommendation.Channel.GetId(), check.Channel.GetId()) {
+				return checkAcceptedReasons(check.Swap.DismissedReasons, recommendation.Swap.DismissedReasons)
+			}
+		}
+		return errNotInAccepted
+	}
+	return nil
 }

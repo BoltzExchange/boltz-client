@@ -9,13 +9,13 @@ import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/database"
 	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/onchain"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"github.com/BurntSushi/toml"
 	"google.golang.org/protobuf/encoding/protojson"
 	"os"
-
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"slices"
 )
 
 type shared struct {
@@ -349,4 +349,15 @@ func (c *swapper[T]) start() {
 }
 func (c *swapper[T]) GetConfig() T {
 	return c.cfg
+}
+
+func checkAcceptedReasons(accepted, current []string) error {
+	// we don't care if `current` has fewer reasons than `accepted` as long as every reason
+	// in `current` is also in `accepted`
+	for _, reason := range current {
+		if !slices.Contains(accepted, reason) {
+			return fmt.Errorf("swap recommendation does not match: %s not in %v", reason, accepted)
+		}
+	}
+	return nil
 }
