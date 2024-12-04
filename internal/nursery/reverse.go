@@ -30,7 +30,6 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap) er
 	if err := nursery.registerSwaps([]string{reverseSwap.Id}); err != nil {
 		return err
 	}
-	nursery.sendReverseSwapUpdate(reverseSwap)
 	if err := nursery.payReverseSwap(&reverseSwap); err != nil {
 		return err
 	}
@@ -128,16 +127,15 @@ func (nursery *Nursery) handleReverseSwapError(reverseSwap *database.ReverseSwap
 		logger.Error("Could not update Reverse Swap state: " + dbErr.Error())
 	}
 	logger.Errorf("Reverse Swap %s error: %s", reverseSwap.Id, err)
-	nursery.sendReverseSwapUpdate(*reverseSwap)
 }
 
 // TODO: fail swap after "transaction.failed" event
-func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse) {
+func (nursery *Nursery) handleReverseSwapStatus(tx *database.Transaction, reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse) error {
 	parsedStatus := boltz.ParseEvent(event.Status)
 
 	if parsedStatus == reverseSwap.Status {
 		logger.Debugf("Status of Reverse Swap %s is %s already", reverseSwap.Id, parsedStatus)
-		return
+		return nil
 	}
 
 	logger.Infof("Status of Reverse Swap %s changed to: %s", reverseSwap.Id, parsedStatus)
@@ -148,19 +146,17 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 	switch parsedStatus {
 	case boltz.TransactionMempool:
-		if err := nursery.database.SetReverseSwapPaidAt(reverseSwap, time.Now()); err != nil {
-			handleError("Could not set paid at in database: " + err.Error())
-			return
+		if err := tx.SetReverseSwapPaidAt(reverseSwap, time.Now()); err != nil {
+			return fmt.Errorf("set paid at: %w", err)
 		}
 
 		fallthrough
 
 	case boltz.TransactionConfirmed:
-		err := nursery.database.SetReverseSwapLockupTransactionId(reverseSwap, event.Transaction.Id)
+		err := tx.SetReverseSwapLockupTransactionId(reverseSwap, event.Transaction.Id)
 
 		if err != nil {
-			handleError("Could not set lockup transaction id in database: " + err.Error())
-			return
+			return fmt.Errorf("set lockup transaction id: %w", err)
 		}
 
 		if parsedStatus == boltz.TransactionMempool && !reverseSwap.AcceptZeroConf {
@@ -172,14 +168,12 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		output := nursery.getReverseSwapClaimOutput(reverseSwap)
 
 		if _, err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output}); err != nil {
-			logger.Info("Could not claim: " + err.Error())
-			return
+			return fmt.Errorf("create transaction: %w", err)
 		}
 	}
 
-	if err := nursery.database.UpdateReverseSwapStatus(reverseSwap, parsedStatus); err != nil {
-		handleError("Could not update status of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
-		return
+	if err := tx.UpdateReverseSwapStatus(reverseSwap, parsedStatus); err != nil {
+		return fmt.Errorf("set reverse swap status: %w", err)
 	}
 
 	if parsedStatus.IsCompletedStatus() {
@@ -188,9 +182,8 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			if err != nil {
 				handleError("Could not get payment status: " + err.Error())
 			} else if status.State == lightning.PaymentSucceeded {
-				if err := nursery.database.SetReverseSwapRoutingFee(reverseSwap, status.FeeMsat); err != nil {
-					handleError("Could not set reverse swap routing fee in database: " + err.Error())
-					return
+				if err := tx.SetReverseSwapRoutingFee(reverseSwap, status.FeeMsat); err != nil {
+					return fmt.Errorf("set routing fee: %w", err)
 				}
 			} else {
 				logger.Warnf("Reverse Swap %s has state completed but payment did not succeed", reverseSwap.Id)
@@ -202,24 +195,20 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		logger.Infof("Reverse Swap service fee: %dsat; boltz onchain fee: %dsat", serviceFee, boltzOnchainFee)
 
-		if err := nursery.database.SetReverseSwapServiceFee(reverseSwap, serviceFee, boltzOnchainFee); err != nil {
-			handleError("Could not set reverse swap service fee in database: " + err.Error())
-			return
+		if err := tx.SetReverseSwapServiceFee(reverseSwap, serviceFee, boltzOnchainFee); err != nil {
+			return fmt.Errorf("set service fee: %w", err)
 		}
-		if err := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
-			handleError("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
-			return
+		if err := tx.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
+			return fmt.Errorf("update state: %w", err)
 		}
 	} else if parsedStatus.IsFailedStatus() {
 		if reverseSwap.State == boltzrpc.SwapState_PENDING {
-			if err := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
-				handleError("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
-				return
+			if err := tx.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
+				return fmt.Errorf("update state: %w", err)
 			}
 		}
 	}
-
-	nursery.sendReverseSwapUpdate(*reverseSwap)
+	return nil
 }
 
 func (nursery *Nursery) handleReverseSwapDirectPayment(swap *database.ReverseSwap, output *onchain.Output) {

@@ -550,11 +550,11 @@ func (server *routedBoltzServer) GetSwapInfo(ctx context.Context, request *boltz
 		request.Identifier = &boltzrpc.GetSwapInfoRequest_SwapId{SwapId: request.Id}
 	}
 	if swapId := request.GetSwapId(); swapId != "" {
-		swap, reverseSwap, chainSwap, err := server.database.QueryAnySwap(swapId)
+		someSwap, err := server.database.QueryAnySwap(request.Id)
 		if err != nil {
-			return nil, errors.New("could not find Swap with ID " + swapId)
+			return nil, errors.New("could not find Swap with ID " + request.Id)
 		}
-		return server.serializeAnySwap(ctx, swap, reverseSwap, chainSwap)
+		return server.serializeAnySwap(ctx, someSwap)
 	} else if paymentHash := request.GetPaymentHash(); paymentHash != nil {
 		swap, err := server.database.QuerySwapByPaymentHash(paymentHash)
 		if err != nil {
@@ -563,7 +563,7 @@ func (server *routedBoltzServer) GetSwapInfo(ctx context.Context, request *boltz
 		if swap == nil {
 			return nil, status.Errorf(codes.NotFound, "could not find Swap with payment hash")
 		}
-		return server.serializeAnySwap(ctx, swap, nil, nil)
+		return server.serializeAnySwap(ctx, &database.SomeSwap{Normal: swap})
 	}
 	return nil, status.Errorf(codes.InvalidArgument, "no ID or payment hash provided")
 }
@@ -597,7 +597,11 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 	}
 
 	for update := range updates {
-		response, err := server.serializeAnySwap(stream.Context(), update.Swap, update.ReverseSwap, update.ChainSwap)
+		response, err := server.serializeAnySwap(stream.Context(), &database.SomeSwap{
+			Normal:  update.Swap,
+			Chain:   update.ChainSwap,
+			Reverse: update.ReverseSwap,
+		})
 		if err == nil {
 			if err := stream.Send(response); err != nil {
 				stop()
@@ -2177,23 +2181,23 @@ func (server *routedBoltzServer) ListTenants(ctx context.Context, request *boltz
 	return response, nil
 }
 
-func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, swap *database.Swap, reverseSwap *database.ReverseSwap, chainSwap *database.ChainSwap) (*boltzrpc.GetSwapInfoResponse, error) {
+func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, someSwap *database.SomeSwap) (*boltzrpc.GetSwapInfoResponse, error) {
 	if tenantId := macaroons.TenantIdFromContext(ctx); tenantId != nil {
 		err := status.Error(codes.PermissionDenied, "tenant does not have permission to view this swap")
-		if swap != nil && swap.TenantId != *tenantId {
+		if someSwap.Normal != nil && someSwap.Normal.TenantId != *tenantId {
 			return nil, err
 		}
-		if reverseSwap != nil && reverseSwap.TenantId != *tenantId {
+		if someSwap.Reverse != nil && someSwap.Reverse.TenantId != *tenantId {
 			return nil, err
 		}
-		if chainSwap != nil && chainSwap.TenantId != *tenantId {
+		if someSwap.Chain != nil && someSwap.Chain.TenantId != *tenantId {
 			return nil, err
 		}
 	}
 	return &boltzrpc.GetSwapInfoResponse{
-		Swap:        serializeSwap(swap),
-		ReverseSwap: serializeReverseSwap(reverseSwap),
-		ChainSwap:   serializeChainSwap(chainSwap),
+		Swap:        serializeSwap(someSwap.Normal),
+		ReverseSwap: serializeReverseSwap(someSwap.Reverse),
+		ChainSwap:   serializeChainSwap(someSwap.Chain),
 	}, nil
 }
 

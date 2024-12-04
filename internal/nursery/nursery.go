@@ -189,6 +189,42 @@ func (nursery *Nursery) recoverSwaps() error {
 	return nursery.registerSwaps(swapIds)
 }
 
+func (nursery *Nursery) setSomeSwapError(swap *database.SomeSwap, err error) {
+	var dbErr error
+	if swap.Normal != nil {
+		dbErr = nursery.database.UpdateSwapState(swap.Normal, boltzrpc.SwapState_ERROR, err.Error())
+		logger.Errorf("Submarine Swap %s error: %v", swap.Normal.Id, err)
+	}
+	if swap.Reverse != nil {
+		dbErr = nursery.database.UpdateReverseSwapState(swap.Reverse, boltzrpc.SwapState_ERROR, err.Error())
+		logger.Errorf("Reverse Swap %s error: %v", swap.Reverse.Id, err)
+	}
+	if swap.Chain != nil {
+		dbErr = nursery.database.UpdateChainSwapState(swap.Chain, boltzrpc.SwapState_ERROR, err.Error())
+		logger.Errorf("Chain Swap %s error: %v", swap.Chain.Id, err)
+	}
+	if dbErr != nil {
+		logger.Error(dbErr.Error())
+	}
+}
+
+func (nursery *Nursery) sendSomeSwapUpdate(swapId string) {
+	swap, err := nursery.database.QueryAnySwap(swapId)
+	if err != nil {
+		logger.Errorf("Could not query swap %s: %v", swapId, err)
+		return
+	}
+	if swap.Normal != nil {
+		nursery.sendSwapUpdate(*swap.Normal)
+	}
+	if swap.Chain != nil {
+		nursery.sendChainSwapUpdate(*swap.Chain)
+	}
+	if swap.Reverse != nil {
+		nursery.sendReverseSwapUpdate(*swap.Reverse)
+	}
+}
+
 func (nursery *Nursery) startSwapListener() {
 	logger.Infof("Starting swap update listener")
 
@@ -198,7 +234,7 @@ func (nursery *Nursery) startSwapListener() {
 		for status := range nursery.boltzWs.Updates {
 			logger.Debugf("Swap %s status update: %s", status.Id, status.Status)
 
-			swap, reverseSwap, chainSwap, err := nursery.database.QueryAnySwap(status.Id)
+			someSwap, err := nursery.database.QueryAnySwap(status.Id)
 			if err != nil {
 				logger.Errorf("Could not query swap %s: %v", status.Id, err)
 				continue
@@ -207,13 +243,20 @@ func (nursery *Nursery) startSwapListener() {
 				logger.Warnf("Boltz could not find Swap %s: %s ", status.Id, status.Error)
 				continue
 			}
-			if swap != nil {
-				nursery.handleSwapStatus(swap, status.SwapStatusResponse)
-			} else if reverseSwap != nil {
-				nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
-			} else if chainSwap != nil {
-				nursery.handleChainSwapStatus(chainSwap, status.SwapStatusResponse)
+			err = nursery.database.RunTx(func(tx *database.Transaction) error {
+				if someSwap.Normal != nil {
+					return nursery.handleSwapStatus(tx, someSwap.Normal, status.SwapStatusResponse)
+				} else if someSwap.Reverse != nil {
+					return nursery.handleReverseSwapStatus(tx, someSwap.Reverse, status.SwapStatusResponse)
+				} else if someSwap.Chain != nil {
+					return nursery.handleChainSwapStatus(tx, someSwap.Chain, status.SwapStatusResponse)
+				}
+				return nil
+			})
+			if err != nil {
+				nursery.setSomeSwapError(someSwap, err)
 			}
+			nursery.sendSomeSwapUpdate(status.Id)
 		}
 		nursery.waitGroup.Done()
 	}()
