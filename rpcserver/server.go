@@ -419,7 +419,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 	}
 	if network == boltz.MainNet {
 		cfg.MempoolApi = "https://mempool.space/api"
-		cfg.MempoolLiquidApi = "https://liquid.network/api"
+		cfg.MempoolLiquidApi = "https://liquid.bullbitcoin.com/api"
 	} else if network == boltz.TestNet {
 		cfg.MempoolApi = "https://mempool.space/testnet/api"
 		cfg.MempoolLiquidApi = "https://liquid.network/liquidtestnet/api"
