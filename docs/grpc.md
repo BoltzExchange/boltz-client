@@ -1748,6 +1748,7 @@ Reloads the configuration from disk.
 | ----- | ---- | ----- | ----------- |
 | `swap` | [`ChainSwap`](#chainswap) | optional | Populated when a swap is recommended based on the current balance of the configured `from_wallet` |
 | `wallet_balance` | [`boltzrpc.Balance`](#boltzrpc.balance) |  |  |
+| `max_balance` | [`uint64`](#uint64) |  | Currently configured max_balance |
 
 
 

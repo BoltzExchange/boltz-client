@@ -79,9 +79,11 @@ message ChainSwap {
 }
 
 message ChainRecommendation {
-  // Populated when a swap is recommended based on the current balance of the configured `from_wallet`
+  // Populated when a swap is recommended based on the configured `wallet_balance`
+  // of the configured `from_wallet` exceeds the currently configured `max_balance`
   optional ChainSwap swap = 1;
   boltzrpc.Balance wallet_balance = 2;
+  uint64 max_balance = 3;
 }
 
 message Budget {

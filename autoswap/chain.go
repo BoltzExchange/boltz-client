@@ -182,6 +182,7 @@ func (cfg *ChainConfig) getRecommendation() (*autoswaprpc.ChainRecommendation, e
 	return &autoswaprpc.ChainRecommendation{
 		Swap:          serializeAutoChainSwap(recommendation.Swap),
 		WalletBalance: serializers.SerializeWalletBalance(recommendation.FromBalance),
+		MaxBalance:    cfg.MaxBalance,
 	}, nil
 }
 

@@ -212,6 +212,7 @@ func TestChainSwapper(t *testing.T) {
 
 				result, err := chainConfig.GetRecommendation()
 				require.NoError(t, err)
+				require.NotZero(t, result.MaxBalance)
 				swap := result.Swap
 				if tc.expectedAmount == 0 {
 					require.Nil(t, swap)
