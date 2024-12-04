@@ -1,4 +1,10 @@
 
+<a name="v2.2.3"></a>
+## [v2.2.3] - 2024-12-04
+### Fix
+- change default mempool liquid api to bull bitcoin ([#349](https://github.com/BoltzExchange/boltz-client/issues/349))
+
+
 <a name="v2.2.2"></a>
 ## [v2.2.2] - 2024-11-27
 ### Fix
@@ -476,6 +482,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.2.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.2...v2.2.3
 [v2.2.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.1...v2.2.2
 [v2.2.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.0...v2.2.1
 [v2.2.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.11...v2.2.0
