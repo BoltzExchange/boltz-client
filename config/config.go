@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/nursery"
 	"os"
 	"path"
 	"runtime"
@@ -90,6 +91,8 @@ type Config struct {
 	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
 	AutoConsolidateThreshold *uint64 `long:"auto-consolidate-threshold" description:"Number of UTXOs that trigger auto consolidation. Set to 0 to disable"`
 
+	Claimer *nursery.Claimer `group:"Claimer Options"`
+
 	Help *helpOptions `group:"Help Options"`
 }
 
@@ -150,6 +153,8 @@ func LoadConfig(dataDir string) (*Config, error) {
 		Database: &database.Database{
 			Path: "",
 		},
+
+		Claimer: &nursery.Claimer{},
 
 		ReferralId: "boltz-client",
 	}

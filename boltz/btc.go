@@ -108,7 +108,7 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outValue
 
 	for _, output := range outputs {
 		// Set the highest timeout block height as locktime
-		if !output.Cooperative {
+		if !output.Cooperative && output.IsRefund() {
 			if output.TimeoutBlockHeight > transaction.LockTime {
 				transaction.LockTime = output.TimeoutBlockHeight
 			}
