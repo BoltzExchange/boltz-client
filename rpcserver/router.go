@@ -786,7 +786,8 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, err
 		}
-		if err := server.checkBalance(wallet, request.Amount, request.AcceptedPair.Fees, feeRate); err != nil {
+		sendAmount := request.Amount + utils.CalculateFeeEstimate(request.AcceptedPair.Fees, request.Amount)
+		if err := server.checkBalance(wallet, sendAmount, feeRate); err != nil {
 			return nil, err
 		}
 		logger.Infof("Using wallet %+v to pay swap", wallet.GetWalletInfo())
@@ -1245,7 +1246,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		if err != nil {
 			return nil, err
 		}
-		if err := server.checkBalance(fromWallet, amount, request.AcceptedPair.Fees, feeRate); err != nil {
+		if err := server.checkBalance(fromWallet, amount, feeRate); err != nil {
 			return nil, err
 		}
 		logger.Infof("Using wallet %+v to pay chain swap", fromWallet.GetWalletInfo())
@@ -2252,8 +2253,7 @@ func (server *routedBoltzServer) estimateFee(requested float64, currency boltz.C
 	return requested, nil
 }
 
-func (server *routedBoltzServer) checkBalance(check onchain.Wallet, expectedAmount uint64, swapFees *boltzrpc.SwapFees, feeRate float64) error {
-	expectedAmount += utils.CalculateFeeEstimate(swapFees, expectedAmount)
+func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount uint64, feeRate float64) error {
 	balance, err := check.GetBalance()
 	if err != nil {
 		return err
@@ -2262,11 +2262,11 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, expectedAmou
 	if ownWallet, ok := check.(*wallet.Wallet); ok {
 		dummyAddress := server.network.DummyLockupAddress[info.Currency]
 		// this call implicitly checks the balance aswell
-		_, _, err := ownWallet.GetSendFee(dummyAddress, expectedAmount, feeRate, false)
+		_, _, err := ownWallet.GetSendFee(dummyAddress, sendAmount, feeRate, false)
 		return err
 	}
-	if balance.Confirmed < expectedAmount {
-		return info.InsufficientBalanceError(expectedAmount)
+	if balance.Confirmed < sendAmount {
+		return info.InsufficientBalanceError(sendAmount)
 	}
 	return nil
 }
