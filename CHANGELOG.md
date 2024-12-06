@@ -1,4 +1,10 @@
 
+<a name="v2.3.2"></a>
+## [v2.3.2] - 2024-12-06
+### Fix
+- check correct balance amount ([#351](https://github.com/BoltzExchange/boltz-client/issues/351))
+
+
 <a name="v2.3.1"></a>
 ## [v2.3.1] - 2024-12-05
 ### Feat
@@ -505,6 +511,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.3.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.1...v2.3.2
 [v2.3.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.3...v2.3.1
 [v2.2.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.2...v2.2.3
 [v2.2.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.1...v2.2.2
