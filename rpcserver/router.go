@@ -770,7 +770,8 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		request.GetSatPerVbyte(),
 		pair.From,
 		request.Amount,
-		!request.GetZeroConf(),
+		// swapResponse will be populated if we found a a magic routing hint, so we can't use lowball
+		swapResponse == nil && !request.GetZeroConf(),
 		request.AcceptedPair.Limits.MaximalZeroConfAmount,
 	)
 	if err != nil {
