@@ -1,6 +1,9 @@
 
 <a name="v2.3.3"></a>
 ## [v2.3.3] - 2024-12-09
+### Fix
+- dont allow lowball fee when paying invoice with magic routing hint
+
 
 <a name="v2.3.2"></a>
 ## [v2.3.2] - 2024-12-06
