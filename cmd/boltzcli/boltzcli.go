@@ -63,6 +63,7 @@ func main() {
 		},
 		&cli.StringFlag{
 			Name:    "datadir",
+			Aliases: []string{"d"},
 			Value:   defaultDataDir,
 			Usage:   "Data directory of boltz-client",
 			EnvVars: []string{"BOLTZ_DATADIR"},

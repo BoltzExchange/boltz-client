@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/build"
 	"github.com/BoltzExchange/boltz-client/config"
 	"github.com/BoltzExchange/boltz-client/logger"
 	"github.com/BoltzExchange/boltz-client/rpcserver"
 	"github.com/BoltzExchange/boltz-client/utils"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 )
@@ -29,9 +31,9 @@ func main() {
 	}
 
 	logger.Init(cfg.Log)
+	logger.Infof("Starting version %s compiled with %s", build.GetVersion(), runtime.Version())
 
 	formattedCfg, err := utils.FormatJson(cfg)
-
 	if err != nil {
 		logger.Fatal("Could not format config: " + err.Error())
 	}

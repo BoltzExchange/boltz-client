@@ -690,8 +690,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 	var preimage, preimageHash []byte
 	if invoice := request.GetInvoice(); invoice != "" {
-		_, lnurlParams, err := lnurl.HandleLNURL(invoice)
-		if err == nil {
+		if _, lnurlParams, err := lnurl.HandleLNURL(invoice); err == nil {
 			if kind := lnurlParams.LNURLKind(); kind != "lnurl-pay" {
 				return nil, status.Errorf(codes.InvalidArgument, "lnurl is not pay, but: %s", kind)
 			}
@@ -770,7 +769,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		request.GetSatPerVbyte(),
 		pair.From,
 		request.Amount,
-		// swapResponse will be populated if we found a a magic routing hint, so we can't use lowball
+		// swapResponse will be populated if we found a magic routing hint, so we can't use lowball
 		swapResponse == nil && !request.GetZeroConf(),
 		request.AcceptedPair.Limits.MaximalZeroConfAmount,
 	)
@@ -795,7 +794,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 	}
 
 	if swapResponse == nil {
-
 		if createSwap.Invoice != "" {
 			existing, err := server.database.QuerySwapByInvoice(createSwap.Invoice)
 			if err != nil {
@@ -928,6 +926,8 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, err
 		}
+
+		logger.Infof("Sent %d to address %s for MRH in: %s", swapResponse.ExpectedAmount, swapResponse.Address, swapResponse.TxId)
 	}
 
 	return swapResponse, nil

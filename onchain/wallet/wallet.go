@@ -686,7 +686,7 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 	}
 	wallet.spentOutputsLock.Lock()
 	defer wallet.spentOutputsLock.Unlock()
-	for spent, _ := range wallet.spentOutputs {
+	for spent := range wallet.spentOutputs {
 		found := false
 		for key, outputs := range result.Unspent {
 			for i, output := range outputs {
@@ -788,7 +788,6 @@ func (wallet *Wallet) GetSendFee(address string, amount uint64, satPerVbyte floa
 }
 
 func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (tx string, err error) {
-
 	result, err := wallet.createTransaction(address, amount, satPerVbyte, sendAll)
 	if err != nil {
 		return "", err
