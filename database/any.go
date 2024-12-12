@@ -115,7 +115,7 @@ func (database *Database) QueryAllSwaps(args SwapQuery) ([]*AnySwap, error) {
 
 func (database *Database) QuerySwapsByTransactions(args SwapQuery, transactionIds []string) ([]*AnySwap, error) {
 	var placeholders []string
-	for i, _ := range transactionIds {
+	for i := range transactionIds {
 		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
 	}
 	placeholder := strings.Join(placeholders, ", ")
