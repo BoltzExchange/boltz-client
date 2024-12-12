@@ -1588,8 +1588,11 @@ var walletCommands = &cli.Command{
 				&cli.Float64Flag{
 					Name: "sat-per-vbyte",
 				},
+				&cli.BoolFlag{
+					Name: "sweep",
+				},
 			},
-			Action: requireNArgs(3, walletSend),
+			Action: requireNArgs(2, walletSend),
 		},
 		{
 			Name:      "receive",
@@ -1914,12 +1917,19 @@ func walletSend(ctx *cli.Context) error {
 		return err
 	}
 	address := ctx.Args().Get(1)
-	amount := ctx.Args().Get(2)
 
 	request := &boltzrpc.WalletSendRequest{
 		Id:      *walletId,
 		Address: address,
-		Amount:  parseUint64(amount, "amount"),
+	}
+
+	if ctx.NArg() >= 3 {
+		request.Amount = parseUint64(ctx.Args().Get(2), "amount")
+	} else if ctx.Bool("sweep") {
+		sweep := true
+		request.SendAll = &sweep
+	} else {
+		return errors.New("amount or sweep flag is required")
 	}
 
 	if satPerVbyte := ctx.Float64("sat-per-vbyte"); satPerVbyte != 0 {
