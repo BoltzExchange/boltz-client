@@ -374,6 +374,10 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		// use boltz for broadcasting if no custom electrum or mempool is configured
 		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
 	}
+	if electrumConfig.Btc.Url == "" && cfg.MempoolApi == "" {
+		// use boltz for broadcasting if no custom electrum or mempool is configured
+		chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
+	}
 
 	if network == boltz.Regtest && electrumConfig.Btc.Url == "" && electrumConfig.Liquid.Url == "" {
 		electrumConfig = onchain.RegtestElectrumConfig
@@ -429,7 +433,10 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		logger.Info("mempool.space API: " + cfg.MempoolApi)
 		client := mempool.InitClient(cfg.MempoolApi)
 		chain.Btc.Blocks = client
-		chain.Btc.Tx = client
+		// dont override boltz tx provider
+		if chain.Btc.Tx == nil {
+			chain.Btc.Tx = client
+		}
 	}
 
 	if cfg.MempoolLiquidApi != "" {
