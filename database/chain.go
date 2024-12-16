@@ -325,12 +325,11 @@ FROM chainSwaps swaps
 WHERE data.lockupTransactionId != ''
   AND data.transactionId == ''
   AND state != ? 
-  AND data.timeoutBlockheight > ?
 `
 
-func (database *Database) QueryClaimableChainSwaps(tenantId *Id, currency boltz.Currency, currentBlockHeight uint32) ([]*ChainSwap, error) {
+func (database *Database) QueryClaimableChainSwaps(tenantId *Id, currency boltz.Currency) ([]*ChainSwap, error) {
 	query := claimableChainSwapsQuery
-	values := []any{currency, boltzrpc.SwapState_REFUNDED, currentBlockHeight}
+	values := []any{currency, boltzrpc.SwapState_REFUNDED}
 	if tenantId != nil {
 		query += " AND tenantId = ?"
 		values = append(values, tenantId)

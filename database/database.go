@@ -480,12 +480,12 @@ func (database *Database) QueryAllRefundableSwaps(tenantId *Id, currency boltz.C
 	return swaps, chainSwaps, nil
 }
 
-func (database *Database) QueryAllClaimableSwaps(tenantId *Id, currency boltz.Currency, currentHeight uint32) ([]*ReverseSwap, []*ChainSwap, error) {
-	reverseSwaps, err := database.QueryClaimableReverseSwaps(tenantId, currency, currentHeight)
+func (database *Database) QueryAllClaimableSwaps(tenantId *Id, currency boltz.Currency) ([]*ReverseSwap, []*ChainSwap, error) {
+	reverseSwaps, err := database.QueryClaimableReverseSwaps(tenantId, currency)
 	if err != nil {
 		return nil, nil, err
 	}
-	chainSwaps, err := database.QueryClaimableChainSwaps(tenantId, currency, currentHeight)
+	chainSwaps, err := database.QueryClaimableChainSwaps(tenantId, currency)
 	if err != nil {
 		return nil, nil, err
 	}

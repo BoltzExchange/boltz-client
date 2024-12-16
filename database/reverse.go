@@ -270,12 +270,11 @@ SELECT * FROM reverseSwaps
 WHERE fromCurrency = ?
   AND reverseSwaps.lockupTransactionId != ''
   AND reverseSwaps.claimTransactionId == ''
-  AND reverseSwaps.timeoutBlockheight > ?
 `
 
-func (database *Database) QueryClaimableReverseSwaps(tenantId *Id, currency boltz.Currency, currentBlockHeight uint32) ([]*ReverseSwap, error) {
+func (database *Database) QueryClaimableReverseSwaps(tenantId *Id, currency boltz.Currency) ([]*ReverseSwap, error) {
 	query := claimableSwapsQuery
-	values := []any{currency, currentBlockHeight}
+	values := []any{currency}
 	if tenantId != nil {
 		query += " AND tenantId = ?"
 		values = append(values, *tenantId)
