@@ -137,7 +137,7 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outVa
 			TxIndex:  output.Vout,
 			Sequence: 0xfffffffd,
 		}
-		if !output.Cooperative {
+		if !output.Cooperative && output.IsRefund() {
 			input.HeightLock = output.TimeoutBlockHeight
 		}
 
