@@ -91,7 +91,7 @@ build: download-gdk build-bolt12
 static: download-gdk build-bolt12
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
-	$(GOBUILD) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
+	$(GOBUILD) -tags static -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
 
 daemon:

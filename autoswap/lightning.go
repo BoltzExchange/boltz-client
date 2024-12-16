@@ -337,7 +337,7 @@ func (cfg *LightningConfig) getSwapRecommendations(includeAll bool) ([]*autoswap
 	for _, recommendation := range validated {
 		result = append(result, &autoswaprpc.LightningRecommendation{
 			Swap:       serializeLightningSwap(recommendation.Swap),
-			Channel:    serializers.SerializeLightningChannel(recommendation.Channel),
+			Channel:    serializeLightningChannel(recommendation.Channel),
 			Thresholds: recommendation.Thresholds,
 		})
 	}
