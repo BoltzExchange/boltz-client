@@ -101,6 +101,22 @@ func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmo
 	return txMock
 }
 
+// failedBroadcastTxProvider returns a mock that fails to broadcast the transaction once
+func failedBroadcastTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
+	txMock := onchainmock.NewMockTxProvider(t)
+	txMock.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(original.IsTransactionConfirmed)
+	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
+	failed := false
+	txMock.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(func(rawTx string) (string, error) {
+		if failed {
+			return original.BroadcastTransaction(rawTx)
+		}
+		failed = true
+		return "", fmt.Errorf("failed to broadcast transaction")
+	})
+	return txMock
+}
+
 func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
 	boltzApi := getBoltz(t, cfg)
 	chain, err := initOnchain(cfg, boltzApi, boltz.Regtest)
@@ -865,6 +881,21 @@ func TestReverseSwap(t *testing.T) {
 				require.Contains(t, info.ReverseSwap.Error, tc.error)
 			})
 		}
+
+		t.Run("Broadcast", func(t *testing.T) {
+			chain.Btc.Tx = failedBroadcastTxProvider(t, originalTx)
+			swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+				Amount:         100000,
+				AcceptZeroConf: false,
+			})
+			require.NoError(t, err)
+
+			_, statusStream := swapStream(t, client, swap.Id)
+			statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+			test.MineBlock()
+			statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionMempool)
+			statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
+		})
 	})
 
 	t.Run("Standalone", func(t *testing.T) {
@@ -2393,23 +2424,23 @@ func TestChainSwap(t *testing.T) {
 			{"Unconfirmed", unconfirmedTxProvider, "not confirmed"},
 		}
 
+		externalPay := true
+		toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
+		request := &boltzrpc.CreateChainSwapRequest{
+			Amount:      &swapAmount,
+			ExternalPay: &externalPay,
+			ToWalletId:  &toWalletId,
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_LBTC,
+				To:   boltzrpc.Currency_BTC,
+			},
+		}
+
 		for _, tc := range tests {
 			t.Run(tc.desc, func(t *testing.T) {
 				chain.Btc.Tx = tc.txMocker(t, originalTx)
 
-				externalPay := true
-				toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
-				swap, err := client.CreateChainSwap(
-					&boltzrpc.CreateChainSwapRequest{
-						Amount:      &swapAmount,
-						ExternalPay: &externalPay,
-						ToWalletId:  &toWalletId,
-						Pair: &boltzrpc.Pair{
-							From: boltzrpc.Currency_LBTC,
-							To:   boltzrpc.Currency_BTC,
-						},
-					},
-				)
+				swap, err := client.CreateChainSwap(request)
 				require.NoError(t, err)
 
 				test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount)
@@ -2422,6 +2453,22 @@ func TestChainSwap(t *testing.T) {
 				require.Contains(t, info.ChainSwap.Error, tc.error)
 			})
 		}
+
+		t.Run("Broadcast", func(t *testing.T) {
+			chain.Btc.Tx = failedBroadcastTxProvider(t, originalTx)
+
+			swap, err := client.CreateChainSwap(request)
+			require.NoError(t, err)
+
+			test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+			test.MineBlock()
+
+			_, statusStream := swapStream(t, client, swap.Id)
+			statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
+			test.MineBlock()
+			statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerMempoool)
+			statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionClaimed)
+		})
 	})
 
 	for _, tc := range tests {

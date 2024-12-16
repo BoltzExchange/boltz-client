@@ -22,7 +22,7 @@ import (
 func (nursery *Nursery) sendReverseSwapUpdate(reverseSwap database.ReverseSwap) {
 	nursery.sendUpdate(reverseSwap.Id, SwapUpdate{
 		ReverseSwap: &reverseSwap,
-		IsFinal:     reverseSwap.State != boltzrpc.SwapState_PENDING,
+		IsFinal:     reverseSwap.State == boltzrpc.SwapState_SUCCESSFUL || reverseSwap.State == boltzrpc.SwapState_SERVER_ERROR,
 	})
 }
 
@@ -167,13 +167,18 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			break
 		}
 
-		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
+		fallthrough
 
-		output := nursery.getReverseSwapClaimOutput(reverseSwap)
+	case boltz.InvoiceSettled:
+		if reverseSwap.ClaimTransactionId == "" {
+			logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
 
-		if _, err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output}); err != nil {
-			logger.Info("Could not claim: " + err.Error())
-			return
+			output := nursery.getReverseSwapClaimOutput(reverseSwap)
+
+			if _, err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output}); err != nil {
+				logger.Info("Could not claim: " + err.Error())
+				return
+			}
 		}
 	}
 

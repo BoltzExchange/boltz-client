@@ -231,7 +231,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			}
 		}
 
-	case boltz.TransactionServerConfirmed, boltz.TransactionServerMempoool:
+	case boltz.TransactionServerConfirmed, boltz.TransactionServerMempoool, boltz.TransactionClaimed:
 		if (parsedStatus == boltz.TransactionServerMempoool && !swap.AcceptZeroConf) || swap.ToData.Transactionid != "" {
 			break
 		}
@@ -241,7 +241,6 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 			logger.Infof("Could not claim chain swap output: %s", err)
 			return
 		}
-	default:
 	}
 
 	logger.Debugf("Updating status of Chain Swap %s to %s", swap.Id, parsedStatus)
