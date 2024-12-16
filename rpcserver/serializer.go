@@ -2,6 +2,7 @@ package rpcserver
 
 import (
 	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
+	"github.com/BoltzExchange/boltz-client/lightning"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/boltz"
@@ -44,7 +45,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 	serialized := &boltzrpc.SwapInfo{
 		Id:                  serializedSwap.Id,
 		Pair:                serializePair(swap.Pair),
-		ChanIds:             serializers.SerializeChanIds(swap.ChanIds),
+		ChanIds:             lightning.SerializeChanIds(swap.ChanIds),
 		State:               swap.State,
 		Error:               serializedSwap.Error,
 		Status:              serializedSwap.Status,
@@ -104,7 +105,7 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 	return &boltzrpc.ReverseSwapInfo{
 		Id:                  serializedReverseSwap.Id,
 		Pair:                serializePair(reverseSwap.Pair),
-		ChanIds:             serializers.SerializeChanIds(reverseSwap.ChanIds),
+		ChanIds:             lightning.SerializeChanIds(reverseSwap.ChanIds),
 		State:               reverseSwap.State,
 		Error:               serializedReverseSwap.Error,
 		Status:              serializedReverseSwap.Status,

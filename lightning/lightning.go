@@ -3,6 +3,7 @@ package lightning
 import (
 	"context"
 	"errors"
+	"github.com/BoltzExchange/boltz-client/boltzrpc"
 	"github.com/BoltzExchange/boltz-client/onchain"
 )
 
@@ -97,4 +98,21 @@ type LightningNode interface {
 	ConnectPeer(uri string) error
 
 	SetupWallet(info onchain.WalletInfo)
+}
+
+func SerializeChanId(chanId ChanId) *boltzrpc.ChannelId {
+	if chanId != 0 {
+		return &boltzrpc.ChannelId{
+			Cln: chanId.ToCln(),
+			Lnd: chanId.ToLnd(),
+		}
+	}
+	return nil
+}
+
+func SerializeChanIds(chanIds []ChanId) (result []*boltzrpc.ChannelId) {
+	for _, chanId := range chanIds {
+		result = append(result, SerializeChanId(chanId))
+	}
+	return result
 }
