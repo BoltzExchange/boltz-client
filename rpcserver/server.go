@@ -369,6 +369,9 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 
 	chain.Init()
 
+	// TODO: use multiple liquid providers once cheapct is available
+	var btcProviders []onchain.TxProvider
+
 	electrumConfig := cfg.Electrum()
 	if electrumConfig.Liquid.Url == "" && cfg.MempoolLiquidApi == "" {
 		// use boltz for broadcasting if no custom electrum or mempool is configured
@@ -403,7 +406,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
 		chain.Btc.Blocks = client
-		chain.Btc.Tx = client
+		btcProviders = append(btcProviders, client)
 	}
 	if electrumConfig.Liquid.Url != "" {
 		logger.Info("Using configured Electrum Liquid RPC: " + electrumConfig.Liquid.Url)
@@ -429,7 +432,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		logger.Info("mempool.space API: " + cfg.MempoolApi)
 		client := mempool.InitClient(cfg.MempoolApi)
 		chain.Btc.Blocks = client
-		chain.Btc.Tx = client
+		btcProviders = append(btcProviders, client)
 	}
 
 	if cfg.MempoolLiquidApi != "" {
@@ -442,10 +445,8 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		}
 	}
 
-	// always use boltz api in regtest because electrum can be a bit slow
-	if network == boltz.Regtest {
-		chain.Btc.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
-		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	chain.Btc.Tx = onchain.MultiTxProvider{
+		Providers: append(btcProviders, onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)),
 	}
 
 	return chain, nil
