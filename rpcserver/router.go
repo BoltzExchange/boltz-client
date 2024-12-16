@@ -168,24 +168,22 @@ func (server *routedBoltzServer) queryRefundableSwaps(ctx context.Context, heigh
 	return
 }
 
-func (server *routedBoltzServer) queryClaimableSwaps(ctx context.Context, heights *boltzrpc.BlockHeights) (
+func (server *routedBoltzServer) queryClaimableSwaps(ctx context.Context) (
 	reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap, err error,
 ) {
 	tenantId := macaroons.TenantIdFromContext(ctx)
-	reverseSwaps, chainSwaps, err = server.database.QueryAllClaimableSwaps(tenantId, boltz.CurrencyBtc, heights.Btc)
+	reverseSwaps, chainSwaps, err = server.database.QueryAllClaimableSwaps(tenantId, boltz.CurrencyBtc)
 	if err != nil {
 		return
 	}
 
-	if heights.Liquid != nil {
-		liquidReverseSwaps, liquidChainSwaps, liquidErr := server.database.QueryAllClaimableSwaps(tenantId, boltz.CurrencyLiquid, *heights.Liquid)
-		if liquidErr != nil {
-			err = liquidErr
-			return
-		}
-		reverseSwaps = append(reverseSwaps, liquidReverseSwaps...)
-		chainSwaps = append(chainSwaps, liquidChainSwaps...)
+	liquidReverseSwaps, liquidChainSwaps, liquidErr := server.database.QueryAllClaimableSwaps(tenantId, boltz.CurrencyLiquid)
+	if liquidErr != nil {
+		err = liquidErr
+		return
 	}
+	reverseSwaps = append(reverseSwaps, liquidReverseSwaps...)
+	chainSwaps = append(chainSwaps, liquidChainSwaps...)
 
 	return
 }
@@ -226,7 +224,7 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		return nil, err
 	}
 
-	claimableReverseSwaps, claimableChainSwaps, err := server.queryClaimableSwaps(ctx, blockHeights)
+	claimableReverseSwaps, claimableChainSwaps, err := server.queryClaimableSwaps(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -482,12 +480,7 @@ func (server *routedBoltzServer) ClaimSwaps(ctx context.Context, request *boltzr
 	var chainSwaps []*database.ChainSwap
 	var currency boltz.Currency
 
-	heights, err := server.queryHeights()
-	if err != nil {
-		return nil, err
-	}
-
-	claimableReverseSwaps, claimableChainSwaps, err := server.queryClaimableSwaps(ctx, heights)
+	claimableReverseSwaps, claimableChainSwaps, err := server.queryClaimableSwaps(ctx)
 	if err != nil {
 		return nil, err
 	}
