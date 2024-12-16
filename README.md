@@ -1,6 +1,6 @@
 # Boltz Client
 
-Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or [LND](https://github.com/lightningnetwork/lnd/) nodes and allows for fully unattended channel rebalancing using [Boltz API](https://docs.boltz.exchange/v/api).
+Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or [LND](https://github.com/lightningnetwork/lnd/) nodes and allows for fully unattended channel rebalancing or accepting Lightning payments without running a node, using [Boltz API](https://docs.boltz.exchange/v/api).
 
 ## Documentation
 
