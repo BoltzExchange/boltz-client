@@ -1,4 +1,14 @@
 
+<a name="v2.3.4"></a>
+## [v2.3.4] - 2024-12-17
+### Feat
+- multi tx provider
+
+### Fix
+- remove timeout block height from claimable swaps query
+- avoid linking lightning library in cli binary ([#358](https://github.com/BoltzExchange/boltz-client/issues/358))
+
+
 <a name="v2.3.3"></a>
 ## [v2.3.3] - 2024-12-09
 ### Fix
@@ -539,6 +549,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.3.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.3...v2.3.4
 [v2.3.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.2...v2.3.3
 [v2.3.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.1...v2.3.2
 [v2.3.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.3...v2.3.1
