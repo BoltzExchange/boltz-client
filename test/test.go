@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/v2/database"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/onchain/wallet"
 	"github.com/stretchr/testify/require"
 
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 )
 
 type Cli func(string) string

@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/vulpemventures/go-elements/confidential"
 )

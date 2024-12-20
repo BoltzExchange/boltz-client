@@ -1,8 +1,8 @@
 package autoswap
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 )
 
 type Balance struct {

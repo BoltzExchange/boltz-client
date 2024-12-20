@@ -3,7 +3,7 @@ package client
 import (
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/autoswaprpc"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"

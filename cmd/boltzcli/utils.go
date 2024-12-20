@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 	"os"
 	"regexp"
 	"strconv"

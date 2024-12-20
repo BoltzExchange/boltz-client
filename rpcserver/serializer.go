@@ -1,16 +1,16 @@
 package rpcserver
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
-	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/serializers"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/onchain/wallet"
 
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/database"
 )
 
 func serializeOptionalString(value string) *string {

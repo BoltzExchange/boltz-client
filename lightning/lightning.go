@@ -3,8 +3,8 @@ package lightning
 import (
 	"context"
 	"errors"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 )
 
 type PaymentState string

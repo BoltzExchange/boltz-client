@@ -2,7 +2,7 @@ package autoswap
 
 import (
 	"errors"
-	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
 	"slices"
 
 	"github.com/mennanov/fmutils"

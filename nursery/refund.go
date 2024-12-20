@@ -2,11 +2,11 @@ package nursery
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/database"
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/database"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 )
 
 func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
