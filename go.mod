@@ -1,4 +1,4 @@
-module github.com/BoltzExchange/boltz-client
+module github.com/BoltzExchange/boltz-client/v2
 
 go 1.23.0
 

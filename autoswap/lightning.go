@@ -3,19 +3,19 @@ package autoswap
 import (
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
-	"github.com/BoltzExchange/boltz-client/database"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/serializers"
+	"github.com/BoltzExchange/boltz-client/v2/database"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 	"google.golang.org/protobuf/proto"
 	"slices"
 	"sync"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 )
 
 type LightningSwapper = swapper[*LightningConfig]

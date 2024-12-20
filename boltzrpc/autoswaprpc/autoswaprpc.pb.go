@@ -7,7 +7,7 @@
 package autoswaprpc
 
 import (
-	boltzrpc "github.com/BoltzExchange/boltz-client/boltzrpc"
+	boltzrpc "github.com/BoltzExchange/boltz-client/v2/boltzrpc"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

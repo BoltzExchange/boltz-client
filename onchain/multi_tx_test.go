@@ -1,8 +1,8 @@
 package onchain_test
 
 import (
-	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	onchainmock "github.com/BoltzExchange/boltz-client/v2/mocks/github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

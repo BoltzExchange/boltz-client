@@ -3,7 +3,7 @@ package macaroons
 import (
 	"context"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/v2/database"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"

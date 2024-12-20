@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 

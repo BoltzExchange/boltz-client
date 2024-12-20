@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
 	"golang.org/x/exp/constraints"
 
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 	"github.com/btcsuite/btcd/btcec/v2"
 	_ "github.com/mattn/go-sqlite3"
 )

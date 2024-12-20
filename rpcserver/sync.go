@@ -1,8 +1,8 @@
 package rpcserver
 
 import (
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 	"strconv"
 	"strings"
 	"time"

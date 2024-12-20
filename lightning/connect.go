@@ -6,8 +6,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 )
 
 func searchUri(network string, uris []string) string {

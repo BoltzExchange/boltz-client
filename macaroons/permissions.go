@@ -1,7 +1,7 @@
 package macaroons
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 

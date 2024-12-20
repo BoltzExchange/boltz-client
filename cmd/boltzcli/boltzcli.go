@@ -7,9 +7,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/BoltzExchange/boltz-client/boltzrpc/client"
-	"github.com/BoltzExchange/boltz-client/build"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/client"
+	"github.com/BoltzExchange/boltz-client/v2/build"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/status"
 )

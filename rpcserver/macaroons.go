@@ -3,10 +3,10 @@ package rpcserver
 import (
 	"os"
 
-	"github.com/BoltzExchange/boltz-client/database"
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/macaroons"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/database"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	"github.com/BoltzExchange/boltz-client/v2/macaroons"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
