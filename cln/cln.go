@@ -12,11 +12,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 
-	"github.com/BoltzExchange/boltz-client/cln/protos"
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/cln/protos"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

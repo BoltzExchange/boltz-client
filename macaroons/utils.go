@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/v2/database"
 	"io"
 )
 

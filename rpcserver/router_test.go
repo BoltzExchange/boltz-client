@@ -1,8 +1,8 @@
 package rpcserver
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"

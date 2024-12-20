@@ -3,7 +3,7 @@
 package onchain
 
 import (
-	onchain "github.com/BoltzExchange/boltz-client/onchain"
+	onchain "github.com/BoltzExchange/boltz-client/v2/onchain"
 	mock "github.com/stretchr/testify/mock"
 )
 

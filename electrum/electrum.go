@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 	"github.com/BoltzExchange/go-electrum/electrum"
 )
 

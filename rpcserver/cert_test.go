@@ -1,7 +1,7 @@
 package rpcserver
 
 import (
-	"github.com/BoltzExchange/boltz-client/test"
+	"github.com/BoltzExchange/boltz-client/v2/test"
 	"os"
 	"testing"
 

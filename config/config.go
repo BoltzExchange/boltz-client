@@ -7,19 +7,19 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
 
-	"github.com/BoltzExchange/boltz-client/build"
-	"github.com/BoltzExchange/boltz-client/cln"
-	"github.com/BoltzExchange/boltz-client/database"
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/lnd"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/build"
+	"github.com/BoltzExchange/boltz-client/v2/cln"
+	"github.com/BoltzExchange/boltz-client/v2/database"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/lnd"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 )
 
 type helpOptions struct {

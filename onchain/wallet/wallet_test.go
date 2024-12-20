@@ -3,12 +3,12 @@
 package wallet_test
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/logger"
-	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/onchain"
-	onchainWallet "github.com/BoltzExchange/boltz-client/onchain/wallet"
-	"github.com/BoltzExchange/boltz-client/test"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	onchainmock "github.com/BoltzExchange/boltz-client/v2/mocks/github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
+	onchainWallet "github.com/BoltzExchange/boltz-client/v2/onchain/wallet"
+	"github.com/BoltzExchange/boltz-client/v2/test"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

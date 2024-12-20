@@ -1,10 +1,10 @@
 package database_test
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/database"
-	"github.com/BoltzExchange/boltz-client/test"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/database"
+	"github.com/BoltzExchange/boltz-client/v2/test"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"

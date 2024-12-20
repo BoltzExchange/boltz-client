@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/mitchellh/mapstructure"
 	"slices"
@@ -26,10 +26,10 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
 )
 
 const MinFeeRate = 0.01

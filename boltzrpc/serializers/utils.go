@@ -1,9 +1,9 @@
 package serializers
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 )
 
 func ParseCurrency(grpcCurrency *boltzrpc.Currency) boltz.Currency {

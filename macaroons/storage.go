@@ -2,7 +2,7 @@ package macaroons
 
 import (
 	"context"
-	"github.com/BoltzExchange/boltz-client/database"
+	"github.com/BoltzExchange/boltz-client/v2/database"
 )
 
 // TODO: encryption

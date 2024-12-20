@@ -1,10 +1,10 @@
 package autoswap
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/serializers"
-	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/serializers"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
 )
 
 func serializeLightningChannel(channel *lightning.LightningChannel) *boltzrpc.LightningChannel {

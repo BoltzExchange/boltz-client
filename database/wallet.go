@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 
-	onchainWallet "github.com/BoltzExchange/boltz-client/onchain/wallet"
+	onchainWallet "github.com/BoltzExchange/boltz-client/v2/onchain/wallet"
 )
 
 type Wallet struct {

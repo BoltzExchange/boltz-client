@@ -3,10 +3,10 @@
 package onchain_test
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltz"
-	onchainmock "github.com/BoltzExchange/boltz-client/mocks/github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/onchain/wallet"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	onchainmock "github.com/BoltzExchange/boltz-client/v2/mocks/github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/onchain/wallet"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

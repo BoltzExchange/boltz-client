@@ -1,16 +1,16 @@
 package autoswap
 
 import (
-	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/test"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/test"
 	"testing"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
-	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
-	"github.com/BoltzExchange/boltz-client/database"
-	"github.com/BoltzExchange/boltz-client/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/v2/database"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"

@@ -6,8 +6,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/BoltzExchange/boltz-client/onchain"
-	"github.com/BoltzExchange/boltz-client/test"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/test"
 	"github.com/stretchr/testify/require"
 )
 

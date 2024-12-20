@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/boltz"
-	"github.com/BoltzExchange/boltz-client/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc"
 	"strings"
 )
 
