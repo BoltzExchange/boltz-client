@@ -267,7 +267,7 @@ func (database *Database) QueryReverseSwapByClaimTransaction(txId string) (rever
 
 const claimableSwapsQuery = `
 SELECT * FROM reverseSwaps
-WHERE fromCurrency = ?
+WHERE toCurrency = ?
   AND reverseSwaps.lockupTransactionId != ''
   AND reverseSwaps.claimTransactionId == ''
 `
@@ -393,7 +393,7 @@ func (database *Database) SetReverseSwapClaimTransactionId(reverseSwap *ReverseS
 func (database *Database) SetReverseSwapClaimAddress(reverseSwap *ReverseSwap, claimAddress string) error {
 	reverseSwap.ClaimAddress = claimAddress
 
-	_, err := database.Exec("UPDATE reverseSwaps SET claimAddress = ? WHERE id = ?", claimAddress, reverseSwap.Id)
+	_, err := database.Exec("UPDATE reverseSwaps SET claimAddress = ?, walletId = NULL WHERE id = ?", claimAddress, reverseSwap.Id)
 	return err
 }
 

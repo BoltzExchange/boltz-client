@@ -103,7 +103,6 @@ func main() {
 		createReverseSwapCommand,
 		createChainSwapCommand,
 		refundSwapCommand,
-		claimSwapsCommand,
 
 		autoSwapCommands,
 

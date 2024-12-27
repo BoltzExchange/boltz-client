@@ -63,6 +63,7 @@ func (server *RpcServer) Init() error {
 		swapper:           swapper,
 		referralId:        server.cfg.ReferralId,
 		maxZeroConfAmount: server.cfg.MaxZeroConfAmount,
+		claimer:           server.cfg.Claimer,
 	}
 	server.autoswapServer = &routedAutoSwapServer{
 		database: server.cfg.Database,
