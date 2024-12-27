@@ -545,11 +545,11 @@ func (server *routedBoltzServer) ClaimSwaps(ctx context.Context, request *boltzr
 }
 
 func (server *routedBoltzServer) GetSwapInfo(ctx context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
-	swap, reverseSwap, chainSwap, err := server.database.QueryAnySwap(request.Id)
+	someSwap, err := server.database.QueryAnySwap(request.Id)
 	if err != nil {
 		return nil, errors.New("could not find Swap with ID " + request.Id)
 	}
-	return server.serializeAnySwap(ctx, swap, reverseSwap, chainSwap)
+	return server.serializeAnySwap(ctx, someSwap)
 }
 
 func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfoRequest, stream boltzrpc.Boltz_GetSwapInfoStreamServer) error {
@@ -575,7 +575,11 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 	}
 
 	for update := range updates {
-		response, err := server.serializeAnySwap(stream.Context(), update.Swap, update.ReverseSwap, update.ChainSwap)
+		response, err := server.serializeAnySwap(stream.Context(), &database.SomeSwap{
+			Normal:  update.Swap,
+			Chain:   update.ChainSwap,
+			Reverse: update.ReverseSwap,
+		})
 		if err == nil {
 			if err := stream.Send(response); err != nil {
 				stop()
@@ -2184,23 +2188,23 @@ func (server *routedBoltzServer) ListTenants(ctx context.Context, request *boltz
 	return response, nil
 }
 
-func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, swap *database.Swap, reverseSwap *database.ReverseSwap, chainSwap *database.ChainSwap) (*boltzrpc.GetSwapInfoResponse, error) {
+func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, someSwap *database.SomeSwap) (*boltzrpc.GetSwapInfoResponse, error) {
 	if tenantId := macaroons.TenantIdFromContext(ctx); tenantId != nil {
 		err := status.Error(codes.PermissionDenied, "tenant does not have permission to view this swap")
-		if swap != nil && swap.TenantId != *tenantId {
+		if someSwap.Normal != nil && someSwap.Normal.TenantId != *tenantId {
 			return nil, err
 		}
-		if reverseSwap != nil && reverseSwap.TenantId != *tenantId {
+		if someSwap.Reverse != nil && someSwap.Reverse.TenantId != *tenantId {
 			return nil, err
 		}
-		if chainSwap != nil && chainSwap.TenantId != *tenantId {
+		if someSwap.Chain != nil && someSwap.Chain.TenantId != *tenantId {
 			return nil, err
 		}
 	}
 	return &boltzrpc.GetSwapInfoResponse{
-		Swap:        serializeSwap(swap),
-		ReverseSwap: serializeReverseSwap(reverseSwap),
-		ChainSwap:   serializeChainSwap(chainSwap),
+		Swap:        serializeSwap(someSwap.Normal),
+		ReverseSwap: serializeReverseSwap(someSwap.Reverse),
+		ChainSwap:   serializeChainSwap(someSwap.Chain),
 	}, nil
 }
 
