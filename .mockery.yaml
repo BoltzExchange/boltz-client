@@ -1,17 +1,17 @@
 with-expecter: True
 filename: "{{ .InterfaceName }}_mock.go"
 packages:
-  github.com/BoltzExchange/boltz-client/onchain:
+  github.com/BoltzExchange/boltz-client/v2/onchain:
     interfaces:
       Wallet:
       TxProvider:
       BlockProvider:
-  github.com/BoltzExchange/boltz-client/autoswap:
+  github.com/BoltzExchange/boltz-client/v2/autoswap:
     config:
       dir: autoswap
       inpackage: True
     interfaces:
       RpcProvider:
-  github.com/BoltzExchange/boltz-client/lightning:
+  github.com/BoltzExchange/boltz-client/v2/lightning:
     interfaces:
       LightningNode:

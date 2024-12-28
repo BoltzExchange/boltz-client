@@ -3,11 +3,11 @@ package autoswap
 import (
 	"math"
 
-	"github.com/BoltzExchange/boltz-client/boltzrpc/autoswaprpc"
-	"github.com/BoltzExchange/boltz-client/lightning"
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/v2/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
 )
 
 type Strategy = func(channels []*lightning.LightningChannel) []*LightningRecommendation

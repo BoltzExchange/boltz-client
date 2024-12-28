@@ -9,7 +9,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 )

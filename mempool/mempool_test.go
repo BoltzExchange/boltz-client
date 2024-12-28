@@ -5,9 +5,9 @@ package mempool
 import (
 	"testing"
 
-	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
 
-	"github.com/BoltzExchange/boltz-client/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/onchain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

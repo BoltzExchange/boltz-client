@@ -1,7 +1,7 @@
 package onchain
 
 import (
-	"github.com/BoltzExchange/boltz-client/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/boltz"
 )
 
 type BoltzTxProvider struct {

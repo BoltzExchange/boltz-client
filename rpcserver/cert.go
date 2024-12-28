@@ -2,8 +2,8 @@ package rpcserver
 
 import (
 	"crypto/tls"
-	"github.com/BoltzExchange/boltz-client/logger"
-	"github.com/BoltzExchange/boltz-client/utils"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
+	"github.com/BoltzExchange/boltz-client/v2/utils"
 	"github.com/lightningnetwork/lnd/cert"
 	"os"
 	"time"

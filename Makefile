@@ -4,8 +4,8 @@ GDK_VERSION = 0.73.3
 GO_VERSION := 1.23.0
 RUST_VERSION := 1.82.0
 
-PKG_BOLTZD := github.com/BoltzExchange/boltz-client/cmd/boltzd
-PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/cmd/boltzcli
+PKG_BOLTZD := github.com/BoltzExchange/boltz-client/v2/cmd/boltzd
+PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/v2/cmd/boltzcli
 
 GO_BIN := ${GOPATH}/bin
 

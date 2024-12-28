@@ -1,7 +1,7 @@
 package wallet
 
 import (
-	"github.com/BoltzExchange/boltz-client/logger"
+	"github.com/BoltzExchange/boltz-client/v2/logger"
 	"sync"
 )
 
