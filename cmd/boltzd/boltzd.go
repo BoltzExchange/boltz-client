@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/build"
-	"github.com/BoltzExchange/boltz-client/v2/config"
-	"github.com/BoltzExchange/boltz-client/v2/logger"
-	"github.com/BoltzExchange/boltz-client/v2/rpcserver"
-	"github.com/BoltzExchange/boltz-client/v2/utils"
+	"github.com/BoltzExchange/boltz-client/v2/internal/build"
+	"github.com/BoltzExchange/boltz-client/v2/internal/config"
+	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
+	"github.com/BoltzExchange/boltz-client/v2/internal/rpcserver"
+	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 	"os"
 	"os/signal"
 	"runtime"

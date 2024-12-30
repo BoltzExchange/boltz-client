@@ -81,7 +81,7 @@ restart-regtest: download-regtest
 
 build-bolt12:
 	@$(call print, "Building bolt12")
-	cd lightning/lib/bolt12 && cargo build --release
+	cd internal/lightning/lib/bolt12 && cargo build --release
 
 build: download-gdk build-bolt12
 	@$(call print, "Building boltz-client")
@@ -117,10 +117,10 @@ deps: submodules
 		find secp256k1-zkp -type f -name "*.h" -print0 | xargs -0 sed -i '/include/!s/secp256k1/go_secp256k1/g'
 
 download-gdk:
-ifeq ("$(wildcard onchain/wallet/lib/libgreen_gdk.so)","")
+ifeq ("$(wildcard internal/onchain/wallet/lib/libgreen_gdk.so)","")
 	@$(call print, "Downloading gdk library")
 	@container_id=$$(docker create "boltz/gdk-ubuntu:$(GDK_VERSION)" true); \
-	docker cp "$$container_id:/" onchain/wallet/lib/ && \
+	docker cp "$$container_id:/" internal/onchain/wallet/lib/ && \
 	docker rm "$$container_id";
 endif
 
