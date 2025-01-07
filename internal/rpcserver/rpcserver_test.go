@@ -2072,7 +2072,7 @@ func TestSwap(t *testing.T) {
 							require.ErrorContains(t, err, "insufficient balance")
 						})
 					})
-					t.Run("Deposit", func(t *testing.T) {
+					t.Run("AnyAmount", func(t *testing.T) {
 						swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
 							Pair: pair,
 						})
