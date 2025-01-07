@@ -11,7 +11,7 @@ boltzcli
 !cmd/boltzd
 !cmd/boltzcli
 bin/
-onchain/wallet/lib/
+internal/onchain/wallet/lib/
 boltz-client-*.tar.gz
 boltz-client-manifest-*.txt
 
@@ -26,9 +26,9 @@ vendor/
 
 # Config, database, log, certificate and macaroon files
 boltz.toml
-!rpcserver/test/boltz.toml
-rpcserver/test/wallet
-rpcserver/test/autoswap.toml
+!internal/rpcserver/test/boltz.toml
+internal/rpcserver/test/wallet
+internal/rpcserver/test/autoswap.toml
 boltz.db
 boltz.log
 tls.key
