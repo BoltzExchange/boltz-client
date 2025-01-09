@@ -25,6 +25,7 @@ type SwapTree struct {
 	RefundLeaf TapLeaf
 
 	isLiquid bool
+	currency Currency
 	isClaim  bool
 	ourKey   *btcec.PrivateKey
 	boltzKey *btcec.PublicKey
@@ -52,17 +53,20 @@ func (tree *SwapTree) Serialize() *SerializedTree {
 	}
 }
 func (tree *SwapTree) Init(
-	isLiquid bool,
+	currency Currency,
 	isClaim bool,
 	ourKey *btcec.PrivateKey,
 	boltzKey *btcec.PublicKey,
 ) error {
-	tree.isLiquid = isLiquid
+	if currency != CurrencyBtc && currency != CurrencyLiquid {
+		return errors.New("invalid currency")
+	}
+	tree.isLiquid = currency == CurrencyLiquid
 	tree.isClaim = isClaim
 	tree.ourKey = ourKey
 	tree.boltzKey = boltzKey
 
-	if isLiquid {
+	if tree.isLiquid {
 		tree.liquidIndexed = taproot.AssembleTaprootScriptTree(
 			taproot.TapElementsLeaf{TapLeaf: tree.ClaimLeaf},
 			taproot.TapElementsLeaf{TapLeaf: tree.RefundLeaf},
@@ -86,7 +90,7 @@ func (tree *SwapTree) Init(
 
 	// after we got the internal key, we can compute the taproot tweak
 	tag := chainhash.TagTapTweak
-	if isLiquid {
+	if tree.isLiquid {
 		tag = taproot.TagTapTweakElements
 	}
 	tapTweakHash := chainhash.TaggedHash(

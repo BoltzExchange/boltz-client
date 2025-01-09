@@ -394,7 +394,7 @@ func (database *Database) parseChainSwap(rows *sql.Rows) (*ChainSwap, error) {
 
 func (swapData *ChainSwapData) InitTree(isClaim bool) error {
 	return swapData.Tree.Init(
-		swapData.Currency == boltz.CurrencyLiquid,
+		swapData.Currency,
 		isClaim,
 		swapData.PrivateKey,
 		swapData.TheirPublicKey,

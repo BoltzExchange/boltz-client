@@ -112,7 +112,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 
 func (reverseSwap *ReverseSwap) InitTree() error {
 	return reverseSwap.SwapTree.Init(
-		reverseSwap.Pair.To == boltz.CurrencyLiquid,
+		reverseSwap.Pair.To,
 		true,
 		reverseSwap.PrivateKey,
 		reverseSwap.RefundPubKey,
