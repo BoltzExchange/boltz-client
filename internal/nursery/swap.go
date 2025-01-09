@@ -150,7 +150,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				return
 			}
 		} else {
-			lockupTransaction, err := boltz.NewTxFromHex(swap.Pair.From, swapTransactionResponse.TransactionHex, swap.BlindingKey)
+			lockupTransaction, err := boltz.NewTxFromHex(swap.Pair.From, swapTransactionResponse.Hex, swap.BlindingKey)
 			if err != nil {
 				handleError("Could not decode lockup transaction: " + err.Error())
 				return

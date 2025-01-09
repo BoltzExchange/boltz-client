@@ -2205,6 +2205,7 @@ func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, swap *dat
 }
 
 func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *boltzrpc.Limits, error) {
+	//nolint:staticcheck
 	pairsResponse, err := server.boltz.GetPairs()
 
 	if err != nil {

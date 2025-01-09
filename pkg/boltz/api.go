@@ -203,12 +203,9 @@ type SwapStatusResponse struct {
 	Error string `json:"error"`
 }
 
-type GetSwapTransactionRequest struct {
-	Id string `json:"id"`
-}
-
 type GetSwapTransactionResponse struct {
-	TransactionHex     string `json:"transactionHex"`
+	Id                 string `json:"id"`
+	Hex                string `json:"hex"`
 	TimeoutBlockHeight uint32 `json:"timeoutBlockHeight"`
 	TimeoutEta         uint64 `json:"timeoutEta"`
 
@@ -243,12 +240,11 @@ type GetTransactionResponse struct {
 }
 
 type BroadcastTransactionRequest struct {
-	Currency       string `json:"currency"`
-	TransactionHex string `json:"transactionHex"`
+	Hex string `json:"hex"`
 }
 
 type BroadcastTransactionResponse struct {
-	TransactionId string `json:"transactionId"`
+	Id string `json:"id"`
 
 	Error string `json:"error"`
 }
@@ -403,14 +399,15 @@ type ErrorMessage struct {
 
 func (boltz *Api) GetVersion() (*GetVersionResponse, error) {
 	var response GetVersionResponse
-	err := boltz.sendGetRequest("/version", &response)
+	err := boltz.sendGetRequestV2("/version", &response)
 
 	return &response, err
 }
 
+// Deprecated: use GetSubmarinePairs, GetChainPairs or GetReversePairs instead
 func (boltz *Api) GetPairs() (*GetPairsResponse, error) {
 	var response GetPairsResponse
-	err := boltz.sendGetRequest("/getpairs", &response)
+	err := boltz.sendGetRequestV2("/getpairs", &response)
 
 	return &response, err
 }
@@ -419,39 +416,39 @@ func (boltz *Api) GetFeeEstimation(currency Currency) (float64, error) {
 	var response struct {
 		Fee float64
 	}
-	err := boltz.sendGetRequest(fmt.Sprintf("/v2/chain/%s/fee", currency), &response)
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/chain/%s/fee", currency), &response)
 
 	return response.Fee, err
 }
 
 func (boltz *Api) GetSubmarinePairs() (response SubmarinePairs, err error) {
-	err = boltz.sendGetRequest("/v2/swap/submarine", &response)
+	err = boltz.sendGetRequestV2("/swap/submarine", &response)
 
 	return response, err
 }
 
 func (boltz *Api) GetReversePairs() (response ReversePairs, err error) {
-	err = boltz.sendGetRequest("/v2/swap/reverse", &response)
+	err = boltz.sendGetRequestV2("/swap/reverse", &response)
 
 	return response, err
 }
 
 func (boltz *Api) GetChainPairs() (response ChainPairs, err error) {
-	err = boltz.sendGetRequest("/v2/swap/chain", &response)
+	err = boltz.sendGetRequestV2("/swap/chain", &response)
 
 	return response, err
 }
 
 func (boltz *Api) GetNodes() (Nodes, error) {
 	var response Nodes
-	err := boltz.sendGetRequest("/v2/nodes", &response)
+	err := boltz.sendGetRequestV2("/nodes", &response)
 
 	return response, err
 }
 
 func (boltz *Api) SwapStatus(id string) (*SwapStatusResponse, error) {
 	var response SwapStatusResponse
-	err := boltz.sendGetRequest("/v2/swap/"+id, &response)
+	err := boltz.sendGetRequestV2("/swap/"+id, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -462,9 +459,7 @@ func (boltz *Api) SwapStatus(id string) (*SwapStatusResponse, error) {
 
 func (boltz *Api) GetSwapTransaction(id string) (*GetSwapTransactionResponse, error) {
 	var response GetSwapTransactionResponse
-	err := boltz.sendPostRequest("/getswaptransaction", GetSwapTransactionRequest{
-		Id: id,
-	}, &response)
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/swap/submarine/%s/transaction", id), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -475,8 +470,8 @@ func (boltz *Api) GetSwapTransaction(id string) (*GetSwapTransactionResponse, er
 
 func (boltz *Api) GetChainSwapTransactions(id string) (*GetChainSwapTransactionsResponse, error) {
 	var response GetChainSwapTransactionsResponse
-	path := fmt.Sprintf("/v2/swap/chain/%s/transactions", id)
-	err := boltz.sendGetRequest(path, &response)
+	path := fmt.Sprintf("/swap/chain/%s/transactions", id)
+	err := boltz.sendGetRequestV2(path, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -487,8 +482,8 @@ func (boltz *Api) GetChainSwapTransactions(id string) (*GetChainSwapTransactions
 
 func (boltz *Api) GetTransaction(transactionId string, currency Currency) (string, error) {
 	var response GetTransactionResponse
-	path := fmt.Sprintf("/v2/chain/%s/transaction/%s", currency, transactionId)
-	err := boltz.sendGetRequest(path, &response)
+	path := fmt.Sprintf("/chain/%s/transaction/%s", currency, transactionId)
+	err := boltz.sendGetRequestV2(path, &response)
 
 	if response.Error != "" {
 		return "", Error(errors.New(response.Error))
@@ -499,21 +494,20 @@ func (boltz *Api) GetTransaction(transactionId string, currency Currency) (strin
 
 func (boltz *Api) BroadcastTransaction(currency Currency, txHex string) (string, error) {
 	var response BroadcastTransactionResponse
-	err := boltz.sendPostRequest("/broadcasttransaction", BroadcastTransactionRequest{
-		Currency:       string(currency),
-		TransactionHex: txHex,
+	err := boltz.sendPostRequest(fmt.Sprintf("/chain/%s/transaction", currency), BroadcastTransactionRequest{
+		Hex: txHex,
 	}, &response)
 
 	if response.Error != "" {
 		return "", Error(errors.New(response.Error))
 	}
 
-	return response.TransactionId, err
+	return response.Id, err
 }
 
 func (boltz *Api) CreateSwap(request CreateSwapRequest) (*CreateSwapResponse, error) {
 	var response CreateSwapResponse
-	err := boltz.sendPostRequest("/v2/swap/submarine", request, &response)
+	err := boltz.sendPostRequest("/swap/submarine", request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -527,7 +521,7 @@ func (boltz *Api) RefundSwap(swapId string, request *RefundRequest) (*PartialSig
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/refund", swapId), request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/swap/submarine/%s/refund", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -538,7 +532,7 @@ func (boltz *Api) RefundSwap(swapId string, request *RefundRequest) (*PartialSig
 
 func (boltz *Api) GetInvoiceAmount(swapId string) (*GetInvoiceAmountResponse, error) {
 	var response GetInvoiceAmountResponse
-	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/submarine/%s/invoice/amount", swapId), &response)
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/swap/submarine/%s/invoice/amount", swapId), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -552,7 +546,7 @@ func (boltz *Api) GetSwapClaimDetails(swapId string) (*SwapClaimDetails, error) 
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response SwapClaimDetails
-	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/submarine/%s/claim", swapId), &response)
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/swap/submarine/%s/claim", swapId), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -563,7 +557,7 @@ func (boltz *Api) GetSwapClaimDetails(swapId string) (*SwapClaimDetails, error) 
 
 func (boltz *Api) SendSwapClaimSignature(swapId string, signature *PartialSignature) error {
 	var response ErrorMessage
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/claim", swapId), signature, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/swap/submarine/%s/claim", swapId), signature, &response)
 
 	if response.Error != "" {
 		return Error(errors.New(response.Error))
@@ -574,7 +568,7 @@ func (boltz *Api) SendSwapClaimSignature(swapId string, signature *PartialSignat
 
 func (boltz *Api) SetInvoice(swapId string, invoice string) (*SetInvoiceResponse, error) {
 	var response SetInvoiceResponse
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/submarine/%s/invoice", swapId), SetInvoiceRequest{Invoice: invoice}, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/swap/submarine/%s/invoice", swapId), SetInvoiceRequest{Invoice: invoice}, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -585,7 +579,7 @@ func (boltz *Api) SetInvoice(swapId string, invoice string) (*SetInvoiceResponse
 
 func (boltz *Api) CreateReverseSwap(request CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {
 	var response CreateReverseSwapResponse
-	err := boltz.sendPostRequest("/v2/swap/reverse", request, &response)
+	err := boltz.sendPostRequest("/swap/reverse", request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -599,7 +593,7 @@ func (boltz *Api) ClaimReverseSwap(swapId string, request *ClaimRequest) (*Parti
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/reverse/%s/claim", swapId), request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/swap/reverse/%s/claim", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -610,7 +604,7 @@ func (boltz *Api) ClaimReverseSwap(swapId string, request *ClaimRequest) (*Parti
 
 func (boltz *Api) CreateChainSwap(request ChainRequest) (*ChainResponse, error) {
 	var response ChainResponse
-	err := boltz.sendPostRequest("/v2/swap/chain", request, &response)
+	err := boltz.sendPostRequest("/swap/chain", request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -624,7 +618,7 @@ func (boltz *Api) GetChainSwapClaimDetails(swapId string) (*ChainSwapSigningDeta
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response ChainSwapSigningDetails
-	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/chain/%s/claim", swapId), &response)
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/swap/chain/%s/claim", swapId), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -638,7 +632,7 @@ func (boltz *Api) ExchangeChainSwapClaimSignature(swapId string, request *ChainS
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/claim", swapId), request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/swap/chain/%s/claim", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -652,7 +646,7 @@ func (boltz *Api) RefundChainSwap(swapId string, request *RefundRequest) (*Parti
 		return nil, ErrPartialSignaturesDisabled
 	}
 	var response PartialSignature
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/refund", swapId), request, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/swap/chain/%s/refund", swapId), request, &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -670,7 +664,7 @@ type ReverseBip21 struct {
 
 func (boltz *Api) GetReverseSwapBip21(invoice string) (*ReverseBip21, error) {
 	var response ReverseBip21
-	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/reverse/%s/bip21", invoice), &response)
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/swap/reverse/%s/bip21", invoice), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -686,7 +680,7 @@ type Quote struct {
 
 func (boltz *Api) GetChainSwapQuote(swapId string) (*Quote, error) {
 	var response Quote
-	err := boltz.sendGetRequest(fmt.Sprintf("/v2/swap/chain/%s/quote", swapId), &response)
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/swap/chain/%s/quote", swapId), &response)
 
 	if response.Error != "" {
 		return nil, Error(errors.New(response.Error))
@@ -697,7 +691,7 @@ func (boltz *Api) GetChainSwapQuote(swapId string) (*Quote, error) {
 
 func (boltz *Api) AcceptChainSwapQuote(swapId string, quote *Quote) error {
 	var response ResponseError
-	err := boltz.sendPostRequest(fmt.Sprintf("/v2/swap/chain/%s/quote", swapId), quote, &response)
+	err := boltz.sendPostRequest(fmt.Sprintf("/swap/chain/%s/quote", swapId), quote, &response)
 
 	return response.ApiError(err)
 }
@@ -713,7 +707,7 @@ func (boltz *Api) FetchBolt12Invoice(offer string, amountSat uint64) (string, er
 		Offer:  offer,
 		Amount: amountSat,
 	}
-	err := boltz.sendPostRequest("/v2/lightning/BTC/bolt12/fetch", &request, &response)
+	err := boltz.sendPostRequest("/lightning/BTC/bolt12/fetch", &request, &response)
 
 	return response.Invoice, err
 }
@@ -728,6 +722,10 @@ func (boltz *Api) sendGetRequest(endpoint string, response interface{}) error {
 	return unmarshalJson(res.Body, &response)
 }
 
+func (boltz *Api) sendGetRequestV2(endpoint string, response interface{}) error {
+	return boltz.sendGetRequest("/v2"+endpoint, response)
+}
+
 func (boltz *Api) sendPostRequest(endpoint string, requestBody interface{}, response interface{}) error {
 	rawBody, err := json.Marshal(requestBody)
 
@@ -735,7 +733,7 @@ func (boltz *Api) sendPostRequest(endpoint string, requestBody interface{}, resp
 		return err
 	}
 
-	res, err := boltz.Client.Post(boltz.URL+endpoint, "application/json", bytes.NewBuffer(rawBody))
+	res, err := boltz.Client.Post(boltz.URL+"/v2"+endpoint, "application/json", bytes.NewBuffer(rawBody))
 
 	if err != nil {
 		return err
