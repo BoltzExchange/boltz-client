@@ -16,11 +16,11 @@ func decode(t *testing.T, raw string) []byte {
 	return decoded
 }
 
-func leaf(t *testing.T, isLiquid bool, script string) txscript.TapLeaf {
+func leaf(t *testing.T, currency Currency, script string) txscript.TapLeaf {
 	decoded, err := hex.DecodeString(script)
 	require.NoError(t, err)
 	return txscript.TapLeaf{
-		LeafVersion: leafVersion(isLiquid),
+		LeafVersion: leafVersion(currency == CurrencyLiquid),
 		Script:      decoded,
 	}
 }
@@ -37,7 +37,7 @@ func privateKey(t *testing.T, raw string) *btcec.PrivateKey {
 }
 
 type testCase struct {
-	isLiquid           bool
+	currency           Currency
 	swapType           SwapType
 	ourKey             string
 	boltzKey           string
@@ -52,11 +52,11 @@ type testCase struct {
 
 func setup(t *testing.T, test *testCase) *SwapTree {
 	tree := &SwapTree{
-		ClaimLeaf:  leaf(t, test.isLiquid, test.claimLeaf),
-		RefundLeaf: leaf(t, test.isLiquid, test.refundLeaf),
+		ClaimLeaf:  leaf(t, test.currency, test.claimLeaf),
+		RefundLeaf: leaf(t, test.currency, test.refundLeaf),
 	}
 	err := tree.Init(
-		test.isLiquid,
+		test.currency,
 		test.swapType == ReverseSwap,
 		privateKey(t, test.ourKey),
 		publicKey(t, test.boltzKey),
@@ -69,7 +69,7 @@ func TestSwapTree(t *testing.T) {
 
 	tests := []*testCase{
 		{
-			isLiquid:           false,
+			currency:           CurrencyBtc,
 			swapType:           ReverseSwap,
 			ourKey:             "7886fd6464350f85c941bd80c824b1ad4f776b0aa1b4783a300b987d69966086",
 			boltzKey:           "0328baf0584489b39d218d0a59bbee01e93be6fba696b348a4033045f3cdc7dc37",
@@ -81,7 +81,7 @@ func TestSwapTree(t *testing.T) {
 			address:    "bc1prmxmvl5z79ddhesfzu3ya0f8ck9k3tfvdcrxfzc8t9s7stm4nfrsyc9hzw",
 		},
 		{
-			isLiquid:           false,
+			currency:           CurrencyBtc,
 			swapType:           NormalSwap,
 			ourKey:             "265238cbdc33eafd2ab2c9bfc3b38fcd9b4d610c62973a85ea74662147eeed99",
 			boltzKey:           "020e9e82ede019c483ef12f0a05a2f602be53a10f72cce88d6975a24592cf9ce07",
@@ -93,7 +93,7 @@ func TestSwapTree(t *testing.T) {
 			address:    "bc1px6up6cxg2vhf049x9g0v8wcztc0vvvd25zjqt6qf3streqvuzm7qm0dpkp",
 		},
 		{
-			isLiquid:           true,
+			currency:           CurrencyLiquid,
 			swapType:           ReverseSwap,
 			ourKey:             "fda57d14c8f0dcaad235b50f095b55bd0f70dd17af36ec62953b7c1a99fe4860",
 			boltzKey:           "020707580d72eeedc94b7429e783c227adef5b3e71a53f052e8054ae369f4b0aca",
