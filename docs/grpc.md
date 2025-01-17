@@ -2,7 +2,7 @@
 
 This page was automatically generated.
 
-Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml).
+Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/pkg/boltzrpc/rest-annotations.yaml).
 
 
 
