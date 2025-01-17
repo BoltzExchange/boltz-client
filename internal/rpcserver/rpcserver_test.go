@@ -2306,10 +2306,11 @@ func TestChainSwap(t *testing.T) {
 
 			newAmount := swap.FromData.Amount - 10
 
+			stream, statusStream := swapStream(t, client, swap.Id)
+
 			test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, newAmount)
 			test.MineBlock()
 
-			stream, statusStream := swapStream(t, client, swap.Id)
 			info := statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionLockupFailed)
 			require.Equal(t, newAmount, info.ChainSwap.FromData.Amount)
 
