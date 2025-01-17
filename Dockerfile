@@ -11,7 +11,7 @@ WORKDIR /boltz-client
 COPY . ./
 COPY --from=rust /usr/local/cargo /usr/local/cargo
 COPY --from=rust /usr/local/rustup /usr/local/rustup
-COPY --from=gdk / /boltz-client/onchain/wallet/lib/
+COPY --from=gdk / /boltz-client/internal/onchain/wallet/lib/
 
 ENV PATH="/usr/local/cargo/bin:${PATH}" \
     CARGO_HOME="/usr/local/cargo" \
