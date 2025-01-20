@@ -45,7 +45,7 @@ install-tools: $(TOOLS_PATH)
 
 proto: $(TOOLS_PATH)
 	@$(call print, "Generating protosbufs")
-	eval cd boltzrpc && ./gen_protos.sh && cd ..
+	eval cd pkg/boltzrpc && ./gen_protos.sh
 
 #
 # Tests
