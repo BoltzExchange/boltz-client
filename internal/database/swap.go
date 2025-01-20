@@ -27,6 +27,7 @@ type Swap struct {
 	Preimage            []byte
 	RedeemScript        []byte
 	Invoice             string
+	PaymentHash         []byte
 	Address             string
 	ExpectedAmount      uint64
 	TimoutBlockHeight   uint32
@@ -55,6 +56,7 @@ type SwapSerialized struct {
 	Preimage            string
 	RedeemScript        string
 	Invoice             string
+	PaymentHash         string
 	Address             string
 	ExpectedAmount      uint64
 	TimeoutBlockHeight  uint32
@@ -96,6 +98,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 		Preimage:            preimage,
 		RedeemScript:        hex.EncodeToString(swap.RedeemScript),
 		Invoice:             swap.Invoice,
+		PaymentHash:         hex.EncodeToString(swap.PaymentHash),
 		Address:             swap.Address,
 		ExpectedAmount:      swap.ExpectedAmount,
 		TimeoutBlockHeight:  swap.TimoutBlockHeight,
@@ -127,6 +130,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	var status string
 	privateKey := PrivateKeyScanner{}
 	var preimage string
+	var paymentHash string
 	var redeemScript string
 	blindingKey := PrivateKeyScanner{Nullable: true}
 	var createdAt, serviceFee, onchainFee sql.NullInt64
@@ -150,6 +154,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 			"preimage":            &preimage,
 			"redeemScript":        &redeemScript,
 			"invoice":             &swap.Invoice,
+			"paymentHash":         &paymentHash,
 			"address":             &swap.Address,
 			"expectedAmount":      &swap.ExpectedAmount,
 			"timeoutBlockheight":  &swap.TimoutBlockHeight,
@@ -182,6 +187,14 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 
 	if preimage != "" {
 		swap.Preimage, err = hex.DecodeString(preimage)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if paymentHash != "" {
+		swap.PaymentHash, err = hex.DecodeString(paymentHash)
 
 		if err != nil {
 			return nil, err
@@ -251,6 +264,27 @@ func (database *Database) QuerySwapByInvoice(invoice string) (swap *Swap, err er
 	return swap, err
 }
 
+func (database *Database) QuerySwapByPaymentHash(paymentHash []byte) (swap *Swap, err error) {
+	database.lock.RLock()
+	defer database.lock.RUnlock()
+	rows, err := database.Query("SELECT * FROM swaps WHERE paymentHash = ?", hex.EncodeToString(paymentHash))
+
+	if err != nil {
+		return swap, err
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		swap, err = parseSwap(rows)
+
+		if err != nil {
+			return swap, err
+		}
+	}
+	return swap, err
+}
+
 func (database *Database) querySwaps(query string, args ...any) (swaps []*Swap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
@@ -303,10 +337,10 @@ func (database *Database) QueryRefundableSwaps(tenantId *Id, currency boltz.Curr
 }
 
 const insertSwapStatement = `
-INSERT INTO swaps (id, fromCurrency, toCurrency, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, address,
+INSERT INTO swaps (id, fromCurrency, toCurrency, chanIds, state, error, status, privateKey, preimage, redeemScript, invoice, paymentHash, address,
                    expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, refundAddress,
                    blindingKey, isAuto, createdAt, serviceFee, serviceFeePercent, onchainFee, walletId, claimPubKey, swapTree, tenantId)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateSwap(swap Swap) error {
@@ -329,6 +363,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 		preimage,
 		hex.EncodeToString(swap.RedeemScript),
 		swap.Invoice,
+		hex.EncodeToString(swap.PaymentHash[:]),
 		swap.Address,
 		swap.ExpectedAmount,
 		swap.TimoutBlockHeight,

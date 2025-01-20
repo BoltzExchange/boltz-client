@@ -1,6 +1,8 @@
 package database
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/lightningnetwork/lnd/zpay32"
@@ -17,7 +19,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 13
+const latestSchemaVersion = 14
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -545,6 +547,43 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 	case 12:
 		if _, err := tx.Exec(createViews); err != nil {
 			return err
+		}
+
+	case 13:
+		migration := `
+		ALTER TABLE swaps ADD COLUMN "paymentHash" VARCHAR NOT NULL DEFAULT '';
+`
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+
+		swaps, err := tx.QuerySwaps(SwapQuery{})
+		if err != nil {
+			return err
+		}
+		for _, swap := range swaps {
+			if swap.Invoice != "" {
+				decoded, err := zpay32.Decode(swap.Invoice, boltz.MainNet.Btc)
+				if err != nil {
+					decoded, err = zpay32.Decode(swap.Invoice, boltz.TestNet.Btc)
+					if err != nil {
+						decoded, err = zpay32.Decode(swap.Invoice, boltz.Regtest.Btc)
+					}
+
+				}
+				if err == nil && decoded.PaymentHash != nil {
+					encoded := hex.EncodeToString(decoded.PaymentHash[:])
+					if _, err := tx.Exec("UPDATE swaps SET paymentHash = ? WHERE id = ?", encoded, swap.Id); err != nil {
+						return err
+					}
+				}
+			} else {
+				hash := sha256.Sum256(swap.Preimage)
+				encoded := hex.EncodeToString(hash[:])
+				if _, err := tx.Exec("UPDATE swaps SET paymentHash = ? WHERE id = ?", encoded, swap.Id); err != nil {
+					return err
+				}
+			}
 		}
 
 	case latestSchemaVersion:

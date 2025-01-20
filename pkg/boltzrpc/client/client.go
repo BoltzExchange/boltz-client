@@ -63,7 +63,13 @@ func (boltz *Boltz) ClaimSwaps(request *boltzrpc.ClaimSwapsRequest) (*boltzrpc.C
 
 func (boltz *Boltz) GetSwapInfo(id string) (*boltzrpc.GetSwapInfoResponse, error) {
 	return boltz.Client.GetSwapInfo(boltz.Ctx, &boltzrpc.GetSwapInfoRequest{
-		Id: id,
+		Identifier: &boltzrpc.GetSwapInfoRequest_SwapId{SwapId: id},
+	})
+}
+
+func (boltz *Boltz) GetSwapInfoByPaymentHash(paymentHash []byte) (*boltzrpc.GetSwapInfoResponse, error) {
+	return boltz.Client.GetSwapInfo(boltz.Ctx, &boltzrpc.GetSwapInfoRequest{
+		Identifier: &boltzrpc.GetSwapInfoRequest_PaymentHash{PaymentHash: paymentHash},
 	})
 }
 

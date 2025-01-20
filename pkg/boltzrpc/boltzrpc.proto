@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package boltzrpc;
-option go_package = "github.com/BoltzExchange/boltz-client/boltzrpc";
+option go_package = "github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc";
 import "google/protobuf/empty.proto";
 
 service Boltz {
@@ -499,7 +499,12 @@ message ClaimSwapsResponse {
 }
 
 message GetSwapInfoRequest {
-    string id = 1;
+    string id = 1 [deprecated = true];
+    oneof identifier {
+        string swap_id = 2;
+        // Only implemented for submarine swaps
+        bytes payment_hash = 3;
+    }
 }
 message GetSwapInfoResponse {
     SwapInfo swap = 1;
