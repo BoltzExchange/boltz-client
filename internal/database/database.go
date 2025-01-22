@@ -108,7 +108,7 @@ CREATE TABLE swaps
     preimage            VARCHAR,
     redeemScript        VARCHAR,
     invoice             VARCHAR,
-    paymentHash         VARCHAR(64),
+    paymentHash         VARCHAR(64) NOT NULL,
     address             VARCHAR,
     expectedAmount      INT,
     timeoutBlockheight  INTEGER,
