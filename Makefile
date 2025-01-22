@@ -1,11 +1,11 @@
-PKG := github.com/BoltzExchange/boltz-client
+PKG := github.com/BoltzExchange/boltz-client/v2
 VERSION := 2.3.6
 GDK_VERSION = 0.73.3
 GO_VERSION := 1.23.0
 RUST_VERSION := 1.82.0
 
-PKG_BOLTZD := github.com/BoltzExchange/boltz-client/v2/cmd/boltzd
-PKG_BOLTZ_CLI := github.com/BoltzExchange/boltz-client/v2/cmd/boltzcli
+PKG_BOLTZD := $(PKG)/cmd/boltzd
+PKG_BOLTZ_CLI := $(PKG)/cmd/boltzcli
 
 GO_BIN := ${GOPATH}/bin
 
@@ -15,7 +15,7 @@ GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
 
 COMMIT := $(shell git log --pretty=format:'%h' -n 1)
-LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT) -X $(PKG)/build.Version=$(VERSION) -w -s"
+LDFLAGS := -ldflags "-X $(PKG)/internal/build.Commit=$(COMMIT) -X $(PKG)/internal/build.Version=$(VERSION) -w -s"
 
 GREEN := "\\033[0;32m"
 NC := "\\033[0m"
