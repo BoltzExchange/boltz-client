@@ -920,10 +920,11 @@ func TestReverseSwap(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, swap.Invoice)
 
+		stream, _ := swapStream(t, client, swap.Id)
+
 		_, err = lnd.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
-		stream, _ := swapStream(t, client, swap.Id)
 		stream(boltzrpc.SwapState_PENDING)
 		info := stream(boltzrpc.SwapState_SUCCESSFUL)
 
