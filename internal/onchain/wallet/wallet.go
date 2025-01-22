@@ -111,13 +111,11 @@ type Subaccount struct {
 
 type Wallet struct {
 	onchain.WalletInfo
-	subaccount       *uint64
-	session          Session
-	connected        bool
-	syncedAccounts   []uint64
-	spentOutputs     map[string]bool
-	spentOutputsLock sync.RWMutex
-	txNotifier       <-chan TransactionNotification
+	subaccount     *uint64
+	session        Session
+	connected      bool
+	syncedAccounts []uint64
+	txNotifier     <-chan TransactionNotification
 }
 
 type Config struct {
@@ -490,7 +488,7 @@ func Login(credentials *Credentials) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
-	wallet := &Wallet{WalletInfo: credentials.WalletInfo, spentOutputs: make(map[string]bool)}
+	wallet := &Wallet{WalletInfo: credentials.WalletInfo}
 	login := make(map[string]any)
 
 	if credentials.Mnemonic != "" {
@@ -676,25 +674,6 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, handler), handler, result); err != nil {
 		return nil, err
 	}
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
-	for spent := range wallet.spentOutputs {
-		found := false
-		for key, outputs := range result.Unspent {
-			for i, output := range outputs {
-				if output["txhash"] == spent {
-					logger.Debugf("Ignoring output for tx %s since it is marked as spent", spent)
-					result.Unspent[key] = append(outputs[:i], outputs[i+1:]...)
-					found = true
-					break
-				}
-			}
-		}
-		if !found {
-			delete(wallet.spentOutputs, spent)
-		}
-	}
-
 	return result, nil
 }
 
@@ -785,8 +764,6 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", err
 	}
 
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
 	handler := new(AuthHandler)
 	params, free := toJson(result)
 	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, handler), handler, &result); err != nil {
@@ -800,18 +777,8 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 	free()
 
-	var signedTx struct {
-		Transaction       string `mapstructure:"transaction"`
-		Error             string `mapstructure:"error"`
-		TransactionInputs []struct {
-			TxId string `mapstructure:"txhash"`
-		} `mapstructure:"transaction_inputs"`
-	}
-	if err := mapstructure.Decode(result, &signedTx); err != nil {
-		return "", err
-	}
-	if signedTx.Error != "" {
-		return "", fmt.Errorf("could not sign: %s", signedTx.Error)
+	if errMsg, ok := result["error"].(string); ok && errMsg != "" {
+		return "", fmt.Errorf("could not sign: %s", errMsg)
 	}
 
 	params, free = toJson(result)
@@ -828,20 +795,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", fmt.Errorf("failed to broadcast: %s", sendTx.Error)
 	}
 
-	for _, input := range signedTx.TransactionInputs {
-		wallet.spentOutputs[input.TxId] = true
-	}
-
 	return sendTx.TxHash, nil
-}
-
-func (wallet *Wallet) SetSpentOutputs(outputs []string) {
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
-	wallet.spentOutputs = make(map[string]bool)
-	for _, output := range outputs {
-		wallet.spentOutputs[output] = true
-	}
 }
 
 func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {

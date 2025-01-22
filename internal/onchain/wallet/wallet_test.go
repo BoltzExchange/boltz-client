@@ -57,26 +57,6 @@ func TestSend(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, balance.Confirmed, amount+fee)
 	})
-
-	t.Run("SpentOutputs", func(t *testing.T) {
-		t.Cleanup(func() {
-			wallet.SetSpentOutputs(nil)
-		})
-
-		txes, err := wallet.GetTransactions(0, 0)
-		require.NoError(t, err)
-		require.NotEmpty(t, txes)
-		var spent []string
-		for _, tx := range txes {
-			spent = append(spent, tx.Id)
-		}
-		wallet.SetSpentOutputs(spent)
-
-		// all outputs will now be marked as spent internally, so no funds should be available
-		balance, err := wallet.GetBalance()
-		require.NoError(t, err)
-		require.Zero(t, balance.Confirmed)
-	})
 }
 
 func TestReal(t *testing.T) {
