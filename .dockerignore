@@ -3,3 +3,6 @@
 vendor
 bin
 target
+regtest
+boltzd
+boltzcli
