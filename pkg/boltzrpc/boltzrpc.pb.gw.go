@@ -122,6 +122,10 @@ func local_request_Boltz_ListSwaps_0(ctx context.Context, marshaler runtime.Mars
 
 }
 
+var (
+	filter_Boltz_GetSwapInfo_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
+)
+
 func request_Boltz_GetSwapInfo_0(ctx context.Context, marshaler runtime.Marshaler, client BoltzClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetSwapInfoRequest
 	var metadata runtime.ServerMetadata
@@ -141,6 +145,13 @@ func request_Boltz_GetSwapInfo_0(ctx context.Context, marshaler runtime.Marshale
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Boltz_GetSwapInfo_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.GetSwapInfo(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -169,10 +180,21 @@ func local_request_Boltz_GetSwapInfo_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Boltz_GetSwapInfo_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
 	msg, err := server.GetSwapInfo(ctx, &protoReq)
 	return msg, metadata, err
 
 }
+
+var (
+	filter_Boltz_GetSwapInfoStream_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
+)
 
 func request_Boltz_GetSwapInfoStream_0(ctx context.Context, marshaler runtime.Marshaler, client BoltzClient, req *http.Request, pathParams map[string]string) (Boltz_GetSwapInfoStreamClient, runtime.ServerMetadata, error) {
 	var protoReq GetSwapInfoRequest
@@ -193,6 +215,13 @@ func request_Boltz_GetSwapInfoStream_0(ctx context.Context, marshaler runtime.Ma
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Boltz_GetSwapInfoStream_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	stream, err := client.GetSwapInfoStream(ctx, &protoReq)

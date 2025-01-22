@@ -545,18 +545,40 @@ func (server *routedBoltzServer) ClaimSwaps(ctx context.Context, request *boltzr
 }
 
 func (server *routedBoltzServer) GetSwapInfo(ctx context.Context, request *boltzrpc.GetSwapInfoRequest) (*boltzrpc.GetSwapInfoResponse, error) {
-	swap, reverseSwap, chainSwap, err := server.database.QueryAnySwap(request.Id)
-	if err != nil {
-		return nil, errors.New("could not find Swap with ID " + request.Id)
+	// nolint: staticcheck
+	if request.Id != "" {
+		// nolint: staticcheck
+		request.Identifier = &boltzrpc.GetSwapInfoRequest_SwapId{SwapId: request.Id}
 	}
-	return server.serializeAnySwap(ctx, swap, reverseSwap, chainSwap)
+	if swapId := request.GetSwapId(); swapId != "" {
+		swap, reverseSwap, chainSwap, err := server.database.QueryAnySwap(swapId)
+		if err != nil {
+			return nil, errors.New("could not find Swap with ID " + swapId)
+		}
+		return server.serializeAnySwap(ctx, swap, reverseSwap, chainSwap)
+	} else if paymentHash := request.GetPaymentHash(); paymentHash != nil {
+		swap, err := server.database.QuerySwapByPaymentHash(paymentHash)
+		if err != nil {
+			return nil, err
+		}
+		if swap == nil {
+			return nil, status.Errorf(codes.NotFound, "could not find Swap with payment hash")
+		}
+		return server.serializeAnySwap(ctx, swap, nil, nil)
+	}
+	return nil, status.Errorf(codes.InvalidArgument, "no ID or payment hash provided")
 }
 
 func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfoRequest, stream boltzrpc.Boltz_GetSwapInfoStreamServer) error {
 	var updates <-chan nursery.SwapUpdate
 	var stop func()
 
-	if request.Id == "" || request.Id == "*" {
+	// nolint: staticcheck
+	if request.Id != "" {
+		// nolint: staticcheck
+		request.Identifier = &boltzrpc.GetSwapInfoRequest_SwapId{SwapId: request.Id}
+	}
+	if swapId := request.GetSwapId(); swapId == "" || swapId == "*" {
 		logger.Info("Starting global Swap info stream")
 		updates, stop = server.nursery.GlobalSwapUpdates()
 	} else {
@@ -564,8 +586,9 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 		if err != nil {
 			return err
 		}
-		logger.Info("Starting Swap info stream for " + request.Id)
-		updates, stop = server.nursery.SwapUpdates(request.Id)
+		swapId := info.Swap.GetId() + info.ReverseSwap.GetId() + info.ChainSwap.GetId()
+		logger.Info("Starting Swap info stream for " + swapId)
+		updates, stop = server.nursery.SwapUpdates(swapId)
 		if updates == nil {
 			if err := stream.Send(info); err != nil {
 				return err
@@ -810,6 +833,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			Error:               "",
 			PrivateKey:          privateKey,
 			Preimage:            preimage,
+			PaymentHash:         preimageHash,
 			Invoice:             createSwap.Invoice,
 			Address:             response.Address,
 			ExpectedAmount:      response.ExpectedAmount,

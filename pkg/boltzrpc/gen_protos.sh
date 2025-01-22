@@ -21,6 +21,6 @@ protoc -I . -I autoswaprpc \
 # gRPC Markdown docs
 protoc -I . -I autoswaprpc \
   --doc_opt=grpc_docs.template,grpc.md \
-  --doc_out='../docs/' \
+  --doc_out='../../docs/' \
   --experimental_allow_proto3_optional \
   boltzrpc.proto autoswaprpc/autoswaprpc.proto

@@ -2,7 +2,7 @@
 
 This page was automatically generated.
 
-Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/pkg/boltzrpc/rest-annotations.yaml).
+Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/boltzrpc/rest-annotations.yaml).
 
 
 
@@ -879,7 +879,9 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [`string`](#string) |  |  |
+| `id` | [`string`](#string) |  | **Deprecated.**  |
+| `swap_id` | [`string`](#string) |  |  |
+| `payment_hash` | [`bytes`](#bytes) |  | Only implemented for submarine swaps |
 
 
 
@@ -1746,9 +1748,9 @@ Reloads the configuration from disk.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swap` | [`ChainSwap`](#chainswap) | optional | Populated when a swap is recommended based on the current balance of the configured `from_wallet` |
+| `swap` | [`ChainSwap`](#chainswap) | optional | Populated when a swap is recommended based on the configured `wallet_balance` of the configured `from_wallet` exceeds the currently configured `max_balance` |
 | `wallet_balance` | [`boltzrpc.Balance`](#boltzrpc.balance) |  |  |
-| `max_balance` | [`uint64`](#uint64) |  | Currently configured max_balance |
+| `max_balance` | [`uint64`](#uint64) |  |  |
 
 
 

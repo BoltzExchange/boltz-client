@@ -537,7 +537,8 @@ func TestMacaroons(t *testing.T) {
 }
 
 func TestSwapInfo(t *testing.T) {
-	admin, _, stop := setup(t, setupOptions{})
+	cfg := loadConfig(t)
+	admin, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
 	_, write, _ := createTenant(t, admin, "test")
@@ -630,6 +631,36 @@ func TestSwapInfo(t *testing.T) {
 		_, err = admin.ListSwaps(request)
 		requireCode(t, err, codes.InvalidArgument)
 
+	})
+
+	t.Run("PaymentHash", func(t *testing.T) {
+		t.Run("WithoutInvoice", func(t *testing.T) {
+			info, err := admin.GetSwapInfo(swap.Id)
+			require.NoError(t, err)
+
+			preimage, err := hex.DecodeString(info.Swap.Preimage)
+			require.NoError(t, err)
+			paymentHash := sha256.Sum256(preimage)
+			now, err := admin.GetSwapInfoByPaymentHash(paymentHash[:])
+			require.NoError(t, err)
+			require.Equal(t, info, now)
+			require.NoError(t, err)
+		})
+		t.Run("WithInvoice", func(t *testing.T) {
+			node := cfg.LND
+			_, err := connectLightning(nil, node)
+			require.NoError(t, err)
+
+			invoice, err := node.CreateInvoice(100000, nil, 3600, "test")
+			require.NoError(t, err)
+
+			swap, err = admin.CreateSwap(&boltzrpc.CreateSwapRequest{Invoice: &invoice.PaymentRequest})
+			require.NoError(t, err)
+
+			info, err := admin.GetSwapInfoByPaymentHash(invoice.PaymentHash[:])
+			require.NoError(t, err)
+			require.Equal(t, swap.Id, info.Swap.Id)
+		})
 	})
 }
 
@@ -889,10 +920,11 @@ func TestReverseSwap(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, swap.Invoice)
 
+		stream, _ := swapStream(t, client, swap.Id)
+
 		_, err = lnd.PayInvoice(context.Background(), *swap.Invoice, 10000, 30, nil)
 		require.NoError(t, err)
 
-		stream, _ := swapStream(t, client, swap.Id)
 		stream(boltzrpc.SwapState_PENDING)
 		info := stream(boltzrpc.SwapState_SUCCESSFUL)
 
