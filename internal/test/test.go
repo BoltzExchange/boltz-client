@@ -145,8 +145,7 @@ func ClnCli(cmd string) string {
 }
 
 func syncCln() {
-	blockheight := BtcCli("getblockcount")
-	for ClnCli("getinfo | jq -r .blockheight") != blockheight {
+	for ClnCli("getinfo | jq -r .blockheight") != BtcCli("getblockcount") {
 		time.Sleep(250 * time.Millisecond)
 	}
 }
