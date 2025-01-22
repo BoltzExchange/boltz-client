@@ -8,10 +8,8 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -173,15 +171,9 @@ func (nursery *Nursery) recoverSwaps() error {
 		return err
 	}
 
-	var lockupTxs []string
-	var spentTxs []string
-
 	var swapIds []string
 	for _, swap := range swaps {
 		swapIds = append(swapIds, swap.Id)
-		if swap.Pair.From == boltz.CurrencyLiquid {
-			lockupTxs = append(lockupTxs, swap.LockupTransactionId)
-		}
 	}
 	for _, reverseSwap := range reverseSwaps {
 		if err := nursery.payReverseSwap(reverseSwap); err != nil {
@@ -192,27 +184,6 @@ func (nursery *Nursery) recoverSwaps() error {
 	}
 	for _, chainSwap := range chainSwaps {
 		swapIds = append(swapIds, chainSwap.Id)
-		if chainSwap.Pair.From == boltz.CurrencyLiquid {
-			lockupTxs = append(lockupTxs, chainSwap.FromData.LockupTransactionId)
-		}
-	}
-
-	for _, lockupTx := range lockupTxs {
-		if lockupTx != "" {
-			tx, err := nursery.onchain.GetTransaction(boltz.CurrencyLiquid, lockupTx, nil)
-			if err != nil {
-				return fmt.Errorf("could not get lockup transaction: %w", err)
-			}
-			for _, input := range tx.(*boltz.LiquidTransaction).Inputs {
-				spentTxs = append(spentTxs, chainhash.Hash(input.Hash).String())
-			}
-		}
-	}
-
-	for _, anyWallet := range nursery.onchain.Wallets {
-		if ownWallet, ok := anyWallet.(*wallet.Wallet); ok {
-			ownWallet.SetSpentOutputs(spentTxs)
-		}
 	}
 
 	return nursery.registerSwaps(swapIds)
