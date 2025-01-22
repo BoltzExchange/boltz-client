@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/lightningnetwork/lnd/zpay32"
 	"strconv"
 	"strings"
@@ -563,15 +564,14 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		}
 		for _, swap := range swaps {
 			if swap.Invoice != "" {
-				decoded, err := zpay32.Decode(swap.Invoice, boltz.MainNet.Btc)
+				decoded, err := lightning.DecodeInvoice(swap.Invoice, boltz.MainNet.Btc)
 				if err != nil {
-					decoded, err = zpay32.Decode(swap.Invoice, boltz.TestNet.Btc)
+					decoded, err = lightning.DecodeInvoice(swap.Invoice, boltz.TestNet.Btc)
 					if err != nil {
-						decoded, err = zpay32.Decode(swap.Invoice, boltz.Regtest.Btc)
+						decoded, err = lightning.DecodeInvoice(swap.Invoice, boltz.Regtest.Btc)
 					}
-
 				}
-				if err == nil && decoded.PaymentHash != nil {
+				if err == nil {
 					encoded := hex.EncodeToString(decoded.PaymentHash[:])
 					if _, err := tx.Exec("UPDATE swaps SET paymentHash = ? WHERE id = ?", encoded, swap.Id); err != nil {
 						return err
