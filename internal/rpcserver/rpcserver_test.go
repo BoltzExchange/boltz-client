@@ -12,6 +12,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 	"net"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1314,7 +1315,10 @@ func TestAutoSwap(t *testing.T) {
 
 				swaps, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{Include: boltzrpc.IncludeSwaps_AUTO})
 				require.NoError(t, err)
-				require.Equal(t, id, swaps.ReverseSwaps[0].Id)
+				// it might be the first index since we create swaps above aswell
+				require.True(t, slices.ContainsFunc(swaps.ReverseSwaps, func(s *boltzrpc.ReverseSwapInfo) bool {
+					return s.Id == id
+				}))
 				stream, _ = swapStream(t, admin, id)
 				stream(boltzrpc.SwapState_SUCCESSFUL)
 
