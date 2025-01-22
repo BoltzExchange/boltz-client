@@ -25,7 +25,6 @@ type SwapTree struct {
 	RefundLeaf TapLeaf
 
 	isLiquid bool
-	currency Currency
 	isClaim  bool
 	ourKey   *btcec.PrivateKey
 	boltzKey *btcec.PublicKey
