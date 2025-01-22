@@ -551,7 +551,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 
 	case 13:
 		migration := `
-		ALTER TABLE swaps ADD COLUMN "paymentHash" VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE swaps ADD COLUMN "paymentHash" VARCHAR(64) NOT NULL DEFAULT '';
 `
 		if _, err := tx.Exec(migration); err != nil {
 			return err
