@@ -1,4 +1,14 @@
 
+<a name="v2.3.6"></a>
+## [v2.3.6] - 2025-01-22
+### Feat
+- get swap by payment hash ([#377](https://github.com/BoltzExchange/boltz-client/issues/377))
+
+### Fix
+- cln regtest ([#374](https://github.com/BoltzExchange/boltz-client/issues/374))
+- docker image gdk path ([#373](https://github.com/BoltzExchange/boltz-client/issues/373))
+
+
 <a name="v2.3.5"></a>
 ## [v2.3.5] - 2025-01-11
 ### Refactor
@@ -55,28 +65,6 @@
 ## [v2.2.3] - 2024-12-04
 ### Fix
 - change default mempool liquid api to bull bitcoin ([#349](https://github.com/BoltzExchange/boltz-client/issues/349))
-- decrease `MaxInputs` by 1 ([#343](https://github.com/BoltzExchange/boltz-client/issues/343))
-- add gdk fee floor ([#344](https://github.com/BoltzExchange/boltz-client/issues/344))
-
-
-<a name="v2.3.0"></a>
-## [v2.3.0] - 2024-11-29
-### Feat
-- include send fee in balance check ([#346](https://github.com/BoltzExchange/boltz-client/issues/346))
-- autoswap execute rpc ([#342](https://github.com/BoltzExchange/boltz-client/issues/342))
-- chain autoswap sweeps ([#341](https://github.com/BoltzExchange/boltz-client/issues/341))
-- autoswap balance check ([#336](https://github.com/BoltzExchange/boltz-client/issues/336))
-
-### Fix
-- run auto consolidation on startup ([#345](https://github.com/BoltzExchange/boltz-client/issues/345))
-- decrease `MaxInputs` by 1 ([#343](https://github.com/BoltzExchange/boltz-client/issues/343))
-- add gdk fee floor ([#344](https://github.com/BoltzExchange/boltz-client/issues/344))
-- check for existing submarine swaps before creation ([#340](https://github.com/BoltzExchange/boltz-client/issues/340))
-- check for same currency on existing credentials aswell ([#335](https://github.com/BoltzExchange/boltz-client/issues/335))
-- include refunded swaps in `FailedSwapsQuery` ([#338](https://github.com/BoltzExchange/boltz-client/issues/338))
-
-### Refactor
-- increase default ln autoswap reserve to 10 percent ([#337](https://github.com/BoltzExchange/boltz-client/issues/337))
 
 
 <a name="v2.2.2"></a>
@@ -556,13 +544,13 @@
 - improve Channel Creation enforcement
 
 
+[v2.3.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.5...v2.3.6
 [v2.3.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.4...v2.3.5
 [v2.3.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.3...v2.3.4
 [v2.3.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.2...v2.3.3
 [v2.3.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.1...v2.3.2
 [v2.3.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.3...v2.3.1
-[v2.2.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.0...v2.2.3
-[v2.3.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.2...v2.3.0
+[v2.2.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.2...v2.2.3
 [v2.2.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.1...v2.2.2
 [v2.2.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.0...v2.2.1
 [v2.2.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.11...v2.2.0
