@@ -1,4 +1,10 @@
 
+<a name="v2.3.7"></a>
+## [v2.3.7] - 2025-01-22
+### Fix
+- update build package path ([#382](https://github.com/BoltzExchange/boltz-client/issues/382))
+
+
 <a name="v2.3.6"></a>
 ## [v2.3.6] - 2025-01-22
 ### Feat
@@ -544,6 +550,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.3.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.6...v2.3.7
 [v2.3.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.5...v2.3.6
 [v2.3.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.4...v2.3.5
 [v2.3.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.3...v2.3.4
