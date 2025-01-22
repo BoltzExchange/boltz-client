@@ -144,9 +144,17 @@ func ClnCli(cmd string) string {
 	return run("lightning-cli-sim 1 " + cmd)
 }
 
+func syncCln() {
+	blockheight := BtcCli("getblockcount")
+	for ClnCli("getinfo | jq -r .blockheight") != blockheight {
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
 func MineBlock() {
 	BtcCli("-generate 1")
 	LiquidCli("-generate 1")
+	syncCln()
 }
 
 func MineUntil(t *testing.T, cli Cli, height int64) {
@@ -154,6 +162,7 @@ func MineUntil(t *testing.T, cli Cli, height int64) {
 	require.NoError(t, err)
 	blocks := height - blockHeight
 	cli(fmt.Sprintf("-generate %d", blocks))
+	syncCln()
 }
 
 func GetNewAddress(cli Cli) string {
