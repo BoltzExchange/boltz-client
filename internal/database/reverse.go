@@ -308,7 +308,7 @@ func (database *Database) queryReverseSwaps(query string, values ...any) (swaps 
 
 func (database *Database) QueryReverseSwaps(args SwapQuery) ([]*ReverseSwap, error) {
 	where, values := args.ToWhereClause()
-	return database.queryReverseSwaps("SELECT * FROM reverseSwaps"+where, values...)
+	return database.queryReverseSwaps("SELECT * FROM reverseSwaps "+where+" ORDER BY createdAt DESC ", values...)
 }
 
 func (database *Database) QueryPendingReverseSwaps() ([]*ReverseSwap, error) {

@@ -294,7 +294,7 @@ func (database *Database) queryChainSwapData(id string, currency boltz.Currency,
 
 func (database *Database) QueryChainSwaps(args SwapQuery) ([]*ChainSwap, error) {
 	where, values := args.ToWhereClause()
-	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where, values...)
+	return database.queryChainSwaps("SELECT * FROM chainSwaps"+where+" ORDER BY createdAt DESC ", values...)
 }
 
 const refundableChainSwapsQuery = `

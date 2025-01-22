@@ -311,7 +311,7 @@ func (database *Database) querySwaps(query string, args ...any) (swaps []*Swap, 
 
 func (database *Database) QuerySwaps(args SwapQuery) ([]*Swap, error) {
 	where, values := args.ToWhereClause()
-	return database.querySwaps("SELECT * FROM swaps"+where, values...)
+	return database.querySwaps("SELECT * FROM swaps"+where+" ORDER BY createdAt DESC ", values...)
 }
 
 func (database *Database) QueryPendingSwaps() ([]*Swap, error) {
