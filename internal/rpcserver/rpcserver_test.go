@@ -1163,6 +1163,7 @@ func TestAutoSwap(t *testing.T) {
 			FromWallet: walletName,
 			ToWallet:   cfg.Node,
 			Enabled:    true,
+			Budget:     1_000_000,
 		}
 		fromWallet, err := admin.GetWallet(cfg.FromWallet)
 		require.NoError(t, err)
