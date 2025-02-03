@@ -85,6 +85,7 @@ type Config struct {
 
 	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
+	Pro        bool `long:"pro" description:"Use boltz pro API"`
 	ReferralId string
 
 	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
@@ -246,6 +247,10 @@ func LoadConfig(dataDir string) (*Config, error) {
 
 	cfg.RPC.AdminMacaroonPath = utils.ExpandDefaultPath(macaroonDir, cfg.RPC.AdminMacaroonPath, "admin.macaroon")
 	cfg.RPC.ReadonlyMacaroonPath = utils.ExpandDefaultPath(macaroonDir, cfg.RPC.ReadonlyMacaroonPath, "readonly.macaroon")
+
+	if cfg.Pro {
+		cfg.ReferralId = "pro"
+	}
 
 	createDirIfNotExists(cfg.DataDir)
 	createDirIfNotExists(macaroonDir)
