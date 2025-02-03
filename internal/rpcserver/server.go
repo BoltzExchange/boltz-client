@@ -342,7 +342,7 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 		logger.Info("Using configured Boltz endpoint: " + boltzUrl)
 	}
 
-	boltzApi := &boltz.Api{URL: boltzUrl}
+	boltzApi := &boltz.Api{URL: boltzUrl, Referral: cfg.ReferralId}
 	if cfg.Proxy != "" {
 		proxy, err := url.Parse(cfg.Proxy)
 		if err != nil {
