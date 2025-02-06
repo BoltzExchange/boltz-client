@@ -14,8 +14,9 @@ import (
 )
 
 type Api struct {
-	URL    string
-	Client http.Client
+	URL      string
+	Client   http.Client
+	Referral string
 
 	DisablePartialSignatures bool
 }
@@ -713,7 +714,13 @@ func (boltz *Api) FetchBolt12Invoice(offer string, amountSat uint64) (string, er
 }
 
 func (boltz *Api) sendGetRequest(endpoint string, response interface{}) error {
-	res, err := boltz.Client.Get(boltz.URL + endpoint)
+	request, err := http.NewRequest("GET", boltz.URL+endpoint, nil)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Referral", boltz.Referral)
+
+	res, err := boltz.Client.Do(request)
 
 	if err != nil {
 		return err
