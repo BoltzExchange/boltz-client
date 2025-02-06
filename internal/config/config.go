@@ -85,7 +85,7 @@ type Config struct {
 
 	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
-	Pro        bool `long:"pro" description:"Use boltz pro API"`
+	Pro        bool `long:"pro" description:"Use the Boltz Pro API"`
 	ReferralId string
 
 	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
