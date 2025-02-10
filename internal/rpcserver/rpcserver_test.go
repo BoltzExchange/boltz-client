@@ -1191,6 +1191,8 @@ func TestAutoSwap(t *testing.T) {
 		require.NotNil(t, info.ChainSwap)
 		id := info.ChainSwap.Id
 
+		waitWalletTx(t, admin, "")
+
 		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
 		require.Nil(t, recommendations.Chain[0].Swap)
@@ -1337,6 +1339,30 @@ func TestAutoSwap(t *testing.T) {
 	})
 
 }
+func waitWalletTx(t *testing.T, client client.Boltz, txId string) {
+	if txId != "" {
+		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: testWallet.Id})
+		require.NoError(t, err)
+		for _, tx := range response.Transactions {
+			if tx.Id == txId {
+				return
+			}
+		}
+	}
+	notifier := wallet.TransactionNotifier.Get()
+	defer wallet.TransactionNotifier.Remove(notifier)
+	timeout := time.After(30 * time.Second)
+	for {
+		select {
+		case notification := <-notifier:
+			if notification.TxId == txId || txId == "" {
+				return
+			}
+		case <-timeout:
+			require.Fail(t, "timed out while waiting for tx")
+		}
+	}
+}
 
 func TestWalletTransactions(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{})
@@ -1351,29 +1377,6 @@ func TestWalletTransactions(t *testing.T) {
 		}
 		require.Fail(t, "swap not found")
 		return nil
-	}
-
-	waitWalletTx := func(t *testing.T, txId string) {
-		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: testWallet.Id})
-		require.NoError(t, err)
-		for _, tx := range response.Transactions {
-			if tx.Id == txId {
-				return
-			}
-		}
-		notifier := wallet.TransactionNotifier.Get()
-		defer wallet.TransactionNotifier.Remove(notifier)
-		timeout := time.After(30 * time.Second)
-		for {
-			select {
-			case notification := <-notifier:
-				if notification.TxId == txId {
-					return
-				}
-			case <-timeout:
-				require.Fail(t, "timed out while waiting for tx")
-			}
-		}
 	}
 
 	t.Run("Pagination", func(t *testing.T) {
@@ -1427,7 +1430,7 @@ func TestWalletTransactions(t *testing.T) {
 			WalletId:       &testWallet.Id,
 		})
 		require.NoError(t, err)
-		waitWalletTx(t, swap.GetClaimTransactionId())
+		waitWalletTx(t, client, swap.GetClaimTransactionId())
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
 		findSwap(t, response, swap.Id, boltzrpc.TransactionType_CLAIM)
@@ -1456,7 +1459,7 @@ func TestWalletTransactions(t *testing.T) {
 		test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount-1000)
 		stream, _ := swapStream(t, client, swap.Id)
 		info := stream(boltzrpc.SwapState_REFUNDED)
-		waitWalletTx(t, info.ChainSwap.FromData.GetTransactionId())
+		waitWalletTx(t, client, info.ChainSwap.FromData.GetTransactionId())
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
 		findSwap(t, response, swap.Id, boltzrpc.TransactionType_REFUND)
@@ -1473,7 +1476,7 @@ func TestWalletTransactions(t *testing.T) {
 			WalletId:         &testWallet.Id,
 		})
 		require.NoError(t, err)
-		waitWalletTx(t, swap.TxId)
+		waitWalletTx(t, client, swap.TxId)
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
 		findSwap(t, response, swap.Id, boltzrpc.TransactionType_LOCKUP)
@@ -1803,12 +1806,14 @@ func TestWalletSendReceive(t *testing.T) {
 		require.NoError(t, err)
 
 		sendAll := true
-		_, err = client.WalletSend(&boltzrpc.WalletSendRequest{
+		sendResponse, err := client.WalletSend(&boltzrpc.WalletSendRequest{
 			Id:      otherWallet.Wallet.Id,
 			Address: nodeReceive.Address,
 			SendAll: &sendAll,
 		})
 		require.NoError(t, err)
+
+		waitWalletTx(t, client, sendResponse.TxId)
 
 		otherWallet, err := client.GetWalletById(otherWallet.Wallet.Id)
 		require.NoError(t, err)
