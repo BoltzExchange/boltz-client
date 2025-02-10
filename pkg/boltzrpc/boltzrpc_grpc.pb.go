@@ -43,6 +43,7 @@ const (
 	Boltz_GetWallet_FullMethodName              = "/boltzrpc.Boltz/GetWallet"
 	Boltz_GetWalletSendFee_FullMethodName       = "/boltzrpc.Boltz/GetWalletSendFee"
 	Boltz_ListWalletTransactions_FullMethodName = "/boltzrpc.Boltz/ListWalletTransactions"
+	Boltz_BumpTransaction_FullMethodName        = "/boltzrpc.Boltz/BumpTransaction"
 	Boltz_GetWalletCredentials_FullMethodName   = "/boltzrpc.Boltz/GetWalletCredentials"
 	Boltz_RemoveWallet_FullMethodName           = "/boltzrpc.Boltz/RemoveWallet"
 	Boltz_WalletSend_FullMethodName             = "/boltzrpc.Boltz/WalletSend"
@@ -124,6 +125,9 @@ type BoltzClient interface {
 	GetWalletSendFee(ctx context.Context, in *WalletSendRequest, opts ...grpc.CallOption) (*WalletSendFee, error)
 	// Returns recent transactions from a wallet.
 	ListWalletTransactions(ctx context.Context, in *ListWalletTransactionsRequest, opts ...grpc.CallOption) (*ListWalletTransactionsResponse, error)
+	// Increase the fee of a transaction using RBF.
+	// The transaction has to belong to one of the clients wallets.
+	BumpTransaction(ctx context.Context, in *BumpTransactionRequest, opts ...grpc.CallOption) (*BumpTransactionResponse, error)
 	// Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
 	GetWalletCredentials(ctx context.Context, in *GetWalletCredentialsRequest, opts ...grpc.CallOption) (*WalletCredentials, error)
 	// Removes a wallet.
@@ -394,6 +398,15 @@ func (c *boltzClient) ListWalletTransactions(ctx context.Context, in *ListWallet
 	return out, nil
 }
 
+func (c *boltzClient) BumpTransaction(ctx context.Context, in *BumpTransactionRequest, opts ...grpc.CallOption) (*BumpTransactionResponse, error) {
+	out := new(BumpTransactionResponse)
+	err := c.cc.Invoke(ctx, Boltz_BumpTransaction_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *boltzClient) GetWalletCredentials(ctx context.Context, in *GetWalletCredentialsRequest, opts ...grpc.CallOption) (*WalletCredentials, error) {
 	out := new(WalletCredentials)
 	err := c.cc.Invoke(ctx, Boltz_GetWalletCredentials_FullMethodName, in, out, opts...)
@@ -569,6 +582,9 @@ type BoltzServer interface {
 	GetWalletSendFee(context.Context, *WalletSendRequest) (*WalletSendFee, error)
 	// Returns recent transactions from a wallet.
 	ListWalletTransactions(context.Context, *ListWalletTransactionsRequest) (*ListWalletTransactionsResponse, error)
+	// Increase the fee of a transaction using RBF.
+	// The transaction has to belong to one of the clients wallets.
+	BumpTransaction(context.Context, *BumpTransactionRequest) (*BumpTransactionResponse, error)
 	// Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
 	GetWalletCredentials(context.Context, *GetWalletCredentialsRequest) (*WalletCredentials, error)
 	// Removes a wallet.
@@ -671,6 +687,9 @@ func (UnimplementedBoltzServer) GetWalletSendFee(context.Context, *WalletSendReq
 }
 func (UnimplementedBoltzServer) ListWalletTransactions(context.Context, *ListWalletTransactionsRequest) (*ListWalletTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListWalletTransactions not implemented")
+}
+func (UnimplementedBoltzServer) BumpTransaction(context.Context, *BumpTransactionRequest) (*BumpTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BumpTransaction not implemented")
 }
 func (UnimplementedBoltzServer) GetWalletCredentials(context.Context, *GetWalletCredentialsRequest) (*WalletCredentials, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWalletCredentials not implemented")
@@ -1138,6 +1157,24 @@ func _Boltz_ListWalletTransactions_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_BumpTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BumpTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).BumpTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_BumpTransaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).BumpTransaction(ctx, req.(*BumpTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Boltz_GetWalletCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetWalletCredentialsRequest)
 	if err := dec(in); err != nil {
@@ -1448,6 +1485,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListWalletTransactions",
 			Handler:    _Boltz_ListWalletTransactions_Handler,
+		},
+		{
+			MethodName: "BumpTransaction",
+			Handler:    _Boltz_BumpTransaction_Handler,
 		},
 		{
 			MethodName: "GetWalletCredentials",

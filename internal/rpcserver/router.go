@@ -1604,6 +1604,62 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 	return response, nil
 }
 
+func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *boltzrpc.BumpTransactionRequest) (*boltzrpc.BumpTransactionResponse, error) {
+	swapId := request.GetSwapId()
+	txId := request.GetTxId()
+	var swaps []*database.AnySwap
+	if swapId != "" {
+		swap, err := server.database.GetAnySwap(swapId)
+		if err != nil {
+			return nil, err
+		}
+		if swap.RefundTransactionid != "" {
+			txId = swap.RefundTransactionid
+		} else if swap.ClaimTransactionid != "" {
+			txId = swap.ClaimTransactionid
+		} else if swap.LockupTransactionid != "" {
+			txId = swap.LockupTransactionid
+		} else {
+			return nil, status.Errorf(codes.NotFound, "swap %s has no transactions to bump", swapId)
+		}
+		swaps = []*database.AnySwap{swap}
+	} else {
+		var err error
+		swaps, err = server.database.QuerySwapsByTransactions(database.SwapQuery{}, []string{txId})
+		if err != nil {
+			return nil, err
+		}
+	}
+	tx, err := wallet.BumpTransactionFee(request.TxId, request.GetSatPerVbyte())
+	if err != nil {
+		return nil, err
+	}
+	txType := boltzrpc.TransactionType_UNKNOWN
+	if len(swaps) > 0 {
+		txType = getTransactionType(swaps[0], txId)
+		if txType == boltzrpc.TransactionType_UNKNOWN {
+			return nil, status.Errorf(codes.NotFound, "transaction %s is not part of a swap", txId)
+		}
+		if txType == boltzrpc.TransactionType_CLAIM || txType == boltzrpc.TransactionType_REFUND {
+			return nil, status.Errorf(codes.Unimplemented, "claim and refund transactions cant be bumped")
+		}
+	}
+	checker := onchain.WalletChecker{
+		TenantId:      macaroons.TenantIdFromContext(ctx),
+		AllowReadonly: false,
+	}
+	for _, wallet := range server.onchain.GetWallets(checker) {
+		tx, err := wallet.BumpTransactionFee(txId, request.GetSatPerVbyte())
+		if err == nil {
+			return &boltzrpc.BumpTransactionResponse{TxId: tx}, nil
+		}
+		if !errors.Is(err, errors.ErrUnsupported) && !strings.Contains(err.Error(), "not found") {
+			return nil, err
+		}
+	}
+	return nil, status.Errorf(codes.NotFound, "transaction %s does not belong to any wallet", txId)
+}
+
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {
 	info := wal.GetWalletInfo()
 	result := &boltzrpc.Wallet{

@@ -94,6 +94,7 @@ type Wallet interface {
 	GetWalletInfo() WalletInfo
 	Disconnect() error
 	GetTransactions(limit, offset uint64) ([]*WalletTransaction, error)
+	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
 }
 
 type ElectrumOptions struct {

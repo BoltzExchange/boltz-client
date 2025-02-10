@@ -34,7 +34,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
 	lnmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/lightning"
 	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/client"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
@@ -244,12 +243,8 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	}
 }
 
-func getCli(pair boltzrpc.Currency) test.Cli {
-	if pair == boltzrpc.Currency_LBTC {
-		return test.LiquidCli
-	} else {
-		return test.BtcCli
-	}
+func getCli(currency boltzrpc.Currency) test.Cli {
+	return test.GetCli(parseCurrency(currency))
 }
 
 type streamFunc func(state boltzrpc.SwapState) *boltzrpc.GetSwapInfoResponse
@@ -1376,19 +1371,7 @@ func waitWalletTx(t *testing.T, client client.Boltz, txId string) {
 			}
 		}
 	}
-	notifier := wallet.TransactionNotifier.Get()
-	defer wallet.TransactionNotifier.Remove(notifier)
-	timeout := time.After(30 * time.Second)
-	for {
-		select {
-		case notification := <-notifier:
-			if notification.TxId == txId || txId == "" {
-				return
-			}
-		case <-timeout:
-			require.Fail(t, "timed out while waiting for tx")
-		}
-	}
+	test.WaitWalletTx(t, txId)
 }
 
 func TestWalletTransactions(t *testing.T) {
@@ -1491,6 +1474,202 @@ func TestWalletTransactions(t *testing.T) {
 			require.Fail(t, "swap not found")
 		})
 	}
+}
+
+func TestBumpTransaction(t *testing.T) {
+	cfg := loadConfig(t)
+	chain := getOnchain(t, cfg)
+	client, _, stop := setup(t, setupOptions{chain: chain, cfg: cfg})
+	defer stop()
+
+	request := &boltzrpc.BumpWalletTransactionRequest{
+		Id:          1234,
+		TxId:        "transaction",
+		SatPerVbyte: 10,
+	}
+	newTxId := "newTransaction"
+
+	t.Run("TxId", func(t *testing.T) {
+		request := &boltzrpc.BumpTransactionRequest{
+			Previous: &boltzrpc.BumpTransactionRequest_TxId{
+				TxId: "transaction",
+			},
+		},
+		{
+			desc: "Error",
+			setupWallet: func(mock *onchainmock.MockWallet) {
+				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
+					Id:       request.Id,
+					Readonly: false,
+					TenantId: database.DefaultTenantId,
+				})
+				mock.EXPECT().BumpTransactionFee(request.TxId, request.SatPerVbyte).Return("", errors.New("error"))
+			},
+			wantErr: "error",
+		},
+		{
+			desc: "Not Found",
+			setupWallet: func(mock *onchainmock.MockWallet) {
+				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
+					Id:       12342,
+					Readonly: false,
+					TenantId: database.DefaultTenantId,
+				})
+			},
+			wantErr: "not found",
+		},
+		{
+			desc: "Readonly",
+			setupWallet: func(mock *onchainmock.MockWallet) {
+				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
+					Id:       request.Id,
+					Readonly: true,
+					TenantId: database.DefaultTenantId,
+				})
+			},
+			wantErr: "not found",
+		},
+	}
+
+		tests := []struct {
+			desc    string
+			setup   func(t *testing.T)
+			wantErr string
+		}{
+			{
+				desc: "Success",
+				setup: func(t *testing.T) {
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(request.GetTxId(), *request.SatPerVbyte).Return(newTxId, nil)
+				},
+			},
+			{
+				desc: "Error",
+				setup: func(t *testing.T) {
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(request.GetTxId(), *request.SatPerVbyte).Return("", errors.New("error"))
+				},
+				wantErr: "error",
+			},
+			{
+				desc: "NotFound",
+				setup: func(t *testing.T) {
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(request.GetTxId(), *request.SatPerVbyte).Return("", errors.New("not found"))
+				},
+				wantErr: "does not belong to any wallet",
+			},
+			{
+				desc: "Readonly",
+				setup: func(t *testing.T) {
+					_, walletInfo := newMockWallet(t, chain)
+					walletInfo.Readonly = true
+				},
+				wantErr: "does not belong to any wallet",
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				tc.setup(t)
+				_, err := client.BumpTransaction(request)
+				if tc.wantErr != "" {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), tc.wantErr)
+				} else {
+					require.NoError(t, err)
+				}
+			})
+		}
+	})
+
+	t.Run("SwapId", func(t *testing.T) {
+		swapId := "swapId"
+		txId := "old tx"
+		request := &boltzrpc.BumpTransactionRequest{
+			Previous: &boltzrpc.BumpTransactionRequest_SwapId{
+				SwapId: swapId,
+			},
+			SatPerVbyte: &satPerVbyte,
+		}
+		newTxId := "newTransaction"
+		normalSwap := "normalSwap"
+
+		tests := []struct {
+			desc    string
+			setup   func(t *testing.T)
+			swaps   test.FakeSwaps
+			wantErr string
+		}{
+			{
+				desc: "Success",
+				swaps: test.FakeSwaps{
+					Swaps: []database.Swap{
+						{
+							Id:                  normalSwap,
+							LockupTransactionId: txId,
+						},
+					},
+				},
+				setup: func(t *testing.T) {
+					request.Previous = &boltzrpc.BumpTransactionRequest_SwapId{SwapId: normalSwap}
+
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(txId, *request.SatPerVbyte).Return(newTxId, nil)
+				},
+			},
+			{
+				desc: "NotImplemented",
+				swaps: test.FakeSwaps{
+					Swaps: []database.Swap{
+						{
+							Id:                  swapId,
+							RefundTransactionId: txId,
+						},
+					},
+				},
+				setup: func(t *testing.T) {
+					request.Previous = &boltzrpc.BumpTransactionRequest_SwapId{SwapId: swapId}
+					newMockWallet(t, chain)
+				},
+				wantErr: "refund transactions cant be bumped",
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				tc.setup(t)
+				tc.swaps.Create(t, cfg.Database)
+
+				_, err := client.BumpTransaction(request)
+				if tc.wantErr != "" {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), tc.wantErr)
+				} else {
+					require.NoError(t, err)
+				}
+			})
+		}
+	})
+
+	t.Run("Swaps", func(t *testing.T) {
+		t.Run("Submarine", func(t *testing.T) {
+			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Amount: swapAmount,
+			})
+			require.NoError(t, err)
+
+			_, statusStream := swapStream(t, client, swap.Id)
+
+			lockupTx := test.SendToAddress(test.BtcCli, swap.Address, swap.ExpectedAmount)
+			info := statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+			require.Equal(t, lockupTx, info.Swap.LockupTransactionId)
+
+			newLockupTx := test.BumpFee(test.BtcCli, lockupTx)
+			info = statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+			require.Equal(t, newLockupTx, info.Swap.LockupTransactionId)
+		})
+	})
 }
 
 func TestWallet(t *testing.T) {
