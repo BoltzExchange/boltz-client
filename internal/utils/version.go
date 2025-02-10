@@ -8,6 +8,9 @@ import (
 )
 
 func CheckVersion(name string, version string, minVersion string) error {
+	if strings.Contains(version, "v") {
+		version = strings.Split(version, "v")[1]
+	}
 	// strip lnd commit
 	version = strings.Split(version, " ")[0]
 	// strip cln rc
