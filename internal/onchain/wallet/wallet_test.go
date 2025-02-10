@@ -256,6 +256,37 @@ func TestAutoConsolidate(t *testing.T) {
 
 }
 
+func TestWallet_BumpTransactionFee(t *testing.T) {
+	getTransaction := func(txId string) *onchain.WalletTransaction {
+		test.WaitWalletTx(t, txId)
+		txs, err := wallet.GetTransactions(0, 0)
+		require.NoError(t, err)
+		for _, tx := range txs {
+			if tx.Id == txId {
+				return tx
+			}
+		}
+		require.Fail(t, "transaction not found")
+		return nil
+	}
+
+	someAddress := test.GetNewAddress(test.BtcCli)
+	amount := int64(1000)
+
+	txId, err := wallet.SendToAddress(someAddress, uint64(amount), 1, false)
+	require.NoError(t, err)
+	tx := getTransaction(txId)
+
+	newTxId, err := wallet.BumpTransactionFee(txId, 2)
+	require.NoError(t, err)
+	test.WaitWalletTx(t, newTxId)
+	newTx := getTransaction(newTxId)
+
+	oldFee := tx.BalanceChange + amount
+	newFee := newTx.BalanceChange + amount
+	require.Equal(t, 2*oldFee, newFee)
+}
+
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name    string

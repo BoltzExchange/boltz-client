@@ -234,3 +234,19 @@ func PastDate(duration time.Duration) time.Time {
 func PrintBackendLogs() {
 	fmt.Println(bash("docker logs boltz-backend"))
 }
+
+func WaitWalletTx(t *testing.T, txId string) {
+	notifier := wallet.TransactionNotifier.Get()
+	defer wallet.TransactionNotifier.Remove(notifier)
+	timeout := time.After(30 * time.Second)
+	for {
+		select {
+		case notification := <-notifier:
+			if notification.TxId == txId {
+				return
+			}
+		case <-timeout:
+			require.Fail(t, "timed out while waiting for tx")
+		}
+	}
+}

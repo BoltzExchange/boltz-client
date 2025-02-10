@@ -720,17 +720,19 @@ func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVby
 		return nil, err
 	}
 
-	// Disable RBF
-	for asset, current := range outputs.Unspent {
-		if len(current) > int(config.MaxInputs) {
-			if sendAll {
-				outputs.Unspent[asset] = current[:config.MaxInputs]
-			} else {
-				return nil, errors.New("too many inputs")
+	// Disable RBF on liquid
+	if wallet.Currency == boltz.CurrencyLiquid {
+		for asset, current := range outputs.Unspent {
+			if len(current) > int(config.MaxInputs) {
+				if sendAll {
+					outputs.Unspent[asset] = current[:config.MaxInputs]
+				} else {
+					return nil, errors.New("too many inputs")
+				}
 			}
-		}
-		for _, output := range current {
-			output["sequence"] = wire.MaxTxInSequenceNum - 1
+			for _, output := range current {
+				output["sequence"] = wire.MaxTxInSequenceNum - 1
+			}
 		}
 	}
 
@@ -766,6 +768,65 @@ func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVby
 	return result, nil
 }
 
+func (wallet *Wallet) broadcastTransaction(transaction any) (tx string, err error) {
+	wallet.spentOutputsLock.Lock()
+	defer wallet.spentOutputsLock.Unlock()
+	handler := new(AuthHandler)
+	params, free := toJson(transaction)
+	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, handler), handler, &transaction); err != nil {
+		return "", err
+	}
+	free()
+
+	params, free = toJson(transaction)
+	if err := withAuthHandler(C.GA_sign_transaction(wallet.session, params, handler), handler, &transaction); err != nil {
+		return "", err
+	}
+	free()
+
+	var signedTx struct {
+		Transaction       string `mapstructure:"transaction"`
+		Error             string `mapstructure:"error"`
+		TransactionInputs []struct {
+			TxId string `mapstructure:"txhash"`
+		} `mapstructure:"transaction_inputs"`
+	}
+	if err := mapstructure.Decode(transaction, &signedTx); err != nil {
+		return "", err
+	}
+	if signedTx.Error != "" {
+		return "", fmt.Errorf("could not sign: %s", signedTx.Error)
+	}
+
+	if wallet.txProvider != nil {
+		tx, err = wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
+	} else {
+		params, free = toJson(transaction)
+		var sendTx struct {
+			TxHash string `json:"txhash"`
+			Error  string `json:"error"`
+		}
+		if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
+			return "", err
+		}
+		free()
+
+		if sendTx.Error != "" {
+			err = errors.New(sendTx.Error)
+		}
+		tx = sendTx.TxHash
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to broadcast: %w", err)
+	}
+
+	for _, input := range signedTx.TransactionInputs {
+		wallet.spentOutputs[input.TxId] = true
+	}
+
+	return tx, nil
+}
+
 func (wallet *Wallet) GetSendFee(address string, amount uint64, satPerVbyte float64, sendAll bool) (send uint64, fee uint64, err error) {
 	result, err := wallet.createTransaction(address, amount, satPerVbyte, sendAll)
 	if err != nil {
@@ -793,62 +854,7 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", err
 	}
 
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
-	handler := new(AuthHandler)
-	params, free := toJson(result)
-	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, handler), handler, &result); err != nil {
-		return "", err
-	}
-	free()
-
-	params, free = toJson(result)
-	if err := withAuthHandler(C.GA_sign_transaction(wallet.session, params, handler), handler, &result); err != nil {
-		return "", err
-	}
-	free()
-
-	var signedTx struct {
-		Transaction       string `mapstructure:"transaction"`
-		Error             string `mapstructure:"error"`
-		TransactionInputs []struct {
-			TxId string `mapstructure:"txhash"`
-		} `mapstructure:"transaction_inputs"`
-	}
-	if err := mapstructure.Decode(result, &signedTx); err != nil {
-		return "", err
-	}
-	if signedTx.Error != "" {
-		return "", fmt.Errorf("could not sign: %s", signedTx.Error)
-	}
-
-	if wallet.txProvider != nil {
-		tx, err = wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
-	} else {
-		params, free = toJson(result)
-		var sendTx struct {
-			TxHash string `json:"txhash"`
-			Error  string `json:"error"`
-		}
-		if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
-			return "", err
-		}
-		free()
-
-		if sendTx.Error != "" {
-			err = errors.New(sendTx.Error)
-		}
-		tx = sendTx.TxHash
-	}
-	if err != nil {
-		return "", fmt.Errorf("failed to broadcast: %w", err)
-	}
-
-	for _, input := range signedTx.TransactionInputs {
-		wallet.spentOutputs[input.TxId] = true
-	}
-
-	return tx, nil
+	return wallet.broadcastTransaction(result)
 }
 
 func (wallet *Wallet) SetSpentOutputs(outputs []string) {
@@ -860,7 +866,7 @@ func (wallet *Wallet) SetSpentOutputs(outputs []string) {
 	}
 }
 
-func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
+func (wallet *Wallet) getTransactions(limit, offset uint64) ([]map[string]any, error) {
 	if wallet.subaccount == nil {
 		return nil, ErrSubAccountNotSet
 	}
@@ -878,25 +884,17 @@ func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTr
 	defer free()
 	handler := new(AuthHandler)
 	var result struct {
-		Transactions []struct {
-			BlockHeight uint32 `json:"block_height"`
-			TxId        string `json:"txhash"`
-			Inputs      []struct {
-				Address    string `json:"address"`
-				Satoshi    uint64 `json:"satoshi"`
-				IsRelevant bool   `json:"is_relevant"`
-			}
-			Outputs []struct {
-				Address    string `json:"address"`
-				Satoshi    uint64 `json:"satoshi"`
-				IsRelevant bool   `json:"is_relevant"`
-			}
-			Timestamp int64            `json:"created_at_ts"`
-			Type      string           `json:"type"`
-			Satoshi   map[string]int64 `json:"satoshi"`
-		} `json:"transactions"`
+		Transactions []map[string]any `json:"transactions"`
 	}
 	if err := withAuthHandler(C.GA_get_transactions(wallet.session, params, handler), handler, &result); err != nil {
+		return nil, err
+	}
+	return result.Transactions, nil
+}
+
+func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
+	result, err := wallet.getTransactions(limit, offset)
+	if err != nil {
 		return nil, err
 	}
 
@@ -906,7 +904,27 @@ func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTr
 	}
 
 	var transactions []*onchain.WalletTransaction
-	for _, tx := range result.Transactions {
+	for _, rawTx := range result {
+		var tx struct {
+			BlockHeight uint32 `mapstructure:"block_height"`
+			TxId        string `mapstructure:"txhash"`
+			Inputs      []struct {
+				Address    string `mapstructure:"address"`
+				Satoshi    uint64 `mapstructure:"satoshi"`
+				IsRelevant bool   `mapstructure:"is_relevant"`
+			}
+			Outputs []struct {
+				Address    string `mapstructure:"address"`
+				Satoshi    uint64 `mapstructure:"satoshi"`
+				IsRelevant bool   `mapstructure:"is_relevant"`
+			}
+			Timestamp int64            `mapstructure:"created_at_ts"`
+			Type      string           `mapstructure:"type"`
+			Satoshi   map[string]int64 `mapstructure:"satoshi"`
+		}
+		if err := mapstructure.Decode(rawTx, &tx); err != nil {
+			return nil, err
+		}
 		var outputs []onchain.TransactionOutput
 		for _, out := range tx.Outputs {
 			outputs = append(outputs, onchain.TransactionOutput{
@@ -926,6 +944,55 @@ func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTr
 	}
 
 	return transactions, nil
+}
+
+func (wallet *Wallet) BumpTransactionFee(txId string, satPerVbyte float64) (string, error) {
+	if wallet.subaccount == nil {
+		return "", ErrSubAccountNotSet
+	}
+	outputs, err := wallet.getUnspentOutputs(*wallet.subaccount, false)
+	if err != nil {
+		return "", err
+	}
+
+	var limit uint64 = 30
+	var offset uint64
+	var found any
+	for {
+		result, err := wallet.getTransactions(limit, offset)
+		if err != nil {
+			return "", err
+		}
+		for _, tx := range result {
+			if tx["txhash"] == txId {
+				found = tx
+				break
+			}
+		}
+		if len(result) < int(limit) {
+			break
+		}
+		offset += limit
+	}
+	if found == nil {
+		return "", errors.New("previous transaction not found")
+	}
+
+	transactionDetails, free := toJson(map[string]any{
+		// gdk uses sat/kVB
+		"fee_rate":             satPerVbyte * 1000,
+		"utxos":                outputs.Unspent,
+		"previous_transaction": found,
+	})
+	defer free()
+
+	handler := new(AuthHandler)
+	var result any
+	if err := withAuthHandler(C.GA_create_transaction(wallet.session, transactionDetails, handler), handler, &result); err != nil {
+		return "", err
+	}
+
+	return wallet.broadcastTransaction(result)
 }
 
 func (wallet *Wallet) Ready() bool {

@@ -134,6 +134,11 @@ service Boltz {
     rpc ListWalletTransactions (ListWalletTransactionsRequest) returns (ListWalletTransactionsResponse);
 
     /*
+    Increase the fee of a wallet transaction using RBF.
+     */
+    rpc BumpWalletTransaction (BumpWalletTransactionRequest) returns (BumpWalletTransactionResponse);
+
+    /*
     Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
      */
     rpc GetWalletCredentials (GetWalletCredentialsRequest) returns (WalletCredentials);
@@ -798,6 +803,19 @@ message WalletTransaction {
     uint32 block_height = 6;
     // additional informations about the tx (type, related swaps etc.)
     repeated TransactionInfo infos = 7;
+}
+
+message BumpWalletTransactionRequest {
+    // id of the wallet which the transaction belongs to
+    uint64 id = 1;
+    // fee rate for the new transaction
+    double sat_per_vbyte = 2;
+    // id of the transaction to bump
+    string tx_id = 3;
+}
+
+message BumpWalletTransactionResponse {
+    string tx_id = 1;
 }
 
 message TransactionInfo {
