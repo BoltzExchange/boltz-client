@@ -34,7 +34,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
 	lnmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/lightning"
 	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/client"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
@@ -244,12 +243,8 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	}
 }
 
-func getCli(pair boltzrpc.Currency) test.Cli {
-	if pair == boltzrpc.Currency_LBTC {
-		return test.LiquidCli
-	} else {
-		return test.BtcCli
-	}
+func getCli(currency boltzrpc.Currency) test.Cli {
+	return test.GetCli(parseCurrency(currency))
 }
 
 type streamFunc func(state boltzrpc.SwapState) *boltzrpc.GetSwapInfoResponse
@@ -1376,19 +1371,7 @@ func waitWalletTx(t *testing.T, client client.Boltz, txId string) {
 			}
 		}
 	}
-	notifier := wallet.TransactionNotifier.Get()
-	defer wallet.TransactionNotifier.Remove(notifier)
-	timeout := time.After(30 * time.Second)
-	for {
-		select {
-		case notification := <-notifier:
-			if notification.TxId == txId || txId == "" {
-				return
-			}
-		case <-timeout:
-			require.Fail(t, "timed out while waiting for tx")
-		}
-	}
+	test.WaitWalletTx(t, txId)
 }
 
 func TestWalletTransactions(t *testing.T) {
@@ -1489,6 +1472,87 @@ func TestWalletTransactions(t *testing.T) {
 				}
 			}
 			require.Fail(t, "swap not found")
+		})
+	}
+}
+
+func TestBumpWalletTransaction(t *testing.T) {
+	chain := getOnchain(t, loadConfig(t))
+	client, _, stop := setup(t, setupOptions{chain: chain})
+	defer stop()
+
+	request := &boltzrpc.BumpWalletTransactionRequest{
+		Id:          1234,
+		TxId:        "transaction",
+		SatPerVbyte: 10,
+	}
+	newTxId := "newTransaction"
+
+	tests := []struct {
+		desc        string
+		setupWallet mockWalletSetup
+		wantErr     string
+	}{
+		{
+			desc: "Success",
+			setupWallet: func(mock *onchainmock.MockWallet) {
+				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
+					Id:       request.Id,
+					Readonly: false,
+					TenantId: database.DefaultTenantId,
+				})
+				mock.EXPECT().BumpTransactionFee(request.TxId, request.SatPerVbyte).Return(newTxId, nil)
+			},
+		},
+		{
+			desc: "Error",
+			setupWallet: func(mock *onchainmock.MockWallet) {
+				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
+					Id:       request.Id,
+					Readonly: false,
+					TenantId: database.DefaultTenantId,
+				})
+				mock.EXPECT().BumpTransactionFee(request.TxId, request.SatPerVbyte).Return("", errors.New("error"))
+			},
+			wantErr: "error",
+		},
+		{
+			desc: "Not Found",
+			setupWallet: func(mock *onchainmock.MockWallet) {
+				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
+					Id:       12342,
+					Readonly: false,
+					TenantId: database.DefaultTenantId,
+				})
+			},
+			wantErr: "not found",
+		},
+		{
+			desc: "Readonly",
+			setupWallet: func(mock *onchainmock.MockWallet) {
+				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
+					Id:       request.Id,
+					Readonly: true,
+					TenantId: database.DefaultTenantId,
+				})
+			},
+			wantErr: "not found",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			mockWallet, walletInfo := newMockWallet(t, chain)
+			tc.setupWallet(mockWallet)
+
+			request.Id = walletInfo.Id
+			_, err := client.BumpWalletTransaction(request)
+			if tc.wantErr != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
