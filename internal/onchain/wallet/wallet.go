@@ -338,7 +338,8 @@ func (wallet *Wallet) Connect() error {
 	}
 
 	params := map[string]any{
-		"gap_limit": GapLimit,
+		"gap_limit":     GapLimit,
+		"discount_fees": true,
 	}
 	var electrum onchain.ElectrumOptions
 	if wallet.Currency == boltz.CurrencyBtc {
