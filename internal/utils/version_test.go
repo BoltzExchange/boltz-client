@@ -16,6 +16,7 @@ func TestParseVersion(t *testing.T) {
 	}{
 		{"cln", "v23.11rc3", "0.23.0", true},
 		{"cln", "v23.11-modded", "0.23.0", true},
+		{"cln", "basedon-v24.08.2", "0.23.0", true},
 		{"lnd", "0.15.0-beta commit=234234", "0.15.0", true},
 		{"invalid", "invalid", "0.15.0", false},
 		{"invalid-min", "0.15.0", "invalid", false},
