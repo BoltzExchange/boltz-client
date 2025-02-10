@@ -1614,6 +1614,18 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 	return response, nil
 }
 
+func (server *routedBoltzServer) BumpWalletTransaction(ctx context.Context, request *boltzrpc.BumpWalletTransactionRequest) (*boltzrpc.BumpWalletTransactionResponse, error) {
+	wallet, err := server.getWallet(ctx, onchain.WalletChecker{Id: &request.Id, AllowReadonly: false})
+	if err != nil {
+		return nil, err
+	}
+	tx, err := wallet.BumpTransactionFee(request.TxId, request.GetSatPerVbyte())
+	if err != nil {
+		return nil, err
+	}
+	return &boltzrpc.BumpWalletTransactionResponse{TxId: tx}, nil
+}
+
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {
 	info := wal.GetWalletInfo()
 	result := &boltzrpc.Wallet{
