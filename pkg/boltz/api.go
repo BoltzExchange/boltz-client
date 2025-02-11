@@ -408,7 +408,7 @@ func (boltz *Api) GetVersion() (*GetVersionResponse, error) {
 // Deprecated: use GetSubmarinePairs, GetChainPairs or GetReversePairs instead
 func (boltz *Api) GetPairs() (*GetPairsResponse, error) {
 	var response GetPairsResponse
-	err := boltz.sendGetRequestV2("/getpairs", &response)
+	err := boltz.sendGetRequest("/getpairs", &response)
 
 	return &response, err
 }
