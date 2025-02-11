@@ -1544,6 +1544,19 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 	}, nil
 }
 
+func getTransactionType(swap *database.AnySwap, txId string) boltzrpc.TransactionType {
+	if swap.RefundTransactionid == txId {
+		return boltzrpc.TransactionType_REFUND
+	}
+	if swap.ClaimTransactionid == txId {
+		return boltzrpc.TransactionType_CLAIM
+	}
+	if swap.LockupTransactionid == txId {
+		return boltzrpc.TransactionType_LOCKUP
+	}
+	return boltzrpc.TransactionType_UNKNOWN
+}
+
 func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, request *boltzrpc.ListWalletTransactionsRequest) (*boltzrpc.ListWalletTransactionsResponse, error) {
 	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{Id: &request.Id})
 	if err != nil {
@@ -1587,17 +1600,8 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 				continue
 			}
 			swap := swaps[i]
-			txSwap := &boltzrpc.TransactionInfo{SwapId: &swap.Id}
-			if swap.RefundTransactionid == tx.Id {
-				txSwap.Type = boltzrpc.TransactionType_REFUND
-			}
-			if swap.ClaimTransactionid == tx.Id {
-				txSwap.Type = boltzrpc.TransactionType_CLAIM
-			}
-			if swap.LockupTransactionid == tx.Id {
-				txSwap.Type = boltzrpc.TransactionType_LOCKUP
-			}
-			result.Infos = append(result.Infos, txSwap)
+			info := &boltzrpc.TransactionInfo{SwapId: &swap.Id, Type: getTransactionType(swap, tx.Id)}
+			result.Infos = append(result.Infos, info)
 		}
 		response.Transactions = append(response.Transactions, result)
 	}
@@ -1630,9 +1634,15 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 			return nil, err
 		}
 	}
-	tx, err := wallet.BumpTransactionFee(request.TxId, request.GetSatPerVbyte())
-	if err != nil {
-		return nil, err
+	for _, currency := range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
+		confirmed, err := server.onchain.IsTransactionConfirmed(currency, txId)
+		if err == nil {
+			if confirmed {
+				return nil, status.Errorf(codes.FailedPrecondition, "transaction %s is already confirmed on %s", txId, currency)
+			} else {
+				break
+			}
+		}
 	}
 	txType := boltzrpc.TransactionType_UNKNOWN
 	if len(swaps) > 0 {

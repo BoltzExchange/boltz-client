@@ -124,7 +124,7 @@ func lessValueTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock
 func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
 	txMock := onchainmock.NewMockTxProvider(t)
 	txMock.EXPECT().IsTransactionConfirmed(mock.Anything).Return(false, nil)
-	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
+	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction).Maybe()
 	return txMock
 }
 
@@ -1482,54 +1482,16 @@ func TestBumpTransaction(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{chain: chain, cfg: cfg})
 	defer stop()
 
-	request := &boltzrpc.BumpWalletTransactionRequest{
-		Id:          1234,
-		TxId:        "transaction",
-		SatPerVbyte: 10,
-	}
-	newTxId := "newTransaction"
+	chain.Btc.Tx = unconfirmedTxProvider(t, chain.Btc.Tx)
 
 	t.Run("TxId", func(t *testing.T) {
 		request := &boltzrpc.BumpTransactionRequest{
 			Previous: &boltzrpc.BumpTransactionRequest_TxId{
 				TxId: "transaction",
 			},
-		},
-		{
-			desc: "Error",
-			setupWallet: func(mock *onchainmock.MockWallet) {
-				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
-					Id:       request.Id,
-					Readonly: false,
-					TenantId: database.DefaultTenantId,
-				})
-				mock.EXPECT().BumpTransactionFee(request.TxId, request.SatPerVbyte).Return("", errors.New("error"))
-			},
-			wantErr: "error",
-		},
-		{
-			desc: "Not Found",
-			setupWallet: func(mock *onchainmock.MockWallet) {
-				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
-					Id:       12342,
-					Readonly: false,
-					TenantId: database.DefaultTenantId,
-				})
-			},
-			wantErr: "not found",
-		},
-		{
-			desc: "Readonly",
-			setupWallet: func(mock *onchainmock.MockWallet) {
-				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
-					Id:       request.Id,
-					Readonly: true,
-					TenantId: database.DefaultTenantId,
-				})
-			},
-			wantErr: "not found",
-		},
-	}
+			SatPerVbyte: &satPerVbyte,
+		}
+		newTxId := "newTransaction"
 
 		tests := []struct {
 			desc    string

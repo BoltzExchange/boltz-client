@@ -810,7 +810,7 @@ message BumpTransactionRequest {
         string swap_id = 2;
     }
     // fee rate for the new transaction
-    double sat_per_vbyte = 3;
+    optional double sat_per_vbyte = 3;
 }
 
 message BumpTransactionResponse {
