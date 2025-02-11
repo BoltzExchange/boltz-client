@@ -124,7 +124,7 @@ func lessValueTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock
 func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
 	txMock := onchainmock.NewMockTxProvider(t)
 	txMock.EXPECT().IsTransactionConfirmed(mock.Anything).Return(false, nil)
-	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
+	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction).Maybe()
 	return txMock
 }
 
@@ -1477,84 +1477,145 @@ func TestWalletTransactions(t *testing.T) {
 }
 
 func TestBumpWalletTransaction(t *testing.T) {
-	chain := getOnchain(t, loadConfig(t))
-	client, _, stop := setup(t, setupOptions{chain: chain})
+	cfg := loadConfig(t)
+	chain := getOnchain(t, cfg)
+	client, _, stop := setup(t, setupOptions{chain: chain, cfg: cfg})
 	defer stop()
 
-	request := &boltzrpc.BumpWalletTransactionRequest{
-		Id:          1234,
-		TxId:        "transaction",
-		SatPerVbyte: 10,
-	}
-	newTxId := "newTransaction"
+	chain.Btc.Tx = unconfirmedTxProvider(t, chain.Btc.Tx)
 
-	tests := []struct {
-		desc        string
-		setupWallet mockWalletSetup
-		wantErr     string
-	}{
-		{
-			desc: "Success",
-			setupWallet: func(mock *onchainmock.MockWallet) {
-				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
-					Id:       request.Id,
-					Readonly: false,
-					TenantId: database.DefaultTenantId,
-				})
-				mock.EXPECT().BumpTransactionFee(request.TxId, request.SatPerVbyte).Return(newTxId, nil)
+	t.Run("TxId", func(t *testing.T) {
+		satPerVbyte := 10.0
+		request := &boltzrpc.BumpWalletTransactionRequest{
+			Previous: &boltzrpc.BumpWalletTransactionRequest_TxId{
+				TxId: "transaction",
 			},
-		},
-		{
-			desc: "Error",
-			setupWallet: func(mock *onchainmock.MockWallet) {
-				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
-					Id:       request.Id,
-					Readonly: false,
-					TenantId: database.DefaultTenantId,
-				})
-				mock.EXPECT().BumpTransactionFee(request.TxId, request.SatPerVbyte).Return("", errors.New("error"))
-			},
-			wantErr: "error",
-		},
-		{
-			desc: "Not Found",
-			setupWallet: func(mock *onchainmock.MockWallet) {
-				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
-					Id:       12342,
-					Readonly: false,
-					TenantId: database.DefaultTenantId,
-				})
-			},
-			wantErr: "not found",
-		},
-		{
-			desc: "Readonly",
-			setupWallet: func(mock *onchainmock.MockWallet) {
-				mock.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{
-					Id:       request.Id,
-					Readonly: true,
-					TenantId: database.DefaultTenantId,
-				})
-			},
-			wantErr: "not found",
-		},
-	}
+			SatPerVbyte: &satPerVbyte,
+		}
+		newTxId := "newTransaction"
 
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			mockWallet, walletInfo := newMockWallet(t, chain)
-			tc.setupWallet(mockWallet)
+		tests := []struct {
+			desc    string
+			setup   func(t *testing.T)
+			wantErr string
+		}{
+			{
+				desc: "Success",
+				setup: func(t *testing.T) {
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(request.GetTxId(), *request.SatPerVbyte).Return(newTxId, nil)
+				},
+			},
+			{
+				desc: "Error",
+				setup: func(t *testing.T) {
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(request.GetTxId(), *request.SatPerVbyte).Return("", errors.New("error"))
+				},
+				wantErr: "error",
+			},
+			{
+				desc: "NotFound",
+				setup: func(t *testing.T) {
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(request.GetTxId(), *request.SatPerVbyte).Return("", errors.New("not found"))
+				},
+				wantErr: "does not belong to any wallet",
+			},
+			{
+				desc: "Readonly",
+				setup: func(t *testing.T) {
+					_, walletInfo := newMockWallet(t, chain)
+					walletInfo.Readonly = true
+				},
+				wantErr: "does not belong to any wallet",
+			},
+		}
 
-			request.Id = walletInfo.Id
-			_, err := client.BumpWalletTransaction(request)
-			if tc.wantErr != "" {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), tc.wantErr)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				tc.setup(t)
+				_, err := client.BumpWalletTransaction(request)
+				if tc.wantErr != "" {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), tc.wantErr)
+				} else {
+					require.NoError(t, err)
+				}
+			})
+		}
+	})
+
+	t.Run("SwapId", func(t *testing.T) {
+		satPerVbyte := 10.0
+		swapId := "swapId"
+		txId := "old tx"
+		request := &boltzrpc.BumpWalletTransactionRequest{
+			Previous: &boltzrpc.BumpWalletTransactionRequest_SwapId{
+				SwapId: swapId,
+			},
+			SatPerVbyte: &satPerVbyte,
+		}
+		newTxId := "newTransaction"
+		normalSwap := "normalSwap"
+
+		tests := []struct {
+			desc    string
+			setup   func(t *testing.T)
+			swaps   test.FakeSwaps
+			wantErr string
+		}{
+			{
+				desc: "Success",
+				swaps: test.FakeSwaps{
+					Swaps: []database.Swap{
+						{
+							Id:                  normalSwap,
+							LockupTransactionId: txId,
+						},
+					},
+				},
+				setup: func(t *testing.T) {
+					request.Previous = &boltzrpc.BumpWalletTransactionRequest_SwapId{SwapId: normalSwap}
+
+					mockWallet, _ := newMockWallet(t, chain)
+					mockWallet.EXPECT().BumpTransactionFee(txId, *request.SatPerVbyte).Return(newTxId, nil)
+				},
+			},
+			{
+				desc: "NotImplemented",
+				swaps: test.FakeSwaps{
+					Swaps: []database.Swap{
+						{
+							Id:                  swapId,
+							RefundTransactionId: txId,
+						},
+					},
+				},
+				setup: func(t *testing.T) {
+					request.Previous = &boltzrpc.BumpWalletTransactionRequest_SwapId{SwapId: swapId}
+					newMockWallet(t, chain)
+				},
+				wantErr: "refund transactions cant be bumped",
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				tc.setup(t)
+				tc.swaps.Create(t, cfg.Database)
+
+				_, err := client.BumpWalletTransaction(request)
+				if tc.wantErr != "" {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), tc.wantErr)
+				} else {
+					require.NoError(t, err)
+				}
+			})
+		}
+	})
+
 }
 
 func TestWallet(t *testing.T) {

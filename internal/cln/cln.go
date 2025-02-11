@@ -163,11 +163,11 @@ func (c *Cln) ListChannels() ([]*lightning.LightningChannel, error) {
 }
 
 func (c *Cln) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
-	return nil, errors.New("not implemented for cln")
+	return nil, lightning.ErrUnsupported
 }
 
 func (c *Cln) BumpTransactionFee(txId string, feeRate float64) (string, error) {
-	return "", errors.New("not implemented for cln")
+	return "", lightning.ErrUnsupported
 }
 
 func (c *Cln) SanityCheck() (string, error) {

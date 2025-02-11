@@ -802,12 +802,14 @@ message WalletTransaction {
 }
 
 message BumpWalletTransactionRequest {
-    // id of the wallet which the transaction belongs to
-    uint64 id = 1;
+    oneof previous {
+        // id of the transaction to bump. the transaction has to belong to one of the clients wallets
+        string tx_id = 1;
+        // depending on the state of the swap, the lockup, refund or claim transaction will be bumped
+        string swap_id = 2;
+    }
     // fee rate for the new transaction
-    double sat_per_vbyte = 2;
-    // id of the transaction to bump
-    string tx_id = 3;
+    optional double sat_per_vbyte = 3;
 }
 
 message BumpWalletTransactionResponse {
