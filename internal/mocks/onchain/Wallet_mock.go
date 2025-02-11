@@ -20,6 +20,63 @@ func (_m *MockWallet) EXPECT() *MockWallet_Expecter {
 	return &MockWallet_Expecter{mock: &_m.Mock}
 }
 
+// BumpTransactionFee provides a mock function with given fields: txId, satPerVbyte
+func (_m *MockWallet) BumpTransactionFee(txId string, satPerVbyte float64) (string, error) {
+	ret := _m.Called(txId, satPerVbyte)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BumpTransactionFee")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, float64) (string, error)); ok {
+		return rf(txId, satPerVbyte)
+	}
+	if rf, ok := ret.Get(0).(func(string, float64) string); ok {
+		r0 = rf(txId, satPerVbyte)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, float64) error); ok {
+		r1 = rf(txId, satPerVbyte)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockWallet_BumpTransactionFee_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BumpTransactionFee'
+type MockWallet_BumpTransactionFee_Call struct {
+	*mock.Call
+}
+
+// BumpTransactionFee is a helper method to define mock.On call
+//   - txId string
+//   - satPerVbyte float64
+func (_e *MockWallet_Expecter) BumpTransactionFee(txId interface{}, satPerVbyte interface{}) *MockWallet_BumpTransactionFee_Call {
+	return &MockWallet_BumpTransactionFee_Call{Call: _e.mock.On("BumpTransactionFee", txId, satPerVbyte)}
+}
+
+func (_c *MockWallet_BumpTransactionFee_Call) Run(run func(txId string, satPerVbyte float64)) *MockWallet_BumpTransactionFee_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(float64))
+	})
+	return _c
+}
+
+func (_c *MockWallet_BumpTransactionFee_Call) Return(_a0 string, _a1 error) *MockWallet_BumpTransactionFee_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockWallet_BumpTransactionFee_Call) RunAndReturn(run func(string, float64) (string, error)) *MockWallet_BumpTransactionFee_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Disconnect provides a mock function with given fields:
 func (_m *MockWallet) Disconnect() error {
 	ret := _m.Called()
