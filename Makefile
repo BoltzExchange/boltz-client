@@ -1,5 +1,5 @@
 PKG := github.com/BoltzExchange/boltz-client/v2
-VERSION := 2.3.8
+VERSION := 2.3.9
 GDK_VERSION = 0.73.3
 GO_VERSION := 1.23.0
 RUST_VERSION := 1.82.0
