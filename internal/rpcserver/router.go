@@ -670,13 +670,10 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.Decode
 	return nil, nil
 }
 
-func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *lightning.DecodedInvoice) {
+func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *lightning.DecodedInvoice) bool {
 	expiryLeft := time.Until(invoice.Expiry.Add(-10 * time.Second))
 	currency := request.Pair.GetFrom()
-	if expiryLeft.Minutes() < boltz.GetBlockTime(serializers.ParseCurrency(&currency)) {
-		zeroConf := true
-		request.ZeroConf = &zeroConf
-	}
+	return expiryLeft.Minutes() > boltz.GetBlockTime(serializers.ParseCurrency(&currency))
 }
 
 // TODO: custom refund address
@@ -748,7 +745,9 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, err
 		}
-		checkInvoiceExpiry(request, decoded)
+		if !checkInvoiceExpiry(request, decoded) {
+			return nil, status.Errorf(codes.InvalidArgument, "invoice is about to expire")
+		}
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
 		// set amount for balance check
@@ -781,14 +780,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		createSwap.PreimageHash = preimageHash
 	}
 
-	feeRate, err := server.estimateFee(
-		request.GetSatPerVbyte(),
-		pair.From,
-		request.Amount,
-		// swapResponse will be populated if we found a magic routing hint, so we can't use lowball
-		swapResponse == nil && !request.GetZeroConf(),
-		request.AcceptedPair.Limits.MaximalZeroConfAmount,
-	)
+	feeRate, err := server.estimateFee(request.GetSatPerVbyte(), pair.From)
 	if err != nil {
 		return nil, err
 	}
@@ -1243,13 +1235,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 		}
 	}
 
-	feeRate, err := server.estimateFee(
-		request.GetSatPerVbyte(),
-		pair.From,
-		amount,
-		!request.GetLockupZeroConf(),
-		request.AcceptedPair.Limits.MaximalZeroConfAmount,
-	)
+	feeRate, err := server.estimateFee(request.GetSatPerVbyte(), pair.From)
 	if err != nil {
 		return nil, err
 	}
@@ -1412,19 +1398,6 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	return serializeChainSwap(&chainSwap), nil
 }
 
-func (server *routedBoltzServer) loginWallet(credentials *wallet.Credentials) (*wallet.Wallet, error) {
-	chain, err := server.onchain.GetCurrency(credentials.Currency)
-	if err != nil {
-		return nil, err
-	}
-	result, err := wallet.Login(credentials)
-	if err != nil {
-		return nil, err
-	}
-	result.SetTxProvider(chain.Tx)
-	return result, nil
-}
-
 func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *wallet.Credentials, password string) error {
 	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
@@ -1440,7 +1413,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 	}
 
-	wallet, err := server.loginWallet(credentials)
+	wallet, err := wallet.Login(credentials)
 	if err != nil {
 		return errors.New("could not login: " + err.Error())
 	}
@@ -1681,7 +1654,7 @@ func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *
 	}
 	feeRate := request.GetSatPerVbyte()
 	if feeRate == 0 {
-		feeRate, err = server.onchain.EstimateFee(ownWallet.Currency, request.GetIsSwapAddress())
+		feeRate, err = server.onchain.EstimateFee(ownWallet.Currency)
 		if err != nil {
 			return nil, err
 		}
@@ -1791,7 +1764,7 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if err != nil {
 		return nil, err
 	}
-	feeRate, err := server.estimateFee(request.GetSatPerVbyte(), sendWallet.GetWalletInfo().Currency, request.Amount, false, 0)
+	feeRate, err := server.estimateFee(request.GetSatPerVbyte(), sendWallet.GetWalletInfo().Currency)
 	if err != nil {
 		return nil, err
 	}
@@ -1929,7 +1902,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			creds := creds
 			go func() {
 				defer wg.Done()
-				wallet, err := server.loginWallet(creds)
+				wallet, err := wallet.Login(creds)
 				if err != nil {
 					logger.Errorf("could not login to wallet: %v", err)
 				} else {
@@ -2256,17 +2229,13 @@ func (server *routedBoltzServer) getPairs(pairId boltz.Pair) (*boltzrpc.Fees, *b
 		}, nil
 }
 
-func (server *routedBoltzServer) estimateFee(requested float64, currency boltz.Currency, amount uint64, allowLowball bool, maxZeroConfAmount uint64) (float64, error) {
+func (server *routedBoltzServer) estimateFee(requested float64, currency boltz.Currency) (float64, error) {
 	if requested == 0 {
-		if amount > maxZeroConfAmount && !allowLowball {
-			logger.Infof("Amount %d exceeds maximal zero conf amount %d, allowing lowball", amount, maxZeroConfAmount)
-			allowLowball = true
-		}
-		feeSatPerVbyte, err := server.onchain.EstimateFee(currency, allowLowball)
+		feeSatPerVbyte, err := server.onchain.EstimateFee(currency)
 		if err != nil {
 			return 0, err
 		}
-		logger.Infof("Using fee of %f sat/vbyte (allowLowball: %v)", feeSatPerVbyte, allowLowball)
+		logger.Infof("Using fee of %f sat/vbyte", feeSatPerVbyte)
 		return feeSatPerVbyte, nil
 	}
 	return requested, nil

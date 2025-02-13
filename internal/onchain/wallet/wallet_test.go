@@ -4,13 +4,11 @@ package wallet_test
 
 import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
-	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	onchainWallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -49,38 +47,15 @@ func TestSend(t *testing.T) {
 		test.MineBlock()
 	})
 
+	minFeeRate := 1.0
+
 	t.Run("SendFee", func(t *testing.T) {
-		amount, fee, err := wallet.GetSendFee(addr, 0, onchainWallet.MinFeeRate, true)
+		amount, fee, err := wallet.GetSendFee(addr, 0, minFeeRate, true)
 		require.NoError(t, err)
 
 		balance, err := wallet.GetBalance()
 		require.NoError(t, err)
 		require.Equal(t, balance.Confirmed, amount+fee)
-	})
-
-	t.Run("TxProvider", func(t *testing.T) {
-		t.Cleanup(func() {
-			wallet.SetTxProvider(nil)
-			wallet.SetSpentOutputs(nil)
-		})
-
-		txProvider := onchainmock.NewMockTxProvider(t)
-		txProvider.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(func(txHex string) (string, error) {
-			require.NotEmpty(t, txHex)
-			return "txid", nil
-		})
-		wallet.SetTxProvider(txProvider)
-
-		txid, err := wallet.SendToAddress(addr, 0, onchainWallet.MinFeeRate, true)
-		require.NoError(t, err)
-		require.Equal(t, "txid", txid)
-
-		_, err = wallet.SendToAddress(addr, 0, onchainWallet.MinFeeRate, true)
-		require.Error(t, err)
-		// all outputs will now be marked as spent internally, so no funds should be available
-		balance, err := wallet.GetBalance()
-		require.NoError(t, err)
-		require.Zero(t, balance.Confirmed)
 	})
 }
 

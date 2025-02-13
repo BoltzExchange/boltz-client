@@ -32,7 +32,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
-const MinFeeRate = 0.01
 const MaxInputs = uint64(255) // TODO: change back to 256 when gdk is fixed
 const DefaultAutoConsolidateThreshold = uint64(200)
 const GapLimit = 100
@@ -112,14 +111,11 @@ type Subaccount struct {
 
 type Wallet struct {
 	onchain.WalletInfo
-	subaccount       *uint64
-	session          Session
-	connected        bool
-	syncedAccounts   []uint64
-	txProvider       onchain.TxProvider
-	spentOutputs     map[string]bool
-	spentOutputsLock sync.RWMutex
-	txNotifier       <-chan TransactionNotification
+	subaccount     *uint64
+	session        Session
+	connected      bool
+	syncedAccounts []uint64
+	txNotifier     <-chan TransactionNotification
 }
 
 type Config struct {
@@ -342,9 +338,8 @@ func (wallet *Wallet) Connect() error {
 	}
 
 	params := map[string]any{
-		// gdk uses sat/kVB
-		"min_fee_rate": MinFeeRate * 1000,
-		"gap_limit":    GapLimit,
+		"gap_limit":     GapLimit,
+		"discount_fees": true,
 	}
 	var electrum onchain.ElectrumOptions
 	if wallet.Currency == boltz.CurrencyBtc {
@@ -494,7 +489,7 @@ func Login(credentials *Credentials) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
-	wallet := &Wallet{WalletInfo: credentials.WalletInfo, spentOutputs: make(map[string]bool)}
+	wallet := &Wallet{WalletInfo: credentials.WalletInfo}
 	login := make(map[string]any)
 
 	if credentials.Mnemonic != "" {
@@ -566,10 +561,6 @@ func GenerateMnemonic() (string, error) {
 		return "", errors.New("failed to generate mnemonic: " + err.Error())
 	}
 	return C.GoString(mnemonic), nil
-}
-
-func (wallet *Wallet) SetTxProvider(txProvider onchain.TxProvider) {
-	wallet.txProvider = txProvider
 }
 
 func (wallet *Wallet) Disconnect() error {
@@ -684,25 +675,6 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 	if err := withAuthHandler(C.GA_get_unspent_outputs(wallet.session, params, handler), handler, result); err != nil {
 		return nil, err
 	}
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
-	for spent := range wallet.spentOutputs {
-		found := false
-		for key, outputs := range result.Unspent {
-			for i, output := range outputs {
-				if output["txhash"] == spent {
-					logger.Debugf("Ignoring output for tx %s since it is marked as spent", spent)
-					result.Unspent[key] = append(outputs[:i], outputs[i+1:]...)
-					found = true
-					break
-				}
-			}
-		}
-		if !found {
-			delete(wallet.spentOutputs, spent)
-		}
-	}
-
 	return result, nil
 }
 
@@ -793,8 +765,6 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 		return "", err
 	}
 
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
 	handler := new(AuthHandler)
 	params, free := toJson(result)
 	if err := withAuthHandler(C.GA_blind_transaction(wallet.session, params, handler), handler, &result); err != nil {
@@ -808,56 +778,25 @@ func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte f
 	}
 	free()
 
-	var signedTx struct {
-		Transaction       string `mapstructure:"transaction"`
-		Error             string `mapstructure:"error"`
-		TransactionInputs []struct {
-			TxId string `mapstructure:"txhash"`
-		} `mapstructure:"transaction_inputs"`
+	if errMsg, ok := result["error"].(string); ok && errMsg != "" {
+		return "", fmt.Errorf("could not sign: %s", errMsg)
 	}
-	if err := mapstructure.Decode(result, &signedTx); err != nil {
+
+	params, free = toJson(result)
+	var sendTx struct {
+		TxHash string `json:"txhash"`
+		Error  string `json:"error"`
+	}
+	if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
 		return "", err
 	}
-	if signedTx.Error != "" {
-		return "", fmt.Errorf("could not sign: %s", signedTx.Error)
+	free()
+
+	if sendTx.Error != "" {
+		return "", fmt.Errorf("failed to broadcast: %s", sendTx.Error)
 	}
 
-	if wallet.txProvider != nil {
-		tx, err = wallet.txProvider.BroadcastTransaction(signedTx.Transaction)
-	} else {
-		params, free = toJson(result)
-		var sendTx struct {
-			TxHash string `json:"txhash"`
-			Error  string `json:"error"`
-		}
-		if err := withAuthHandler(C.GA_send_transaction(wallet.session, params, handler), handler, &sendTx); err != nil {
-			return "", err
-		}
-		free()
-
-		if sendTx.Error != "" {
-			err = errors.New(sendTx.Error)
-		}
-		tx = sendTx.TxHash
-	}
-	if err != nil {
-		return "", fmt.Errorf("failed to broadcast: %w", err)
-	}
-
-	for _, input := range signedTx.TransactionInputs {
-		wallet.spentOutputs[input.TxId] = true
-	}
-
-	return tx, nil
-}
-
-func (wallet *Wallet) SetSpentOutputs(outputs []string) {
-	wallet.spentOutputsLock.Lock()
-	defer wallet.spentOutputsLock.Unlock()
-	wallet.spentOutputs = make(map[string]bool)
-	for _, output := range outputs {
-		wallet.spentOutputs[output] = true
-	}
+	return sendTx.TxHash, nil
 }
 
 func (wallet *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {

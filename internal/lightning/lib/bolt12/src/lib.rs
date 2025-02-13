@@ -101,10 +101,8 @@ pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> CResult<Invoi
         Invoice {
             amount_sat: convert_msats_to_sats(invoice.amount_msats()),
             payment_hash: invoice.payment_hash().0,
-            expiry_date: invoice
-                .absolute_expiry()
-                .and_then(|d| Some(d.as_secs()))
-                .unwrap_or(0),
+            expiry_date: (invoice.created_at()
+                + invoice.relative_expiry()).as_secs(),
         }
     }))
 }
