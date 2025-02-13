@@ -23,16 +23,25 @@ type SwapUpdate struct {
 	Id                 string `json:"id"`
 }
 
+type websocketState string
+
+const (
+	disconnected websocketState = "disconnected"
+	connected    websocketState = "connected"
+	reconnecting websocketState = "reconnecting"
+	closed       websocketState = "closed"
+)
+
 type Websocket struct {
 	Updates chan SwapUpdate
 
-	apiUrl        string
-	subscriptions chan bool
-	conn          *websocket.Conn
-	closed        bool
-	reconnect     bool
-	dialer        *websocket.Dialer
-	swapIds       []string
+	apiUrl            string
+	subscriptions     chan bool
+	conn              *websocket.Conn
+	dialer            *websocket.Dialer
+	swapIds           []string
+	state             websocketState
+	reconnectInterval time.Duration
 }
 
 type wsResponse struct {
@@ -51,14 +60,19 @@ func (boltz *Api) NewWebsocket() *Websocket {
 	}
 
 	return &Websocket{
-		apiUrl:        boltz.URL,
-		subscriptions: make(chan bool),
-		dialer:        &dialer,
-		Updates:       make(chan SwapUpdate),
+		apiUrl:            boltz.URL,
+		subscriptions:     make(chan bool),
+		dialer:            &dialer,
+		Updates:           make(chan SwapUpdate),
+		state:             disconnected,
+		reconnectInterval: reconnectInterval,
 	}
 }
 
 func (boltz *Websocket) Connect() error {
+	if boltz.state == closed {
+		return errors.New("websocket is closed")
+	}
 	wsUrl, err := url.Parse(boltz.apiUrl)
 	if err != nil {
 		return err
@@ -75,9 +89,10 @@ func (boltz *Websocket) Connect() error {
 	if err != nil {
 		return fmt.Errorf("could not connect to boltz ws at %s: %w", wsUrl, err)
 	}
-	boltz.conn = conn
 
 	logger.Infof("Connected to Boltz ws at %s", wsUrl)
+	boltz.conn = conn
+	boltz.state = connected
 
 	setDeadline := func() error {
 		return conn.SetReadDeadline(time.Now().Add(pingInterval + pongWait))
@@ -95,7 +110,7 @@ func (boltz *Websocket) Connect() error {
 			// Will not wait longer with writing than for the response
 			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(pongWait))
 			if err != nil {
-				if boltz.closed {
+				if boltz.state == closed {
 					return
 				}
 				logger.Errorf("could not send ping: %s", err)
@@ -108,11 +123,14 @@ func (boltz *Websocket) Connect() error {
 		for {
 			msgType, message, err := conn.ReadMessage()
 			if err != nil {
-				if boltz.closed {
-					close(boltz.Updates)
+				if boltz.state == closed || boltz.state == disconnected {
+					boltz.conn = nil
+					if boltz.state == closed {
+						close(boltz.Updates)
+					}
 					return
 				}
-				if !boltz.reconnect {
+				if boltz.state == connected {
 					logger.Error("could not receive message: " + err.Error())
 				}
 				break
@@ -156,12 +174,12 @@ func (boltz *Websocket) Connect() error {
 		}
 		for {
 			pingTicker.Stop()
-			if boltz.reconnect {
-				boltz.reconnect = false
+			if boltz.state == reconnecting {
 				return
 			} else {
-				logger.Errorf("lost connection to boltz ws, reconnecting in %s", reconnectInterval)
-				time.Sleep(reconnectInterval)
+				boltz.state = reconnecting
+				logger.Errorf("lost connection to boltz ws, reconnecting in %s", boltz.reconnectInterval)
+				time.Sleep(boltz.reconnectInterval)
 			}
 			err := boltz.Connect()
 			if err == nil {
@@ -178,7 +196,7 @@ func (boltz *Websocket) Connect() error {
 }
 
 func (boltz *Websocket) subscribe(swapIds []string) error {
-	if boltz.closed {
+	if boltz.state == closed {
 		return errors.New("websocket is closed")
 	}
 	logger.Infof("Subscribing to Swaps: %v", swapIds)
@@ -201,6 +219,11 @@ func (boltz *Websocket) subscribe(swapIds []string) error {
 }
 
 func (boltz *Websocket) Subscribe(swapIds []string) error {
+	if boltz.state == disconnected {
+		if err := boltz.Connect(); err != nil {
+			return fmt.Errorf("could not connect boltz ws: %w", err)
+		}
+	}
 	if err := boltz.subscribe(swapIds); err != nil {
 		// the connection might be dead, so forcefully reconnect
 		if err := boltz.Reconnect(); err != nil {
@@ -219,19 +242,33 @@ func (boltz *Websocket) Unsubscribe(swapId string) {
 		return id == swapId
 	})
 	logger.Debugf("Unsubscribed from swap %s", swapId)
+	if len(boltz.swapIds) == 0 {
+		logger.Debugf("No more pending swaps, disconnecting websocket")
+		boltz.state = disconnected
+		if err := boltz.close(); err != nil {
+			logger.Warnf("could not close boltz ws: %v", err)
+		}
+	}
+}
+
+func (boltz *Websocket) close() error {
+	if conn := boltz.conn; conn != nil {
+		return conn.Close()
+	}
+	return nil
 }
 
 func (boltz *Websocket) Close() error {
-	boltz.closed = true
-	return boltz.conn.Close()
+	boltz.state = closed
+	return boltz.close()
 }
 
 func (boltz *Websocket) Reconnect() error {
-	if boltz.closed {
+	if boltz.state == closed {
 		return errors.New("websocket is closed")
 	}
 	logger.Infof("Force reconnecting to Boltz ws")
-	boltz.reconnect = true
+	boltz.state = reconnecting
 	if err := boltz.conn.Close(); err != nil {
 		logger.Warnf("could not close boltz ws: %v", err)
 	}
