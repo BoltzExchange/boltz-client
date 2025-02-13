@@ -1,6 +1,6 @@
 PKG := github.com/BoltzExchange/boltz-client/v2
 VERSION := 2.3.8
-GDK_VERSION = 0.73.3
+GDK_VERSION = 0.74.2
 GO_VERSION := 1.23.0
 RUST_VERSION := 1.82.0
 
@@ -150,27 +150,33 @@ changelog:
 
 PLATFORMS := linux/amd64,linux/arm64
 DOCKER_CACHE := boltz/boltz-client:buildcache
-DOCKER_ARGS := --platform $(PLATFORMS) --build-arg GO_VERSION=$(GO_VERSION) --build-arg GDK_VERSION=$(GDK_VERSION) --build-arg RUST_VERSION=$(RUST_VERSION) --cache-from type=registry,ref=$(DOCKER_CACHE) --cache-to type=registry,ref=$(DOCKER_CACHE),mode=max
+DOCKER_ARGS := --platform $(PLATFORMS) --build-arg GO_VERSION=$(GO_VERSION) --build-arg GDK_VERSION=$(GDK_VERSION) --build-arg RUST_VERSION=$(RUST_VERSION)
+DOCKER_CACHE_ARGS := --cache-from type=registry,ref=$(DOCKER_CACHE) --cache-to type=registry,ref=$(DOCKER_CACHE),mode=max
 
 docker:
 	@$(call print, "Building docker image")
-	docker buildx build --push -t boltz/boltz-client:$(VERSION) -t boltz/boltz-client:latest $(DOCKER_ARGS) .
+	docker buildx build --push -t boltz/boltz-client:$(VERSION) -t boltz/boltz-client:latest $(DOCKER_ARGS) $(DOCKER_CACHE_ARGS) .
 
 binaries:
 	@$(call print, "Building binaries")
-	docker buildx build --output bin --target binaries $(DOCKER_ARGS) .
+	docker buildx build --output bin --target binaries $(DOCKER_ARGS) $(DOCKER_CACHE_ARGS) .
 	tar -czvf boltz-client-linux-amd64-v$(VERSION).tar.gz bin/linux_amd64
 	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
 
 gdk-source: submodules
 	cd gdk && git checkout release_$(GDK_VERSION) && git apply ../gdk.patch
-	cp ./gdk/include/gdk.h ./onchain/wallet/include/gdk.h
+	cp ./gdk/include/gdk.h ./internal/onchain/wallet/include/gdk.h
 
 build-gdk-builder: gdk-source
 	docker buildx build --push -t boltz/gdk-ubuntu-builder:latest -t boltz/gdk-ubuntu-builder:$(GDK_VERSION) $(DOCKER_ARGS) -f ./gdk/docker/ubuntu/Dockerfile ./gdk
 
+GDK_AMD64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:3470ad91a2bdc42dd7d6210a9323f3c9d59aeb93843c23fe6a17dc8eb8ac99f7
+GDK_ARM64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:0b2c672edaf8dea27041c235170f6b71d8651a09c754e10f00bb989e1e2770ad
+
 build-gdk:
-	docker buildx build --push -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile $(DOCKER_ARGS) .
+	docker buildx build --push -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile $(DOCKER_ARGS) \
+		--build-arg GDK_AMD64_BUILDER=$(GDK_AMD64_BUILDER) \
+		--build-arg GDK_ARM64_BUILDER=$(GDK_ARM64_BUILDER) .
 
 .PHONY: build binaries
