@@ -369,15 +369,10 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 
 	chain.Init()
 
-	// TODO: use multiple liquid providers once cheapct is available
 	var btcProviders []onchain.TxProvider
+	var liquidProviders []onchain.TxProvider
 
 	electrumConfig := cfg.Electrum()
-	if electrumConfig.Liquid.Url == "" && cfg.MempoolLiquidApi == "" {
-		// use boltz for broadcasting if no custom electrum or mempool is configured
-		chain.Liquid.Tx = onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
-	}
-
 	if network == boltz.Regtest && electrumConfig.Btc.Url == "" && electrumConfig.Liquid.Url == "" {
 		electrumConfig = onchain.RegtestElectrumConfig
 	}
@@ -415,10 +410,7 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
 		chain.Liquid.Blocks = client
-		// dont override boltz tx provider
-		if chain.Liquid.Tx == nil {
-			chain.Liquid.Tx = client
-		}
+		liquidProviders = append(liquidProviders, client)
 	}
 	if network == boltz.MainNet {
 		cfg.MempoolApi = "https://mempool.space/api"
@@ -439,14 +431,14 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
 		client := mempool.InitClient(cfg.MempoolLiquidApi)
 		chain.Liquid.Blocks = client
-		// dont override boltz tx provider
-		if chain.Liquid.Tx == nil {
-			chain.Liquid.Tx = client
-		}
+		liquidProviders = append(liquidProviders, client)
 	}
 
 	chain.Btc.Tx = onchain.MultiTxProvider{
 		Providers: append(btcProviders, onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)),
+	}
+	chain.Liquid.Tx = onchain.MultiTxProvider{
+		Providers: append(liquidProviders, onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)),
 	}
 
 	return chain, nil
