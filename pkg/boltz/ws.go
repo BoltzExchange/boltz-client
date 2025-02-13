@@ -233,7 +233,7 @@ func (boltz *Websocket) Reconnect() error {
 	logger.Infof("Force reconnecting to Boltz ws")
 	boltz.reconnect = true
 	if err := boltz.conn.Close(); err != nil {
-		return fmt.Errorf("could not close boltz ws: %w", err)
+		logger.Warnf("could not close boltz ws: %v", err)
 	}
 	return boltz.Connect()
 }
