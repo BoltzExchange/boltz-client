@@ -1,4 +1,20 @@
 
+<a name="v2.3.9"></a>
+## [v2.3.9] - 2025-02-13
+### Fix
+- do not return error when closing previous connection on reconnect ([#391](https://github.com/BoltzExchange/boltz-client/issues/391))
+
+
+<a name="v2.3.8"></a>
+## [v2.3.8] - 2025-02-11
+### Feat
+- `pro` config option ([#385](https://github.com/BoltzExchange/boltz-client/issues/385))
+
+### Fix
+- legacy `getpairs` request ([#389](https://github.com/BoltzExchange/boltz-client/issues/389))
+- remove any version prefix before parsing ([#387](https://github.com/BoltzExchange/boltz-client/issues/387))
+
+
 <a name="v2.3.7"></a>
 ## [v2.3.7] - 2025-01-22
 ### Fix
@@ -550,6 +566,8 @@
 - improve Channel Creation enforcement
 
 
+[v2.3.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.8...v2.3.9
+[v2.3.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.7...v2.3.8
 [v2.3.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.6...v2.3.7
 [v2.3.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.5...v2.3.6
 [v2.3.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.4...v2.3.5
