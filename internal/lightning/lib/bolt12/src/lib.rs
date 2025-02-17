@@ -39,7 +39,7 @@ impl<T> CResult<T> {
             },
             Err(err) => CResult {
                 result: null(),
-                error: CString::new(err).unwrap_or(CString::default()).into_raw(),
+                error: CString::new(err).unwrap_or_default().into_raw(),
             },
         }
     }
@@ -97,13 +97,10 @@ fn parse_invoice(invoice: *const c_char) -> Result<Bolt12Invoice, String> {
 
 #[no_mangle]
 pub unsafe extern "C" fn decode_invoice(invoice: *const c_char) -> CResult<Invoice> {
-    CResult::from_result(parse_invoice(invoice).map(|invoice| {
-        Invoice {
-            amount_sat: convert_msats_to_sats(invoice.amount_msats()),
-            payment_hash: invoice.payment_hash().0,
-            expiry_date: (invoice.created_at()
-                + invoice.relative_expiry()).as_secs(),
-        }
+    CResult::from_result(parse_invoice(invoice).map(|invoice| Invoice {
+        amount_sat: convert_msats_to_sats(invoice.amount_msats()),
+        payment_hash: invoice.payment_hash().0,
+        expiry_date: (invoice.created_at() + invoice.relative_expiry()).as_secs(),
     }))
 }
 
@@ -126,7 +123,7 @@ pub unsafe extern "C" fn check_invoice_is_for_offer(
             possible_signers.push(last_signer.blinded_node_id);
         }
     });
-    if let Some(signer) = offer.signing_pubkey() {
+    if let Some(signer) = offer.issuer_signing_pubkey() {
         possible_signers.push(signer);
     }
     possible_signers.contains(&invoice.signing_pubkey())
