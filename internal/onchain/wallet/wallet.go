@@ -884,8 +884,7 @@ func (wallet *Wallet) estimateFee() (float64, error) {
 	if err := withOutput(C.GA_get_fee_estimates(wallet.session, &output), output, &estimates); err != nil {
 		return 0, err
 	}
-	// TODO: remove when proper floor is in gdk
-	return max(estimates.Fees[0]/1000, 0.1), nil
+	return estimates.Fees[0] / 1000, nil
 }
 
 func (wallet *Wallet) autoConsolidate() error {
