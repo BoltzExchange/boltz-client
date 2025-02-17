@@ -1,4 +1,22 @@
 
+<a name="v2.4.0"></a>
+## [v2.4.0] - 2025-02-17
+### Feat
+- enable discountct in gdk
+- use discounted liquid transaction size
+
+### Fix
+- change `MaxInputs` back to 256
+- do not return error when closing previous connection on reconnect ([#391](https://github.com/BoltzExchange/boltz-client/issues/391))
+- bolt12 expiry date decoding
+
+
+<a name="v2.3.9"></a>
+## [v2.3.9] - 2025-02-13
+### Fix
+- do not return error when closing previous connection on reconnect ([#391](https://github.com/BoltzExchange/boltz-client/issues/391))
+
+
 <a name="v2.3.8"></a>
 ## [v2.3.8] - 2025-02-11
 ### Feat
@@ -560,6 +578,8 @@
 - improve Channel Creation enforcement
 
 
+[v2.4.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.9...v2.4.0
+[v2.3.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.8...v2.3.9
 [v2.3.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.7...v2.3.8
 [v2.3.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.6...v2.3.7
 [v2.3.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.5...v2.3.6
