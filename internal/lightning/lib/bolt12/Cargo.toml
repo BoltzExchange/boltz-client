@@ -13,7 +13,7 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 bech32 = { version = "0.9.1", default-features = false }
-lightning = { version = "0.0.124", features = ["no-std"], default-features = false }
+lightning = { version = "0.1.1", default-features = false }
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
