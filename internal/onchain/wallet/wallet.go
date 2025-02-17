@@ -32,7 +32,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
-const MaxInputs = uint64(255) // TODO: change back to 256 when gdk is fixed
+const MaxInputs = uint64(256)
 const DefaultAutoConsolidateThreshold = uint64(200)
 const GapLimit = 100
 
