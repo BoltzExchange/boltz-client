@@ -261,6 +261,7 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) (streamFunc, s
 		for {
 			status, err := stream.Recv()
 			if err != nil {
+				fmt.Println(err)
 				close(updates)
 				return
 			}
@@ -750,15 +751,11 @@ func TestReverseSwap(t *testing.T) {
 		external        bool
 		recover         bool
 		disablePartials bool
-		waitForClaim    bool
 	}{
 		{desc: "BTC/Normal", to: boltzrpc.Currency_BTC, disablePartials: true},
 		{desc: "BTC/ZeroConf", to: boltzrpc.Currency_BTC, zeroConf: true, external: true},
-		{desc: "BTC/Recover", to: boltzrpc.Currency_BTC, zeroConf: true, recover: true},
 		{desc: "Liquid/Normal", to: boltzrpc.Currency_LBTC, disablePartials: true},
 		{desc: "Liquid/ZeroConf", to: boltzrpc.Currency_LBTC, zeroConf: true, external: true},
-		{desc: "Liquid/Recover", to: boltzrpc.Currency_LBTC, zeroConf: true, recover: true},
-		{desc: "Wait", to: boltzrpc.Currency_BTC, zeroConf: true, waitForClaim: true},
 	}
 
 	for _, node := range nodes {
@@ -785,7 +782,7 @@ func TestReverseSwap(t *testing.T) {
 
 					var info *boltzrpc.GetSwapInfoResponse
 
-					returnImmediately := !tc.waitForClaim
+					returnImmediately := true
 					request := &boltzrpc.CreateReverseSwapRequest{
 						Amount:            100000,
 						Address:           addr,
@@ -794,49 +791,17 @@ func TestReverseSwap(t *testing.T) {
 						ReturnImmediately: &returnImmediately,
 					}
 
-					if tc.recover {
-						request.AcceptZeroConf = false
-						swap, err := client.CreateReverseSwap(request)
-						require.NoError(t, err)
-						_, statusStream := swapStream(t, client, swap.Id)
-						statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
-						stop()
+					swap, err := client.CreateReverseSwap(request)
+					require.NoError(t, err)
 
+					_, statusStream := swapStream(t, client, swap.Id)
+					statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+
+					if !tc.zeroConf {
 						test.MineBlock()
-
-						client, _, stop = setup(t, setupOptions{cfg: cfg})
-
-						ticker := time.NewTicker(200 * time.Millisecond)
-						timeout := time.After(5 * time.Second)
-						for info.GetReverseSwap().GetState() != boltzrpc.SwapState_SUCCESSFUL {
-							select {
-							case <-ticker.C:
-								info, err = client.GetSwapInfo(swap.Id)
-								require.NoError(t, err)
-							case <-timeout:
-								require.Fail(t, "timed out while waiting for swap")
-							}
-						}
-					} else {
-						swap, err := client.CreateReverseSwap(request)
-						require.NoError(t, err)
-
-						if tc.waitForClaim && tc.zeroConf {
-							require.NotZero(t, swap.ClaimTransactionId)
-							info, err = client.GetSwapInfo(swap.Id)
-							require.NoError(t, err)
-						} else {
-							_, statusStream := swapStream(t, client, swap.Id)
-							statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
-
-							if !tc.zeroConf {
-								test.MineBlock()
-							}
-
-							info = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
-						}
-
 					}
+
+					info = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
 
 					require.NotZero(t, info.ReverseSwap.OnchainFee)
 					require.NotZero(t, info.ReverseSwap.ServiceFee)
@@ -862,6 +827,236 @@ func TestReverseSwap(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("Nodes", func(t *testing.T) {
+		nodes := []string{"CLN", "LND"}
+		for _, node := range nodes {
+			node := node
+			t.Run(node, func(t *testing.T) {
+				for _, tc := range tests {
+					t.Run(tc.desc, func(t *testing.T) {
+						cfg := loadConfig(t)
+						cfg.Node = node
+						chain := getOnchain(t, cfg)
+						client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+
+						pair := &boltzrpc.Pair{
+							From: boltzrpc.Currency_BTC,
+							To:   boltzrpc.Currency_BTC,
+						}
+
+						addr := ""
+						if tc.external {
+							addr = getCli(tc.to)("getnewaddress")
+						}
+
+						var info *boltzrpc.GetSwapInfoResponse
+
+						returnImmediately := true
+						request := &boltzrpc.CreateReverseSwapRequest{
+							Amount:            100000,
+							Pair:              pair,
+							AcceptZeroConf:    tc.zeroConf,
+							ReturnImmediately: &returnImmediately,
+						}
+
+						swap, err := client.CreateReverseSwap(request)
+						require.NoError(t, err)
+
+						_, statusStream := swapStream(t, client, swap.Id)
+						statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+						test.MineBlock()
+						statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionConfirmed)
+						info = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
+
+						require.NotZero(t, info.ReverseSwap.OnchainFee)
+						require.NotZero(t, info.ReverseSwap.ServiceFee)
+						require.NotNil(t, info.ReverseSwap.PaidAt)
+						require.LessOrEqual(t, *info.ReverseSwap.PaidAt, time.Now().Unix())
+						require.GreaterOrEqual(t, *info.ReverseSwap.PaidAt, info.ReverseSwap.CreatedAt)
+
+						currency := parseCurrency(tc.to)
+
+						claimFee, err := chain.GetTransactionFee(currency, info.ReverseSwap.ClaimTransactionId)
+						require.NoError(t, err)
+
+						totalFees := info.ReverseSwap.InvoiceAmount - info.ReverseSwap.OnchainAmount
+						require.Equal(t, int64(totalFees+claimFee), int64(*info.ReverseSwap.ServiceFee+*info.ReverseSwap.OnchainFee))
+
+						if tc.external {
+							require.Equal(t, addr, info.ReverseSwap.ClaimAddress)
+						}
+						checkTxOutAddress(t, chain, currency, info.ReverseSwap.ClaimTransactionId, info.ReverseSwap.ClaimAddress, !tc.disablePartials)
+
+						stop()
+					})
+				}
+			})
+		}
+	})
+
+	t.Run("Normal", func(t *testing.T) {
+		cfg := loadConfig(t)
+		//cfg.Node = node
+		chain := getOnchain(t, cfg)
+		boltzApi := getBoltz(t, cfg)
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain, boltzApi: boltzApi})
+		t.Cleanup(stop)
+		tests := []struct {
+			desc            string
+			to              boltzrpc.Currency
+			request         func(request *boltzrpc.CreateReverseSwapRequest)
+			zeroConf        bool
+			external        bool
+			disablePartials bool
+			check           func(t *testing.T, request *boltzrpc.CreateReverseSwapRequest, reverseSwap *boltzrpc.ReverseSwapInfo)
+		}{
+			{
+				desc: "Wallet",
+				request: func(request *boltzrpc.CreateReverseSwapRequest) {
+					id := walletId(t, client, request.Pair.To)
+					request.WalletId = &id
+				},
+				check: func(t *testing.T, request *boltzrpc.CreateReverseSwapRequest, reverseSwap *boltzrpc.ReverseSwapInfo) {
+
+					//require.Equal(t, request.WalletId, reverseSwap.)
+				},
+			},
+			{
+				desc: "External",
+				request: func(request *boltzrpc.CreateReverseSwapRequest) {
+					request.Address = getCli(request.Pair.To)("getnewaddress")
+				},
+				check: func(t *testing.T, request *boltzrpc.CreateReverseSwapRequest, reverseSwap *boltzrpc.ReverseSwapInfo) {
+					require.Equal(t, request.Address, reverseSwap.ClaimAddress)
+				},
+			},
+			{
+				desc: "NoZeroConf",
+				request: func(request *boltzrpc.CreateReverseSwapRequest) {
+					request.AcceptZeroConf = false
+				},
+			},
+		}
+
+		checkSwap := func(t *testing.T, reverseSwap *boltzrpc.ReverseSwapInfo, coop bool) {
+			require.NotZero(t, reverseSwap.OnchainFee)
+			require.NotZero(t, reverseSwap.ServiceFee)
+			require.NotNil(t, reverseSwap.PaidAt)
+			require.LessOrEqual(t, *reverseSwap.PaidAt, time.Now().Unix())
+			require.GreaterOrEqual(t, *reverseSwap.PaidAt, reverseSwap.CreatedAt)
+
+			currency := parseCurrency(reverseSwap.Pair.To)
+
+			claimFee, err := chain.GetTransactionFee(currency, reverseSwap.ClaimTransactionId)
+			require.NoError(t, err)
+
+			totalFees := reverseSwap.InvoiceAmount - reverseSwap.OnchainAmount
+			require.Equal(t, int64(totalFees+claimFee), int64(*reverseSwap.ServiceFee+*reverseSwap.OnchainFee))
+
+			checkTxOutAddress(t, chain, currency, reverseSwap.ClaimTransactionId, reverseSwap.ClaimAddress, coop)
+
+		}
+
+		createSwap := func(t *testing.T, request *boltzrpc.CreateReverseSwapRequest) *boltzrpc.ReverseSwapInfo {
+			swap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
+
+			info, err := client.GetSwapInfo(swap.Id)
+			require.NoError(t, err)
+			return info.ReverseSwap
+		}
+
+		for _, currency := range []boltzrpc.Currency{boltzrpc.Currency_BTC, boltzrpc.Currency_LBTC} {
+			t.Run(currency.String(), func(t *testing.T) {
+				t.Parallel()
+				for _, tc := range tests {
+					t.Run(tc.desc, func(t *testing.T) {
+						t.Parallel()
+						boltzApi.DisablePartialSignatures = tc.disablePartials
+						returnImmediately := false
+						request := &boltzrpc.CreateReverseSwapRequest{
+							Amount: 100000,
+							Pair: &boltzrpc.Pair{
+								From: boltzrpc.Currency_BTC,
+								To:   currency,
+							},
+							ReturnImmediately: &returnImmediately,
+							AcceptZeroConf:    true,
+						}
+						if tc.request != nil {
+							tc.request(request)
+						}
+						swap := createSwap(t, request)
+						checkSwap(t, swap, !tc.disablePartials)
+						if tc.check != nil {
+							tc.check(t, request, swap)
+						}
+					})
+				}
+
+			})
+		}
+	})
+
+	t.Run("Wait", func(t *testing.T) {
+		cfg := loadConfig(t)
+		client, _, stop := setup(t, setupOptions{cfg: cfg})
+		defer stop()
+
+		pair := &boltzrpc.Pair{
+			From: boltzrpc.Currency_BTC,
+			To:   boltzrpc.Currency_BTC,
+		}
+
+		returnImmediately := false
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount:            100000,
+			Pair:              pair,
+			ReturnImmediately: &returnImmediately,
+			AcceptZeroConf:    true,
+		}
+
+		swap, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+		require.NotZero(t, swap.ClaimTransactionId)
+		info, err := client.GetSwapInfo(swap.Id)
+		require.NoError(t, err)
+		require.Equal(t, boltzrpc.SwapState_SUCCESSFUL, info.ReverseSwap.State)
+	})
+
+	t.Run("Recover", func(t *testing.T) {
+		cfg := loadConfig(t)
+		client, _, stop := setup(t, setupOptions{cfg: cfg})
+
+		pair := &boltzrpc.Pair{
+			From: boltzrpc.Currency_BTC,
+			To:   boltzrpc.Currency_BTC,
+		}
+
+		returnImmediately := true
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount:            100000,
+			Pair:              pair,
+			ReturnImmediately: &returnImmediately,
+			AcceptZeroConf:    false,
+		}
+
+		swap, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+		_, statusStream := swapStream(t, client, swap.Id)
+		statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+		stop()
+		test.MineBlock()
+
+		client, _, stop = setup(t, setupOptions{cfg: cfg})
+		defer stop()
+		require.Eventually(t, func() bool {
+			info, err := client.GetSwapInfo(swap.Id)
+			require.NoError(t, err)
+			return info.GetReverseSwap().GetState() == boltzrpc.SwapState_SUCCESSFUL
+		}, 5*time.Second, 200*time.Millisecond)
+	})
 
 	t.Run("Invalid", func(t *testing.T) {
 		cfg := loadConfig(t)

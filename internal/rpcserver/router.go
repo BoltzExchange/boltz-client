@@ -601,11 +601,13 @@ func (server *routedBoltzServer) GetSwapInfoStream(request *boltzrpc.GetSwapInfo
 		response, err := server.serializeAnySwap(stream.Context(), update.Swap, update.ReverseSwap, update.ChainSwap)
 		if err == nil {
 			if err := stream.Send(response); err != nil {
+				logger.Errorf("Failed to send Swap info %s update: %v", request.GetSwapId(), err)
 				stop()
 				return err
 			}
 		}
 	}
+	logger.Infof("Swap info stream %s stopped", request.GetSwapId())
 
 	return nil
 }
