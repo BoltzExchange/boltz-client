@@ -1430,6 +1430,7 @@ func TestWalletTransactions(t *testing.T) {
 			WalletId:       &testWallet.Id,
 		})
 		require.NoError(t, err)
+		test.MineBlock()
 		waitWalletTx(t, client, swap.GetClaimTransactionId())
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
@@ -1459,6 +1460,7 @@ func TestWalletTransactions(t *testing.T) {
 		test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount-1000)
 		stream, _ := swapStream(t, client, swap.Id)
 		info := stream(boltzrpc.SwapState_REFUNDED)
+		test.MineBlock()
 		waitWalletTx(t, client, info.ChainSwap.FromData.GetTransactionId())
 		response, err := client.ListWalletTransactions(request)
 		require.NoError(t, err)
