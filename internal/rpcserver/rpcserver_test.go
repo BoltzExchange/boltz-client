@@ -55,6 +55,9 @@ import (
 func TestMain(m *testing.M) {
 	test.BackendCli("updatetimeout 300 300 350 300 300 --pair L-BTC/BTC")
 	test.BackendCli("updatetimeout 300 300 350 300 300 --pair BTC/BTC")
+	if err := test.InitWallet(true); err != nil {
+		logger.Fatal(err.Error())
+	}
 	os.Exit(m.Run())
 }
 
@@ -163,7 +166,7 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	var err error
 	if walletCredentials == nil {
 		var testWallet *wallet.Wallet
-		testWallet, walletCredentials, err = test.InitTestWallet(parseCurrency(walletParams.Currency), false)
+		testWallet, walletCredentials, err = test.InitTestWallet(parseCurrency(walletParams.Currency))
 		require.NoError(t, err)
 		walletCredentials.Name = walletName
 		walletCredentials.TenantId = database.DefaultTenantId
@@ -240,12 +243,8 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	}
 }
 
-func getCli(pair boltzrpc.Currency) test.Cli {
-	if pair == boltzrpc.Currency_LBTC {
-		return test.LiquidCli
-	} else {
-		return test.BtcCli
-	}
+func getCli(currency boltzrpc.Currency) test.Cli {
+	return test.GetCli(parseCurrency(currency))
 }
 
 type streamFunc func(state boltzrpc.SwapState) *boltzrpc.GetSwapInfoResponse
