@@ -34,6 +34,7 @@ type Websocket struct {
 	closed            bool
 	dialer            *websocket.Dialer
 	swapIds           []string
+	swapIdsLock       sync.Mutex
 	reconnectInterval time.Duration
 }
 
@@ -223,11 +224,15 @@ func (boltz *Websocket) Subscribe(swapIds []string) error {
 			return err
 		}
 	}
+	boltz.swapIdsLock.Lock()
 	boltz.swapIds = append(boltz.swapIds, swapIds...)
+	boltz.swapIdsLock.Unlock()
 	return nil
 }
 
 func (boltz *Websocket) Unsubscribe(swapId string) {
+	boltz.swapIdsLock.Lock()
+	defer boltz.swapIdsLock.Unlock()
 	boltz.swapIds = slices.DeleteFunc(boltz.swapIds, func(id string) bool {
 		return id == swapId
 	})
