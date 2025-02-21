@@ -15,12 +15,11 @@ import (
 	"time"
 )
 
-var wallet *onchainWallet.Wallet
-var credentials *onchainWallet.Credentials
+var wallets map[boltz.Currency]*onchainWallet.Wallet
 
 func TestMain(m *testing.M) {
 	var err error
-	wallet, credentials, err = test.InitTestWallet(boltz.CurrencyBtc, true)
+	wallets, err = test.InitTestWallet(true)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -28,12 +27,17 @@ func TestMain(m *testing.M) {
 }
 
 func TestBalance(t *testing.T) {
-	balance, err := wallet.GetBalance()
+	balance, err := getWallet(boltz.CurrencyBtc).GetBalance()
 	require.NoError(t, err)
 	require.NotZero(t, balance.Total)
 }
+
+func getWallet(currency boltz.Currency) *onchainWallet.Wallet {
+	return wallets[currency]
+}
 func TestSend(t *testing.T) {
 	addr := test.BtcCli("getnewaddress")
+	wallet := getWallet(boltz.CurrencyBtc)
 
 	t.Run("Normal", func(t *testing.T) {
 		txid, err := wallet.SendToAddress(addr, 10000, 1, false)
@@ -60,17 +64,19 @@ func TestSend(t *testing.T) {
 }
 
 func TestReal(t *testing.T) {
-	subaccounts, err := wallet.GetSubaccounts(true)
+	btcWallet := getWallet(boltz.CurrencyBtc)
+
+	subaccounts, err := btcWallet.GetSubaccounts(true)
 	require.NoError(t, err)
 	require.NotZero(t, subaccounts)
 
-	balance, err := wallet.GetBalance()
+	balance, err := btcWallet.GetBalance()
 	require.NoError(t, err)
 	require.NotZero(t, balance.Total)
 
-	_, err = wallet.SetSubaccount(nil)
+	_, err = btcWallet.SetSubaccount(nil)
 	require.NoError(t, err)
-	balance, err = wallet.GetBalance()
+	balance, err = btcWallet.GetBalance()
 	require.NoError(t, err)
 	require.Zero(t, balance.Total)
 }
@@ -153,6 +159,12 @@ func TestImportWallet(t *testing.T) {
 
 func TestEncryptedCredentials(t *testing.T) {
 	password := "password"
+	credentials := &onchainWallet.Credentials{
+		WalletInfo: onchain.WalletInfo{
+			Currency: boltz.CurrencyBtc,
+		},
+		Mnemonic: test.WalletMnemonic,
+	}
 	encrypted, err := credentials.Encrypt(password)
 	require.NoError(t, err)
 
