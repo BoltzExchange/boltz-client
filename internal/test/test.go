@@ -44,12 +44,11 @@ func ClearWalletDataDir() {
 	os.RemoveAll(walletDataDir)
 }
 
-func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *wallet.Credentials, error) {
-	var err error
+func InitWallet(debug bool) error {
 	InitLogger()
 	ClearWalletDataDir()
 	if !wallet.Initialized() {
-		err = wallet.Init(wallet.Config{
+		return wallet.Init(wallet.Config{
 			DataDir:                  walletDataDir,
 			Network:                  boltz.Regtest,
 			Debug:                    debug,
@@ -57,11 +56,12 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 			AutoConsolidateThreshold: wallet.DefaultAutoConsolidateThreshold,
 			MaxInputs:                wallet.MaxInputs,
 		})
-		if err != nil {
-			return nil, nil, err
-		}
 	}
+	return nil
+}
 
+func InitTestWallet(currency boltz.Currency) (*wallet.Wallet, *wallet.Credentials, error) {
+	var err error
 	credentials := &wallet.Credentials{
 		WalletInfo: onchain.WalletInfo{
 			Currency: currency,
@@ -130,6 +130,14 @@ func InitLogger() {
 
 func BtcCli(cmd string) string {
 	return run("bitcoin-cli-sim-server " + cmd)
+}
+
+func GetCli(pair boltz.Currency) Cli {
+	if pair == boltz.CurrencyLiquid {
+		return LiquidCli
+	} else {
+		return BtcCli
+	}
 }
 
 func BackendCli(cmd string) string {
@@ -233,4 +241,20 @@ func PastDate(duration time.Duration) time.Time {
 
 func PrintBackendLogs() {
 	fmt.Println(bash("docker logs boltz-backend"))
+}
+
+func WaitWalletTx(t *testing.T, txId string) {
+	notifier := wallet.TransactionNotifier.Get()
+	defer wallet.TransactionNotifier.Remove(notifier)
+	timeout := time.After(30 * time.Second)
+	for {
+		select {
+		case notification := <-notifier:
+			if notification.TxId == txId || txId == "" {
+				return
+			}
+		case <-timeout:
+			require.Fail(t, "timed out while waiting for tx")
+		}
+	}
 }

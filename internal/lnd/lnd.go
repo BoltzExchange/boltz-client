@@ -225,6 +225,10 @@ func (lnd *LND) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransact
 	return nil, errors.New("not implemented for lnd")
 }
 
+func (lnd *LND) BumpTransactionFee(txId string, feeRate float64) (string, error) {
+	return "", errors.New("not implemented for lnd")
+}
+
 func (lnd *LND) CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
 	request := &lnrpc.Invoice{
 		Memo:      memo,
