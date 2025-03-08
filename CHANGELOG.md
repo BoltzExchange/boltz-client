@@ -1,4 +1,14 @@
 
+<a name="v2.4.1"></a>
+## [v2.4.1] - 2025-03-08
+### Feat
+- use multi tx provider for liquid ([#392](https://github.com/BoltzExchange/boltz-client/issues/392))
+- lazy websocket connection ([#393](https://github.com/BoltzExchange/boltz-client/issues/393))
+
+### Fix
+- remove invoice expiry check ([#397](https://github.com/BoltzExchange/boltz-client/issues/397))
+
+
 <a name="v2.4.0"></a>
 ## [v2.4.0] - 2025-02-17
 ### Feat
@@ -578,6 +588,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.4.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.4.0...v2.4.1
 [v2.4.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.9...v2.4.0
 [v2.3.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.8...v2.3.9
 [v2.3.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.7...v2.3.8
