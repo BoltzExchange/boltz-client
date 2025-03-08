@@ -9,8 +9,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
-	"github.com/fiatjaf/go-lnurl"
 	"math"
 	"net/url"
 	"regexp"
@@ -18,7 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
 	"github.com/BoltzExchange/boltz-client/v2/internal/build"
@@ -32,9 +29,11 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/fiatjaf/go-lnurl"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/lightningnetwork/lnd/zpay32"
 	"golang.org/x/sync/errgroup"
@@ -670,12 +669,6 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.Decode
 	return nil, nil
 }
 
-func checkInvoiceExpiry(request *boltzrpc.CreateSwapRequest, invoice *lightning.DecodedInvoice) bool {
-	expiryLeft := time.Until(invoice.Expiry.Add(-10 * time.Second))
-	currency := request.Pair.GetFrom()
-	return expiryLeft.Minutes() > boltz.GetBlockTime(serializers.ParseCurrency(&currency))
-}
-
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	privateKey, publicKey, err := newKeys()
@@ -744,9 +737,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		swapResponse, err = server.checkMagicRoutingHint(decoded, invoice)
 		if err != nil {
 			return nil, err
-		}
-		if !checkInvoiceExpiry(request, decoded) {
-			return nil, status.Errorf(codes.InvalidArgument, "invoice is about to expire")
 		}
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
