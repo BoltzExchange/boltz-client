@@ -1,4 +1,10 @@
 
+<a name="v2.4.1"></a>
+## [v2.4.1] - 2025-03-08
+### Fix
+- remove invoice expiry check ([#397](https://github.com/BoltzExchange/boltz-client/issues/397))
+
+
 <a name="v2.4.0"></a>
 ## [v2.4.0] - 2025-02-17
 ### Feat
@@ -99,6 +105,28 @@
 ## [v2.2.3] - 2024-12-04
 ### Fix
 - change default mempool liquid api to bull bitcoin ([#349](https://github.com/BoltzExchange/boltz-client/issues/349))
+- decrease `MaxInputs` by 1 ([#343](https://github.com/BoltzExchange/boltz-client/issues/343))
+- add gdk fee floor ([#344](https://github.com/BoltzExchange/boltz-client/issues/344))
+
+
+<a name="v2.3.0"></a>
+## [v2.3.0] - 2024-11-29
+### Feat
+- include send fee in balance check ([#346](https://github.com/BoltzExchange/boltz-client/issues/346))
+- autoswap execute rpc ([#342](https://github.com/BoltzExchange/boltz-client/issues/342))
+- chain autoswap sweeps ([#341](https://github.com/BoltzExchange/boltz-client/issues/341))
+- autoswap balance check ([#336](https://github.com/BoltzExchange/boltz-client/issues/336))
+
+### Fix
+- run auto consolidation on startup ([#345](https://github.com/BoltzExchange/boltz-client/issues/345))
+- decrease `MaxInputs` by 1 ([#343](https://github.com/BoltzExchange/boltz-client/issues/343))
+- add gdk fee floor ([#344](https://github.com/BoltzExchange/boltz-client/issues/344))
+- check for existing submarine swaps before creation ([#340](https://github.com/BoltzExchange/boltz-client/issues/340))
+- check for same currency on existing credentials aswell ([#335](https://github.com/BoltzExchange/boltz-client/issues/335))
+- include refunded swaps in `FailedSwapsQuery` ([#338](https://github.com/BoltzExchange/boltz-client/issues/338))
+
+### Refactor
+- increase default ln autoswap reserve to 10 percent ([#337](https://github.com/BoltzExchange/boltz-client/issues/337))
 
 
 <a name="v2.2.2"></a>
@@ -578,6 +606,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.4.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.4.0...v2.4.1
 [v2.4.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.9...v2.4.0
 [v2.3.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.8...v2.3.9
 [v2.3.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.7...v2.3.8
@@ -588,7 +617,8 @@
 [v2.3.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.2...v2.3.3
 [v2.3.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.1...v2.3.2
 [v2.3.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.3...v2.3.1
-[v2.2.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.2...v2.2.3
+[v2.2.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.0...v2.2.3
+[v2.3.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.2...v2.3.0
 [v2.2.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.1...v2.2.2
 [v2.2.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.2.0...v2.2.1
 [v2.2.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.1.11...v2.2.0
