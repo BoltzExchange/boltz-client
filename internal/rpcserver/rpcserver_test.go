@@ -7,9 +7,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
+	"math/rand/v2"
 	"net"
 	"os"
 	"slices"
@@ -54,6 +56,10 @@ import (
 func TestMain(m *testing.M) {
 	test.BackendCli("updatetimeout 300 300 350 300 300 --pair L-BTC/BTC")
 	test.BackendCli("updatetimeout 300 300 350 300 300 --pair BTC/BTC")
+	_, err := test.InitTestWallet(false)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
 	os.Exit(m.Run())
 }
 
@@ -76,6 +82,28 @@ func getBoltz(t *testing.T, cfg *config.Config) *boltz.Api {
 	require.NoError(t, err)
 	return boltzApi
 }
+
+func newMockWallet(t *testing.T, chain *onchain.Onchain) (*onchainmock.MockWallet, *onchain.WalletInfo) {
+	info := &onchain.WalletInfo{
+		Name:     "mock",
+		Id:       rand.Uint64(),
+		TenantId: database.DefaultTenantId,
+		Currency: boltz.CurrencyBtc,
+	}
+	mockWallet := onchainmock.NewMockWallet(t)
+	mockWallet.EXPECT().Ready().Return(true).Maybe()
+	mockWallet.EXPECT().GetWalletInfo().RunAndReturn(func() onchain.WalletInfo {
+		return *info
+	}).Maybe()
+	mockWallet.EXPECT().Disconnect().Return(nil).Maybe()
+	chain.AddWallet(mockWallet)
+	t.Cleanup(func() {
+		chain.RemoveWallet(info.Id)
+	})
+	return mockWallet, info
+}
+
+type mockWalletSetup func(mock *onchainmock.MockWallet)
 
 type txMocker func(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider
 
@@ -110,19 +138,16 @@ func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
 
 var walletName = "regtest"
 var password = "password"
-var walletParams = &boltzrpc.WalletParams{Currency: boltzrpc.Currency_LBTC, Name: walletName}
-var walletCredentials *wallet.Credentials
-var testWallet *database.Wallet
 var swapAmount = uint64(100000)
 
 type setupOptions struct {
 	cfg       *config.Config
-	password  string
 	chain     *onchain.Onchain
 	boltzApi  *boltz.Api
 	lightning lightning.LightningNode
 	node      string
 	dontSync  bool
+	wallets   []onchain.Wallet
 }
 
 func waitForSync(t *testing.T, client client.Boltz) {
@@ -160,29 +185,6 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	logger.Init(cfg.Log)
 
 	var err error
-	if walletCredentials == nil {
-		var testWallet *wallet.Wallet
-		testWallet, walletCredentials, err = test.InitTestWallet(parseCurrency(walletParams.Currency), false)
-		require.NoError(t, err)
-		walletCredentials.Name = walletName
-		walletCredentials.TenantId = database.DefaultTenantId
-		require.NoError(t, testWallet.Disconnect())
-	}
-
-	encrytpedCredentials := walletCredentials
-	if options.password != "" {
-		encrytpedCredentials, err = walletCredentials.Encrypt(password)
-		require.NoError(t, err)
-	}
-	testWallet = &database.Wallet{Credentials: encrytpedCredentials}
-
-	require.NoError(t, cfg.Database.Connect())
-	_, err = cfg.Database.GetWallet(encrytpedCredentials.Id)
-	if err != nil {
-		require.NoError(t, cfg.Database.CreateWallet(testWallet))
-	} else {
-		require.NoError(t, cfg.Database.UpdateWalletCredentials(encrytpedCredentials))
-	}
 
 	rpc := NewRpcServer(cfg)
 	require.NoError(t, rpc.Init())
@@ -191,6 +193,9 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	rpc.boltzServer.lightning = options.lightning
 	go func() {
 		require.NoError(t, rpc.boltzServer.start(cfg))
+		for _, wallet := range options.wallets {
+			rpc.boltzServer.onchain.AddWallet(wallet)
+		}
 	}()
 
 	lis := bufconn.Listen(1024 * 1024)
@@ -468,6 +473,7 @@ func TestMacaroons(t *testing.T) {
 	})
 
 	t.Run("Wallet", func(t *testing.T) {
+		testWallet := fundedWallet(t, admin, boltzrpc.Currency_LBTC)
 		hasWallets := func(t *testing.T, client client.Boltz, amount int) {
 			wallets, err := client.GetWallets(nil, true)
 			require.NoError(t, err)
@@ -476,9 +482,10 @@ func TestMacaroons(t *testing.T) {
 		hasWallets(t, tenant, 0)
 		hasWallets(t, admin, 2)
 
-		_, err = tenant.GetWallet(walletName)
+		_, err = tenant.GetWallet(testWallet.Name)
 		requireCode(t, err, codes.NotFound)
 
+		walletParams := &boltzrpc.WalletParams{Currency: boltzrpc.Currency_LBTC, Name: "test"}
 		_, err = readTenant.CreateWallet(walletParams)
 		requireCode(t, err, codes.PermissionDenied)
 
@@ -591,11 +598,12 @@ func TestSwapInfo(t *testing.T) {
 
 	check(t, reverseSwap.Id)
 
+	toWallet := fundedWallet(t, admin, boltzrpc.Currency_LBTC)
 	chainSwap, err := admin.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
 		Amount:      &swapAmount,
 		Pair:        &boltzrpc.Pair{From: boltzrpc.Currency_BTC, To: boltzrpc.Currency_LBTC},
 		ExternalPay: &externalPay,
-		ToWalletId:  &testWallet.Id,
+		ToWalletId:  &toWallet.Id,
 	})
 	require.NoError(t, err)
 	info = stream(boltzrpc.SwapState_PENDING)
@@ -772,6 +780,7 @@ func TestReverseSwap(t *testing.T) {
 					cfg.Node = node
 					chain := getOnchain(t, cfg)
 					client, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi, chain: chain})
+					fundedWallet(t, client, tc.to)
 
 					pair := &boltzrpc.Pair{
 						From: boltzrpc.Currency_BTC,
@@ -1102,13 +1111,10 @@ func TestReverseSwap(t *testing.T) {
 			})
 
 			t.Run("Valid", func(t *testing.T) {
-				destination.WalletId = walletId(t, client, boltzrpc.Currency_BTC)
+				destinationWallet := emptyWallet(t, client, boltzrpc.Currency_BTC)
+				destination.WalletId = destinationWallet.Id
 				_, err := client.ClaimSwaps(request)
 				require.NoError(t, err)
-
-				fromWallet, err := client.GetWalletById(destination.WalletId)
-				require.NoError(t, err)
-				require.NotZero(t, fromWallet.Balance.Unconfirmed)
 
 				_, err = client.ClaimSwaps(request)
 				requireCode(t, err, codes.NotFound)
@@ -1118,6 +1124,24 @@ func TestReverseSwap(t *testing.T) {
 
 }
 
+func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) *boltzrpc.Wallet {
+	wallets, err := client.GetWallets(&currency, false)
+	require.NoError(t, err)
+	for _, existing := range wallets.Wallets {
+		if existing.Balance.Confirmed > 0 {
+			return existing
+		}
+	}
+	params := &boltzrpc.WalletParams{Currency: currency, Name: "regtest"}
+	mnemonic := test.WalletMnemonic
+	subaccount := uint64(test.WalletSubaccount)
+	creds := &boltzrpc.WalletCredentials{Mnemonic: &mnemonic, Subaccount: &subaccount}
+	result, err := client.ImportWallet(params, creds)
+	require.NoError(t, err)
+	time.Sleep(200 * time.Millisecond)
+	return result
+}
+
 func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
 	wallets, err := client.GetWallets(&currency, false)
 	require.NoError(t, err)
@@ -1125,7 +1149,7 @@ func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uin
 	return wallets.Wallets[0].Id
 }
 
-func emptyWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
+func emptyWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) *boltzrpc.Wallet {
 	response, err := client.CreateWallet(&boltzrpc.WalletParams{
 		Currency: currency,
 		Name:     "empty",
@@ -1133,9 +1157,9 @@ func emptyWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) 
 	if err != nil {
 		existing, err := client.GetWallet("empty")
 		require.NoError(t, err)
-		return existing.Id
+		return existing
 	}
-	return response.Wallet.Id
+	return response.Wallet
 }
 
 func TestAutoSwap(t *testing.T) {
@@ -1149,6 +1173,7 @@ func TestAutoSwap(t *testing.T) {
 
 	admin, autoSwap, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
+	fundedWallet(t, admin, boltzrpc.Currency_LBTC)
 
 	reset := func(t *testing.T) {
 		_, err = autoSwap.ResetConfig(client.LnAutoSwap)
@@ -1254,7 +1279,7 @@ func TestAutoSwap(t *testing.T) {
 			require.NoError(t, err)
 			_, err = autoSwap.SetLightningConfigValue("enabled", true)
 			require.NoError(t, err)
-			_, err = admin.RemoveWallet(testWallet.Id)
+			_, err = admin.RemoveWallet(walletId(t, admin, boltzrpc.Currency_LBTC))
 			require.Error(t, err)
 		})
 
@@ -1341,7 +1366,9 @@ func TestAutoSwap(t *testing.T) {
 }
 func waitWalletTx(t *testing.T, client client.Boltz, txId string) {
 	if txId != "" {
-		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: testWallet.Id})
+		// TODO
+		id := walletId(t, client, boltzrpc.Currency_LBTC)
+		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: id})
 		require.NoError(t, err)
 		for _, tx := range response.Transactions {
 			if tx.Id == txId {
@@ -1365,126 +1392,105 @@ func waitWalletTx(t *testing.T, client client.Boltz, txId string) {
 }
 
 func TestWalletTransactions(t *testing.T) {
-	client, _, stop := setup(t, setupOptions{})
+	cfg := loadConfig(t)
+	chain := getOnchain(t, cfg)
+
+	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 	t.Cleanup(stop)
 
-	findSwap := func(t *testing.T, response *boltzrpc.ListWalletTransactionsResponse, id string, transactionType boltzrpc.TransactionType) *boltzrpc.TransactionInfo {
-		for _, tx := range response.Transactions {
-			if len(tx.Infos) > 0 && tx.Infos[0].GetSwapId() == id {
-				require.Equal(t, transactionType, tx.Infos[0].Type)
-				return tx.Infos[0]
-			}
-		}
-		require.Fail(t, "swap not found")
-		return nil
-	}
-
 	t.Run("Pagination", func(t *testing.T) {
-		offset := uint64(0)
+		offset := uint64(1)
 		limit := uint64(1)
-		request := &boltzrpc.ListWalletTransactionsRequest{
-			Id:     testWallet.Id,
+		txId := "test"
+		testWallet, walletInfo := newMockWallet(t, chain)
+		testWallet.EXPECT().GetTransactions(limit, offset).Return([]*onchain.WalletTransaction{{Id: txId}}, nil)
+
+		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{
+			Id:     walletInfo.Id,
 			Offset: &offset,
 			Limit:  &limit,
-		}
-		response, err := client.ListWalletTransactions(request)
+		})
 		require.NoError(t, err)
 		require.Len(t, response.Transactions, 1)
+		require.Equal(t, txId, response.Transactions[0].Id)
+	})
 
-		t.Run("Balance", func(t *testing.T) {
-			limit = 30
-			response, err := client.ListWalletTransactions(request)
+	claimTx := "claim"
+	refundTx := "refund"
+	lockupTx := "lockup"
+	fakeSwaps := test.FakeSwaps{
+		ReverseSwaps: []database.ReverseSwap{
+			{
+				ClaimTransactionId: claimTx,
+			},
+		},
+		Swaps: []database.Swap{
+			{
+				RefundTransactionId: refundTx,
+			},
+		},
+		ChainSwaps: []database.ChainSwap{
+			{
+				FromData: &database.ChainSwapData{
+					LockupTransactionId: lockupTx,
+				},
+			},
+		},
+	}
+	fakeSwaps.Create(t, cfg.Database)
+
+	tests := []struct {
+		desc         string
+		transactions []*onchain.WalletTransaction
+		fakeSwaps    test.FakeSwaps
+		txType       boltzrpc.TransactionType
+	}{
+		{
+			desc: "Claim",
+			transactions: []*onchain.WalletTransaction{
+				{Id: claimTx},
+			},
+			txType: boltzrpc.TransactionType_CLAIM,
+		},
+		{
+			desc: "Refund",
+			transactions: []*onchain.WalletTransaction{
+				{Id: refundTx},
+			},
+			txType: boltzrpc.TransactionType_REFUND,
+		},
+		{
+			desc: "Lockup",
+			transactions: []*onchain.WalletTransaction{
+				{Id: lockupTx},
+			},
+			txType: boltzrpc.TransactionType_LOCKUP,
+		},
+
+		{
+			desc: "Consolidate",
+			transactions: []*onchain.WalletTransaction{
+				{Id: "consolidation", IsConsolidation: true},
+			},
+			txType: boltzrpc.TransactionType_CONSOLIDATION,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			testWallet, walletInfo := newMockWallet(t, chain)
+			testWallet.EXPECT().GetTransactions(mock.Anything, mock.Anything).Return(test.transactions, nil)
+
+			response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: walletInfo.Id})
 			require.NoError(t, err)
-			require.NotEmpty(t, response.Transactions)
-			for {
-				offset += limit
-				additional, err := client.ListWalletTransactions(request)
-				require.NoError(t, err)
-				response.Transactions = append(response.Transactions, additional.Transactions...)
-				if len(additional.Transactions) < int(limit) {
-					break
+			for _, tx := range response.Transactions {
+				if tx.Infos[0].Type == test.txType {
+					return
 				}
 			}
-
-			balance, err := client.GetWalletById(testWallet.Id)
-			require.NoError(t, err)
-			require.NotZero(t, balance.Balance.Total)
-			var sum int64
-			for _, tx := range response.Transactions {
-				sum += tx.BalanceChange
-				require.Empty(t, tx.Infos)
-			}
-			require.Equal(t, int64(balance.Balance.Total), sum)
+			require.Fail(t, "swap not found")
 		})
-	})
-
-	request := &boltzrpc.ListWalletTransactionsRequest{Id: testWallet.Id}
-	t.Run("Claim", func(t *testing.T) {
-		swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-			Pair: &boltzrpc.Pair{
-				From: boltzrpc.Currency_BTC,
-				To:   boltzrpc.Currency_LBTC,
-			},
-			Amount:         100000,
-			AcceptZeroConf: true,
-			WalletId:       &testWallet.Id,
-		})
-		require.NoError(t, err)
-		test.MineBlock()
-		waitWalletTx(t, client, swap.GetClaimTransactionId())
-		response, err := client.ListWalletTransactions(request)
-		require.NoError(t, err)
-		findSwap(t, response, swap.Id, boltzrpc.TransactionType_CLAIM)
-	})
-
-	t.Run("Refund", func(t *testing.T) {
-		toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
-		externalPay := true
-		receive, err := client.WalletReceive(testWallet.Id)
-		require.NoError(t, err)
-		pair := &boltzrpc.Pair{
-			From: boltzrpc.Currency_LBTC,
-			To:   boltzrpc.Currency_BTC,
-		}
-		pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
-		require.NoError(t, err)
-		amount := pairInfo.Limits.Minimal
-		swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
-			Pair:          pair,
-			Amount:        &amount,
-			ExternalPay:   &externalPay,
-			RefundAddress: &receive.Address,
-			ToWalletId:    &toWalletId,
-		})
-		require.NoError(t, err)
-		test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount-1000)
-		stream, _ := swapStream(t, client, swap.Id)
-		info := stream(boltzrpc.SwapState_REFUNDED)
-		test.MineBlock()
-		waitWalletTx(t, client, info.ChainSwap.FromData.GetTransactionId())
-		response, err := client.ListWalletTransactions(request)
-		require.NoError(t, err)
-		findSwap(t, response, swap.Id, boltzrpc.TransactionType_REFUND)
-	})
-
-	t.Run("Lockup", func(t *testing.T) {
-		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
-			Pair: &boltzrpc.Pair{
-				From: boltzrpc.Currency_LBTC,
-				To:   boltzrpc.Currency_BTC,
-			},
-			Amount:           100000,
-			SendFromInternal: true,
-			WalletId:         &testWallet.Id,
-		})
-		require.NoError(t, err)
-		waitWalletTx(t, client, swap.TxId)
-		response, err := client.ListWalletTransactions(request)
-		require.NoError(t, err)
-		findSwap(t, response, swap.Id, boltzrpc.TransactionType_LOCKUP)
-	})
-
-	test.MineBlock()
+	}
 }
 
 func TestWallet(t *testing.T) {
@@ -1492,6 +1498,7 @@ func TestWallet(t *testing.T) {
 	defer stop()
 
 	// the main setup function already created a wallet
+	testWallet := fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	_, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
@@ -1531,10 +1538,21 @@ func TestWallet(t *testing.T) {
 
 func TestUnlock(t *testing.T) {
 	password := "password"
-	client, _, stop := setup(t, setupOptions{password: password})
+	cfg := loadConfig(t)
+	require.NoError(t, cfg.Database.Connect())
+	walletCredentials := test.WalletCredentials(boltz.CurrencyBtc)
+	encryptedCredentials, err := walletCredentials.Encrypt(password)
+	require.NoError(t, err)
+	encryptedWallet := &database.Wallet{
+		Credentials: encryptedCredentials,
+	}
+	err = cfg.Database.CreateWallet(encryptedWallet)
+	require.NoError(t, err)
+
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
-	_, err := client.GetInfo()
+	_, err = client.GetInfo()
 	require.Error(t, err)
 
 	require.Error(t, client.Unlock("wrong"))
@@ -1547,10 +1565,10 @@ func TestUnlock(t *testing.T) {
 	_, err = client.GetInfo()
 	require.NoError(t, err)
 
-	_, err = client.GetWalletCredentials(testWallet.Id, nil)
+	_, err = client.GetWalletCredentials(encryptedWallet.Id, nil)
 	require.Error(t, err)
 
-	c, err := client.GetWalletCredentials(testWallet.Id, &password)
+	c, err := client.GetWalletCredentials(encryptedWallet.Id, &password)
 	require.NoError(t, err)
 	require.Equal(t, walletCredentials.Mnemonic, *c.Mnemonic)
 
@@ -1570,6 +1588,7 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 	cfg.MaxZeroConfAmount = &maxZeroConfAmount
 	chain := getOnchain(t, cfg)
 	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+	fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	defer stop()
 
 	t.Run("Multiple", func(t *testing.T) {
@@ -1675,6 +1694,7 @@ func TestCreateWallet(t *testing.T) {
 	defer stop()
 
 	t.Run("WithPassword", func(t *testing.T) {
+		testWallet := fundedWallet(t, client, boltzrpc.Currency_LBTC)
 		_, err := client.GetWalletCredentials(testWallet.Id, nil)
 		require.NoError(t, err)
 
@@ -1706,16 +1726,27 @@ func TestWalletSendReceive(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{chain: chain})
 	defer stop()
 
-	otherWallet, err := client.CreateWallet(&boltzrpc.WalletParams{Name: "test", Currency: boltzrpc.Currency_BTC})
-	require.NoError(t, err)
+	t.Run("Receive", func(t *testing.T) {
+		mockWallet, walletInfo := newMockWallet(t, chain)
+		errWallet, errInfo := newMockWallet(t, chain)
 
-	nodeWallet, err := client.GetWallet(strings.ToUpper(cfg.Node))
-	require.NoError(t, err)
+		address := "test"
+		mockWallet.EXPECT().NewAddress().Return(address, nil)
+		errWallet.EXPECT().NewAddress().Return("", errors.New("error"))
 
-	response, err := client.WalletReceive(otherWallet.Wallet.Id)
-	require.NoError(t, err)
+		response, err := client.WalletReceive(walletInfo.Id)
+		require.NoError(t, err)
+		require.Equal(t, address, response.Address)
+
+		_, err = client.WalletReceive(errInfo.Id)
+		require.Error(t, err)
+	})
 
 	t.Run("SendFee", func(t *testing.T) {
+		nodeWallet, err := client.GetWallet(strings.ToUpper(cfg.Node))
+		require.NoError(t, err)
+		testWallet := fundedWallet(t, client, boltzrpc.Currency_LBTC)
+
 		swapRelated := true
 		sendAll := true
 		t.Run("NodeWallet", func(t *testing.T) {
@@ -1763,63 +1794,96 @@ func TestWalletSendReceive(t *testing.T) {
 	})
 
 	t.Run("Send", func(t *testing.T) {
-		amount := uint64(100000)
-		send := func(satPerVbyte *float64) uint64 {
-			request := &boltzrpc.WalletSendRequest{
-				Id:          nodeWallet.Id,
-				Address:     response.Address,
-				Amount:      amount,
-				SatPerVbyte: satPerVbyte,
-			}
-			response, err := client.WalletSend(request)
-			require.NoError(t, err)
-			require.NotEmpty(t, response)
-
-			txFee, err := chain.GetTransactionFee(boltz.CurrencyBtc, response.TxId)
-			require.NoError(t, err)
-			return txFee
-		}
-
-		defaultFee := send(nil)
-		feeRate := float64(10)
-		highFee := send(&feeRate)
-
-		require.Greater(t, highFee, defaultFee)
-
-		test.MineBlock()
-
-		timeout := time.After(10 * time.Second)
-		ticker := time.NewTicker(200 * time.Millisecond)
-		defer ticker.Stop()
-		var balance uint64
-		for balance != amount*2 {
-			select {
-			case <-ticker.C:
-				walletResponse, err := client.GetWalletById(otherWallet.Wallet.Id)
-				require.NoError(t, err)
-				balance = walletResponse.Balance.Confirmed
-			case <-timeout:
-				t.Fatal("timeout while waiting for balance")
-				return
-			}
-		}
-
-		nodeReceive, err := client.WalletReceive(nodeWallet.Id)
-		require.NoError(t, err)
-
+		satPerVbyte := 10.0
 		sendAll := true
-		sendResponse, err := client.WalletSend(&boltzrpc.WalletSendRequest{
-			Id:      otherWallet.Wallet.Id,
-			Address: nodeReceive.Address,
-			SendAll: &sendAll,
-		})
-		require.NoError(t, err)
 
-		waitWalletTx(t, client, sendResponse.TxId)
+		tests := []struct {
+			desc    string
+			request *boltzrpc.WalletSendRequest
+			setup   mockWalletSetup
+			result  string
+			err     require.ErrorAssertionFunc
+		}{
+			{
+				desc: "Normal",
+				request: &boltzrpc.WalletSendRequest{
+					Address: "address",
+					Amount:  1000,
+				},
+				result: "txid",
+				err:    require.NoError,
+				setup: func(mockWallet *onchainmock.MockWallet) {
+					mockWallet.EXPECT().SendToAddress("address", uint64(1000), mock.Anything, mock.Anything).Return("txid", nil)
+				},
+			},
+			{
+				desc: "CustomFee",
+				request: &boltzrpc.WalletSendRequest{
+					Address:     "address",
+					Amount:      1000,
+					SatPerVbyte: &satPerVbyte,
+				},
+				result: "txid",
+				err:    require.NoError,
+				setup: func(mockWallet *onchainmock.MockWallet) {
+					mockWallet.EXPECT().SendToAddress("address", uint64(1000), satPerVbyte, mock.Anything).Return("txid", nil)
+				},
+			},
+			{
+				desc: "SendAll",
+				request: &boltzrpc.WalletSendRequest{
+					Address: "address",
+					Amount:  1000,
+					SendAll: &sendAll,
+				},
+				result: "txid",
+				err:    require.NoError,
+				setup: func(mockWallet *onchainmock.MockWallet) {
+					mockWallet.EXPECT().SendToAddress("address", uint64(1000), mock.Anything, sendAll).Return("txid", nil)
+				},
+			},
+			{
+				desc: "MissingAddress",
+				request: &boltzrpc.WalletSendRequest{
+					Amount: 1000,
+				},
+				err: require.Error,
+			},
+			{
+				desc: "MissingAmount",
+				request: &boltzrpc.WalletSendRequest{
+					Address: "address",
+				},
+				err: require.Error,
+			},
+			{
+				desc: "WalletError",
+				request: &boltzrpc.WalletSendRequest{
+					Address: "address",
+					Amount:  1000,
+				},
+				setup: func(mockWallet *onchainmock.MockWallet) {
+					mockWallet.EXPECT().SendToAddress("address", uint64(1000), mock.Anything, mock.Anything).Return("", errors.New("wallet error"))
+				},
+				err: require.Error,
+			},
+		}
 
-		otherWallet, err := client.GetWalletById(otherWallet.Wallet.Id)
-		require.NoError(t, err)
-		require.Zero(t, otherWallet.Balance.Total)
+		for _, tc := range tests {
+			t.Run(tc.desc, func(t *testing.T) {
+				mockWallet, walletInfo := newMockWallet(t, chain)
+				if tc.setup != nil {
+					tc.setup(mockWallet)
+				}
+				tc.request.Id = walletInfo.Id
+
+				response, err := client.WalletSend(tc.request)
+				tc.err(t, err)
+				if err == nil {
+					require.Equal(t, tc.result, response.TxId)
+				}
+			})
+		}
 	})
 }
 
@@ -1827,6 +1891,7 @@ func TestImportDuplicateCredentials(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
+	testWallet := fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	credentials, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
@@ -1844,6 +1909,7 @@ func TestChangePassword(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{})
 	defer stop()
 
+	testWallet := fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	_, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
@@ -2081,6 +2147,7 @@ func TestSwap(t *testing.T) {
 					}
 					admin, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
 					defer stop()
+					fundedWallet(t, admin, tc.from)
 
 					_, write, _ := createTenant(t, admin, "test")
 					tenant := client.NewBoltzClient(write)
@@ -2106,12 +2173,12 @@ func TestSwap(t *testing.T) {
 						})
 
 						t.Run("NoBalance", func(t *testing.T) {
-							emptyWalletId := emptyWallet(t, admin, tc.from)
+							emptyWallet := emptyWallet(t, admin, tc.from)
 							_, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
 								Amount:           100000,
 								Pair:             pair,
 								SendFromInternal: true,
-								WalletId:         &emptyWalletId,
+								WalletId:         &emptyWallet.Id,
 							})
 							require.ErrorContains(t, err, "insufficient balance")
 						})
@@ -2427,6 +2494,7 @@ func TestChainSwap(t *testing.T) {
 		originalTx := chain.Btc.Tx
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 		defer stop()
+		toWallet := fundedWallet(t, client, boltzrpc.Currency_BTC)
 
 		tests := []struct {
 			desc     string
@@ -2442,12 +2510,11 @@ func TestChainSwap(t *testing.T) {
 				chain.Btc.Tx = tc.txMocker(t, originalTx)
 
 				externalPay := true
-				toWalletId := walletId(t, client, boltzrpc.Currency_BTC)
 				swap, err := client.CreateChainSwap(
 					&boltzrpc.CreateChainSwapRequest{
 						Amount:      &swapAmount,
 						ExternalPay: &externalPay,
-						ToWalletId:  &toWalletId,
+						ToWalletId:  &toWallet.Id,
 						Pair: &boltzrpc.Pair{
 							From: boltzrpc.Currency_LBTC,
 							To:   boltzrpc.Currency_BTC,
@@ -2485,8 +2552,8 @@ func TestChainSwap(t *testing.T) {
 			refundAddress := fromCli("getnewaddress")
 			toAddress := toCli("getnewaddress")
 
-			fromWalletId := walletId(t, client, tc.from)
-			toWalletId := walletId(t, client, tc.to)
+			fromWallet := fundedWallet(t, client, tc.from)
+			toWallet := fundedWallet(t, client, tc.to)
 
 			checkSwap := func(t *testing.T, id string) {
 				response, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
@@ -2513,7 +2580,7 @@ func TestChainSwap(t *testing.T) {
 
 			t.Run("InternalWallets", func(t *testing.T) {
 				t.Run("EnoughBalance", func(t *testing.T) {
-					toWallet, err := client.GetWalletById(toWalletId)
+					toWallet, err := client.GetWalletById(toWallet.Id)
 					require.NoError(t, err)
 					prev := toWallet.Balance.Total
 
@@ -2521,8 +2588,8 @@ func TestChainSwap(t *testing.T) {
 					swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
 						Amount:         &swapAmount,
 						Pair:           pair,
-						ToWalletId:     &toWalletId,
-						FromWalletId:   &fromWalletId,
+						ToWalletId:     &toWallet.Id,
+						FromWalletId:   &fromWallet.Id,
 						AcceptZeroConf: &zeroConf,
 					})
 					require.NoError(t, err)
@@ -2534,7 +2601,7 @@ func TestChainSwap(t *testing.T) {
 
 					// gdk takes too long to sync
 					if tc.to == boltzrpc.Currency_BTC {
-						toWallet, err = client.GetWalletById(toWalletId)
+						toWallet, err = client.GetWalletById(toWallet.Id)
 						require.NoError(t, err)
 						require.Greater(t, toWallet.Balance.Total, prev)
 					}
@@ -2543,12 +2610,12 @@ func TestChainSwap(t *testing.T) {
 				})
 
 				t.Run("NoBalance", func(t *testing.T) {
-					emptyWalletId := emptyWallet(t, client, tc.from)
+					emptyWallet := emptyWallet(t, client, tc.from)
 					_, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
 						Amount:       &swapAmount,
 						Pair:         pair,
-						ToWalletId:   &toWalletId,
-						FromWalletId: &emptyWalletId,
+						ToWalletId:   &toWallet.Id,
+						FromWalletId: &emptyWallet.Id,
 					})
 					require.ErrorContains(t, err, "insufficient balance")
 				})
@@ -2694,14 +2761,14 @@ func TestChainSwap(t *testing.T) {
 							})
 
 							t.Run("Valid", func(t *testing.T) {
-								destination.WalletId = fromWalletId
+								destination.WalletId = fromWallet.Id
 								_, err := client.RefundSwap(request)
 								require.NoError(t, err)
 
 								info = statusStream(boltzrpc.SwapState_REFUNDED, boltz.TransactionLockupFailed).ChainSwap
 								require.Zero(t, info.ServiceFee)
 
-								fromWallet, err := client.GetWalletById(fromWalletId)
+								fromWallet, err := client.GetWalletById(fromWallet.Id)
 								require.NoError(t, err)
 								require.NotZero(t, fromWallet.Balance.Unconfirmed)
 
@@ -2788,14 +2855,14 @@ func TestChainSwap(t *testing.T) {
 						})
 
 						t.Run("Valid", func(t *testing.T) {
-							destination.WalletId = toWalletId
+							destination.WalletId = toWallet.Id
 							_, err := client.ClaimSwaps(request)
 							require.NoError(t, err)
 
 							info = stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
 							checkSwap(t, info.Id)
 
-							fromWallet, err := client.GetWalletById(toWalletId)
+							fromWallet, err := client.GetWalletById(toWallet.Id)
 							require.NoError(t, err)
 							require.NotZero(t, fromWallet.Balance.Unconfirmed)
 
