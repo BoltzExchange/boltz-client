@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"github.com/BoltzExchange/go-electrum/electrum"
+	"golang.org/x/sync/errgroup"
 	"math/rand/v2"
 	"os"
 	"os/exec"
@@ -44,12 +45,27 @@ func ClearWalletDataDir() {
 	os.RemoveAll(walletDataDir)
 }
 
-func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *wallet.Credentials, error) {
-	var err error
+const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large"
+const WalletSubaccount = 0
+
+func WalletCredentials(currency boltz.Currency) *wallet.Credentials {
+	sub := uint64(WalletSubaccount)
+	return &wallet.Credentials{
+		WalletInfo: onchain.WalletInfo{
+			Name:     "regtest",
+			Currency: currency,
+			TenantId: database.DefaultTenantId,
+		},
+		Mnemonic:   WalletMnemonic,
+		Subaccount: &sub,
+	}
+}
+
+func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 	InitLogger()
 	ClearWalletDataDir()
 	if !wallet.Initialized() {
-		err = wallet.Init(wallet.Config{
+		err := wallet.Init(wallet.Config{
 			DataDir:                  walletDataDir,
 			Network:                  boltz.Regtest,
 			Debug:                    debug,
@@ -58,69 +74,57 @@ func InitTestWallet(currency boltz.Currency, debug bool) (*wallet.Wallet, *walle
 			MaxInputs:                wallet.MaxInputs,
 		})
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
-	credentials := &wallet.Credentials{
-		WalletInfo: onchain.WalletInfo{
-			Currency: currency,
-		},
-		Mnemonic: "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large",
-	}
-	wallet, err := wallet.Login(credentials)
-	if err != nil {
-		return nil, nil, err
-	}
-	time.Sleep(200 * time.Millisecond)
-	var subaccount *uint64
-	subaccounts, err := wallet.GetSubaccounts(true)
-	if err != nil {
-		return nil, nil, err
-	}
-	if len(subaccounts) != 0 {
-		subaccount = &subaccounts[0].Pointer
-	}
-	if credentials.Subaccount, err = wallet.SetSubaccount(subaccount); err != nil {
-		return nil, nil, err
-	}
-	time.Sleep(200 * time.Millisecond)
-	addr, err := wallet.NewAddress()
-	if err != nil {
-		return nil, nil, err
-	}
-	balance, err := wallet.GetBalance()
-	if err != nil {
-		return nil, nil, err
-	}
-	if balance.Confirmed == 0 {
-		// gdk takes a bit to sync, so make sure we have plenty of utxos available
-		for i := 0; i < 10; i++ {
-			if currency == boltz.CurrencyBtc {
-				SendToAddress(BtcCli, addr, 10000000)
-			} else {
-				SendToAddress(LiquidCli, addr, 10000000)
+	result := make(map[boltz.Currency]*wallet.Wallet)
+	var eg errgroup.Group
+	for _, currency := range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
+		currency := currency
+		eg.Go(func() error {
+			wallet, err := wallet.Login(WalletCredentials(currency))
+			if err != nil {
+				return err
 			}
-		}
-		MineBlock()
-		ticker := time.NewTicker(1 * time.Second)
-		timeout := time.After(15 * time.Second)
-		for {
-			select {
-			case <-ticker.C:
-				balance, err := wallet.GetBalance()
+			time.Sleep(200 * time.Millisecond)
+			balance, err := wallet.GetBalance()
+			if err != nil {
+				return err
+			}
+			if balance.Confirmed == 0 {
+				addr, err := wallet.NewAddress()
 				if err != nil {
-					return nil, nil, err
+					return err
 				}
-				if balance.Confirmed > 0 {
-					return wallet, credentials, nil
+				// gdk takes a bit to sync, so make sure we have plenty of utxos available
+				for i := 0; i < 10; i++ {
+					if currency == boltz.CurrencyBtc {
+						SendToAddress(BtcCli, addr, 10000000)
+					} else {
+						SendToAddress(LiquidCli, addr, 10000000)
+					}
 				}
-			case <-timeout:
-				return nil, nil, fmt.Errorf("timeout")
+				MineBlock()
+				ticker := time.NewTicker(1 * time.Second)
+				timeout := time.After(15 * time.Second)
+				for balance.Confirmed == 0 {
+					select {
+					case <-ticker.C:
+						balance, err = wallet.GetBalance()
+						if err != nil {
+							return err
+						}
+					case <-timeout:
+						return fmt.Errorf("timeout")
+					}
+				}
 			}
-		}
+			result[currency] = wallet
+			return nil
+		})
 	}
-	return wallet, credentials, nil
+	return result, eg.Wait()
 }
 
 func InitLogger() {
@@ -193,23 +197,28 @@ func tenantId(existing database.Id) database.Id {
 	return existing
 }
 
+func setSwapid(swapId *string) {
+	if *swapId == "" {
+		*swapId = RandomId()
+	}
+}
+
 func (f FakeSwaps) Create(t *testing.T, db *database.Database) {
 	for _, swap := range f.Swaps {
 		swap.TenantId = tenantId(swap.TenantId)
-		swap.Id = RandomId()
+		setSwapid(&swap.Id)
 		require.NoError(t, db.CreateSwap(swap))
 	}
 
 	for _, reverseSwap := range f.ReverseSwaps {
 		reverseSwap.TenantId = tenantId(reverseSwap.TenantId)
-		reverseSwap.Id = RandomId()
+		setSwapid(&reverseSwap.Id)
 		require.NoError(t, db.CreateReverseSwap(reverseSwap))
 	}
 
 	for _, chainSwap := range f.ChainSwaps {
 		chainSwap.TenantId = tenantId(chainSwap.TenantId)
-		id := RandomId()
-		chainSwap.Id = id
+		setSwapid(&chainSwap.Id)
 		chainSwap.Pair = boltz.Pair{
 			From: boltz.CurrencyLiquid,
 			To:   boltz.CurrencyBtc,
@@ -220,9 +229,9 @@ func (f FakeSwaps) Create(t *testing.T, db *database.Database) {
 		if chainSwap.ToData == nil {
 			chainSwap.ToData = &database.ChainSwapData{}
 		}
-		chainSwap.FromData.Id = id
+		chainSwap.FromData.Id = chainSwap.Id
 		chainSwap.FromData.Currency = chainSwap.Pair.From
-		chainSwap.ToData.Id = id
+		chainSwap.ToData.Id = chainSwap.Id
 		chainSwap.ToData.Currency = chainSwap.Pair.To
 		require.NoError(t, db.CreateChainSwap(chainSwap))
 	}

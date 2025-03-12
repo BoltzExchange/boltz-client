@@ -1758,6 +1758,12 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if err != nil {
 		return nil, err
 	}
+	if request.Address == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "address required")
+	}
+	if request.Amount == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "amount required")
+	}
 	txId, err := sendWallet.SendToAddress(request.Address, request.Amount, feeRate, request.GetSendAll())
 	if err != nil {
 		return nil, err
