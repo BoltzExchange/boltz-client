@@ -450,23 +450,29 @@ func (database *Database) QueryRow(query string, args ...any) *sql.Row {
 	return database.db.QueryRow(query, args...)
 }
 
-func (database *Database) QueryAnySwap(id string) (*Swap, *ReverseSwap, *ChainSwap, error) {
+type SomeSwap struct {
+	Normal  *Swap
+	Reverse *ReverseSwap
+	Chain   *ChainSwap
+}
+
+func (database *Database) QueryAnySwap(id string) (*SomeSwap, error) {
 	swap, err := database.QuerySwap(id)
 	if err == nil {
-		return swap, nil, nil, nil
+		return &SomeSwap{Normal: swap}, nil
 	}
 
 	reverseSwap, err := database.QueryReverseSwap(id)
 	if err == nil {
-		return nil, reverseSwap, nil, nil
+		return &SomeSwap{Reverse: reverseSwap}, nil
 	}
 
 	chainSwap, err := database.QueryChainSwap(id)
 	if err == nil {
-		return nil, nil, chainSwap, nil
+		return &SomeSwap{Chain: chainSwap}, nil
 	}
 
-	return nil, nil, nil, fmt.Errorf("could not find any type of Swap with ID %s", id)
+	return nil, fmt.Errorf("could not find any type of Swap with ID %s", id)
 }
 
 func (database *Database) QueryAllRefundableSwaps(tenantId *Id, currency boltz.Currency, currentHeight uint32) ([]*Swap, []*ChainSwap, error) {

@@ -62,13 +62,7 @@ func (nursery *Nursery) getRefundOutput(swap *database.Swap) *Output {
 		walletId:   swap.WalletId,
 		outputArgs: swapOutputArgs(swap),
 		setTransaction: func(transactionId string, fee uint64) error {
-			if err := nursery.database.SetSwapRefundTransactionId(swap, transactionId, fee); err != nil {
-				return err
-			}
-
-			nursery.sendSwapUpdate(*swap)
-
-			return nil
+			return nursery.database.SetSwapRefundTransactionId(swap, transactionId, fee)
 		},
 		setError: func(err error) {
 			nursery.handleSwapError(swap, err)
@@ -80,7 +74,6 @@ func (nursery *Nursery) RegisterSwap(swap database.Swap) error {
 	if err := nursery.registerSwaps([]string{swap.Id}); err != nil {
 		return err
 	}
-	nursery.sendSwapUpdate(swap)
 	return nil
 }
 
@@ -124,66 +117,54 @@ func (nursery *Nursery) handleSwapError(swap *database.Swap, err error) {
 		logger.Error(dbErr.Error())
 	}
 	logger.Errorf("Swap %s error: %v", swap.Id, err)
-	nursery.sendSwapUpdate(*swap)
 }
 
-func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapStatusResponse) {
+func (nursery *Nursery) handleSwapStatus(tx *database.Transaction, swap *database.Swap, status boltz.SwapStatusResponse) error {
 	parsedStatus := boltz.ParseEvent(status.Status)
 
 	if parsedStatus == swap.Status {
 		logger.Debugf("Status of Swap %s is %s already", swap.Id, parsedStatus)
-		return
+		return nil
 	}
 
 	logger.Infof("Status of Swap %s changed to: %s", swap.Id, parsedStatus)
-
-	handleError := func(err string) {
-		nursery.handleSwapError(swap, errors.New(err))
-	}
 
 	if parsedStatus != boltz.InvoiceSet && swap.LockupTransactionId == "" {
 		swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
 		if err != nil {
 			var boltzErr boltz.Error
 			if !errors.As(err, &boltzErr) {
-				handleError("Could not get lockup tx from boltz: " + err.Error())
-				return
+				return fmt.Errorf("could not get lockup tx from boltz: %w", err)
 			}
 		} else {
 			lockupTransaction, err := boltz.NewTxFromHex(swap.Pair.From, swapTransactionResponse.Hex, swap.BlindingKey)
 			if err != nil {
-				handleError("Could not decode lockup transaction: " + err.Error())
-				return
+				return fmt.Errorf("could not decode lockup transaction: %w", err)
 			}
 
-			if err := nursery.database.SetSwapLockupTransactionId(swap, lockupTransaction.Hash()); err != nil {
-				handleError("Could not set lockup transaction in database: " + err.Error())
-				return
+			if err := tx.SetSwapLockupTransactionId(swap, lockupTransaction.Hash()); err != nil {
+				return fmt.Errorf("could not set lockup transaction in database: %w", err)
 			}
 
 			result, err := nursery.onchain.FindOutput(swapOutputArgs(swap))
 			if err != nil {
-				handleError(err.Error())
-				return
+				return err
 			}
 
 			logger.Infof("Got lockup transaction of Swap %s: %s", swap.Id, lockupTransaction.Hash())
 
-			if err := nursery.database.SetSwapExpectedAmount(swap, result.Value); err != nil {
-				handleError("Could not set expected amount in database: " + err.Error())
-				return
+			if err := tx.SetSwapExpectedAmount(swap, result.Value); err != nil {
+				return fmt.Errorf("could not set expected amount in database: %w", err)
 			}
 
 			// dont add onchain fee if the swap was paid externally as it might have been part of a larger transaction
 			if swap.WalletId != nil {
 				fee, err := nursery.onchain.GetTransactionFee(swap.Pair.From, swap.LockupTransactionId)
 				if err != nil {
-					handleError("could not get lockup transaction fee: " + err.Error())
-					return
+					return fmt.Errorf("could not get lockup transaction fee: %w", err)
 				}
-				if err := nursery.database.SetSwapOnchainFee(swap, fee); err != nil {
-					handleError("could not set lockup transaction fee in database: " + err.Error())
-					return
+				if err := tx.SetSwapOnchainFee(swap, fee); err != nil {
+					return fmt.Errorf("could not set lockup transaction fee in database: %w", err)
 				}
 			}
 		}
@@ -201,25 +182,21 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 		swapRates, err := nursery.boltz.GetInvoiceAmount(swap.Id)
 		if err != nil {
-			handleError("Could not query Swap rates of Swap " + swap.Id + ": " + err.Error())
-			return
+			return fmt.Errorf("could not query swap rates of swap %s: %w", swap.Id, err)
 		}
 
 		if err := nursery.CheckAmounts(boltz.NormalSwap, swap.Pair, swap.ExpectedAmount, swapRates.InvoiceAmount, swap.ServiceFeePercent); err != nil {
-			handleError(fmt.Sprintf("not accepting invoice amount %d from boltz: %s", swapRates.InvoiceAmount, err))
-			return
+			return fmt.Errorf("not accepting invoice amount %d from boltz: %s", swapRates.InvoiceAmount, err)
 		}
 
 		blockHeight, err := nursery.onchain.GetBlockHeight(swap.Pair.From)
 
 		if err != nil {
-			handleError("Could not get block height: " + err.Error())
-			return
+			return fmt.Errorf("could not get block height: %w", err)
 		}
 
 		if nursery.lightning == nil {
-			handleError("No lightning node available, can not create invoice for Swap " + swap.Id)
-			return
+			return fmt.Errorf("no lightning node available, can not create invoice for swap %s", swap.Id)
 		}
 
 		invoice, err := nursery.lightning.CreateInvoice(
@@ -230,8 +207,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		)
 
 		if err != nil {
-			handleError("Could not get new invoice for Swap " + swap.Id + ": " + err.Error())
-			return
+			return fmt.Errorf("could not get new invoice for swap %s: %w", swap.Id, err)
 		}
 
 		logger.Infof("Generated new invoice for Swap %s for %d saothis", swap.Id, swapRates.InvoiceAmount)
@@ -239,15 +215,13 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		_, err = nursery.boltz.SetInvoice(swap.Id, invoice.PaymentRequest)
 
 		if err != nil {
-			handleError("Could not set invoice of Swap: " + err.Error())
-			return
+			return fmt.Errorf("could not set invoice of swap %s: %w", swap.Id, err)
 		}
 
-		err = nursery.database.SetSwapInvoice(swap, invoice.PaymentRequest)
+		err = tx.SetSwapInvoice(swap, invoice.PaymentRequest)
 
 		if err != nil {
-			handleError("Could not set invoice of Swap in database: " + err.Error())
-			return
+			return fmt.Errorf("could not set invoice of swap %s in database: %w", swap.Id, err)
 		}
 
 	case boltz.TransactionClaimPending, boltz.TransactionClaimed:
@@ -255,20 +229,17 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 
 		if err != nil {
-			handleError("Could not decode invoice: " + err.Error())
-			return
+			return fmt.Errorf("could not decode swap invoice: %w", err)
 		}
 
 		if nursery.lightning != nil {
 			paid, err := nursery.lightning.CheckInvoicePaid(decodedInvoice.PaymentHash[:])
 			if err != nil {
 				if !errors.Is(err, lightning.ErrInvoiceNotFound) {
-					handleError("Could not get invoice information from lightning node: " + err.Error())
-					return
+					return fmt.Errorf("could not get invoice information from lightning node: %w", err)
 				}
 			} else if !paid {
-				logger.Warnf("Swap %s was not actually settled. Refunding at block %d", swap.Id, swap.TimoutBlockHeight)
-				return
+				return fmt.Errorf("invoice was not actually paid. refunding at block %d", swap.TimoutBlockHeight)
 			}
 		}
 
@@ -281,18 +252,15 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 	}
 
-	err := nursery.database.UpdateSwapStatus(swap, parsedStatus)
-
+	err := tx.UpdateSwapStatus(swap, parsedStatus)
 	if err != nil {
-		handleError(fmt.Sprintf("Could not update status of Swap %s to %s: %s", swap.Id, parsedStatus, err))
-		return
+		return fmt.Errorf("could not update status of swap %s to %s: %w", swap.Id, parsedStatus, err)
 	}
 
 	if parsedStatus.IsCompletedStatus() {
 		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 		if err != nil {
-			handleError("Could not decode invoice: " + err.Error())
-			return
+			return fmt.Errorf("could not decode invoice: %w", err)
 		}
 		serviceFee := swap.ServiceFeePercent.Calculate(decodedInvoice.AmountSat)
 		boltzOnchainFee := int64(swap.ExpectedAmount - decodedInvoice.AmountSat - serviceFee)
@@ -303,29 +271,24 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 		logger.Infof("Swap service fee: %dsat onchain fee: %dsat", serviceFee, boltzOnchainFee)
 
-		if err := nursery.database.SetSwapServiceFee(swap, serviceFee, uint64(boltzOnchainFee)); err != nil {
-			handleError("Could not set swap service fee in database: " + err.Error())
-			return
+		if err := tx.SetSwapServiceFee(swap, serviceFee, uint64(boltzOnchainFee)); err != nil {
+			return fmt.Errorf("could not set swap service fee in database: %w", err)
 		}
 
-		if err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
-			handleError(err.Error())
-			return
+		if err := tx.UpdateSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
+			return fmt.Errorf("update swap state: %w", err)
 		}
 	} else if parsedStatus.IsFailedStatus() {
 		if swap.State == boltzrpc.SwapState_PENDING {
-			if err := nursery.database.UpdateSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
-				handleError(err.Error())
-				return
+			if err := tx.UpdateSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
+				return fmt.Errorf("update swap state: %w", err)
 			}
 		}
 
 		logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
 		if _, err := nursery.RefundSwaps(swap.Pair.From, []*database.Swap{swap}, nil); err != nil {
-			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
-			return
+			return fmt.Errorf("could not refund: %w", err)
 		}
-		return
 	}
-	nursery.sendSwapUpdate(*swap)
+	return nil
 }
