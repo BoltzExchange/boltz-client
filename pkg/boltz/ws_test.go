@@ -56,11 +56,11 @@ func TestWebsocketReconnect(t *testing.T) {
 
 		require.Eventually(t, func() bool {
 			return !ws.Connected()
-		}, waitFor, ws.reconnectInterval)
+		}, waitFor, ws.reconnectInterval/2)
 
 		require.Eventually(t, func() bool {
 			return ws.Connected()
-		}, waitFor, ws.reconnectInterval)
+		}, waitFor, ws.reconnectInterval/2)
 
 		newConn := ws.conn
 		require.NotNil(t, newConn)
