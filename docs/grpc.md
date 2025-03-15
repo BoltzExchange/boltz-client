@@ -197,6 +197,14 @@ Returns recent transactions from a wallet.
 | ------- | -------- |
 | [`ListWalletTransactionsRequest`](#listwallettransactionsrequest) | [`ListWalletTransactionsResponse`](#listwallettransactionsresponse) |
 
+#### BumpWalletTransaction
+
+Increase the fee of a wallet transaction using RBF.
+
+| Request | Response |
+| ------- | -------- |
+| [`BumpWalletTransactionRequest`](#bumpwallettransactionrequest) | [`BumpWalletTransactionResponse`](#bumpwallettransactionresponse) |
+
 #### GetWalletCredentials
 
 Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
@@ -390,6 +398,34 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `remaining` | [`int64`](#int64) |  |  |
 | `start_date` | [`int64`](#int64) |  |  |
 | `end_date` | [`int64`](#int64) |  |  |
+
+
+
+
+
+#### BumpWalletTransactionRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [`string`](#string) |  | id of the transaction to bump. the transaction has to belong to one of the clients wallets |
+| `swap_id` | [`string`](#string) |  | depending on the state of the swap, the lockup, refund or claim transaction will be bumped |
+| `sat_per_vbyte` | [`double`](#double) | optional | fee rate for the new transaction |
+
+
+
+
+
+#### BumpWalletTransactionResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [`string`](#string) |  |  |
 
 
 

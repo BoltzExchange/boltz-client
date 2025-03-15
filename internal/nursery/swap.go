@@ -130,7 +130,8 @@ func (nursery *Nursery) handleSwapError(swap *database.Swap, err error) {
 func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapStatusResponse) {
 	parsedStatus := boltz.ParseEvent(status.Status)
 
-	if parsedStatus == swap.Status {
+	// transaction mempool can be sent multiple times in case of RBF
+	if parsedStatus == swap.Status && parsedStatus != boltz.TransactionMempool {
 		logger.Debugf("Status of Swap %s is %s already", swap.Id, parsedStatus)
 		return
 	}
@@ -141,7 +142,10 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		nursery.handleSwapError(swap, errors.New(err))
 	}
 
-	if parsedStatus != boltz.InvoiceSet && swap.LockupTransactionId == "" {
+	// if we're at invoice.set, there is no lockup transaction yet.
+	// since there is the possibility that `transaction.mempool` is transitioned through while the client is offline
+	// we have to check if the transaction is empty aswell
+	if parsedStatus != boltz.InvoiceSet && (parsedStatus == boltz.TransactionMempool || swap.LockupTransactionId == "") {
 		swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
 		if err != nil {
 			var boltzErr boltz.Error

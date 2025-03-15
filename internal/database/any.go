@@ -71,7 +71,7 @@ func parseAnySwap(rows *sql.Rows) (*AnySwap, error) {
 func (database *Database) GetAnySwap(id string) (*AnySwap, error) {
 	database.lock.Lock()
 	defer database.lock.Unlock()
-	rows, err := database.Query("SELECT * FROM reverseSwaps WHERE id = ?", id)
+	rows, err := database.Query("SELECT * FROM allSwaps WHERE id = ?", id)
 
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (database *Database) GetAnySwap(id string) (*AnySwap, error) {
 	if rows.Next() {
 		return parseAnySwap(rows)
 	}
-	return nil, fmt.Errorf("could not find Reverse Swap %s", id)
+	return nil, fmt.Errorf("could not find swap %s", id)
 }
 func (database *Database) queryAllSwaps(query string, values ...any) (swaps []*AnySwap, err error) {
 	database.lock.RLock()

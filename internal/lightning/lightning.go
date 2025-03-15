@@ -3,6 +3,7 @@ package lightning
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 )
@@ -23,6 +24,7 @@ const (
 )
 
 var ErrInvoiceNotFound = errors.New("invoice not found")
+var ErrUnsupported = fmt.Errorf("lightning: %w", errors.ErrUnsupported)
 
 type PaymentStatus struct {
 	State         PaymentState
