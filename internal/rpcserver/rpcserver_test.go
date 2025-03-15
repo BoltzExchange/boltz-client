@@ -1188,6 +1188,7 @@ func TestAutoSwap(t *testing.T) {
 		fromWallet, err := admin.GetWallet(cfg.FromWallet)
 		require.NoError(t, err)
 		cfg.MaxBalance = fromWallet.Balance.Confirmed - 1000
+		cfg.ReserveBalance = cfg.MaxBalance - swapAmount
 
 		_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: cfg})
 		require.NoError(t, err)
@@ -1211,11 +1212,15 @@ func TestAutoSwap(t *testing.T) {
 		require.NotNil(t, info.ChainSwap)
 		id := info.ChainSwap.Id
 
-		waitWalletTx(t, admin, "")
-
 		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.Nil(t, recommendations.Chain[0].Swap)
+		require.NotEmpty(t, recommendations.Chain[0].Swap.GetDismissedReasons())
+
+		require.Eventually(t, func() bool {
+			recommendations, err = autoSwap.GetRecommendations()
+			require.NoError(t, err)
+			return recommendations.Chain[0].Swap == nil
+		}, 10*time.Second, 250*time.Millisecond)
 
 		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{Include: boltzrpc.IncludeSwaps_AUTO})
 		require.Len(t, response.ChainSwaps, 1)
@@ -1359,11 +1364,9 @@ func TestAutoSwap(t *testing.T) {
 	})
 
 }
-func waitWalletTx(t *testing.T, client client.Boltz, txId string) {
+func waitWalletTx(t *testing.T, client client.Boltz, walletId uint64, txId string) {
 	if txId != "" {
-		// TODO
-		id := walletId(t, client, boltzrpc.Currency_LBTC)
-		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: id})
+		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: walletId})
 		require.NoError(t, err)
 		for _, tx := range response.Transactions {
 			if tx.Id == txId {
@@ -1483,6 +1486,7 @@ func TestBumpTransaction(t *testing.T) {
 	defer stop()
 
 	chain.Btc.Tx = unconfirmedTxProvider(t, chain.Btc.Tx)
+	satPerVbyte := 10.0
 
 	t.Run("TxId", func(t *testing.T) {
 		request := &boltzrpc.BumpTransactionRequest{
@@ -1630,6 +1634,30 @@ func TestBumpTransaction(t *testing.T) {
 			newLockupTx := test.BumpFee(test.BtcCli, lockupTx)
 			info = statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
 			require.Equal(t, newLockupTx, info.Swap.LockupTransactionId)
+		})
+
+		t.Run("Chain", func(t *testing.T) {
+			externalPay := true
+			toAddress := test.GetNewAddress(test.LiquidCli)
+			swap, err := client.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+				Amount: &swapAmount,
+				Pair: &boltzrpc.Pair{
+					From: boltzrpc.Currency_BTC,
+					To:   boltzrpc.Currency_LBTC,
+				},
+				ToAddress:   &toAddress,
+				ExternalPay: &externalPay,
+			})
+			require.NoError(t, err)
+
+			_, statusStream := swapStream(t, client, swap.Id)
+			lockupTx := test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+			info := statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool).GetChainSwap()
+			require.Equal(t, lockupTx, info.FromData.GetLockupTransactionId())
+
+			newLockupTx := test.BumpFee(test.BtcCli, lockupTx)
+			info = statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool).GetChainSwap()
+			require.Equal(t, newLockupTx, info.FromData.GetLockupTransactionId())
 		})
 	})
 }

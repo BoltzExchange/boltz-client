@@ -184,6 +184,10 @@ func SendToAddress(cli Cli, address string, amount uint64) string {
 	return cli("sendtoaddress " + address + " " + fmt.Sprint(float64(amount)/1e8))
 }
 
+func BumpFee(cli Cli, txId string) string {
+	return cli(fmt.Sprintf("bumpfee %s | jq -r .txid", txId))
+}
+
 func GetBolt12Offer() string {
 	return ClnCli("offer any '' | jq -r .bolt12")
 }
