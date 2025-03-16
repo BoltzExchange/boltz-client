@@ -1362,19 +1362,6 @@ func TestAutoSwap(t *testing.T) {
 		})
 
 	})
-
-}
-func waitWalletTx(t *testing.T, client client.Boltz, walletId uint64, txId string) {
-	if txId != "" {
-		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: walletId})
-		require.NoError(t, err)
-		for _, tx := range response.Transactions {
-			if tx.Id == txId {
-				return
-			}
-		}
-	}
-	test.WaitWalletTx(t, txId)
 }
 
 func TestWalletTransactions(t *testing.T) {

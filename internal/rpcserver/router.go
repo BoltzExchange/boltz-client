@@ -1649,9 +1649,8 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 	if err != nil {
 		return nil, err
 	}
-	txType := boltzrpc.TransactionType_UNKNOWN
 	if len(swaps) > 0 {
-		txType = getTransactionType(swaps[0], txId)
+		txType := getTransactionType(swaps[0], txId)
 		if txType == boltzrpc.TransactionType_UNKNOWN {
 			return nil, status.Errorf(codes.NotFound, "transaction %s is not part of a swap", txId)
 		}
