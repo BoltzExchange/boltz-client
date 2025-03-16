@@ -809,7 +809,7 @@ message BumpTransactionRequest {
         // depending on the state of the swap, the lockup, refund or claim transaction will be bumped
         string swap_id = 2;
     }
-    // fee rate for the new transaction
+    // fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider
     optional double sat_per_vbyte = 3;
 }
 

@@ -5143,7 +5143,7 @@ type BumpTransactionRequest struct {
 	//	*BumpTransactionRequest_TxId
 	//	*BumpTransactionRequest_SwapId
 	Previous isBumpTransactionRequest_Previous `protobuf_oneof:"previous"`
-	// fee rate for the new transaction
+	// fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider
 	SatPerVbyte *float64 `protobuf:"fixed64,3,opt,name=sat_per_vbyte,json=satPerVbyte,proto3,oneof" json:"sat_per_vbyte,omitempty"`
 }
 

@@ -1612,6 +1612,7 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 	swapId := request.GetSwapId()
 	txId := request.GetTxId()
 	var swaps []*database.AnySwap
+	var err error
 	if swapId != "" {
 		swap, err := server.database.GetAnySwap(swapId)
 		if err != nil {
@@ -1628,14 +1629,15 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 		}
 		swaps = []*database.AnySwap{swap}
 	} else {
-		var err error
 		swaps, err = server.database.QuerySwapsByTransactions(database.SwapQuery{}, []string{txId})
 		if err != nil {
 			return nil, err
 		}
 	}
-	for _, currency := range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
-		confirmed, err := server.onchain.IsTransactionConfirmed(currency, txId)
+	var currency boltz.Currency
+	for _, currency = range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
+		var confirmed bool
+		confirmed, err = server.onchain.IsTransactionConfirmed(currency, txId)
 		if err == nil {
 			if confirmed {
 				return nil, status.Errorf(codes.FailedPrecondition, "transaction %s is already confirmed on %s", txId, currency)
@@ -1643,6 +1645,9 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 				break
 			}
 		}
+	}
+	if err != nil {
+		return nil, err
 	}
 	txType := boltzrpc.TransactionType_UNKNOWN
 	if len(swaps) > 0 {
@@ -1654,12 +1659,20 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 			return nil, status.Errorf(codes.Unimplemented, "claim and refund transactions cant be bumped")
 		}
 	}
+	feeRate := request.GetSatPerVbyte()
+	if feeRate == 0 {
+		feeRate, err = server.onchain.EstimateFee(currency)
+		if err != nil {
+			return nil, err
+		}
+	}
 	checker := onchain.WalletChecker{
 		TenantId:      macaroons.TenantIdFromContext(ctx),
 		AllowReadonly: false,
+		Currency:      currency,
 	}
 	for _, wallet := range server.onchain.GetWallets(checker) {
-		tx, err := wallet.BumpTransactionFee(txId, request.GetSatPerVbyte())
+		tx, err := wallet.BumpTransactionFee(txId, feeRate)
 		if err == nil {
 			return &boltzrpc.BumpTransactionResponse{TxId: tx}, nil
 		}
