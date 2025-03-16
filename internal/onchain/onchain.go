@@ -362,19 +362,23 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 		return false, err
 	}
 
-	retry := 5
+	retry := 0
 	if onchain.Network == boltz.Regtest {
 		retry = 0
 	}
 	for {
 		confirmed, err := chain.Tx.IsTransactionConfirmed(txId)
-		if err != nil || !confirmed {
+		if err != nil {
+			if errors.Is(err, errors.ErrUnsupported) {
+				logger.Infof("Transaction confirmation check not supported for %s, assuming its confirmed", currency)
+				return true, nil
+			}
 			if retry == 0 {
 				return false, err
 			}
 			retry--
 			retryInterval := 10 * time.Second
-			logger.Debugf("Transaction %s not confirmed yet, retrying in %s", txId, retryInterval)
+			logger.Debugf("Transaction %s not yet in mempool, retrying in %s", txId, retryInterval)
 			<-time.After(retryInterval)
 		} else {
 			return confirmed, nil
