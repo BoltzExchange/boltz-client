@@ -1637,7 +1637,10 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 	var currency boltz.Currency
 	for _, currency = range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
 		var confirmed bool
-		confirmed, err = server.onchain.IsTransactionConfirmed(currency, txId)
+		confirmed, err = server.onchain.IsTransactionConfirmed(currency, txId, false)
+		if errors.Is(err, errors.ErrUnsupported) {
+			_, err = server.onchain.GetTransaction(currency, txId, nil, false)
+		}
 		if err == nil {
 			if confirmed {
 				return nil, status.Errorf(codes.FailedPrecondition, "transaction %s is already confirmed on %s", txId, currency)

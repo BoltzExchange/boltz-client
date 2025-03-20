@@ -681,7 +681,7 @@ func TestGetPairs(t *testing.T) {
 }
 
 func checkTxOutAddress(t *testing.T, chain *onchain.Onchain, currency boltz.Currency, txId string, outAddress string, cooperative bool) {
-	transaction, err := chain.GetTransaction(currency, txId, nil)
+	transaction, err := chain.GetTransaction(currency, txId, nil, false)
 	require.NoError(t, err)
 
 	if tx, ok := transaction.(*boltz.BtcTransaction); ok {

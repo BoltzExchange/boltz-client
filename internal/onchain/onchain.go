@@ -217,7 +217,7 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency) (float64, error) {
 	return math.Max(minFee, fee), err
 }
 
-func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, ourOutputBlindingKey *btcec.PrivateKey) (boltz.Transaction, error) {
+func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, ourOutputBlindingKey *btcec.PrivateKey, retry bool) (boltz.Transaction, error) {
 	if txId == "" {
 		return nil, errors.New("empty transaction id")
 	}
@@ -225,15 +225,15 @@ func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, our
 	if err != nil {
 		return nil, err
 	}
-	retry := 5
+	retryCount := 5
 	for {
 		// Check if the transaction is in the mempool
 		hex, err := chain.Tx.GetRawTransaction(txId)
 		if err != nil {
-			if retry == 0 {
+			if retryCount == 0 || !retry {
 				return nil, err
 			}
-			retry--
+			retryCount--
 			retryInterval := 10 * time.Second
 			logger.Debugf("Transaction %s not found yet, retrying in %s", txId, retryInterval)
 			<-time.After(retryInterval)
@@ -244,7 +244,7 @@ func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, our
 }
 
 func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) (uint64, error) {
-	transaction, err := onchain.GetTransaction(currency, txId, nil)
+	transaction, err := onchain.GetTransaction(currency, txId, nil, false)
 	if err != nil {
 		return 0, err
 	}
@@ -256,7 +256,7 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 			id := prevOut.Hash.String()
 			_, ok := transactions[id]
 			if !ok {
-				transaction, err := onchain.GetTransaction(currency, id, nil)
+				transaction, err := onchain.GetTransaction(currency, id, nil, false)
 				if err != nil {
 					return 0, errors.New("could not fetch input tx: " + err.Error())
 				}
@@ -356,27 +356,24 @@ func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (str
 	return chain.Tx.BroadcastTransaction(serialized)
 }
 
-func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId string) (bool, error) {
+func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId string, retry bool) (bool, error) {
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return false, err
 	}
 
-	retry := 0
-	if onchain.Network == boltz.Regtest {
-		retry = 0
-	}
+	retryCount := 5
 	for {
 		confirmed, err := chain.Tx.IsTransactionConfirmed(txId)
 		if err != nil {
 			if errors.Is(err, errors.ErrUnsupported) {
-				logger.Infof("Transaction confirmation check not supported for %s, assuming its confirmed", currency)
-				return true, nil
-			}
-			if retry == 0 {
+				logger.Infof("Transaction confirmation check not supported for %s", currency)
 				return false, err
 			}
-			retry--
+			if retryCount == 0 || !retry {
+				return false, err
+			}
+			retryCount--
 			retryInterval := 10 * time.Second
 			logger.Debugf("Transaction %s not yet in mempool, retrying in %s", txId, retryInterval)
 			<-time.After(retryInterval)
@@ -412,7 +409,7 @@ type OutputResult struct {
 var ErrNotConfirmed = errors.New("lockup transaction not confirmed")
 
 func (onchain *Onchain) FindOutput(info OutputArgs) (*OutputResult, error) {
-	lockupTransaction, err := onchain.GetTransaction(info.Currency, info.TransactionId, info.BlindingKey)
+	lockupTransaction, err := onchain.GetTransaction(info.Currency, info.TransactionId, info.BlindingKey, true)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode lockup transaction: %w", err)
 	}
@@ -426,12 +423,14 @@ func (onchain *Onchain) FindOutput(info OutputArgs) (*OutputResult, error) {
 		return nil, fmt.Errorf("locked up less onchain coins than expected: %d < %d", value, info.ExpectedAmount)
 	}
 	if info.RequireConfirmed {
-		confirmed, err := onchain.IsTransactionConfirmed(info.Currency, info.TransactionId)
-		if err != nil {
-			return nil, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
-		}
-		if !confirmed {
-			return nil, ErrNotConfirmed
+		confirmed, err := onchain.IsTransactionConfirmed(info.Currency, info.TransactionId, false)
+		if !errors.Is(err, errors.ErrUnsupported) {
+			if err != nil {
+				return nil, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
+			}
+			if !confirmed {
+				return nil, ErrNotConfirmed
+			}
 		}
 	}
 

@@ -251,16 +251,18 @@ func (nursery *Nursery) handleReverseSwapDirectPayment(swap *database.ReverseSwa
 			return fmt.Errorf("set paid at: %s", err)
 		}
 		if currency == boltz.CurrencyBtc || expectedAmount > nursery.MaxZeroConfAmount {
-			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, output.TxId)
-			if err != nil {
-				return fmt.Errorf("is transaction confirmed: %s", err)
-			}
-			if !confirmed {
-				logger.Infof("Rejecting zero conf for direct payment of swap %s: %s", swap.Id, output.TxId)
-				if err := tx.UpdateReverseSwapStatus(swap, boltz.TransactionDirectMempool); err != nil {
-					return fmt.Errorf("set reverse swap status: %s", err)
+			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, output.TxId, true)
+			if !errors.Is(err, errors.ErrUnsupported) {
+				if err != nil {
+					return fmt.Errorf("is transaction confirmed: %s", err)
 				}
-				return nil
+				if !confirmed {
+					logger.Infof("Rejecting zero conf for direct payment of swap %s: %s", swap.Id, output.TxId)
+					if err := tx.UpdateReverseSwapStatus(swap, boltz.TransactionDirectMempool); err != nil {
+						return fmt.Errorf("set reverse swap status: %s", err)
+					}
+					return nil
+				}
 			}
 		}
 		if err := tx.SetReverseSwapPaidAt(swap, time.Now()); err != nil {
