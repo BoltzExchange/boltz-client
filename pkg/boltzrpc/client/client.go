@@ -107,6 +107,10 @@ func (boltz *Boltz) ListWalletTransactions(request *boltzrpc.ListWalletTransacti
 	return boltz.Client.ListWalletTransactions(boltz.Ctx, request)
 }
 
+func (boltz *Boltz) BumpTransaction(request *boltzrpc.BumpTransactionRequest) (*boltzrpc.BumpTransactionResponse, error) {
+	return boltz.Client.BumpTransaction(boltz.Ctx, request)
+}
+
 func (boltz *Boltz) ImportWallet(params *boltzrpc.WalletParams, credentials *boltzrpc.WalletCredentials) (*boltzrpc.Wallet, error) {
 	return boltz.Client.ImportWallet(boltz.Ctx, &boltzrpc.ImportWalletRequest{Params: params, Credentials: credentials})
 }

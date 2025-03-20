@@ -26,6 +26,41 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestWallet_BumpTransactionFee(t *testing.T) {
+	wallet := getWallet(boltz.CurrencyBtc)
+
+	notifier := onchainWallet.TransactionNotifier.Get()
+	defer onchainWallet.TransactionNotifier.Remove(notifier)
+
+	getTransaction := func(txId string) *onchain.WalletTransaction {
+		test.WaitWalletNotifier(t, txId, notifier)
+		txs, err := wallet.GetTransactions(0, 0)
+		require.NoError(t, err)
+		for _, tx := range txs {
+			if tx.Id == txId {
+				return tx
+			}
+		}
+		require.Fail(t, "transaction not found")
+		return nil
+	}
+
+	someAddress := test.GetNewAddress(test.BtcCli)
+	amount := int64(1000)
+
+	txId, err := wallet.SendToAddress(someAddress, uint64(amount), 1, false)
+	require.NoError(t, err)
+	tx := getTransaction(txId)
+
+	newTxId, err := wallet.BumpTransactionFee(txId, 2)
+	require.NoError(t, err)
+	newTx := getTransaction(newTxId)
+
+	oldFee := tx.BalanceChange + amount
+	newFee := newTx.BalanceChange + amount
+	require.Equal(t, 2*oldFee, newFee)
+}
+
 func TestBalance(t *testing.T) {
 	balance, err := getWallet(boltz.CurrencyBtc).GetBalance()
 	require.NoError(t, err)
@@ -36,31 +71,43 @@ func getWallet(currency boltz.Currency) *onchainWallet.Wallet {
 	return wallets[currency]
 }
 func TestSend(t *testing.T) {
-	addr := test.BtcCli("getnewaddress")
-	wallet := getWallet(boltz.CurrencyBtc)
+	for _, currency := range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
+		t.Run(string(currency), func(t *testing.T) {
+			wallet := getWallet(currency)
+			cli := test.GetCli(currency)
+			addr := cli("getnewaddress")
 
-	t.Run("Normal", func(t *testing.T) {
-		txid, err := wallet.SendToAddress(addr, 10000, 1, false)
-		require.NoError(t, err)
-		rawTx := test.BtcCli("getrawtransaction " + txid)
-		tx, err := boltz.NewBtcTxFromHex(rawTx)
-		require.NoError(t, err)
-		for _, txIn := range tx.MsgTx().TxIn {
-			require.Equalf(t, wire.MaxTxInSequenceNum-1, txIn.Sequence, "rbf should be disabled")
-		}
-		test.MineBlock()
-	})
+			t.Run("Normal", func(t *testing.T) {
+				txid, err := wallet.SendToAddress(addr, 10000, 1, false)
+				require.NoError(t, err)
+				rawTx := cli("getrawtransaction " + txid)
+				tx, err := boltz.NewTxFromHex(currency, rawTx, nil)
+				require.NoError(t, err)
+				if btcTx, ok := tx.(*boltz.BtcTransaction); ok {
+					for _, txIn := range btcTx.MsgTx().TxIn {
+						require.Equalf(t, wire.MaxTxInSequenceNum-2, txIn.Sequence, "rbf should be enabled")
+					}
+				} else if liquidTx, ok := tx.(*boltz.LiquidTransaction); ok {
+					for _, txIn := range liquidTx.Transaction.Inputs {
+						require.Equalf(t, wire.MaxTxInSequenceNum-1, txIn.Sequence, "rbf should be disabled")
+					}
 
-	minFeeRate := 1.0
+				}
+				test.MineBlock()
+			})
 
-	t.Run("SendFee", func(t *testing.T) {
-		amount, fee, err := wallet.GetSendFee(addr, 0, minFeeRate, true)
-		require.NoError(t, err)
+			minFeeRate := 1.0
 
-		balance, err := wallet.GetBalance()
-		require.NoError(t, err)
-		require.Equal(t, balance.Confirmed, amount+fee)
-	})
+			t.Run("SendFee", func(t *testing.T) {
+				amount, fee, err := wallet.GetSendFee(addr, 0, minFeeRate, true)
+				require.NoError(t, err)
+
+				balance, err := wallet.GetBalance()
+				require.NoError(t, err)
+				require.Equal(t, balance.Confirmed, amount+fee)
+			})
+		})
+	}
 }
 
 func TestReal(t *testing.T) {

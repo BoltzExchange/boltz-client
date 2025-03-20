@@ -136,6 +136,14 @@ func BtcCli(cmd string) string {
 	return run("bitcoin-cli-sim-server " + cmd)
 }
 
+func GetCli(pair boltz.Currency) Cli {
+	if pair == boltz.CurrencyLiquid {
+		return LiquidCli
+	} else {
+		return BtcCli
+	}
+}
+
 func BackendCli(cmd string) string {
 	return bash("docker exec -i boltz-backend /boltz-backend/bin/boltz-cli " + cmd)
 }
@@ -174,6 +182,10 @@ func GetNewAddress(cli Cli) string {
 
 func SendToAddress(cli Cli, address string, amount uint64) string {
 	return cli("sendtoaddress " + address + " " + fmt.Sprint(float64(amount)/1e8))
+}
+
+func BumpFee(cli Cli, txId string) string {
+	return cli(fmt.Sprintf("bumpfee %s | jq -r .txid", txId))
 }
 
 func GetBolt12Offer() string {
@@ -242,4 +254,24 @@ func PastDate(duration time.Duration) time.Time {
 
 func PrintBackendLogs() {
 	fmt.Println(bash("docker logs boltz-backend"))
+}
+
+func WaitWalletTx(t *testing.T, txId string) {
+	notifier := wallet.TransactionNotifier.Get()
+	defer wallet.TransactionNotifier.Remove(notifier)
+	WaitWalletNotifier(t, txId, notifier)
+}
+
+func WaitWalletNotifier(t *testing.T, txId string, notifier <-chan wallet.TransactionNotification) {
+	timeout := time.After(30 * time.Second)
+	for {
+		select {
+		case notification := <-notifier:
+			if notification.TxId == txId || txId == "" {
+				return
+			}
+		case <-timeout:
+			require.Fail(t, "timed out while waiting for tx")
+		}
+	}
 }

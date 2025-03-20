@@ -222,7 +222,11 @@ func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 }
 
 func (lnd *LND) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
-	return nil, errors.New("not implemented for lnd")
+	return nil, lightning.ErrUnsupported
+}
+
+func (lnd *LND) BumpTransactionFee(txId string, feeRate float64) (string, error) {
+	return "", lightning.ErrUnsupported
 }
 
 func (lnd *LND) CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
