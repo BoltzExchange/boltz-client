@@ -804,12 +804,13 @@ message WalletTransaction {
 
 message BumpTransactionRequest {
     oneof previous {
-        // id of the transaction to bump. the transaction has to belong to one of the clients wallets
+        // Id of the transaction to bump. The transaction has to belong to one of the clients wallets
         string tx_id = 1;
-        // depending on the state of the swap, the lockup, refund or claim transaction will be bumped
+        // Depending on the state of the swap, the lockup, refund or claim transaction will be bumped
         string swap_id = 2;
     }
-    // fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider
+    // Fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider
+    // and bump the fee by at least 1 sat/vbyte.
     optional double sat_per_vbyte = 3;
 }
 

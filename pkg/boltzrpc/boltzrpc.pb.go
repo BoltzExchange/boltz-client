@@ -5143,7 +5143,8 @@ type BumpTransactionRequest struct {
 	//	*BumpTransactionRequest_TxId
 	//	*BumpTransactionRequest_SwapId
 	Previous isBumpTransactionRequest_Previous `protobuf_oneof:"previous"`
-	// fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider
+	// Fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider
+	// and bump the fee by at least 1 sat/vbyte.
 	SatPerVbyte *float64 `protobuf:"fixed64,3,opt,name=sat_per_vbyte,json=satPerVbyte,proto3,oneof" json:"sat_per_vbyte,omitempty"`
 }
 
@@ -5212,12 +5213,12 @@ type isBumpTransactionRequest_Previous interface {
 }
 
 type BumpTransactionRequest_TxId struct {
-	// id of the transaction to bump. the transaction has to belong to one of the clients wallets
+	// Id of the transaction to bump. The transaction has to belong to one of the clients wallets
 	TxId string `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,oneof"`
 }
 
 type BumpTransactionRequest_SwapId struct {
-	// depending on the state of the swap, the lockup, refund or claim transaction will be bumped
+	// Depending on the state of the swap, the lockup, refund or claim transaction will be bumped
 	SwapId string `protobuf:"bytes,2,opt,name=swap_id,json=swapId,proto3,oneof"`
 }
 

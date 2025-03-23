@@ -410,9 +410,9 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tx_id` | [`string`](#string) |  | id of the transaction to bump. the transaction has to belong to one of the clients wallets |
-| `swap_id` | [`string`](#string) |  | depending on the state of the swap, the lockup, refund or claim transaction will be bumped |
-| `sat_per_vbyte` | [`double`](#double) | optional | fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider |
+| `tx_id` | [`string`](#string) |  | Id of the transaction to bump. The transaction has to belong to one of the clients wallets |
+| `swap_id` | [`string`](#string) |  | Depending on the state of the swap, the lockup, refund or claim transaction will be bumped |
+| `sat_per_vbyte` | [`double`](#double) | optional | Fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider and bump the fee by at least 1 sat/vbyte. |
 
 
 
