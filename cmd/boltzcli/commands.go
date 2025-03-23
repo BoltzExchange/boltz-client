@@ -1545,9 +1545,9 @@ var walletCommands = &cli.Command{
 			Usage:  "Bump the fee of a transaction",
 			Action: bumpFee,
 			Flags: []cli.Flag{
-				&cli.StringFlag{Name: "swap-id", Usage: "Swap which should be used to get the transaction"},
+				&cli.StringFlag{Name: "swap-id", Usage: "Swap id of the transaction that should be bumped"},
 				&cli.StringFlag{Name: "tx-id", Usage: "ID of the transaction to bump. Has to belong to a clients wallet."},
-				&cli.Float64Flag{Name: "fee-rate", Usage: "Fee rate in sat/vbyte"},
+				&cli.Float64Flag{Name: "fee-rate", Usage: "Fee rate in sat/vbyte. Will be queried by the configured provider if not set."},
 			},
 		},
 		{

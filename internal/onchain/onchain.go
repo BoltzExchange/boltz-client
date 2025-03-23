@@ -363,7 +363,7 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 		confirmed, err := chain.Tx.IsTransactionConfirmed(txId)
 		if err != nil {
 			if errors.Is(err, errors.ErrUnsupported) {
-				logger.Infof("Transaction confirmation check not supported for %s", currency)
+				logger.Warnf("Transaction confirmation check not supported for %s", currency)
 				return false, err
 			}
 			if retryCount == 0 || !retry {
