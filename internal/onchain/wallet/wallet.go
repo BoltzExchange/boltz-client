@@ -35,6 +35,7 @@ import (
 const MaxInputs = uint64(256)
 const DefaultAutoConsolidateThreshold = uint64(200)
 const GapLimit = 100
+const GetTransactionsMaxLimit = 30
 
 type TransactionNotification struct {
 	TxId     string
@@ -692,7 +693,7 @@ func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVby
 		return nil, err
 	}
 
-	// Disable RBF on liquid
+	// Disable RBF on liquid and check that we don't spend more inputs than allowed
 	if wallet.Currency == boltz.CurrencyLiquid {
 		for asset, current := range outputs.Unspent {
 			if len(current) > int(config.MaxInputs) {
@@ -811,9 +812,9 @@ func (wallet *Wallet) getTransactions(limit, offset uint64) ([]map[string]any, e
 		return nil, ErrSubAccountNotSet
 	}
 	if limit == 0 {
-		limit = 30
+		limit = GetTransactionsMaxLimit
 	}
-	if limit > 30 {
+	if limit > GetTransactionsMaxLimit {
 		return nil, errors.New("limit cant be larger than 30")
 	}
 	params, free := toJson(map[string]any{
@@ -895,11 +896,11 @@ func (wallet *Wallet) BumpTransactionFee(txId string, satPerVbyte float64) (stri
 		return "", err
 	}
 
-	var limit uint64 = 30
 	var offset uint64
 	var found any
-	for {
-		result, err := wallet.getTransactions(limit, offset)
+	for found == nil {
+		// 0 indicates no limit
+		result, err := wallet.getTransactions(GetTransactionsMaxLimit, offset)
 		if err != nil {
 			return "", err
 		}
@@ -909,13 +910,13 @@ func (wallet *Wallet) BumpTransactionFee(txId string, satPerVbyte float64) (stri
 				break
 			}
 		}
-		if len(result) < int(limit) {
+		if len(result) < GetTransactionsMaxLimit {
 			break
 		}
-		offset += limit
+		offset += GetTransactionsMaxLimit
 	}
 	if found == nil {
-		return "", errors.New("previous transaction not found")
+		return "", errors.New("transaction not found")
 	}
 
 	transactionDetails, free := toJson(map[string]any{

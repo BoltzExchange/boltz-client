@@ -36,7 +36,7 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	}
 	transactionId := transaction.Transaction.Id
 	data.LockupTransactionId = transactionId
-	_, err := nursery.onchain.FindOutput(chainOutputArgs(data))
+	result, err := nursery.onchain.FindOutput(chainOutputArgs(data))
 	if err != nil {
 		return fmt.Errorf("could not find lockup vout: %s", err)
 	}
@@ -46,7 +46,7 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	}
 
 	if data == swap.ToData || data.WalletId != nil {
-		fee, err := nursery.onchain.GetTransactionFee(data.Currency, transactionId)
+		fee, err := nursery.onchain.GetTransactionFee(result.Transaction)
 		if err != nil {
 			return errors.New("could not get lockup transaction fee: " + err.Error())
 		}

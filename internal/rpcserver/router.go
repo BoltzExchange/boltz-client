@@ -1635,22 +1635,48 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 		}
 	}
 	var currency boltz.Currency
+	var transaction boltz.Transaction
 	for _, currency = range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
-		var confirmed bool
-		confirmed, err = server.onchain.IsTransactionConfirmed(currency, txId, false)
-		if errors.Is(err, errors.ErrUnsupported) {
-			_, err = server.onchain.GetTransaction(currency, txId, nil, false)
-		}
-		if err == nil {
-			if confirmed {
-				return nil, status.Errorf(codes.FailedPrecondition, "transaction %s is already confirmed on %s", txId, currency)
-			} else {
-				break
-			}
+		transaction, err = server.onchain.GetTransaction(currency, txId, nil, false)
+		if transaction != nil {
+			break
 		}
 	}
+	if transaction == nil {
+		return nil, status.Errorf(codes.NotFound, "transaction %s not found: %s", txId, err)
+	}
+	feeRate := request.GetSatPerVbyte()
+	confirmed, err := server.onchain.IsTransactionConfirmed(currency, txId, false)
+	if err != nil {
+		if errors.Is(err, errors.ErrUnsupported) {
+			confirmed = false
+		} else {
+			return nil, err
+		}
+	}
+	if confirmed {
+		return nil, status.Errorf(
+			codes.FailedPrecondition, "transaction %s is already confirmed on %s", txId, currency,
+		)
+	}
+	previousFee, err := server.onchain.GetTransactionFee(transaction)
 	if err != nil {
 		return nil, err
+	}
+	previousFeeRate := float64(previousFee) / float64(transaction.VSize())
+	if feeRate == 0 {
+		feeRate, err = server.onchain.EstimateFee(currency)
+		if err != nil {
+			return nil, err
+		}
+		// the new estimation should always be higher than the previous fee rate (why would you have to bump it then?)
+		// but we doublecheck here
+		feeRate = max(previousFeeRate+1, feeRate)
+	} else if feeRate <= previousFeeRate {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"new fee rate has to be higher than the original transactions rate of %f", previousFeeRate,
+		)
 	}
 	if len(swaps) > 0 {
 		txType := getTransactionType(swaps[0], txId)
@@ -1659,13 +1685,6 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 		}
 		if txType == boltzrpc.TransactionType_CLAIM || txType == boltzrpc.TransactionType_REFUND {
 			return nil, status.Errorf(codes.Unimplemented, "claim and refund transactions cant be bumped")
-		}
-	}
-	feeRate := request.GetSatPerVbyte()
-	if feeRate == 0 {
-		feeRate, err = server.onchain.EstimateFee(currency)
-		if err != nil {
-			return nil, err
 		}
 	}
 	checker := onchain.WalletChecker{

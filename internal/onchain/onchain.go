@@ -243,11 +243,7 @@ func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, our
 	}
 }
 
-func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) (uint64, error) {
-	transaction, err := onchain.GetTransaction(currency, txId, nil, false)
-	if err != nil {
-		return 0, err
-	}
+func (onchain *Onchain) GetTransactionFee(transaction boltz.Transaction) (uint64, error) {
 	if btcTransaction, ok := transaction.(*boltz.BtcTransaction); ok {
 		var fee uint64
 		transactions := make(map[string]*boltz.BtcTransaction)
@@ -256,7 +252,7 @@ func (onchain *Onchain) GetTransactionFee(currency boltz.Currency, txId string) 
 			id := prevOut.Hash.String()
 			_, ok := transactions[id]
 			if !ok {
-				transaction, err := onchain.GetTransaction(currency, id, nil, false)
+				transaction, err := onchain.GetTransaction(boltz.CurrencyBtc, id, nil, false)
 				if err != nil {
 					return 0, errors.New("could not fetch input tx: " + err.Error())
 				}

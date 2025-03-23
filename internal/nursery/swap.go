@@ -180,7 +180,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 			// dont add onchain fee if the swap was paid externally as it might have been part of a larger transaction
 			if swap.WalletId != nil {
-				fee, err := nursery.onchain.GetTransactionFee(swap.Pair.From, swap.LockupTransactionId)
+				fee, err := nursery.onchain.GetTransactionFee(result.Transaction)
 				if err != nil {
 					handleError("could not get lockup transaction fee: " + err.Error())
 					return
