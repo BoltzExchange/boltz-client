@@ -1541,6 +1541,16 @@ var walletCommands = &cli.Command{
 			Flags:     []cli.Flag{jsonFlag, &cli.BoolFlag{Name: "exclude-swap-related", Usage: "Exclude swap related transactions"}},
 		},
 		{
+			Name:   "bumpfee",
+			Usage:  "Bump the fee of a transaction",
+			Action: bumpFee,
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "swap-id", Usage: "Swap id of the transaction that should be bumped"},
+				&cli.StringFlag{Name: "tx-id", Usage: "ID of the transaction to bump. Has to belong to a clients wallet."},
+				&cli.Float64Flag{Name: "fee-rate", Usage: "Fee rate in sat/vbyte. Will be queried by the configured provider if not set."},
+			},
+		},
+		{
 			Name:        "subaccounts",
 			Usage:       "Show the subaccounts of a wallet",
 			Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
@@ -2029,6 +2039,27 @@ func listTransactions(ctx *cli.Context) error {
 		Id:                 *walletId,
 		ExcludeSwapRelated: &exclude,
 	})
+	if err != nil {
+		return err
+	}
+	printJson(response)
+	return nil
+}
+
+func bumpFee(ctx *cli.Context) error {
+	client := getClient(ctx)
+	request := &boltzrpc.BumpTransactionRequest{}
+	if swapId := ctx.String("swap-id"); swapId != "" {
+		request.Previous = &boltzrpc.BumpTransactionRequest_SwapId{SwapId: swapId}
+	} else if txId := ctx.String("tx-id"); txId != "" {
+		request.Previous = &boltzrpc.BumpTransactionRequest_TxId{TxId: txId}
+	} else {
+		return errors.New("swap-id or tx-id is required")
+	}
+	if feeRate := ctx.Float64("fee-rate"); feeRate != 0 {
+		request.SatPerVbyte = &feeRate
+	}
+	response, err := client.BumpTransaction(request)
 	if err != nil {
 		return err
 	}

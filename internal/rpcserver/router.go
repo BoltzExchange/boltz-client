@@ -1544,6 +1544,19 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 	}, nil
 }
 
+func getTransactionType(swap *database.AnySwap, txId string) boltzrpc.TransactionType {
+	if swap.RefundTransactionid == txId {
+		return boltzrpc.TransactionType_REFUND
+	}
+	if swap.ClaimTransactionid == txId {
+		return boltzrpc.TransactionType_CLAIM
+	}
+	if swap.LockupTransactionid == txId {
+		return boltzrpc.TransactionType_LOCKUP
+	}
+	return boltzrpc.TransactionType_UNKNOWN
+}
+
 func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, request *boltzrpc.ListWalletTransactionsRequest) (*boltzrpc.ListWalletTransactionsResponse, error) {
 	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{Id: &request.Id})
 	if err != nil {
@@ -1587,21 +1600,108 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 				continue
 			}
 			swap := swaps[i]
-			txSwap := &boltzrpc.TransactionInfo{SwapId: &swap.Id}
-			if swap.RefundTransactionid == tx.Id {
-				txSwap.Type = boltzrpc.TransactionType_REFUND
-			}
-			if swap.ClaimTransactionid == tx.Id {
-				txSwap.Type = boltzrpc.TransactionType_CLAIM
-			}
-			if swap.LockupTransactionid == tx.Id {
-				txSwap.Type = boltzrpc.TransactionType_LOCKUP
-			}
-			result.Infos = append(result.Infos, txSwap)
+			info := &boltzrpc.TransactionInfo{SwapId: &swap.Id, Type: getTransactionType(swap, tx.Id)}
+			result.Infos = append(result.Infos, info)
 		}
 		response.Transactions = append(response.Transactions, result)
 	}
 	return response, nil
+}
+
+func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *boltzrpc.BumpTransactionRequest) (*boltzrpc.BumpTransactionResponse, error) {
+	swapId := request.GetSwapId()
+	txId := request.GetTxId()
+	var swaps []*database.AnySwap
+	var err error
+	if swapId != "" {
+		swap, err := server.database.GetAnySwap(swapId)
+		if err != nil {
+			return nil, err
+		}
+		if swap.RefundTransactionid != "" {
+			txId = swap.RefundTransactionid
+		} else if swap.ClaimTransactionid != "" {
+			txId = swap.ClaimTransactionid
+		} else if swap.LockupTransactionid != "" {
+			txId = swap.LockupTransactionid
+		} else {
+			return nil, status.Errorf(codes.NotFound, "swap %s has no transactions to bump", swapId)
+		}
+		swaps = []*database.AnySwap{swap}
+	} else {
+		swaps, err = server.database.QuerySwapsByTransactions(database.SwapQuery{}, []string{txId})
+		if err != nil {
+			return nil, err
+		}
+	}
+	var currency boltz.Currency
+	var transaction boltz.Transaction
+	for _, currency = range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
+		transaction, err = server.onchain.GetTransaction(currency, txId, nil, false)
+		if transaction != nil {
+			break
+		}
+	}
+	if transaction == nil {
+		return nil, status.Errorf(codes.NotFound, "transaction %s not found: %s", txId, err)
+	}
+	feeRate := request.GetSatPerVbyte()
+	confirmed, err := server.onchain.IsTransactionConfirmed(currency, txId, false)
+	if err != nil {
+		if errors.Is(err, errors.ErrUnsupported) {
+			confirmed = false
+		} else {
+			return nil, err
+		}
+	}
+	if confirmed {
+		return nil, status.Errorf(
+			codes.FailedPrecondition, "transaction %s is already confirmed on %s", txId, currency,
+		)
+	}
+	previousFee, err := server.onchain.GetTransactionFee(transaction)
+	if err != nil {
+		return nil, err
+	}
+	previousFeeRate := float64(previousFee) / float64(transaction.VSize())
+	if feeRate == 0 {
+		feeRate, err = server.onchain.EstimateFee(currency)
+		if err != nil {
+			return nil, err
+		}
+		// the new estimation should always be higher than the previous fee rate (why would you have to bump it then?)
+		// but we doublecheck here
+		feeRate = max(previousFeeRate+1, feeRate)
+	} else if feeRate <= previousFeeRate {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"new fee rate has to be higher than the original transactions rate of %f", previousFeeRate,
+		)
+	}
+	if len(swaps) > 0 {
+		txType := getTransactionType(swaps[0], txId)
+		if txType == boltzrpc.TransactionType_UNKNOWN {
+			return nil, status.Errorf(codes.NotFound, "transaction %s is not part of a swap", txId)
+		}
+		if txType == boltzrpc.TransactionType_CLAIM || txType == boltzrpc.TransactionType_REFUND {
+			return nil, status.Errorf(codes.Unimplemented, "claim and refund transactions cannot be bumped")
+		}
+	}
+	checker := onchain.WalletChecker{
+		TenantId:      macaroons.TenantIdFromContext(ctx),
+		AllowReadonly: false,
+		Currency:      currency,
+	}
+	for _, wallet := range server.onchain.GetWallets(checker) {
+		tx, err := wallet.BumpTransactionFee(txId, feeRate)
+		if err == nil {
+			return &boltzrpc.BumpTransactionResponse{TxId: tx}, nil
+		}
+		if !errors.Is(err, errors.ErrUnsupported) && !strings.Contains(err.Error(), "not found") {
+			return nil, err
+		}
+	}
+	return nil, status.Errorf(codes.NotFound, "transaction %s does not belong to any wallet", txId)
 }
 
 func (server *routedBoltzServer) serializeWallet(wal onchain.Wallet) (*boltzrpc.Wallet, error) {

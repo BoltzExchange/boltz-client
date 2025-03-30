@@ -197,6 +197,14 @@ Returns recent transactions from a wallet.
 | ------- | -------- |
 | [`ListWalletTransactionsRequest`](#listwallettransactionsrequest) | [`ListWalletTransactionsResponse`](#listwallettransactionsresponse) |
 
+#### BumpTransaction
+
+Increase the fee of a transaction using RBF. The transaction has to belong to one of the clients wallets.
+
+| Request | Response |
+| ------- | -------- |
+| [`BumpTransactionRequest`](#bumptransactionrequest) | [`BumpTransactionResponse`](#bumptransactionresponse) |
+
 #### GetWalletCredentials
 
 Returns the credentials of a wallet. The password will be required if the wallet is encrypted.
@@ -390,6 +398,34 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `remaining` | [`int64`](#int64) |  |  |
 | `start_date` | [`int64`](#int64) |  |  |
 | `end_date` | [`int64`](#int64) |  |  |
+
+
+
+
+
+#### BumpTransactionRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [`string`](#string) |  | Id of the transaction to bump. The transaction has to belong to one of the clients wallets |
+| `swap_id` | [`string`](#string) |  | Depending on the state of the swap, the lockup, refund or claim transaction will be bumped |
+| `sat_per_vbyte` | [`double`](#double) | optional | Fee rate for the new transaction. if not specified, the daemon will query the fee rate from the configured provider and bump the fee by at least 1 sat/vbyte. |
+
+
+
+
+
+#### BumpTransactionResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx_id` | [`string`](#string) |  |  |
 
 
 

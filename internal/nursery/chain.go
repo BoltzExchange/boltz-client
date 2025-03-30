@@ -30,9 +30,13 @@ func (nursery *Nursery) RegisterChainSwap(chainSwap database.ChainSwap) error {
 	return nil
 }
 
-func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, data *database.ChainSwapData, transactionId string) error {
+func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, data *database.ChainSwapData, transaction *boltz.ChainSwapTransaction) error {
+	if transaction == nil || data.LockupTransactionId == transaction.Transaction.Id {
+		return nil
+	}
+	transactionId := transaction.Transaction.Id
 	data.LockupTransactionId = transactionId
-	_, err := nursery.onchain.FindOutput(chainOutputArgs(data))
+	result, err := nursery.onchain.FindOutput(chainOutputArgs(data))
 	if err != nil {
 		return fmt.Errorf("could not find lockup vout: %s", err)
 	}
@@ -42,7 +46,7 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	}
 
 	if data == swap.ToData || data.WalletId != nil {
-		fee, err := nursery.onchain.GetTransactionFee(data.Currency, transactionId)
+		fee, err := nursery.onchain.GetTransactionFee(result.Transaction)
 		if err != nil {
 			return errors.New("could not get lockup transaction fee: " + err.Error())
 		}
@@ -51,6 +55,7 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 		}
 	}
 
+	logger.Infof("Found lockup tx for Chain Swap %s: %s", swap.Id, transactionId)
 	return nil
 }
 
@@ -145,7 +150,8 @@ func (nursery *Nursery) handleChainSwapError(swap *database.ChainSwap, err error
 func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status boltz.SwapStatusResponse) {
 	parsedStatus := boltz.ParseEvent(status.Status)
 
-	if parsedStatus == swap.Status {
+	isMempool := parsedStatus == boltz.TransactionMempool || parsedStatus == boltz.TransactionServerMempoool
+	if parsedStatus == swap.Status && !isMempool {
 		logger.Debugf("Status of Chain Swap %s is %s already", swap.Id, parsedStatus)
 		return
 	}
@@ -156,7 +162,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		nursery.handleChainSwapError(swap, fmt.Errorf(format, args...))
 	}
 
-	if swap.FromData.LockupTransactionId == "" || swap.ToData.LockupTransactionId == "" {
+	if isMempool || swap.FromData.LockupTransactionId == "" || swap.ToData.LockupTransactionId == "" {
 		response, err := nursery.boltz.GetChainSwapTransactions(swap.Id)
 		if err != nil {
 			var boltzErr boltz.Error
@@ -165,19 +171,13 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 				return
 			}
 		} else {
-			if swap.FromData.LockupTransactionId == "" && response.UserLock != nil {
-				if err := nursery.setChainSwapLockupTransaction(swap, swap.FromData, response.UserLock.Transaction.Id); err != nil {
-					handleError("Could not set lockup transaction in database: " + err.Error())
-					return
-				}
-				logger.Infof("Found user lockup for Chain Swap %s", swap.Id)
+			if err := nursery.setChainSwapLockupTransaction(swap, swap.FromData, response.UserLock); err != nil {
+				handleError("Could not set lockup transaction in database: " + err.Error())
+				return
 			}
-			if swap.ToData.LockupTransactionId == "" && response.ServerLock != nil {
-				if err := nursery.setChainSwapLockupTransaction(swap, swap.ToData, response.ServerLock.Transaction.Id); err != nil {
-					handleError("Could not set lockup transaction in database: " + err.Error())
-					return
-				}
-				logger.Infof("Found server lockup for Chain Swap %s", swap.Id)
+			if err := nursery.setChainSwapLockupTransaction(swap, swap.ToData, response.ServerLock); err != nil {
+				handleError("Could not set lockup transaction in database: " + err.Error())
+				return
 			}
 		}
 	}

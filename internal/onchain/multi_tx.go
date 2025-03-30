@@ -1,5 +1,7 @@
 package onchain
 
+import "github.com/BoltzExchange/boltz-client/v2/internal/logger"
+
 type MultiTxProvider struct {
 	TxProvider
 	Providers []TxProvider
@@ -30,6 +32,8 @@ func (m MultiTxProvider) IsTransactionConfirmed(txId string) (confirmed bool, er
 		confirmed, err = provider.IsTransactionConfirmed(txId)
 		if err == nil {
 			return confirmed, nil
+		} else {
+			logger.Debugf("Error checking transaction confirmation: %v", err)
 		}
 	}
 	return false, err
