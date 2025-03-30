@@ -1595,7 +1595,7 @@ func TestBumpTransaction(t *testing.T) {
 			setup: func(t *testing.T) {
 				newMockWallet(t, chain)
 			},
-			wantErr: "refund transactions cant be bumped",
+			wantErr: "refund transactions cannot be bumped",
 		},
 	}
 
