@@ -1684,7 +1684,7 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 			return nil, status.Errorf(codes.NotFound, "transaction %s is not part of a swap", txId)
 		}
 		if txType == boltzrpc.TransactionType_CLAIM || txType == boltzrpc.TransactionType_REFUND {
-			return nil, status.Errorf(codes.Unimplemented, "claim and refund transactions cant be bumped")
+			return nil, status.Errorf(codes.Unimplemented, "claim and refund transactions cannot be bumped")
 		}
 	}
 	checker := onchain.WalletChecker{
