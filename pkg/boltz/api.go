@@ -235,7 +235,8 @@ type GetTransactionRequest struct {
 }
 
 type GetTransactionResponse struct {
-	Hex string `json:"hex"`
+	Hex           string `json:"hex"`
+	Confirmations uint64 `json:"confirmations"`
 
 	Error string `json:"error"`
 }
@@ -481,13 +482,22 @@ func (boltz *Api) GetChainSwapTransactions(id string) (*GetChainSwapTransactions
 	return &response, err
 }
 
-func (boltz *Api) GetTransaction(transactionId string, currency Currency) (string, error) {
+func (boltz *Api) GetTransactionDetails(transactionId string, currency Currency) (*GetTransactionResponse, error) {
 	var response GetTransactionResponse
 	path := fmt.Sprintf("/chain/%s/transaction/%s", currency, transactionId)
 	err := boltz.sendGetRequestV2(path, &response)
 
 	if response.Error != "" {
-		return "", Error(errors.New(response.Error))
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Api) GetTransaction(transactionId string, currency Currency) (string, error) {
+	response, err := boltz.GetTransactionDetails(transactionId, currency)
+	if err != nil {
+		return "", err
 	}
 
 	return response.Hex, err

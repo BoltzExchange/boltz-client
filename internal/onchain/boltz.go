@@ -1,7 +1,6 @@
 package onchain
 
 import (
-	"errors"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
@@ -23,5 +22,9 @@ func (txProvider BoltzTxProvider) BroadcastTransaction(txHex string) (string, er
 }
 
 func (txProvider BoltzTxProvider) IsTransactionConfirmed(txId string) (bool, error) {
-	return false, errors.ErrUnsupported
+	transaction, err := txProvider.Api.GetTransactionDetails(txId, txProvider.currency)
+	if err != nil {
+		return false, err
+	}
+	return transaction.Confirmations > 0, nil
 }
