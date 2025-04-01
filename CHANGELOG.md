@@ -1,4 +1,17 @@
 
+<a name="v2.5.0"></a>
+## [v2.5.0] - 2025-04-01
+### Feat
+- implement `IsTransactionConfirmed` for boltz ([#407](https://github.com/BoltzExchange/boltz-client/issues/407))
+- `BumpTransaction` rpc ([#388](https://github.com/BoltzExchange/boltz-client/issues/388))
+
+### Fix
+- bump transaction test ([#405](https://github.com/BoltzExchange/boltz-client/issues/405))
+
+### Refactor
+- increase mainchain fee floor ([#400](https://github.com/BoltzExchange/boltz-client/issues/400))
+
+
 <a name="v2.4.1"></a>
 ## [v2.4.1] - 2025-03-08
 ### Feat
@@ -588,6 +601,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.5.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.4.1...v2.5.0
 [v2.4.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.4.0...v2.4.1
 [v2.4.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.9...v2.4.0
 [v2.3.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.8...v2.3.9
