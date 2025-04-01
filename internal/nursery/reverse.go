@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"slices"
-	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
@@ -109,7 +110,7 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 			Address:          lockupAddress,
 			BlindingKey:      reverseSwap.BlindingKey,
 			ExpectedAmount:   reverseSwap.OnchainAmount,
-			RequireConfirmed: true,
+			RequireConfirmed: !reverseSwap.AcceptZeroConf,
 		},
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, transactionId, fee); err != nil {

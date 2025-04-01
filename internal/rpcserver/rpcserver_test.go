@@ -9,8 +9,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/internal/test"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 	"math/rand/v2"
 	"net"
 	"os"
@@ -18,6 +16,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/test"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/macaroons"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -53,8 +54,6 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	test.BackendCli("updatetimeout 300 300 350 300 300 --pair L-BTC/BTC")
-	test.BackendCli("updatetimeout 300 300 350 300 300 --pair BTC/BTC")
 	_, err := test.InitTestWallet(false)
 	if err != nil {
 		logger.Fatal(err.Error())

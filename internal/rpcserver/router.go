@@ -1648,11 +1648,7 @@ func (server *routedBoltzServer) BumpTransaction(ctx context.Context, request *b
 	feeRate := request.GetSatPerVbyte()
 	confirmed, err := server.onchain.IsTransactionConfirmed(currency, txId, false)
 	if err != nil {
-		if errors.Is(err, errors.ErrUnsupported) {
-			confirmed = false
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	if confirmed {
 		return nil, status.Errorf(
