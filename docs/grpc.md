@@ -322,7 +322,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `from_amount` | [`uint64`](#uint64) |  | The expected amount to be sent to the lockup address for submarine and chain swaps and the invoice amount for reverse swaps. |
 | `to_amount` | [`uint64`](#uint64) |  | `from_amount` minus the service and network fee. |
 | `created_at` | [`int64`](#int64) |  |  |
-| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `service_fee` | [`int64`](#int64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional | inclues the routing fee for reverse swaps |
 | `is_auto` | [`bool`](#bool) |  |  |
 | `tenant_id` | [`uint64`](#uint64) |  |  |
@@ -469,7 +469,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | `status` | [`string`](#string) |  |  |
 | `preimage` | [`string`](#string) |  |  |
 | `is_auto` | [`bool`](#bool) |  |  |
-| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `service_fee` | [`int64`](#int64) | optional |  |
 | `service_fee_percent` | [`double`](#double) |  |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
@@ -1253,7 +1253,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
 | `paid_at` | [`int64`](#int64) | optional | the time when the invoice was paid |
-| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `service_fee` | [`int64`](#int64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `routing_fee_msat` | [`uint64`](#uint64) | optional |  |
 | `external_pay` | [`bool`](#bool) |  |  |
@@ -1333,7 +1333,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `chan_ids` | [`ChannelId`](#channelid) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
 | `created_at` | [`int64`](#int64) |  |  |
-| `service_fee` | [`uint64`](#uint64) | optional |  |
+| `service_fee` | [`int64`](#int64) | optional |  |
 | `onchain_fee` | [`uint64`](#uint64) | optional |  |
 | `wallet_id` | [`uint64`](#uint64) | optional | internal wallet which was used to pay the swap |
 | `tenant_id` | [`uint64`](#uint64) |  |  |

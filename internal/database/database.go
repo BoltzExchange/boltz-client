@@ -540,10 +540,17 @@ func FormatTime(t time.Time) int64 {
 	return t.Unix()
 }
 
-func parseNullInt(value sql.NullInt64) *uint64 {
+func parseNullUint(value sql.NullInt64) *uint64 {
 	if value.Valid {
 		value := uint64(value.Int64)
 		return &value
+	}
+	return nil
+}
+
+func parseNullInt(value sql.NullInt64) *int64 {
+	if value.Valid {
+		return &value.Int64
 	}
 	return nil
 }

@@ -36,7 +36,7 @@ type Swap struct {
 	RefundAddress       string
 	BlindingKey         *btcec.PrivateKey
 	IsAuto              bool
-	ServiceFee          *uint64
+	ServiceFee          *int64
 	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	WalletId            *Id
@@ -65,7 +65,7 @@ type SwapSerialized struct {
 	RefundAddress       string
 	BlindingKey         string
 	IsAuto              bool
-	ServiceFee          *uint64
+	ServiceFee          *int64
 	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	WalletId            *Id
@@ -178,7 +178,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	}
 
 	swap.ServiceFee = parseNullInt(serviceFee)
-	swap.OnchainFee = parseNullInt(onchainFee)
+	swap.OnchainFee = parseNullUint(onchainFee)
 	swap.Status = boltz.ParseEvent(status)
 	swap.ChanIds = chanIds.Value
 	swap.PrivateKey = privateKey.Value
@@ -453,7 +453,7 @@ func (database *Database) SetSwapOnchainFee(swap *Swap, onchainFee uint64) error
 	return err
 }
 
-func (database *Database) SetSwapServiceFee(swap *Swap, serviceFee uint64, onchainFee uint64) error {
+func (database *Database) SetSwapServiceFee(swap *Swap, serviceFee int64, onchainFee uint64) error {
 	swap.ServiceFee = &serviceFee
 	swap.OnchainFee = addToOptional(swap.OnchainFee, onchainFee)
 

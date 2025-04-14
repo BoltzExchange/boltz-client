@@ -1,17 +1,21 @@
 package database_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestStats(t *testing.T) {
 	fee := func(amount uint64) *uint64 {
+		return &amount
+	}
+	serviceFee := func(amount int64) *int64 {
 		return &amount
 	}
 
@@ -29,14 +33,14 @@ func TestStats(t *testing.T) {
 						State:          boltzrpc.SwapState_PENDING,
 						ExpectedAmount: 100,
 						OnchainFee:     fee(10),
-						ServiceFee:     fee(15),
+						ServiceFee:     serviceFee(15),
 						IsAuto:         true,
 					},
 					{
 						ExpectedAmount: 100,
 						State:          boltzrpc.SwapState_SUCCESSFUL,
 						OnchainFee:     fee(10),
-						ServiceFee:     fee(15),
+						ServiceFee:     serviceFee(15),
 						IsAuto:         false,
 					},
 				},
@@ -45,7 +49,7 @@ func TestStats(t *testing.T) {
 						State:          boltzrpc.SwapState_SERVER_ERROR,
 						InvoiceAmount:  100,
 						OnchainFee:     fee(10),
-						ServiceFee:     fee(10),
+						ServiceFee:     serviceFee(10),
 						RoutingFeeMsat: fee(5000),
 						IsAuto:         true,
 					},
@@ -53,7 +57,7 @@ func TestStats(t *testing.T) {
 						InvoiceAmount: 100,
 						State:         boltzrpc.SwapState_SUCCESSFUL,
 						OnchainFee:    fee(10),
-						ServiceFee:    fee(15),
+						ServiceFee:    serviceFee(15),
 						IsAuto:        false,
 					},
 				},
@@ -62,14 +66,14 @@ func TestStats(t *testing.T) {
 						State:      boltzrpc.SwapState_ERROR,
 						FromData:   &database.ChainSwapData{Amount: 100},
 						OnchainFee: fee(10),
-						ServiceFee: fee(15),
+						ServiceFee: serviceFee(15),
 						IsAuto:     true,
 					},
 					{
 						FromData:   &database.ChainSwapData{Amount: 100},
 						State:      boltzrpc.SwapState_SUCCESSFUL,
 						OnchainFee: fee(10),
-						ServiceFee: fee(15),
+						ServiceFee: serviceFee(15),
 						IsAuto:     false,
 					},
 				},
@@ -87,14 +91,14 @@ func TestStats(t *testing.T) {
 				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						CreatedAt:  test.PastDate(2 * time.Minute),
 					},
 				},
 				ReverseSwaps: []database.ReverseSwap{
 					{
 						OnchainFee:     fee(10),
-						ServiceFee:     fee(10),
+						ServiceFee:     serviceFee(10),
 						RoutingFeeMsat: fee(5000),
 						CreatedAt:      test.PastDate(2 * time.Minute),
 					},
@@ -102,7 +106,7 @@ func TestStats(t *testing.T) {
 				ChainSwaps: []database.ChainSwap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(15),
+						ServiceFee: serviceFee(15),
 						CreatedAt:  test.PastDate(2 * time.Minute),
 					},
 				},

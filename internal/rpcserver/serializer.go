@@ -1,9 +1,10 @@
 package rpcserver
 
 import (
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
-	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
@@ -77,7 +78,7 @@ func serializeAnySwap(swap *database.AnySwap) *boltzrpc.AnySwapInfo {
 		toAmount -= *swap.OnchainFee
 	}
 	if swap.ServiceFee != nil {
-		toAmount -= *swap.ServiceFee
+		toAmount = uint64(int64(toAmount) - *swap.ServiceFee)
 	}
 	return &boltzrpc.AnySwapInfo{
 		Id:         swap.Id,

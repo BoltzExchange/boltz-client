@@ -5,10 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"time"
 )
 
 type ChainSwap struct {
@@ -20,7 +21,7 @@ type ChainSwap struct {
 	AcceptZeroConf    bool
 	Preimage          []byte
 	IsAuto            bool
-	ServiceFee        *uint64
+	ServiceFee        *int64
 	ServiceFeePercent boltz.Percentage
 	OnchainFee        *uint64
 	CreatedAt         time.Time
@@ -56,7 +57,7 @@ type ChainSwapSerialized struct {
 	AcceptZeroConf    bool
 	Preimage          string
 	IsAuto            bool
-	ServiceFee        *uint64
+	ServiceFee        *int64
 	ServiceFeePercent boltz.Percentage
 	OnchainFee        *uint64
 	CreatedAt         int64
@@ -230,7 +231,7 @@ func (database *Database) AddChainSwapOnchainFee(chainSwap *ChainSwap, onchainFe
 	return err
 }
 
-func (database *Database) SetChainSwapServiceFee(chainSwap *ChainSwap, serviceFee uint64) error {
+func (database *Database) SetChainSwapServiceFee(chainSwap *ChainSwap, serviceFee int64) error {
 	chainSwap.ServiceFee = &serviceFee
 	_, err := database.Exec("UPDATE chainSwaps SET serviceFee = ? WHERE id = ?", chainSwap.ServiceFee, chainSwap.Id)
 	return err
@@ -369,7 +370,7 @@ func (database *Database) parseChainSwap(rows *sql.Rows) (*ChainSwap, error) {
 	}
 
 	swap.ServiceFee = parseNullInt(serviceFee)
-	swap.OnchainFee = parseNullInt(onchainFee)
+	swap.OnchainFee = parseNullUint(onchainFee)
 	swap.CreatedAt = parseTime(createdAt.Int64)
 	swap.Status = boltz.ParseEvent(status)
 
