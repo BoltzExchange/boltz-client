@@ -1,4 +1,10 @@
 
+<a name="v2.5.1"></a>
+## [v2.5.1] - 2025-04-14
+### Fix
+- allow negative service fees ([#412](https://github.com/BoltzExchange/boltz-client/issues/412))
+
+
 <a name="v2.5.0"></a>
 ## [v2.5.0] - 2025-04-01
 ### Feat
@@ -601,6 +607,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.5.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.5.0...v2.5.1
 [v2.5.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.4.1...v2.5.0
 [v2.4.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.4.0...v2.4.1
 [v2.4.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.3.9...v2.4.0
