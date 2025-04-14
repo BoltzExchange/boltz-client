@@ -8,9 +8,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
+	"github.com/fatih/color"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/urfave/cli/v2"
@@ -144,4 +146,10 @@ func percentValidator(ans interface{}) error {
 		return errNotNumber
 	}
 	return nil
+}
+
+func colorPrintln(color *color.Color, message string) {
+	if _, err := color.Println(message); err != nil {
+		logger.Fatal(err.Error())
+	}
 }

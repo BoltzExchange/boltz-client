@@ -22,7 +22,7 @@ func (txProvider BoltzTxProvider) BroadcastTransaction(txHex string) (string, er
 }
 
 func (txProvider BoltzTxProvider) IsTransactionConfirmed(txId string) (bool, error) {
-	transaction, err := txProvider.Api.GetTransactionDetails(txId, txProvider.currency)
+	transaction, err := txProvider.GetTransactionDetails(txId, txProvider.currency)
 	if err != nil {
 		return false, err
 	}

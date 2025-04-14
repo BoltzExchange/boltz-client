@@ -60,7 +60,11 @@ func (c *Client) getFeeRecommendation() (*feeEstimation, error) {
 		return nil, err
 	}
 
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			logger.Errorf("Error closing response body: %v", err)
+		}
+	}()
 
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed with status: %d", res.StatusCode)
@@ -122,9 +126,10 @@ func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onch
 	}
 	ws.Path += "/ws"
 
-	if ws.Scheme == "https" {
+	switch ws.Scheme {
+	case "https":
 		ws.Scheme = "wss"
-	} else if ws.Scheme == "http" {
+	case "http":
 		ws.Scheme = "ws"
 	}
 

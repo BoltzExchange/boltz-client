@@ -242,13 +242,14 @@ func AdminPermissions() []bakery.Op {
 
 func GetPermissions(isTenant bool, permissions []*boltzrpc.MacaroonPermissions) (result []bakery.Op) {
 	for _, permission := range permissions {
-		if permission.Action == boltzrpc.MacaroonAction_READ {
+		switch permission.Action {
+		case boltzrpc.MacaroonAction_READ:
 			if isTenant {
 				result = append(result, TenantReadPermissions...)
 			} else {
 				result = append(result, ReadPermissions...)
 			}
-		} else if permission.Action == boltzrpc.MacaroonAction_WRITE {
+		case boltzrpc.MacaroonAction_WRITE:
 			if isTenant {
 				result = append(result, TenantWritePermissons...)
 			} else {

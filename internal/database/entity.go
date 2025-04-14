@@ -53,7 +53,7 @@ func (d *Database) QueryTenants() ([]*Tenant, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tenants: %w", err)
 	}
-	defer rows.Close()
+	defer closeRows(rows)
 	var result []*Tenant
 	for rows.Next() {
 		tenant, err := parseTenant(rows)

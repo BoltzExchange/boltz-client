@@ -256,7 +256,7 @@ func (database *Database) QueryChainSwap(id string) (swap *ChainSwap, err error)
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		swap, err = database.parseChainSwap(rows)
@@ -278,7 +278,7 @@ func (database *Database) queryChainSwapData(id string, currency boltz.Currency,
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		data, err = parseChainSwapData(rows, isClaim)
@@ -287,7 +287,7 @@ func (database *Database) queryChainSwapData(id string, currency boltz.Currency,
 			return data, err
 		}
 	} else {
-		return data, errors.New("could not find data " + id)
+		return data, fmt.Errorf("could not find data %s", id)
 	}
 
 	return data, nil
@@ -418,7 +418,7 @@ func (database *Database) queryChainSwaps(query string, args ...any) (swaps []*C
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	for rows.Next() {
 		swap, err := database.parseChainSwap(rows)

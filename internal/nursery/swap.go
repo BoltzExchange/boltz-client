@@ -90,7 +90,7 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 
 	claimDetails, err := nursery.boltz.GetSwapClaimDetails(swap.Id)
 	if err != nil {
-		return fmt.Errorf("Could not get claim details from boltz: %w", err)
+		return fmt.Errorf("could not get claim details from boltz: %w", err)
 	}
 
 	// Verify that the invoice was actually paid

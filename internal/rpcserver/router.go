@@ -289,15 +289,16 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 }
 
 func (server *routedBoltzServer) GetPairInfo(_ context.Context, request *boltzrpc.GetPairInfoRequest) (*boltzrpc.PairInfo, error) {
-	if request.Type == boltzrpc.SwapType_SUBMARINE {
+	switch request.Type {
+	case boltzrpc.SwapType_SUBMARINE:
 		return server.getSubmarinePair(request.Pair)
-	} else if request.Type == boltzrpc.SwapType_REVERSE {
+	case boltzrpc.SwapType_REVERSE:
 		return server.getReversePair(request.Pair)
-	} else if request.Type == boltzrpc.SwapType_CHAIN {
+	case boltzrpc.SwapType_CHAIN:
 		return server.getChainPair(request.Pair)
+	default:
+		return nil, errors.New("unknown swap type")
 	}
-
-	return nil, errors.New("invalid swap type")
 }
 
 func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
@@ -851,10 +852,6 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 		if pair.From == boltz.CurrencyLiquid {
 			swap.BlindingKey, _ = btcec.PrivKeyFromBytes(response.BlindingKey)
-
-			if err != nil {
-				return nil, err
-			}
 		}
 
 		if err := swap.InitTree(); err != nil {

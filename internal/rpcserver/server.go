@@ -4,11 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/internal/config"
-	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
-	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
-	"google.golang.org/grpc/keepalive"
 	"io/fs"
 	"net"
 	"net/http"
@@ -19,6 +14,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/config"
+	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
+	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
+	"google.golang.org/grpc/keepalive"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
@@ -412,10 +413,11 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		chain.Liquid.Blocks = client
 		liquidProviders = append(liquidProviders, client)
 	}
-	if network == boltz.MainNet {
+	switch network {
+	case boltz.MainNet:
 		cfg.MempoolApi = "https://mempool.space/api"
 		cfg.MempoolLiquidApi = "https://liquid.bullbitcoin.com/api"
-	} else if network == boltz.TestNet {
+	case boltz.TestNet:
 		cfg.MempoolApi = "https://mempool.space/testnet/api"
 		cfg.MempoolLiquidApi = "https://liquid.network/liquidtestnet/api"
 	}

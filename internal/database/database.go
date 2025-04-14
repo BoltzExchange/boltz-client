@@ -571,3 +571,9 @@ func formatJson(value any) string {
 	}
 	return string(encoded)
 }
+
+func closeRows(rows *sql.Rows) {
+	if err := rows.Close(); err != nil {
+		logger.Errorf("Error closing rows: %v", err)
+	}
+}

@@ -3,12 +3,13 @@ package client
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/autoswaprpc"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
-	"strconv"
-	"strings"
 )
 
 type AutoSwap struct {
@@ -105,7 +106,7 @@ func getField(message protoreflect.ProtoMessage, name string) (protoreflect.Fiel
 			return field, nil
 		}
 	}
-	return nil, errors.New("Unknown field")
+	return nil, errors.New("unknown field")
 }
 
 func setValue(message protoreflect.ProtoMessage, name string, value any) (*fieldmaskpb.FieldMask, error) {
@@ -156,7 +157,7 @@ func setValue(message protoreflect.ProtoMessage, name string, value any) (*field
 		}
 
 	default:
-		return nil, errors.New("Unknown field type")
+		return nil, errors.New("unknown field type")
 	}
 	message.ProtoReflect().Set(field, protoreflect.ValueOf(setValue))
 	return fieldmaskpb.New(message, string(field.Name()))

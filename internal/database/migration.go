@@ -5,10 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
-	"github.com/lightningnetwork/lnd/zpay32"
 	"strconv"
 	"strings"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
+	"github.com/lightningnetwork/lnd/zpay32"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
@@ -348,7 +349,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 				ids = append(ids, id)
 				pairs = append(pairs, pair)
 			}
-			rows.Close()
+			closeRows(rows)
 			for i, id := range ids {
 				split := strings.Split(pairs[i], "/")
 				from := split[0]

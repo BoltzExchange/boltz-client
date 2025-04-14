@@ -185,7 +185,8 @@ func (tree *SwapTree) Check(
 
 	claimPubKey := toXOnly(tree.claimPubKey())
 	claim := txscript.NewScriptBuilder()
-	if swapType == ReverseSwap || swapType == ChainSwap {
+	switch swapType {
+	case ReverseSwap, ChainSwap:
 		claim.AddOp(txscript.OP_SIZE)
 		claim.AddInt64(32)
 		claim.AddOp(txscript.OP_EQUALVERIFY)
@@ -194,7 +195,7 @@ func (tree *SwapTree) Check(
 		claim.AddOp(txscript.OP_EQUALVERIFY)
 		claim.AddData(claimPubKey)
 		claim.AddOp(txscript.OP_CHECKSIG)
-	} else if swapType == NormalSwap {
+	case NormalSwap:
 		claim.AddOp(txscript.OP_HASH160)
 		claim.AddData(input.Ripemd160H(preimageHash))
 		claim.AddOp(txscript.OP_EQUALVERIFY)
