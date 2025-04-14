@@ -292,7 +292,7 @@ message SwapInfo {
     repeated ChannelId chan_ids = 14;
     optional string blinding_key = 15;
     int64 created_at = 16;
-    optional uint64 service_fee = 17;
+    optional int64 service_fee = 17;
     optional uint64 onchain_fee = 18;
     // internal wallet which was used to pay the swap
     optional uint64 wallet_id = 20;
@@ -360,7 +360,7 @@ message ReverseSwapInfo {
     optional string blinding_key = 16;
     int64 created_at = 17;
     optional int64 paid_at = 23; // the time when the invoice was paid
-    optional uint64 service_fee = 18;
+    optional int64 service_fee = 18;
     optional uint64 onchain_fee = 19;
     optional uint64 routing_fee_msat = 20;
     bool external_pay = 21;
@@ -449,7 +449,7 @@ message AnySwapInfo {
     // `from_amount` minus the service and network fee.
     uint64 to_amount = 13;
     int64 created_at = 8;
-    optional uint64 service_fee = 9;
+    optional int64 service_fee = 9;
     // inclues the routing fee for reverse swaps
     optional uint64 onchain_fee = 10;
     bool is_auto = 11;
@@ -653,7 +653,7 @@ message ChainSwapInfo {
     string status = 5;
     string preimage = 6;
     bool is_auto = 8;
-    optional uint64 service_fee = 9;
+    optional int64 service_fee = 9;
     double service_fee_percent = 10;
     optional uint64 onchain_fee = 11;
     int64 created_at = 12;

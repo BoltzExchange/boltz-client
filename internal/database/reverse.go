@@ -39,7 +39,7 @@ type ReverseSwap struct {
 	BlindingKey         *btcec.PrivateKey
 	IsAuto              bool
 	RoutingFeeMsat      *uint64
-	ServiceFee          *uint64
+	ServiceFee          *int64
 	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
@@ -70,7 +70,7 @@ type ReverseSwapSerialized struct {
 	BlindingKey         string
 	IsAuto              bool
 	RoutingFeeMsat      *uint64
-	ServiceFee          *uint64
+	ServiceFee          *int64
 	ServiceFeePercent   boltz.Percentage
 	OnchainFee          *uint64
 	ExternalPay         bool
@@ -180,8 +180,8 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	}
 
 	reverseSwap.ServiceFee = parseNullInt(serviceFee)
-	reverseSwap.OnchainFee = parseNullInt(onchainFee)
-	reverseSwap.RoutingFeeMsat = parseNullInt(routingFeeMsat)
+	reverseSwap.OnchainFee = parseNullUint(onchainFee)
+	reverseSwap.RoutingFeeMsat = parseNullUint(routingFeeMsat)
 	reverseSwap.Status = boltz.ParseEvent(status)
 	reverseSwap.ChanIds = chanIds.Value
 
@@ -411,7 +411,7 @@ func (database *Database) SetReverseSwapRoutingFee(reverseSwap *ReverseSwap, fee
 	return err
 }
 
-func (database *Database) SetReverseSwapServiceFee(reverseSwap *ReverseSwap, serviceFee uint64, onchainFee uint64) error {
+func (database *Database) SetReverseSwapServiceFee(reverseSwap *ReverseSwap, serviceFee int64, onchainFee uint64) error {
 	reverseSwap.ServiceFee = &serviceFee
 	reverseSwap.OnchainFee = addToOptional(reverseSwap.OnchainFee, onchainFee)
 

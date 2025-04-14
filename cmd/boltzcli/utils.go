@@ -3,13 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 	"os"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/urfave/cli/v2"
@@ -94,7 +95,7 @@ func printFees(fees *boltzrpc.SwapFees, amount uint64) {
 	if amount == 0 {
 		fmt.Printf("  - Boltz fee: %s%%\n", fmt.Sprint(fees.Percentage))
 	} else {
-		serviceFee := utils.Satoshis(boltz.Percentage(fees.Percentage).Calculate(amount))
+		serviceFee := utils.Satoshis(boltz.CalculatePercentage(boltz.Percentage(fees.Percentage), amount))
 		fmt.Printf("  - Boltz fee (%s%%): %s\n", fmt.Sprint(fees.Percentage), serviceFee)
 	}
 	fmt.Printf("  - Network fee: %s\n", utils.Satoshis(fees.MinerFees))

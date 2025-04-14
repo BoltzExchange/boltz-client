@@ -198,12 +198,17 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			}
 		}
 
-		serviceFee := reverseSwap.ServiceFeePercent.Calculate(reverseSwap.InvoiceAmount)
-		boltzOnchainFee := reverseSwap.InvoiceAmount - reverseSwap.OnchainAmount - serviceFee
+		invoiceAmount := int64(reverseSwap.InvoiceAmount)
+		serviceFee := boltz.CalculatePercentage(reverseSwap.ServiceFeePercent, invoiceAmount)
+		boltzOnchainFee := invoiceAmount - int64(reverseSwap.OnchainAmount) - serviceFee
+		if boltzOnchainFee < 0 {
+			logger.Warnf("Reverse Swap %s has negative boltz onchain fee: %dsat", reverseSwap.Id, boltzOnchainFee)
+			boltzOnchainFee = 0
+		}
 
 		logger.Infof("Reverse Swap service fee: %dsat; boltz onchain fee: %dsat", serviceFee, boltzOnchainFee)
 
-		if err := nursery.database.SetReverseSwapServiceFee(reverseSwap, serviceFee, boltzOnchainFee); err != nil {
+		if err := nursery.database.SetReverseSwapServiceFee(reverseSwap, serviceFee, uint64(boltzOnchainFee)); err != nil {
 			handleError("Could not set reverse swap service fee in database: " + err.Error())
 			return
 		}

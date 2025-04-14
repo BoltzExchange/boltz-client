@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/constraints"
 )
 
 type Api struct {
@@ -97,6 +99,10 @@ func (p *Percentage) UnmarshalJSON(text []byte) error {
 	}
 	*p = Percentage(parsed)
 	return nil
+}
+
+func CalculatePercentage[T constraints.Integer](p Percentage, value T) T {
+	return T(math.Ceil(float64(value) * p.Ratio()))
 }
 
 // Types for Boltz API

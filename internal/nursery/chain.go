@@ -3,6 +3,7 @@ package nursery
 import (
 	"errors"
 	"fmt"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -254,7 +255,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 	}
 
 	if parsedStatus.IsCompletedStatus() {
-		serviceFee := swap.ServiceFeePercent.Calculate(swap.FromData.Amount)
+		serviceFee := boltz.CalculatePercentage(swap.ServiceFeePercent, int64(swap.FromData.Amount))
 
 		logger.Infof("Chain Swap service fee: %dsat onchain fee: %dsat", serviceFee, *swap.OnchainFee)
 

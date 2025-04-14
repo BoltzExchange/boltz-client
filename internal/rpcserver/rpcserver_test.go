@@ -860,7 +860,7 @@ func TestReverseSwap(t *testing.T) {
 					claimFee := getTransactionFee(t, chain, currency, info.ReverseSwap.ClaimTransactionId)
 
 					totalFees := info.ReverseSwap.InvoiceAmount - info.ReverseSwap.OnchainAmount
-					require.Equal(t, int64(totalFees+claimFee), int64(*info.ReverseSwap.ServiceFee+*info.ReverseSwap.OnchainFee))
+					require.Equal(t, int64(totalFees+claimFee), *info.ReverseSwap.ServiceFee+int64(*info.ReverseSwap.OnchainFee))
 
 					if tc.external {
 						require.Equal(t, addr, info.ReverseSwap.ClaimAddress)
@@ -2117,7 +2117,7 @@ func TestSwap(t *testing.T) {
 		require.NoError(t, err)
 
 		excpectedFees := swap.ExpectedAmount - uint64(invoice.MilliSat.ToSatoshis())
-		actualFees := *swap.OnchainFee + *swap.ServiceFee
+		actualFees := int64(*swap.OnchainFee) + *swap.ServiceFee
 		if swap.WalletId != nil {
 			lockupFee := getTransactionFee(t, chain, parseCurrency(swap.Pair.From), swap.LockupTransactionId)
 			require.NoError(t, err)
@@ -2125,7 +2125,7 @@ func TestSwap(t *testing.T) {
 			excpectedFees += lockupFee
 		}
 
-		require.Equal(t, excpectedFees, actualFees)
+		require.Equal(t, int64(excpectedFees), actualFees)
 	}
 
 	t.Run("Recovery", func(t *testing.T) {

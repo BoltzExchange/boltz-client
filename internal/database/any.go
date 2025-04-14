@@ -19,7 +19,7 @@ type AnySwap struct {
 	Status              boltz.SwapUpdateEvent
 	Amount              uint64
 	IsAuto              bool
-	ServiceFee          *uint64
+	ServiceFee          *int64
 	OnchainFee          *uint64
 	CreatedAt           time.Time
 	LockupTransactionid string
@@ -61,7 +61,7 @@ func parseAnySwap(rows *sql.Rows) (*AnySwap, error) {
 	}
 
 	anySwap.ServiceFee = parseNullInt(serviceFee)
-	anySwap.OnchainFee = parseNullInt(onchainFee)
+	anySwap.OnchainFee = parseNullUint(onchainFee)
 	anySwap.Status = boltz.ParseEvent(status)
 	anySwap.CreatedAt = parseTime(createdAt.Int64)
 

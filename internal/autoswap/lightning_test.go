@@ -1,10 +1,11 @@
 package autoswap
 
 import (
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
-	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"testing"
 	"time"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
@@ -59,16 +60,19 @@ func TestBudget(t *testing.T) {
 	fee := func(amount uint64) *uint64 {
 		return &amount
 	}
+	serviceFee := func(amount int64) *int64 {
+		return &amount
+	}
 
 	chainSwaps := []database.ChainSwap{
 		{
 			OnchainFee: fee(10),
-			ServiceFee: fee(15),
+			ServiceFee: serviceFee(15),
 			IsAuto:     true,
 		},
 		{
 			OnchainFee: fee(10),
-			ServiceFee: fee(15),
+			ServiceFee: serviceFee(15),
 			IsAuto:     false,
 		},
 	}
@@ -76,12 +80,12 @@ func TestBudget(t *testing.T) {
 	swaps := []database.Swap{
 		{
 			OnchainFee: fee(10),
-			ServiceFee: fee(15),
+			ServiceFee: serviceFee(15),
 			IsAuto:     true,
 		},
 		{
 			OnchainFee: fee(10),
-			ServiceFee: fee(15),
+			ServiceFee: serviceFee(15),
 			IsAuto:     false,
 		},
 	}
@@ -89,13 +93,13 @@ func TestBudget(t *testing.T) {
 	reverseSwaps := []database.ReverseSwap{
 		{
 			OnchainFee:     fee(10),
-			ServiceFee:     fee(10),
+			ServiceFee:     serviceFee(10),
 			RoutingFeeMsat: fee(5000),
 			IsAuto:         true,
 		},
 		{
 			OnchainFee:     fee(10),
-			ServiceFee:     fee(10),
+			ServiceFee:     serviceFee(10),
 			RoutingFeeMsat: fee(5000),
 			IsAuto:         false,
 		},
@@ -139,7 +143,7 @@ func TestBudget(t *testing.T) {
 				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 					},
 				},
@@ -156,7 +160,7 @@ func TestBudget(t *testing.T) {
 				ReverseSwaps: []database.ReverseSwap{
 					{
 						OnchainFee:     fee(10),
-						ServiceFee:     fee(10),
+						ServiceFee:     serviceFee(10),
 						RoutingFeeMsat: fee(10000),
 						IsAuto:         true,
 					},
@@ -174,7 +178,7 @@ func TestBudget(t *testing.T) {
 				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 					},
 				},
 				ChainSwaps: chainSwaps,
@@ -190,7 +194,7 @@ func TestBudget(t *testing.T) {
 				ReverseSwaps: []database.ReverseSwap{
 					{
 						OnchainFee:     fee(100),
-						ServiceFee:     fee(100),
+						ServiceFee:     serviceFee(100),
 						RoutingFeeMsat: fee(10000),
 						IsAuto:         true,
 					},
@@ -208,13 +212,13 @@ func TestBudget(t *testing.T) {
 				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 						CreatedAt:  test.PastDate(7 * time.Minute),
 					},
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 						CreatedAt:  test.PastDate(2 * time.Minute),
 					},
@@ -222,12 +226,12 @@ func TestBudget(t *testing.T) {
 				ChainSwaps: []database.ChainSwap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 					},
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     false,
 					},
 				},
@@ -247,13 +251,13 @@ func TestBudget(t *testing.T) {
 				Swaps: []database.Swap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 						CreatedAt:  test.PastDate(7 * time.Minute),
 					},
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 						CreatedAt:  test.PastDate(2 * time.Minute),
 					},
@@ -261,13 +265,13 @@ func TestBudget(t *testing.T) {
 				ChainSwaps: []database.ChainSwap{
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 						CreatedAt:  test.PastDate(7 * time.Minute),
 					},
 					{
 						OnchainFee: fee(10),
-						ServiceFee: fee(10),
+						ServiceFee: serviceFee(10),
 						IsAuto:     true,
 						CreatedAt:  test.PastDate(2 * time.Minute),
 					},

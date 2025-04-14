@@ -1,9 +1,10 @@
 package autoswap
 
 import (
+	"math"
+
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
-	"math"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 )
@@ -51,7 +52,7 @@ func check(amount uint64, params checkParams) checks {
 		checks.Dismiss(ReasonAmountBelowMin)
 	}
 
-	maxFee := params.MaxFeePercent.Calculate(adjustedAmount)
+	maxFee := boltz.CalculatePercentage(params.MaxFeePercent, adjustedAmount)
 	if checks.FeeEstimate > maxFee {
 		checks.Dismiss(ReasonMaxFeePercent)
 	}

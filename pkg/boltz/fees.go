@@ -53,7 +53,7 @@ const RelativeFeeTolerance = Percentage(25)
 const AbsoluteFeeToleranceSat = 1500
 
 func checkTolerance(expected uint64, actual uint64) error {
-	tolerance := max(AbsoluteFeeToleranceSat, RelativeFeeTolerance.Calculate(expected))
+	tolerance := max(AbsoluteFeeToleranceSat, CalculatePercentage(RelativeFeeTolerance, expected))
 	if actual > expected+tolerance {
 		return fmt.Errorf("%w: %d > %d+%d", ErrInvalidOnchainFee, actual, expected, tolerance)
 	}
@@ -64,9 +64,9 @@ func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount
 	totalFees := sendAmount - receiveAmount
 	networkFees := totalFees
 	if swapType == NormalSwap {
-		networkFees -= serviceFee.Calculate(receiveAmount)
+		networkFees -= CalculatePercentage(serviceFee, receiveAmount)
 	} else {
-		networkFees -= serviceFee.Calculate(sendAmount)
+		networkFees -= CalculatePercentage(serviceFee, sendAmount)
 	}
 	return checkTolerance(calcNetworkFee(swapType, pair, estimations, includeClaim), networkFees)
 }

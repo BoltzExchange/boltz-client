@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
@@ -298,10 +299,11 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			handleError("Could not decode invoice: " + err.Error())
 			return
 		}
-		serviceFee := swap.ServiceFeePercent.Calculate(decodedInvoice.AmountSat)
-		boltzOnchainFee := int64(swap.ExpectedAmount - decodedInvoice.AmountSat - serviceFee)
+		invoiceAmount := int64(decodedInvoice.AmountSat)
+		serviceFee := boltz.CalculatePercentage(swap.ServiceFeePercent, invoiceAmount)
+		boltzOnchainFee := int64(swap.ExpectedAmount) - invoiceAmount - serviceFee
 		if boltzOnchainFee < 0 {
-			logger.Warnf("Boltz onchain fee seems to be negative")
+			logger.Warnf("Swap %s has negative boltz onchain fee: %dsat", swap.Id, boltzOnchainFee)
 			boltzOnchainFee = 0
 		}
 
