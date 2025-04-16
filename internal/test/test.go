@@ -2,8 +2,6 @@ package test
 
 import (
 	"fmt"
-	"github.com/BoltzExchange/go-electrum/electrum"
-	"golang.org/x/sync/errgroup"
 	"math/rand/v2"
 	"os"
 	"os/exec"
@@ -11,6 +9,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/BoltzExchange/go-electrum/electrum"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 
@@ -41,8 +42,8 @@ func run(cmd string) string {
 
 const walletDataDir = "./test-data"
 
-func ClearWalletDataDir() {
-	os.RemoveAll(walletDataDir)
+func ClearWalletDataDir() error {
+	return os.RemoveAll(walletDataDir)
 }
 
 const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large"
@@ -63,7 +64,9 @@ func WalletCredentials(currency boltz.Currency) *wallet.Credentials {
 
 func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 	InitLogger()
-	ClearWalletDataDir()
+	if err := ClearWalletDataDir(); err != nil {
+		return nil, err
+	}
 	if !wallet.Initialized() {
 		err := wallet.Init(wallet.Config{
 			DataDir:                  walletDataDir,

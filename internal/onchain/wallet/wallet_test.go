@@ -3,6 +3,10 @@
 package wallet_test
 
 import (
+	"os"
+	"testing"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	onchainWallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
@@ -10,9 +14,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
-	"time"
 )
 
 var wallets map[boltz.Currency]*onchainWallet.Wallet
@@ -88,10 +89,9 @@ func TestSend(t *testing.T) {
 						require.Equalf(t, wire.MaxTxInSequenceNum-2, txIn.Sequence, "rbf should be enabled")
 					}
 				} else if liquidTx, ok := tx.(*boltz.LiquidTransaction); ok {
-					for _, txIn := range liquidTx.Transaction.Inputs {
+					for _, txIn := range liquidTx.Inputs {
 						require.Equalf(t, wire.MaxTxInSequenceNum-1, txIn.Sequence, "rbf should be disabled")
 					}
-
 				}
 				test.MineBlock()
 			})

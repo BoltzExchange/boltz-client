@@ -43,7 +43,7 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 	}
 
 	if err := nursery.database.SetChainSwapLockupTransactionId(data, transactionId); err != nil {
-		return errors.New("Could not set lockup transaction in database: " + err.Error())
+		return fmt.Errorf("could not set lockup transaction in database: %w", err)
 	}
 
 	if data == swap.ToData || data.WalletId != nil {
@@ -52,7 +52,7 @@ func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, 
 			return errors.New("could not get lockup transaction fee: " + err.Error())
 		}
 		if err := nursery.database.AddChainSwapOnchainFee(swap, fee); err != nil {
-			return errors.New("could not set lockup transaction fee in database: " + err.Error())
+			return fmt.Errorf("could not set lockup transaction fee in database: %w", err)
 		}
 	}
 
@@ -89,11 +89,11 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 		outputArgs: info,
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.ToData, transactionId); err != nil {
-				return fmt.Errorf("Could not set lockup transaction in database: %w", err)
+				return fmt.Errorf("could not set lockup transaction in database: %w", err)
 			}
 
 			if err := nursery.database.AddChainSwapOnchainFee(swap, fee); err != nil {
-				return fmt.Errorf("Could not set lockup transaction in database: %w", err)
+				return fmt.Errorf("could not set lockup transaction in database: %w", err)
 			}
 
 			return nil

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/vulpemventures/go-elements/address"
@@ -48,7 +49,7 @@ func NewLiquidTxFromHex(hexString string, ourOutputBlindingKey *btcec.PrivateKey
 
 func (transaction *LiquidTransaction) FindVout(network *Network, addressToFind string) (uint32, uint64, error) {
 	if transaction.OurOutputBlindingKey == nil {
-		return 0, 0, errors.New("No blinding key set")
+		return 0, 0, errors.New("no blinding key set")
 	}
 	info, err := address.FromConfidential(addressToFind)
 	if err != nil {
@@ -58,7 +59,7 @@ func (transaction *LiquidTransaction) FindVout(network *Network, addressToFind s
 		if bytes.Equal(info.Script, output.Script) {
 			unblinded, err := confidential.UnblindOutputWithKey(output, transaction.OurOutputBlindingKey.Serialize())
 			if err != nil {
-				return 0, 0, errors.New("Failed to unblind lockup tx: " + err.Error())
+				return 0, 0, errors.New("failed to unblind lockup tx: " + err.Error())
 			}
 			return uint32(vout), unblinded.Value, err
 		}
@@ -152,7 +153,7 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outVa
 
 		if lockupTx.OurOutputBlindingKey != nil {
 			if len(inPrivateBlindingKeys) != i {
-				return nil, errors.New("Inconsistent blinding")
+				return nil, errors.New("inconsistent blinding")
 			}
 			inPrivateBlindingKeys = append(inPrivateBlindingKeys, lockupTx.OurOutputBlindingKey.Serialize())
 		}

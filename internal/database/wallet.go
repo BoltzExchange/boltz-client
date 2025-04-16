@@ -85,7 +85,7 @@ func (d *Database) GetNodeWallet(nodePubkey string) (*Wallet, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query wallets: %w", err)
 	}
-	defer rows.Close()
+	defer closeRows(rows)
 	if rows.Next() {
 		return parseWallet(rows)
 	}
@@ -100,7 +100,7 @@ func (d *Database) QueryWalletCredentials() ([]*onchainWallet.Credentials, error
 	if err != nil {
 		return nil, fmt.Errorf("failed to query wallets: %w", err)
 	}
-	defer rows.Close()
+	defer closeRows(rows)
 
 	var credentials []*onchainWallet.Credentials
 	for rows.Next() {

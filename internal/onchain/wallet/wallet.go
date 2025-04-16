@@ -17,14 +17,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/mitchellh/mapstructure"
 	"slices"
 	"strings"
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
+	"github.com/btcsuite/btcd/wire"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -233,9 +234,10 @@ func withAuthHandler[R any](ret C.int, handler *AuthHandler, result *R) (err err
 		return err
 	}
 
-	if handlerStatus.Status == "error" {
+	switch handlerStatus.Status {
+	case "error":
 		return errors.New(handlerStatus.Error)
-	} else if handlerStatus.Status == "resolve_code" {
+	case "resolve_code":
 		return errors.New("resolve code not implemented")
 	}
 	if result != nil {
@@ -343,29 +345,32 @@ func (wallet *Wallet) Connect() error {
 		"discount_fees": true,
 	}
 	var electrum onchain.ElectrumOptions
-	if wallet.Currency == boltz.CurrencyBtc {
+	switch wallet.Currency {
+	case boltz.CurrencyBtc:
 		electrum = config.Electrum.Btc
-		if config.Network == boltz.MainNet {
+		switch config.Network {
+		case boltz.MainNet:
 			params["name"] = "electrum-mainnet"
-		} else if config.Network == boltz.TestNet {
+		case boltz.TestNet:
 			params["name"] = "electrum-testnet"
-		} else if config.Network == boltz.Regtest {
+		case boltz.Regtest:
 			params["name"] = "electrum-localtest"
-		} else {
+		default:
 			return errors.New("unknown network")
 		}
-	} else if wallet.Currency == boltz.CurrencyLiquid {
+	case boltz.CurrencyLiquid:
 		electrum = config.Electrum.Liquid
-		if config.Network == boltz.MainNet {
+		switch config.Network {
+		case boltz.MainNet:
 			params["name"] = "electrum-liquid"
-		} else if config.Network == boltz.TestNet {
+		case boltz.TestNet:
 			params["name"] = "electrum-testnet-liquid"
-		} else if config.Network == boltz.Regtest {
+		case boltz.Regtest:
 			params["name"] = "electrum-localtest-liquid"
-		} else {
+		default:
 			return errors.New("unknown network")
 		}
-	} else {
+	default:
 		return errors.New("unknown currency")
 	}
 	if electrum.Url != "" {

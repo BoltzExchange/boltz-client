@@ -3,14 +3,15 @@ package autoswap
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"sync"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/autoswaprpc"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 	"google.golang.org/protobuf/proto"
-	"slices"
-	"sync"
-	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
@@ -163,7 +164,7 @@ func (cfg *LightningConfig) Description() string {
 }
 
 func (cfg *LightningConfig) GetPair(swapType boltzrpc.SwapType) *boltzrpc.Pair {
-	currency := cfg.SerializedLnConfig.Currency
+	currency := cfg.Currency
 	result := &boltzrpc.Pair{}
 	switch swapType {
 	case boltzrpc.SwapType_SUBMARINE:
@@ -397,7 +398,8 @@ func (cfg *LightningConfig) execute(recommendation *autoswaprpc.LightningRecomme
 	swap := recommendation.Swap
 	pair := cfg.GetPair(swap.Type)
 	var err error
-	if swap.Type == boltzrpc.SwapType_REVERSE {
+	switch swap.Type {
+	case boltzrpc.SwapType_REVERSE:
 		err = cfg.rpc.CreateAutoReverseSwap(&database.DefaultTenant, &boltzrpc.CreateReverseSwapRequest{
 			Amount:         swap.Amount,
 			Address:        cfg.StaticAddress,
@@ -406,7 +408,7 @@ func (cfg *LightningConfig) execute(recommendation *autoswaprpc.LightningRecomme
 			ChanIds:        chanIds,
 			WalletId:       cfg.walletId(),
 		})
-	} else if swap.Type == boltzrpc.SwapType_SUBMARINE {
+	case boltzrpc.SwapType_SUBMARINE:
 		err = cfg.rpc.CreateAutoSwap(&database.DefaultTenant, &boltzrpc.CreateSwapRequest{
 			Amount: swap.Amount,
 			Pair:   pair,

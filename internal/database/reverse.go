@@ -199,10 +199,6 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	reverseSwap.CreatedAt = parseTime(createdAt.Int64)
 	reverseSwap.PaidAt = parseTime(paidAt.Int64)
 
@@ -227,7 +223,7 @@ func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap,
 		return reverseSwap, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		reverseSwap, err = parseReverseSwap(rows)
@@ -250,7 +246,7 @@ func (database *Database) QueryReverseSwapByClaimTransaction(txId string) (rever
 	if err != nil {
 		return reverseSwap, err
 	}
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		reverseSwap, err = parseReverseSwap(rows)
@@ -291,7 +287,7 @@ func (database *Database) queryReverseSwaps(query string, values ...any) (swaps 
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	for rows.Next() {
 		swap, err := parseReverseSwap(rows)

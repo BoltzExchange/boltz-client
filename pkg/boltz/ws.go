@@ -72,9 +72,10 @@ func (boltz *Websocket) Connect() error {
 	}
 	wsUrl.Path += "/v2/ws"
 
-	if wsUrl.Scheme == "https" {
+	switch wsUrl.Scheme {
+	case "https":
 		wsUrl.Scheme = "wss"
-	} else if wsUrl.Scheme == "http" {
+	case "http":
 		wsUrl.Scheme = "ws"
 	}
 

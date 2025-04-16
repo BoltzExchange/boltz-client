@@ -35,11 +35,12 @@ func SerializeCurrency(currency boltz.Currency) boltzrpc.Currency {
 }
 
 func SerializeSwapType(currency boltz.SwapType) boltzrpc.SwapType {
-	if currency == boltz.NormalSwap {
+	switch currency {
+	case boltz.NormalSwap:
 		return boltzrpc.SwapType_SUBMARINE
-	} else if currency == boltz.ReverseSwap {
+	case boltz.ReverseSwap:
 		return boltzrpc.SwapType_REVERSE
-	} else {
+	default:
 		return boltzrpc.SwapType_CHAIN
 	}
 }

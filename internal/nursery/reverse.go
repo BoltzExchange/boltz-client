@@ -114,7 +114,7 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 		},
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, transactionId, fee); err != nil {
-				return fmt.Errorf("Could not set claim transaction id in database: %w", err)
+				return fmt.Errorf("could not set claim transaction id in database: %w", err)
 			}
 			return nil
 		},

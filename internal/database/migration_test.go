@@ -28,7 +28,7 @@ func TestMigration(t *testing.T) {
 			database := &Database{Path: path, db: db}
 			originalVersion, err := database.queryVersion()
 			require.NoError(t, err)
-			db.Close()
+			require.NoError(t, db.Close())
 
 			database = &Database{Path: path}
 			migrationError := database.Connect()

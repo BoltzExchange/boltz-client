@@ -228,7 +228,7 @@ func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
 		return swap, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		swap, err = parseSwap(rows)
@@ -252,7 +252,7 @@ func (database *Database) QuerySwapByInvoice(invoice string) (swap *Swap, err er
 		return swap, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		swap, err = parseSwap(rows)
@@ -273,7 +273,7 @@ func (database *Database) QuerySwapByPaymentHash(paymentHash []byte) (swap *Swap
 		return swap, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		swap, err = parseSwap(rows)
@@ -294,7 +294,7 @@ func (database *Database) querySwaps(query string, args ...any) (swaps []*Swap, 
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	for rows.Next() {
 		swap, err := parseSwap(rows)

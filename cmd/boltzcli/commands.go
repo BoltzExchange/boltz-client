@@ -7,9 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/client"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
-	"google.golang.org/protobuf/proto"
 	"io"
 	"os"
 	"path"
@@ -17,10 +14,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/client"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
+	"google.golang.org/protobuf/proto"
+
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
@@ -65,7 +67,7 @@ func getInfo(ctx *cli.Context) error {
 	fmt.Println(jsonMarshaler.Format(info))
 
 	if info.AutoSwapStatus == "error" {
-		color.New(color.Bold).Println("Autoswap encountered an error. See autoswap status for details.")
+		colorPrintln(color.New(color.Bold), "Autoswap encountered an error. See autoswap status for details.")
 	}
 
 	return nil
@@ -284,9 +286,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				swap := info.Swap
 				state = swap.State
 				if isGlobal {
-					yellowBold.Printf("Swap %s Status: %s\n", swap.Id, swap.Status)
+					colorPrintln(yellowBold, fmt.Sprintf("Swap %s Status: %s", swap.Id, swap.Status))
 				} else {
-					yellowBold.Printf("Status: %s\n", swap.Status)
+					colorPrintln(yellowBold, fmt.Sprintf("Status: %s", swap.Status))
 				}
 
 				switch info.Swap.State {
@@ -309,9 +311,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				swap := info.ReverseSwap
 				state = swap.State
 				if isGlobal {
-					yellowBold.Printf("Reverse Swap %s Status: %s\n", swap.Id, swap.Status)
+					colorPrintln(yellowBold, fmt.Sprintf("Reverse Swap %s Status: %s", swap.Id, swap.Status))
 				} else {
-					yellowBold.Printf("Status: %s\n", swap.Status)
+					colorPrintln(yellowBold, fmt.Sprintf("Status: %s", swap.Status))
 				}
 
 				switch swap.State {
@@ -339,9 +341,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 				swap := info.ChainSwap
 				state = swap.State
 				if isGlobal {
-					yellowBold.Printf("Chain Swap %s Status: %s\n", swap.Id, swap.Status)
+					colorPrintln(yellowBold, fmt.Sprintf("Chain Swap %s Status: %s", swap.Id, swap.Status))
 				} else {
-					yellowBold.Printf("Status: %s\n", swap.Status)
+					colorPrintln(yellowBold, fmt.Sprintf("Status: %s", swap.Status))
 				}
 
 				switch swap.State {
@@ -553,19 +555,19 @@ func listSwapRecommendations(ctx *cli.Context) error {
 func printStatus(prefix string, status *autoswaprpc.Status) {
 	prefix += ": "
 	if status.Running {
-		color.New(color.FgGreen, color.Bold).Println(prefix + "Running")
+		colorPrintln(color.New(color.FgGreen, color.Bold), prefix+"Running")
 	} else if status.Error != nil {
-		color.New(color.FgRed, color.Bold).Println(prefix + "Failed to start")
+		colorPrintln(color.New(color.FgRed, color.Bold), prefix+"Failed to start")
 		fmt.Println("Error: " + status.GetError())
 	} else {
-		color.New(color.FgYellow, color.Bold).Println(prefix + "Disabled")
+		colorPrintln(color.New(color.FgYellow, color.Bold), prefix+"Disabled")
 	}
 	if status.Description != "" {
 		fmt.Printf("%s\n", status.Description)
 	}
 	if status.Budget != nil {
 		budget := status.Budget
-		yellowBold.Println("\nBudget")
+		colorPrintln(yellowBold, "\nBudget")
 		fmt.Printf(" - From %s until %s\n", parseDate(budget.StartDate), parseDate(budget.EndDate))
 		fmt.Println(" - Total: " + utils.Satoshis(budget.Total))
 		fmt.Println(" - Remaining: " + utils.Satoshis(budget.Remaining))
@@ -575,7 +577,7 @@ func printStatus(prefix string, status *autoswaprpc.Status) {
 }
 
 func printStats(stats *boltzrpc.SwapStats) {
-	yellowBold.Println("Stats")
+	colorPrintln(yellowBold, "Stats")
 	fmt.Printf(" - Successfull Swaps: %d\n", stats.SuccessCount)
 	fmt.Println(" - Amount: " + utils.Satoshis(stats.TotalAmount))
 	fmt.Println(" - Fees: " + utils.Satoshis(stats.TotalFees))
@@ -698,12 +700,13 @@ func autoSwapLightningSetup(ctx *cli.Context) error {
 	}
 	allowReverse := true
 	allowNormal := true
-	if config.SwapType == "both" {
+	switch config.SwapType {
+	case "both":
 		config.SwapType = ""
-	} else if config.SwapType == "reverse" {
+	case "reverse":
 		allowNormal = false
 		config.OutboundBalancePercent = 0
-	} else if config.SwapType == "normal" {
+	case "normal":
 		allowReverse = false
 		config.InboundBalancePercent = 0
 	}
@@ -854,9 +857,10 @@ func askForWallet(ctx *cli.Context, message string, currency *boltzrpc.Currency,
 			return checkWalletName(ctx, ans.(string))
 		}))
 
-		if choice == createNew {
+		switch choice {
+		case createNew:
 			result, err = createWallet(ctx, info)
-		} else if choice == importExisting {
+		case importExisting:
 			result, err = importWallet(ctx, info, allowReadonly)
 		}
 	}
@@ -1400,9 +1404,10 @@ func parseCurrency(currency string) (boltzrpc.Currency, error) {
 		return boltzrpc.Currency_BTC, errors.New("currency is required, allowed values: BTC, LBTC")
 	}
 	upper := strings.ToUpper(currency)
-	if upper == "LBTC" || upper == "L-BTC" || upper == "LIQUID" {
+	switch upper {
+	case "LBTC", "L-BTC", "LIQUID":
 		return boltzrpc.Currency_LBTC, nil
-	} else if upper == "BTC" {
+	case "BTC":
 		return boltzrpc.Currency_BTC, nil
 	}
 	return boltzrpc.Currency_BTC, fmt.Errorf("invalid currency: %s, allowed values: BTC, LBTC", currency)
@@ -1816,11 +1821,12 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 	}
 
 	credentials := &boltzrpc.WalletCredentials{}
-	if importType == "mnemonic" {
+	switch importType {
+	case "mnemonic":
 		credentials.Mnemonic = &mnemonic
-	} else if importType == "xpub" {
+	case "xpub":
 		credentials.Xpub = &mnemonic
-	} else if importType == "core descriptor" {
+	case "core descriptor":
 		credentials.CoreDescriptor = &mnemonic
 	}
 
@@ -2123,7 +2129,11 @@ var shellCompletionsCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				logger.Errorf("Error closing %s file: %v", rc, err)
+			}
+		}()
 		content := fmt.Sprintf("\n# load completions for boltzcli\nPROG=boltzcli source %s", scriptPath)
 		if _, err := file.WriteString(content); err != nil {
 			return err

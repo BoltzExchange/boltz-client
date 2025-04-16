@@ -53,7 +53,7 @@ func (database *Database) QueryMacaroon(id []byte) (macaroon *Macaroon, err erro
 		return macaroon, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		macaroon, err = parseMacaroon(rows)

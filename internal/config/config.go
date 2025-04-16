@@ -178,7 +178,7 @@ func LoadConfig(dataDir string) (*Config, error) {
 		_, err := toml.DecodeFile(cfg.ConfigFile, &cfg)
 
 		if err != nil {
-			return nil, fmt.Errorf("Could not read config file: %v", err)
+			return nil, fmt.Errorf("could not read config file: %v", err)
 		}
 	}
 

@@ -77,13 +77,14 @@ func (database *Database) GetAnySwap(id string) (*AnySwap, error) {
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	if rows.Next() {
 		return parseAnySwap(rows)
 	}
 	return nil, fmt.Errorf("could not find swap %s", id)
 }
+
 func (database *Database) queryAllSwaps(query string, values ...any) (swaps []*AnySwap, err error) {
 	database.lock.RLock()
 	defer database.lock.RUnlock()
@@ -93,7 +94,7 @@ func (database *Database) queryAllSwaps(query string, values ...any) (swaps []*A
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer closeRows(rows)
 
 	for rows.Next() {
 		swap, err := parseAnySwap(rows)

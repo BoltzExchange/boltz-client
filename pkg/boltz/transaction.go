@@ -3,9 +3,10 @@ package boltz
 import (
 	"errors"
 	"fmt"
+	"math"
+
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/txscript"
-	"math"
 )
 
 const sigHashType = txscript.SigHashDefault
@@ -166,11 +167,12 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 				Preimage:    output.Preimage,
 			}
 			var signature *PartialSignature
-			if output.SwapType == ReverseSwap {
+			switch output.SwapType {
+			case ReverseSwap:
 				signature, err = boltzApi.ClaimReverseSwap(output.SwapId, claimRequest)
-			} else if output.SwapType == NormalSwap {
+			case NormalSwap:
 				signature, err = boltzApi.RefundSwap(output.SwapId, refundRequest)
-			} else {
+			default:
 				signature, err = func() (*PartialSignature, error) {
 					if output.IsRefund() {
 						return boltzApi.RefundChainSwap(output.SwapId, refundRequest)

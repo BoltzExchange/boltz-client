@@ -63,7 +63,7 @@ func (transaction *BtcTransaction) FindVout(network *Network, addressToFind stri
 			}
 		}
 	}
-	return 0, 0, errors.New("Could not find address in transaction")
+	return 0, 0, errors.New("could not find address in transaction")
 }
 
 func (transaction *BtcTransaction) VoutValue(vout uint32) (uint64, error) {
