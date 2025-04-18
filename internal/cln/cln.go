@@ -249,13 +249,6 @@ func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, tim
 	}, nil
 }
 
-func (c *Cln) ConnectPeer(uri string) error {
-	_, err := c.Client.ConnectPeer(context.Background(), &protos.ConnectRequest{
-		Id: uri,
-	})
-	return err
-}
-
 func (c *Cln) NewAddress() (string, error) {
 	res, err := c.Client.NewAddr(context.Background(), &protos.NewaddrRequest{
 		//Addresstype: &protos.NewaddrRequest_BECH32,
