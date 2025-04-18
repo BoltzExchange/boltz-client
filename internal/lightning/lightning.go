@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 )
@@ -96,8 +97,6 @@ type LightningNode interface {
 	CheckInvoicePaid(paymentHash []byte) (bool, error)
 	ListChannels() ([]*LightningChannel, error)
 	//GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error)
-
-	ConnectPeer(uri string) error
 
 	SetupWallet(info onchain.WalletInfo)
 }

@@ -160,22 +160,6 @@ func (lnd *LND) GetBlockHeight() (uint32, error) {
 	return info.BlockHeight, nil
 }
 
-func (lnd *LND) ConnectPeer(uri string) error {
-	uriParts := strings.Split(uri, "@")
-
-	if len(uriParts) != 2 {
-		return errors.New("could not parse URI")
-	}
-	_, err := lnd.client.ConnectPeer(lnd.ctx, &lnrpc.ConnectPeerRequest{
-		Perm: true,
-		Addr: &lnrpc.LightningAddress{
-			Pubkey: uriParts[0],
-			Host:   uriParts[1],
-		},
-	})
-	return err
-}
-
 func (lnd *LND) PendingChannels() (*lnrpc.PendingChannelsResponse, error) {
 	return lnd.client.PendingChannels(lnd.ctx, &lnrpc.PendingChannelsRequest{})
 }

@@ -193,12 +193,6 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	autoConfPath := path.Join(cfg.DataDir, "autoswap.toml")
 	server.swapper.Init(server.database, server.onchain, autoConfPath, server)
 
-	if server.lightning != nil {
-		if err := lightning.ConnectBoltz(server.lightning, server.boltz); err != nil {
-			logger.Warn("Could not connect to to boltz node: " + err.Error())
-		}
-	}
-
 	if server.maxZeroConfAmount == nil {
 		pair, err := server.getSubmarinePair(&boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC})
 		if err != nil {
