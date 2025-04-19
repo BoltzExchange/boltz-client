@@ -1,6 +1,6 @@
 PKG := github.com/BoltzExchange/boltz-client/v2
 VERSION := 2.5.1
-GDK_VERSION = 0.74.2
+GDK_VERSION = 0.75.1
 GO_VERSION := 1.24.2
 RUST_VERSION := 1.82.0
 
@@ -166,14 +166,11 @@ binaries:
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
 
 gdk-source: submodules
-	cd gdk && git checkout release_$(GDK_VERSION) && git apply ../gdk.patch
+	cd gdk && git checkout release_$(GDK_VERSION)
 	cp ./gdk/include/gdk.h ./internal/onchain/wallet/include/gdk.h
 
-build-gdk-builder: gdk-source
-	docker buildx build --push -t boltz/gdk-ubuntu-builder:latest -t boltz/gdk-ubuntu-builder:$(GDK_VERSION) $(DOCKER_ARGS) -f ./gdk/docker/ubuntu/Dockerfile ./gdk
-
-GDK_AMD64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:3470ad91a2bdc42dd7d6210a9323f3c9d59aeb93843c23fe6a17dc8eb8ac99f7
-GDK_ARM64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:0b2c672edaf8dea27041c235170f6b71d8651a09c754e10f00bb989e1e2770ad
+GDK_AMD64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:0faa0e15127f3a2a025c2c7e92764c617c24417c40a91f950e777fb99620aa9a
+GDK_ARM64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:66a546eff8c28be6af96a26791bf34306710be30c20ff1d7447d66521a5defcd
 
 build-gdk:
 	docker buildx build --push -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile $(DOCKER_ARGS) \
