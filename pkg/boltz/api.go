@@ -115,6 +115,7 @@ type SubmarinePair struct {
 	Rate   float64 `json:"rate"`
 	Limits struct {
 		Minimal               uint64 `json:"minimal"`
+		MinimalBatched        uint64 `json:"minimalBatched"`
 		Maximal               uint64 `json:"maximal"`
 		MaximalZeroConfAmount uint64 `json:"maximalZeroConf"`
 	} `json:"limits"`

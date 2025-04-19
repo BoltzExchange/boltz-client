@@ -177,6 +177,10 @@ func serializeChainSwapData(chainSwap *database.ChainSwapData) *boltzrpc.ChainSw
 }
 
 func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair) *boltzrpc.PairInfo {
+	min := submarinePair.Limits.MinimalBatched
+	if min == 0 {
+		min = submarinePair.Limits.Minimal
+	}
 	return &boltzrpc.PairInfo{
 		Pair: serializePair(pair),
 		Hash: submarinePair.Hash,
@@ -185,7 +189,7 @@ func serializeSubmarinePair(pair boltz.Pair, submarinePair *boltz.SubmarinePair)
 			MinerFees:  submarinePair.Fees.MinerFees,
 		},
 		Limits: &boltzrpc.Limits{
-			Minimal:               submarinePair.Limits.Minimal,
+			Minimal:               min,
 			Maximal:               submarinePair.Limits.Maximal,
 			MaximalZeroConfAmount: submarinePair.Limits.MaximalZeroConfAmount,
 		},

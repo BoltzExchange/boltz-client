@@ -194,6 +194,10 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 	}
 
+	// batchOnly indicates if a swap should skip the cooperative claim attempt
+	// and only be processed through batching due to its small amount
+	batchOnly := false
+
 	switch parsedStatus {
 	case boltz.TransactionMempool:
 		fallthrough
@@ -280,8 +284,28 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		logger.Infof("Swap %s succeeded", swap.Id)
 
 		if parsedStatus == boltz.TransactionClaimPending {
-			if err := nursery.cooperativeSwapClaim(swap, status); err != nil {
-				logger.Warnf("Could not claim swap %s cooperatively: %s", swap.Id, err)
+			submarinePairs, err := nursery.boltz.GetSubmarinePairs()
+			if err != nil {
+				handleError("Could not get submarine pairs: " + err.Error())
+				return
+			}
+			submarinePair, err := boltz.FindPair(swap.Pair, submarinePairs)
+			if err != nil {
+				handleError("Could not find submarine pair: " + err.Error())
+				return
+			}
+
+			decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
+			if err != nil {
+				handleError("Could not decode invoice: " + err.Error())
+				return
+			}
+			batchOnly = decodedInvoice.AmountSat < submarinePair.Limits.Minimal
+
+			if !batchOnly {
+				if err := nursery.cooperativeSwapClaim(swap, status); err != nil {
+					logger.Warnf("Could not claim swap %s cooperatively: %s", swap.Id, err)
+				}
 			}
 		}
 	}
@@ -293,7 +317,9 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		return
 	}
 
-	if parsedStatus.IsCompletedStatus() {
+	// dont wait for boltz to claim the swap in case of batchOnly
+	// in which case it will stay at transaction.claimed for longer
+	if parsedStatus.IsCompletedStatus() || batchOnly {
 		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 		if err != nil {
 			handleError("Could not decode invoice: " + err.Error())
@@ -331,7 +357,6 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
 			return
 		}
-		return
 	}
 	nursery.sendSwapUpdate(*swap)
 }
