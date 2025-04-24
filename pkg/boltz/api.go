@@ -105,6 +105,11 @@ func CalculatePercentage[T constraints.Integer](p Percentage, value T) T {
 	return T(math.Ceil(float64(value) * p.Ratio()))
 }
 
+type ExtraFees struct {
+	Id         string     `json:"id"`
+	Percentage Percentage `json:"percentage"`
+}
+
 // Types for Boltz API
 type GetVersionResponse struct {
 	Version string `json:"version"`
@@ -258,13 +263,14 @@ type BroadcastTransactionResponse struct {
 }
 
 type CreateSwapRequest struct {
-	From            Currency  `json:"from"`
-	To              Currency  `json:"to"`
-	PairHash        string    `json:"pairHash,omitempty"`
-	RefundPublicKey HexString `json:"refundPublicKey"`
-	Invoice         string    `json:"invoice,omitempty"`
-	ReferralId      string    `json:"referralId"`
-	PreimageHash    HexString `json:"preimageHash,omitempty"`
+	From            Currency   `json:"from"`
+	To              Currency   `json:"to"`
+	PairHash        string     `json:"pairHash,omitempty"`
+	RefundPublicKey HexString  `json:"refundPublicKey"`
+	Invoice         string     `json:"invoice,omitempty"`
+	ReferralId      string     `json:"referralId"`
+	PreimageHash    HexString  `json:"preimageHash,omitempty"`
+	ExtraFees       *ExtraFees `json:"extraFees,omitempty"`
 
 	Error string `json:"error"`
 }
@@ -328,19 +334,20 @@ type SetInvoiceResponse struct {
 }
 
 type CreateReverseSwapRequest struct {
-	From             Currency  `json:"from"`
-	To               Currency  `json:"to"`
-	PreimageHash     HexString `json:"preimageHash"`
-	ClaimPublicKey   HexString `json:"claimPublicKey"`
-	InvoiceAmount    uint64    `json:"invoiceAmount,omitempty"`
-	OnchainAmount    uint64    `json:"onchainAmount,omitempty"`
-	PairHash         string    `json:"pairHash,omitempty"`
-	ReferralId       string    `json:"referralId"`
-	Address          string    `json:"address,omitempty"`
-	AddressSignature HexString `json:"addressSignature,omitempty"`
-	Description      string    `json:"description,omitempty"`
-	DescriptionHash  HexString `json:"descriptionHash,omitempty"`
-	InvoiceExpiry    uint64    `json:"invoiceExpiry,omitempty"`
+	From             Currency   `json:"from"`
+	To               Currency   `json:"to"`
+	PreimageHash     HexString  `json:"preimageHash"`
+	ClaimPublicKey   HexString  `json:"claimPublicKey"`
+	InvoiceAmount    uint64     `json:"invoiceAmount,omitempty"`
+	OnchainAmount    uint64     `json:"onchainAmount,omitempty"`
+	PairHash         string     `json:"pairHash,omitempty"`
+	ReferralId       string     `json:"referralId"`
+	Address          string     `json:"address,omitempty"`
+	AddressSignature HexString  `json:"addressSignature,omitempty"`
+	Description      string     `json:"description,omitempty"`
+	DescriptionHash  HexString  `json:"descriptionHash,omitempty"`
+	InvoiceExpiry    uint64     `json:"invoiceExpiry,omitempty"`
+	ExtraFees        *ExtraFees `json:"extraFees,omitempty"`
 
 	Error string `json:"error"`
 }
@@ -365,15 +372,16 @@ type ClaimRequest struct {
 }
 
 type ChainRequest struct {
-	From             Currency  `json:"from"`
-	To               Currency  `json:"to"`
-	PreimageHash     HexString `json:"preimageHash"`
-	ClaimPublicKey   HexString `json:"claimPublicKey,omitempty"`
-	RefundPublicKey  HexString `json:"refundPublicKey,omitempty"`
-	UserLockAmount   uint64    `json:"userLockAmount,omitempty"`
-	ServerLockAmount uint64    `json:"serverLockAmount,omitempty"`
-	PairHash         string    `json:"pairHash,omitempty"`
-	ReferralId       string    `json:"referralId,omitempty"`
+	From             Currency   `json:"from"`
+	To               Currency   `json:"to"`
+	PreimageHash     HexString  `json:"preimageHash"`
+	ClaimPublicKey   HexString  `json:"claimPublicKey,omitempty"`
+	RefundPublicKey  HexString  `json:"refundPublicKey,omitempty"`
+	UserLockAmount   uint64     `json:"userLockAmount,omitempty"`
+	ServerLockAmount uint64     `json:"serverLockAmount,omitempty"`
+	PairHash         string     `json:"pairHash,omitempty"`
+	ReferralId       string     `json:"referralId,omitempty"`
+	ExtraFees        *ExtraFees `json:"extraFees,omitempty"`
 }
 
 type ChainResponse struct {
