@@ -45,12 +45,29 @@ func reverseSwap() error {
 
 	boltzApi := &boltz.Api{URL: endpoint}
 
+	reversePairs, err := boltzApi.GetReversePairs()
+	if err != nil {
+		return fmt.Errorf("could not get reverse pairs: %s", err)
+	}
+
+	pair := boltz.Pair{From: boltz.CurrencyBtc, To: toCurrency}
+	pairInfo, err := boltz.FindPair(pair, reversePairs)
+	if err != nil {
+		return fmt.Errorf("could not find reverse pair: %s", err)
+	}
+
+	fees := pairInfo.Fees
+	serviceFee := boltz.Percentage(fees.Percentage)
+	fmt.Printf("Service Fee: %dsat\n", boltz.CalculatePercentage(serviceFee, invoiceAmount))
+	fmt.Printf("Network Fee: %dsat\n", fees.MinerFees.Lockup+fees.MinerFees.Claim)
+
 	swap, err := boltzApi.CreateReverseSwap(boltz.CreateReverseSwapRequest{
 		From:           boltz.CurrencyBtc,
 		To:             toCurrency,
 		ClaimPublicKey: ourKeys.PubKey().SerializeCompressed(),
 		PreimageHash:   preimageHash[:],
 		InvoiceAmount:  invoiceAmount,
+		PairHash:       pairInfo.Hash,
 	})
 	if err != nil {
 		return fmt.Errorf("Could not create swap: %s", err)

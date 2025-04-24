@@ -5,8 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec/v2"
 	"os"
+
+	"github.com/btcsuite/btcd/btcec/v2"
 
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/lightningnetwork/lnd/zpay32"
@@ -35,11 +36,33 @@ func submarineSwap() error {
 
 	boltzApi := &boltz.Api{URL: endpoint}
 
+	submarinePairs, err := boltzApi.GetSubmarinePairs()
+	if err != nil {
+		return fmt.Errorf("Could not get submarine pairs: %s", err)
+	}
+
+	pair, err := boltz.FindPair(boltz.Pair{From: boltz.CurrencyBtc, To: boltz.CurrencyBtc}, submarinePairs)
+	if err != nil {
+		return fmt.Errorf("Could not find submarine pair: %s", err)
+	}
+
+	decodedInvoice, err := zpay32.Decode(invoice, network.Btc)
+	if err != nil {
+		return fmt.Errorf("could not decode invoice: %s", err)
+	}
+	invoiceAmount := *decodedInvoice.MilliSat / 1000
+
+	fees := pair.Fees
+	serviceFee := boltz.Percentage(fees.Percentage)
+	fmt.Printf("Service Fee: %dsat\n", boltz.CalculatePercentage(serviceFee, invoiceAmount))
+	fmt.Printf("Network Fee: %dsat\n", fees.MinerFees)
+
 	swap, err := boltzApi.CreateSwap(boltz.CreateSwapRequest{
 		From:            boltz.CurrencyBtc,
 		To:              boltz.CurrencyBtc,
 		RefundPublicKey: keys.PubKey().SerializeCompressed(),
 		Invoice:         invoice,
+		PairHash:        pair.Hash,
 	})
 	if err != nil {
 		return fmt.Errorf("Could not create swap: %s", err)
@@ -53,11 +76,6 @@ func submarineSwap() error {
 	tree := swap.SwapTree.Deserialize()
 	if err := tree.Init(boltz.CurrencyBtc, false, keys, boltzPubKey); err != nil {
 		return err
-	}
-
-	decodedInvoice, err := zpay32.Decode(invoice, network.Btc)
-	if err != nil {
-		return fmt.Errorf("could not decode swap invoice: %s", err)
 	}
 
 	// Check the scripts of the Taptree to make sure Boltz is not cheating
