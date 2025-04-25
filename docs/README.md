@@ -5,23 +5,22 @@ coverY: 0
 
 # 👋 Introduction
 
-Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or [LND](https://github.com/lightningnetwork/lnd/) nodes and allows for fully unattended channel rebalancing using [Boltz API](https://docs.boltz.exchange/v/api). It is composed of `boltzcli` and `boltzd`.
+Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or [LND](https://github.com/lightningnetwork/lnd/) nodes and allows for fully unattended channel rebalancing or accepting Lightning payments without running a node, using [Boltz API](https://docs.boltz.exchange/v/api). It is composed of `boltzcli` and `boltzd`.
 
 Design principles:
 
-* CLI-first, fine-grained control and enhanced setup UX via `boltzcli`
-* CLN-first: first-class citizen support
-* [Liquid](https://liquid.net/)-first: optimized for Lightning -> Liquid -> mainchain swaps
-* Create or import Liquid/mainchain wallets, swap to read-only wallets
-* Fully backwards compatible with last [boltz-lnd release](https://github.com/BoltzExchange/boltz-client/releases/tag/v1.2.7)
+* CLI-first: fine-grained control and enhanced setup UX via `boltzcli`
+* CLN-first: first-class citizen support for [CLN](https://github.com/ElementsProject/lightning) in addition to [LND](https://github.com/lightningnetwork/lnd)
+* [Liquid](https://liquid.net/)-first: leverages fee-efficient Lightning -> Liquid swaps in addition to Bitcoin swaps
+* Self-contained: create/import Liquid and mainchain wallets, swap to read-only wallets
 
-It consists of two main components:
+## Main Components
 
-## `boltzd`
+### `boltzd`
 
-`boltzd` is a daemon that should run alongside of your lightning node. It connects to your lightning node and the Boltz API to create and execute Swaps.
+`boltzd` is a daemon that should run alongside of your lightning node. It connects to your lightning node and the Boltz API to create and execute swaps.
 
-## `boltzcli`
+### `boltzcli`
 
 `boltzcli` is the CLI tool to interact with the gRPC interface that `boltzd` exposes.
 
