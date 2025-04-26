@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
-	"strings"
 )
 
 const statsQuery = `
@@ -33,7 +34,7 @@ func (database *Database) QueryStats(args SwapQuery, swapTypes []boltz.SwapType)
 		return nil, err
 	}
 	if stats.SuccessCount != 0 {
-		stats.AvgFees = stats.TotalFees / stats.SuccessCount
+		stats.AvgFees = stats.TotalFees / int64(stats.SuccessCount)
 		stats.AvgAmount = stats.TotalAmount / stats.SuccessCount
 	}
 	return &stats, nil
