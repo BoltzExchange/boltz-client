@@ -693,9 +693,9 @@ message LightningChannel {
 }
 
 message SwapStats {
-    uint64 total_fees = 1;
+    int64 total_fees = 1;
     uint64 total_amount = 2;
-    uint64 avg_fees = 3;
+    int64 avg_fees = 3;
     uint64 avg_amount = 4;
     uint64 count = 5;
     uint64 success_count = 6;

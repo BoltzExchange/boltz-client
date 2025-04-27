@@ -86,6 +86,44 @@ func TestStats(t *testing.T) {
 			},
 		},
 		{
+			name: "Negative fees",
+			fakeSwaps: test.FakeSwaps{
+				Swaps: []database.Swap{
+					{
+						ExpectedAmount: 100,
+						State:          boltzrpc.SwapState_SUCCESSFUL,
+						OnchainFee:     fee(10),
+						ServiceFee:     serviceFee(-15),
+						IsAuto:         false,
+					},
+				},
+				ReverseSwaps: []database.ReverseSwap{
+					{
+						InvoiceAmount: 100,
+						State:         boltzrpc.SwapState_SUCCESSFUL,
+						OnchainFee:    fee(10),
+						ServiceFee:    serviceFee(-15),
+						IsAuto:        false,
+					},
+				},
+				ChainSwaps: []database.ChainSwap{
+					{
+						FromData:   &database.ChainSwapData{Amount: 100},
+						State:      boltzrpc.SwapState_SUCCESSFUL,
+						OnchainFee: fee(10),
+						ServiceFee: serviceFee(-15),
+						IsAuto:     false,
+					},
+				},
+			},
+			expected: &boltzrpc.SwapStats{
+				TotalFees:    -15,
+				TotalAmount:  300,
+				SuccessCount: 3,
+				Count:        3,
+			},
+		},
+		{
 			name: "Past",
 			fakeSwaps: test.FakeSwaps{
 				Swaps: []database.Swap{

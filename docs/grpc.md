@@ -1350,9 +1350,9 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `total_fees` | [`uint64`](#uint64) |  |  |
+| `total_fees` | [`int64`](#int64) |  |  |
 | `total_amount` | [`uint64`](#uint64) |  |  |
-| `avg_fees` | [`uint64`](#uint64) |  |  |
+| `avg_fees` | [`int64`](#int64) |  |  |
 | `avg_amount` | [`uint64`](#uint64) |  |  |
 | `count` | [`uint64`](#uint64) |  |  |
 | `success_count` | [`uint64`](#uint64) |  |  |
