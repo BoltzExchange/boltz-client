@@ -2,6 +2,8 @@ github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/BoltzExchange/boltz-client/v2 v2.3.5 h1:39l9Ej/+UhrSn3MQeFrITXnrlsl82Qh5ObsSmdA440s=
 github.com/BoltzExchange/boltz-client/v2 v2.3.5/go.mod h1:z7AUZhrswQnxyP6U4ARU9n+1w9XFh0nQ5q8R5I5vcbk=
+github.com/BoltzExchange/boltz-client/v2 v2.5.1 h1:0auVtSFjgiSWOcqu04KIoS/oUlMCKOeYknztqCI5o94=
+github.com/BoltzExchange/boltz-client/v2 v2.5.1/go.mod h1:n/WJOFJoSA/FJQ2f7pnYPiI61LQ0cxczekxrPgCz2HY=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEVMRuU21PR1EtLVZJmdB18Gu3Rw=
@@ -27,6 +29,8 @@ github.com/btcsuite/btcd/btcutil v1.1.5 h1:+wER79R5670vs/ZusMTF1yTcRYE5GUsFbdjdi
 github.com/btcsuite/btcd/btcutil v1.1.5/go.mod h1:PSZZ4UitpLBWzxGd5VGOrLnmOjtPP/a6HaFo12zMs00=
 github.com/btcsuite/btcd/btcutil/psbt v1.1.8 h1:4voqtT8UppT7nmKQkXV+T9K8UyQjKOn2z/ycpmJK8wg=
 github.com/btcsuite/btcd/btcutil/psbt v1.1.8/go.mod h1:kA6FLH/JfUx++j9pYU0pyu+Z8XGBQuuTmuKYUf6q7/U=
+github.com/btcsuite/btcd/btcutil/psbt v1.1.9 h1:UmfOIiWMZcVMOLaN+lxbbLSuoINGS1WmK1TZNI0b4yk=
+github.com/btcsuite/btcd/btcutil/psbt v1.1.9/go.mod h1:ehBEvU91lxSlXtA+zZz3iFYx7Yq9eqnKx4/kSrnsvMY=
 github.com/btcsuite/btcd/chaincfg/chainhash v1.0.0/go.mod h1:7SFka0XMvUgj3hfZtydOrQY2mwhPclbT2snogU7SQQc=
 github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1/go.mod h1:7SFka0XMvUgj3hfZtydOrQY2mwhPclbT2snogU7SQQc=
 github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 h1:59Kx4K6lzOW5w6nFlA0v5+lk/6sjybR934QNHSJZPTQ=
@@ -297,6 +301,8 @@ github.com/vulpemventures/fastsha256 v0.0.0-20160815193821-637e65642941 h1:CTcw8
 github.com/vulpemventures/fastsha256 v0.0.0-20160815193821-637e65642941/go.mod h1:GXBJykxW2kUcktGdsgyay7uwwWvkljASfljNcT0mbh8=
 github.com/vulpemventures/go-elements v0.5.3 h1:zaC/ynHFwCAzFSOMfzb6BcbD6FXASppSiGMycc95WVA=
 github.com/vulpemventures/go-elements v0.5.3/go.mod h1:aBGuWXHaiAIUIcwqCdtEh2iQ3kJjKwHU9ywvhlcRSeU=
+github.com/vulpemventures/go-elements v0.5.5 h1:oN76qcussRvVn8jkwaCI9+thmP9UeXwrzghAoWFzLAg=
+github.com/vulpemventures/go-elements v0.5.5/go.mod h1:Tvhb+rZWv3lxoI5CdK03J3V+e2QVr/7UAnCYILxFSq4=
 github.com/vulpemventures/go-secp256k1-zkp v1.1.6 h1:BmsrmXRLUibwa75Qkk8yELjpzCzlAjYFGLiLiOdq7Xo=
 github.com/vulpemventures/go-secp256k1-zkp v1.1.6/go.mod h1:zo7CpgkuPgoe7fAV+inyxsI9IhGmcoFgyD8nqZaPSOM=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f h1:J9EGpcZtP0E/raorCMxlFGSTBrsSlaDGf3jU/qvAE2c=
@@ -374,6 +380,8 @@ golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.10.0 h1:3NQrjDixjgGwUOCaF8w2+VYHv0Ve/vGYSbdkTa98gmQ=
 golang.org/x/sync v0.10.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
+golang.org/x/sync v0.11.0 h1:GGz8+XQP4FvTTrjZPzNKTMFtSXH80RAzG+5ghFPgK9w=
+golang.org/x/sync v0.11.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
