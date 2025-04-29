@@ -194,8 +194,8 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 	}
 
-	// batchOnly indicates if a swap should skip the cooperative claim attempt
-	// and only be processed through batching due to its small amount
+	// batchOnly indicates whether the backend is willing to do a 
+	// cooperative claim transaction or will batch claim
 	batchOnly := false
 
 	switch parsedStatus {
@@ -317,8 +317,8 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		return
 	}
 
-	// dont wait for boltz to claim the swap in case of batchOnly
-	// in which case it will stay at transaction.claimed for longer
+	// Don't wait for boltz to claim the swap in case of batchOnly
+	// in which case it will stay at transaction.claim.pending for longer
 	if parsedStatus.IsCompletedStatus() || batchOnly {
 		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 		if err != nil {
