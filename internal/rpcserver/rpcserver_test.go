@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math"
 	"math/rand/v2"
 	"net"
 	"os"
@@ -2326,12 +2325,8 @@ func TestSwap(t *testing.T) {
 
 					t.Run("Normal", func(t *testing.T) {
 						t.Run("Minimal", func(t *testing.T) {
-							fees := submarinePair.Fees
-							networkFees := math.Ceil(fees.Percentage * float64(submarinePair.Limits.Minimal) / 100)
-							onchainAmount := submarinePair.Limits.Minimal + uint64(networkFees) + fees.MinerFees
-
 							swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
-								Amount:           onchainAmount,
+								Amount:           submarinePair.Limits.Minimal,
 								Pair:             pair,
 								SendFromInternal: true,
 							})
