@@ -2317,10 +2317,27 @@ func TestSwap(t *testing.T) {
 					defer stop()
 					fundedWallet(t, admin, tc.from)
 
+					submarinePair, err := admin.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
+					require.NoError(t, err)
+
 					_, write, _ := createTenant(t, admin, "test")
 					tenant := client.NewBoltzClient(write)
 
 					t.Run("Normal", func(t *testing.T) {
+						t.Run("Minimal", func(t *testing.T) {
+							swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Amount:           submarinePair.Limits.Minimal,
+								Pair:             pair,
+								SendFromInternal: true,
+							})
+							require.NoError(t, err)
+
+							stream, _ := swapStream(t, admin, swap.Id)
+							stream(boltzrpc.SwapState_PENDING)
+							test.MineBlock()
+							stream(boltzrpc.SwapState_SUCCESSFUL)
+
+						})
 						t.Run("EnoughBalance", func(t *testing.T) {
 
 							swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
@@ -2371,10 +2388,6 @@ func TestSwap(t *testing.T) {
 
 					t.Run("Refund", func(t *testing.T) {
 						cli := tc.cli
-
-						submarinePair, err := admin.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
-
-						require.NoError(t, err)
 
 						createFailed := func(t *testing.T, refundAddress string) (streamFunc, streamStatusFunc) {
 							amount := submarinePair.Limits.Minimal + 100

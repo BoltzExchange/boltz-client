@@ -304,7 +304,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 					fmt.Printf("Transaction ID: %s\nAmount: %dsat\n", info.Swap.LockupTransactionId, info.Swap.ExpectedAmount)
 				case boltz.InvoiceSet:
 					fmt.Printf("Invoice: %s\n", info.Swap.Invoice)
-				case boltz.TransactionClaimed:
+				}
+
+				if swap.State == boltzrpc.SwapState_SUCCESSFUL {
 					fmt.Printf("Paid %d sat onchain fee and %d sat boltz fee\n", *info.Swap.OnchainFee, *info.Swap.ServiceFee)
 				}
 			} else if info.ReverseSwap != nil {
