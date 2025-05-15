@@ -79,7 +79,7 @@ func reverseSwap() error {
 	}
 
 	tree := swap.SwapTree.Deserialize()
-	if err := tree.Init(toCurrency, false, ourKeys, boltzPubKey); err != nil {
+	if err := tree.Init(toCurrency, true, ourKeys, boltzPubKey); err != nil {
 		return err
 	}
 
