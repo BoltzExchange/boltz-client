@@ -20,6 +20,9 @@ node = ""
 # Whether to use Boltz Pro fee rates
 pro = false
 
+# The daemon can also operate without a lightning node
+# standalone = true
+
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network your node is on
 # This value is used to overwrite that

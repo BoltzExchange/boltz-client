@@ -86,6 +86,10 @@ The daemon connects to CLN through [gRPC](https://docs.corelightning.org/docs/gr
 You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory as well.
 You might have to set the `cln.servername` option as well, if you are using a custom certificate.
 
+#### Standalone
+
+The daemon can also operate without a lightning node. In this case, you need to specify the `--standalone` CLI flag or set the `standalone` option to `true` in the configuration file.
+
 ### CLI
 
 We recommend running `boltzcli completions` to setup autocompletions for the CLI (only supported for zsh and bash).
