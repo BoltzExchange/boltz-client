@@ -3,6 +3,7 @@
 * [👋 Introduction](README.md)
 * [💰 Wallets](wallets.md)
 * [🔁 Autoswap](autoswap.md)
+* [🏅 Boltz Pro](boltz-pro.md)
 * [🎛️ Configuration](configuration.md)
 * [🤖 gRPC API](grpc.md)
 * [🤖 REST API](https://github.com/BoltzExchange/boltz-client/blob/master/pkg/boltzrpc/rest-annotations.yaml)
