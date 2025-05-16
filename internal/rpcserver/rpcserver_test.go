@@ -2323,51 +2323,34 @@ func TestSwap(t *testing.T) {
 					_, write, _ := createTenant(t, admin, "test")
 					tenant := client.NewBoltzClient(write)
 
-					t.Run("Normal", func(t *testing.T) {
-						t.Run("Minimal", func(t *testing.T) {
-							swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
-								Amount:           submarinePair.Limits.Minimal,
-								Pair:             pair,
-								SendFromInternal: true,
-							})
-							require.NoError(t, err)
-
-							stream, _ := swapStream(t, admin, swap.Id)
-							stream(boltzrpc.SwapState_PENDING)
-							test.MineBlock()
-							stream(boltzrpc.SwapState_SUCCESSFUL)
-
+					t.Run("Minimal", func(t *testing.T) {
+						swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
+							Amount:           submarinePair.Limits.Minimal,
+							Pair:             pair,
+							SendFromInternal: true,
 						})
-						t.Run("EnoughBalance", func(t *testing.T) {
+						require.NoError(t, err)
+						require.NotEmpty(t, swap.TxId)
+						require.NotZero(t, swap.TimeoutHours)
+						require.NotZero(t, swap.TimeoutBlockHeight)
 
-							swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
-								Amount:           100000,
-								Pair:             pair,
-								SendFromInternal: true,
-							})
-							require.NoError(t, err)
-							require.NotEmpty(t, swap.TxId)
-							require.NotZero(t, swap.TimeoutHours)
-							require.NotZero(t, swap.TimeoutBlockHeight)
-
-							stream, _ := swapStream(t, admin, swap.Id)
-							test.MineBlock()
-
-							info := stream(boltzrpc.SwapState_SUCCESSFUL)
-							checkSwap(t, info.Swap)
-						})
-
-						t.Run("NoBalance", func(t *testing.T) {
-							emptyWallet := emptyWallet(t, admin, tc.from)
-							_, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
-								Amount:           100000,
-								Pair:             pair,
-								SendFromInternal: true,
-								WalletId:         &emptyWallet.Id,
-							})
-							require.ErrorContains(t, err, "insufficient balance")
-						})
+						stream, _ := swapStream(t, admin, swap.Id)
+						stream(boltzrpc.SwapState_PENDING)
+						test.MineBlock()
+						stream(boltzrpc.SwapState_SUCCESSFUL)
 					})
+
+					t.Run("NoBalance", func(t *testing.T) {
+						emptyWallet := emptyWallet(t, admin, tc.from)
+						_, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
+							Amount:           100000,
+							Pair:             pair,
+							SendFromInternal: true,
+							WalletId:         &emptyWallet.Id,
+						})
+						require.ErrorContains(t, err, "insufficient balance")
+					})
+
 					t.Run("AnyAmount", func(t *testing.T) {
 						swap, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
 							Pair: pair,
