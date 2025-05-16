@@ -17,6 +17,9 @@ network = "mainnet"
 # you will have to set this to "cln" or "lnd" if you have configuration values for both
 node = ""
 
+# Whether to use Boltz Pro fee rates
+pro = false
+
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network your node is on
 # This value is used to overwrite that
