@@ -2210,14 +2210,12 @@ var bakeMacaroonCommand = &cli.Command{
 var tenantCommands = &cli.Command{
 	Name:     "tenant",
 	Category: "Tenant",
-	Usage:    "Manage the wallets used by the client",
+	Usage:    "Manage the tenants used by the client",
 	Subcommands: []*cli.Command{
 		{
 			Name:      "create",
 			Usage:     "Create a new tenant",
 			ArgsUsage: "name",
-			Description: "Creates a new wallet for the specified currency and unique name.\n" +
-				"Currency has to be BTC or LBTC (case insensitive).",
 			Action: requireNArgs(1, func(ctx *cli.Context) error {
 				client := getClient(ctx)
 
