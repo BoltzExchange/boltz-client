@@ -2210,7 +2210,10 @@ var bakeMacaroonCommand = &cli.Command{
 var tenantCommands = &cli.Command{
 	Name:     "tenant",
 	Category: "Tenant",
-	Usage:    "Manage the tenants used by the client",
+	Usage:    "Manage tenants",
+	Description: "Tenants are used to manage multiple users on a single instance of the daemon.\n" +
+		"Each tenant can have its own wallets, swaps and chain auto swap configuration.\n" +
+		"You can use the `bakemacaroon` command to create a macaroon which is limited to a specific tenant.",
 	Subcommands: []*cli.Command{
 		{
 			Name:      "create",
