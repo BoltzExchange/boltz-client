@@ -43,6 +43,60 @@ var getInfoCommand = &cli.Command{
 	Action:   getInfo,
 }
 
+var getPairsCommand = &cli.Command{
+	Name:     "getpairs",
+	Category: "Infos",
+	Usage:    "Returns all available pairs for submarine, reverse, and chain swaps",
+	Action:   getPairs,
+	Flags: []cli.Flag{
+		jsonFlag,
+	},
+}
+
+func getPairs(ctx *cli.Context) error {
+	client := getClient(ctx)
+	pairs, err := client.GetPairs()
+	if err != nil {
+		return err
+	}
+
+	if ctx.Bool("json") {
+		printJson(pairs)
+	} else {
+		colorPrintln(yellowBold, "Submarine")
+		printPairs(pairs.Submarine)
+		fmt.Println()
+
+		colorPrintln(yellowBold, "Reverse")
+		printPairs(pairs.Reverse)
+		fmt.Println()
+
+		colorPrintln(yellowBold, "Chain")
+		printPairs(pairs.Chain)
+		fmt.Println()
+	}
+
+	return nil
+}
+
+func printPairs(pairs []*boltzrpc.PairInfo) {
+	tbl := table.New("From", "To", "Min Amount", "Max Amount", "Service Fee", "Network Fee")
+	tbl.WithHeaderFormatter(color.New(color.FgGreen, color.Underline).SprintfFunc())
+
+	for _, pair := range pairs {
+		tbl.AddRow(
+			pair.Pair.From,
+			pair.Pair.To,
+			utils.Satoshis(pair.Limits.Minimal),
+			utils.Satoshis(pair.Limits.Maximal),
+			fmt.Sprintf("%.2f%%", pair.Fees.Percentage),
+			utils.Satoshis(pair.Fees.MinerFees),
+		)
+	}
+
+	tbl.Print()
+}
+
 //nolint:staticcheck
 func getInfo(ctx *cli.Context) error {
 	client := getClient(ctx)
