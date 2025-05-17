@@ -94,6 +94,7 @@ func main() {
 	}
 	app.Commands = []*cli.Command{
 		getInfoCommand,
+		getPairsCommand,
 		getSwapCommand,
 		swapInfoStreamCommand,
 		listSwapsCommand,
