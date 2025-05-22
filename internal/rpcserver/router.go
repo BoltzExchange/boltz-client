@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
 	"github.com/BoltzExchange/boltz-client/v2/internal/build"
@@ -45,11 +46,13 @@ import (
 type serverState string
 
 const (
-	stateUnlocked         serverState = "unlocked"
-	stateSyncing          serverState = "syncing"
-	stateLocked           serverState = "locked"
-	stateLightningSyncing serverState = "lightningSyncing"
-	stateStopping         serverState = "stopping"
+	stateUnlocked           serverState = "unlocked"
+	stateUnavailable        serverState = "unavailable"
+	stateSyncing            serverState = "syncing"
+	stateLocked             serverState = "locked"
+	stateLightningSyncing   serverState = "lightningSyncing"
+	stateBackendUnreachable serverState = "backendUnreachable"
+	stateStopping           serverState = "stopping"
 )
 
 type routedBoltzServer struct {
@@ -1933,6 +1936,43 @@ func (server *routedBoltzServer) VerifyWalletPassword(_ context.Context, request
 	return &boltzrpc.VerifyWalletPasswordResponse{Correct: err == nil}, nil
 }
 
+func (server *routedBoltzServer) fullInit() (err error) {
+	version, err := server.boltz.GetVersion()
+	if err != nil {
+		return fmt.Errorf("get boltz version: %v", err)
+	}
+	if err := checkBoltzVersion(version); err != nil {
+		logger.Fatalf("unsupported boltz version: %v", err)
+	}
+
+	maxZeroConfAmount := server.maxZeroConfAmount
+	if maxZeroConfAmount == nil {
+		pair, err := server.getSubmarinePair(&boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC})
+		if err != nil {
+			return fmt.Errorf("could not get submarine pair: %v", err)
+		}
+		maxZeroConfAmount = &pair.Limits.MaximalZeroConfAmount
+		logger.Infof("No maximal zero conf amount set, using same value as boltz: %v", *maxZeroConfAmount)
+	}
+
+	server.nursery = &nursery.Nursery{MaxZeroConfAmount: *maxZeroConfAmount}
+	err = server.nursery.Init(
+		server.network,
+		server.lightning,
+		server.onchain,
+		server.boltz,
+		server.database,
+	)
+	if err != nil {
+		logger.Fatalf("could not start nursery: %v", err)
+	}
+
+	if err := server.swapper.LoadConfig(); err != nil {
+		logger.Warnf("Could not load autoswap config: %v", err)
+	}
+	return nil
+}
+
 func (server *routedBoltzServer) unlock(password string) error {
 	credentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
@@ -2002,20 +2042,14 @@ func (server *routedBoltzServer) unlock(password string) error {
 		}
 		wg.Wait()
 
-		server.nursery = &nursery.Nursery{MaxZeroConfAmount: *server.maxZeroConfAmount}
-		err = server.nursery.Init(
-			server.network,
-			server.lightning,
-			server.onchain,
-			server.boltz,
-			server.database,
-		)
-		if err != nil {
-			logger.Fatalf("could not start nursery: %v", err)
-		}
-
-		if err := server.swapper.LoadConfig(); err != nil {
-			logger.Warnf("Could not load autoswap config: %v", err)
+		for {
+			if err := server.fullInit(); err != nil {
+				logger.Errorf("Could not initialize server, retrying in 10 seconds: %v", err)
+				time.Sleep(time.Second * 10)
+				server.state = stateUnavailable
+			} else {
+				break
+			}
 		}
 	}()
 
@@ -2037,6 +2071,9 @@ func (server *routedBoltzServer) ChangeWalletPassword(_ context.Context, request
 func (server *routedBoltzServer) requestAllowed(fullMethod string) error {
 	if strings.Contains(fullMethod, "Stop") {
 		return nil
+	}
+	if server.state == stateUnavailable {
+		return status.Error(codes.Unavailable, "unavailable, please check logs for more information")
 	}
 	if server.state == stateLightningSyncing {
 		return status.Errorf(codes.Unavailable, "connected lightning node is syncing, please wait")

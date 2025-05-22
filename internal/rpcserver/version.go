@@ -23,12 +23,6 @@ func checkClnVersion(info *lightning.LightningInfo) {
 	}
 }
 
-func checkBoltzVersion(boltz *boltz.Api) {
-	version, err := boltz.GetVersion()
-	if err != nil {
-		logger.Fatal("Could not get Boltz version: " + err.Error())
-	}
-	if err := utils.CheckVersion("Boltz", version.Version, minBoltzVersion); err != nil {
-		logger.Fatal(err.Error())
-	}
+func checkBoltzVersion(response *boltz.GetVersionResponse) error {
+	return utils.CheckVersion("Boltz", response.Version, minBoltzVersion)
 }
