@@ -193,15 +193,6 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	autoConfPath := path.Join(cfg.DataDir, "autoswap.toml")
 	server.swapper.Init(server.database, server.onchain, autoConfPath, server)
 
-	if server.maxZeroConfAmount == nil {
-		pair, err := server.getSubmarinePair(&boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC})
-		if err != nil {
-			return fmt.Errorf("could not get submarine pair: %v", err)
-		}
-		server.maxZeroConfAmount = &pair.Limits.MaximalZeroConfAmount
-		logger.Infof("No maximal zero conf amount set, using same value as boltz: %v", *server.maxZeroConfAmount)
-	}
-
 	return server.unlock("")
 }
 
@@ -349,8 +340,6 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 			Transport: transport,
 		}
 	}
-
-	checkBoltzVersion(boltzApi)
 
 	return boltzApi, nil
 }
