@@ -485,6 +485,15 @@ func (boltz *Api) GetSwapTransaction(id string) (*GetSwapTransactionResponse, er
 	return &response, err
 }
 
+func (boltz *Api) GetSwapPreimage(id string) (HexString, error) {
+	var response struct {
+		Preimage HexString `json:"preimage"`
+	}
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/swap/submarine/%s/preimage", id), &response)
+
+	return response.Preimage, err
+}
+
 func (boltz *Api) GetChainSwapTransactions(id string) (*GetChainSwapTransactionsResponse, error) {
 	var response GetChainSwapTransactionsResponse
 	path := fmt.Sprintf("/swap/chain/%s/transactions", id)

@@ -85,6 +85,14 @@ func (nursery *Nursery) RegisterSwap(swap database.Swap) error {
 	return nil
 }
 
+func validatePreimage(preimage []byte, invoice *lightning.DecodedInvoice) error {
+	preimageHash := sha256.Sum256(preimage)
+	if !bytes.Equal(invoice.PaymentHash[:], preimageHash[:]) {
+		return fmt.Errorf("boltz returned wrong preimage: %x", preimage)
+	}
+	return nil
+}
+
 func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.SwapStatusResponse) error {
 	logger.Debugf("Trying to claim swap %s cooperatively", swap.Id)
 
@@ -99,9 +107,8 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 		return fmt.Errorf("could not decode swap invoice: %w", err)
 	}
 
-	preimageHash := sha256.Sum256(claimDetails.Preimage)
-	if !bytes.Equal(decodedInvoice.PaymentHash[:], preimageHash[:]) {
-		return fmt.Errorf("boltz returned wrong preimage: %x", claimDetails.Preimage)
+	if err := validatePreimage(claimDetails.Preimage, decodedInvoice); err != nil {
+		return err
 	}
 
 	// save the preimage if we dont have it yet
@@ -201,7 +208,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 	}
 
-	// batchOnly indicates whether the backend is willing to do a 
+	// batchOnly indicates whether the backend is willing to do a
 	// cooperative claim transaction or will batch claim
 	batchOnly := false
 
@@ -329,9 +336,26 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 	if parsedStatus.IsCompletedStatus() || batchOnly {
 		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
 		if err != nil {
-			handleError("Could not decode invoice: " + err.Error())
+			handleError(fmt.Sprintf("Could not decode invoice: %s", err))
 			return
 		}
+		if swap.Preimage == nil {
+			preimage, err := nursery.boltz.GetSwapPreimage(swap.Id)
+			if err != nil {
+				handleError(fmt.Sprintf("Could not get preimage from boltz: %s", err))
+				return
+			}
+			if err := validatePreimage(preimage, decodedInvoice); err != nil {
+				handleError(err.Error())
+				return
+			}
+
+			if err := nursery.database.SetSwapPreimage(swap, preimage); err != nil {
+				handleError(fmt.Sprintf("Could not set preimage in database: %s", err))
+				return
+			}
+		}
+
 		invoiceAmount := int64(decodedInvoice.AmountSat)
 		serviceFee := boltz.CalculatePercentage(swap.ServiceFeePercent, invoiceAmount)
 		boltzOnchainFee := int64(swap.ExpectedAmount) - invoiceAmount - serviceFee
