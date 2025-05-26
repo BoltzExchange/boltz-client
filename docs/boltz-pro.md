@@ -47,4 +47,4 @@ You can fund swaps in two ways:
 This choice is controlled by:
 
 * API: `send_from_internal` parameter in [`CreateSwapRequest`](grpc.md#createswaprequest)
-* CLI: `--from-wallet` (internal) or `--external-pay` (external)
+* CLI: `--from-wallet <wallet-name>` (internal) or `--external-pay` (external)
