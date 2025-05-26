@@ -11,13 +11,13 @@ description: >-
 
 Boltz Client is the recommended way to programmatically interact with Boltz Pro to check for fee discounts, identify earn opportunities, and trigger swaps.
 
-To configure Boltz Client to use the Boltz Pro API, simply start the daemon with the `--pro` startup flag. Since Boltz Pro discounts and earn opportunities are primarily available for Chain -> Lightning swaps, this guide will focus on that setup.
+To configure Boltz Client to use the Boltz Pro API, simply start the daemon with the `--pro` startup flag or set the `pro` [configuration option](configuration.md). Since Boltz Pro discounts and earn opportunities are primarily available for Chain -> Lightning swaps, this guide will focus on that setup.
 
-Boltz Client exposes a powerful [gRPC API](grpc.md), which you can integrate into your own applications or use via `boltzcli`.&#x20;
+Boltz Client exposes a powerful [gRPC API](grpc.md), which you can integrate into your own applications. For scripted usage of `boltzcli`, use the `--json` flag.
 
 The current fee rates can be retrieved using the [`GetPairs`](grpc.md#getpairs) endpoint or with the `boltzcli getpairs` command.
 
-Here is an example for querying the current service fee for a Bitcoin -> Lightning swap using a `boltzcli` and `jq` for processing the JSON:
+Here is an example for querying the current service fee for a Bitcoin -> Lightning swap using `boltzcli` and `jq` for processing the JSON output:
 
 ```bash
 boltzcli getpairs --json | jq '.submarine[] | select(.pair.from == "BTC") | .fees.percentage'
@@ -25,22 +25,26 @@ boltzcli getpairs --json | jq '.submarine[] | select(.pair.from == "BTC") | .fee
 
 ## Paying Lightning Invoices
 
-You can get Lightning invoices for your swaps from:
+### **Paying invoices of your own node**
 
-1. **Your own node** [(CLN or LND)](README.md#configuration)
-   - Set the `amount` field to automatically generate a new invoice
-   - Example: `boltzcli createswap --amount 100000` (100k sats)
+* [Connect Boltz Client to your CLN or LND node](README.md#configuration)
+* Set the `amount` field to automatically generate a new invoice
+* Example: `boltzcli createswap --amount 100000` (100k sats)
 
-2. **Standalone mode** [(without connecting to a node)](README.md#standalone)
-   - Provide an existing invoice via `--invoice` or the `invoice` field
-   - Example: `boltzcli createswap --invoice lnbc1...`
+### **Paying invoices of an external service**
 
-### Funding Options
+* [Start Boltz Client in standalone mode](README.md#standalone)
+* Provide an existing invoice via `--invoice` or the `invoice` field
+* Example: `boltzcli createswap --invoice lnbc1...`
+
+## Funding Swaps
 
 You can fund swaps in two ways:
+
 1. Using Boltz Client's internal wallets
-2. Funding externally
+2. Using an external wallet
 
 This choice is controlled by:
-- API: `send_from_internal` parameter in [`CreateSwapRequest`](grpc.md#createswaprequest)
-- CLI: `--from-wallet` (internal) or `--external-pay` (external)
+
+* API: `send_from_internal` parameter in [`CreateSwapRequest`](grpc.md#createswaprequest)
+* CLI: `--from-wallet` (internal) or `--external-pay` (external)
