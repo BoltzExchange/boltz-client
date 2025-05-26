@@ -104,6 +104,13 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 		return fmt.Errorf("boltz returned wrong preimage: %x", claimDetails.Preimage)
 	}
 
+	// save the preimage if we dont have it yet
+	if swap.Preimage == nil {
+		if err := nursery.database.SetSwapPreimage(swap, claimDetails.Preimage); err != nil {
+			return fmt.Errorf("could not save preimage: %w", err)
+		}
+	}
+
 	session, err := boltz.NewSigningSession(swap.SwapTree)
 	if err != nil {
 		return fmt.Errorf("could not create signing session: %w", err)
