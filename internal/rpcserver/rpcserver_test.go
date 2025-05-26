@@ -2126,6 +2126,7 @@ func TestSwap(t *testing.T) {
 		invoice, err := zpay32.Decode(swap.Invoice, &chaincfg.RegressionNetParams)
 		require.NoError(t, err)
 		preimage, err := hex.DecodeString(swap.Preimage)
+		require.NotEmpty(t, swap.Preimage)
 		require.NoError(t, err)
 		require.Equal(t, *invoice.PaymentHash, sha256.Sum256(preimage))
 
