@@ -409,6 +409,13 @@ func (database *Database) SetSwapInvoice(swap *Swap, invoice string) error {
 	return err
 }
 
+func (database *Database) SetSwapPreimage(swap *Swap, preimage []byte) error {
+	swap.Preimage = preimage
+
+	_, err := database.Exec("UPDATE swaps SET preimage = ? WHERE id = ?", hex.EncodeToString(preimage), swap.Id)
+	return err
+}
+
 func (database *Database) SetSwapLockupTransactionId(swap *Swap, lockupTransactionId string) error {
 	swap.LockupTransactionId = lockupTransactionId
 

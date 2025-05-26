@@ -2125,6 +2125,9 @@ func TestSwap(t *testing.T) {
 	checkSwap := func(t *testing.T, swap *boltzrpc.SwapInfo) {
 		invoice, err := zpay32.Decode(swap.Invoice, &chaincfg.RegressionNetParams)
 		require.NoError(t, err)
+		preimage, err := hex.DecodeString(swap.Preimage)
+		require.NoError(t, err)
+		require.Equal(t, *invoice.PaymentHash, sha256.Sum256(preimage))
 
 		excpectedFees := swap.ExpectedAmount - uint64(invoice.MilliSat.ToSatoshis())
 		actualFees := int64(*swap.OnchainFee) + *swap.ServiceFee
