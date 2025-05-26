@@ -13,7 +13,7 @@ Boltz Client is the recommended way to programmatically interact with Boltz Pro 
 
 To configure Boltz Client to use the Boltz Pro API, simply start the daemon with the `--pro` startup flag or set the `pro` [configuration option](configuration.md). Since Boltz Pro discounts and earn opportunities are primarily available for Chain -> Lightning swaps, this guide will focus on that setup.
 
-Boltz Client exposes a powerful [gRPC API](grpc.md), which you can integrate into your own applications. For scripted usage of `boltzcli`, use the `--json` flag.
+Boltz Client exposes a powerful [gRPC API](grpc.md), which you can integrate into your own applications. For scripted usage of `boltzcli`, use the `--json` flag, which is available on most commands.
 
 The current fee rates can be retrieved using the [`GetPairs`](grpc.md#getpairs) endpoint or with the `boltzcli getpairs` command.
 
