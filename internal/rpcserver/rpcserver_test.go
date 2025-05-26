@@ -1394,6 +1394,16 @@ func TestWalletTransactions(t *testing.T) {
 		require.Equal(t, txId, response.Transactions[0].Id)
 	})
 
+	t.Run("Readonly", func(t *testing.T) {
+		testWallet, walletInfo := newMockWallet(t, chain)
+		testWallet.EXPECT().GetTransactions(mock.Anything, mock.Anything).Return(nil, nil)
+		walletInfo.Readonly = true
+
+		response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: walletInfo.Id})
+		require.NoError(t, err)
+		require.Empty(t, response.Transactions)
+	})
+
 	claimTx := "claim"
 	refundTx := "refund"
 	lockupTx := "lockup"

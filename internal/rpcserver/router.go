@@ -1555,7 +1555,7 @@ func getTransactionType(swap *database.AnySwap, txId string) boltzrpc.Transactio
 }
 
 func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, request *boltzrpc.ListWalletTransactionsRequest) (*boltzrpc.ListWalletTransactionsResponse, error) {
-	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{Id: &request.Id})
+	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{Id: &request.Id, AllowReadonly: true})
 	if err != nil {
 		return nil, err
 	}
