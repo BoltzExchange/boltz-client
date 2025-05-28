@@ -1,0 +1,19 @@
+dir: ./internal/mocks/{{ .SrcPackageName }}
+filename: "{{ .InterfaceName }}_mock.go"
+template: testify
+template-data:
+  unroll-variadic: true
+packages:
+  github.com/BoltzExchange/boltz-client/v2/internal/autoswap:
+    config:
+      dir: ./internal/autoswap
+    interfaces:
+      RpcProvider: {}
+  github.com/BoltzExchange/boltz-client/v2/internal/lightning:
+    interfaces:
+      LightningNode: {}
+  github.com/BoltzExchange/boltz-client/v2/internal/onchain:
+    interfaces:
+      BlockProvider: {}
+      TxProvider: {}
+      Wallet: {}
