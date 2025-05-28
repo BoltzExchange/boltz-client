@@ -382,12 +382,12 @@ func (lnd *LND) GetBalance() (*onchain.Balance, error) {
 
 }
 
-func (lnd *LND) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
+func (lnd *LND) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 	response, err := lnd.client.SendCoins(lnd.ctx, &lnrpc.SendCoinsRequest{
-		Addr:        address,
-		Amount:      int64(amount),
-		SatPerVbyte: uint64(satPerVbyte),
-		SendAll:     sendAll,
+		Addr:        args.Address,
+		Amount:      int64(args.Amount),
+		SatPerVbyte: uint64(args.SatPerVbyte),
+		SendAll:     args.SendAll,
 	})
 
 	if err != nil {
@@ -395,6 +395,10 @@ func (lnd *LND) SendToAddress(address string, amount uint64, satPerVbyte float64
 	}
 
 	return response.Txid, nil
+}
+
+func (lnd *LND) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
+	return 0, 0, lightning.ErrUnsupported
 }
 
 func (lnd *LND) SubscribeSingleInvoice(preimageHash []byte, channel chan *lnrpc.Invoice, errChannel chan error) {

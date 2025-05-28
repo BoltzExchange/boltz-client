@@ -684,7 +684,7 @@ func (wallet *Wallet) getUnspentOutputs(subaccount uint64, includeUnconfirmed bo
 	return result, nil
 }
 
-func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVbyte float64, sendAll bool) (map[string]any, error) {
+func (wallet *Wallet) createTransaction(args onchain.WalletSendArgs) (map[string]any, error) {
 	if wallet.Readonly {
 		return nil, errors.New("wallet is readonly")
 	}
@@ -702,7 +702,7 @@ func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVby
 	if wallet.Currency == boltz.CurrencyLiquid {
 		for asset, current := range outputs.Unspent {
 			if len(current) > int(config.MaxInputs) {
-				if sendAll {
+				if args.SendAll {
 					outputs.Unspent[asset] = current[:config.MaxInputs]
 				} else {
 					return nil, errors.New("too many inputs")
@@ -721,13 +721,13 @@ func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVby
 
 	transactionDetails, free := toJson(map[string]any{
 		// gdk uses sat/kVB
-		"fee_rate": satPerVbyte * 1000,
+		"fee_rate": args.SatPerVbyte * 1000,
 		"addressees": []map[string]any{
 			{
-				"address":   address,
-				"satoshi":   amount,
+				"address":   args.Address,
+				"satoshi":   args.Amount,
 				"asset_id":  asset,
-				"is_greedy": sendAll,
+				"is_greedy": args.SendAll,
 			},
 		},
 		"utxos": outputs.Unspent,
@@ -740,7 +740,7 @@ func (wallet *Wallet) createTransaction(address string, amount uint64, satPerVby
 	}
 	if err, ok := result["error"].(string); ok {
 		if strings.Contains(err, "id_insufficient_funds") {
-			return nil, wallet.InsufficientBalanceError(amount)
+			return nil, wallet.InsufficientBalanceError(args.Amount)
 		}
 	}
 	return result, nil
@@ -782,8 +782,8 @@ func (wallet *Wallet) broadcastTransaction(transaction any) (tx string, err erro
 	return sendTx.TxHash, nil
 }
 
-func (wallet *Wallet) GetSendFee(address string, amount uint64, satPerVbyte float64, sendAll bool) (send uint64, fee uint64, err error) {
-	result, err := wallet.createTransaction(address, amount, satPerVbyte, sendAll)
+func (wallet *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
+	result, err := wallet.createTransaction(args)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -803,8 +803,8 @@ func (wallet *Wallet) GetSendFee(address string, amount uint64, satPerVbyte floa
 	return createTx.Addressees[0].Satoshi, createTx.Fee, nil
 }
 
-func (wallet *Wallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (tx string, err error) {
-	result, err := wallet.createTransaction(address, amount, satPerVbyte, sendAll)
+func (wallet *Wallet) SendToAddress(args onchain.WalletSendArgs) (tx string, err error) {
+	result, err := wallet.createTransaction(args)
 	if err != nil {
 		return "", err
 	}
@@ -979,7 +979,11 @@ func (wallet *Wallet) autoConsolidate() error {
 					return fmt.Errorf("could not get estimate fee: %v", err)
 				}
 				logger.Infof("Using fee rate of %f sat/vbyte for consolidation", feeRate)
-				if _, err := wallet.SendToAddress(address, 0, feeRate, true); err != nil {
+				if _, err := wallet.SendToAddress(onchain.WalletSendArgs{
+					Address:     address,
+					SatPerVbyte: feeRate,
+					SendAll:     true,
+				}); err != nil {
 					return fmt.Errorf("could not send: %v", err)
 				}
 			}

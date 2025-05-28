@@ -86,15 +86,23 @@ type AddressProvider interface {
 	IsUsed(address string) (bool, error)
 }
 
+type WalletSendArgs struct {
+	Address     string
+	Amount      uint64
+	SatPerVbyte float64
+	SendAll     bool
+}
+
 type Wallet interface {
 	NewAddress() (string, error)
-	SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error)
+	SendToAddress(args WalletSendArgs) (string, error)
 	Ready() bool
 	GetBalance() (*Balance, error)
 	GetWalletInfo() WalletInfo
 	Disconnect() error
 	GetTransactions(limit, offset uint64) ([]*WalletTransaction, error)
 	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
+	GetSendFee(args WalletSendArgs) (send uint64, fee uint64, err error)
 }
 
 type ElectrumOptions struct {

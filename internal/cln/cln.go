@@ -325,22 +325,22 @@ func (c *Cln) GetBalance() (*onchain.Balance, error) {
 	return balance, err
 }
 
-func (c *Cln) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
+func (c *Cln) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 	request := &protos.WithdrawRequest{
-		Destination: address,
+		Destination: args.Address,
 		Satoshi:     &protos.AmountOrAll{},
 		Feerate: &protos.Feerate{
 			Style: &protos.Feerate_Perkb{
 				// TODO: check this is correct
-				Perkb: uint32(satPerVbyte * 1000),
+				Perkb: uint32(args.SatPerVbyte * 1000),
 			},
 		},
 	}
-	if sendAll {
+	if args.SendAll {
 		request.Satoshi.Value = &protos.AmountOrAll_All{All: true}
 	} else {
 		request.Satoshi.Value = &protos.AmountOrAll_Amount{Amount: &protos.Amount{
-			Msat: amount * 1000,
+			Msat: args.Amount * 1000,
 		}}
 	}
 
@@ -352,6 +352,10 @@ func (c *Cln) SendToAddress(address string, amount uint64, satPerVbyte float64, 
 
 	return hex.EncodeToString(response.GetTxid()), nil
 
+}
+
+func (c *Cln) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
+	return 0, 0, lightning.ErrUnsupported
 }
 
 func encodeOptionalBytes(data []byte) string {

@@ -49,7 +49,11 @@ func TestWallet_BumpTransactionFee(t *testing.T) {
 	someAddress := test.GetNewAddress(test.BtcCli)
 	amount := int64(1000)
 
-	txId, err := wallet.SendToAddress(someAddress, uint64(amount), 1, false)
+	txId, err := wallet.SendToAddress(onchain.WalletSendArgs{
+		Address:     someAddress,
+		Amount:      uint64(amount),
+		SatPerVbyte: 1,
+	})
 	require.NoError(t, err)
 	tx := getTransaction(txId)
 
@@ -79,7 +83,11 @@ func TestSend(t *testing.T) {
 			addr := cli("getnewaddress")
 
 			t.Run("Normal", func(t *testing.T) {
-				txid, err := wallet.SendToAddress(addr, 10000, 1, false)
+				txid, err := wallet.SendToAddress(onchain.WalletSendArgs{
+					Address:     addr,
+					Amount:      10000,
+					SatPerVbyte: 1,
+				})
 				require.NoError(t, err)
 				rawTx := cli("getrawtransaction " + txid)
 				tx, err := boltz.NewTxFromHex(currency, rawTx, nil)
@@ -99,7 +107,11 @@ func TestSend(t *testing.T) {
 			minFeeRate := 1.0
 
 			t.Run("SendFee", func(t *testing.T) {
-				amount, fee, err := wallet.GetSendFee(addr, 0, minFeeRate, true)
+				amount, fee, err := wallet.GetSendFee(onchain.WalletSendArgs{
+					Address:     addr,
+					SatPerVbyte: minFeeRate,
+					SendAll:     true,
+				})
 				require.NoError(t, err)
 
 				balance, err := wallet.GetBalance()
