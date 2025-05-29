@@ -31,6 +31,7 @@ type Websocket struct {
 	apiUrl            string
 	subscriptions     chan bool
 	conn              *websocket.Conn
+	connLock          sync.RWMutex
 	closed            bool
 	dialer            *websocket.Dialer
 	swapIds           []string
@@ -83,7 +84,8 @@ func (boltz *Websocket) Connect() error {
 	if err != nil {
 		return fmt.Errorf("could not connect to boltz ws at %s: %w", wsUrl, err)
 	}
-	boltz.conn = conn
+
+	boltz.setConn(conn)
 
 	logger.Infof("Connected to Boltz ws at %s", wsUrl)
 
@@ -119,7 +121,7 @@ func (boltz *Websocket) Connect() error {
 				// if `close` was intentionally called, `Connected` will return false
 				// since the connection has already been set to nil.
 				if boltz.Connected() {
-					boltz.conn = nil
+					boltz.setConn(nil)
 					logger.Error("could not receive message: " + err.Error())
 				} else {
 					return
@@ -185,6 +187,7 @@ func (boltz *Websocket) handleTextMessage(data []byte) error {
 }
 
 func (boltz *Websocket) subscribe(swapIds []string) error {
+
 	if boltz.closed {
 		return errors.New("websocket is closed")
 	}
@@ -192,11 +195,14 @@ func (boltz *Websocket) subscribe(swapIds []string) error {
 	if len(swapIds) == 0 {
 		return nil
 	}
-	if err := boltz.conn.WriteJSON(map[string]any{
+	boltz.connLock.Lock()
+	err := boltz.conn.WriteJSON(map[string]any{
 		"op":      "subscribe",
 		"channel": "swap.update",
 		"args":    swapIds,
-	}); err != nil {
+	})
+	boltz.connLock.Unlock()
+	if err != nil {
 		return err
 	}
 	select {
@@ -247,6 +253,9 @@ func (boltz *Websocket) Unsubscribe(swapId string) {
 }
 
 func (boltz *Websocket) close() error {
+	boltz.connLock.Lock()
+	defer boltz.connLock.Unlock()
+
 	if conn := boltz.conn; conn != nil {
 		boltz.conn = nil
 		return conn.Close()
@@ -267,6 +276,8 @@ func (boltz *Websocket) Close() error {
 }
 
 func (boltz *Websocket) Connected() bool {
+	boltz.connLock.RLock()
+	defer boltz.connLock.RUnlock()
 	return boltz.conn != nil
 }
 
@@ -276,4 +287,10 @@ func (boltz *Websocket) Reconnect() error {
 		logger.Warnf("could not close boltz ws: %v", err)
 	}
 	return boltz.Connect()
+}
+
+func (boltz *Websocket) setConn(conn *websocket.Conn) {
+	boltz.connLock.Lock()
+	boltz.conn = conn
+	boltz.connLock.Unlock()
 }
