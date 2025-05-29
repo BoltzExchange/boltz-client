@@ -1975,6 +1975,9 @@ func TestWalletSendReceive(t *testing.T) {
 		satPerVbyte := 10.0
 		sendAll := true
 
+		defaultEstimate, err := chain.EstimateFee(boltz.CurrencyBtc)
+		require.NoError(t, err)
+
 		tests := []struct {
 			desc    string
 			request *boltzrpc.WalletSendRequest
@@ -1991,7 +1994,11 @@ func TestWalletSendReceive(t *testing.T) {
 				result: "txid",
 				err:    require.NoError,
 				setup: func(mockWallet *onchainmock.MockWallet) {
-					mockWallet.EXPECT().SendToAddress("address", uint64(1000), mock.Anything, mock.Anything).Return("txid", nil)
+					mockWallet.EXPECT().SendToAddress(onchain.WalletSendArgs{
+						Address:     "address",
+						Amount:      1000,
+						SatPerVbyte: defaultEstimate,
+					}).Return("txid", nil)
 				},
 			},
 			{
@@ -2004,7 +2011,12 @@ func TestWalletSendReceive(t *testing.T) {
 				result: "txid",
 				err:    require.NoError,
 				setup: func(mockWallet *onchainmock.MockWallet) {
-					mockWallet.EXPECT().SendToAddress("address", uint64(1000), satPerVbyte, mock.Anything).Return("txid", nil)
+					mockWallet.EXPECT().SendToAddress(onchain.WalletSendArgs{
+						Address:     "address",
+						Amount:      1000,
+						SatPerVbyte: satPerVbyte,
+						SendAll:     false,
+					}).Return("txid", nil)
 				},
 			},
 			{
@@ -2017,7 +2029,12 @@ func TestWalletSendReceive(t *testing.T) {
 				result: "txid",
 				err:    require.NoError,
 				setup: func(mockWallet *onchainmock.MockWallet) {
-					mockWallet.EXPECT().SendToAddress("address", uint64(1000), mock.Anything, sendAll).Return("txid", nil)
+					mockWallet.EXPECT().SendToAddress(onchain.WalletSendArgs{
+						Address:     "address",
+						Amount:      1000,
+						SatPerVbyte: defaultEstimate,
+						SendAll:     sendAll,
+					}).Return("txid", nil)
 				},
 			},
 			{
@@ -2041,7 +2058,11 @@ func TestWalletSendReceive(t *testing.T) {
 					Amount:  1000,
 				},
 				setup: func(mockWallet *onchainmock.MockWallet) {
-					mockWallet.EXPECT().SendToAddress("address", uint64(1000), mock.Anything, mock.Anything).Return("", errors.New("wallet error"))
+					mockWallet.EXPECT().SendToAddress(onchain.WalletSendArgs{
+						Address:     "address",
+						Amount:      1000,
+						SatPerVbyte: defaultEstimate,
+					}).Return("", errors.New("wallet error"))
 				},
 				err: require.Error,
 			},

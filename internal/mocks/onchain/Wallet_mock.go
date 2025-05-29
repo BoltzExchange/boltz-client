@@ -201,6 +201,72 @@ func (_c *MockWallet_GetBalance_Call) RunAndReturn(run func() (*onchain.Balance,
 	return _c
 }
 
+// GetSendFee provides a mock function for the type MockWallet
+func (_mock *MockWallet) GetSendFee(args onchain.WalletSendArgs) (uint64, uint64, error) {
+	ret := _mock.Called(args)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSendFee")
+	}
+
+	var r0 uint64
+	var r1 uint64
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(onchain.WalletSendArgs) (uint64, uint64, error)); ok {
+		return returnFunc(args)
+	}
+	if returnFunc, ok := ret.Get(0).(func(onchain.WalletSendArgs) uint64); ok {
+		r0 = returnFunc(args)
+	} else {
+		r0 = ret.Get(0).(uint64)
+	}
+	if returnFunc, ok := ret.Get(1).(func(onchain.WalletSendArgs) uint64); ok {
+		r1 = returnFunc(args)
+	} else {
+		r1 = ret.Get(1).(uint64)
+	}
+	if returnFunc, ok := ret.Get(2).(func(onchain.WalletSendArgs) error); ok {
+		r2 = returnFunc(args)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockWallet_GetSendFee_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSendFee'
+type MockWallet_GetSendFee_Call struct {
+	*mock.Call
+}
+
+// GetSendFee is a helper method to define mock.On call
+//   - args onchain.WalletSendArgs
+func (_e *MockWallet_Expecter) GetSendFee(args interface{}) *MockWallet_GetSendFee_Call {
+	return &MockWallet_GetSendFee_Call{Call: _e.mock.On("GetSendFee", args)}
+}
+
+func (_c *MockWallet_GetSendFee_Call) Run(run func(args onchain.WalletSendArgs)) *MockWallet_GetSendFee_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 onchain.WalletSendArgs
+		if args[0] != nil {
+			arg0 = args[0].(onchain.WalletSendArgs)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockWallet_GetSendFee_Call) Return(send uint64, fee uint64, err error) *MockWallet_GetSendFee_Call {
+	_c.Call.Return(send, fee, err)
+	return _c
+}
+
+func (_c *MockWallet_GetSendFee_Call) RunAndReturn(run func(args onchain.WalletSendArgs) (uint64, uint64, error)) *MockWallet_GetSendFee_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTransactions provides a mock function for the type MockWallet
 func (_mock *MockWallet) GetTransactions(limit uint64, offset uint64) ([]*onchain.WalletTransaction, error) {
 	ret := _mock.Called(limit, offset)
@@ -411,8 +477,8 @@ func (_c *MockWallet_Ready_Call) RunAndReturn(run func() bool) *MockWallet_Ready
 }
 
 // SendToAddress provides a mock function for the type MockWallet
-func (_mock *MockWallet) SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error) {
-	ret := _mock.Called(address, amount, satPerVbyte, sendAll)
+func (_mock *MockWallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
+	ret := _mock.Called(args)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendToAddress")
@@ -420,16 +486,16 @@ func (_mock *MockWallet) SendToAddress(address string, amount uint64, satPerVbyt
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string, uint64, float64, bool) (string, error)); ok {
-		return returnFunc(address, amount, satPerVbyte, sendAll)
+	if returnFunc, ok := ret.Get(0).(func(onchain.WalletSendArgs) (string, error)); ok {
+		return returnFunc(args)
 	}
-	if returnFunc, ok := ret.Get(0).(func(string, uint64, float64, bool) string); ok {
-		r0 = returnFunc(address, amount, satPerVbyte, sendAll)
+	if returnFunc, ok := ret.Get(0).(func(onchain.WalletSendArgs) string); ok {
+		r0 = returnFunc(args)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string, uint64, float64, bool) error); ok {
-		r1 = returnFunc(address, amount, satPerVbyte, sendAll)
+	if returnFunc, ok := ret.Get(1).(func(onchain.WalletSendArgs) error); ok {
+		r1 = returnFunc(args)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -442,37 +508,19 @@ type MockWallet_SendToAddress_Call struct {
 }
 
 // SendToAddress is a helper method to define mock.On call
-//   - address string
-//   - amount uint64
-//   - satPerVbyte float64
-//   - sendAll bool
-func (_e *MockWallet_Expecter) SendToAddress(address interface{}, amount interface{}, satPerVbyte interface{}, sendAll interface{}) *MockWallet_SendToAddress_Call {
-	return &MockWallet_SendToAddress_Call{Call: _e.mock.On("SendToAddress", address, amount, satPerVbyte, sendAll)}
+//   - args onchain.WalletSendArgs
+func (_e *MockWallet_Expecter) SendToAddress(args interface{}) *MockWallet_SendToAddress_Call {
+	return &MockWallet_SendToAddress_Call{Call: _e.mock.On("SendToAddress", args)}
 }
 
-func (_c *MockWallet_SendToAddress_Call) Run(run func(address string, amount uint64, satPerVbyte float64, sendAll bool)) *MockWallet_SendToAddress_Call {
+func (_c *MockWallet_SendToAddress_Call) Run(run func(args onchain.WalletSendArgs)) *MockWallet_SendToAddress_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
+		var arg0 onchain.WalletSendArgs
 		if args[0] != nil {
-			arg0 = args[0].(string)
-		}
-		var arg1 uint64
-		if args[1] != nil {
-			arg1 = args[1].(uint64)
-		}
-		var arg2 float64
-		if args[2] != nil {
-			arg2 = args[2].(float64)
-		}
-		var arg3 bool
-		if args[3] != nil {
-			arg3 = args[3].(bool)
+			arg0 = args[0].(onchain.WalletSendArgs)
 		}
 		run(
 			arg0,
-			arg1,
-			arg2,
-			arg3,
 		)
 	})
 	return _c
@@ -483,7 +531,7 @@ func (_c *MockWallet_SendToAddress_Call) Return(s string, err error) *MockWallet
 	return _c
 }
 
-func (_c *MockWallet_SendToAddress_Call) RunAndReturn(run func(address string, amount uint64, satPerVbyte float64, sendAll bool) (string, error)) *MockWallet_SendToAddress_Call {
+func (_c *MockWallet_SendToAddress_Call) RunAndReturn(run func(args onchain.WalletSendArgs) (string, error)) *MockWallet_SendToAddress_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -898,10 +898,11 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 
 		if request.SendFromInternal {
 			swapResponse.TxId, err = wallet.SendToAddress(
-				swapResponse.Address,
-				swapResponse.ExpectedAmount,
-				feeRate,
-				false,
+				onchain.WalletSendArgs{
+					Address:     swapResponse.Address,
+					Amount:      swapResponse.ExpectedAmount,
+					SatPerVbyte: feeRate,
+				},
 			)
 			if err != nil {
 				if dbErr := server.database.UpdateSwapState(&swap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
@@ -916,10 +917,11 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		}
 	} else if request.SendFromInternal {
 		swapResponse.TxId, err = wallet.SendToAddress(
-			swapResponse.Address,
-			swapResponse.ExpectedAmount,
-			feeRate,
-			false,
+			onchain.WalletSendArgs{
+				Address:     swapResponse.Address,
+				Amount:      swapResponse.ExpectedAmount,
+				SatPerVbyte: feeRate,
+			},
 		)
 		if err != nil {
 			return nil, err
@@ -1367,10 +1369,11 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	if !externalPay {
 		from := chainSwap.FromData
 		from.LockupTransactionId, err = fromWallet.SendToAddress(
-			from.LockupAddress,
-			from.Amount,
-			feeRate,
-			false,
+			onchain.WalletSendArgs{
+				Address:     from.LockupAddress,
+				Amount:      from.Amount,
+				SatPerVbyte: feeRate,
+			},
 		)
 		if err != nil {
 			if dbErr := server.database.UpdateChainSwapState(&chainSwap, boltzrpc.SwapState_ERROR, err.Error()); dbErr != nil {
@@ -1747,7 +1750,12 @@ func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *
 	if request.Address == "" {
 		request.Address = server.network.DummyLockupAddress[ownWallet.Currency]
 	}
-	amount, fee, err := ownWallet.GetSendFee(request.Address, request.Amount, feeRate, request.GetSendAll())
+	amount, fee, err := ownWallet.GetSendFee(onchain.WalletSendArgs{
+		Address:     request.Address,
+		Amount:      request.Amount,
+		SatPerVbyte: feeRate,
+		SendAll:     request.GetSendAll(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1859,7 +1867,12 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if request.Amount == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "amount required")
 	}
-	txId, err := sendWallet.SendToAddress(request.Address, request.Amount, feeRate, request.GetSendAll())
+	txId, err := sendWallet.SendToAddress(onchain.WalletSendArgs{
+		Address:     request.Address,
+		Amount:      request.Amount,
+		SatPerVbyte: feeRate,
+		SendAll:     request.GetSendAll(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2375,7 +2388,11 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 	if ownWallet, ok := check.(*wallet.Wallet); ok {
 		dummyAddress := server.network.DummyLockupAddress[info.Currency]
 		// this call implicitly checks the balance aswell
-		_, _, err := ownWallet.GetSendFee(dummyAddress, sendAmount, feeRate, false)
+		_, _, err := ownWallet.GetSendFee(onchain.WalletSendArgs{
+			Address:     dummyAddress,
+			Amount:      sendAmount,
+			SatPerVbyte: feeRate,
+		})
 		return err
 	}
 	if balance.Confirmed < sendAmount {
