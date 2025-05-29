@@ -50,25 +50,35 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 	var err error
 
 	if cfg.SyncInterval == 0 {
-		cfg.SyncInterval = DefaultSyncInterval
+		if cfg.Network == boltz.Regtest {
+			cfg.SyncInterval = 1 * time.Second
+		} else {
+			cfg.SyncInterval = DefaultSyncInterval
+		}
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
 	}
 
 	backend := &BlockchainBackend{cfg: cfg}
-	if cfg.Esplora != nil {
-		esplora := cfg.Esplora
-		if esplora.Waterfall {
-			backend.esplora, err = lwk.EsploraClientNewWaterfalls(esplora.Url, convertNetwork(cfg.Network))
-		} else {
-			backend.esplora, err = lwk.NewEsploraClient(esplora.Url, convertNetwork(cfg.Network))
+	if cfg.Esplora == nil {
+		switch cfg.Network {
+		case boltz.Regtest:
+			cfg.Esplora = &EsploraConfig{
+				Url:       "http://localhost:3003",
+				Waterfall: false,
+			}
+		default:
+			return nil, errors.New("esplora is required")
 		}
-		if err != nil {
-			return nil, err
-		}
+	}
+	if cfg.Esplora.Waterfall {
+		backend.esplora, err = lwk.EsploraClientNewWaterfalls(cfg.Esplora.Url, convertNetwork(cfg.Network))
 	} else {
-		return nil, errors.New("esplora is required")
+		backend.esplora, err = lwk.NewEsploraClient(cfg.Esplora.Url, convertNetwork(cfg.Network))
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return backend, nil
