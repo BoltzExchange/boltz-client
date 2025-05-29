@@ -53,14 +53,6 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-func TestMain(m *testing.M) {
-	_, err := test.InitTestWallet(false)
-	if err != nil {
-		logger.Fatal(err.Error())
-	}
-	os.Exit(m.Run())
-}
-
 func requireCode(t *testing.T, err error, code codes.Code) {
 	assert.Equal(t, code, status.Code(err))
 }
@@ -1126,21 +1118,31 @@ func TestReverseSwap(t *testing.T) {
 }
 
 func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) *boltzrpc.Wallet {
-	wallets, err := client.GetWallets(&currency, false)
-	require.NoError(t, err)
-	for _, existing := range wallets.Wallets {
-		if existing.Balance.Confirmed > 0 {
-			return existing
+	params := &boltzrpc.WalletParams{Currency: currency, Name: "regtest"}
+	wallet, err := client.GetWallet(params.Name)
+	if err != nil {
+		mnemonic := test.WalletMnemonic
+		subaccount := uint64(test.WalletSubaccount)
+		creds := &boltzrpc.WalletCredentials{Mnemonic: &mnemonic, Subaccount: &subaccount}
+		wallet, err = client.ImportWallet(params, creds)
+		require.NoError(t, err)
+	}
+	if wallet.Balance.Total == 0 {
+		receive, err := client.WalletReceive(wallet.Id)
+		require.NoError(t, err)
+		test.SendToAddress(getCli(currency), receive.Address, 10_000_000)
+		for {
+			wallet, err = client.GetWalletById(wallet.Id)
+			if err != nil {
+				require.NoError(t, err)
+			}
+			if wallet.Balance.Total > 0 {
+				break
+			}
+			time.Sleep(200 * time.Millisecond)
 		}
 	}
-	params := &boltzrpc.WalletParams{Currency: currency, Name: "regtest"}
-	mnemonic := test.WalletMnemonic
-	subaccount := uint64(test.WalletSubaccount)
-	creds := &boltzrpc.WalletCredentials{Mnemonic: &mnemonic, Subaccount: &subaccount}
-	result, err := client.ImportWallet(params, creds)
-	require.NoError(t, err)
-	time.Sleep(200 * time.Millisecond)
-	return result
+	return wallet
 }
 
 func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
@@ -1706,9 +1708,6 @@ func TestWallet(t *testing.T) {
 		require.Error(t, err)
 
 	*/
-
-	_, err = client.SetSubaccount(testWallet.Id, nil)
-	require.NoError(t, err)
 
 	_, err = client.GetWallet(walletName)
 	require.NoError(t, err)
