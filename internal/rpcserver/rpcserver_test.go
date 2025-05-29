@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 
@@ -52,14 +54,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
-
-func TestMain(m *testing.M) {
-	_, err := test.InitTestWallet(false)
-	if err != nil {
-		logger.Fatal(err.Error())
-	}
-	os.Exit(m.Run())
-}
 
 func requireCode(t *testing.T, err error, code codes.Code) {
 	assert.Equal(t, code, status.Code(err))
@@ -1165,21 +1159,30 @@ func TestReverseSwap(t *testing.T) {
 }
 
 func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) *boltzrpc.Wallet {
-	wallets, err := client.GetWallets(&currency, false)
-	require.NoError(t, err)
-	for _, existing := range wallets.Wallets {
-		if existing.Balance.Confirmed > 0 {
-			return existing
-		}
-	}
 	params := &boltzrpc.WalletParams{Currency: currency, Name: walletName(currency)}
-	mnemonic := test.WalletMnemonic
-	subaccount := uint64(test.WalletSubaccount)
-	creds := &boltzrpc.WalletCredentials{Mnemonic: &mnemonic, Subaccount: &subaccount}
-	result, err := client.ImportWallet(params, creds)
-	require.NoError(t, err)
-	time.Sleep(200 * time.Millisecond)
-	return result
+	wallet, err := client.GetWallet(params.Name)
+	if err != nil {
+		mnemonic := test.WalletMnemonic
+		subaccount := uint64(test.WalletSubaccount)
+		creds := &boltzrpc.WalletCredentials{Mnemonic: &mnemonic, Subaccount: &subaccount}
+		wallet, err = client.ImportWallet(params, creds)
+		require.NoError(t, err)
+	}
+	if wallet.Balance.Total == 0 {
+		for i := 0; i < 5; i++ {
+			receive, err := client.WalletReceive(wallet.Id)
+			require.NoError(t, err)
+			test.SendToAddress(getCli(currency), receive.Address, 10_000_000)
+			time.Sleep(200 * time.Millisecond)
+		}
+		test.MineBlock()
+		require.Eventually(t, func() bool {
+			wallet, err = client.GetWalletById(wallet.Id)
+			require.NoError(t, err)
+			return wallet.Balance.Total > 0
+		}, 10*time.Second, 250*time.Millisecond)
+	}
+	return wallet
 }
 
 func walletId(t *testing.T, client client.Boltz, currency boltzrpc.Currency) uint64 {
@@ -1758,9 +1761,6 @@ func TestWallet(t *testing.T) {
 		require.Error(t, err)
 
 	*/
-
-	_, err = client.SetSubaccount(testWallet.Id, nil)
-	require.NoError(t, err)
 
 	_, err = client.GetWallet(walletName(boltzrpc.Currency_LBTC))
 	require.NoError(t, err)
@@ -3150,4 +3150,42 @@ func TestPasswordAuth(t *testing.T) {
 		require.Error(t, err)
 		requireCode(t, err, codes.Unauthenticated)
 	})
+}
+
+func TestLegacyWallet(t *testing.T) {
+	cfg := loadConfig(t)
+	chain := getOnchain(t, cfg)
+	client, _, stop := setup(t, setupOptions{
+		cfg:   cfg,
+		chain: chain,
+	})
+
+	rpcWallet := emptyWallet(t, client, boltzrpc.Currency_LBTC)
+
+	walletImpl, err := chain.GetAnyWallet(onchain.WalletChecker{Id: &rpcWallet.Id})
+	require.NoError(t, err)
+
+	_, ok := walletImpl.(*liquid_wallet.Wallet)
+	require.True(t, ok)
+
+	stop()
+
+	dbWallet, err := cfg.Database.GetWallet(rpcWallet.Id)
+	require.NoError(t, err)
+	require.False(t, dbWallet.Legacy)
+
+	_, err = cfg.Database.Exec("UPDATE wallets SET legacy = TRUE WHERE id = ?", rpcWallet.Id)
+	require.NoError(t, err)
+
+	chain = getOnchain(t, cfg)
+	_, _, stop = setup(t, setupOptions{
+		cfg:   cfg,
+		chain: chain,
+	})
+	defer stop()
+
+	walletImpl, err = chain.GetAnyWallet(onchain.WalletChecker{Id: &rpcWallet.Id})
+	require.NoError(t, err)
+	_, ok = walletImpl.(*wallet.Wallet)
+	require.True(t, ok)
 }

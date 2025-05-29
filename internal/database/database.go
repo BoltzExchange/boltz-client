@@ -218,6 +218,7 @@ CREATE TABLE wallets
     subaccount     INT,
     salt           VARCHAR,
     tenantId       INT NOT NULL REFERENCES tenants (id),
+    legacy         BOOLEAN DEFAULT FALSE,
 
     UNIQUE (name, tenantId, nodePubkey),
     UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
