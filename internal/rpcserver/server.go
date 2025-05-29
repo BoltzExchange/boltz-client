@@ -19,6 +19,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"google.golang.org/grpc/keepalive"
 
@@ -204,6 +205,14 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		server.boltz,
 		server.database,
 	)
+
+	server.liquidBackend, err = liquid_wallet.NewBlockchainBackend(liquid_wallet.Config{
+		Network: server.network,
+		DataDir: cfg.DataDir + "/liquid_wallet",
+	})
+	if err != nil {
+		return fmt.Errorf("could not init liquid wallet backend: %v", err)
+	}
 
 	autoConfPath := path.Join(cfg.DataDir, "autoswap.toml")
 	server.swapper.Init(server.database, server.onchain, autoConfPath, server)
