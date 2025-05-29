@@ -269,8 +269,6 @@ func TestAutoConsolidate(t *testing.T) {
 
 	cli := test.LiquidCli
 	numTxns := int(walletConfig.AutoConsolidateThreshold) + 1
-	notifier := onchainWallet.TransactionNotifier.Get()
-	defer onchainWallet.TransactionNotifier.Remove(notifier)
 	amount := uint64(1000)
 	for i := 0; i < numTxns; i++ {
 		addr, err := wallet.NewAddress()
@@ -278,30 +276,20 @@ func TestAutoConsolidate(t *testing.T) {
 		test.SendToAddress(cli, addr, amount)
 	}
 	test.MineBlock()
-	timeout := time.After(15 * time.Second)
-	for {
-		select {
-		case <-notifier:
-		case <-timeout:
-			t.Fatal("timeout")
-		}
+	require.Eventually(t, func() bool {
 		txs, err := wallet.GetTransactions(0, 0)
 		require.NoError(t, err)
 		// wait for all txns to be picked up, including the consolidation txn
 		if len(txs) == numTxns+1 {
-			consolidated := false
 			for _, tx := range txs {
 				if tx.IsConsolidation {
-					consolidated = true
 					require.Less(t, tx.Outputs[0].Amount, amount*walletConfig.MaxInputs)
+					return true
 				}
 			}
-			require.True(t, consolidated)
-			require.Len(t, txs, numTxns+1)
-			break
 		}
-	}
-
+		return false
+	}, 15*time.Second, 250*time.Millisecond)
 }
 
 func TestConfig_Validate(t *testing.T) {

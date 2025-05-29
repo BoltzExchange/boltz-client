@@ -56,6 +56,7 @@ func parseWallet(rows row) (*Wallet, error) {
 		&wallet.Subaccount,
 		&wallet.Salt,
 		&wallet.TenantId,
+		&wallet.Legacy,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse wallet wallet: %w", err)

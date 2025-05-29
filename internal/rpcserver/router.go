@@ -26,6 +26,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/macaroons"
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
@@ -67,6 +68,8 @@ type routedBoltzServer struct {
 	swapper    *autoswap.AutoSwap
 	macaroon   *macaroons.Service
 	referralId string
+
+	liquidBackend *liquid_wallet.BlockchainBackend
 
 	stop  chan bool
 	state serverState
@@ -1389,12 +1392,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 }
 
 func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *onchain.WalletCredentials, password string) error {
-	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
+	decryptedCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
 		return status.Error(codes.InvalidArgument, "wrong password")
 	}
 
-	for _, existing := range decryptWalletCredentials {
+	for _, existing := range decryptedCredentials {
 		if existing.Name == credentials.Name && existing.TenantId == credentials.TenantId {
 			return status.Errorf(codes.InvalidArgument, "wallet %s already exists", existing.Name)
 		}
@@ -1403,38 +1406,29 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 	}
 
-	wallet, err := wallet.Login(credentials)
-	if err != nil {
-		return errors.New("could not login: " + err.Error())
-	}
-	if wallet.GetWalletInfo().Readonly {
-		var subaccount *uint64
-		subaccounts, err := wallet.GetSubaccounts(false)
-		if err != nil {
+	return server.database.RunTx(func(tx *database.Transaction) error {
+		if err := tx.CreateWallet(&database.Wallet{WalletCredentials: credentials}); err != nil {
 			return err
 		}
-		if len(subaccounts) != 0 {
-			subaccount = &subaccounts[0].Pointer
+		decryptedCredentials = append(decryptedCredentials, credentials)
+
+		if password != "" {
+			if err := server.encryptWalletCredentials(tx, password, decryptedCredentials); err != nil {
+				return fmt.Errorf("could not encrypt credentials: %w", err)
+			}
 		}
-		credentials.Subaccount, err = wallet.SetSubaccount(subaccount)
+
+		logger.Infof("Creating new wallet %d", credentials.Id)
+		imported, err := server.loginWallet(credentials)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not login: %w", err)
 		}
-	}
 
-	decryptWalletCredentials = append(decryptWalletCredentials, credentials)
-	if err := server.database.CreateWallet(&database.Wallet{WalletCredentials: credentials}); err != nil {
-		return err
-	}
-	if password != "" {
-		if err := server.encryptWalletCredentials(password, decryptWalletCredentials); err != nil {
-			return fmt.Errorf("could not encrypt credentials: %w", err)
-		}
-	}
-	wallet.Id = credentials.Id
+		server.onchain.AddWallet(imported)
 
-	server.onchain.AddWallet(wallet)
-	return nil
+		return nil
+	})
+
 }
 
 func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *boltzrpc.ImportWalletRequest) (*boltzrpc.Wallet, error) {
@@ -1532,11 +1526,14 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 		return nil, err
 	}
 
-	_, err = server.SetSubaccount(ctx, &boltzrpc.SetSubaccountRequest{
-		WalletId: created.Id,
-	})
-	if err != nil {
-		return nil, err
+	// only GDK wallets have subaccounts
+	if request.Params.Currency == boltzrpc.Currency_BTC {
+		_, err = server.SetSubaccount(ctx, &boltzrpc.SetSubaccountRequest{
+			WalletId: created.Id,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &boltzrpc.CreateWalletResponse{
 		Mnemonic: mnemonic,
@@ -1734,21 +1731,22 @@ func (server *routedBoltzServer) GetWallet(ctx context.Context, request *boltzrp
 }
 
 func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *boltzrpc.WalletSendRequest) (*boltzrpc.WalletSendFee, error) {
-	ownWallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.Id})
+	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{Id: &request.Id})
 	if err != nil {
 		return nil, err
 	}
 	feeRate := request.GetSatPerVbyte()
+	currency := wallet.GetWalletInfo().Currency
 	if feeRate == 0 {
-		feeRate, err = server.onchain.EstimateFee(ownWallet.Currency)
+		feeRate, err = server.onchain.EstimateFee(wallet.GetWalletInfo().Currency)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if request.Address == "" {
-		request.Address = server.network.DummyLockupAddress[ownWallet.Currency]
+		request.Address = server.network.DummyLockupAddress[currency]
 	}
-	amount, fee, err := ownWallet.GetSendFee(onchain.WalletSendArgs{
+	amount, fee, err := wallet.GetSendFee(onchain.WalletSendArgs{
 		Address:     request.Address,
 		Amount:      request.Amount,
 		SatPerVbyte: feeRate,
@@ -1823,7 +1821,7 @@ func (server *routedBoltzServer) GetWalletCredentials(ctx context.Context, reque
 }
 
 func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *boltzrpc.RemoveWalletRequest) (*boltzrpc.RemoveWalletResponse, error) {
-	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{
+	wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
 		Id:            &request.Id,
 		AllowReadonly: true,
 	})
@@ -1919,11 +1917,7 @@ func (server *routedBoltzServer) decryptWalletCredentials(password string) (decr
 	return decrypted, nil
 }
 
-func (server *routedBoltzServer) encryptWalletCredentials(password string, credentials []*onchain.WalletCredentials) (err error) {
-	tx, err := server.database.BeginTx()
-	if err != nil {
-		return err
-	}
+func (server *routedBoltzServer) encryptWalletCredentials(tx *database.Transaction, password string, credentials []*onchain.WalletCredentials) (err error) {
 	for _, creds := range credentials {
 		if password != "" {
 			if creds, err = creds.Encrypt(password); err != nil {
@@ -1931,10 +1925,10 @@ func (server *routedBoltzServer) encryptWalletCredentials(password string, crede
 			}
 		}
 		if err := tx.UpdateWalletCredentials(creds); err != nil {
-			return tx.Rollback(err)
+			return err
 		}
 	}
-	return tx.Commit()
+	return nil
 }
 
 func (server *routedBoltzServer) Unlock(_ context.Context, request *boltzrpc.UnlockRequest) (*empty.Empty, error) {
@@ -2015,7 +2009,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			creds := creds
 			go func() {
 				defer wg.Done()
-				wallet, err := wallet.Login(creds)
+				wallet, err := server.loginWallet(creds)
 				if err != nil {
 					logger.Errorf("could not login to wallet: %v", err)
 				} else {
@@ -2054,10 +2048,9 @@ func (server *routedBoltzServer) ChangeWalletPassword(_ context.Context, request
 		return nil, err
 	}
 
-	if err := server.encryptWalletCredentials(request.New, decrypted); err != nil {
-		return nil, err
-	}
-	return &empty.Empty{}, nil
+	return &empty.Empty{}, server.database.RunTx(func(tx *database.Transaction) error {
+		return server.encryptWalletCredentials(tx, request.New, decrypted)
+	})
 }
 
 func (server *routedBoltzServer) requestAllowed(fullMethod string) error {
@@ -2379,6 +2372,13 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 		return info.InsufficientBalanceError(sendAmount)
 	}
 	return nil
+}
+
+func (server *routedBoltzServer) loginWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
+	if credentials.Currency == boltz.CurrencyLiquid && !credentials.Legacy {
+		return liquid_wallet.NewWallet(server.liquidBackend, credentials)
+	}
+	return wallet.Login(credentials)
 }
 
 func calculateDepositLimit(limit uint64, fees *boltzrpc.Fees, isMin bool) uint64 {
