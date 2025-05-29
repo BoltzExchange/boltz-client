@@ -58,6 +58,10 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
+	_, err = test.InitTestWalletLiquid(false)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
 	os.Exit(m.Run())
 }
 
@@ -1706,9 +1710,6 @@ func TestWallet(t *testing.T) {
 		require.Error(t, err)
 
 	*/
-
-	_, err = client.SetSubaccount(testWallet.Id, nil)
-	require.NoError(t, err)
 
 	_, err = client.GetWallet(walletName)
 	require.NoError(t, err)

@@ -18,6 +18,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/config"
 	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"google.golang.org/grpc/keepalive"
 
@@ -375,6 +376,17 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		})
 		if err != nil {
 			return nil, fmt.Errorf("could not init wallet: %v", err)
+		}
+
+		err = liquid_wallet.Init(&liquid_wallet.Config{
+			Network: network,
+			DataDir: cfg.DataDir + "/liquid_wallet",
+			Esplora: &liquid_wallet.EsploraConfig{
+				Url: "http://localhost:4003/api",
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("could not init liquid_wallet: %v", err)
 		}
 	}
 
