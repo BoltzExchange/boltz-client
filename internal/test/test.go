@@ -16,6 +16,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/stretchr/testify/require"
@@ -60,6 +61,46 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 		Mnemonic:   WalletMnemonic,
 		Subaccount: &sub,
 	}
+}
+
+func LiquidWalletConfig() *liquid_wallet.Config {
+	return &liquid_wallet.Config{
+		Network: boltz.Regtest,
+		DataDir: walletDataDir,
+		Esplora: &liquid_wallet.EsploraConfig{
+			Url:       "http://localhost:3003",
+			Waterfall: false,
+		},
+	}
+}
+
+func InitTestWalletLiquid(backend *liquid_wallet.BlockchainBackend) (*liquid_wallet.Wallet, error) {
+	InitLogger()
+	credentials := WalletCredentials(boltz.CurrencyLiquid)
+
+	wallet, err := liquid_wallet.NewWallet(backend, credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := wallet.GetBalance()
+	if err != nil {
+		return nil, err
+	}
+
+	if balance.Confirmed == 0 {
+		addr, err := wallet.NewAddress()
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < 3; i++ {
+			SendToAddress(LiquidCli, addr, 1000000)
+		}
+		MineBlock()
+		time.Sleep(3 * time.Second)
+	}
+
+	return wallet, nil
 }
 
 func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
