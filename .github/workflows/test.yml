@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -28,8 +30,6 @@ jobs:
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
 
       - name: Build
         run: make build

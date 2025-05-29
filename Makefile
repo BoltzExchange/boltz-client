@@ -20,6 +20,9 @@ LDFLAGS := -ldflags "-X $(PKG)/internal/build.Commit=$(COMMIT) -X $(PKG)/interna
 GREEN := "\\033[0;32m"
 NC := "\\033[0m"
 
+CARGO_TARGET_DIR := $(shell pwd)/target
+CARGO_BUILD := cargo build --target-dir $(CARGO_TARGET_DIR) --release --lib
+
 define print
 	echo $(GREEN)$1$(NC)
 endef
@@ -47,6 +50,8 @@ proto: $(TOOLS_PATH)
 	@$(call print, "Generating protosbufs")
 	eval cd pkg/boltzrpc && ./gen_protos.sh
 
+lwk-bindings: build-lwk
+	cd lwk/lwk_bindings && uniffi-bindgen-go --out-dir ../../internal/onchain/liquid-wallet/ --library ../../target/release/liblwk.a
 #
 # Tests
 #
@@ -79,16 +84,26 @@ restart-regtest: download-regtest
 # Building
 #
 
+LN_LIB := $(shell pwd)/internal/lightning/lib
+
 build-bolt12:
 	@$(call print, "Building bolt12")
-	cd internal/lightning/lib/bolt12 && cargo build --release
+	BOLT12_HEADER_FILE=$(LN_LIB)/bolt12.h $(CARGO_BUILD) --manifest-path $(LN_LIB)/bolt12/Cargo.toml
+	cp target/release/libbolt12.a target/release/libbolt12.so $(LN_LIB)/
 
-build: download-gdk build-bolt12
+build-lwk:
+ifeq ("$(wildcard internal/onchain/liquid-wallet/lwk/liblwk.a)","")
+	@$(call print, "Building lwk")
+	$(CARGO_BUILD) --manifest-path lwk/lwk_bindings/Cargo.toml
+	cp target/release/liblwk.a target/release/liblwk.so internal/onchain/liquid-wallet/lwk/
+endif
+
+build: download-gdk build-bolt12 build-lwk
 	@$(call print, "Building boltz-client")
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-static: download-gdk build-bolt12
+static: download-gdk build-bolt12 build-lwk
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -tags static -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)

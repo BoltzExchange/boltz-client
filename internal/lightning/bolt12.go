@@ -1,7 +1,7 @@
 package lightning
 
 /*
-#include "./lib/bolt12/target/bolt12.h"
+#include "./lib/bolt12/bolt12.h"
 #include <stdlib.h>
 */
 import "C"
