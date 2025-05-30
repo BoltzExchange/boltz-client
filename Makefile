@@ -47,6 +47,8 @@ proto: $(TOOLS_PATH)
 	@$(call print, "Generating protosbufs")
 	eval cd pkg/boltzrpc && ./gen_protos.sh
 
+lwk-bindings: build-lwk
+	cd lwk/lwk_bindings && uniffi-bindgen-go --out-dir ../../internal/onchain/liquid-wallet/ --library ../../target/release/liblwk.a
 #
 # Tests
 #
@@ -59,19 +61,19 @@ integration: start-regtest
 	@$(call print, "Running integration tests")
 	$(GOTEST) ./... -v
 
-download-regtest:
-ifeq ("$(wildcard regtest/start.sh)","")
+setup-regtest:
+ifeq ("$(wildcard regtest/docker-compose.override.yml)","")
 	@$(call print, "Downloading regtest")
 	make submodules
 	cp regtest.override.yml regtest/docker-compose.override.yml
 	cd regtest && git apply ../regtest.patch
 endif
 
-start-regtest: download-regtest
+start-regtest: setup-regtest
 	@$(call print, "Starting regtest")
 	eval cd regtest && ./start.sh
 
-restart-regtest: download-regtest
+restart-regtest: setup-regtest
 	@$(call print, "Restarting regtest")
 	eval cd regtest && ./restart.sh
 
@@ -83,12 +85,19 @@ build-bolt12:
 	@$(call print, "Building bolt12")
 	cd internal/lightning/lib/bolt12 && cargo build --release
 
-build: download-gdk build-bolt12
+build-lwk:
+ifeq ("$(wildcard internal/onchain/liquid-wallet/lwk/liblwk.a)","")
+	@$(call print, "Building lwk")
+	cd lwk/lwk_bindings && cargo build --release --lib
+	cp lwk/target/release/liblwk.a lwk/target/release/liblwk.so internal/onchain/liquid-wallet/lwk/
+endif
+
+build: download-gdk build-bolt12 build-lwk
 	@$(call print, "Building boltz-client")
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-static: download-gdk build-bolt12
+static: download-gdk build-bolt12 build-lwk
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -tags static -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
