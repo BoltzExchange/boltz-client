@@ -22,39 +22,6 @@ type BlockEpoch struct {
 	Height uint32
 }
 
-type Balance struct {
-	Total       uint64
-	Confirmed   uint64
-	Unconfirmed uint64
-}
-
-type TransactionOutput struct {
-	Address      string
-	Amount       uint64
-	IsOurAddress bool
-}
-
-type WalletTransaction struct {
-	Id              string
-	Timestamp       time.Time
-	Outputs         []TransactionOutput
-	BlockHeight     uint32
-	BalanceChange   int64
-	IsConsolidation bool
-}
-
-type WalletInfo struct {
-	Id       Id
-	Name     string
-	Currency boltz.Currency
-	Readonly bool
-	TenantId Id
-}
-
-func (info WalletInfo) InsufficientBalanceError(amount uint64) error {
-	return fmt.Errorf("wallet %s has insufficient balance for sending %d sats", info.Name, amount)
-}
-
 type WalletChecker struct {
 	Id            *Id
 	Name          *string
@@ -84,25 +51,6 @@ type TxProvider interface {
 
 type AddressProvider interface {
 	IsUsed(address string) (bool, error)
-}
-
-type WalletSendArgs struct {
-	Address     string
-	Amount      uint64
-	SatPerVbyte float64
-	SendAll     bool
-}
-
-type Wallet interface {
-	NewAddress() (string, error)
-	SendToAddress(args WalletSendArgs) (string, error)
-	Ready() bool
-	GetBalance() (*Balance, error)
-	GetWalletInfo() WalletInfo
-	Disconnect() error
-	GetTransactions(limit, offset uint64) ([]*WalletTransaction, error)
-	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
-	GetSendFee(args WalletSendArgs) (send uint64, fee uint64, err error)
 }
 
 type ElectrumOptions struct {

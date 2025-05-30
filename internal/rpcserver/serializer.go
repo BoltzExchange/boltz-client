@@ -237,7 +237,7 @@ func serializeWalletSubaccount(subaccount wallet.Subaccount, balance *onchain.Ba
 	}
 }
 
-func serializeWalletCredentials(credentials *wallet.Credentials) *boltzrpc.WalletCredentials {
+func serializeWalletCredentials(credentials *onchain.WalletCredentials) *boltzrpc.WalletCredentials {
 	return &boltzrpc.WalletCredentials{
 		Mnemonic:       serializeOptionalString(credentials.Mnemonic),
 		Xpub:           serializeOptionalString(credentials.Xpub),

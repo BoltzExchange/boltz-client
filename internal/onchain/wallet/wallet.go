@@ -50,59 +50,6 @@ type AuthHandler = *C.struct_GA_auth_handler
 type Json = *C.GA_json
 type Session = *C.struct_GA_session
 
-type Credentials struct {
-	onchain.WalletInfo
-	Mnemonic       string  `json:"mnemonic"`
-	Subaccount     *uint64 `json:"subaccount"`
-	Xpub           string  `json:"xpub"`
-	CoreDescriptor string  `json:"core_descriptor"`
-	Salt           string
-}
-
-func (c *Credentials) Encrypted() bool {
-	return c.Salt != ""
-}
-
-func (c *Credentials) Decrypt(password string) (*Credentials, error) {
-	if !c.Encrypted() {
-		return nil, errors.New("credentials are not encrypted")
-	}
-	decrypted := *c
-	var err error
-
-	if decrypted.Xpub != "" {
-		decrypted.Xpub, err = decrypt(decrypted.Xpub, password, decrypted.Salt)
-	} else if decrypted.CoreDescriptor != "" {
-		decrypted.CoreDescriptor, err = decrypt(decrypted.CoreDescriptor, password, decrypted.Salt)
-	} else if decrypted.Mnemonic != "" {
-		decrypted.Mnemonic, err = decrypt(decrypted.Mnemonic, password, decrypted.Salt)
-	}
-	decrypted.Salt = ""
-	return &decrypted, err
-}
-
-func (c *Credentials) Encrypt(password string) (*Credentials, error) {
-	if c.Encrypted() {
-		return nil, errors.New("credentails are already encrypted")
-	}
-	var err error
-
-	encrypted := *c
-	encrypted.Salt, err = generateSalt()
-	if err != nil {
-		return nil, fmt.Errorf("could not generate new salt: %w", err)
-	}
-
-	if encrypted.Xpub != "" {
-		encrypted.Xpub, err = encrypt(encrypted.Xpub, password, encrypted.Salt)
-	} else if encrypted.CoreDescriptor != "" {
-		encrypted.CoreDescriptor, err = encrypt(encrypted.CoreDescriptor, password, encrypted.Salt)
-	} else if encrypted.Mnemonic != "" {
-		encrypted.Mnemonic, err = encrypt(encrypted.Mnemonic, password, encrypted.Salt)
-	}
-	return &encrypted, err
-}
-
 type Subaccount struct {
 	Pointer         uint64   `json:"pointer"`
 	Name            string   `json:"name"`
@@ -491,7 +438,7 @@ func (wallet *Wallet) CurrentSubaccount() (uint64, error) {
 	return *wallet.subaccount, nil
 }
 
-func Login(credentials *Credentials) (*Wallet, error) {
+func Login(credentials *onchain.WalletCredentials) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
