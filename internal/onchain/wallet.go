@@ -97,7 +97,7 @@ func (c *WalletCredentials) Decrypt(password string) (*WalletCredentials, error)
 
 func (c *WalletCredentials) Encrypt(password string) (*WalletCredentials, error) {
 	if c.Encrypted() {
-		return nil, errors.New("credentails are already encrypted")
+		return nil, errors.New("credentials are already encrypted")
 	}
 	var err error
 
