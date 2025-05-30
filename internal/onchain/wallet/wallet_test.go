@@ -143,12 +143,12 @@ func TestReal(t *testing.T) {
 func TestImportWallet(t *testing.T) {
 	tests := []struct {
 		name        string
-		credentials onchainWallet.Credentials
+		credentials onchain.WalletCredentials
 		err         bool
 	}{
 		{
 			name: "Xpub/Btc",
-			credentials: onchainWallet.Credentials{
+			credentials: onchain.WalletCredentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyBtc,
 				},
@@ -157,7 +157,7 @@ func TestImportWallet(t *testing.T) {
 		},
 		{
 			name: "Xpub/Liquid",
-			credentials: onchainWallet.Credentials{
+			credentials: onchain.WalletCredentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyLiquid,
 				},
@@ -167,7 +167,7 @@ func TestImportWallet(t *testing.T) {
 		},
 		{
 			name: "CoreDescriptor/Btc",
-			credentials: onchainWallet.Credentials{
+			credentials: onchain.WalletCredentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyBtc,
 				},
@@ -176,7 +176,7 @@ func TestImportWallet(t *testing.T) {
 		},
 		{
 			name: "CoreDescriptor/Liquid",
-			credentials: onchainWallet.Credentials{
+			credentials: onchain.WalletCredentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyLiquid,
 				},
@@ -185,7 +185,7 @@ func TestImportWallet(t *testing.T) {
 		},
 		{
 			name: "CoreDescriptor/Liquid/Multiple",
-			credentials: onchainWallet.Credentials{
+			credentials: onchain.WalletCredentials{
 				WalletInfo: onchain.WalletInfo{
 					Currency: boltz.CurrencyLiquid,
 				},
@@ -218,7 +218,7 @@ func TestImportWallet(t *testing.T) {
 
 func TestEncryptedCredentials(t *testing.T) {
 	password := "password"
-	credentials := &onchainWallet.Credentials{
+	credentials := &onchain.WalletCredentials{
 		WalletInfo: onchain.WalletInfo{
 			Currency: boltz.CurrencyBtc,
 		},
@@ -254,7 +254,7 @@ func TestAutoConsolidate(t *testing.T) {
 	onchainWallet.UpdateConfig(walletConfig)
 	mnemonic, err := onchainWallet.GenerateMnemonic()
 	require.NoError(t, err)
-	credentials := &onchainWallet.Credentials{
+	credentials := &onchain.WalletCredentials{
 		WalletInfo: onchain.WalletInfo{
 			Currency: boltz.CurrencyLiquid,
 		},

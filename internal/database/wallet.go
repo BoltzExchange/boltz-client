@@ -3,11 +3,11 @@ package database
 import (
 	"fmt"
 
-	onchainWallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 )
 
 type Wallet struct {
-	*onchainWallet.Credentials
+	*onchain.WalletCredentials
 	NodePubkey *string
 }
 
@@ -28,7 +28,7 @@ func (d *Database) CreateWallet(wallet *Wallet) error {
 	return row.Scan(&wallet.Id)
 }
 
-func (d *Database) UpdateWalletCredentials(credentials *onchainWallet.Credentials) error {
+func (d *Database) UpdateWalletCredentials(credentials *onchain.WalletCredentials) error {
 	query := "UPDATE wallets SET currency = ?, xpub = ?, coreDescriptor = ?, mnemonic = ?, subaccount = ?, salt = ? WHERE id = ?"
 	_, err := d.Exec(
 		query,
@@ -44,7 +44,7 @@ func (d *Database) UpdateWalletCredentials(credentials *onchainWallet.Credential
 }
 
 func parseWallet(rows row) (*Wallet, error) {
-	wallet := &Wallet{Credentials: &onchainWallet.Credentials{}}
+	wallet := &Wallet{WalletCredentials: &onchain.WalletCredentials{}}
 	err := rows.Scan(
 		&wallet.Id,
 		&wallet.Name,
@@ -92,7 +92,7 @@ func (d *Database) GetNodeWallet(nodePubkey string) (*Wallet, error) {
 	return nil, fmt.Errorf("walle with nodePubkey %s not found", nodePubkey)
 }
 
-func (d *Database) QueryWalletCredentials() ([]*onchainWallet.Credentials, error) {
+func (d *Database) QueryWalletCredentials() ([]*onchain.WalletCredentials, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	query := "SELECT * FROM wallets"
@@ -102,14 +102,14 @@ func (d *Database) QueryWalletCredentials() ([]*onchainWallet.Credentials, error
 	}
 	defer closeRows(rows)
 
-	var credentials []*onchainWallet.Credentials
+	var credentials []*onchain.WalletCredentials
 	for rows.Next() {
 		wallet, err := parseWallet(rows)
 		if err != nil {
 			return nil, err
 		}
 		if wallet.NodePubkey == nil {
-			credentials = append(credentials, wallet.Credentials)
+			credentials = append(credentials, wallet.WalletCredentials)
 		}
 	}
 

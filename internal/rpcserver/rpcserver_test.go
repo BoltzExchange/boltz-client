@@ -1722,7 +1722,7 @@ func TestUnlock(t *testing.T) {
 	encryptedCredentials, err := walletCredentials.Encrypt(password)
 	require.NoError(t, err)
 	encryptedWallet := &database.Wallet{
-		Credentials: encryptedCredentials,
+		WalletCredentials: encryptedCredentials,
 	}
 	err = cfg.Database.CreateWallet(encryptedWallet)
 	require.NoError(t, err)

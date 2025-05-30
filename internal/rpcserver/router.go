@@ -1390,7 +1390,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	return serializeChainSwap(&chainSwap), nil
 }
 
-func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *wallet.Credentials, password string) error {
+func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *onchain.WalletCredentials, password string) error {
 	decryptWalletCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
 		return status.Error(codes.InvalidArgument, "wrong password")
@@ -1425,7 +1425,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 	}
 
 	decryptWalletCredentials = append(decryptWalletCredentials, credentials)
-	if err := server.database.CreateWallet(&database.Wallet{Credentials: credentials}); err != nil {
+	if err := server.database.CreateWallet(&database.Wallet{WalletCredentials: credentials}); err != nil {
 		return err
 	}
 	if password != "" {
@@ -1448,7 +1448,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 	}
 
 	currency := serializers.ParseCurrency(&request.Params.Currency)
-	credentials := &wallet.Credentials{
+	credentials := &onchain.WalletCredentials{
 		WalletInfo: onchain.WalletInfo{
 			Name:     request.Params.Name,
 			Currency: currency,
@@ -1807,21 +1807,21 @@ func (server *routedBoltzServer) GetWalletCredentials(ctx context.Context, reque
 		return nil, err
 	}
 	info := wallet.GetWalletInfo()
-	creds, err := server.database.GetWallet(request.Id)
+	dbWallet, err := server.database.GetWallet(request.Id)
 	if err != nil {
 		return nil, fmt.Errorf("could not read credentials for wallet %s: %w", info.Name, err)
 	}
-	if creds.NodePubkey != nil {
+	if dbWallet.NodePubkey != nil {
 		return nil, errors.New("cant get credentials for node wallet")
 	}
-	if creds.Encrypted() {
-		creds.Credentials, err = creds.Decrypt(request.GetPassword())
+	if dbWallet.Encrypted() {
+		dbWallet.WalletCredentials, err = dbWallet.Decrypt(request.GetPassword())
 		if err != nil {
 			return nil, fmt.Errorf("invalid password: %w", err)
 		}
 	}
 
-	return serializeWalletCredentials(creds.Credentials), err
+	return serializeWalletCredentials(dbWallet.WalletCredentials), err
 }
 
 func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *boltzrpc.RemoveWalletRequest) (*boltzrpc.RemoveWalletResponse, error) {
@@ -1904,7 +1904,7 @@ func (server *routedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Emp
 	return &empty.Empty{}, nil
 }
 
-func (server *routedBoltzServer) decryptWalletCredentials(password string) (decrypted []*wallet.Credentials, err error) {
+func (server *routedBoltzServer) decryptWalletCredentials(password string) (decrypted []*onchain.WalletCredentials, err error) {
 	credentials, err := server.database.QueryWalletCredentials()
 	if err != nil {
 		return nil, err
@@ -1921,7 +1921,7 @@ func (server *routedBoltzServer) decryptWalletCredentials(password string) (decr
 	return decrypted, nil
 }
 
-func (server *routedBoltzServer) encryptWalletCredentials(password string, credentials []*wallet.Credentials) (err error) {
+func (server *routedBoltzServer) encryptWalletCredentials(password string, credentials []*onchain.WalletCredentials) (err error) {
 	tx, err := server.database.BeginTx()
 	if err != nil {
 		return err
@@ -2006,7 +2006,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 		nodeWallet, err := server.database.GetNodeWallet(info.Pubkey)
 		if err != nil {
 			err = server.database.CreateWallet(&database.Wallet{
-				Credentials: &wallet.Credentials{
+				WalletCredentials: &onchain.WalletCredentials{
 					WalletInfo: walletInfo,
 				},
 				NodePubkey: &info.Pubkey,
