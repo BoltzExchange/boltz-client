@@ -187,7 +187,6 @@ func (boltz *Websocket) handleTextMessage(data []byte) error {
 }
 
 func (boltz *Websocket) subscribe(swapIds []string) error {
-
 	if boltz.closed {
 		return errors.New("websocket is closed")
 	}
