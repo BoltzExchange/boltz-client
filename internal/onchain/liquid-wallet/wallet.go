@@ -80,6 +80,7 @@ var Regtest = lwk.NetworkRegtestDefault()
 var Testnet = lwk.NetworkTestnet()
 var Mainnet = lwk.NetworkMainnet()
 
+// convertNetwork maps a boltz.Network to the corresponding lwk.Network, panicking if the network is unsupported.
 func convertNetwork(network *boltz.Network) *lwk.Network {
 	if network == nil {
 		return nil
@@ -96,6 +97,9 @@ func convertNetwork(network *boltz.Network) *lwk.Network {
 	}
 }
 
+// NewWallet creates and initializes a new Wallet instance using the provided blockchain backend and wallet credentials.
+// It supports both mnemonic-based (read-write) and descriptor-based (read-only) wallets, performs an initial full scan to synchronize state, and starts a background synchronization loop.
+// Returns the initialized Wallet or an error if setup fails.
 func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredentials) (*Wallet, error) {
 	if backend == nil {
 		return nil, errors.New("backend instance is nil")
@@ -394,6 +398,7 @@ func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint6
 	return send - fee, fee, nil
 }
 
+// GenerateMnemonic creates a new random mnemonic phrase for the specified network.
 func GenerateMnemonic(network *boltz.Network) (string, error) {
 	signer, err := lwk.SignerRandom(convertNetwork(network))
 	if err != nil {

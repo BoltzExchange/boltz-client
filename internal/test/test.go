@@ -50,6 +50,7 @@ func ClearWalletDataDir() error {
 const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large"
 const WalletSubaccount = 0
 
+// WalletCredentials returns wallet credentials for the specified currency using a fixed mnemonic and subaccount for regtest testing.
 func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 	sub := uint64(WalletSubaccount)
 	return &onchain.WalletCredentials{
@@ -63,6 +64,7 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 	}
 }
 
+// LiquidWalletConfig returns a default configuration for a Liquid wallet on regtest, specifying the data directory and Esplora endpoint.
 func LiquidWalletConfig() *liquid_wallet.Config {
 	return &liquid_wallet.Config{
 		Network: boltz.Regtest,
@@ -74,6 +76,8 @@ func LiquidWalletConfig() *liquid_wallet.Config {
 	}
 }
 
+// InitTestWalletLiquid initializes a Liquid wallet for testing, funding it with test coins if its balance is zero.
+// Returns the initialized wallet or an error.
 func InitTestWalletLiquid(backend *liquid_wallet.BlockchainBackend) (*liquid_wallet.Wallet, error) {
 	InitLogger()
 	credentials := WalletCredentials(boltz.CurrencyLiquid)
@@ -103,6 +107,9 @@ func InitTestWalletLiquid(backend *liquid_wallet.BlockchainBackend) (*liquid_wal
 	return wallet, nil
 }
 
+// InitTestWallet initializes and funds test wallets for Bitcoin and Liquid networks in regtest mode.
+//
+// It clears any existing wallet data, initializes the wallet package if needed, logs in to wallets for both currencies, and ensures each has a confirmed balance by funding new addresses and mining blocks if necessary. Returns a map of currency to wallet or an error if initialization fails.
 func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 	InitLogger()
 	if err := ClearWalletDataDir(); err != nil {
