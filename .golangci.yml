@@ -1,0 +1,5 @@
+version: "2"
+linters:
+  exclusions:
+    paths:
+      - internal/onchain/liquid-wallet/lwk/
