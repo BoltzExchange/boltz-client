@@ -533,12 +533,13 @@ message DepositResponse {
 }
 
 message CreateSwapRequest {
+    // amount of sats to be received on lightning. 
+    // related: `invoice` field
     uint64 amount = 1;
     Pair pair = 2;
-    // not yet supported
-    // repeated string chan_ids = 3;
 
-    // the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise.
+    // the daemon will pay the swap using the onchain wallet specified in the `wallet` field 
+    // or the first internal wallet with the correct currency otherwise.
     bool send_from_internal = 4;
     // address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise.
     optional string refund_address = 5;

@@ -655,9 +655,9 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) |  |  |
-| `pair` | [`Pair`](#pair) |  | not yet supported repeated string chan_ids = 3; |
-| `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise. |
+| `amount` | [`uint64`](#uint64) |  | amount of sats to be received on lightning. related: `invoice` field |
+| `pair` | [`Pair`](#pair) |  |  |
+| `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or the first internal wallet with the correct currency otherwise. |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
 | `wallet_id` | [`uint64`](#uint64) | optional | wallet to pay swap from. only used if `send_from_internal` is set to true |
 | `invoice` | [`string`](#string) | optional | bolt11 invoice, lnurl, or lnaddress to use for the swap. required in standalone mode. when connected to a lightning node, a new invoice for `amount` sats will be fetched the `amount` field has to be populated in case of a lnurl and lnaddress |
