@@ -1,2 +1,3 @@
 [toolchain]
+# we lock to the same version as lwk here to make sure we can properly cache
 channel = "1.81.0"
