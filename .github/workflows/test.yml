@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Go
         uses: actions/setup-go@v5
@@ -29,7 +31,9 @@ jobs:
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          cache-workspaces: ./internal/lightning/lib/bolt12
+          cache-workspaces: |
+           ./internal/lightning/lib/bolt12
+           ./lwk
 
       - name: Build
         run: make build
@@ -40,7 +44,7 @@ jobs:
       - name: Start Regtest
         env:
           COMPOSE_PROFILES: ci
-        run: make download-regtest && chmod -R 777 regtest && make start-regtest
+        run: chmod -R 777 regtest && make start-regtest
 
       - name: Backend logs
         if: failure()
