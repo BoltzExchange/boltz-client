@@ -29,13 +29,13 @@ boltzcli getpairs --json | jq '.submarine[] | select(.pair.from == "BTC") | .fee
 
 * [Connect Boltz Client to your CLN or LND node](README.md#configuration)
 * Set the `amount` field to automatically generate a new invoice
-* Example: `boltzcli createswap --amount 100000` (100k sats)
+* Example: `boltzcli createswap 100000 btc` (100k sats)
 
 ### **Paying invoices of an external service**
 
 * [Start Boltz Client in standalone mode](README.md#standalone)
 * Provide an existing invoice via `--invoice` or the `invoice` field
-* Example: `boltzcli createswap --invoice lnbc1...`
+* Example: `boltzcli createswap --invoice lnbc1... btc`
 
 ## Funding Swaps
 
@@ -47,4 +47,4 @@ You can fund swaps in two ways:
 This choice is controlled by:
 
 * API: `send_from_internal` parameter in [`CreateSwapRequest`](grpc.md#createswaprequest)
-* CLI: `--from-wallet <wallet-name>` (internal) or `--external-pay` (external)
+* CLI: `--from-wallet <wallet-name>` (internal) or `--external-pay` (external). If neither is specified, the first internal wallet with the correct currency will be used for funding.
