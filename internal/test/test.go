@@ -16,6 +16,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/stretchr/testify/require"
@@ -62,6 +63,70 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 	}
 }
 
+func LiquidWalletConfig() liquid_wallet.Config {
+	return liquid_wallet.Config{
+		Network: boltz.Regtest,
+		DataDir: walletDataDir,
+		Esplora: &liquid_wallet.EsploraConfig{
+			Url:       "http://localhost:3003",
+			Waterfall: false,
+		},
+	}
+}
+
+func fundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
+	balance, err := wallet.GetBalance()
+	if err != nil {
+		return err
+	}
+	if balance.Total > 0 {
+		return nil
+	}
+
+	amount := uint64(10000000)
+	txes := 3
+	for i := 0; i < txes; i++ {
+		addr, err := wallet.NewAddress()
+		if err != nil {
+			return err
+		}
+		SendToAddress(GetCli(currency), addr, amount)
+	}
+	time.Sleep(1 * time.Second)
+	MineBlock()
+	ticker := time.NewTicker(1 * time.Second)
+	timeout := time.After(15 * time.Second)
+
+	for balance.Total < uint64(txes)*amount {
+		select {
+		case <-ticker.C:
+			balance, err = wallet.GetBalance()
+			if err != nil {
+				return err
+			}
+		case <-timeout:
+			return fmt.Errorf("timeout")
+		}
+	}
+	time.Sleep(1 * time.Second)
+	return nil
+}
+
+func InitTestWalletLiquid(backend *liquid_wallet.BlockchainBackend) (*liquid_wallet.Wallet, error) {
+	InitLogger()
+	credentials := WalletCredentials(boltz.CurrencyLiquid)
+
+	wallet, err := liquid_wallet.NewWallet(backend, credentials)
+	if err != nil {
+		return nil, err
+	}
+	if err := fundWallet(boltz.CurrencyLiquid, wallet); err != nil {
+		return nil, err
+	}
+
+	return wallet, nil
+}
+
 func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 	InitLogger()
 	if err := ClearWalletDataDir(); err != nil {
@@ -90,41 +155,9 @@ func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 			if err != nil {
 				return err
 			}
-			time.Sleep(200 * time.Millisecond)
-			balance, err := wallet.GetBalance()
-			if err != nil {
-				return err
-			}
-			if balance.Confirmed == 0 {
-				addr, err := wallet.NewAddress()
-				if err != nil {
-					return err
-				}
-				// gdk takes a bit to sync, so make sure we have plenty of utxos available
-				for i := 0; i < 10; i++ {
-					if currency == boltz.CurrencyBtc {
-						SendToAddress(BtcCli, addr, 10000000)
-					} else {
-						SendToAddress(LiquidCli, addr, 10000000)
-					}
-				}
-				MineBlock()
-				ticker := time.NewTicker(1 * time.Second)
-				timeout := time.After(15 * time.Second)
-				for balance.Confirmed == 0 {
-					select {
-					case <-ticker.C:
-						balance, err = wallet.GetBalance()
-						if err != nil {
-							return err
-						}
-					case <-timeout:
-						return fmt.Errorf("timeout")
-					}
-				}
-			}
+			time.Sleep(2 * time.Second)
 			result[currency] = wallet
-			return nil
+			return fundWallet(currency, wallet)
 		})
 	}
 	return result, eg.Wait()
