@@ -23,12 +23,18 @@ type Connection struct {
 
 	NoMacaroons  bool
 	MacaroonPath string
+	Password     string
 
 	Ctx context.Context
 }
 
 func (connection *Connection) SetMacaroon(macaroon string) {
 	md := metadata.Pairs("macaroon", macaroon)
+	connection.Ctx = metadata.NewOutgoingContext(context.Background(), md)
+}
+
+func (connection *Connection) SetPassword(password string) {
+	md := metadata.Pairs("password", password)
 	connection.Ctx = metadata.NewOutgoingContext(context.Background(), md)
 }
 
@@ -60,7 +66,9 @@ func (connection *Connection) Connect() error {
 	if connection.Ctx == nil {
 		connection.Ctx = context.Background()
 
-		if !connection.NoMacaroons {
+		if connection.Password != "" {
+			connection.SetPassword(connection.Password)
+		} else if !connection.NoMacaroons {
 			macaroonFile, err := os.ReadFile(connection.MacaroonPath)
 
 			if err != nil {

@@ -91,6 +91,11 @@ func main() {
 			Usage:   "Id or name of the tenant to use for the request",
 			EnvVars: []string{"BOLTZ_TENANT"},
 		},
+		&cli.StringFlag{
+			Name:    "password",
+			Usage:   "Password for authentication",
+			EnvVars: []string{"BOLTZ_PASSWORD"},
+		},
 	}
 	app.Commands = []*cli.Command{
 		getInfoCommand,
@@ -140,6 +145,7 @@ func getConnection(ctx *cli.Context) client.Connection {
 
 	tlsCert := ctx.String("tlscert")
 	macaroon := ctx.String("macaroon")
+	password := ctx.String("password")
 
 	if tlsCert == "" {
 		defaultPath := path.Join(dataDir, "tls.cert")
@@ -159,6 +165,7 @@ func getConnection(ctx *cli.Context) client.Connection {
 
 		NoMacaroons:  ctx.Bool("no-macaroons"),
 		MacaroonPath: macaroon,
+		Password:     password,
 	}
 
 	err := boltz.Connect()

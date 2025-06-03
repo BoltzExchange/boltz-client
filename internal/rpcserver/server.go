@@ -91,7 +91,13 @@ func (server *RpcServer) Init() error {
 
 		serverOpts = append(serverOpts, serverCreds)
 	}
-	if !rpcCfg.NoMacaroons {
+
+	if rpcCfg.Password != "" {
+		passwordAuth := NewPasswordAuth(rpcCfg.Password)
+		unaryInterceptors = append(unaryInterceptors, passwordAuth.UnaryServerInterceptor())
+		streamInterceptors = append(streamInterceptors, passwordAuth.StreamServerInterceptor())
+		logger.Info("Using password authentication")
+	} else if !rpcCfg.NoMacaroons {
 		macaroon, err := server.generateMacaroons(server.cfg.Database)
 		if err != nil {
 			return err
@@ -100,7 +106,7 @@ func (server *RpcServer) Init() error {
 		streamInterceptors = append(streamInterceptors, macaroon.StreamServerInterceptor())
 		server.boltzServer.macaroon = macaroon
 	} else {
-		logger.Warn("Disabled Macaroon authentication")
+		logger.Warn("No authentication mechanism enabled")
 	}
 
 	if len(unaryInterceptors) != 0 || len(streamInterceptors) != 0 {

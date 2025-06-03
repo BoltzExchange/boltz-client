@@ -96,4 +96,7 @@ adminMacaroonPath = ""
 
 # Path to the read-only macaroon for the gRPC and REST interface
 readOnlyMacaroonPath = ""
+
+# Password for authentication (alternative to macaroons and takes precedence if set)
+password = ""
 ````
