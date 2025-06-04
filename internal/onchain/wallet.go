@@ -71,6 +71,7 @@ type WalletCredentials struct {
 	Xpub           string
 	CoreDescriptor string
 	Salt           string
+	Legacy         bool
 }
 
 func (c *WalletCredentials) Encrypted() bool {

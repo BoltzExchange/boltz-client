@@ -29,6 +29,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	test.InitLogger()
 	os.Exit(m.Run())
 }
 

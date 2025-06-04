@@ -21,7 +21,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 14
+const latestSchemaVersion = 15
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -585,6 +585,22 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 					return err
 				}
 			}
+		}
+
+	case 14:
+		logMigration(oldVersion)
+
+		logger.Info("Adding legacy field to wallets table")
+
+		_, err := tx.Exec("ALTER TABLE wallets ADD COLUMN legacy BOOLEAN DEFAULT FALSE")
+		if err != nil {
+			return err
+		}
+
+		// Set legacy to true for all existing wallets
+		_, err = tx.Exec("UPDATE wallets SET legacy = TRUE")
+		if err != nil {
+			return err
 		}
 
 	case latestSchemaVersion:
