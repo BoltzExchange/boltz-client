@@ -14,6 +14,43 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
+// Persister defines the interface for persisting and loading the last index
+type Persister interface {
+	// LoadLastIndex loads the last index for a given wallet ID
+	LoadLastIndex(walletId uint64) (*uint32, error)
+	// PersistLastIndex persists the last index for a given wallet ID
+	PersistLastIndex(walletId uint64, index uint32) error
+}
+
+// InMemoryPersister implements the Persister interface using in-memory storage
+type InMemoryPersister struct {
+	mu      sync.RWMutex
+	indices map[uint64]uint32
+}
+
+// NewInMemoryPersister creates a new in-memory persister
+func NewInMemoryPersister() *InMemoryPersister {
+	return &InMemoryPersister{
+		indices: make(map[uint64]uint32),
+	}
+}
+
+func (p *InMemoryPersister) LoadLastIndex(walletId uint64) (*uint32, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if index, exists := p.indices[walletId]; exists {
+		return &index, nil
+	}
+	return nil, nil
+}
+
+func (p *InMemoryPersister) PersistLastIndex(walletId uint64, index uint32) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.indices[walletId] = index
+	return nil
+}
+
 type Wallet struct {
 	*lwk.Wollet
 	signer     *lwk.Signer
@@ -22,6 +59,7 @@ type Wallet struct {
 	lastIndex  *uint32
 	syncCancel context.CancelFunc
 	syncWait   sync.WaitGroup
+	persister  Persister
 }
 
 type EsploraConfig struct {
@@ -35,6 +73,7 @@ type Config struct {
 	Esplora                *EsploraConfig
 	SyncInterval           time.Duration
 	ConsolidationThreshold uint64
+	Persister              Persister
 }
 
 type BlockchainBackend struct {
@@ -54,6 +93,9 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
+	}
+	if cfg.Persister == nil {
+		cfg.Persister = NewInMemoryPersister()
 	}
 
 	backend := &BlockchainBackend{cfg: cfg}
@@ -102,8 +144,9 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 	}
 
 	result := &Wallet{
-		backend: backend,
-		info:    credentials.WalletInfo,
+		backend:   backend,
+		info:      credentials.WalletInfo,
+		persister: backend.cfg.Persister,
 	}
 
 	var descriptor *lwk.WolletDescriptor
@@ -139,6 +182,10 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := result.loadLastIndex(); err != nil {
+		return nil, fmt.Errorf("failed to load last index: %w", err)
 	}
 
 	if err := result.FullScan(); err != nil {
@@ -259,6 +306,9 @@ func (w *Wallet) NewAddress() (string, error) {
 	}
 	idx := result.Index() + 1
 	w.lastIndex = &idx
+	if err := w.persistLastIndex(); err != nil {
+		return "", fmt.Errorf("failed to persist last index: %w", err)
+	}
 	return result.Address().String(), nil
 }
 
@@ -409,4 +459,20 @@ func GenerateMnemonic(network *boltz.Network) (string, error) {
 		return "", err
 	}
 	return mnemonic.String(), nil
+}
+
+func (w *Wallet) persistLastIndex() error {
+	if w.lastIndex == nil {
+		return nil
+	}
+	return w.persister.PersistLastIndex(w.info.Id, *w.lastIndex)
+}
+
+func (w *Wallet) loadLastIndex() error {
+	index, err := w.persister.LoadLastIndex(w.info.Id)
+	if err != nil {
+		return err
+	}
+	w.lastIndex = index
+	return nil
 }

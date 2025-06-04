@@ -216,6 +216,7 @@ CREATE TABLE wallets
     mnemonic       VARCHAR,
     subaccount     INT,
     salt           VARCHAR,
+    lastIndex      INT,
     tenantId       INT NOT NULL REFERENCES tenants (id),
 
     UNIQUE (name, tenantId, nodePubkey),

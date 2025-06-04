@@ -1,18 +1,59 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 )
 
+// WalletPersister implements the liquid_wallet.Persister interface using the database
+type WalletPersister struct {
+	Db *Database
+}
+
+// NewWalletPersister creates a new database persister
+func NewWalletPersister(db *Database) *WalletPersister {
+	return &WalletPersister{Db: db}
+}
+
+func (p *WalletPersister) LoadLastIndex(walletId uint64) (*uint32, error) {
+	var lastIndex sql.NullInt64
+	query := "SELECT lastIndex FROM wallets WHERE id = ?"
+	err := p.Db.QueryRow(query, walletId).Scan(&lastIndex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query lastIndex: %w", err)
+	}
+	if !lastIndex.Valid {
+		return nil, nil
+	}
+	idx := uint32(lastIndex.Int64)
+	return &idx, nil
+}
+
+func (p *WalletPersister) PersistLastIndex(walletId uint64, index uint32) error {
+	query := "UPDATE wallets SET lastIndex = ? WHERE id = ?"
+	_, err := p.Db.Exec(query, index, walletId)
+	if err != nil {
+		return fmt.Errorf("failed to persist lastIndex: %w", err)
+	}
+	return nil
+}
+
 type Wallet struct {
 	*onchain.WalletCredentials
 	NodePubkey *string
+	LastIndex  *uint32
 }
 
 func (d *Database) CreateWallet(wallet *Wallet) error {
-	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
+	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey, lastIndex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
+	/*
+		var lastIndex sql.NullInt64
+		if wallet.LastIndex != nil {
+			lastIndex = sql.NullInt64{Int64: int64(*wallet.LastIndex), Valid: true}
+		}
+	*/
 	row := d.QueryRow(
 		query,
 		wallet.Name,
@@ -24,6 +65,7 @@ func (d *Database) CreateWallet(wallet *Wallet) error {
 		wallet.Salt,
 		wallet.TenantId,
 		wallet.NodePubkey,
+		wallet.LastIndex,
 	)
 	return row.Scan(&wallet.Id)
 }
@@ -45,6 +87,7 @@ func (d *Database) UpdateWalletCredentials(credentials *onchain.WalletCredential
 
 func parseWallet(rows row) (*Wallet, error) {
 	wallet := &Wallet{WalletCredentials: &onchain.WalletCredentials{}}
+	var lastIndex sql.NullInt64
 	err := rows.Scan(
 		&wallet.Id,
 		&wallet.Name,
@@ -56,9 +99,14 @@ func parseWallet(rows row) (*Wallet, error) {
 		&wallet.Subaccount,
 		&wallet.Salt,
 		&wallet.TenantId,
+		&lastIndex, // scan into sql.NullInt64
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse wallet wallet: %w", err)
+		return nil, fmt.Errorf("failed to parse wallet: %w", err)
+	}
+	if lastIndex.Valid {
+		idx := uint32(lastIndex.Int64)
+		wallet.LastIndex = &idx
 	}
 	return wallet, nil
 }
