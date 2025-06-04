@@ -15,12 +15,19 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
+// Persister defines the interface for persisting and loading the last index
+type Persister interface {
+	// LoadLastIndex loads the last index for a given wallet ID
+	LoadLastIndex(walletId uint64) (*uint32, error)
+	// PersistLastIndex persists the last index for a given wallet ID
+	PersistLastIndex(walletId uint64, index uint32) error
+}
+
 type Wallet struct {
 	*lwk.Wollet
 	signer     *lwk.Signer
 	backend    *BlockchainBackend
 	info       onchain.WalletInfo
-	lastIndex  *uint32
 	syncCancel context.CancelFunc
 	syncWait   sync.WaitGroup
 }
@@ -38,6 +45,7 @@ type Config struct {
 	SyncInterval           time.Duration
 	ConsolidationThreshold uint64
 	TxProvider             onchain.TxProvider
+	Persister              Persister
 }
 
 type BlockchainBackend struct {
@@ -64,7 +72,9 @@ const DefaultConsolidationThreshold = 200
 
 func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 	var err error
-
+	if cfg.Persister == nil {
+		return nil, errors.New("persister is required")
+	}
 	if cfg.SyncInterval == 0 {
 		if cfg.Network == boltz.Regtest {
 			cfg.SyncInterval = 1 * time.Second
@@ -212,7 +222,15 @@ func (w *Wallet) syncLoop(ctx context.Context) {
 
 func (w *Wallet) FullScan() error {
 	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
-	update, err := w.backend.client.FullScan(w.Wollet)
+	index, err := w.loadLastIndex()
+	if err != nil {
+		return fmt.Errorf("load last index: %w", err)
+	}
+	if index == nil {
+		all := uint32(0)
+		index = &all
+	}
+	update, err := w.backend.client.FullScanToIndex(w.Wollet, *index)
 	if err != nil {
 		return err
 	}
@@ -294,12 +312,18 @@ func (w *Wallet) GetBalance() (*onchain.Balance, error) {
 }
 
 func (w *Wallet) NewAddress() (string, error) {
-	result, err := w.Address(w.lastIndex)
+	index, err := w.loadLastIndex()
+	if err != nil {
+		return "", fmt.Errorf("load last index: %w", err)
+	}
+	result, err := w.Address(index)
 	if err != nil {
 		return "", err
 	}
 	idx := result.Index() + 1
-	w.lastIndex = &idx
+	if err := w.persistLastIndex(idx); err != nil {
+		return "", fmt.Errorf("failed to persist last index: %w", err)
+	}
 	return result.Address().String(), nil
 }
 
@@ -463,4 +487,12 @@ func GenerateMnemonic(network *boltz.Network) (string, error) {
 		return "", err
 	}
 	return mnemonic.String(), nil
+}
+
+func (w *Wallet) persistLastIndex(index uint32) error {
+	return w.backend.cfg.Persister.PersistLastIndex(w.info.Id, index)
+}
+
+func (w *Wallet) loadLastIndex() (*uint32, error) {
+	return w.backend.cfg.Persister.LoadLastIndex(w.info.Id)
 }

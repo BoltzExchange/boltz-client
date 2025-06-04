@@ -3,11 +3,11 @@
 package liquid_wallet_test
 
 import (
-	"log"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
@@ -18,30 +18,43 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var backend *liquid_wallet.BlockchainBackend
-
 const syncInterval = 1 * time.Second
 
-func defaultConfig() liquid_wallet.Config {
+func dbPersister(t *testing.T) liquid_wallet.Persister {
+	db := database.Database{
+		Path: ":memory:",
+	}
+	err := db.Connect()
+	require.NoError(t, err)
+	err = db.CreateWallet(&database.Wallet{
+		WalletCredentials: test.WalletCredentials(boltz.CurrencyLiquid),
+	})
+	require.NoError(t, err)
+	return database.NewWalletPersister(&db)
+}
+
+func defaultBackend(t *testing.T) *liquid_wallet.BlockchainBackend {
+	backend, err := liquid_wallet.NewBlockchainBackend(defaultConfig(t))
+	require.NoError(t, err)
+	return backend
+}
+
+func defaultConfig(t *testing.T) liquid_wallet.Config {
 	return liquid_wallet.Config{
 		Network:      boltz.Regtest,
 		DataDir:      "test-data",
 		SyncInterval: syncInterval,
+		Persister:    dbPersister(t),
 	}
 }
 
 func TestMain(m *testing.M) {
-	var err error
-	backend, err = liquid_wallet.NewBlockchainBackend(defaultConfig())
-	if err != nil {
-		log.Fatal(err)
-	}
 	test.InitLogger()
 	os.Exit(m.Run())
 }
 
 func TestWallet_GetBalance(t *testing.T) {
-	wallet := newWallet(t, backend)
+	wallet := newWallet(t, defaultBackend(t))
 	balance, err := wallet.GetBalance()
 	require.NoError(t, err)
 	require.NotNil(t, balance)
@@ -70,7 +83,7 @@ func TestWallet_GetBalance(t *testing.T) {
 }
 
 func TestWallet_Funded(t *testing.T) {
-	fundedWallet, err := liquid_wallet.NewWallet(backend, test.WalletCredentials(boltz.CurrencyLiquid))
+	fundedWallet, err := liquid_wallet.NewWallet(defaultBackend(t), test.WalletCredentials(boltz.CurrencyLiquid))
 	require.NoError(t, err)
 	require.NoError(t, test.FundWallet(boltz.CurrencyLiquid, fundedWallet))
 
@@ -125,12 +138,12 @@ func TestBackend_Broadcast(t *testing.T) {
 	tx, err := lwk.NewTransaction(someTx)
 	require.NoError(t, err)
 
-	backend, err := liquid_wallet.NewBlockchainBackend(defaultConfig())
+	backend, err := liquid_wallet.NewBlockchainBackend(defaultConfig(t))
 	require.NoError(t, err)
 	_, err = backend.BroadcastTransaction(tx)
 	require.Error(t, err)
 
-	cfg := defaultConfig()
+	cfg := defaultConfig(t)
 	txProvider := onchainmock.NewMockTxProvider(t)
 	txProvider.EXPECT().BroadcastTransaction(mock.Anything).Return("txid", nil)
 	cfg.TxProvider = txProvider
@@ -144,19 +157,24 @@ func TestBackend_Broadcast(t *testing.T) {
 }
 
 func newWallet(t *testing.T, backend *liquid_wallet.BlockchainBackend) *liquid_wallet.Wallet {
+	credentials := test.WalletCredentials(boltz.CurrencyLiquid)
 	mnemonic, err := liquid_wallet.GenerateMnemonic(boltz.Regtest)
 	require.NoError(t, err)
-	wallet, err := liquid_wallet.NewWallet(backend, &onchain.WalletCredentials{
-		WalletInfo: onchain.WalletInfo{
-			Currency: boltz.CurrencyLiquid,
-		},
-		Mnemonic: mnemonic,
-	})
+	credentials.Mnemonic = mnemonic
+	wallet, err := liquid_wallet.NewWallet(backend, credentials)
 	require.NoError(t, err)
 	return wallet
 }
 
 func TestWallet_NewAddress(t *testing.T) {
+	cfg := defaultConfig(t)
+
+	idx, err := cfg.Persister.LoadLastIndex(1)
+	require.NoError(t, err)
+	require.Nil(t, idx)
+
+	backend, err := liquid_wallet.NewBlockchainBackend(cfg)
+	require.NoError(t, err)
 	wallet := newWallet(t, backend)
 	address, err := wallet.NewAddress()
 	require.NoError(t, err)
@@ -166,11 +184,15 @@ func TestWallet_NewAddress(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, anotherAddress)
 	require.NotEqual(t, address, anotherAddress)
+
+	idx, err = cfg.Persister.LoadLastIndex(1)
+	require.NoError(t, err)
+	require.Equal(t, uint32(2), *idx)
 }
 
 func TestWallet_AutoConsolidate(t *testing.T) {
 	numTxns := 3
-	cfg := defaultConfig()
+	cfg := defaultConfig(t)
 	cfg.ConsolidationThreshold = uint64(numTxns)
 	backend, err := liquid_wallet.NewBlockchainBackend(cfg)
 	require.NoError(t, err)
