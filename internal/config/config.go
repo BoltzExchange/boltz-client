@@ -46,6 +46,7 @@ type RpcOptions struct {
 	NoMacaroons          bool   `long:"rpc.no-macaroons" description:"Disables Macaroon authentication"`
 	AdminMacaroonPath    string `long:"rpc.adminmacaroonpath" description:"Path to the admin Macaroon"`
 	ReadonlyMacaroonPath string `long:"rpc.readonlymacaroonpath" description:"Path to the readonly macaroon"`
+	Password             string `long:"rpc.password" description:"Password for authentication (alternative to macaroons and takes precedence if set)" json:"-"`
 }
 
 type Config struct {

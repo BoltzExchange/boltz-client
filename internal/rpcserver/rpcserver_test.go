@@ -231,9 +231,13 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	}()
 
 	clientConn := client.Connection{ClientConn: conn}
-	macaroonFile, err := os.ReadFile("./test/macaroons/admin.macaroon")
-	require.NoError(t, err)
-	clientConn.SetMacaroon(hex.EncodeToString(macaroonFile))
+	if password := cfg.RPC.Password; password != "" {
+		clientConn.SetPassword(password)
+	} else {
+		macaroonFile, err := os.ReadFile("./test/macaroons/admin.macaroon")
+		require.NoError(t, err)
+		clientConn.SetMacaroon(hex.EncodeToString(macaroonFile))
+	}
 
 	boltzClient := client.NewBoltzClient(clientConn)
 	autoSwapClient := client.NewAutoSwapClient(clientConn)
@@ -3073,4 +3077,34 @@ func TestChainSwap(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPasswordAuth(t *testing.T) {
+	cfg := loadConfig(t)
+	cfg.RPC.Password = "testpassword"
+
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
+	defer stop()
+
+	t.Run("Success", func(t *testing.T) {
+		info, err := client.GetInfo()
+		require.NoError(t, err)
+		require.Equal(t, "regtest", info.Network)
+	})
+
+	t.Run("WrongPassword", func(t *testing.T) {
+		wrongClient := client
+		wrongClient.SetPassword("wrongpassword")
+		_, err := wrongClient.GetInfo()
+		require.Error(t, err)
+		requireCode(t, err, codes.Unauthenticated)
+	})
+
+	t.Run("NoPassword", func(t *testing.T) {
+		noPasswordClient := client
+		noPasswordClient.SetPassword("")
+		_, err := noPasswordClient.GetInfo()
+		require.Error(t, err)
+		requireCode(t, err, codes.Unauthenticated)
+	})
 }
