@@ -47,6 +47,7 @@ func ClearWalletDataDir() error {
 
 const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large"
 const WalletSubaccount = 0
+const WalletId = 1
 
 func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 	sub := uint64(WalletSubaccount)
@@ -55,6 +56,7 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 			Name:     "regtest",
 			Currency: currency,
 			TenantId: database.DefaultTenantId,
+			Id:       WalletId,
 		},
 		Mnemonic:   WalletMnemonic,
 		Subaccount: &sub,

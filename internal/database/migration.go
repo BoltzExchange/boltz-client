@@ -598,17 +598,14 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 	case 15:
 		logMigration(oldVersion)
 
-		_, err := tx.Exec("ALTER TABLE wallets ADD COLUMN legacy BOOLEAN DEFAULT FALSE")
-		if err != nil {
+		migration := `
+		ALTER TABLE wallets ADD COLUMN legacy BOOLEAN DEFAULT FALSE;
+		ALTER TABLE wallets ADD COLUMN lastIndex INT;
+		UPDATE wallets SET legacy = TRUE;
+`
+		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}
-
-		// Set legacy to true for all existing wallets
-		_, err = tx.Exec("UPDATE wallets SET legacy = TRUE")
-		if err != nil {
-			return err
-		}
-
 	case latestSchemaVersion:
 		logger.Info("database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 		return nil

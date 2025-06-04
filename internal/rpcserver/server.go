@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/config"
+	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
@@ -210,6 +211,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		Network:    server.network,
 		DataDir:    cfg.DataDir + "/liquid-wallet",
 		TxProvider: server.onchain.Liquid.Tx,
+		Persister:  database.NewWalletPersister(server.database),
 	}
 	electrumConfig := cfg.Electrum()
 	if electrumConfig.Liquid.Url != "" {

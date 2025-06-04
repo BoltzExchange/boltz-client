@@ -219,6 +219,7 @@ CREATE TABLE wallets
     salt           VARCHAR,
     tenantId       INT NOT NULL REFERENCES tenants (id),
     legacy         BOOLEAN DEFAULT FALSE,
+    lastIndex      INT,
 
     UNIQUE (name, tenantId, nodePubkey),
     UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
