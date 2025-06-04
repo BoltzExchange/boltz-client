@@ -3074,9 +3074,12 @@ type CreateSwapRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// amount of sats to be received on lightning.
+	// related: `invoice` field
 	Amount uint64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	Pair   *Pair  `protobuf:"bytes,2,opt,name=pair,proto3" json:"pair,omitempty"`
-	// the daemon will pay the swap using the onchain wallet specified in the `wallet` field or any wallet otherwise.
+	// the daemon will pay the swap using the onchain wallet specified in the `wallet` field
+	// or the first internal wallet with the correct currency otherwise.
 	SendFromInternal bool `protobuf:"varint,4,opt,name=send_from_internal,json=sendFromInternal,proto3" json:"send_from_internal,omitempty"`
 	// address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise.
 	RefundAddress *string `protobuf:"bytes,5,opt,name=refund_address,json=refundAddress,proto3,oneof" json:"refund_address,omitempty"`
