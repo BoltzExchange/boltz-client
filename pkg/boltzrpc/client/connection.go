@@ -34,7 +34,7 @@ func (connection *Connection) SetMacaroon(macaroon string) {
 }
 
 func (connection *Connection) SetPassword(password string) {
-	md := metadata.Pairs("password", password)
+	md := metadata.Pairs("authorization", password)
 	connection.Ctx = metadata.NewOutgoingContext(context.Background(), md)
 }
 
