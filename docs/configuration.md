@@ -23,6 +23,9 @@ pro = false
 # The daemon can also operate without a lightning node
 # standalone = true
 
+# Custom referral ID to use when creating swaps
+referralId = "my-referral"
+
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network your node is on
 # This value is used to overwrite that

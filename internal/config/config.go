@@ -86,8 +86,8 @@ type Config struct {
 
 	Proxy string `long:"proxy" description:"Proxy URL to use for all Boltz API requests"`
 
-	Pro        bool `long:"pro" description:"Use the Boltz Pro API"`
-	ReferralId string
+	Pro        bool   `long:"pro" description:"Use the Boltz Pro API"`
+	ReferralId string `long:"referral-id" description:"Custom referral ID to use when creating swaps"`
 
 	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
 	AutoConsolidateThreshold *uint64 `long:"auto-consolidate-threshold" description:"Number of UTXOs that trigger auto consolidation. Set to 0 to disable"`
