@@ -36,11 +36,35 @@ type Nursery struct {
 	eventListenersLock sync.RWMutex
 	globalListener     swapListener
 	waitGroup          sync.WaitGroup
-
-	MaxZeroConfAmount uint64
+	maxZeroConfAmount  uint64
 
 	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
 	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
+}
+
+func New(
+	maxZeroConfAmount *uint64,
+	network *boltz.Network,
+	lightning lightning.LightningNode,
+	chain *onchain.Onchain,
+	boltzClient *boltz.Api,
+	database *database.Database,
+) *Nursery {
+	nursery := &Nursery{
+		network:        network,
+		lightning:      lightning,
+		onchain:        chain,
+		boltz:          boltzClient,
+		database:       database,
+		eventListeners: make(map[string]swapListener),
+		globalListener: utils.ForwardChannel(make(chan SwapUpdate), 0, false),
+		boltzWs:        boltzClient.NewWebsocket(),
+	}
+	if maxZeroConfAmount != nil {
+		nursery.maxZeroConfAmount = *maxZeroConfAmount
+	}
+	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())
+	return nursery
 }
 
 type SwapUpdate struct {
@@ -88,24 +112,21 @@ func (nursery *Nursery) GlobalSwapUpdates() (<-chan SwapUpdate, func()) {
 	}
 }
 
-func (nursery *Nursery) Init(
-	network *boltz.Network,
-	lightning lightning.LightningNode,
-	chain *onchain.Onchain,
-	boltzClient *boltz.Api,
-	database *database.Database,
-) error {
-	nursery.ctx, nursery.cancel = context.WithCancel(context.Background())
-	nursery.network = network
-	nursery.lightning = lightning
-	nursery.boltz = boltzClient
-	nursery.database = database
-	nursery.onchain = chain
-	nursery.eventListeners = make(map[string]swapListener)
-	nursery.globalListener = utils.ForwardChannel(make(chan SwapUpdate), 0, false)
-	nursery.boltzWs = boltzClient.NewWebsocket()
-
+func (nursery *Nursery) Init() error {
 	logger.Info("Starting nursery")
+
+	if nursery.maxZeroConfAmount == 0 {
+		pairs, err := nursery.boltz.GetSubmarinePairs()
+		if err != nil {
+			return fmt.Errorf("could not get submarine pairs: %v", err)
+		}
+		pair, err := boltz.FindPair(boltz.Pair{From: boltz.CurrencyLiquid, To: boltz.CurrencyBtc}, pairs)
+		if err != nil {
+			return fmt.Errorf("could not find submarine pair: %v", err)
+		}
+		nursery.maxZeroConfAmount = pair.Limits.MaximalZeroConfAmount
+		logger.Infof("No maximal zero conf amount set, using same value as boltz: %v", nursery.maxZeroConfAmount)
+	}
 
 	if err := nursery.boltzWs.Connect(); err != nil {
 		return fmt.Errorf("could not connect to boltz websocket: %v", err)

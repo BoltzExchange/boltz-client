@@ -59,15 +59,14 @@ type routedBoltzServer struct {
 
 	network *boltz.Network
 
-	onchain           *onchain.Onchain
-	lightning         lightning.LightningNode
-	boltz             *boltz.Api
-	nursery           *nursery.Nursery
-	database          *database.Database
-	swapper           *autoswap.AutoSwap
-	macaroon          *macaroons.Service
-	referralId        string
-	maxZeroConfAmount *uint64
+	onchain    *onchain.Onchain
+	lightning  lightning.LightningNode
+	boltz      *boltz.Api
+	nursery    *nursery.Nursery
+	database   *database.Database
+	swapper    *autoswap.AutoSwap
+	macaroon   *macaroons.Service
+	referralId string
 
 	stop  chan bool
 	state serverState
@@ -1949,25 +1948,7 @@ func (server *routedBoltzServer) VerifyWalletPassword(_ context.Context, request
 }
 
 func (server *routedBoltzServer) fullInit() (err error) {
-	maxZeroConfAmount := server.maxZeroConfAmount
-	if maxZeroConfAmount == nil {
-		pair, err := server.getSubmarinePair(&boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC})
-		if err != nil {
-			return fmt.Errorf("could not get submarine pair: %v", err)
-		}
-		maxZeroConfAmount = &pair.Limits.MaximalZeroConfAmount
-		logger.Infof("No maximal zero conf amount set, using same value as boltz: %v", *maxZeroConfAmount)
-	}
-
-	server.nursery = &nursery.Nursery{MaxZeroConfAmount: *maxZeroConfAmount}
-	err = server.nursery.Init(
-		server.network,
-		server.lightning,
-		server.onchain,
-		server.boltz,
-		server.database,
-	)
-	if err != nil {
+	if err := server.nursery.Init(); err != nil {
 		return fmt.Errorf("could not start nursery: %v", err)
 	}
 

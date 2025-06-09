@@ -18,6 +18,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/config"
 	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
+	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"google.golang.org/grpc/keepalive"
 
@@ -58,12 +59,11 @@ func (server *RpcServer) Init() error {
 
 	swapper := &autoswap.AutoSwap{}
 	server.boltzServer = &routedBoltzServer{
-		database:          server.cfg.Database,
-		stop:              make(chan bool),
-		state:             stateLightningSyncing,
-		swapper:           swapper,
-		referralId:        server.cfg.ReferralId,
-		maxZeroConfAmount: server.cfg.MaxZeroConfAmount,
+		database:   server.cfg.Database,
+		stop:       make(chan bool),
+		state:      stateLightningSyncing,
+		swapper:    swapper,
+		referralId: server.cfg.ReferralId,
 	}
 	server.autoswapServer = &routedAutoSwapServer{
 		database: server.cfg.Database,
@@ -195,6 +195,15 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 			return fmt.Errorf("could not init onchain: %v", err)
 		}
 	}
+
+	server.nursery = nursery.New(
+		cfg.MaxZeroConfAmount,
+		server.network,
+		server.lightning,
+		server.onchain,
+		server.boltz,
+		server.database,
+	)
 
 	autoConfPath := path.Join(cfg.DataDir, "autoswap.toml")
 	server.swapper.Init(server.database, server.onchain, autoConfPath, server)

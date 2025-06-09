@@ -256,7 +256,7 @@ func (nursery *Nursery) handleReverseSwapDirectPayment(swap *database.ReverseSwa
 		if err := tx.SetReverseSwapClaimTransactionId(swap, output.TxId, 0); err != nil {
 			return fmt.Errorf("set paid at: %s", err)
 		}
-		if currency == boltz.CurrencyBtc || expectedAmount > nursery.MaxZeroConfAmount {
+		if currency == boltz.CurrencyBtc || expectedAmount > nursery.maxZeroConfAmount {
 			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, output.TxId, true)
 			if !errors.Is(err, errors.ErrUnsupported) {
 				if err != nil {
