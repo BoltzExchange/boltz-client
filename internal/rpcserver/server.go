@@ -69,7 +69,6 @@ func (server *RpcServer) Init() error {
 		database: server.cfg.Database,
 		swapper:  swapper,
 	}
-
 	unaryInterceptors := []grpc.UnaryServerInterceptor{server.boltzServer.UnaryServerInterceptor()}
 	streamInterceptors := []grpc.StreamServerInterceptor{server.boltzServer.StreamServerInterceptor()}
 
@@ -198,6 +197,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 
 	server.nursery = nursery.New(
 		cfg.MaxZeroConfAmount,
+		cfg.LightningOptions.DefaultFeeLimitPpm,
 		server.network,
 		server.lightning,
 		server.onchain,
@@ -330,14 +330,7 @@ func (server *RpcServer) Stop() error {
 func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 	boltzUrl := cfg.Boltz.URL
 	if boltzUrl == "" {
-		switch network {
-		case boltz.MainNet:
-			boltzUrl = "https://api.boltz.exchange"
-		case boltz.TestNet:
-			boltzUrl = "https://api.testnet.boltz.exchange"
-		case boltz.Regtest:
-			boltzUrl = "http://127.0.0.1:9001"
-		}
+		boltzUrl = boltz.DefaultApiUrl(network)
 		logger.Infof("Using default Boltz endpoint for network %s: %s", network.Name, boltzUrl)
 	} else {
 		logger.Info("Using configured Boltz endpoint: " + boltzUrl)

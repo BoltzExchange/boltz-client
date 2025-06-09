@@ -877,6 +877,35 @@ func TestReverseSwap(t *testing.T) {
 		})
 	}
 
+	t.Run("MaxRoutingFee", func(t *testing.T) {
+		ppm := uint64(10)
+		amount := uint64(1_000_000)
+		cfg := loadConfig(t)
+		client, _, stop := setup(t, setupOptions{cfg: cfg})
+		defer stop()
+
+
+		externalPay := false
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount:         amount,
+			AcceptZeroConf: true,
+			MaxRoutingFeePpm: &ppm,
+			ExternalPay: &externalPay,
+		}
+
+		response, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+
+		dbSwap, err := cfg.Database.QueryReverseSwap(response.Id)
+		require.NoError(t, err)
+		require.Equal(t, ppm, *dbSwap.MaxRoutingFeePpm)
+
+		externalPay = true
+		_, err = client.CreateReverseSwap(request)
+		require.Error(t, err)
+		requireCode(t, err, codes.InvalidArgument)
+	})
+
 	t.Run("Invalid", func(t *testing.T) {
 		cfg := loadConfig(t)
 		chain := getOnchain(t, cfg)

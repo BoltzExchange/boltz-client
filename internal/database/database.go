@@ -194,7 +194,8 @@ CREATE TABLE reverseSwaps
     paidAt              INT,
     externalPay         BOOLEAN,
     walletId            INT REFERENCES wallets (id) ON DELETE SET NULL,
-    tenantId            INT REFERENCES tenants (id)
+    tenantId            INT REFERENCES tenants (id),
+    maxRoutingFeePpm    INT
 );
 CREATE TABLE autobudget
 (

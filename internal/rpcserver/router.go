@@ -1057,6 +1057,10 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, err
 	}
 
+	if request.MaxRoutingFeePpm != nil && request.GetExternalPay() {
+		return nil, status.Errorf(codes.InvalidArgument, "max routing fee ppm is not supported when using external pay")
+	}
+
 	reverseSwap := database.ReverseSwap{
 		Id:                  response.Id,
 		IsAuto:              isAuto,
@@ -1077,6 +1081,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		ExternalPay:         externalPay,
 		WalletId:            walletId,
 		TenantId:            requireTenantId(ctx),
+		MaxRoutingFeePpm:    request.MaxRoutingFeePpm,
 	}
 
 	logger.Infof(
@@ -1094,12 +1099,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 
 	var blindingPubKey *btcec.PublicKey
 	if reverseSwap.Pair.To == boltz.CurrencyLiquid {
-		reverseSwap.BlindingKey, _ = btcec.PrivKeyFromBytes(response.BlindingKey)
-		blindingPubKey = reverseSwap.BlindingKey.PubKey()
-
-		if err != nil {
-			return nil, err
-		}
+		reverseSwap.BlindingKey, blindingPubKey = btcec.PrivKeyFromBytes(response.BlindingKey)
 	}
 
 	if err := reverseSwap.InitTree(); err != nil {

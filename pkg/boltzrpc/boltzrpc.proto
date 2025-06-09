@@ -606,6 +606,10 @@ message CreateReverseSwapRequest {
     // Rates to accept for the swap. Queries latest from boltz otherwise
     // The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
     optional PairInfo accepted_pair = 12;
+
+    // The maximum routing fee to pay for the lightning invoice, expressed as
+    // parts per million of the volume being routed.
+    optional uint64 max_routing_fee_ppm = 13;
 }
 message CreateReverseSwapResponse {
     string id = 1;

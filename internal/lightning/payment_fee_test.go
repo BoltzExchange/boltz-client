@@ -8,6 +8,8 @@ import (
 )
 
 func TestGetFeeLimit(t *testing.T) {
+	routingFeePpm := uint64(1000) // 0.1%
+
 	bigInvoice := "lnbcrt242314120n1p07xy5wpp5th2xv0vdmcx9ure5gs5zcs3vj2y37vg6a35dnl4te79nyq08drdsdqqcqzpgsp5zpwtknhqrdh5rz6lnzst52zt0wj88rjjhx49gxycx7m6z4qgv9ms9qy9qsq520tkslgzqhgsetygx8mc8se928l9favv4jdsmajmeds8ckzaxfrky55sazwx8gpfhx33ys9hg9mpj2vrx8wpe3jmsh8pvwayx2kpkcqm69z2z"
 	bigInvoiceAmt := 24231412
 
@@ -16,19 +18,19 @@ func TestGetFeeLimit(t *testing.T) {
 	cfg := &chaincfg.RegressionNetParams
 
 	// Should use the payment fee ratio for big invoices
-	bigPaymentFeeLimit, err := GetFeeLimit(bigInvoice, cfg)
+	bigPaymentFeeLimit, err := CalculateFeeLimit(bigInvoice, cfg, routingFeePpm)
 
 	assert.Nil(t, err)
-	assert.Equal(t, uint(float64(bigInvoiceAmt)*maxPaymentFeeRatio), bigPaymentFeeLimit)
+	assert.Equal(t, uint(float64(bigInvoiceAmt)*float64(routingFeePpm)/1000000), bigPaymentFeeLimit)
 
 	// Should use minimal payment fee for small invoices
-	smallPaymentFeeLimit, err := GetFeeLimit(smallInvoice, cfg)
+	smallPaymentFeeLimit, err := CalculateFeeLimit(smallInvoice, cfg, routingFeePpm)
 
 	assert.Nil(t, err)
 	assert.Equal(t, uint(minPaymentFee), smallPaymentFeeLimit)
 
 	// Should return fee limit 0 for invalid invoices
-	zeroFeeLimit, err := GetFeeLimit("", cfg)
+	zeroFeeLimit, err := CalculateFeeLimit("", cfg, routingFeePpm)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, uint(0), zeroFeeLimit)

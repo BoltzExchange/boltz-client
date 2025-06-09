@@ -1,20 +1,17 @@
 package lightning
 
 import (
-	"math"
-
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/zpay32"
 )
 
 const (
-	minPaymentFee              = 21
-	maxPaymentFeeRatio float64 = 0.03
+	minPaymentFee = 5
 )
 
 // getFeeLimit calculates the fee limit of a payment in sat
-func GetFeeLimit(invoice string, chainParams *chaincfg.Params) (uint, error) {
+func CalculateFeeLimit(invoice string, chainParams *chaincfg.Params, feeLimitPpm uint64) (uint, error) {
 	decodedInvoice, err := zpay32.Decode(invoice, chainParams)
 
 	if err != nil {
@@ -22,10 +19,10 @@ func GetFeeLimit(invoice string, chainParams *chaincfg.Params) (uint, error) {
 	}
 
 	// Use the minimum value for small payments
-	feeLimit := math.Max(
-		decodedInvoice.MilliSat.ToSatoshis().MulF64(maxPaymentFeeRatio).ToUnit(btcutil.AmountSatoshi),
-		minPaymentFee,
+	feeLimit := max(
+		decodedInvoice.MilliSat.ToSatoshis().MulF64(float64(feeLimitPpm)/1_000_000),
+		btcutil.Amount(minPaymentFee),
 	)
 
-	return uint(feeLimit), nil
+	return uint(feeLimit.ToUnit(btcutil.AmountSatoshi)), nil
 }

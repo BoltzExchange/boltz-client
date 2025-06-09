@@ -26,6 +26,9 @@ pro = false
 # Custom referral ID to use when creating swaps
 referralId = "my-referral"
 
+# Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis.
+defaultFeeLimitPpm = 2500
+
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network your node is on
 # This value is used to overwrite that
