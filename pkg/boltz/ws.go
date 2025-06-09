@@ -186,6 +186,15 @@ func (boltz *Websocket) handleTextMessage(data []byte) error {
 	return nil
 }
 
+func (boltz *Websocket) writeJson(data any) error {
+	boltz.connLock.Lock()
+	defer boltz.connLock.Unlock()
+	if boltz.conn == nil {
+		return errors.New("websocket is not connected")
+	}
+	return boltz.conn.WriteJSON(data)
+}
+
 func (boltz *Websocket) subscribe(swapIds []string) error {
 	if boltz.closed {
 		return errors.New("websocket is closed")
@@ -194,14 +203,11 @@ func (boltz *Websocket) subscribe(swapIds []string) error {
 	if len(swapIds) == 0 {
 		return nil
 	}
-	boltz.connLock.Lock()
-	err := boltz.conn.WriteJSON(map[string]any{
+	if err := boltz.writeJson(map[string]any{
 		"op":      "subscribe",
 		"channel": "swap.update",
 		"args":    swapIds,
-	})
-	boltz.connLock.Unlock()
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 	select {
