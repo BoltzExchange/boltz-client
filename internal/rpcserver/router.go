@@ -1057,7 +1057,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, err
 	}
 
-	if request.MaxRoutingFeePpm != nil && request.GetExternalPay() {
+	if request.MaxRoutingFeePpm != nil && externalPay {
 		return nil, status.Errorf(codes.InvalidArgument, "max routing fee ppm is not supported when using external pay")
 	}
 
