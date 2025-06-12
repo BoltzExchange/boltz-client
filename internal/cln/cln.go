@@ -235,7 +235,7 @@ func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, tim
 		Bolt11:   invoice,
 		RetryFor: &retry,
 		Maxfee: &protos.Amount{
-			Msat: uint64(feeLimit),
+			Msat: uint64(feeLimit) * 1000,
 		},
 		Exclude: exclude,
 	})
