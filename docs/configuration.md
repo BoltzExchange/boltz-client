@@ -4,7 +4,7 @@ Boltz Client can be configured via a `TOML` config file or CLI arguments. By def
 
 ## Example
 
-````toml
+```toml
 # Path to the log file
 logfile = ""
 
@@ -25,6 +25,10 @@ pro = false
 
 # Custom referral ID to use when creating swaps
 referralId = "my-referral"
+
+[LIGHTNING]
+# Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis.
+routingFeeLimitPpm = 2500
 
 [BOLTZ]
 # By default the daemon automatically connects to the official Boltz Backend for the network your node is on
@@ -102,4 +106,4 @@ readOnlyMacaroonPath = ""
 
 # Password for authentication (alternative to macaroons and takes precedence if set)
 password = ""
-````
+```

@@ -42,13 +42,16 @@ func (nursery *Nursery) payReverseSwap(reverseSwap *database.ReverseSwap) error 
 	if reverseSwap.ExternalPay {
 		return nil
 	}
-	feeLimit, err := lightning.GetFeeLimit(reverseSwap.Invoice, nursery.network.Btc)
-	if err != nil {
-		return err
-	}
-
 	if nursery.lightning == nil {
 		return fmt.Errorf("no lightning node available to pay invoice")
+	}
+	feeLimitPpm := nursery.maxRoutingFeePpm
+	if reverseSwap.RoutingFeeLimitPpm != nil {
+		feeLimitPpm = *reverseSwap.RoutingFeeLimitPpm
+	}
+	feeLimit, err := lightning.CalculateFeeLimit(reverseSwap.Invoice, nursery.network.Btc, feeLimitPpm)
+	if err != nil {
+		return err
 	}
 
 	status, err := nursery.lightning.PaymentStatus(reverseSwap.PreimageHash())

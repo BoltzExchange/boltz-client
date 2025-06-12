@@ -49,6 +49,10 @@ type RpcOptions struct {
 	Password             string `long:"rpc.password" description:"Password for authentication (alternative to macaroons and takes precedence if set)" json:"-"`
 }
 
+type LightningOptions struct {
+	RoutingFeeLimitPpm uint64 `long:"lightning.rounting-fee-limit-ppm" description:"Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis."`
+}
+
 type Config struct {
 	DataDir string `short:"d" long:"datadir" description:"Data directory of boltz-client"`
 
@@ -73,8 +77,9 @@ type Config struct {
 
 	Lightning lightning.LightningNode `json:"-"`
 
-	RPC      *RpcOptions        `group:"RPC options"`
-	Database *database.Database `group:"Database options"`
+	LightningOptions *LightningOptions  `group:"Lightning options"`
+	RPC              *RpcOptions        `group:"RPC options"`
+	Database         *database.Database `group:"Database options"`
 
 	MempoolApi       string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 	MempoolLiquidApi string `long:"mempool-liquid" description:"mempool.space liquid API to use for fee estimations; set to empty string to disable"`
@@ -131,6 +136,10 @@ func LoadConfig(dataDir string) (*Config, error) {
 			PrivateKey: "",
 			CertChain:  "",
 			ServerName: "cln",
+		},
+
+		LightningOptions: &LightningOptions{
+			RoutingFeeLimitPpm: 2500,
 		},
 
 		RPC: &RpcOptions{

@@ -45,6 +45,7 @@ type ReverseSwap struct {
 	ExternalPay         bool
 	WalletId            *Id
 	TenantId            Id
+	RoutingFeeLimitPpm  *uint64
 }
 
 type ReverseSwapSerialized struct {
@@ -76,6 +77,7 @@ type ReverseSwapSerialized struct {
 	ExternalPay         bool
 	WalletId            *Id
 	TenantId            Id
+	RoutingFeeLimitPpm  *uint64
 }
 
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
@@ -107,6 +109,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		ExternalPay:         reverseSwap.ExternalPay,
 		WalletId:            reverseSwap.WalletId,
 		TenantId:            reverseSwap.TenantId,
+		RoutingFeeLimitPpm:  reverseSwap.RoutingFeeLimitPpm,
 	}
 }
 
@@ -132,7 +135,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var preimage string
 	var redeemScript string
 	blindingKey := PrivateKeyScanner{Nullable: true}
-	var createdAt, paidAt, serviceFee, onchainFee, routingFeeMsat sql.NullInt64
+	var createdAt, paidAt, serviceFee, onchainFee, routingFeeMsat, routingFeeLimitPpm sql.NullInt64
 	var externalPay sql.NullBool
 	swapTree := JsonScanner[*boltz.SerializedTree]{Nullable: true}
 	refundPubKey := PublicKeyScanner{Nullable: true}
@@ -172,6 +175,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"externalPay":         &externalPay,
 			"tenantId":            &reverseSwap.TenantId,
 			"walletId":            &reverseSwap.WalletId,
+			"routingFeeLimitPpm":  &routingFeeLimitPpm,
 		},
 	)
 
@@ -182,6 +186,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	reverseSwap.ServiceFee = parseNullInt(serviceFee)
 	reverseSwap.OnchainFee = parseNullUint(onchainFee)
 	reverseSwap.RoutingFeeMsat = parseNullUint(routingFeeMsat)
+	reverseSwap.RoutingFeeLimitPpm = parseNullUint(routingFeeLimitPpm)
 	reverseSwap.Status = boltz.ParseEvent(status)
 	reverseSwap.ChanIds = chanIds.Value
 
@@ -315,8 +320,8 @@ const insertReverseSwapStatement = `
 INSERT INTO reverseSwaps (id, fromCurrency, toCurrency, chanIds, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript,
                           invoice, claimAddress, onchainAmount, invoiceAmount, timeoutBlockheight, lockupTransactionId,
                           claimTransactionId, blindingKey, isAuto, createdAt, routingFeeMsat, serviceFee,
-                          serviceFeePercent, onchainFee, refundPubKey, swapTree, externalPay, tenantId, walletId)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          serviceFeePercent, onchainFee, refundPubKey, swapTree, externalPay, tenantId, walletId, routingFeeLimitPpm)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
@@ -352,6 +357,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		reverseSwap.ExternalPay,
 		reverseSwap.TenantId,
 		reverseSwap.WalletId,
+		reverseSwap.RoutingFeeLimitPpm,
 	)
 	return err
 }
