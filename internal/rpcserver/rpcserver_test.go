@@ -889,7 +889,7 @@ func TestReverseSwap(t *testing.T) {
 		request := &boltzrpc.CreateReverseSwapRequest{
 			Amount:         amount,
 			AcceptZeroConf: true,
-			MaxRoutingFeePpm: &ppm,
+			RoutingFeeLimitPpm: &ppm,
 			ExternalPay: &externalPay,
 		}
 
@@ -898,7 +898,7 @@ func TestReverseSwap(t *testing.T) {
 
 		dbSwap, err := cfg.Database.QueryReverseSwap(response.Id)
 		require.NoError(t, err)
-		require.Equal(t, ppm, *dbSwap.MaxRoutingFeePpm)
+		require.Equal(t, ppm, *dbSwap.RoutingFeeLimitPpm)
 
 		externalPay = true
 		_, err = client.CreateReverseSwap(request)

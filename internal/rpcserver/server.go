@@ -197,7 +197,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 
 	server.nursery = nursery.New(
 		cfg.MaxZeroConfAmount,
-		cfg.LightningOptions.DefaultFeeLimitPpm,
+		cfg.LightningOptions.RoutingFeeLimitPpm,
 		server.network,
 		server.lightning,
 		server.onchain,

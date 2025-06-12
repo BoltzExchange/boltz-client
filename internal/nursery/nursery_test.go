@@ -70,7 +70,7 @@ func TestPayReverseSwap(t *testing.T) {
 		t.Run("Custom", func(t *testing.T) {
 			nursery := setup(t)
 			swap := testSwap
-			swap.MaxRoutingFeePpm = &maxRoutingFeePpm
+			swap.RoutingFeeLimitPpm = &maxRoutingFeePpm
 
 			err := nursery.payReverseSwap(swap)
 			require.NoError(t, err)
@@ -79,7 +79,7 @@ func TestPayReverseSwap(t *testing.T) {
 
 		t.Run("Default", func(t *testing.T) {
 			nursery := setup(t)
-			nursery.defaultFeeLimitPpm = maxRoutingFeePpm
+			nursery.maxRoutingFeePpm = maxRoutingFeePpm
 			err := nursery.payReverseSwap(testSwap)
 			require.NoError(t, err)
 			time.Sleep(10 * time.Millisecond) // wait for the pay call to run in the goroutine

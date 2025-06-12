@@ -588,7 +588,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		}
 
 	case 14:
-		_, err := tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN maxRoutingFeePpm INT")
+		_, err := tx.Exec("ALTER TABLE reverseSwaps ADD COLUMN routingFeeLimitPpm INT")
 		if err != nil {
 			return err
 		}

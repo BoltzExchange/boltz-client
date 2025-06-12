@@ -607,8 +607,8 @@ message CreateReverseSwapRequest {
     // The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
     optional PairInfo accepted_pair = 12;
 
-    // The maximum routing fee to pay the lightning invoice in ppm (parts per million)
-    optional uint64 max_routing_fee_ppm = 13;
+    // The routing fee limit for paying the lightning invoice in ppm (parts per million)
+    optional uint64 routing_fee_limit_ppm = 13;
 }
 message CreateReverseSwapResponse {
     string id = 1;
