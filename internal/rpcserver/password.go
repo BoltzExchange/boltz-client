@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var ErrInvalidAuthorization = status.Error(codes.Unauthenticated, "invalid authorization")
+
 type PasswordAuth struct {
 	password []byte
 }
@@ -54,11 +56,11 @@ func (auth *PasswordAuth) validateRequest(ctx context.Context) error {
 
 	authorization := md.Get("authorization")
 	if len(authorization) != 1 {
-		return status.Error(codes.Unauthenticated, "invalid authorization")
+		return ErrInvalidAuthorization
 	}
 
 	if subtle.ConstantTimeCompare(auth.password, []byte(authorization[0])) == 0 {
-		return status.Error(codes.Unauthenticated, "invalid authorization")
+		return ErrInvalidAuthorization
 	}
 
 	return nil
