@@ -52,12 +52,12 @@ func (auth *PasswordAuth) validateRequest(ctx context.Context) error {
 		return status.Error(codes.Unauthenticated, "metadata is not provided")
 	}
 
-	password := md.Get("authorization")
-	if len(password) != 1 {
+	authorization := md.Get("authorization")
+	if len(authorization) != 1 {
 		return status.Error(codes.Unauthenticated, "invalid authorization")
 	}
 
-	if subtle.ConstantTimeCompare(auth.password, []byte(password[0])) == 0 {
+	if subtle.ConstantTimeCompare(auth.password, []byte(authorization[0])) == 0 {
 		return status.Error(codes.Unauthenticated, "invalid authorization")
 	}
 
