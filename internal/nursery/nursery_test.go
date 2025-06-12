@@ -33,7 +33,7 @@ func setup(t *testing.T) (*Nursery) {
 		boltz.Regtest,
 		nil,
 		chain,
-		&boltz.Api{URL: boltz.DefaultApiUrl(boltz.Regtest)},
+		&boltz.Api{URL: boltz.Regtest.DefaultBoltzUrl},
 		&db,
 	)
 

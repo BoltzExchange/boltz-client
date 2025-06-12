@@ -15,18 +15,6 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-func DefaultApiUrl(network *Network) string {
-	switch network {
-	case MainNet:
-		return "https://api.boltz.exchange"
-	case TestNet:
-		return "https://api.testnet.boltz.exchange"
-	case Regtest:
-		return "http://127.0.0.1:9001"
-	}
-	return ""
-}
-
 type Api struct {
 	URL      string
 	Client   http.Client

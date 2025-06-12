@@ -330,7 +330,7 @@ func (server *RpcServer) Stop() error {
 func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 	boltzUrl := cfg.Boltz.URL
 	if boltzUrl == "" {
-		boltzUrl = boltz.DefaultApiUrl(network)
+		boltzUrl = network.DefaultBoltzUrl
 		logger.Infof("Using default Boltz endpoint for network %s: %s", network.Name, boltzUrl)
 	} else {
 		logger.Info("Using configured Boltz endpoint: " + boltzUrl)
