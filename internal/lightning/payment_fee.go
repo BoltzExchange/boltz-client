@@ -10,7 +10,7 @@ const (
 	minPaymentFee = btcutil.Amount(5)
 )
 
-// getFeeLimit calculates the fee limit of a payment in sat
+// CalculateFeeLimit calculates the fee limit of a payment in sat
 func CalculateFeeLimit(invoice string, chainParams *chaincfg.Params, feeLimitPpm uint64) (uint, error) {
 	decodedInvoice, err := zpay32.Decode(invoice, chainParams)
 

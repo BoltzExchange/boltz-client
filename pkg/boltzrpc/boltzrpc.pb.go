@@ -3387,8 +3387,7 @@ type CreateReverseSwapRequest struct {
 	// Rates to accept for the swap. Queries latest from boltz otherwise
 	// The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
 	AcceptedPair *PairInfo `protobuf:"bytes,12,opt,name=accepted_pair,json=acceptedPair,proto3,oneof" json:"accepted_pair,omitempty"`
-	// The maximum routing fee to pay for the lightning invoice, expressed as
-	// parts per million of the volume being routed.
+	// The maximum routing fee to pay the lightning invoice in ppm (parts per million)
 	MaxRoutingFeePpm *uint64 `protobuf:"varint,13,opt,name=max_routing_fee_ppm,json=maxRoutingFeePpm,proto3,oneof" json:"max_routing_fee_ppm,omitempty"`
 }
 

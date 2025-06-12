@@ -626,7 +626,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `description_hash` | [`bytes`](#bytes) | optional | Description hash of the invoice which will be created for the swap. Takes precedence over `description` |
 | `invoice_expiry` | [`uint64`](#uint64) | optional | Expiry of the reverse swap invoice in seconds |
 | `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
-| `max_routing_fee_ppm` | [`uint64`](#uint64) | optional | The maximum routing fee to pay for the lightning invoice, expressed as parts per million of the volume being routed. |
+| `max_routing_fee_ppm` | [`uint64`](#uint64) | optional | The maximum routing fee to pay the lightning invoice in ppm (parts per million) |
 
 
 
