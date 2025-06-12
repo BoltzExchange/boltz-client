@@ -45,7 +45,7 @@ type ReverseSwap struct {
 	ExternalPay         bool
 	WalletId            *Id
 	TenantId            Id
-	RoutingFeeLimitPpm    *uint64
+	RoutingFeeLimitPpm  *uint64
 }
 
 type ReverseSwapSerialized struct {
@@ -77,7 +77,7 @@ type ReverseSwapSerialized struct {
 	ExternalPay         bool
 	WalletId            *Id
 	TenantId            Id
-	RoutingFeeLimitPpm    *uint64
+	RoutingFeeLimitPpm  *uint64
 }
 
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
@@ -109,7 +109,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		ExternalPay:         reverseSwap.ExternalPay,
 		WalletId:            reverseSwap.WalletId,
 		TenantId:            reverseSwap.TenantId,
-		RoutingFeeLimitPpm:    reverseSwap.RoutingFeeLimitPpm,
+		RoutingFeeLimitPpm:  reverseSwap.RoutingFeeLimitPpm,
 	}
 }
 
@@ -175,7 +175,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"externalPay":         &externalPay,
 			"tenantId":            &reverseSwap.TenantId,
 			"walletId":            &reverseSwap.WalletId,
-			"routingFeeLimitPpm":    &routingFeeLimitPpm,
+			"routingFeeLimitPpm":  &routingFeeLimitPpm,
 		},
 	)
 

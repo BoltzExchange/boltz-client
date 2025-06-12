@@ -37,7 +37,7 @@ type Nursery struct {
 	globalListener     swapListener
 	waitGroup          sync.WaitGroup
 	maxZeroConfAmount  uint64
-	maxRoutingFeePpm uint64
+	maxRoutingFeePpm   uint64
 
 	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
 	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
@@ -53,14 +53,14 @@ func New(
 	database *database.Database,
 ) *Nursery {
 	nursery := &Nursery{
-		network:            network,
-		lightning:          lightning,
-		onchain:            chain,
-		boltz:              boltzClient,
-		database:           database,
-		eventListeners:     make(map[string]swapListener),
-		globalListener:     utils.ForwardChannel(make(chan SwapUpdate), 0, false),
-		boltzWs:            boltzClient.NewWebsocket(),
+		network:          network,
+		lightning:        lightning,
+		onchain:          chain,
+		boltz:            boltzClient,
+		database:         database,
+		eventListeners:   make(map[string]swapListener),
+		globalListener:   utils.ForwardChannel(make(chan SwapUpdate), 0, false),
+		boltzWs:          boltzClient.NewWebsocket(),
 		maxRoutingFeePpm: maxRoutingFeePpm,
 	}
 	if maxZeroConfAmount != nil {

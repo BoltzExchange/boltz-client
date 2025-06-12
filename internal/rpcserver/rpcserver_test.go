@@ -884,13 +884,12 @@ func TestReverseSwap(t *testing.T) {
 		client, _, stop := setup(t, setupOptions{cfg: cfg})
 		defer stop()
 
-
 		externalPay := false
 		request := &boltzrpc.CreateReverseSwapRequest{
-			Amount:         amount,
-			AcceptZeroConf: true,
+			Amount:             amount,
+			AcceptZeroConf:     true,
 			RoutingFeeLimitPpm: &ppm,
-			ExternalPay: &externalPay,
+			ExternalPay:        &externalPay,
 		}
 
 		response, err := client.CreateReverseSwap(request)

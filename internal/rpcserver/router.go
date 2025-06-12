@@ -1081,7 +1081,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		ExternalPay:         externalPay,
 		WalletId:            walletId,
 		TenantId:            requireTenantId(ctx),
-		RoutingFeeLimitPpm:    request.RoutingFeeLimitPpm,
+		RoutingFeeLimitPpm:  request.RoutingFeeLimitPpm,
 	}
 
 	logger.Infof(

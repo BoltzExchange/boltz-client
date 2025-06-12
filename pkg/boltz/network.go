@@ -12,7 +12,7 @@ type Network struct {
 	Liquid             *liquid.Network
 	Name               string
 	DummyLockupAddress map[Currency]string
-	DefaultBoltzUrl        string
+	DefaultBoltzUrl    string
 }
 
 var MainNet = &Network{

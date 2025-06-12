@@ -16,10 +16,10 @@ import (
 
 const defaultFeeLimitPpm = uint64(1000)
 
-func setup(t *testing.T) (*Nursery) {
+func setup(t *testing.T) *Nursery {
 	chain := &onchain.Onchain{
-		Btc: &onchain.Currency{},
-		Liquid: &onchain.Currency{},
+		Btc:     &onchain.Currency{},
+		Liquid:  &onchain.Currency{},
 		Network: boltz.Regtest,
 	}
 	chain.Init()
@@ -62,8 +62,8 @@ func TestPayReverseSwap(t *testing.T) {
 			return nursery
 		}
 		testSwap := &database.ReverseSwap{
-			Id: "test-swap",
-			Invoice: testInvoice,
+			Id:            "test-swap",
+			Invoice:       testInvoice,
 			InvoiceAmount: testInvoiceAmount,
 		}
 
@@ -84,7 +84,6 @@ func TestPayReverseSwap(t *testing.T) {
 			require.NoError(t, err)
 			time.Sleep(10 * time.Millisecond) // wait for the pay call to run in the goroutine
 		})
-
 
 	})
 	t.Run("ExternalPay", func(t *testing.T) {
@@ -107,4 +106,3 @@ func TestPayReverseSwap(t *testing.T) {
 		require.Equal(t, "no lightning node available to pay invoice", err.Error())
 	})
 }
-
