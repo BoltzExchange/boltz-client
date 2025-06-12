@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	minPaymentFee = 5
+	minPaymentFee = btcutil.Amount(5)
 )
 
 // getFeeLimit calculates the fee limit of a payment in sat
@@ -21,8 +21,9 @@ func CalculateFeeLimit(invoice string, chainParams *chaincfg.Params, feeLimitPpm
 	// Use the minimum value for small payments
 	feeLimit := max(
 		decodedInvoice.MilliSat.ToSatoshis().MulF64(float64(feeLimitPpm)/1_000_000),
-		btcutil.Amount(minPaymentFee),
+		minPaymentFee,
 	)
 
-	return uint(feeLimit.ToUnit(btcutil.AmountSatoshi)), nil
+	// feeLimit is in sats already, no need for ToUnit
+	return uint(feeLimit), nil
 }
