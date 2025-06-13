@@ -1415,6 +1415,10 @@ func claimSwaps(ctx *cli.Context) error {
 	fmt.Println("Claim transaction ID: " + response.TransactionId)
 	return nil
 }
+var routingFeeLimitFlag = &cli.Uint64Flag{
+	Name:  "routing-fee-limit-ppm",
+	Usage: "The routing fee limit for paying the lightning invoice in ppm (parts per million)",
+}
 
 var createReverseSwapCommand = &cli.Command{
 	Name:      "createreverseswap",
@@ -1452,6 +1456,7 @@ var createReverseSwapCommand = &cli.Command{
 		&cli.StringSliceFlag{
 			Name: "chan-id",
 		},
+		routingFeeLimitFlag,
 	},
 }
 
@@ -1528,6 +1533,11 @@ func createReverseSwap(ctx *cli.Context) error {
 	}
 	if externalPay := ctx.Bool("external-pay"); externalPay {
 		request.ExternalPay = &externalPay
+	}
+
+	if ctx.IsSet(routingFeeLimitFlag.Name) {
+		routingFeeLimitPpm := ctx.Uint64(routingFeeLimitFlag.Name)
+		request.RoutingFeeLimitPpm = &routingFeeLimitPpm
 	}
 
 	response, err := client.CreateReverseSwap(request)
