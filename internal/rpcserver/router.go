@@ -633,8 +633,7 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.Decode
 	if pubKey := decoded.MagicRoutingHint; pubKey != nil {
 		logger.Info("Found magic routing hint in invoice")
 		reverseBip21, err := server.boltz.GetReverseSwapBip21(invoice)
-		var boltzErr boltz.Error
-		if err != nil && !errors.As(err, &boltzErr) {
+		if err != nil {
 			return nil, fmt.Errorf("could not get reverse swap bip21: %w", err)
 		}
 
