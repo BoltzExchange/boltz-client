@@ -2,6 +2,45 @@
 
 This page was automatically generated.
 
+## Authorization
+
+The gRPC API supports two authorization methods.
+
+### Macaroons
+
+Macaroons are cryptographic bearer tokens that offer fine-grained access control and serve as the default authorization method for the gRPC. The daemon automatically generates two macaroons at startup.
+
+- Admin macaroon (`admin.macaroon`) - grants full access to all RPCs
+- Readonly macaroon (`readonly.macaroon`) - grants read-only access to all RPCs
+
+The macaroons are stored in the `macaroons` folder in the data directory by default. Their locations can be overridden using the configuration options:
+
+- `rpc.adminmacaroonpath`
+- `rpc.readonlymacaroonpath`
+
+When using macaroon authentication, include the macaroon in your request metadata:
+
+- For gRPC: Use the `macaroon` key in the request metadata
+- For REST proxy: Use the `Grpc-Metadata-Macaroon` header
+
+### Password
+
+The client supports simple password authentication as an alternative to macaroons.
+
+To enable password authentication:
+
+1. Set a password using the `rpc.password` flag at startup
+2. Or configure it in the [config](configuration.md)
+
+Note: When password authentication is enabled, macaroon authentication is automatically disabled and vice-versa.
+
+To use password authentication:
+
+- For gRPC: Include the password in the `authorization` key of the request metadata
+- For REST proxy: Use the `Authorization` header
+
+Note: It is recommended to use macaroon authentication when possible as it provides more granular access control.
+
 Paths for the REST proxy of the gRPC interface can be found [here](https://github.com/BoltzExchange/boltz-client/blob/master/pkg/boltzrpc/rest-annotations.yaml).
 
 
