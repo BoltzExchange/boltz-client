@@ -1,4 +1,15 @@
 
+<a name="v2.7.1"></a>
+## [v2.7.1] - 2025-06-13
+### Feat
+- routing fee limit cli flag ([#479](https://github.com/BoltzExchange/boltz-client/issues/479))
+
+### Fix
+- correct name for `LightningOptions` in config ([#478](https://github.com/BoltzExchange/boltz-client/issues/478))
+- routing limit cli flag typo ([#477](https://github.com/BoltzExchange/boltz-client/issues/477))
+- reverse swap bip21 error handling ([#476](https://github.com/BoltzExchange/boltz-client/issues/476))
+
+
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2025-06-13
 ### Feat
@@ -673,6 +684,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.7.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.7.0...v2.7.1
 [v2.7.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.6.1...v2.7.0
 [v2.6.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.6.0...v2.6.1
 [v2.6.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.5.1...v2.6.0
