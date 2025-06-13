@@ -50,7 +50,7 @@ type RpcOptions struct {
 }
 
 type LightningOptions struct {
-	RoutingFeeLimitPpm uint64 `long:"lightning.rounting-fee-limit-ppm" description:"Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis."`
+	RoutingFeeLimitPpm uint64 `long:"lightning.routing-fee-limit-ppm" description:"Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis."`
 }
 
 type Config struct {
