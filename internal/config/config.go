@@ -17,7 +17,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/build"
 	"github.com/BoltzExchange/boltz-client/v2/internal/cln"
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
-	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/lnd"
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 )
@@ -75,11 +74,9 @@ type Config struct {
 
 	Standalone bool `long:"standalone" description:"Run boltz-client without a lightning node"`
 
-	Lightning lightning.LightningNode `json:"-"`
-
-	LightningOptions *LightningOptions  `group:"Lightning options"`
-	RPC              *RpcOptions        `group:"RPC options"`
-	Database         *database.Database `group:"Database options"`
+	Lightning *LightningOptions  `group:"Lightning options"`
+	RPC       *RpcOptions        `group:"RPC options"`
+	Database  *database.Database `group:"Database options"`
 
 	MempoolApi       string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 	MempoolLiquidApi string `long:"mempool-liquid" description:"mempool.space liquid API to use for fee estimations; set to empty string to disable"`
@@ -138,7 +135,7 @@ func LoadConfig(dataDir string) (*Config, error) {
 			ServerName: "cln",
 		},
 
-		LightningOptions: &LightningOptions{
+		Lightning: &LightningOptions{
 			RoutingFeeLimitPpm: 2500,
 		},
 
