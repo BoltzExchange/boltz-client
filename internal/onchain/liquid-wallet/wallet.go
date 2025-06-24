@@ -123,7 +123,14 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 
 	var descriptor *lwk.WolletDescriptor
 	var err error
-	if credentials.Mnemonic != "" {
+	readonly := credentials.CoreDescriptor != ""
+	result.info.Readonly = readonly
+	if credentials.CoreDescriptor != "" {
+		descriptor, err = lwk.NewWolletDescriptor(credentials.CoreDescriptor)
+		if err != nil {
+			return nil, err
+		}
+	} else if !readonly {
 		mnemonic, err := lwk.NewMnemonic(credentials.Mnemonic)
 		if err != nil {
 			return nil, err
@@ -132,19 +139,12 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 		if err != nil {
 			return nil, err
 		}
-		descriptor, err = result.signer.WpkhSlip77Descriptor()
+		descriptor, err = result.signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		result.info.Readonly = true
-		if credentials.CoreDescriptor == "" {
-			return nil, errors.New("invalid credentials")
-		}
-		descriptor, err = lwk.NewWolletDescriptor(credentials.CoreDescriptor)
-		if err != nil {
-			return nil, err
-		}
+		return nil, errors.New("no descriptor or mnemonic provided")
 	}
 
 	result.Wollet, err = lwk.NewWollet(
