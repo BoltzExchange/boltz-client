@@ -2,23 +2,6 @@ diff --git a/data/backend/boltz.conf b/data/backend/boltz.conf
 index 6129eba..ccc3014 100755
 --- a/data/backend/boltz.conf
 +++ b/data/backend/boltz.conf
-@@ -36,11 +36,11 @@ maxSwapAmount = 40_294_967
- minSwapAmount = 50_000
- 
-   [pairs.timeoutDelta]
--  chain = 1440
--  reverse = 1440
--  swapMinimal = 1440
--  swapMaximal = 2880
--  swapTaproot = 10080
-+  chain = 300
-+  reverse = 300
-+  swapTaproot = 300
-+  swapMinimal = 300
-+  swapMaximal = 350
- 
- [[pairs]]
- base = "L-BTC"
 @@ -59,11 +59,11 @@ minSwapAmount = 100
    minSwapAmount = 25_000
  
@@ -28,11 +11,11 @@ index 6129eba..ccc3014 100755
 -  swapMinimal = 1440
 -  swapMaximal = 2880
 -  swapTaproot = 10080
-+  chain = 300
-+  reverse = 300
-+  swapTaproot = 300
-+  swapMinimal = 300
-+  swapMaximal = 350
++  chain = 400
++  reverse = 400
++  swapTaproot = 400
++  swapMinimal = 400
++  swapMaximal = 450
  
  [[pairs]]
  base = "RBTC"
