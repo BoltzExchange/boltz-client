@@ -1,6 +1,9 @@
 package autoswap
 
 import (
+	"testing"
+	"time"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -13,8 +16,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
-	"testing"
-	"time"
 )
 
 type mockedWallet struct {
@@ -286,6 +287,7 @@ func TestChainSwapper(t *testing.T) {
 		require.Empty(t, chainSwapper.Error())
 
 		blockUpdates <- &onchain.BlockEpoch{Height: 1000}
+		time.Sleep(100 * time.Millisecond)
 
 		require.True(t, swapper.WalletUsed(fromWallet.GetWalletInfo().Id))
 
