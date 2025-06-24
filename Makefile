@@ -73,11 +73,15 @@ ifeq ("$(wildcard regtest/docker-compose.override.yml)","")
 	cd regtest && git apply ../regtest.patch
 endif
 
-start-regtest: setup-regtest
+clear-wallet-data:
+	rm -rf internal/onchain/liquid-wallet/test-data
+	rm -rf internal/rpcserver/test/liquid-wallet
+
+start-regtest: setup-regtest clear-wallet-data
 	@$(call print, "Starting regtest")
 	eval cd regtest && ./start.sh
 
-restart-regtest: setup-regtest
+restart-regtest: setup-regtest clear-wallet-data
 	@$(call print, "Restarting regtest")
 	eval cd regtest && ./restart.sh
 
