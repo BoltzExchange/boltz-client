@@ -2592,8 +2592,8 @@ func TestSwap(t *testing.T) {
 }
 
 func TestChainSwap(t *testing.T) {
-
 	cfg := loadConfig(t)
+	cfg.Standalone = true
 	chain := getOnchain(t, cfg)
 
 	tests := []struct {
@@ -3117,6 +3117,7 @@ func TestChainSwap(t *testing.T) {
 
 func TestPasswordAuth(t *testing.T) {
 	cfg := loadConfig(t)
+	cfg.Standalone = true
 	cfg.RPC.Password = "testpassword"
 
 	client, _, stop := setup(t, setupOptions{cfg: cfg})
