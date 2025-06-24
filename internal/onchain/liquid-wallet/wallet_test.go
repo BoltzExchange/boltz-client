@@ -18,14 +18,18 @@ import (
 var backend *liquid_wallet.BlockchainBackend
 
 const syncInterval = 1 * time.Second
-const consolidationThreshold = 3
+
+func defaultConfig() liquid_wallet.Config {
+	return liquid_wallet.Config{
+		Network:      boltz.Regtest,
+		DataDir:      "test-wallet",
+		SyncInterval: syncInterval,
+	}
+}
 
 func TestMain(m *testing.M) {
 	var err error
-	cfg := test.LiquidWalletConfig()
-	cfg.SyncInterval = syncInterval
-	cfg.ConsolidationThreshold = consolidationThreshold
-	backend, err = liquid_wallet.NewBlockchainBackend(cfg)
+	backend, err = liquid_wallet.NewBlockchainBackend(defaultConfig())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +38,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestWallet_GetBalance(t *testing.T) {
-	wallet := newWallet(t)
+	wallet := newWallet(t, backend)
 	balance, err := wallet.GetBalance()
 	require.NoError(t, err)
 	require.NotNil(t, balance)
@@ -63,8 +67,9 @@ func TestWallet_GetBalance(t *testing.T) {
 }
 
 func TestWallet_Funded(t *testing.T) {
-	fundedWallet, err := test.InitTestWalletLiquid(backend)
+	fundedWallet, err := liquid_wallet.NewWallet(backend, test.WalletCredentials(boltz.CurrencyLiquid))
 	require.NoError(t, err)
+	require.NoError(t, test.FundWallet(boltz.CurrencyLiquid, fundedWallet))
 
 	t.Run("SendToAddress", func(t *testing.T) {
 		address := test.GetNewAddress(test.LiquidCli)
@@ -113,7 +118,7 @@ func TestWallet_Funded(t *testing.T) {
 	})
 }
 
-func newWallet(t *testing.T) *liquid_wallet.Wallet {
+func newWallet(t *testing.T, backend *liquid_wallet.BlockchainBackend) *liquid_wallet.Wallet {
 	mnemonic, err := liquid_wallet.GenerateMnemonic(boltz.Regtest)
 	require.NoError(t, err)
 	wallet, err := liquid_wallet.NewWallet(backend, &onchain.WalletCredentials{
@@ -127,7 +132,7 @@ func newWallet(t *testing.T) *liquid_wallet.Wallet {
 }
 
 func TestWallet_NewAddress(t *testing.T) {
-	wallet := newWallet(t)
+	wallet := newWallet(t, backend)
 	address, err := wallet.NewAddress()
 	require.NoError(t, err)
 	require.NotEmpty(t, address)
@@ -139,8 +144,13 @@ func TestWallet_NewAddress(t *testing.T) {
 }
 
 func TestWallet_AutoConsolidate(t *testing.T) {
-	wallet := newWallet(t)
-	numTxns := consolidationThreshold
+	numTxns := 3
+	cfg := defaultConfig()
+	cfg.ConsolidationThreshold = uint64(numTxns)
+	backend, err := liquid_wallet.NewBlockchainBackend(cfg)
+	require.NoError(t, err)
+	wallet := newWallet(t, backend)
+
 	amount := uint64(500)
 	for i := 0; i < numTxns; i++ {
 		address, err := wallet.NewAddress()
