@@ -674,6 +674,16 @@ RustBuffer uniffi_lwk_fn_method_esploraclient_full_scan(void* ptr, void* wollet,
 RustBuffer uniffi_lwk_fn_method_esploraclient_full_scan_to_index(void* ptr, void* wollet, uint32_t index, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_EXTERNALUTXO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_EXTERNALUTXO
+void* uniffi_lwk_fn_clone_externalutxo(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_EXTERNALUTXO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_EXTERNALUTXO
+void uniffi_lwk_fn_free_externalutxo(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNPERSISTER
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNPERSISTER
 void* uniffi_lwk_fn_clone_foreignpersister(void* ptr, RustCallStatus *out_status
@@ -1147,9 +1157,19 @@ void uniffi_lwk_fn_free_secretkey(void* ptr, RustCallStatus *out_status
 void* uniffi_lwk_fn_constructor_secretkey_from_bytes(RustBuffer bytes, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SECRETKEY_FROM_WIF
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SECRETKEY_FROM_WIF
+void* uniffi_lwk_fn_constructor_secretkey_from_wif(RustBuffer wif, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SECRETKEY_BYTES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SECRETKEY_BYTES
 RustBuffer uniffi_lwk_fn_method_secretkey_bytes(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SECRETKEY_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SECRETKEY_SIGN
+void* uniffi_lwk_fn_method_secretkey_sign(void* ptr, void* pset, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_SIGNER
@@ -1185,6 +1205,11 @@ void* uniffi_lwk_fn_method_signer_mnemonic(void* ptr, RustCallStatus *out_status
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_SIGN
 void* uniffi_lwk_fn_method_signer_sign(void* ptr, void* pset, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_SINGLESIG_DESC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_SINGLESIG_DESC
+void* uniffi_lwk_fn_method_signer_singlesig_desc(void* ptr, RustBuffer script_variant, RustBuffer blinding_variant, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_WPKH_SLIP77_DESCRIPTOR
@@ -1301,6 +1326,11 @@ void* uniffi_lwk_fn_constructor_txbuilder_new(void* network, RustCallStatus *out
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_BURN
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_BURN
 void uniffi_lwk_fn_method_txbuilder_add_burn(void* ptr, uint64_t satoshi, RustBuffer asset, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
+void uniffi_lwk_fn_method_txbuilder_add_external_utxos(void* ptr, RustBuffer utxos, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_LBTC_RECIPIENT
@@ -1723,9 +1753,19 @@ void* uniffi_lwk_fn_method_wollet_pset_details(void* ptr, void* pset, RustCallSt
 RustBuffer uniffi_lwk_fn_method_wollet_transactions(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TRANSACTIONS_PAGINATED
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TRANSACTIONS_PAGINATED
+RustBuffer uniffi_lwk_fn_method_wollet_transactions_paginated(void* ptr, uint32_t offset, uint32_t limit, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TXOS
 RustBuffer uniffi_lwk_fn_method_wollet_txos(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_UNBLIND_UTXOS_WITH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_UNBLIND_UTXOS_WITH
+RustBuffer uniffi_lwk_fn_method_wollet_unblind_utxos_with(void* ptr, void* blinding_privkey, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_UTXOS
@@ -2466,6 +2506,12 @@ uint16_t uniffi_lwk_checksum_method_secretkey_bytes(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SECRETKEY_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SECRETKEY_SIGN
+uint16_t uniffi_lwk_checksum_method_secretkey_sign(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_KEYORIGIN_XPUB
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_KEYORIGIN_XPUB
 uint16_t uniffi_lwk_checksum_method_signer_keyorigin_xpub(void
@@ -2481,6 +2527,12 @@ uint16_t uniffi_lwk_checksum_method_signer_mnemonic(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_SIGN
 uint16_t uniffi_lwk_checksum_method_signer_sign(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_SINGLESIG_DESC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_SINGLESIG_DESC
+uint16_t uniffi_lwk_checksum_method_signer_singlesig_desc(void
     
 );
 #endif
@@ -2559,6 +2611,12 @@ uint16_t uniffi_lwk_checksum_method_transaction_txid(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_BURN
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_BURN
 uint16_t uniffi_lwk_checksum_method_txbuilder_add_burn(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
+uint16_t uniffi_lwk_checksum_method_txbuilder_add_external_utxos(void
     
 );
 #endif
@@ -2886,9 +2944,21 @@ uint16_t uniffi_lwk_checksum_method_wollet_transactions(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_TRANSACTIONS_PAGINATED
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_TRANSACTIONS_PAGINATED
+uint16_t uniffi_lwk_checksum_method_wollet_transactions_paginated(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_TXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_TXOS
 uint16_t uniffi_lwk_checksum_method_wollet_txos(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_UNBLIND_UTXOS_WITH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_UNBLIND_UTXOS_WITH
+uint16_t uniffi_lwk_checksum_method_wollet_unblind_utxos_with(void
     
 );
 #endif
@@ -3051,6 +3121,12 @@ uint16_t uniffi_lwk_checksum_constructor_script_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SECRETKEY_FROM_BYTES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SECRETKEY_FROM_BYTES
 uint16_t uniffi_lwk_checksum_constructor_secretkey_from_bytes(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SECRETKEY_FROM_WIF
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SECRETKEY_FROM_WIF
+uint16_t uniffi_lwk_checksum_constructor_secretkey_from_wif(void
     
 );
 #endif

@@ -132,7 +132,7 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 		if err != nil {
 			return nil, err
 		}
-		descriptor, err = result.signer.WpkhSlip77Descriptor()
+		descriptor, err = result.signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
 		if err != nil {
 			return nil, err
 		}

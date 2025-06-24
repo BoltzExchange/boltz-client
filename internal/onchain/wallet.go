@@ -65,14 +65,30 @@ func (info WalletInfo) String() string {
 	return fmt.Sprintf("Wallet{Id: %d, Name: %s, Currency: %s}", info.Id, info.Name, info.Currency)
 }
 
-type WalletCredentials struct {
-	WalletInfo
-	Mnemonic       string
-	Subaccount     *uint64
+type ScriptType string
+
+const (
+	ScriptTypeWpkh   ScriptType = "wpkh"
+	ScriptTypeShWpkh ScriptType = "shwpkh"
+)
+
+type SigningData struct {
+	Mnemonic   string
+	ScriptType ScriptType
+	Subaccount *uint64
+}
+
+type Readonly struct {
 	Xpub           string
 	CoreDescriptor string
-	Salt           string
-	Legacy         bool
+}
+
+type WalletCredentials struct {
+	WalletInfo
+	SigningData
+	Readonly
+	Salt   string
+	Legacy bool
 }
 
 func (c *WalletCredentials) Encrypted() bool {
