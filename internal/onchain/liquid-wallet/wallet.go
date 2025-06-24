@@ -50,25 +50,40 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 	var err error
 
 	if cfg.SyncInterval == 0 {
-		cfg.SyncInterval = DefaultSyncInterval
+		if cfg.Network == boltz.Regtest {
+			cfg.SyncInterval = 1 * time.Second
+		} else {
+			cfg.SyncInterval = DefaultSyncInterval
+		}
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
 	}
 
 	backend := &BlockchainBackend{cfg: cfg}
-	if cfg.Esplora != nil {
-		esplora := cfg.Esplora
-		if esplora.Waterfall {
-			backend.esplora, err = lwk.EsploraClientNewWaterfalls(esplora.Url, convertNetwork(cfg.Network))
-		} else {
-			backend.esplora, err = lwk.NewEsploraClient(esplora.Url, convertNetwork(cfg.Network))
+	if cfg.Esplora == nil {
+		switch cfg.Network {
+		case boltz.Regtest:
+			cfg.Esplora = &EsploraConfig{
+				Url:       "http://localhost:3003",
+				Waterfall: false,
+			}
+		case boltz.MainNet:
+			cfg.Esplora = &EsploraConfig{
+				Url:       "https://esplora.bol.tz/liquid",
+				Waterfall: true,
+			}
+		default:
+			return nil, errors.New("esplora is required")
 		}
-		if err != nil {
-			return nil, err
-		}
+	}
+	if cfg.Esplora.Waterfall {
+		backend.esplora, err = lwk.EsploraClientNewWaterfalls(cfg.Esplora.Url, convertNetwork(cfg.Network))
 	} else {
-		return nil, errors.New("esplora is required")
+		backend.esplora, err = lwk.NewEsploraClient(cfg.Esplora.Url, convertNetwork(cfg.Network))
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return backend, nil
@@ -397,6 +412,25 @@ func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint6
 		}
 	}
 	return send - fee, fee, nil
+}
+
+func (w *Wallet) GetOutputs(address string) ([]*onchain.Output, error) {
+	utxos, err := w.Utxos()
+	if err != nil {
+		return nil, err
+	}
+
+	var outputs []*onchain.Output
+	for _, utxo := range utxos {
+		if utxo.Address().String() == address {
+			output := &onchain.Output{TxId: utxo.Outpoint().Txid().String()}
+			if unblinded := utxo.Unblinded(); unblinded != nil {
+				output.Value = unblinded.Value()
+			}
+			outputs = append(outputs, output)
+		}
+	}
+	return outputs, nil
 }
 
 func GenerateMnemonic(network *boltz.Network) (string, error) {

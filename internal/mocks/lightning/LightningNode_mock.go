@@ -443,6 +443,68 @@ func (_c *MockLightningNode_GetInfo_Call) RunAndReturn(run func() (*lightning.Li
 	return _c
 }
 
+// GetOutputs provides a mock function for the type MockLightningNode
+func (_mock *MockLightningNode) GetOutputs(address string) ([]*onchain.Output, error) {
+	ret := _mock.Called(address)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOutputs")
+	}
+
+	var r0 []*onchain.Output
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(string) ([]*onchain.Output, error)); ok {
+		return returnFunc(address)
+	}
+	if returnFunc, ok := ret.Get(0).(func(string) []*onchain.Output); ok {
+		r0 = returnFunc(address)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*onchain.Output)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
+		r1 = returnFunc(address)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockLightningNode_GetOutputs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOutputs'
+type MockLightningNode_GetOutputs_Call struct {
+	*mock.Call
+}
+
+// GetOutputs is a helper method to define mock.On call
+//   - address string
+func (_e *MockLightningNode_Expecter) GetOutputs(address interface{}) *MockLightningNode_GetOutputs_Call {
+	return &MockLightningNode_GetOutputs_Call{Call: _e.mock.On("GetOutputs", address)}
+}
+
+func (_c *MockLightningNode_GetOutputs_Call) Run(run func(address string)) *MockLightningNode_GetOutputs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockLightningNode_GetOutputs_Call) Return(outputs []*onchain.Output, err error) *MockLightningNode_GetOutputs_Call {
+	_c.Call.Return(outputs, err)
+	return _c
+}
+
+func (_c *MockLightningNode_GetOutputs_Call) RunAndReturn(run func(address string) ([]*onchain.Output, error)) *MockLightningNode_GetOutputs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSendFee provides a mock function for the type MockLightningNode
 func (_mock *MockLightningNode) GetSendFee(args onchain.WalletSendArgs) (uint64, uint64, error) {
 	ret := _mock.Called(args)

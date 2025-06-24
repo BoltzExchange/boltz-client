@@ -54,6 +54,7 @@ type Wallet interface {
 	GetTransactions(limit, offset uint64) ([]*WalletTransaction, error)
 	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
 	GetSendFee(args WalletSendArgs) (send uint64, fee uint64, err error)
+	GetOutputs(address string) ([]*Output, error)
 }
 
 func (info WalletInfo) InsufficientBalanceError(amount uint64) error {
@@ -71,6 +72,7 @@ type WalletCredentials struct {
 	Xpub           string
 	CoreDescriptor string
 	Salt           string
+	Legacy         bool
 }
 
 func (c *WalletCredentials) Encrypted() bool {
