@@ -1220,7 +1220,6 @@ func TestAutoSwap(t *testing.T) {
 		cfg := &autoswaprpc.ChainConfig{
 			FromWallet: walletName,
 			ToWallet:   cfg.Node,
-			Enabled:    true,
 			Budget:     1_000_000,
 		}
 		fromWallet, err := admin.GetWallet(cfg.FromWallet)
@@ -1233,7 +1232,7 @@ func TestAutoSwap(t *testing.T) {
 
 		status, err := autoSwap.GetStatus()
 		require.NoError(t, err)
-		require.True(t, status.Chain.Running)
+		require.False(t, status.Chain.Running)
 
 		recommendations, err := autoSwap.GetRecommendations()
 		require.NoError(t, err)
@@ -1277,6 +1276,15 @@ func TestAutoSwap(t *testing.T) {
 
 		_, err = tenant.GetChainConfig()
 		require.Error(t, err)
+
+		cfg.Enabled = true
+		_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: cfg})
+		require.NoError(t, err)
+
+		status, err = autoSwap.GetStatus()
+		require.NoError(t, err)
+		require.True(t, status.Chain.Running)
+
 	})
 
 	t.Run("Lightning", func(t *testing.T) {
@@ -2584,8 +2592,8 @@ func TestSwap(t *testing.T) {
 }
 
 func TestChainSwap(t *testing.T) {
-
 	cfg := loadConfig(t)
+	cfg.Standalone = true
 	chain := getOnchain(t, cfg)
 
 	tests := []struct {
@@ -3109,6 +3117,7 @@ func TestChainSwap(t *testing.T) {
 
 func TestPasswordAuth(t *testing.T) {
 	cfg := loadConfig(t)
+	cfg.Standalone = true
 	cfg.RPC.Password = "testpassword"
 
 	client, _, stop := setup(t, setupOptions{cfg: cfg})
