@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/BoltzExchange/go-electrum/electrum"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
@@ -131,7 +130,6 @@ func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 }
 
 func InitLogger() {
-	electrum.DebugMode = true
 	logger.Init(logger.Options{Level: "debug"})
 }
 
