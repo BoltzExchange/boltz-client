@@ -22,7 +22,7 @@ const syncInterval = 1 * time.Second
 func defaultConfig() liquid_wallet.Config {
 	return liquid_wallet.Config{
 		Network:      boltz.Regtest,
-		DataDir:      "test-wallet",
+		DataDir:      "test-data",
 		SyncInterval: syncInterval,
 	}
 }

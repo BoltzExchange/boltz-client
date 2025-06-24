@@ -208,7 +208,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 
 	server.liquidBackend, err = liquid_wallet.NewBlockchainBackend(liquid_wallet.Config{
 		Network: server.network,
-		DataDir: cfg.DataDir + "/liquid_wallet",
+		DataDir: cfg.DataDir + "/liquid-wallet",
 	})
 	if err != nil {
 		return fmt.Errorf("could not init liquid wallet backend: %v", err)

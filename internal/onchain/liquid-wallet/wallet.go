@@ -68,6 +68,11 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 				Url:       "http://localhost:3003",
 				Waterfall: false,
 			}
+		case boltz.MainNet:
+			cfg.Esplora = &EsploraConfig{
+				Url:       "https://esplora.bol.tz/liquid",
+				Waterfall: true,
+			}
 		default:
 			return nil, errors.New("esplora is required")
 		}
