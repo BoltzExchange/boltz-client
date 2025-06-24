@@ -10,7 +10,6 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/btcsuite/btcd/btcec/v2"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
@@ -342,41 +341,42 @@ func (nursery *Nursery) checkSwapsWallet(swaps []*database.ReverseSwap) (bool, e
 		if err != nil {
 			return false, err
 		}
-		if ownWallet, ok := swapWallet.(*wallet.Wallet); ok {
-			outputs, err := ownWallet.GetOutputs(swaps[0].ClaimAddress)
-			if err != nil {
-				return true, err
+		outputs, err := swapWallet.GetOutputs(swaps[0].ClaimAddress)
+		if err != nil {
+			if errors.Is(err, errors.ErrUnsupported) {
+				return false, nil
 			}
-			slices.SortFunc(swaps, func(a, b *database.ReverseSwap) int {
-				return cmp.Compare(a.OnchainAmount, b.OnchainAmount)
-			})
-			slices.SortFunc(outputs, func(a, b *onchain.Output) int {
-				return cmp.Compare(a.Value, b.Value)
-			})
-			for _, swap := range swaps {
-				var chosenOutput *onchain.Output
-				for _, output := range outputs {
-					found, err := nursery.database.QueryReverseSwapByClaimTransaction(output.TxId)
-					if err == nil && found.Id != swap.Id {
-						continue
-					} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
-						logger.Errorf("could not query swap by claim tx: %s", err)
-					}
-					if output.Value <= swap.OnchainAmount || chosenOutput == nil {
-						// try to go match as close possible to the output value
-						// its important that we sorted both swaps and outputs by amount above
-						chosenOutput = output
-					} else {
-						break
-					}
-				}
-				if chosenOutput == nil {
-					return true, nil
-				}
-				nursery.handleReverseSwapDirectPayment(swap, chosenOutput)
-			}
-			return true, nil
+			return true, err
 		}
+		slices.SortFunc(swaps, func(a, b *database.ReverseSwap) int {
+			return cmp.Compare(a.OnchainAmount, b.OnchainAmount)
+		})
+		slices.SortFunc(outputs, func(a, b *onchain.Output) int {
+			return cmp.Compare(a.Value, b.Value)
+		})
+		for _, swap := range swaps {
+			var chosenOutput *onchain.Output
+			for _, output := range outputs {
+				found, err := nursery.database.QueryReverseSwapByClaimTransaction(output.TxId)
+				if err == nil && found.Id != swap.Id {
+					continue
+				} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
+					logger.Errorf("could not query swap by claim tx: %s", err)
+				}
+				if output.Value <= swap.OnchainAmount || chosenOutput == nil {
+					// try to go match as close possible to the output value
+					// its important that we sorted both swaps and outputs by amount above
+					chosenOutput = output
+				} else {
+					break
+				}
+			}
+			if chosenOutput == nil {
+				return true, nil
+			}
+			nursery.handleReverseSwapDirectPayment(swap, chosenOutput)
+		}
+		return true, nil
 	}
 	return false, nil
 }

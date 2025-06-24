@@ -409,6 +409,25 @@ func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint6
 	return send - fee, fee, nil
 }
 
+func (w *Wallet) GetOutputs(address string) ([]*onchain.Output, error) {
+	utxos, err := w.Utxos()
+	if err != nil {
+		return nil, err
+	}
+
+	var outputs []*onchain.Output
+	for _, utxo := range utxos {
+		if utxo.Address().String() == address {
+			output := &onchain.Output{TxId: utxo.Outpoint().Txid().String()}
+			if unblinded := utxo.Unblinded(); unblinded != nil {
+				output.Value = unblinded.Value()
+			}
+			outputs = append(outputs, output)
+		}
+	}
+	return outputs, nil
+}
+
 func GenerateMnemonic(network *boltz.Network) (string, error) {
 	signer, err := lwk.SignerRandom(convertNetwork(network))
 	if err != nil {

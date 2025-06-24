@@ -397,6 +397,10 @@ func (lnd *LND) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 	return response.Txid, nil
 }
 
+func (lnd *LND) GetOutputs(address string) ([]*onchain.Output, error) {
+	return nil, lightning.ErrUnsupported
+}
+
 func (lnd *LND) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
 	return 0, 0, lightning.ErrUnsupported
 }
