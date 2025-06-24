@@ -1844,10 +1844,17 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 		// send a bunch of payments to the address.
 		test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount/2)
 		correct := test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount)
-		first = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect).ReverseSwap
-		claimTx := first.ClaimTransactionId
-		require.NotEqualf(t, claimTx, second.ClaimTransactionId, "transactions are the same")
-		require.Equal(t, correct, claimTx)
+		require.Eventually(t, func() bool {
+			test.MineBlock()
+			info, err := client.GetSwapInfo(first.Id)
+			require.NoError(t, err)
+			if claimTx := info.ReverseSwap.ClaimTransactionId; claimTx != "" {
+				require.NotEqualf(t, claimTx, second.ClaimTransactionId, "transactions are the same")
+				require.Equal(t, correct, claimTx)
+				return true
+			}
+			return false
+		}, 15*time.Second, 3*time.Second)
 	})
 
 	tt := []struct {
@@ -1856,8 +1863,9 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 		currency boltzrpc.Currency
 	}{
 		{"Btc/Normal", false, boltzrpc.Currency_BTC},
-		{"Liquid/Normal", false, boltzrpc.Currency_LBTC},
-		{"Liquid/ZeroConf", true, boltzrpc.Currency_LBTC},
+		// TODO: re-enable this once when we have mrh notifications
+		//{"Liquid/Normal", false, boltzrpc.Currency_LBTC},
+		//{"Liquid/ZeroConf", true, boltzrpc.Currency_LBTC},
 	}
 	for _, tc := range tt {
 		t.Run(tc.desc, func(t *testing.T) {

@@ -351,7 +351,10 @@ func (c *Cln) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 	}
 
 	return hex.EncodeToString(response.GetTxid()), nil
+}
 
+func (c *Cln) GetOutputs(address string) ([]*onchain.Output, error) {
+	return nil, lightning.ErrUnsupported
 }
 
 func (c *Cln) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
