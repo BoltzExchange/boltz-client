@@ -344,6 +344,22 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 | ------- | -------- |
 | [`BakeMacaroonRequest`](#bakemacaroonrequest) | [`BakeMacaroonResponse`](#bakemacaroonresponse) |
 
+#### GetSwapMnemonic
+
+Returns mnemonic used for the private keys of swaps, which can be used to restore swap information in the case of data loss.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetSwapMnemonicRequest`](#getswapmnemonicrequest) | [`GetSwapMnemonicResponse`](#getswapmnemonicresponse) |
+
+#### SetSwapMnemonic
+
+Set the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+
+| Request | Response |
+| ------- | -------- |
+| [`SetSwapMnemonicRequest`](#setswapmnemonicrequest) | [`SetSwapMnemonicResponse`](#setswapmnemonicresponse) |
+
 
 
 
@@ -983,6 +999,27 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### GetSwapMnemonicRequest
+
+
+
+
+
+
+
+#### GetSwapMnemonicResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mnemonic` | [`string`](#string) |  |  |
+
+
+
+
+
 #### GetTenantRequest
 
 
@@ -1317,6 +1354,33 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `wallet_id` | [`uint64`](#uint64) |  |  |
 | `subaccount` | [`uint64`](#uint64) | optional | The subaccount to use. If not set, a new one will be created. |
+
+
+
+
+
+#### SetSwapMnemonicRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `existing` | [`string`](#string) |  |  |
+| `generate` | [`bool`](#bool) |  |  |
+
+
+
+
+
+#### SetSwapMnemonicResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mnemonic` | [`string`](#string) |  |  |
 
 
 

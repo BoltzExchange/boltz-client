@@ -201,6 +201,14 @@ var (
 			Entity: "admin",
 			Action: "write",
 		}},
+		"/boltzrpc.Boltz/GetSwapMnemonic": {{
+			Entity: "admin",
+			Action: "read",
+		}},
+		"/boltzrpc.Boltz/SetSwapMnemonic": {{
+			Entity: "admin",
+			Action: "write",
+		}},
 		"/autoswaprpc.AutoSwap/GetRecommendations": {{
 			Entity: "autoswap",
 			Action: "read",

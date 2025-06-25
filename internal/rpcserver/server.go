@@ -2,6 +2,7 @@ package rpcserver
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/config"
+	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
@@ -192,6 +194,25 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		server.onchain, err = initOnchain(cfg, server.boltz, server.network)
 		if err != nil {
 			return fmt.Errorf("could not init onchain: %v", err)
+		}
+	}
+
+	if cfg.GenerateSwapMnemonic {
+		_, err := server.database.GetSwapMnemonic()
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
+			mnemonic, err := wallet.GenerateMnemonic()
+			if err != nil {
+				return err
+			}
+			logger.Info("Generated new swap mnemonic")
+			if err := server.database.RunTx(func(tx *database.Transaction) error {
+				return tx.SetSwapMnemonic(&database.SwapMnemonic{Mnemonic: mnemonic})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/lightningnetwork/lnd/zpay32"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
@@ -21,7 +22,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 15
+const latestSchemaVersion = 16
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -593,6 +594,26 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			return err
 		}
 
+	case 15:
+		logMigration(oldVersion)
+		migration := `
+		CREATE TABLE swapMnemonic
+		(
+			mnemonic     VARCHAR PRIMARY KEY,
+			lastKeyIndex INT DEFAULT 0
+		);
+		`
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+
+		mnemonic, err := wallet.GenerateMnemonic()
+		if err != nil {
+			return err
+		}
+		if err := tx.SetSwapMnemonic(&SwapMnemonic{Mnemonic: mnemonic}); err != nil {
+			return err
+		}
 	case latestSchemaVersion:
 		logger.Info("database already at latest schema version: " + strconv.Itoa(latestSchemaVersion))
 		return nil
