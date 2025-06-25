@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
+	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 type Balance struct {
@@ -54,6 +55,10 @@ type Wallet interface {
 	GetTransactions(limit, offset uint64) ([]*WalletTransaction, error)
 	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
 	GetSendFee(args WalletSendArgs) (send uint64, fee uint64, err error)
+}
+
+type KeyProvider interface {
+	NewKey() (*btcec.PrivateKey, error)
 }
 
 func (info WalletInfo) InsufficientBalanceError(amount uint64) error {

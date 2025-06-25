@@ -9,10 +9,11 @@ import (
 type Wallet struct {
 	*onchain.WalletCredentials
 	NodePubkey *string
+	LastKeyIndex *uint32
 }
 
 func (d *Database) CreateWallet(wallet *Wallet) error {
-	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
+	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey, lastKeyIndex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
 	row := d.QueryRow(
 		query,
 		wallet.Name,
@@ -24,6 +25,7 @@ func (d *Database) CreateWallet(wallet *Wallet) error {
 		wallet.Salt,
 		wallet.TenantId,
 		wallet.NodePubkey,
+		wallet.LastKeyIndex,
 	)
 	return row.Scan(&wallet.Id)
 }
@@ -56,6 +58,7 @@ func parseWallet(rows row) (*Wallet, error) {
 		&wallet.Subaccount,
 		&wallet.Salt,
 		&wallet.TenantId,
+		&wallet.LastKeyIndex,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse wallet wallet: %w", err)
@@ -132,4 +135,16 @@ func (d *Database) SetWalletSubaccount(id Id, subaccount uint64) error {
 	query := "UPDATE wallets SET subaccount = ? WHERE id = ?"
 	_, err := d.Exec(query, subaccount, id)
 	return err
+}
+
+func (d *Database) UpdateLastWalletIndex(id Id, index uint32) error {
+	query := "UPDATE wallets SET lastKeyIndex = ? WHERE id = ?"
+	result, err := d.Exec(query, index, id)
+	if err != nil {
+		return fmt.Errorf("failed to update last key index: %w", err)
+	}
+	if rows, _ := result.RowsAffected(); rows == 0 {
+		return fmt.Errorf("failed to update last key index for wallet with id %d", id)
+	}
+	return nil
 }

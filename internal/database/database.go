@@ -218,6 +218,7 @@ CREATE TABLE wallets
     subaccount     INT,
     salt           VARCHAR,
     tenantId       INT NOT NULL REFERENCES tenants (id),
+    lastKeyIndex   INT,
 
     UNIQUE (name, tenantId, nodePubkey),
     UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
