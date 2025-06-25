@@ -66,6 +66,7 @@ func loadConfig(t *testing.T) *config.Config {
 	cfg.Log.Level = "debug"
 	cfg.Database.Path = t.TempDir() + "/boltz.db"
 	cfg.Node = "lnd"
+	cfg.GenerateSwapMnemonic = true
 	return cfg
 }
 
@@ -3166,4 +3167,77 @@ func TestLegacyWallet(t *testing.T) {
 	require.NoError(t, err)
 	_, ok = walletImpl.(*wallet.Wallet)
 	require.True(t, ok)
+}
+
+func TestSwapMnemonic(t *testing.T) {
+	t.Run("GenerateMnemonic", func(t *testing.T) {
+		cfg := loadConfig(t)
+		cfg.GenerateSwapMnemonic = true
+
+		client, _, stop := setup(t, setupOptions{cfg: cfg})
+		defer stop()
+
+		mnemonic, err := client.GetSwapMnemonic()
+		require.NoError(t, err)
+		require.NotEmpty(t, mnemonic.Mnemonic)
+	})
+
+	cfg := loadConfig(t)
+	cfg.GenerateSwapMnemonic = false
+	client, _, stop := setup(t, setupOptions{cfg: cfg})
+	defer stop()
+
+	_, err := client.GetSwapMnemonic()
+	require.Error(t, err)
+
+	_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+		Amount: swapAmount,
+	})
+	requireCode(t, err, codes.FailedPrecondition)
+
+	mnemonic := "invalid"
+	_, err = client.SetSwapMnemonic(&boltzrpc.SetSwapMnemonicRequest{
+		Mnemonic: &boltzrpc.SetSwapMnemonicRequest_Existing{
+			Existing: mnemonic,
+		},
+	})
+	require.Error(t, err)
+
+	createSwap := func(t *testing.T, expectedKeyIndex uint32) {
+		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+			Amount: swapAmount,
+		})
+		require.NoError(t, err)
+
+		swapInfo, err := client.GetSwapInfo(swap.Id)
+		require.NoError(t, err)
+
+		mnemonic, err := client.GetSwapMnemonic()
+		require.NoError(t, err)
+
+		privateKey, err := boltz.DeriveKey(mnemonic.Mnemonic, expectedKeyIndex, boltz.Regtest.Btc)
+		require.NoError(t, err)
+		require.Equal(t, hex.EncodeToString(privateKey.Serialize()), swapInfo.Swap.PrivateKey)
+	}
+
+	mnemonic = test.WalletMnemonic
+	_, err = client.SetSwapMnemonic(&boltzrpc.SetSwapMnemonicRequest{
+		Mnemonic: &boltzrpc.SetSwapMnemonicRequest_Existing{
+			Existing: mnemonic,
+		},
+	})
+	require.NoError(t, err)
+
+	createSwap(t, 0)
+	createSwap(t, 1)
+
+	response, err := client.SetSwapMnemonic(&boltzrpc.SetSwapMnemonicRequest{
+		Mnemonic: &boltzrpc.SetSwapMnemonicRequest_Generate{
+			Generate: true,
+		},
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, mnemonic, response.Mnemonic)
+
+	createSwap(t, 0)
 }

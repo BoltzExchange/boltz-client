@@ -132,6 +132,16 @@ The daemon can also operate without a lightning node. In this case, you need to
 specify the `--standalone` CLI flag or set the `standalone` option to `true` in
 the configuration file.
 
+### Swap Mnemonic
+
+The swap mnemonic is used to derive the private keys for each swap. It is recommended to back this mnemonic up in a secure location, as it can be used to recover funds locked in a swap if you loose your database.
+
+**You will not be able to create any swaps if no swap mnemonic is setup**
+
+The swap mnemonic can be set with the `boltzcli swapmnemonic set` command. A new mnemonic can be generated with the `--generate` flag. If you wish to automatically generate a mnemonic on startup, you can set the `generateSwapMnemonic` config value or `generate-swap-mnemonic` CLI flag option to `true`.
+
+The current swap mnemonic can be retrieved with the `boltzcli swapmnemonic get` command.
+
 ### CLI
 
 We recommend running `boltzcli completions` to setup autocompletions for the CLI

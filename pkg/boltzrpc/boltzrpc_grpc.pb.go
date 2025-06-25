@@ -56,6 +56,8 @@ const (
 	Boltz_ListTenants_FullMethodName            = "/boltzrpc.Boltz/ListTenants"
 	Boltz_GetTenant_FullMethodName              = "/boltzrpc.Boltz/GetTenant"
 	Boltz_BakeMacaroon_FullMethodName           = "/boltzrpc.Boltz/BakeMacaroon"
+	Boltz_GetSwapMnemonic_FullMethodName        = "/boltzrpc.Boltz/GetSwapMnemonic"
+	Boltz_SetSwapMnemonic_FullMethodName        = "/boltzrpc.Boltz/SetSwapMnemonic"
 )
 
 // BoltzClient is the client API for Boltz service.
@@ -159,6 +161,10 @@ type BoltzClient interface {
 	// - any swap or wallet created with the returned macaroon will belong to this tenant and can not be accessed by other tenants.
 	// - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
 	BakeMacaroon(ctx context.Context, in *BakeMacaroonRequest, opts ...grpc.CallOption) (*BakeMacaroonResponse, error)
+	// Returns mnemonic used for the private keys of swaps, which can be used to restore swap information in the case of data loss.
+	GetSwapMnemonic(ctx context.Context, in *GetSwapMnemonicRequest, opts ...grpc.CallOption) (*GetSwapMnemonicResponse, error)
+	// Set the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+	SetSwapMnemonic(ctx context.Context, in *SetSwapMnemonicRequest, opts ...grpc.CallOption) (*SetSwapMnemonicResponse, error)
 }
 
 type boltzClient struct {
@@ -521,6 +527,24 @@ func (c *boltzClient) BakeMacaroon(ctx context.Context, in *BakeMacaroonRequest,
 	return out, nil
 }
 
+func (c *boltzClient) GetSwapMnemonic(ctx context.Context, in *GetSwapMnemonicRequest, opts ...grpc.CallOption) (*GetSwapMnemonicResponse, error) {
+	out := new(GetSwapMnemonicResponse)
+	err := c.cc.Invoke(ctx, Boltz_GetSwapMnemonic_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) SetSwapMnemonic(ctx context.Context, in *SetSwapMnemonicRequest, opts ...grpc.CallOption) (*SetSwapMnemonicResponse, error) {
+	out := new(SetSwapMnemonicResponse)
+	err := c.cc.Invoke(ctx, Boltz_SetSwapMnemonic_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BoltzServer is the server API for Boltz service.
 // All implementations must embed UnimplementedBoltzServer
 // for forward compatibility
@@ -622,6 +646,10 @@ type BoltzServer interface {
 	// - any swap or wallet created with the returned macaroon will belong to this tenant and can not be accessed by other tenants.
 	// - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
 	BakeMacaroon(context.Context, *BakeMacaroonRequest) (*BakeMacaroonResponse, error)
+	// Returns mnemonic used for the private keys of swaps, which can be used to restore swap information in the case of data loss.
+	GetSwapMnemonic(context.Context, *GetSwapMnemonicRequest) (*GetSwapMnemonicResponse, error)
+	// Set the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+	SetSwapMnemonic(context.Context, *SetSwapMnemonicRequest) (*SetSwapMnemonicResponse, error)
 	mustEmbedUnimplementedBoltzServer()
 }
 
@@ -736,6 +764,12 @@ func (UnimplementedBoltzServer) GetTenant(context.Context, *GetTenantRequest) (*
 }
 func (UnimplementedBoltzServer) BakeMacaroon(context.Context, *BakeMacaroonRequest) (*BakeMacaroonResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BakeMacaroon not implemented")
+}
+func (UnimplementedBoltzServer) GetSwapMnemonic(context.Context, *GetSwapMnemonicRequest) (*GetSwapMnemonicResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSwapMnemonic not implemented")
+}
+func (UnimplementedBoltzServer) SetSwapMnemonic(context.Context, *SetSwapMnemonicRequest) (*SetSwapMnemonicResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSwapMnemonic not implemented")
 }
 func (UnimplementedBoltzServer) mustEmbedUnimplementedBoltzServer() {}
 
@@ -1401,6 +1435,42 @@ func _Boltz_BakeMacaroon_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_GetSwapMnemonic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSwapMnemonicRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetSwapMnemonic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetSwapMnemonic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetSwapMnemonic(ctx, req.(*GetSwapMnemonicRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_SetSwapMnemonic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSwapMnemonicRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).SetSwapMnemonic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_SetSwapMnemonic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).SetSwapMnemonic(ctx, req.(*SetSwapMnemonicRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Boltz_ServiceDesc is the grpc.ServiceDesc for Boltz service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1547,6 +1617,14 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BakeMacaroon",
 			Handler:    _Boltz_BakeMacaroon_Handler,
+		},
+		{
+			MethodName: "GetSwapMnemonic",
+			Handler:    _Boltz_GetSwapMnemonic_Handler,
+		},
+		{
+			MethodName: "SetSwapMnemonic",
+			Handler:    _Boltz_SetSwapMnemonic_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
