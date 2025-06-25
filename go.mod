@@ -31,6 +31,7 @@ require (
 	github.com/rodaine/table v1.1.0
 	github.com/rs/cors v1.11.0
 	github.com/stretchr/testify v1.10.0
+	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/vektra/mockery v1.1.2
 	github.com/vulpemventures/go-elements v0.5.5
