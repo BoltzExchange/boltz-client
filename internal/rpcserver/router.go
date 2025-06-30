@@ -1461,7 +1461,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 
 //nolint:staticcheck
 func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *boltzrpc.SetSubaccountRequest) (*boltzrpc.Subaccount, error) {
-	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
+	wallet, err := server.getGdkWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
 	if err != nil {
 		return nil, err
 	}
@@ -1488,7 +1488,7 @@ func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *bol
 
 //nolint:staticcheck
 func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *boltzrpc.GetSubaccountsRequest) (*boltzrpc.GetSubaccountsResponse, error) {
-	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
+	wallet, err := server.getGdkWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
 	if err != nil {
 		return nil, err
 	}
@@ -1743,7 +1743,7 @@ func (server *routedBoltzServer) GetWalletSendFee(ctx context.Context, request *
 	feeRate := request.GetSatPerVbyte()
 	currency := wallet.GetWalletInfo().Currency
 	if feeRate == 0 {
-		feeRate, err = server.onchain.EstimateFee(wallet.GetWalletInfo().Currency)
+		feeRate, err = server.onchain.EstimateFee(currency)
 		if err != nil {
 			return nil, err
 		}
@@ -2112,14 +2112,14 @@ func (server *routedBoltzServer) StreamServerInterceptor() grpc.StreamServerInte
 	}
 }
 
-func (server *routedBoltzServer) getOwnWallet(ctx context.Context, checker onchain.WalletChecker) (*wallet.Wallet, error) {
+func (server *routedBoltzServer) getGdkWallet(ctx context.Context, checker onchain.WalletChecker) (*wallet.Wallet, error) {
 	existing, err := server.getWallet(ctx, checker)
 	if err != nil {
 		return nil, err
 	}
 	wallet, ok := existing.(*wallet.Wallet)
 	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "wallet %s can not be modified", existing.GetWalletInfo().Name)
+		return nil, status.Errorf(codes.InvalidArgument, "operation not supported for wallet %s", existing.GetWalletInfo().Name)
 	}
 	return wallet, nil
 }
