@@ -33,14 +33,16 @@ type Config struct {
 	Network                *boltz.Network
 	DataDir                string
 	Esplora                *EsploraConfig
+	Electrum               *onchain.ElectrumOptions
 	SyncInterval           time.Duration
 	ConsolidationThreshold uint64
 }
 
 type BlockchainBackend struct {
 	// cfg used for buliding this instance
-	cfg     Config
-	esplora *lwk.EsploraClient
+	cfg Config
+	// electrum also satisfies the EsploraClientInterface
+	client lwk.EsploraClientInterface
 }
 
 const DefaultSyncInterval = 30 * time.Second
@@ -61,29 +63,39 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 	}
 
 	backend := &BlockchainBackend{cfg: cfg}
-	if cfg.Esplora == nil {
-		switch cfg.Network {
-		case boltz.Regtest:
-			cfg.Esplora = &EsploraConfig{
-				Url:       "http://localhost:3003",
-				Waterfall: false,
-			}
-		case boltz.MainNet:
-			cfg.Esplora = &EsploraConfig{
-				Url:       "https://esplora.bol.tz/liquid",
-				Waterfall: true,
-			}
-		default:
-			return nil, errors.New("esplora is required")
+	if cfg.Electrum != nil {
+		logger.Infof("Using electrum client as liquid wallet backend: %s", cfg.Electrum.Url)
+		backend.client, err = lwk.NewElectrumClient(cfg.Electrum.Url, cfg.Electrum.SSL, false)
+		if err != nil {
+			return nil, fmt.Errorf("new electrum client: %w", err)
 		}
-	}
-	if cfg.Esplora.Waterfall {
-		backend.esplora, err = lwk.EsploraClientNewWaterfalls(cfg.Esplora.Url, convertNetwork(cfg.Network))
 	} else {
-		backend.esplora, err = lwk.NewEsploraClient(cfg.Esplora.Url, convertNetwork(cfg.Network))
-	}
-	if err != nil {
-		return nil, err
+		if cfg.Esplora == nil {
+			switch cfg.Network {
+			case boltz.Regtest:
+				cfg.Esplora = &EsploraConfig{
+					Url:       "http://localhost:3003",
+					Waterfall: false,
+				}
+			case boltz.MainNet:
+				cfg.Esplora = &EsploraConfig{
+					Url:       "https://esplora.bol.tz/liquid",
+					Waterfall: true,
+				}
+			default:
+				return nil, errors.New("esplora is required")
+			}
+		}
+		if cfg.Esplora.Waterfall {
+			logger.Infof("Using waterfall esplora client as liquid wallet backend: %s", cfg.Esplora.Url)
+			backend.client, err = lwk.EsploraClientNewWaterfalls(cfg.Esplora.Url, convertNetwork(cfg.Network))
+		} else {
+			logger.Infof("Using esplora client as liquid wallet backend: %s", cfg.Esplora.Url)
+			backend.client, err = lwk.NewEsploraClient(cfg.Esplora.Url, convertNetwork(cfg.Network))
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return backend, nil
@@ -186,7 +198,7 @@ func (w *Wallet) syncLoop(ctx context.Context) {
 
 func (w *Wallet) FullScan() error {
 	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
-	update, err := w.backend.esplora.FullScan(w.Wollet)
+	update, err := w.backend.client.FullScan(w.Wollet)
 	if err != nil {
 		return err
 	}
@@ -377,7 +389,7 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 	}
 
 	// TODO: external broadcast provider
-	txId, err := w.backend.esplora.Broadcast(tx)
+	txId, err := w.backend.client.Broadcast(tx)
 	if err != nil {
 		return "", fmt.Errorf("broadcast: %w", err)
 	}
