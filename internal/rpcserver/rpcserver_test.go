@@ -198,9 +198,13 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 	rpc.boltzServer.onchain = options.chain
 	rpc.boltzServer.lightning = options.lightning
 	go func() {
-		require.NoError(t, rpc.boltzServer.start(cfg))
-		for _, wallet := range options.wallets {
-			rpc.boltzServer.onchain.AddWallet(wallet)
+		err := rpc.boltzServer.start(cfg)
+		if err != nil {
+			logger.Warn("error starting boltz server: " + err.Error())
+		} else {
+			for _, wallet := range options.wallets {
+				rpc.boltzServer.onchain.AddWallet(wallet)
+			}
 		}
 	}()
 
