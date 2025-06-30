@@ -272,8 +272,10 @@ func TestChainSwapper(t *testing.T) {
 		cleaned := false
 		blockUpdates := make(chan *onchain.BlockEpoch)
 		rpcMock.EXPECT().GetBlockUpdates(fromWallet.GetWalletInfo().Currency).Return(blockUpdates, func() {
-			cleaned = true
-			close(blockUpdates)
+			if !cleaned {
+				cleaned = true
+				close(blockUpdates)
+			}
 		})
 
 		err := swapper.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{
