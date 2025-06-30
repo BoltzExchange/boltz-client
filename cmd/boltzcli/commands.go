@@ -1415,6 +1415,7 @@ func claimSwaps(ctx *cli.Context) error {
 	fmt.Println("Claim transaction ID: " + response.TransactionId)
 	return nil
 }
+
 var routingFeeLimitFlag = &cli.Uint64Flag{
 	Name:  "routing-fee-limit-ppm",
 	Usage: "The routing fee limit for paying the lightning invoice in ppm (parts per million)",
@@ -1828,6 +1829,7 @@ func askBudget(defaultMaxFeePercent float32, defaultDuration, defaultBudget uint
 	}
 }
 
+//nolint:staticcheck
 func printSubaccount(info *boltzrpc.Subaccount) {
 	fmt.Printf("Subaccount: %d (%s)\n", info.Pointer, liquidAccountType(info.Type))
 	balance := info.Balance

@@ -1449,7 +1449,8 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 		Mnemonic:       request.Credentials.GetMnemonic(),
 		Xpub:           request.Credentials.GetXpub(),
 		CoreDescriptor: request.Credentials.GetCoreDescriptor(),
-		Subaccount:     request.Credentials.Subaccount,
+		//nolint:staticcheck
+		Subaccount: request.Credentials.Subaccount,
 	}
 
 	if err := server.importWallet(ctx, credentials, request.Params.GetPassword()); err != nil {
@@ -1458,6 +1459,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Id: &credentials.Id})
 }
 
+//nolint:staticcheck
 func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *boltzrpc.SetSubaccountRequest) (*boltzrpc.Subaccount, error) {
 	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
 	if err != nil {
@@ -1484,6 +1486,7 @@ func (server *routedBoltzServer) SetSubaccount(ctx context.Context, request *bol
 	return serializeWalletSubaccount(*subaccount, balance), nil
 }
 
+//nolint:staticcheck
 func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *boltzrpc.GetSubaccountsRequest) (*boltzrpc.GetSubaccountsResponse, error) {
 	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: &request.WalletId})
 	if err != nil {
@@ -1495,6 +1498,7 @@ func (server *routedBoltzServer) GetSubaccounts(ctx context.Context, request *bo
 		return nil, err
 	}
 
+	//nolint:staticcheck
 	response := &boltzrpc.GetSubaccountsResponse{}
 	for _, subaccount := range subaccounts {
 		balance, err := wallet.GetSubaccountBalance(subaccount.Pointer)
@@ -1528,6 +1532,7 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 
 	// only GDK wallets have subaccounts
 	if request.Params.Currency == boltzrpc.Currency_BTC {
+		//nolint:staticcheck
 		_, err = server.SetSubaccount(ctx, &boltzrpc.SetSubaccountRequest{
 			WalletId: created.Id,
 		})

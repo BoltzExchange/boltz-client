@@ -105,12 +105,12 @@ service Boltz {
     /*
     Sets the subaccount of a wallet. Not supported for readonly wallets.
      */
-    rpc SetSubaccount (SetSubaccountRequest) returns (Subaccount);
+    rpc SetSubaccount (SetSubaccountRequest) returns (Subaccount) { option deprecated = true; };
 
     /*
     Returns all subaccounts for a given wallet. Not supported for readonly wallets.
      */
-    rpc GetSubaccounts (GetSubaccountsRequest) returns (GetSubaccountsResponse);
+    rpc GetSubaccounts (GetSubaccountsRequest) returns (GetSubaccountsResponse) { option deprecated = true; };
 
     /*
     Returns all available wallets.
@@ -713,13 +713,12 @@ message Budget {
 }
 
 message WalletCredentials {
-    // only one of these is allowed to be present
     optional string mnemonic = 1;
     optional string xpub = 2;
     optional string core_descriptor = 3;
 
     // only used in combination with mnemonic
-    optional uint64 subaccount = 4;
+    optional uint64 subaccount = 4 [deprecated = true];
 }
 
 message WalletParams {
@@ -744,16 +743,19 @@ message CreateWalletResponse {
 }
 
 message SetSubaccountRequest {
+    option deprecated = true;
     uint64 wallet_id = 1;
     // The subaccount to use. If not set, a new one will be created.
     optional uint64 subaccount = 2;
 }
 
 message GetSubaccountsRequest {
+    option deprecated = true;
     uint64 wallet_id = 1;
 }
 
 message GetSubaccountsResponse {
+    option deprecated = true;
     optional uint64 current = 1;
     repeated Subaccount subaccounts = 2;
 }
@@ -894,6 +896,7 @@ message Balance {
 }
 
 message Subaccount {
+    option deprecated = true;
     Balance balance = 1;
     uint64 pointer = 2;
     string type = 3;

@@ -228,7 +228,9 @@ func serializeChainPair(pair boltz.Pair, chainPair *boltz.ChainPair) *boltzrpc.P
 	}
 }
 
+//nolint:staticcheck
 func serializeWalletSubaccount(subaccount wallet.Subaccount, balance *onchain.Balance) *boltzrpc.Subaccount {
+	//nolint:staticcheck
 	return &boltzrpc.Subaccount{
 		Balance:     serializers.SerializeWalletBalance(balance),
 		Pointer:     subaccount.Pointer,
