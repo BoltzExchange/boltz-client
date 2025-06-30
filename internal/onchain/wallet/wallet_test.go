@@ -57,6 +57,8 @@ func TestWallet_BumpTransactionFee(t *testing.T) {
 	require.NoError(t, err)
 	tx := getTransaction(txId)
 
+	time.Sleep(2 * time.Second)
+
 	newTxId, err := wallet.BumpTransactionFee(txId, 2)
 	require.NoError(t, err)
 	newTx := getTransaction(newTxId)
