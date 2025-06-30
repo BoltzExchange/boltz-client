@@ -160,6 +160,11 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		fallthrough
 
 	case boltz.TransactionConfirmed:
+		// already broadcasted on transaction.mempool
+		if reverseSwap.ClaimTransactionId != "" {
+			break
+		}
+
 		err := nursery.database.SetReverseSwapLockupTransactionId(reverseSwap, event.Transaction.Id)
 
 		if err != nil {
