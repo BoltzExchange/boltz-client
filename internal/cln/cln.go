@@ -99,6 +99,10 @@ func (c *Cln) GetWalletInfo() onchain.WalletInfo {
 	return c.walletInfo
 }
 
+func (c *Cln) Sync() error {
+	return nil
+}
+
 func (c *Cln) SetupWallet(info onchain.WalletInfo) {
 	c.walletInfo = info
 }

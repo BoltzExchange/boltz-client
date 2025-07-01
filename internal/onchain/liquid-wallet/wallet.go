@@ -192,10 +192,6 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 		return nil, err
 	}
 
-	if err := result.FullScan(); err != nil {
-		return nil, err
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	result.syncCancel = cancel
 	result.syncWait.Add(1)
@@ -213,14 +209,14 @@ func (w *Wallet) syncLoop(ctx context.Context) {
 			w.syncWait.Done()
 			return
 		case <-time.After(sleep):
-			if err := w.FullScan(); err != nil {
+			if err := w.Sync(); err != nil {
 				logger.Errorf("LWK full scan for wallet %d failed: %v", w.info.Id, err)
 			}
 		}
 	}
 }
 
-func (w *Wallet) FullScan() error {
+func (w *Wallet) Sync() error {
 	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
 	index, err := w.loadLastIndex()
 	if err != nil {
@@ -279,6 +275,8 @@ func (w *Wallet) Ready() bool {
 func (w *Wallet) Disconnect() error {
 	w.syncCancel()
 	w.syncWait.Wait()
+	w.Destroy()
+	w.signer.Destroy()
 	return nil
 }
 
