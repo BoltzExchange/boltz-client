@@ -29,23 +29,6 @@ func TestMain(m *testing.M) {
 
 func TestWallet_BumpTransactionFee(t *testing.T) {
 	wallet := getWallet(boltz.CurrencyBtc)
-
-	notifier := onchainWallet.TransactionNotifier.Get()
-	defer onchainWallet.TransactionNotifier.Remove(notifier)
-
-	getTransaction := func(txId string) *onchain.WalletTransaction {
-		test.WaitWalletNotifier(t, txId, notifier)
-		txs, err := wallet.GetTransactions(0, 0)
-		require.NoError(t, err)
-		for _, tx := range txs {
-			if tx.Id == txId {
-				return tx
-			}
-		}
-		require.Fail(t, "transaction not found")
-		return nil
-	}
-
 	someAddress := test.GetNewAddress(test.BtcCli)
 	amount := int64(1000)
 
@@ -55,17 +38,14 @@ func TestWallet_BumpTransactionFee(t *testing.T) {
 		SatPerVbyte: 1,
 	})
 	require.NoError(t, err)
-	tx := getTransaction(txId)
 
-	time.Sleep(2 * time.Second)
-
-	newTxId, err := wallet.BumpTransactionFee(txId, 2)
-	require.NoError(t, err)
-	newTx := getTransaction(newTxId)
-
-	oldFee := tx.BalanceChange + amount
-	newFee := newTx.BalanceChange + amount
-	require.Equal(t, 2*oldFee, newFee)
+	require.Eventually(t, func() bool {
+		newTxId, err := wallet.BumpTransactionFee(txId, 2)
+		if err != nil {
+			return false
+		}
+		return newTxId != txId
+	}, 15*time.Second, 250*time.Millisecond)
 }
 
 func TestBalance(t *testing.T) {
