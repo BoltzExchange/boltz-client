@@ -55,6 +55,7 @@ type Wallet interface {
 	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
 	GetSendFee(args WalletSendArgs) (send uint64, fee uint64, err error)
 	GetOutputs(address string) ([]*Output, error)
+	Sync() error
 }
 
 func (info WalletInfo) InsufficientBalanceError(amount uint64) error {

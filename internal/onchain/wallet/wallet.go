@@ -507,6 +507,10 @@ func Login(credentials *onchain.WalletCredentials) (*Wallet, error) {
 	return wallet, nil
 }
 
+func (wallet *Wallet) Sync() error {
+	return nil
+}
+
 func GenerateMnemonic() (string, error) {
 	mnemonic := C.CString("")
 	defer C.free(unsafe.Pointer(mnemonic))

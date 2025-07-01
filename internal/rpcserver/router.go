@@ -12,6 +12,7 @@ import (
 	"math"
 	"net/url"
 	"regexp"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -1406,7 +1407,8 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 	}
 
-	return server.database.RunTx(func(tx *database.Transaction) error {
+	var imported onchain.Wallet
+	err = server.database.RunTx(func(tx *database.Transaction) error {
 		if err := tx.CreateWallet(&database.Wallet{WalletCredentials: credentials}); err != nil {
 			return err
 		}
@@ -1419,7 +1421,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 
 		logger.Infof("Creating new wallet %d", credentials.Id)
-		imported, err := server.loginWallet(credentials)
+		imported, err = server.loginWallet(credentials)
 		if err != nil {
 			return fmt.Errorf("could not login: %w", err)
 		}
@@ -1428,7 +1430,12 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
+	// TODO: maybe allow returning without sync here
+	return imported.Sync()
 }
 
 func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *boltzrpc.ImportWalletRequest) (*boltzrpc.Wallet, error) {
@@ -1568,6 +1575,7 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
+	runtime.GC()
 	var txIds []string
 	for _, tx := range transactions {
 		txIds = append(txIds, tx.Id)
@@ -2016,9 +2024,12 @@ func (server *routedBoltzServer) unlock(password string) error {
 				defer wg.Done()
 				wallet, err := server.loginWallet(creds)
 				if err != nil {
-					logger.Errorf("could not login to wallet: %v", err)
+					logger.Errorf("Could not login to wallet %s: %v", creds.String(), err)
 				} else {
-					logger.Debugf("Logged into wallet: %+v", wallet.GetWalletInfo())
+					logger.Debugf("Logged into wallet: %s", wallet.GetWalletInfo().String())
+					if err := wallet.Sync(); err != nil {
+						logger.Errorf("Failed to sync wallet %s: %v", wallet.GetWalletInfo().String(), err)
+					}
 					server.onchain.AddWallet(wallet)
 				}
 			}()
