@@ -713,6 +713,7 @@ message Budget {
 }
 
 message WalletCredentials {
+    // only one of these is allowed to be present
     optional string mnemonic = 1;
     optional string xpub = 2;
     optional string core_descriptor = 3;
