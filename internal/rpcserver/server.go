@@ -207,8 +207,9 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	)
 
 	liquidConfig := liquid_wallet.Config{
-		Network: server.network,
-		DataDir: cfg.DataDir + "/liquid-wallet",
+		Network:    server.network,
+		DataDir:    cfg.DataDir + "/liquid-wallet",
+		TxProvider: server.onchain.Liquid.Tx,
 	}
 	electrumConfig := cfg.Electrum()
 	if electrumConfig.Liquid.Url != "" {
