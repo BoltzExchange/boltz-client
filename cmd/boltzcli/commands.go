@@ -387,7 +387,7 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 					fmt.Printf("Lockup transaction ID: %s\n", swap.LockupTransactionId)
 				case boltz.InvoiceSettled:
 					fmt.Printf("Claim transaction ID: %s\n", swap.ClaimTransactionId)
-					if swap.ExternalPay {
+					if swap.ExternalPay || swap.RoutingFeeMsat == nil {
 						fmt.Printf("Paid %d sat onchain fee and %d sat boltz fee\n", *swap.OnchainFee, *swap.ServiceFee)
 					} else {
 						fmt.Printf("Paid %d msat routing fee, %d sat onchain fee and %d sat boltz fee\n", *swap.RoutingFeeMsat, *swap.OnchainFee, *swap.ServiceFee)
@@ -1415,6 +1415,7 @@ func claimSwaps(ctx *cli.Context) error {
 	fmt.Println("Claim transaction ID: " + response.TransactionId)
 	return nil
 }
+
 var routingFeeLimitFlag = &cli.Uint64Flag{
 	Name:  "routing-fee-limit-ppm",
 	Usage: "The routing fee limit for paying the lightning invoice in ppm (parts per million)",
