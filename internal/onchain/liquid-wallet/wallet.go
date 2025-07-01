@@ -2,6 +2,7 @@ package liquid_wallet
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -36,6 +37,7 @@ type Config struct {
 	Electrum               *onchain.ElectrumOptions
 	SyncInterval           time.Duration
 	ConsolidationThreshold uint64
+	TxProvider             onchain.TxProvider
 }
 
 type BlockchainBackend struct {
@@ -43,6 +45,18 @@ type BlockchainBackend struct {
 	cfg Config
 	// electrum also satisfies the EsploraClientInterface
 	client lwk.EsploraClientInterface
+}
+
+func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, error) {
+	if b.cfg.TxProvider != nil {
+		raw := tx.Bytes()
+		return b.cfg.TxProvider.BroadcastTransaction(hex.EncodeToString(raw))
+	}
+	txId, err := b.client.Broadcast(tx)
+	if err != nil {
+		return "", err
+	}
+	return txId.String(), nil
 }
 
 const DefaultSyncInterval = 30 * time.Second
@@ -388,13 +402,7 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 		return "", err
 	}
 
-	// TODO: external broadcast provider
-	txId, err := w.backend.client.Broadcast(tx)
-	if err != nil {
-		return "", fmt.Errorf("broadcast: %w", err)
-	}
-
-	return txId.String(), nil
+	return w.backend.BroadcastTransaction(tx)
 }
 
 func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
