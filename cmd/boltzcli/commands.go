@@ -1909,10 +1909,7 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 	}
 
 	fmt.Println("Successfully imported wallet!")
-
-	if !wallet.Readonly {
-		return wallet, selectSubaccount(ctx, wallet.Id)
-	}
+	fmt.Printf("Wallet Balance: %s\n", utils.Satoshis(wallet.Balance.Total))
 	return wallet, nil
 }
 

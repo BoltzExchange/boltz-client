@@ -4323,6 +4323,7 @@ type WalletCredentials struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// only one of these is allowed to be present
 	Mnemonic       *string `protobuf:"bytes,1,opt,name=mnemonic,proto3,oneof" json:"mnemonic,omitempty"`
 	Xpub           *string `protobuf:"bytes,2,opt,name=xpub,proto3,oneof" json:"xpub,omitempty"`
 	CoreDescriptor *string `protobuf:"bytes,3,opt,name=core_descriptor,json=coreDescriptor,proto3,oneof" json:"core_descriptor,omitempty"`
