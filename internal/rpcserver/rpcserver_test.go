@@ -1380,15 +1380,19 @@ func TestAutoSwap(t *testing.T) {
 				info := stream(boltzrpc.SwapState_PENDING)
 				require.NotNil(t, info.ReverseSwap)
 				require.True(t, info.ReverseSwap.IsAuto)
+
+				stream(boltzrpc.SwapState_SUCCESSFUL)
+				test.MineBlock()
 			})
 
 			t.Run("Auto", func(t *testing.T) {
 				setupRecommendation(t)
 
+				stream, _ := swapStream(t, admin, "")
+
 				_, err := autoSwap.Enable()
 				require.NoError(t, err)
 
-				stream, _ := swapStream(t, admin, "")
 				test.MineBlock()
 				info := stream(boltzrpc.SwapState_PENDING)
 				require.NotNil(t, info.ReverseSwap)
