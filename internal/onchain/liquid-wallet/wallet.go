@@ -330,8 +330,10 @@ func (w *Wallet) assetId() string {
 }
 
 func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
-	// TODO: implement pagination in lwk
-	transactions, err := w.Transactions()
+	if limit == 0 {
+		limit = onchain.DefaultTransactionsLimit
+	}
+	transactions, err := w.TransactionsPaginated(uint32(offset), uint32(limit))
 	if err != nil {
 		return nil, err
 	}
