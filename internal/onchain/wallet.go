@@ -8,6 +8,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
+const DefaultTransactionsLimit = 30
+
 type Balance struct {
 	Total       uint64
 	Confirmed   uint64

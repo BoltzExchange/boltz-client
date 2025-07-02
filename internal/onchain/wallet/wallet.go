@@ -36,7 +36,6 @@ import (
 const MaxInputs = uint64(256)
 const DefaultAutoConsolidateThreshold = uint64(200)
 const GapLimit = 100
-const GetTransactionsMaxLimit = 30
 
 type TransactionNotification struct {
 	TxId     string
@@ -768,9 +767,9 @@ func (wallet *Wallet) getTransactions(limit, offset uint64) ([]map[string]any, e
 		return nil, ErrSubAccountNotSet
 	}
 	if limit == 0 {
-		limit = GetTransactionsMaxLimit
+		limit = onchain.DefaultTransactionsLimit
 	}
-	if limit > GetTransactionsMaxLimit {
+	if limit > onchain.DefaultTransactionsLimit {
 		return nil, errors.New("limit cant be larger than 30")
 	}
 	params, free := toJson(map[string]any{
@@ -856,7 +855,7 @@ func (wallet *Wallet) BumpTransactionFee(txId string, satPerVbyte float64) (stri
 	var found any
 	for found == nil {
 		// 0 indicates no limit
-		result, err := wallet.getTransactions(GetTransactionsMaxLimit, offset)
+		result, err := wallet.getTransactions(onchain.DefaultTransactionsLimit, offset)
 		if err != nil {
 			return "", err
 		}
@@ -866,10 +865,10 @@ func (wallet *Wallet) BumpTransactionFee(txId string, satPerVbyte float64) (stri
 				break
 			}
 		}
-		if len(result) < GetTransactionsMaxLimit {
+		if len(result) < onchain.DefaultTransactionsLimit {
 			break
 		}
-		offset += GetTransactionsMaxLimit
+		offset += onchain.DefaultTransactionsLimit
 	}
 	if found == nil {
 		return "", errors.New("transaction not found")
