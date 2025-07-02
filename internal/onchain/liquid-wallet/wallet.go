@@ -173,15 +173,9 @@ func DeriveDefaultDescriptor(network *boltz.Network, credentials *onchain.Wallet
 	return nil
 }
 
-func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredentials) (*Wallet, error) {
-	if backend == nil {
-		return nil, errors.New("backend instance is nil")
-	}
-
-	result := &Wallet{
-		backend: backend,
-		info:    credentials.WalletInfo,
-	}
+func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentials, info onchain.WalletInfo) (*Wallet, error) {
+	result := &Wallet{backend: backend, info: info}
+	result.info.Readonly = credentials.Mnemonic == ""
 
 	if credentials.CoreDescriptor == "" {
 		return nil, errors.New("core descriptor is required")
@@ -428,6 +422,9 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 
 	pset, err = w.Finalize(pset)
 	if err != nil {
+		if strings.Contains(err.Error(), "InsufficientFunds") {
+			return nil, w.info.InsufficientBalanceError(args.Amount)
+		}
 		return nil, fmt.Errorf("finalize: %w", err)
 	}
 

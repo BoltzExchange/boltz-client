@@ -1771,7 +1771,7 @@ func TestUnlock(t *testing.T) {
 	password := "password"
 	cfg := loadConfig(t)
 	require.NoError(t, cfg.Database.Connect())
-	walletCredentials := test.WalletCredentials(boltz.CurrencyBtc)
+	walletCredentials := test.WalletCredentials()
 	encryptedCredentials, err := walletCredentials.Encrypt(password)
 	require.NoError(t, err)
 	encryptedWallet := &database.Wallet{

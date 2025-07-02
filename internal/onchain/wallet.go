@@ -69,7 +69,6 @@ func (info WalletInfo) String() string {
 }
 
 type WalletCredentials struct {
-	WalletInfo
 	Mnemonic       string
 	Subaccount     *uint64
 	Xpub           string

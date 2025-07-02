@@ -437,18 +437,18 @@ func (wallet *Wallet) CurrentSubaccount() (uint64, error) {
 	return *wallet.subaccount, nil
 }
 
-func Login(credentials *onchain.WalletCredentials) (*Wallet, error) {
+func Login(credentials *onchain.WalletCredentials, info onchain.WalletInfo) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
-	wallet := &Wallet{WalletInfo: credentials.WalletInfo}
+	wallet := &Wallet{WalletInfo: info}
 	login := make(map[string]any)
 
 	if credentials.Mnemonic != "" {
 		login["mnemonic"] = credentials.Mnemonic
 		wallet.Readonly = false
 	} else if credentials.Xpub != "" {
-		if credentials.Currency == boltz.CurrencyLiquid {
+		if info.Currency == boltz.CurrencyLiquid {
 			return nil, errors.New("xpub not supported for liquid")
 		}
 		login["slip132_extended_pubkeys"] = []string{credentials.Xpub}
@@ -486,14 +486,14 @@ func Login(credentials *onchain.WalletCredentials) (*Wallet, error) {
 
 	if credentials.Subaccount != nil {
 		if _, err := wallet.SetSubaccount(credentials.Subaccount); err != nil {
-			logger.Warnf("Failed to set subaccount for wallet %s, Resyncing subaccounts", credentials.Name)
+			logger.Warnf("Failed to set subaccount for wallet %s, Resyncing subaccounts", info.Name)
 			if _, err := wallet.GetSubaccounts(true); err != nil {
 				return nil, err
 			}
 			if _, err := wallet.SetSubaccount(credentials.Subaccount); err != nil {
 				subaccount, err := wallet.SetSubaccount(nil)
 				if err != nil {
-					logger.Errorf("Failed to set existing and new subaccount for wallet %s: %v", credentials.Name, err)
+					logger.Errorf("Failed to set existing and new subaccount for wallet %s: %v", info.Name, err)
 					return nil, err
 				}
 				if *subaccount != *credentials.Subaccount {

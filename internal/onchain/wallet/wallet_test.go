@@ -125,52 +125,43 @@ func TestReal(t *testing.T) {
 func TestImportWallet(t *testing.T) {
 	tests := []struct {
 		name        string
+		currency    boltz.Currency
 		credentials onchain.WalletCredentials
 		err         bool
 	}{
 		{
-			name: "Xpub/Btc",
+			name:     "Xpub/Btc",
+			currency: boltz.CurrencyBtc,
 			credentials: onchain.WalletCredentials{
-				WalletInfo: onchain.WalletInfo{
-					Currency: boltz.CurrencyBtc,
-				},
 				Xpub: "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
 			},
 		},
 		{
-			name: "Xpub/Liquid",
+			name:     "Xpub/Liquid",
+			currency: boltz.CurrencyLiquid,
 			credentials: onchain.WalletCredentials{
-				WalletInfo: onchain.WalletInfo{
-					Currency: boltz.CurrencyLiquid,
-				},
 				Xpub: "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
 			},
 			err: true,
 		},
 		{
-			name: "CoreDescriptor/Btc",
+			name:     "CoreDescriptor/Btc",
+			currency: boltz.CurrencyBtc,
 			credentials: onchain.WalletCredentials{
-				WalletInfo: onchain.WalletInfo{
-					Currency: boltz.CurrencyBtc,
-				},
 				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
 			},
 		},
 		{
-			name: "CoreDescriptor/Liquid",
+			name:     "CoreDescriptor/Liquid",
+			currency: boltz.CurrencyLiquid,
 			credentials: onchain.WalletCredentials{
-				WalletInfo: onchain.WalletInfo{
-					Currency: boltz.CurrencyLiquid,
-				},
 				CoreDescriptor: "ct(slip77(099d2fa0d9e56478d00ba3044a55aa9878a2f0e1c0fd1c57962573994771f87a),elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*))#60v4fm2h",
 			},
 		},
 		{
-			name: "CoreDescriptor/Liquid/Multiple",
+			name:     "CoreDescriptor/Liquid/Multiple",
+			currency: boltz.CurrencyLiquid,
 			credentials: onchain.WalletCredentials{
-				WalletInfo: onchain.WalletInfo{
-					Currency: boltz.CurrencyLiquid,
-				},
 				CoreDescriptor: "ct(slip77(28edd9ac380841b8ba1bc51e188f45f3db497eca97a81539e7ede3a1eff22049),elwpkh([48aca338/84'/1'/0']tpubDC2Q4xK4XH72GZPMueFxNKSYGJvUWgFFFmMF91ThA23DhC4GUvbQ5Krpxn1SBiTNowRujrfppf7YCqLj8i6X6ggeUPVTKQHCHTMTrJW7SMp/0/*))#vcah5hc6\n" +
 					"ct(slip77(28edd9ac380841b8ba1bc51e188f45f3db497eca97a81539e7ede3a1eff22049),elwpkh([48aca338/84'/1'/0']tpubDC2Q4xK4XH72GZPMueFxNKSYGJvUWgFFFmMF91ThA23DhC4GUvbQ5Krpxn1SBiTNowRujrfppf7YCqLj8i6X6ggeUPVTKQHCHTMTrJW7SMp/1/*))#eenpvgd9",
 			},
@@ -179,7 +170,7 @@ func TestImportWallet(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			wallet, err := onchainWallet.Login(&tc.credentials)
+			wallet, err := onchainWallet.Login(&tc.credentials, test.WalletInfo(tc.currency))
 			if tc.err {
 				require.Error(t, err)
 			} else {
@@ -201,25 +192,23 @@ func TestImportWallet(t *testing.T) {
 func TestEncryptedCredentials(t *testing.T) {
 	password := "password"
 	credentials := &onchain.WalletCredentials{
-		WalletInfo: onchain.WalletInfo{
-			Currency: boltz.CurrencyBtc,
-		},
 		Mnemonic: test.WalletMnemonic,
 	}
+	info := test.WalletInfo(boltz.CurrencyBtc)
 	encrypted, err := credentials.Encrypt(password)
 	require.NoError(t, err)
 
 	_, err = encrypted.Encrypt(password)
 	require.Error(t, err)
 
-	_, err = onchainWallet.Login(encrypted)
+	_, err = onchainWallet.Login(encrypted, info)
 	require.Error(t, err)
 
 	decrypted, err := encrypted.Decrypt(password)
 	require.NoError(t, err)
 	require.Equal(t, credentials, decrypted)
 
-	wallet, err := onchainWallet.Login(decrypted)
+	wallet, err := onchainWallet.Login(decrypted, info)
 	require.NoError(t, err)
 
 	_, err = decrypted.Decrypt(password)
@@ -236,13 +225,11 @@ func TestAutoConsolidate(t *testing.T) {
 	onchainWallet.UpdateConfig(walletConfig)
 	mnemonic, err := onchainWallet.GenerateMnemonic()
 	require.NoError(t, err)
+	info := test.WalletInfo(boltz.CurrencyLiquid)
 	credentials := &onchain.WalletCredentials{
-		WalletInfo: onchain.WalletInfo{
-			Currency: boltz.CurrencyLiquid,
-		},
 		Mnemonic: mnemonic,
 	}
-	wallet, err := onchainWallet.Login(credentials)
+	wallet, err := onchainWallet.Login(credentials, info)
 	require.NoError(t, err)
 	_, err = wallet.SetSubaccount(nil)
 	require.NoError(t, err)

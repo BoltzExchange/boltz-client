@@ -41,6 +41,7 @@ func (p *WalletPersister) PersistLastIndex(walletId uint64, index uint32) error 
 }
 
 type Wallet struct {
+	onchain.WalletInfo
 	*onchain.WalletCredentials
 	NodePubkey *string
 	LastIndex  *uint32
@@ -64,17 +65,16 @@ func (d *Database) CreateWallet(wallet *Wallet) error {
 	return row.Scan(&wallet.Id)
 }
 
-func (d *Database) UpdateWalletCredentials(credentials *onchain.WalletCredentials) error {
-	query := "UPDATE wallets SET currency = ?, xpub = ?, coreDescriptor = ?, mnemonic = ?, subaccount = ?, salt = ? WHERE id = ?"
+func (d *Database) UpdateWallet(wallet *Wallet) error {
+	query := "UPDATE wallets SET xpub = ?, coreDescriptor = ?, mnemonic = ?, subaccount = ?, salt = ? WHERE id = ?"
 	_, err := d.Exec(
 		query,
-		credentials.Currency,
-		credentials.Xpub,
-		credentials.CoreDescriptor,
-		credentials.Mnemonic,
-		credentials.Subaccount,
-		credentials.Salt,
-		credentials.Id,
+		wallet.Xpub,
+		wallet.CoreDescriptor,
+		wallet.Mnemonic,
+		wallet.Subaccount,
+		wallet.Salt,
+		wallet.Id,
 	)
 	return err
 }
@@ -135,7 +135,7 @@ func (d *Database) GetNodeWallet(nodePubkey string) (*Wallet, error) {
 	return nil, fmt.Errorf("walle with nodePubkey %s not found", nodePubkey)
 }
 
-func (d *Database) QueryWalletCredentials() ([]*onchain.WalletCredentials, error) {
+func (d *Database) QueryWalletCredentials() ([]*Wallet, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	query := "SELECT * FROM wallets"
@@ -145,18 +145,18 @@ func (d *Database) QueryWalletCredentials() ([]*onchain.WalletCredentials, error
 	}
 	defer closeRows(rows)
 
-	var credentials []*onchain.WalletCredentials
+	var wallets []*Wallet
 	for rows.Next() {
 		wallet, err := parseWallet(rows)
 		if err != nil {
 			return nil, err
 		}
 		if wallet.NodePubkey == nil {
-			credentials = append(credentials, wallet.WalletCredentials)
+			wallets = append(wallets, wallet)
 		}
 	}
 
-	return credentials, nil
+	return wallets, nil
 }
 
 func (d *Database) DeleteWallet(id Id) error {

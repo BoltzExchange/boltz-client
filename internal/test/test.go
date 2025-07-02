@@ -49,15 +49,18 @@ const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enfor
 const WalletSubaccount = 0
 const WalletId = 1
 
-func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
+func WalletInfo(currency boltz.Currency) onchain.WalletInfo {
+	return onchain.WalletInfo{
+		Name:     "regtest",
+		Currency: currency,
+		TenantId: database.DefaultTenantId,
+		Id:       WalletId,
+	}
+}
+
+func WalletCredentials() *onchain.WalletCredentials {
 	sub := uint64(WalletSubaccount)
 	return &onchain.WalletCredentials{
-		WalletInfo: onchain.WalletInfo{
-			Name:     "regtest",
-			Currency: currency,
-			TenantId: database.DefaultTenantId,
-			Id:       WalletId,
-		},
 		Mnemonic:   WalletMnemonic,
 		Subaccount: &sub,
 	}
@@ -125,7 +128,7 @@ func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 	for _, currency := range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
 		currency := currency
 		eg.Go(func() error {
-			wallet, err := wallet.Login(WalletCredentials(currency))
+			wallet, err := wallet.Login(WalletCredentials(), WalletInfo(currency))
 			if err != nil {
 				return err
 			}

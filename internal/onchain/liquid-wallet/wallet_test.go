@@ -20,6 +20,8 @@ import (
 
 const syncInterval = 1 * time.Second
 
+var walletInfo = test.WalletInfo(boltz.CurrencyLiquid)
+
 func dbPersister(t *testing.T) liquid_wallet.Persister {
 	db := database.Database{
 		Path: ":memory:",
@@ -27,7 +29,8 @@ func dbPersister(t *testing.T) liquid_wallet.Persister {
 	err := db.Connect()
 	require.NoError(t, err)
 	err = db.CreateWallet(&database.Wallet{
-		WalletCredentials: test.WalletCredentials(boltz.CurrencyLiquid),
+		WalletInfo:        test.WalletInfo(boltz.CurrencyLiquid),
+		WalletCredentials: test.WalletCredentials(),
 	})
 	require.NoError(t, err)
 	return database.NewWalletPersister(&db)
@@ -83,7 +86,7 @@ func TestWallet_GetBalance(t *testing.T) {
 }
 
 func TestWallet_Funded(t *testing.T) {
-	fundedWallet := newWallet(t, defaultBackend(t), test.WalletCredentials(boltz.CurrencyLiquid))
+	fundedWallet := newWallet(t, defaultBackend(t), test.WalletCredentials())
 	require.NoError(t, test.FundWallet(boltz.CurrencyLiquid, fundedWallet))
 
 	t.Run("SendToAddress", func(t *testing.T) {
@@ -159,14 +162,63 @@ func newWallet(t *testing.T, backend *liquid_wallet.BlockchainBackend, credentia
 	if credentials == nil {
 		mnemonic, err := liquid_wallet.GenerateMnemonic(boltz.Regtest)
 		require.NoError(t, err)
-		credentials = test.WalletCredentials(boltz.CurrencyLiquid)
+		credentials = test.WalletCredentials()
 		credentials.Mnemonic = mnemonic
 	}
 	err := liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, credentials)
 	require.NoError(t, err)
-	wallet, err := liquid_wallet.NewWallet(backend, credentials)
+	wallet, err := backend.NewWallet(credentials, walletInfo)
 	require.NoError(t, err)
 	return wallet
+}
+
+func TestParseDefaultDescriptor(t *testing.T) {
+	network := boltz.Regtest
+
+	tests := []struct {
+		name             string
+		credentials      *onchain.WalletCredentials
+		expectDescriptor bool
+		err              require.ErrorAssertionFunc
+	}{
+		{
+			name: "Readonly",
+			credentials: &onchain.WalletCredentials{
+				CoreDescriptor: "ct(slip77(4ad98f82d7ff83475fef315a4ef0e678dda235a2349e9608ca9dcdaa29614c56),elwpkh([db2512f4/84'/1'/0']tpubDC5arE7hT8QemD3p1yqL7sCSbGtrg1KXU9xP2UWJE9SJDdhRuFRUVW5RoYHC8PSUEK4ptSGeG23Sh5GDwHZFXKaQcZYA1GLMY75PWTpLCJe/<0;1>/*))#lppvk6uy",
+			},
+			err:              require.NoError,
+			expectDescriptor: true,
+		},
+		{
+			name: "DeriveDescriptor",
+			credentials: &onchain.WalletCredentials{
+				Mnemonic: test.WalletMnemonic,
+			},
+			err:              require.NoError,
+			expectDescriptor: true,
+		},
+		{
+			name: "Invalid/Mnemonic",
+			credentials: &onchain.WalletCredentials{
+				Mnemonic:       "invalid",
+				CoreDescriptor: "",
+			},
+			err:              require.Error,
+			expectDescriptor: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := liquid_wallet.DeriveDefaultDescriptor(network, tt.credentials)
+			tt.err(t, err)
+			if tt.expectDescriptor {
+				require.NotEmpty(t, tt.credentials.CoreDescriptor)
+			} else {
+				require.Empty(t, tt.credentials.CoreDescriptor)
+			}
+		})
+	}
 }
 
 func TestWallet_NewAddress(t *testing.T) {
