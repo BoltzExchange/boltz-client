@@ -1414,16 +1414,16 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 		decryptedCredentials = append(decryptedCredentials, credentials)
 
-		if password != "" {
-			if err := server.encryptWalletCredentials(tx, password, decryptedCredentials); err != nil {
-				return fmt.Errorf("could not encrypt credentials: %w", err)
-			}
-		}
-
 		logger.Infof("Creating new wallet %d", credentials.Id)
 		imported, err = server.loginWallet(credentials)
 		if err != nil {
 			return fmt.Errorf("could not login: %w", err)
+		}
+
+		if password != "" {
+			if err := server.encryptWalletCredentials(tx, password, decryptedCredentials); err != nil {
+				return fmt.Errorf("could not encrypt credentials: %w", err)
+			}
 		}
 
 		server.onchain.AddWallet(imported)
