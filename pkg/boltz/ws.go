@@ -150,6 +150,18 @@ func (boltz *Websocket) Connect() error {
 			}
 		}
 	}()
+
+	boltz.swapIdsLock.Lock()
+	swapIds := make([]string, len(boltz.swapIds))
+	copy(swapIds, boltz.swapIds)
+	boltz.swapIdsLock.Unlock()
+
+	if len(swapIds) > 0 {
+		if err := boltz.subscribe(swapIds); err != nil {
+			return fmt.Errorf("failed to subscribe to existing swaps: %w", err)
+		}
+	}
+
 	return nil
 }
 
