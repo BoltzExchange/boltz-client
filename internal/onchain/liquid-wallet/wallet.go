@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,8 +16,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
-// Persister defines the interface for persisting and loading the last used index for a wallet.
-// An index is considered used as soon as its associated has been generated to ensure unique addresses.
+// Persister defines methods for saving and retrieving the last used address index for a wallet.
+// The index is marked as used as soon as its corresponding address is generated, ensuring address uniqueness.
 type Persister interface {
 	LoadLastIndex(walletId uint64) (*uint32, error)
 	PersistLastIndex(walletId uint64, index uint32) error
@@ -398,6 +399,9 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 
 	pset, err := builder.Finish(w.Wollet)
 	if err != nil {
+		if strings.Contains(err.Error(), "InsufficientFunds") {
+			return nil, w.info.InsufficientBalanceError(args.Amount)
+		}
 		return nil, fmt.Errorf("finish: %w", err)
 	}
 
