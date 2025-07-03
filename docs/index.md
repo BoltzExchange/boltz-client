@@ -1,18 +1,13 @@
----
-cover: .gitbook/assets/boltz-client (1).png
-coverY: 0
----
-
 # 👋 Introduction
 
 Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or [LND](https://github.com/lightningnetwork/lnd/) nodes and allows for fully unattended channel rebalancing or accepting Lightning payments without running a node, using [Boltz API](https://docs.boltz.exchange/v/api). It is composed of `boltzcli` and `boltzd`.
 
 Design principles:
 
-* CLI-first: fine-grained control and enhanced setup UX via `boltzcli`
-* CLN-first: first-class citizen support for [CLN](https://github.com/ElementsProject/lightning) in addition to [LND](https://github.com/lightningnetwork/lnd)
-* [Liquid](https://liquid.net/)-first: leverages fee-efficient Lightning -> Liquid swaps in addition to Bitcoin swaps
-* Self-contained: create/import Liquid and mainchain wallets, swap to read-only wallets
+- CLI-first: fine-grained control and enhanced setup UX via `boltzcli`
+- CLN-first: first-class citizen support for [CLN](https://github.com/ElementsProject/lightning) in addition to [LND](https://github.com/lightningnetwork/lnd)
+- [Liquid](https://liquid.net/)-first: leverages fee-efficient Lightning -> Liquid swaps in addition to Bitcoin swaps
+- Self-contained: create/import Liquid and mainchain wallets, swap to read-only wallets
 
 ## Main Components
 
@@ -34,7 +29,7 @@ Boltz Client is available for linux on `amd64` and `arm64`. Download the latest 
 
 Boltz Client is also available as [docker image](https://hub.docker.com/r/boltz/boltz-client/tags). Assuming your lnd macaroon and certificate are placed in `~/.lnd`, run:
 
-```
+```bash
 docker create -v ~/.boltz:/root/.boltz -v ~/.lnd:/root/.lnd --name boltz-client boltz/boltz-client:latest
 docker start boltz-client
 docker exec boltz-client boltzcli getinfo
@@ -66,10 +61,10 @@ To view all CLI flags use `--help`.
 
 The LND node to which the daemon connects has to be version `v0.10.0-beta` or higher. Also, LND needs to be compiled with these build flags (official binaries from Lightning Labs releases include them):
 
-* `invoicerpc` (hold invoices)
-* `routerrpc` (multi path payments)
-* `chainrpc` (block listener)
-* `walletrpc` (fee estimations)
+- `invoicerpc` (hold invoices)
+- `routerrpc` (multi path payments)
+- `chainrpc` (block listener)
+- `walletrpc` (fee estimations)
 
 By default, boltzd will attempt to connect to lnd running at `localhost:10009` (`lnd.host` and `lnd.port`) and looking for certificate and macaroon inside the data directory `~/.lnd` (`lnd.datadir`).
 
@@ -79,9 +74,9 @@ You can manually set the location of the tls certificate (`lnd.certificate`) and
 
 The daemon connects to CLN through [gRPC](https://docs.corelightning.org/docs/grpc). You need start CLN with the `--grpc-port` CLI flag, or set it in your config:
 
-* `--cln.port` same port as used for `--grpc-port`
-* `--cln.host` host of the machine CLN is running on
-* `--cln.datadir` data directory of cln (`~/.lightning` by default)
+- `--cln.port` same port as used for `--grpc-port`
+- `--cln.host` host of the machine CLN is running on
+- `--cln.datadir` data directory of cln (`~/.lightning` by default)
 
 You can manually set the paths of `cln.rootcert`, `cln.privatekey` and `cln.certchain` instead of speciyfing the data directory as well.
 You might have to set the `cln.servername` option as well, if you are using a custom certificate.
