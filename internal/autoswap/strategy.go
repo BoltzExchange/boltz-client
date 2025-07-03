@@ -49,10 +49,10 @@ func (cfg *LightningConfig) channelRecommendation(channel *lightning.LightningCh
 			reserve := boltz.CalculatePercentage(cfg.reserve, channel.Capacity)
 			if swap.Amount < reserve {
 				logger.Warnf(
-					"Recommended amount %d of channel %d is smaller than the reserve %d",
+					"Recommended amount %d of channel %d is lower than the reserve %d, not recommending swap",
 					swap.Amount, channel.Id, reserve,
 				)
-				swap.Amount = 0
+				swap = nil
 			} else {
 				swap.Amount -= reserve
 			}
