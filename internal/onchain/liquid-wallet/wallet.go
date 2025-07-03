@@ -15,11 +15,10 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
-// Persister defines the interface for persisting and loading the last index
+// Persister defines the interface for persisting and loading the last used index for a wallet.
+// An index is considered used as soon as its associated has been generated to ensure unique addresses.
 type Persister interface {
-	// LoadLastIndex loads the last index for a given wallet ID
 	LoadLastIndex(walletId uint64) (*uint32, error)
-	// PersistLastIndex persists the last index for a given wallet ID
 	PersistLastIndex(walletId uint64, index uint32) error
 }
 
