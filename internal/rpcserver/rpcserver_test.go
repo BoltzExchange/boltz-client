@@ -1737,13 +1737,18 @@ func TestWallet(t *testing.T) {
 
 	walletParams := &boltzrpc.WalletParams{Currency: boltzrpc.Currency_LBTC, Name: "test", Password: &password}
 
-	credentials, err := client.CreateWallet(walletParams)
+	response, err := client.CreateWallet(walletParams)
 	require.NoError(t, err)
+
+	credentials, err := client.GetWalletCredentials(response.Wallet.Id, &password)
+	require.NoError(t, err)
+	require.NotEmpty(t, credentials.Mnemonic)
+	require.NotEmpty(t, credentials.CoreDescriptor)
 
 	_, err = client.GetWallet(walletParams.Name)
 	require.NoError(t, err)
 
-	_, err = client.RemoveWallet(credentials.Wallet.Id)
+	_, err = client.RemoveWallet(response.Wallet.Id)
 	require.NoError(t, err)
 
 	mnemonic := "invalid"
@@ -1753,7 +1758,7 @@ func TestWallet(t *testing.T) {
 	_, err = client.GetWallet(walletParams.Name)
 	require.Error(t, err)
 
-	_, err = client.ImportWallet(walletParams, &boltzrpc.WalletCredentials{Mnemonic: &credentials.Mnemonic})
+	_, err = client.ImportWallet(walletParams, credentials)
 	require.NoError(t, err)
 
 	/*

@@ -1409,6 +1409,12 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 
 	var imported onchain.Wallet
 	err = server.database.RunTx(func(tx *database.Transaction) error {
+		if credentials.Currency == boltz.CurrencyLiquid && credentials.CoreDescriptor == "" {
+			if err := liquid_wallet.DeriveDefaultDescriptor(server.network, credentials); err != nil {
+				return err
+			}
+		}
+
 		if err := tx.CreateWallet(&database.Wallet{WalletCredentials: credentials}); err != nil {
 			return err
 		}
