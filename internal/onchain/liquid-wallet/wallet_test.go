@@ -54,7 +54,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestWallet_GetBalance(t *testing.T) {
-	wallet := newWallet(t, defaultBackend(t))
+	wallet := newWallet(t, defaultBackend(t), nil)
 	balance, err := wallet.GetBalance()
 	require.NoError(t, err)
 	require.NotNil(t, balance)
@@ -83,8 +83,7 @@ func TestWallet_GetBalance(t *testing.T) {
 }
 
 func TestWallet_Funded(t *testing.T) {
-	fundedWallet, err := liquid_wallet.NewWallet(defaultBackend(t), test.WalletCredentials(boltz.CurrencyLiquid))
-	require.NoError(t, err)
+	fundedWallet := newWallet(t, defaultBackend(t), test.WalletCredentials(boltz.CurrencyLiquid))
 	require.NoError(t, test.FundWallet(boltz.CurrencyLiquid, fundedWallet))
 
 	t.Run("SendToAddress", func(t *testing.T) {
@@ -156,11 +155,15 @@ func TestBackend_Broadcast(t *testing.T) {
 
 }
 
-func newWallet(t *testing.T, backend *liquid_wallet.BlockchainBackend) *liquid_wallet.Wallet {
-	credentials := test.WalletCredentials(boltz.CurrencyLiquid)
-	mnemonic, err := liquid_wallet.GenerateMnemonic(boltz.Regtest)
+func newWallet(t *testing.T, backend *liquid_wallet.BlockchainBackend, credentials *onchain.WalletCredentials) *liquid_wallet.Wallet {
+	if credentials == nil {
+		mnemonic, err := liquid_wallet.GenerateMnemonic(boltz.Regtest)
+		require.NoError(t, err)
+		credentials = test.WalletCredentials(boltz.CurrencyLiquid)
+		credentials.Mnemonic = mnemonic
+	}
+	err := liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, credentials)
 	require.NoError(t, err)
-	credentials.Mnemonic = mnemonic
 	wallet, err := liquid_wallet.NewWallet(backend, credentials)
 	require.NoError(t, err)
 	return wallet
@@ -175,7 +178,7 @@ func TestWallet_NewAddress(t *testing.T) {
 
 	backend, err := liquid_wallet.NewBlockchainBackend(cfg)
 	require.NoError(t, err)
-	wallet := newWallet(t, backend)
+	wallet := newWallet(t, backend, nil)
 	address, err := wallet.NewAddress()
 	require.NoError(t, err)
 	require.NotEmpty(t, address)
@@ -196,7 +199,7 @@ func TestWallet_AutoConsolidate(t *testing.T) {
 	cfg.ConsolidationThreshold = uint64(numTxns)
 	backend, err := liquid_wallet.NewBlockchainBackend(cfg)
 	require.NoError(t, err)
-	wallet := newWallet(t, backend)
+	wallet := newWallet(t, backend, nil)
 
 	amount := uint64(500)
 	for i := 0; i < numTxns; i++ {

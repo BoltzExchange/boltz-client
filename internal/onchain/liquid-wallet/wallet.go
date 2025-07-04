@@ -147,6 +147,32 @@ func convertNetwork(network *boltz.Network) *lwk.Network {
 	}
 }
 
+func newSigner(network *boltz.Network, mnemonic string) (*lwk.Signer, error) {
+	parsed, err := lwk.NewMnemonic(mnemonic)
+	if err != nil {
+		return nil, err
+	}
+	return lwk.NewSigner(parsed, convertNetwork(network))
+}
+
+func DeriveDefaultDescriptor(network *boltz.Network, credentials *onchain.WalletCredentials) error {
+	if credentials.CoreDescriptor == "" {
+		if credentials.Mnemonic == "" {
+			return errors.New("core descriptor or mnemonic is required")
+		}
+		signer, err := newSigner(network, credentials.Mnemonic)
+		if err != nil {
+			return err
+		}
+		descriptor, err := signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
+		if err != nil {
+			return err
+		}
+		credentials.CoreDescriptor = descriptor.String()
+	}
+	return nil
+}
+
 func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredentials) (*Wallet, error) {
 	if backend == nil {
 		return nil, errors.New("backend instance is nil")
@@ -157,30 +183,20 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 		info:    credentials.WalletInfo,
 	}
 
-	var descriptor *lwk.WolletDescriptor
-	var err error
+	if credentials.CoreDescriptor == "" {
+		return nil, errors.New("core descriptor is required")
+	}
+	descriptor, err := lwk.NewWolletDescriptor(credentials.CoreDescriptor)
+	if err != nil {
+		return nil, err
+	}
 	if credentials.Mnemonic != "" {
-		mnemonic, err := lwk.NewMnemonic(credentials.Mnemonic)
-		if err != nil {
-			return nil, err
-		}
-		result.signer, err = lwk.NewSigner(mnemonic, convertNetwork(backend.cfg.Network))
-		if err != nil {
-			return nil, err
-		}
-		descriptor, err = result.signer.WpkhSlip77Descriptor()
+		result.signer, err = newSigner(backend.cfg.Network, credentials.Mnemonic)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		result.info.Readonly = true
-		if credentials.CoreDescriptor == "" {
-			return nil, errors.New("invalid credentials")
-		}
-		descriptor, err = lwk.NewWolletDescriptor(credentials.CoreDescriptor)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	result.Wollet, err = lwk.NewWollet(
