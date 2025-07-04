@@ -115,10 +115,12 @@ func (boltz *Boltz) ImportWallet(params *boltzrpc.WalletParams, credentials *bol
 	return boltz.Client.ImportWallet(boltz.Ctx, &boltzrpc.ImportWalletRequest{Params: params, Credentials: credentials})
 }
 
+//nolint:staticcheck
 func (boltz *Boltz) SetSubaccount(walletId uint64, subaccount *uint64) (*boltzrpc.Subaccount, error) {
 	return boltz.Client.SetSubaccount(boltz.Ctx, &boltzrpc.SetSubaccountRequest{Subaccount: subaccount, WalletId: walletId})
 }
 
+//nolint:staticcheck
 func (boltz *Boltz) GetSubaccounts(walletId uint64) (*boltzrpc.GetSubaccountsResponse, error) {
 	return boltz.Client.GetSubaccounts(boltz.Ctx, &boltzrpc.GetSubaccountsRequest{WalletId: walletId})
 }

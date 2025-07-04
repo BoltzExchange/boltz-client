@@ -657,6 +657,60 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_electrum_url()
+		})
+		if checksum != 55646 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_electrum_url: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_generate()
+		})
+		if checksum != 26765 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_generate: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_get_new_address()
+		})
+		if checksum != 19321 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_get_new_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_height()
+		})
+		if checksum != 2430 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_height: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_issue_asset()
+		})
+		if checksum != 1145 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_issue_asset: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_send_to_address()
+		})
+		if checksum != 56643 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_send_to_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_network_default_electrum_client()
 		})
 		if checksum != 57493 {
@@ -738,6 +792,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_pset_combine()
+		})
+		if checksum != 29157 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_pset_combine: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_pset_extract_tx()
 		})
 		if checksum != 24108 {
@@ -761,6 +824,15 @@ func uniffiCheckChecksums() {
 		if checksum != 59953 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_pset_inputs: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_pset_unique_id()
+		})
+		if checksum != 39035 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_pset_unique_id: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -963,6 +1035,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_secretkey_sign()
+		})
+		if checksum != 47116 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_secretkey_sign: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_signer_keyorigin_xpub()
 		})
 		if checksum != 15198 {
@@ -990,65 +1071,20 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_signer_singlesig_desc()
+		})
+		if checksum != 28847 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_signer_singlesig_desc: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_signer_wpkh_slip77_descriptor()
 		})
 		if checksum != 55215 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_signer_wpkh_slip77_descriptor: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_testenv_electrum_url()
-		})
-		if checksum != 37727 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_testenv_electrum_url: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_testenv_generate()
-		})
-		if checksum != 4725 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_testenv_generate: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_testenv_get_new_address()
-		})
-		if checksum != 11090 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_testenv_get_new_address: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_testenv_height()
-		})
-		if checksum != 18988 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_testenv_height: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_testenv_issue_asset()
-		})
-		if checksum != 13400 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_testenv_issue_asset: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_testenv_send_to_address()
-		})
-		if checksum != 8497 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_testenv_send_to_address: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1103,6 +1139,15 @@ func uniffiCheckChecksums() {
 		if checksum != 9804 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_add_burn: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txbuilder_add_external_utxos()
+		})
+		if checksum != 29722 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txbuilder_add_external_utxos: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1593,11 +1638,29 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_transactions_paginated()
+		})
+		if checksum != 32144 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_transactions_paginated: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_txos()
 		})
 		if checksum != 19061 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_txos: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_unblind_utxos_with()
+		})
+		if checksum != 51999 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_unblind_utxos_with: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1737,6 +1800,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_lwktestenv_new()
+		})
+		if checksum != 23847 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_lwktestenv_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_mnemonic_from_entropy()
 		})
 		if checksum != 36360 {
@@ -1845,6 +1917,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_secretkey_from_wif()
+		})
+		if checksum != 46565 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_secretkey_from_wif: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_signer_new()
 		})
 		if checksum != 16701 {
@@ -1859,15 +1940,6 @@ func uniffiCheckChecksums() {
 		if checksum != 54097 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_signer_random: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_constructor_testenv_new()
-		})
-		if checksum != 46965 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_constructor_testenv_new: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -3224,6 +3296,61 @@ func (_ FfiDestroyerEsploraClient) Destroy(value *EsploraClient) {
 	value.Destroy()
 }
 
+type ExternalUtxoInterface interface {
+}
+type ExternalUtxo struct {
+	ffiObject FfiObject
+}
+
+func (object *ExternalUtxo) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterExternalUtxo struct{}
+
+var FfiConverterExternalUtxoINSTANCE = FfiConverterExternalUtxo{}
+
+func (c FfiConverterExternalUtxo) Lift(pointer unsafe.Pointer) *ExternalUtxo {
+	result := &ExternalUtxo{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_externalutxo(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_externalutxo(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*ExternalUtxo).Destroy)
+	return result
+}
+
+func (c FfiConverterExternalUtxo) Read(reader io.Reader) *ExternalUtxo {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterExternalUtxo) Lower(value *ExternalUtxo) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*ExternalUtxo")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterExternalUtxo) Write(writer io.Writer, value *ExternalUtxo) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerExternalUtxo struct{}
+
+func (_ FfiDestroyerExternalUtxo) Destroy(value *ExternalUtxo) {
+	value.Destroy()
+}
+
 // An exported trait, useful for caller-defined persistence.
 type ForeignPersister interface {
 	Get(index uint64) (**Update, error)
@@ -3668,6 +3795,136 @@ func (c FfiConverterIssuance) Write(writer io.Writer, value *Issuance) {
 type FfiDestroyerIssuance struct{}
 
 func (_ FfiDestroyerIssuance) Destroy(value *Issuance) {
+	value.Destroy()
+}
+
+// Represent a test environment with an elements node and an electrum server.
+// useful for testing only, wrapper over [`lwk_test_util::TestElectrumServer`]
+type LwkTestEnvInterface interface {
+	ElectrumUrl() string
+	Generate(blocks uint32)
+	GetNewAddress() *Address
+	Height() uint64
+	IssueAsset(satoshi uint64) AssetId
+	SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid
+}
+
+// Represent a test environment with an elements node and an electrum server.
+// useful for testing only, wrapper over [`lwk_test_util::TestElectrumServer`]
+type LwkTestEnv struct {
+	ffiObject FfiObject
+}
+
+func NewLwkTestEnv() *LwkTestEnv {
+	return FfiConverterLwkTestEnvINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_lwktestenv_new(_uniffiStatus)
+	}))
+}
+
+func (_self *LwkTestEnv) ElectrumUrl() string {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lwktestenv_electrum_url(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (_self *LwkTestEnv) Generate(blocks uint32) {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	rustCall(func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_lwktestenv_generate(
+			_pointer, FfiConverterUint32INSTANCE.Lower(blocks), _uniffiStatus)
+		return false
+	})
+}
+
+func (_self *LwkTestEnv) GetNewAddress() *Address {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterAddressINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_lwktestenv_get_new_address(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+func (_self *LwkTestEnv) Height() uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_lwktestenv_height(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+func (_self *LwkTestEnv) IssueAsset(satoshi uint64) AssetId {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterTypeAssetIdINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lwktestenv_issue_asset(
+				_pointer, FfiConverterUint64INSTANCE.Lower(satoshi), _uniffiStatus),
+		}
+	}))
+}
+
+func (_self *LwkTestEnv) SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterTxidINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_lwktestenv_send_to_address(
+			_pointer, FfiConverterAddressINSTANCE.Lower(address), FfiConverterUint64INSTANCE.Lower(satoshi), FfiConverterOptionalTypeAssetIdINSTANCE.Lower(asset), _uniffiStatus)
+	}))
+}
+func (object *LwkTestEnv) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterLwkTestEnv struct{}
+
+var FfiConverterLwkTestEnvINSTANCE = FfiConverterLwkTestEnv{}
+
+func (c FfiConverterLwkTestEnv) Lift(pointer unsafe.Pointer) *LwkTestEnv {
+	result := &LwkTestEnv{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_lwktestenv(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_lwktestenv(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*LwkTestEnv).Destroy)
+	return result
+}
+
+func (c FfiConverterLwkTestEnv) Read(reader io.Reader) *LwkTestEnv {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterLwkTestEnv) Lower(value *LwkTestEnv) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*LwkTestEnv")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterLwkTestEnv) Write(writer io.Writer, value *LwkTestEnv) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerLwkTestEnv struct{}
+
+func (_ FfiDestroyerLwkTestEnv) Destroy(value *LwkTestEnv) {
 	value.Destroy()
 }
 
@@ -4139,10 +4396,15 @@ func (_ FfiDestroyerPrecision) Destroy(value *Precision) {
 
 // Partially Signed Elements Transaction, wrapper over [`elements::pset::PartiallySignedTransaction`]
 type PsetInterface interface {
+	Combine(other *Pset) (*Pset, error)
 	ExtractTx() (*Transaction, error)
 	// Finalize and extract the PSET
 	Finalize() (*Transaction, error)
 	Inputs() []*PsetInput
+	// Get the unique id of the PSET as defined by [BIP-370](https://github.com/bitcoin/bips/blob/master/bip-0370.mediawiki#unique-identification)
+	//
+	// The unique id is the txid of the PSET with sequence numbers of inputs set to 0
+	UniqueId() (*Txid, error)
 }
 
 // Partially Signed Elements Transaction, wrapper over [`elements::pset::PartiallySignedTransaction`]
@@ -4154,6 +4416,21 @@ type Pset struct {
 func NewPset(base64 string) (*Pset, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_pset_new(FfiConverterStringINSTANCE.Lower(base64), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Pset
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPsetINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *Pset) Combine(other *Pset) (*Pset, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Pset")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_pset_combine(
+			_pointer, FfiConverterPsetINSTANCE.Lower(other), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *Pset
@@ -4203,6 +4480,24 @@ func (_self *Pset) Inputs() []*PsetInput {
 				_pointer, _uniffiStatus),
 		}
 	}))
+}
+
+// Get the unique id of the PSET as defined by [BIP-370](https://github.com/bitcoin/bips/blob/master/bip-0370.mediawiki#unique-identification)
+//
+// The unique id is the txid of the PSET with sequence numbers of inputs set to 0
+func (_self *Pset) UniqueId() (*Txid, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Pset")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_pset_unique_id(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Txid
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterTxidINSTANCE.Lift(_uniffiRV), nil
+	}
 }
 
 func (_self *Pset) String() string {
@@ -4876,6 +5171,8 @@ func (_ FfiDestroyerScript) Destroy(value *Script) {
 // A secret key
 type SecretKeyInterface interface {
 	Bytes() []byte
+	// Sign the given `pset`
+	Sign(pset *Pset) (*Pset, error)
 }
 
 // A secret key
@@ -4895,6 +5192,18 @@ func SecretKeyFromBytes(bytes []byte) (*SecretKey, error) {
 	}
 }
 
+func SecretKeyFromWif(wif string) (*SecretKey, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_secretkey_from_wif(FfiConverterStringINSTANCE.Lower(wif), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *SecretKey
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSecretKeyINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
 func (_self *SecretKey) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*SecretKey")
 	defer _self.ffiObject.decrementPointer()
@@ -4904,6 +5213,22 @@ func (_self *SecretKey) Bytes() []byte {
 				_pointer, _uniffiStatus),
 		}
 	}))
+}
+
+// Sign the given `pset`
+func (_self *SecretKey) Sign(pset *Pset) (*Pset, error) {
+	_pointer := _self.ffiObject.incrementPointer("*SecretKey")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_secretkey_sign(
+			_pointer, FfiConverterPsetINSTANCE.Lower(pset), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Pset
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPsetINSTANCE.Lift(_uniffiRV), nil
+	}
 }
 func (object *SecretKey) Destroy() {
 	runtime.SetFinalizer(object, nil)
@@ -4963,6 +5288,7 @@ type SignerInterface interface {
 	// Note from an API perspective it would be better to consume the `pset` parameter so it would
 	// be clear the signed PSET is the returned one, but it's not possible with uniffi bindings
 	Sign(pset *Pset) (*Pset, error)
+	SinglesigDesc(scriptVariant Singlesig, blindingVariant DescriptorBlindingKey) (*WolletDescriptor, error)
 	WpkhSlip77Descriptor() (*WolletDescriptor, error)
 }
 
@@ -5048,6 +5374,21 @@ func (_self *Signer) Sign(pset *Pset) (*Pset, error) {
 	}
 }
 
+func (_self *Signer) SinglesigDesc(scriptVariant Singlesig, blindingVariant DescriptorBlindingKey) (*WolletDescriptor, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Signer")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_signer_singlesig_desc(
+			_pointer, FfiConverterSinglesigINSTANCE.Lower(scriptVariant), FfiConverterDescriptorBlindingKeyINSTANCE.Lower(blindingVariant), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *WolletDescriptor
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterWolletDescriptorINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
 func (_self *Signer) WpkhSlip77Descriptor() (*WolletDescriptor, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Signer")
 	defer _self.ffiObject.decrementPointer()
@@ -5108,136 +5449,6 @@ func (c FfiConverterSigner) Write(writer io.Writer, value *Signer) {
 type FfiDestroyerSigner struct{}
 
 func (_ FfiDestroyerSigner) Destroy(value *Signer) {
-	value.Destroy()
-}
-
-// Represent a test environment with an elements node and an electrum server.
-// useful for testing only, wrapper over [`lwk_test_util::TestElectrumServer`]
-type TestEnvInterface interface {
-	ElectrumUrl() string
-	Generate(blocks uint32)
-	GetNewAddress() *Address
-	Height() uint64
-	IssueAsset(satoshi uint64) AssetId
-	SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid
-}
-
-// Represent a test environment with an elements node and an electrum server.
-// useful for testing only, wrapper over [`lwk_test_util::TestElectrumServer`]
-type TestEnv struct {
-	ffiObject FfiObject
-}
-
-func NewTestEnv() *TestEnv {
-	return FfiConverterTestEnvINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_lwk_fn_constructor_testenv_new(_uniffiStatus)
-	}))
-}
-
-func (_self *TestEnv) ElectrumUrl() string {
-	_pointer := _self.ffiObject.incrementPointer("*TestEnv")
-	defer _self.ffiObject.decrementPointer()
-	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
-		return GoRustBuffer{
-			inner: C.uniffi_lwk_fn_method_testenv_electrum_url(
-				_pointer, _uniffiStatus),
-		}
-	}))
-}
-
-func (_self *TestEnv) Generate(blocks uint32) {
-	_pointer := _self.ffiObject.incrementPointer("*TestEnv")
-	defer _self.ffiObject.decrementPointer()
-	rustCall(func(_uniffiStatus *C.RustCallStatus) bool {
-		C.uniffi_lwk_fn_method_testenv_generate(
-			_pointer, FfiConverterUint32INSTANCE.Lower(blocks), _uniffiStatus)
-		return false
-	})
-}
-
-func (_self *TestEnv) GetNewAddress() *Address {
-	_pointer := _self.ffiObject.incrementPointer("*TestEnv")
-	defer _self.ffiObject.decrementPointer()
-	return FfiConverterAddressINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_lwk_fn_method_testenv_get_new_address(
-			_pointer, _uniffiStatus)
-	}))
-}
-
-func (_self *TestEnv) Height() uint64 {
-	_pointer := _self.ffiObject.incrementPointer("*TestEnv")
-	defer _self.ffiObject.decrementPointer()
-	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
-		return C.uniffi_lwk_fn_method_testenv_height(
-			_pointer, _uniffiStatus)
-	}))
-}
-
-func (_self *TestEnv) IssueAsset(satoshi uint64) AssetId {
-	_pointer := _self.ffiObject.incrementPointer("*TestEnv")
-	defer _self.ffiObject.decrementPointer()
-	return FfiConverterTypeAssetIdINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
-		return GoRustBuffer{
-			inner: C.uniffi_lwk_fn_method_testenv_issue_asset(
-				_pointer, FfiConverterUint64INSTANCE.Lower(satoshi), _uniffiStatus),
-		}
-	}))
-}
-
-func (_self *TestEnv) SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid {
-	_pointer := _self.ffiObject.incrementPointer("*TestEnv")
-	defer _self.ffiObject.decrementPointer()
-	return FfiConverterTxidINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_lwk_fn_method_testenv_send_to_address(
-			_pointer, FfiConverterAddressINSTANCE.Lower(address), FfiConverterUint64INSTANCE.Lower(satoshi), FfiConverterOptionalTypeAssetIdINSTANCE.Lower(asset), _uniffiStatus)
-	}))
-}
-func (object *TestEnv) Destroy() {
-	runtime.SetFinalizer(object, nil)
-	object.ffiObject.destroy()
-}
-
-type FfiConverterTestEnv struct{}
-
-var FfiConverterTestEnvINSTANCE = FfiConverterTestEnv{}
-
-func (c FfiConverterTestEnv) Lift(pointer unsafe.Pointer) *TestEnv {
-	result := &TestEnv{
-		newFfiObject(
-			pointer,
-			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
-				return C.uniffi_lwk_fn_clone_testenv(pointer, status)
-			},
-			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
-				C.uniffi_lwk_fn_free_testenv(pointer, status)
-			},
-		),
-	}
-	runtime.SetFinalizer(result, (*TestEnv).Destroy)
-	return result
-}
-
-func (c FfiConverterTestEnv) Read(reader io.Reader) *TestEnv {
-	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
-}
-
-func (c FfiConverterTestEnv) Lower(value *TestEnv) unsafe.Pointer {
-	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
-	// because the pointer will be decremented immediately after this function returns,
-	// and someone will be left holding onto a non-locked pointer.
-	pointer := value.ffiObject.incrementPointer("*TestEnv")
-	defer value.ffiObject.decrementPointer()
-	return pointer
-
-}
-
-func (c FfiConverterTestEnv) Write(writer io.Writer, value *TestEnv) {
-	writeUint64(writer, uint64(uintptr(c.Lower(value))))
-}
-
-type FfiDestroyerTestEnv struct{}
-
-func (_ FfiDestroyerTestEnv) Destroy(value *TestEnv) {
 	value.Destroy()
 }
 
@@ -5380,6 +5591,8 @@ func (_ FfiDestroyerTransaction) Destroy(value *Transaction) {
 type TxBuilderInterface interface {
 	// Burn satoshi units of the given asset
 	AddBurn(satoshi uint64, asset AssetId) error
+	// Add external utxos, wrapper of [`lwk_wollet::TxBuilder::add_external_utxos()`]
+	AddExternalUtxos(utxos []*ExternalUtxo) error
 	// Add a recipient receiving L-BTC
 	AddLbtcRecipient(address *Address, satoshi uint64) error
 	// Add a recipient receiving the given asset
@@ -5422,6 +5635,18 @@ func (_self *TxBuilder) AddBurn(satoshi uint64, asset AssetId) error {
 	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
 		C.uniffi_lwk_fn_method_txbuilder_add_burn(
 			_pointer, FfiConverterUint64INSTANCE.Lower(satoshi), FfiConverterTypeAssetIdINSTANCE.Lower(asset), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
+}
+
+// Add external utxos, wrapper of [`lwk_wollet::TxBuilder::add_external_utxos()`]
+func (_self *TxBuilder) AddExternalUtxos(utxos []*ExternalUtxo) error {
+	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_txbuilder_add_external_utxos(
+			_pointer, FfiConverterSequenceExternalUtxoINSTANCE.Lower(utxos), _uniffiStatus)
 		return false
 	})
 	return _uniffiErr.AsError()
@@ -6649,8 +6874,12 @@ type WolletInterface interface {
 	Finalize(pset *Pset) (*Pset, error)
 	PsetDetails(pset *Pset) (*PsetDetails, error)
 	Transactions() ([]*WalletTx, error)
+	TransactionsPaginated(offset uint32, limit uint32) ([]*WalletTx, error)
 	// Get all the transaction outputs of the wallet, both spent and unspent
 	Txos() ([]*WalletTxOut, error)
+	// Get the utxo with unspent transaction outputs of the wallet
+	// Return utxos unblinded with a specific blinding key
+	UnblindUtxosWith(blindingPrivkey *SecretKey) ([]*ExternalUtxo, error)
 	// Get the unspent transaction outputs of the wallet
 	Utxos() ([]*WalletTxOut, error)
 	// Note this a test method but we are not feature gating in test because we need it in
@@ -6794,6 +7023,23 @@ func (_self *Wollet) Transactions() ([]*WalletTx, error) {
 	}
 }
 
+func (_self *Wollet) TransactionsPaginated(offset uint32, limit uint32) ([]*WalletTx, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_wollet_transactions_paginated(
+				_pointer, FfiConverterUint32INSTANCE.Lower(offset), FfiConverterUint32INSTANCE.Lower(limit), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []*WalletTx
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceWalletTxINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
 // Get all the transaction outputs of the wallet, both spent and unspent
 func (_self *Wollet) Txos() ([]*WalletTxOut, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
@@ -6809,6 +7055,25 @@ func (_self *Wollet) Txos() ([]*WalletTxOut, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterSequenceWalletTxOutINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Get the utxo with unspent transaction outputs of the wallet
+// Return utxos unblinded with a specific blinding key
+func (_self *Wollet) UnblindUtxosWith(blindingPrivkey *SecretKey) ([]*ExternalUtxo, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_wollet_unblind_utxos_with(
+				_pointer, FfiConverterSecretKeyINSTANCE.Lower(blindingPrivkey), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []*ExternalUtxo
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceExternalUtxoINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
@@ -7054,6 +7319,39 @@ type FfiDestroyerChain struct{}
 func (_ FfiDestroyerChain) Destroy(value Chain) {
 }
 
+type DescriptorBlindingKey uint
+
+const (
+	DescriptorBlindingKeySlip77     DescriptorBlindingKey = 1
+	DescriptorBlindingKeySlip77Rand DescriptorBlindingKey = 2
+	DescriptorBlindingKeyElip151    DescriptorBlindingKey = 3
+)
+
+type FfiConverterDescriptorBlindingKey struct{}
+
+var FfiConverterDescriptorBlindingKeyINSTANCE = FfiConverterDescriptorBlindingKey{}
+
+func (c FfiConverterDescriptorBlindingKey) Lift(rb RustBufferI) DescriptorBlindingKey {
+	return LiftFromRustBuffer[DescriptorBlindingKey](c, rb)
+}
+
+func (c FfiConverterDescriptorBlindingKey) Lower(value DescriptorBlindingKey) C.RustBuffer {
+	return LowerIntoRustBuffer[DescriptorBlindingKey](c, value)
+}
+func (FfiConverterDescriptorBlindingKey) Read(reader io.Reader) DescriptorBlindingKey {
+	id := readInt32(reader)
+	return DescriptorBlindingKey(id)
+}
+
+func (FfiConverterDescriptorBlindingKey) Write(writer io.Writer, value DescriptorBlindingKey) {
+	writeInt32(writer, int32(value))
+}
+
+type FfiDestroyerDescriptorBlindingKey struct{}
+
+func (_ FfiDestroyerDescriptorBlindingKey) Destroy(value DescriptorBlindingKey) {
+}
+
 // Possible errors emitted
 type LwkError struct {
 	err error
@@ -7193,6 +7491,38 @@ func (_ FfiDestroyerLwkError) Destroy(value *LwkError) {
 		_ = variantValue
 		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerLwkError.Destroy", value))
 	}
+}
+
+type Singlesig uint
+
+const (
+	SinglesigWpkh   Singlesig = 1
+	SinglesigShWpkh Singlesig = 2
+)
+
+type FfiConverterSinglesig struct{}
+
+var FfiConverterSinglesigINSTANCE = FfiConverterSinglesig{}
+
+func (c FfiConverterSinglesig) Lift(rb RustBufferI) Singlesig {
+	return LiftFromRustBuffer[Singlesig](c, rb)
+}
+
+func (c FfiConverterSinglesig) Lower(value Singlesig) C.RustBuffer {
+	return LowerIntoRustBuffer[Singlesig](c, value)
+}
+func (FfiConverterSinglesig) Read(reader io.Reader) Singlesig {
+	id := readInt32(reader)
+	return Singlesig(id)
+}
+
+func (FfiConverterSinglesig) Write(writer io.Writer, value Singlesig) {
+	writeInt32(writer, int32(value))
+}
+
+type FfiDestroyerSinglesig struct{}
+
+func (_ FfiDestroyerSinglesig) Destroy(value Singlesig) {
 }
 
 type FfiConverterOptionalUint8 struct{}
@@ -7747,6 +8077,49 @@ type FfiDestroyerOptionalTypeAssetId struct{}
 func (_ FfiDestroyerOptionalTypeAssetId) Destroy(value *AssetId) {
 	if value != nil {
 		FfiDestroyerTypeAssetId{}.Destroy(*value)
+	}
+}
+
+type FfiConverterSequenceExternalUtxo struct{}
+
+var FfiConverterSequenceExternalUtxoINSTANCE = FfiConverterSequenceExternalUtxo{}
+
+func (c FfiConverterSequenceExternalUtxo) Lift(rb RustBufferI) []*ExternalUtxo {
+	return LiftFromRustBuffer[[]*ExternalUtxo](c, rb)
+}
+
+func (c FfiConverterSequenceExternalUtxo) Read(reader io.Reader) []*ExternalUtxo {
+	length := readInt32(reader)
+	if length == 0 {
+		return nil
+	}
+	result := make([]*ExternalUtxo, 0, length)
+	for i := int32(0); i < length; i++ {
+		result = append(result, FfiConverterExternalUtxoINSTANCE.Read(reader))
+	}
+	return result
+}
+
+func (c FfiConverterSequenceExternalUtxo) Lower(value []*ExternalUtxo) C.RustBuffer {
+	return LowerIntoRustBuffer[[]*ExternalUtxo](c, value)
+}
+
+func (c FfiConverterSequenceExternalUtxo) Write(writer io.Writer, value []*ExternalUtxo) {
+	if len(value) > math.MaxInt32 {
+		panic("[]*ExternalUtxo is too large to fit into Int32")
+	}
+
+	writeInt32(writer, int32(len(value)))
+	for _, item := range value {
+		FfiConverterExternalUtxoINSTANCE.Write(writer, item)
+	}
+}
+
+type FfiDestroyerSequenceExternalUtxo struct{}
+
+func (FfiDestroyerSequenceExternalUtxo) Destroy(sequence []*ExternalUtxo) {
+	for _, value := range sequence {
+		FfiDestroyerExternalUtxo{}.Destroy(value)
 	}
 }
 
