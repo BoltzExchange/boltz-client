@@ -60,11 +60,15 @@ type Subaccount struct {
 
 type Wallet struct {
 	onchain.WalletInfo
+
 	subaccount     *uint64
 	session        Session
 	connected      bool
 	syncedAccounts []uint64
 	txNotifier     <-chan TransactionNotification
+
+	// the credentials that were used to login
+	credentials onchain.WalletCredentials
 }
 
 type Config struct {
@@ -442,7 +446,7 @@ func Login(credentials *onchain.WalletCredentials) (*Wallet, error) {
 	if credentials.Encrypted() {
 		return nil, errors.New("credentials are encrypted")
 	}
-	wallet := &Wallet{WalletInfo: credentials.WalletInfo}
+	wallet := &Wallet{WalletInfo: credentials.WalletInfo, credentials: *credentials}
 	login := make(map[string]any)
 
 	if credentials.Mnemonic != "" {
@@ -895,6 +899,10 @@ func (wallet *Wallet) Ready() bool {
 
 func (wallet *Wallet) GetWalletInfo() onchain.WalletInfo {
 	return wallet.WalletInfo
+}
+
+func (wallet *Wallet) GetCredentials() onchain.WalletCredentials {
+	return wallet.credentials
 }
 
 func (wallet *Wallet) estimateFee() (float64, error) {

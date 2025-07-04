@@ -672,7 +672,7 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.Decode
 
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
-	privateKey, publicKey, err := newKeys()
+	privateKey, publicKey, err := server.newKeys(ctx, request.WalletId)
 	if err != nil {
 		return nil, err
 	}
@@ -1010,7 +1010,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, err
 	}
 
-	privateKey, publicKey, err := newKeys()
+	privateKey, publicKey, err := server.newKeys(ctx, request.WalletId)
 
 	if err != nil {
 		return nil, err
@@ -1179,12 +1179,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	tenantId := requireTenantId(ctx)
 
-	claimPrivateKey, claimPub, err := newKeys()
+	claimPrivateKey, claimPub, err := server.newKeys(ctx, request.ToWalletId)
 	if err != nil {
 		return nil, err
 	}
 
-	refundPrivateKey, refundPub, err := newKeys()
+	refundPrivateKey, refundPub, err := server.newKeys(ctx, request.FromWalletId)
 	if err != nil {
 		return nil, err
 	}
@@ -2395,16 +2395,36 @@ func calculateDepositLimit(limit uint64, fees *boltzrpc.Fees, isMin bool) uint64
 	return uint64(limitFloat) + uint64(fees.Miner.Normal)
 }
 
-func newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {
-	privateKey, err := btcec.NewPrivateKey()
-
+func (server *routedBoltzServer) newKeys(ctx context.Context, walletId *database.Id) (*btcec.PrivateKey, *btcec.PublicKey, error) {
+	if walletId == nil {
+		randomKey, err := btcec.NewPrivateKey()
+		if err != nil {
+			return nil, nil, err
+		}
+		return randomKey, randomKey.PubKey(), nil
+	}
+	wallet, err := server.getOwnWallet(ctx, onchain.WalletChecker{Id: walletId})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	publicKey := privateKey.PubKey()
+	dbWallet, err := server.database.GetWallet(*walletId)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return privateKey, publicKey, err
+	lastKeyIndex := uint32(0)
+	if dbWallet.LastKeyIndex != nil {
+		lastKeyIndex = *dbWallet.LastKeyIndex + 1
+	}
+	privateKey, err := boltz.DeriveKey(wallet.GetCredentials().Mnemonic, lastKeyIndex, server.network.Btc)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := server.database.UpdateLastWalletIndex(*walletId, lastKeyIndex); err != nil {
+		return nil, nil, err
+	}
+	return privateKey, privateKey.PubKey(), nil
 }
 
 func newPreimage() ([]byte, []byte, error) {
