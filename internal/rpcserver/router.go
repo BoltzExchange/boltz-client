@@ -2380,14 +2380,13 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 		return err
 	}
 	info := check.GetWalletInfo()
-	if ownWallet, ok := check.(*wallet.Wallet); ok {
-		dummyAddress := server.network.DummyLockupAddress[info.Currency]
-		// this call implicitly checks the balance aswell
-		_, _, err := ownWallet.GetSendFee(onchain.WalletSendArgs{
-			Address:     dummyAddress,
-			Amount:      sendAmount,
-			SatPerVbyte: feeRate,
-		})
+	dummyAddress := server.network.DummyLockupAddress[info.Currency]
+	_, _, err = check.GetSendFee(onchain.WalletSendArgs{
+		Address:     dummyAddress,
+		Amount:      sendAmount,
+		SatPerVbyte: feeRate,
+	})
+	if err != nil && !errors.Is(err, errors.ErrUnsupported) {
 		return err
 	}
 	if balance.Confirmed < sendAmount {
