@@ -1862,7 +1862,7 @@ func (server *routedBoltzServer) WalletSend(ctx context.Context, request *boltzr
 	if request.Address == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "address required")
 	}
-	if request.Amount == 0 {
+	if request.Amount == 0 && !request.GetSendAll() {
 		return nil, status.Errorf(codes.InvalidArgument, "amount required")
 	}
 	txId, err := sendWallet.SendToAddress(onchain.WalletSendArgs{
