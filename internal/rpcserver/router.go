@@ -986,6 +986,18 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		if err != nil {
 			return nil, fmt.Errorf("invalid claim address %s: %w", claimAddress, err)
 		}
+
+		swaps, err := server.database.QueryReverseSwaps(database.SwapQuery{
+			States: []boltzrpc.SwapState{boltzrpc.SwapState_PENDING},
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, swap := range swaps {
+			if swap.ClaimAddress == claimAddress {
+				return nil, status.Errorf(codes.AlreadyExists, "claim address %s is already used by swap %s", claimAddress, swap.Id)
+			}
+		}
 		logger.Infof("Using claim address: %s", claimAddress)
 	} else {
 		wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{

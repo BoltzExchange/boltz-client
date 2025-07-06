@@ -14,6 +14,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet/lwk"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
+	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 // Persister defines methods for saving and retrieving the last used address index for a wallet.
@@ -26,6 +27,7 @@ type Persister interface {
 type Wallet struct {
 	*lwk.Wollet
 	signer     *lwk.Signer
+	descriptor *lwk.WolletDescriptor
 	backend    *BlockchainBackend
 	info       onchain.WalletInfo
 	syncCancel context.CancelFunc
@@ -186,7 +188,8 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 	if credentials.CoreDescriptor == "" {
 		return nil, errors.New("core descriptor is required")
 	}
-	descriptor, err := lwk.NewWolletDescriptor(credentials.CoreDescriptor)
+	var err error
+	result.descriptor, err = lwk.NewWolletDescriptor(credentials.CoreDescriptor)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +204,7 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 
 	result.Wollet, err = lwk.NewWollet(
 		convertNetwork(backend.cfg.Network),
-		descriptor,
+		result.descriptor,
 		&backend.cfg.DataDir,
 	)
 	if err != nil {
@@ -387,6 +390,19 @@ func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransac
 		result = append(result, out)
 	}
 	return result, nil
+}
+
+func (w *Wallet) DeriveBlindingKey(address string) (*btcec.PrivateKey, error) {
+	addr, err := lwk.NewAddress(address)
+	if err != nil {
+		return nil, err
+	}
+	key := w.descriptor.DeriveBlindingKey(addr.ScriptPubkey())
+	if key == nil {
+		return nil, errors.New("could not derive blinding key")
+	}
+	privKey, _ := btcec.PrivKeyFromBytes((*key).Bytes())
+	return privKey, nil
 }
 
 func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transaction, error) {

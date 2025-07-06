@@ -9,6 +9,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	lnmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -105,4 +106,113 @@ func TestPayReverseSwap(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "no lightning node available to pay invoice", err.Error())
 	})
+}
+
+func TestChooseDirectOutput(t *testing.T) {
+	test.InitLogger()
+	nursery := setup(t)
+	tests := []struct {
+		name           string
+		outputs        []*onchain.Output
+		expected       *onchain.Output
+		swap           *database.ReverseSwap
+		feeEstimations boltz.FeeEstimations
+		err            require.ErrorAssertionFunc
+	}{
+		{
+			name: "Match",
+			outputs: []*onchain.Output{
+				{
+					TxId:  "tx1",
+					Value: 1000,
+				},
+				{
+					TxId:  "tx3",
+					Value: 15000,
+				},
+				{
+					TxId:  "tx2",
+					Value: 9000,
+				},
+			},
+			expected: &onchain.Output{
+				TxId:  "tx2",
+				Value: 9000,
+			},
+			swap: &database.ReverseSwap{
+				Pair: boltz.Pair{
+					From: boltz.CurrencyBtc,
+					To:   boltz.CurrencyLiquid,
+				},
+				ServiceFeePercent: 1,
+				InvoiceAmount:     10000,
+			},
+			feeEstimations: boltz.FeeEstimations{
+				boltz.CurrencyLiquid: 0.1,
+				boltz.CurrencyBtc:    1,
+			},
+			err: require.NoError,
+		},
+		{
+			name: "NoMatch",
+			outputs: []*onchain.Output{
+				{
+					TxId:  "tx1",
+					Value: 500,
+				},
+				{
+					TxId:  "tx2",
+					Value: 600,
+				},
+			},
+			swap: &database.ReverseSwap{
+				Pair: boltz.Pair{
+					From: boltz.CurrencyBtc,
+					To:   boltz.CurrencyBtc,
+				},
+				InvoiceAmount:     10000,
+				ServiceFeePercent: 1,
+			},
+			feeEstimations: boltz.FeeEstimations{
+				boltz.CurrencyLiquid: 0.1,
+				boltz.CurrencyBtc:    1,
+			},
+			expected: nil,
+			err:      require.NoError,
+		},
+		{
+			name: "Liquid/UnknownValue",
+			outputs: []*onchain.Output{
+				{
+					TxId:  "tx1",
+					Value: 0,
+				},
+			},
+			swap: &database.ReverseSwap{
+				Pair: boltz.Pair{
+					From: boltz.CurrencyBtc,
+					To:   boltz.CurrencyLiquid,
+				},
+				InvoiceAmount:     10000,
+				ServiceFeePercent: 1,
+			},
+			feeEstimations: boltz.FeeEstimations{
+				boltz.CurrencyLiquid: 0.1,
+				boltz.CurrencyBtc:    1,
+			},
+			expected: &onchain.Output{
+				TxId:  "tx1",
+				Value: 0,
+			},
+			err: require.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			output, err := nursery.chooseDirectOutput(test.swap, test.feeEstimations, test.outputs)
+			test.err(t, err)
+			require.Equal(t, test.expected, output)
+		})
+	}
 }

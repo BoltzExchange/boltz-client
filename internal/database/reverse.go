@@ -266,6 +266,17 @@ func (database *Database) QueryReverseSwapByClaimTransaction(txId string) (rever
 	return reverseSwap, err
 }
 
+func (database *Database) QueryReverseSwapByClaimAddress(claimAddress string) (*ReverseSwap, error) {
+	swaps, err := database.queryReverseSwaps("SELECT * FROM reverseSwaps WHERE claimAddress = ? AND state = ?", claimAddress, boltzrpc.SwapState_PENDING)
+	if err != nil {
+		return nil, err
+	}
+	if len(swaps) > 0 {
+		return swaps[0], nil
+	}
+	return nil, sql.ErrNoRows
+}
+
 const claimableSwapsQuery = `
 SELECT * FROM reverseSwaps
 WHERE fromCurrency = ?
