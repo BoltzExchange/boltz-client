@@ -40,7 +40,7 @@ type LightningConfig struct {
 	executeLock sync.Mutex
 }
 
-const DefaultReserve = boltz.Percentage(10)
+const DefaultReserve = boltz.Percentage(5)
 
 func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
 	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: DefaultReserve}
@@ -78,12 +78,20 @@ func (cfg *LightningConfig) Init() error {
 	cfg.outboundBalance = Balance{Absolute: cfg.OutboundBalance}
 	cfg.inboundBalance = Balance{Absolute: cfg.InboundBalance}
 
+	maxPercentageThreshold := boltz.Percentage(100) - 2*cfg.reserve
+
 	// Only consider relative values if absolute values are not set
 	if cfg.InboundBalance == 0 && cfg.OutboundBalance == 0 {
 		cfg.outboundBalance.Relative = boltz.Percentage(cfg.OutboundBalancePercent)
 		cfg.inboundBalance.Relative = boltz.Percentage(cfg.InboundBalancePercent)
 		if cfg.OutboundBalancePercent+cfg.InboundBalancePercent >= 100 {
 			return errors.New("sum of balance percentages must be smaller than 100")
+		}
+		if cfg.outboundBalance.Relative > maxPercentageThreshold {
+			return fmt.Errorf("outbound balance percentage must be smaller than %s", maxPercentageThreshold)
+		}
+		if cfg.inboundBalance.Relative > maxPercentageThreshold {
+			return fmt.Errorf("inbound balance percentage must be smaller than %s", maxPercentageThreshold)
 		}
 	}
 
