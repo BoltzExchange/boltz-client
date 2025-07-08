@@ -145,6 +145,7 @@ func TestChooseDirectOutput(t *testing.T) {
 					To:   boltz.CurrencyLiquid,
 				},
 				ServiceFeePercent: 1,
+				OnchainAmount:     9500,
 				InvoiceAmount:     10000,
 			},
 			feeEstimations: boltz.FeeEstimations{
@@ -171,6 +172,7 @@ func TestChooseDirectOutput(t *testing.T) {
 					To:   boltz.CurrencyBtc,
 				},
 				InvoiceAmount:     10000,
+				OnchainAmount:     9500,
 				ServiceFeePercent: 1,
 			},
 			feeEstimations: boltz.FeeEstimations{
@@ -181,12 +183,16 @@ func TestChooseDirectOutput(t *testing.T) {
 			err:      require.NoError,
 		},
 		{
-			name: "Liquid/UnknownValue",
+			name: "Overpaid",
 			outputs: []*onchain.Output{
 				{
 					TxId:  "tx1",
-					Value: 0,
+					Value: 10500,
 				},
+			},
+			expected: &onchain.Output{
+				TxId:  "tx1",
+				Value: 10500,
 			},
 			swap: &database.ReverseSwap{
 				Pair: boltz.Pair{
@@ -194,15 +200,12 @@ func TestChooseDirectOutput(t *testing.T) {
 					To:   boltz.CurrencyLiquid,
 				},
 				InvoiceAmount:     10000,
+				OnchainAmount:     9500,
 				ServiceFeePercent: 1,
 			},
 			feeEstimations: boltz.FeeEstimations{
 				boltz.CurrencyLiquid: 0.1,
 				boltz.CurrencyBtc:    1,
-			},
-			expected: &onchain.Output{
-				TxId:  "tx1",
-				Value: 0,
 			},
 			err: require.NoError,
 		},

@@ -2,6 +2,7 @@ package nursery
 
 import (
 	"fmt"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -31,7 +32,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 				}
 			}
 
-			if err := nursery.checkExternalReverseSwaps(currency, ""); err != nil {
+			if err := nursery.checkExternalReverseSwaps(currency); err != nil {
 				logger.Error("Could not check external reverse swaps: " + err.Error())
 			}
 		}

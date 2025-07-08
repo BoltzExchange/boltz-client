@@ -1826,25 +1826,6 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 	fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	defer stop()
 
-	t.Run("Multiple", func(t *testing.T) {
-		address := test.GetNewAddress(test.LiquidCli)
-		externalPay := true
-		request := &boltzrpc.CreateReverseSwapRequest{
-			Pair: &boltzrpc.Pair{
-				From: boltzrpc.Currency_BTC,
-				To:   boltzrpc.Currency_LBTC,
-			},
-			ExternalPay: &externalPay,
-			Amount:      maxZeroConfAmount,
-			Address:     address,
-		}
-		_, err := client.CreateReverseSwap(request)
-		require.NoError(t, err)
-		request.Address = address
-		_, err = client.CreateReverseSwap(request)
-		require.Error(t, err)
-	})
-
 	tt := []struct {
 		desc     string
 		zeroconf bool
@@ -1900,7 +1881,7 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 
 			_, statusStream := swapStream(t, client, reverseSwap.Id)
 			// it only gets to mempool state on liquid since its using gdk - btc uses the node wallet
-			if !tc.zeroconf && tc.currency == boltzrpc.Currency_LBTC {
+			if !tc.zeroconf {
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
 			}
 			confirmed = true

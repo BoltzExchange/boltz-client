@@ -249,7 +249,7 @@ func (nursery *Nursery) startSwapListener() {
 		for {
 			select {
 			case notification := <-notifier:
-				if err := nursery.checkExternalReverseSwaps(notification.Currency, notification.TxId); err != nil {
+				if err := nursery.checkExternalReverseSwaps(notification.Currency); err != nil {
 					logger.Errorf("Could not check external reverse swaps: %v", err)
 				}
 			case <-nursery.ctx.Done():
