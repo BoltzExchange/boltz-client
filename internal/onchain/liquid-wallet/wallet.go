@@ -349,16 +349,15 @@ func (w *Wallet) assetId() string {
 }
 
 func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransaction, error) {
-	if limit == 0 {
-		limit = onchain.DefaultTransactionsLimit
-	}
-	transactions, err := w.TransactionsPaginated(uint32(offset), uint32(limit))
+	fmt.Println("FfiCounter", lwk.FfiCounter.Load())
+	transactions, err := w.Transactions()
 	if err != nil {
 		return nil, err
 	}
 
 	var result []*onchain.WalletTransaction
 	for _, r := range transactions {
+		defer r.Destroy()
 		out := &onchain.WalletTransaction{
 			Id:              r.Tx().Txid().String(),
 			BalanceChange:   r.Balance()[w.assetId()],
@@ -389,6 +388,7 @@ func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransac
 
 		result = append(result, out)
 	}
+	fmt.Println("FfiCounter", lwk.FfiCounter.Load())
 	return result, nil
 }
 

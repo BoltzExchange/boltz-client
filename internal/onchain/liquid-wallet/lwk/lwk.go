@@ -2281,11 +2281,14 @@ type FfiObject struct {
 	destroyed     atomic.Bool
 }
 
+var FfiCounter atomic.Int64
+
 func newFfiObject(
 	pointer unsafe.Pointer,
 	cloneFunction func(unsafe.Pointer, *C.RustCallStatus) unsafe.Pointer,
 	freeFunction func(unsafe.Pointer, *C.RustCallStatus),
 ) FfiObject {
+	FfiCounter.Add(1)
 	return FfiObject{
 		pointer:       pointer,
 		cloneFunction: cloneFunction,
@@ -2328,6 +2331,7 @@ func (ffiObject *FfiObject) destroy() {
 
 func (ffiObject *FfiObject) freeRustArcPtr() {
 	rustCall(func(status *C.RustCallStatus) int32 {
+		FfiCounter.Add(-1)
 		ffiObject.freeFunction(ffiObject.pointer, status)
 		return 0
 	})

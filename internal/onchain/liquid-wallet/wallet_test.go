@@ -53,6 +53,50 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func print(t *testing.T, wollet *lwk.Wollet) {
+	txs, err := wollet.Transactions()
+	require.NoError(t, err)
+	require.NotNil(t, txs)
+
+	for _, tx := range txs {
+		tx.Destroy()
+	}
+}
+
+func TestLeak(t *testing.T) {
+	descriptor, err := lwk.NewWolletDescriptor("ct(slip77(65da876df6ea87104f4963197292a43625efc70e8192cee1916210c918658c58),elwpkh([18ba7258/84'/1'/0']tpubDC3xF5QBwmwR8CCY2JNDYPejkt8fJFdDCf6aSmwahjqCoGr2oUkTmUhYmzEeGwhZwuRb5brRQU7RjJEERfxCciLA6hH1ugsCbZmEHs8A968/<0;1>/*))#rl8qanky")
+	require.NoError(t, err)
+
+	dataDir := "/home/jacksn/.boltz/liquid-wallet"
+	wollet, err := lwk.NewWollet(
+		lwk.NetworkRegtestDefault(),
+		descriptor,
+		&dataDir,
+	)
+	require.NoError(t, err)
+
+	for {
+		print(t, wollet)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func TestOldLeak(t *testing.T) {
+
+	backend := defaultBackend(t)
+	creds := test.WalletCredentials(boltz.CurrencyLiquid)
+	creds.Mnemonic = ""
+	creds.CoreDescriptor = "ct(slip77(65da876df6ea87104f4963197292a43625efc70e8192cee1916210c918658c58),elwpkh([18ba7258/84'/1'/0']tpubDC3xF5QBwmwR8CCY2JNDYPejkt8fJFdDCf6aSmwahjqCoGr2oUkTmUhYmzEeGwhZwuRb5brRQU7RjJEERfxCciLA6hH1ugsCbZmEHs8A968/<0;1>/*))#rl8qanky"
+	wallet := newWallet(t, backend, creds)
+
+	for {
+		_, err := wallet.GetTransactions(30, 0)
+		require.NoError(t, err)
+		time.Sleep(10 * time.Millisecond)
+		//runtime.GC()
+	}
+}
+
 func TestWallet_GetBalance(t *testing.T) {
 	wallet := newWallet(t, defaultBackend(t), nil)
 	balance, err := wallet.GetBalance()

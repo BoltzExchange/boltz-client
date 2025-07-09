@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"path"
@@ -249,6 +250,11 @@ func (server *RpcServer) Start() chan error {
 	wg := sync.WaitGroup{}
 
 	wg.Add(1)
+
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
+
 	go func() {
 		logger.Info("Starting RPC server on: " + rpcUrl)
 
