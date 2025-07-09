@@ -6,12 +6,13 @@ const docsRoot = "https://docs.boltz.exchange";
 export default defineConfig({
   title: "Boltz Client",
   description: "Boltz Client Docs",
+  head: [["link", { rel: "icon", href: "/assets/logo.svg" }]],
   themeConfig: {
-    logo: "./assets/logo.svg",
+    logo: "/assets/logo.svg",
     search: {
       provider: "local",
     },
-    nav: [{ text: "Home", link: docsRoot }],
+    nav: [{ text: "🏠 Docs Home", link: docsRoot, target: "_self" }],
     sidebar: [
       {
         items: [
@@ -25,8 +26,7 @@ export default defineConfig({
             text: "🤖 REST API",
             link: "https://github.com/BoltzExchange/boltz-client/blob/master/pkg/boltzrpc/rest-annotations.yaml",
           },
-
-          { text: "🔙 Home", link: docsRoot },
+          { text: "🏠 Docs Home", link: docsRoot, target: "_self" },
         ],
       },
     ],

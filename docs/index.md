@@ -1,8 +1,14 @@
+---
+next:
+    text: "💰 Wallets"
+    link: "/wallets"
+---
+
 # 👋 Introduction
 
 Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or [LND](https://github.com/lightningnetwork/lnd/) nodes and allows for fully unattended channel rebalancing or accepting Lightning payments without running a node, using [Boltz API](https://docs.boltz.exchange/v/api). It is composed of `boltzcli` and `boltzd`.
 
-Design principles:
+## Design principles
 
 - CLI-first: fine-grained control and enhanced setup UX via `boltzcli`
 - CLN-first: first-class citizen support for [CLN](https://github.com/ElementsProject/lightning) in addition to [LND](https://github.com/lightningnetwork/lnd)
