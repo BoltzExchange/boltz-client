@@ -4,7 +4,7 @@
 
 ## Create New Wallet
 
-You can **create new** wallets, which will generate a new mnemonic and prompt you to back it up. We strongly recommend importing the displayed mnemonic into a wallet like [Green](https://blockstream.com/green/) on a second device. This serves as backup and UI to be able to monitior and control funds. Optionally, wallets can be encrypted with a passphrase that will be required on startup.
+You can **create new** wallets, which will generate a new mnemonic and prompt you to back it up. We strongly recommend importing the displayed mnemonic into a wallet like [Green](https://blockstream.com/green/) on a second device. This serves as backup and UI to be able to monitor and control funds. Optionally, wallets can be encrypted with a passphrase that will be required on startup.
 
 To create a new Liquid called "MyLiquidWallet" run:
 
