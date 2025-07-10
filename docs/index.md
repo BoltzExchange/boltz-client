@@ -134,7 +134,7 @@ the configuration file.
 
 ### Swap Mnemonic
 
-The swap mnemonic is used to derive the private keys for each swap. It is recommended to back this mnemonic up in a secure location, as it can be used to recover funds locked in a swap if you loose your database.
+The swap mnemonic is used to derive the private keys for each swap. It is recommended to back this mnemonic up in a secure location, as it can be used to recover funds locked in swaps in the case the database of the daemon is lost.
 
 **You will not be able to create any swaps if no swap mnemonic is setup**
 

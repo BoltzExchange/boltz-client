@@ -2314,7 +2314,7 @@ var swapMnemonicCommands = &cli.Command{
 	Name: "swapmnemonic",
 	Description: "The swap mnemonic is used to derive the private keys for each swap.\n" +
 		"It is recommended to back this mnemonic up in a secure location,\n" +
-		"as it can be used to restore swap information if you loose your database.",
+		"as it can be used to restore swap information n case the database is lost.",
 	Usage: "Manage swap mnemonic",
 	Subcommands: []*cli.Command{
 		{
