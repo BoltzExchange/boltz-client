@@ -112,15 +112,16 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 				return nil, errors.New("esplora is required")
 			}
 		}
-		if cfg.Esplora.Waterfall {
-			logger.Infof("Using waterfall esplora client as liquid wallet backend: %s", cfg.Esplora.Url)
-			backend.client, err = lwk.EsploraClientNewWaterfalls(cfg.Esplora.Url, convertNetwork(cfg.Network))
-		} else {
-			logger.Infof("Using esplora client as liquid wallet backend: %s", cfg.Esplora.Url)
-			backend.client, err = lwk.NewEsploraClient(cfg.Esplora.Url, convertNetwork(cfg.Network))
-		}
+		logger.Infof("Using esplora client as liquid wallet backend: %s", cfg.Esplora.Url)
+		concurrency := uint32(32)
+		backend.client, err = lwk.EsploraClientFromBuilder(lwk.EsploraClientBuilder{
+			BaseUrl:     cfg.Esplora.Url,
+			Network:     convertNetwork(cfg.Network),
+			Waterfalls:  cfg.Esplora.Waterfall,
+			Concurrency: &concurrency,
+		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("esplora client: %w", err)
 		}
 	}
 
