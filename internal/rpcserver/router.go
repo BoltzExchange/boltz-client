@@ -12,7 +12,6 @@ import (
 	"math"
 	"net/url"
 	"regexp"
-	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -1581,7 +1580,6 @@ func (server *routedBoltzServer) ListWalletTransactions(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
-	runtime.GC()
 	var txIds []string
 	for _, tx := range transactions {
 		txIds = append(txIds, tx.Id)
