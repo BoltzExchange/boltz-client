@@ -2347,6 +2347,9 @@ var swapMnemonicCommands = &cli.Command{
 				generate := ctx.Bool("generate")
 				request := &boltzrpc.SetSwapMnemonicRequest{}
 				if generate {
+					if mnemonic != "" {
+						return errors.New("mnemonic cannot be provided when generating a new one")
+					}
 					request.Mnemonic = &boltzrpc.SetSwapMnemonicRequest_Generate{
 						Generate: true,
 					}
