@@ -28,6 +28,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestWallet_BumpTransactionFee(t *testing.T) {
+	// we sleep here to avoid a race where tx doesn't get confirmed by a block we mined, causing the tx to be confirmed
+	time.Sleep(10 * time.Second)
 	wallet := getWallet(boltz.CurrencyBtc)
 	someAddress := test.GetNewAddress(test.BtcCli)
 	amount := int64(1000)

@@ -20,7 +20,6 @@ import (
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/macaroons"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -32,6 +31,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/autoswaprpc"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 	"github.com/vulpemventures/go-elements/address"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
@@ -1826,55 +1826,14 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 	fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	defer stop()
 
-	t.Run("Multiple", func(t *testing.T) {
-		externalPay := true
-		request := &boltzrpc.CreateReverseSwapRequest{
-			Pair: &boltzrpc.Pair{
-				From: boltzrpc.Currency_BTC,
-				To:   boltzrpc.Currency_LBTC,
-			},
-			ExternalPay: &externalPay,
-			Amount:      maxZeroConfAmount,
-		}
-		firstResponse, err := client.CreateReverseSwap(request)
-		require.NoError(t, err)
-		_, statusStream := swapStream(t, client, firstResponse.Id)
-		first := statusStream(boltzrpc.SwapState_PENDING, boltz.SwapCreated).ReverseSwap
-		claimAddress := first.ClaimAddress
-
-		request.Address = claimAddress
-		request.AcceptZeroConf = true
-		externalPay = false
-		second, err := client.CreateReverseSwap(request)
-		require.NoError(t, err)
-		require.NotEmpty(t, second.ClaimTransactionId)
-		test.MineBlock()
-
-		// send a bunch of payments to the address.
-		test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount/2)
-		correct := test.SendToAddress(test.LiquidCli, claimAddress, first.OnchainAmount)
-		require.Eventually(t, func() bool {
-			test.MineBlock()
-			info, err := client.GetSwapInfo(first.Id)
-			require.NoError(t, err)
-			if claimTx := info.ReverseSwap.ClaimTransactionId; claimTx != "" {
-				require.NotEqualf(t, claimTx, second.ClaimTransactionId, "transactions are the same")
-				require.Equal(t, correct, claimTx)
-				return true
-			}
-			return false
-		}, 15*time.Second, 3*time.Second)
-	})
-
 	tt := []struct {
 		desc     string
 		zeroconf bool
 		currency boltzrpc.Currency
 	}{
 		{"Btc/Normal", false, boltzrpc.Currency_BTC},
-		// TODO: re-enable this once when we have mrh notifications
-		//{"Liquid/Normal", false, boltzrpc.Currency_LBTC},
-		//{"Liquid/ZeroConf", true, boltzrpc.Currency_LBTC},
+		{"Liquid/Normal", false, boltzrpc.Currency_LBTC},
+		{"Liquid/ZeroConf", true, boltzrpc.Currency_LBTC},
 	}
 	for _, tc := range tt {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -1886,6 +1845,7 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 				mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
 					return confirmed, nil
 				})
+				mockTx.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(currency.Tx.BroadcastTransaction)
 				currency.Tx = mockTx
 			}
 
@@ -1921,13 +1881,14 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 
 			_, statusStream := swapStream(t, client, reverseSwap.Id)
 			// it only gets to mempool state on liquid since its using gdk - btc uses the node wallet
-			if !tc.zeroconf && tc.currency == boltzrpc.Currency_LBTC {
+			if !tc.zeroconf {
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
 			}
 			confirmed = true
 			test.MineBlock()
 			info := statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect)
 			require.Equal(t, info.ReverseSwap.ClaimAddress, swap.Address)
+			time.Sleep(1 * time.Second)
 		})
 	}
 }

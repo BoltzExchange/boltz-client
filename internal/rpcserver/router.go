@@ -1040,7 +1040,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		InvoiceExpiry:   request.GetInvoiceExpiry(),
 	}
 
-	if claimAddress != "" {
+	if claimAddress != "" && walletId != nil {
 		addressHash := sha256.Sum256([]byte(claimAddress))
 		signature, err := schnorr.Sign(privateKey, addressHash[:])
 		if err != nil {
