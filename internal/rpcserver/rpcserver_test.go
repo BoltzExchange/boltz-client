@@ -66,7 +66,6 @@ func loadConfig(t *testing.T) *config.Config {
 	cfg.Log.Level = "debug"
 	cfg.Database.Path = t.TempDir() + "/boltz.db"
 	cfg.Node = "lnd"
-	cfg.GenerateSwapMnemonic = true
 	return cfg
 }
 
@@ -3170,30 +3169,14 @@ func TestLegacyWallet(t *testing.T) {
 }
 
 func TestSwapMnemonic(t *testing.T) {
-	t.Run("GenerateMnemonic", func(t *testing.T) {
-		cfg := loadConfig(t)
-		cfg.GenerateSwapMnemonic = true
-
-		client, _, stop := setup(t, setupOptions{cfg: cfg})
-		defer stop()
-
-		mnemonic, err := client.GetSwapMnemonic()
-		require.NoError(t, err)
-		require.NotEmpty(t, mnemonic.Mnemonic)
-	})
-
 	cfg := loadConfig(t)
-	cfg.GenerateSwapMnemonic = false
 	client, _, stop := setup(t, setupOptions{cfg: cfg})
 	defer stop()
 
-	_, err := client.GetSwapMnemonic()
-	require.Error(t, err)
-
-	_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
-		Amount: swapAmount,
-	})
-	requireCode(t, err, codes.FailedPrecondition)
+	// random mnemonic is generated on startup
+	mnemonicResponse, err := client.GetSwapMnemonic()
+	require.NoError(t, err)
+	require.NotEmpty(t, mnemonicResponse.Mnemonic)
 
 	mnemonic := "invalid"
 	_, err = client.SetSwapMnemonic(&boltzrpc.SetSwapMnemonicRequest{
@@ -3240,4 +3223,17 @@ func TestSwapMnemonic(t *testing.T) {
 	require.NotEqual(t, mnemonic, response.Mnemonic)
 
 	createSwap(t, 0)
+
+	t.Run("Missing", func(t *testing.T) {
+		_, err := cfg.Database.Exec("DELETE FROM swapMnemonic")
+		require.NoError(t, err)
+
+		_, err = client.GetSwapMnemonic()
+		require.Error(t, err)
+
+		_, err = client.CreateSwap(&boltzrpc.CreateSwapRequest{
+			Amount: swapAmount,
+		})
+		requireCode(t, err, codes.FailedPrecondition)
+	})
 }

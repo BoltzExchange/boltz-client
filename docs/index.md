@@ -138,9 +138,7 @@ The swap mnemonic is used to derive the private keys for each swap. It is recomm
 
 **You will not be able to create any swaps if no swap mnemonic is setup**
 
-The swap mnemonic can be set with the `boltzcli swapmnemonic set` command. A new mnemonic can be generated with the `--generate` flag. If you wish to automatically generate a mnemonic on startup, you can set the `generateSwapMnemonic` config value or `generate-swap-mnemonic` CLI flag option to `true`.
-
-The current swap mnemonic can be retrieved with the `boltzcli swapmnemonic get` command.
+On initial startup, the client will generate a new swap mnemonic and store it in the database. It can be viewed with the `boltzcli swapmnemonic get` command or changed using the `boltzcli swapmnemonic set` command.
 
 ### CLI
 

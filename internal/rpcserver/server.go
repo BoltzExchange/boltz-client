@@ -198,22 +198,21 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		}
 	}
 
-	if cfg.GenerateSwapMnemonic {
-		_, err := server.database.GetSwapMnemonic()
+	// make sure we have a swap mnemonic
+	_, err = server.database.GetSwapMnemonic()
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return err
+		}
+		mnemonic, err := wallet.GenerateMnemonic()
 		if err != nil {
-			if err != sql.ErrNoRows {
-				return err
-			}
-			mnemonic, err := wallet.GenerateMnemonic()
-			if err != nil {
-				return err
-			}
-			logger.Info("Generated new swap mnemonic")
-			if err := server.database.RunTx(func(tx *database.Transaction) error {
-				return tx.SetSwapMnemonic(&database.SwapMnemonic{Mnemonic: mnemonic})
-			}); err != nil {
-				return err
-			}
+			return err
+		}
+		logger.Info("Generated new swap mnemonic")
+		if err := server.database.RunTx(func(tx *database.Transaction) error {
+			return tx.SetSwapMnemonic(&database.SwapMnemonic{Mnemonic: mnemonic})
+		}); err != nil {
+			return err
 		}
 	}
 
