@@ -74,6 +74,10 @@ func (lnd *LND) GetWalletInfo() onchain.WalletInfo {
 	return lnd.walletInfo
 }
 
+func (lnd *LND) Sync() error {
+	return nil
+}
+
 func (lnd *LND) Name() string {
 	return "LND"
 }
@@ -395,6 +399,10 @@ func (lnd *LND) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 	}
 
 	return response.Txid, nil
+}
+
+func (lnd *LND) GetOutputs(address string) ([]*onchain.Output, error) {
+	return nil, lightning.ErrUnsupported
 }
 
 func (lnd *LND) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
