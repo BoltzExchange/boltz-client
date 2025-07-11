@@ -295,8 +295,6 @@ func (w *Wallet) Ready() bool {
 func (w *Wallet) Disconnect() error {
 	w.syncCancel()
 	w.syncWait.Wait()
-	w.Destroy()
-	w.signer.Destroy()
 	return nil
 }
 
