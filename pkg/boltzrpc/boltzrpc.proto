@@ -203,12 +203,12 @@ service Boltz {
     rpc BakeMacaroon(BakeMacaroonRequest) returns (BakeMacaroonResponse);
 
     /*
-    Returns mnemonic used for the private keys of swaps, which can be used to restore swap information in the case of data loss.
+    Returns mnemonic used for the key derivation of swaps, which can be used to restore swap information in the case of data loss.
     */
     rpc GetSwapMnemonic(GetSwapMnemonicRequest) returns (GetSwapMnemonicResponse);
 
     /*
-    Set the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+    Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
     */
     rpc SetSwapMnemonic(SetSwapMnemonicRequest) returns (SetSwapMnemonicResponse);
 }

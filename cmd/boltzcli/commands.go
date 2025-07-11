@@ -2314,7 +2314,7 @@ var swapMnemonicCommands = &cli.Command{
 	Name: "swapmnemonic",
 	Description: "The swap mnemonic is used to derive the private keys for each swap.\n" +
 		"It is recommended to back this mnemonic up in a secure location,\n" +
-		"as it can be used to restore swap information n case the database is lost.",
+		"as it can be used to restore swap information in case the database is lost.",
 	Usage: "Manage swap mnemonic",
 	Subcommands: []*cli.Command{
 		{
@@ -2339,7 +2339,7 @@ var swapMnemonicCommands = &cli.Command{
 					Usage: "Generate a new mnemonic",
 				},
 			},
-			ArgsUsage: "[mnemonic]",
+			UsageText: "boltzcli swapmnemonic set \"abandon ... abandon about\"\nboltzcli swapmnemonic set --generate",
 			Action: func(ctx *cli.Context) error {
 				client := getClient(ctx)
 

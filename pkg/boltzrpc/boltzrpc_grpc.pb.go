@@ -161,9 +161,9 @@ type BoltzClient interface {
 	// - any swap or wallet created with the returned macaroon will belong to this tenant and can not be accessed by other tenants.
 	// - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
 	BakeMacaroon(ctx context.Context, in *BakeMacaroonRequest, opts ...grpc.CallOption) (*BakeMacaroonResponse, error)
-	// Returns mnemonic used for the private keys of swaps, which can be used to restore swap information in the case of data loss.
+	// Returns mnemonic used for the key derivation of swaps, which can be used to restore swap information in the case of data loss.
 	GetSwapMnemonic(ctx context.Context, in *GetSwapMnemonicRequest, opts ...grpc.CallOption) (*GetSwapMnemonicResponse, error)
-	// Set the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+	// Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
 	SetSwapMnemonic(ctx context.Context, in *SetSwapMnemonicRequest, opts ...grpc.CallOption) (*SetSwapMnemonicResponse, error)
 }
 
@@ -646,9 +646,9 @@ type BoltzServer interface {
 	// - any swap or wallet created with the returned macaroon will belong to this tenant and can not be accessed by other tenants.
 	// - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
 	BakeMacaroon(context.Context, *BakeMacaroonRequest) (*BakeMacaroonResponse, error)
-	// Returns mnemonic used for the private keys of swaps, which can be used to restore swap information in the case of data loss.
+	// Returns mnemonic used for the key derivation of swaps, which can be used to restore swap information in the case of data loss.
 	GetSwapMnemonic(context.Context, *GetSwapMnemonicRequest) (*GetSwapMnemonicResponse, error)
-	// Set the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+	// Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
 	SetSwapMnemonic(context.Context, *SetSwapMnemonicRequest) (*SetSwapMnemonicResponse, error)
 	mustEmbedUnimplementedBoltzServer()
 }

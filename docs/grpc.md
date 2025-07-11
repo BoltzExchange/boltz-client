@@ -342,7 +342,7 @@ Bakes a new macaroon with the specified permissions. The macaroon can also be re
 
 #### GetSwapMnemonic
 
-Returns mnemonic used for the private keys of swaps, which can be used to restore swap information in the case of data loss.
+Returns mnemonic used for the key derivation of swaps, which can be used to restore swap information in the case of data loss.
 
 | Request | Response |
 | ------- | -------- |
@@ -350,7 +350,7 @@ Returns mnemonic used for the private keys of swaps, which can be used to restor
 
 #### SetSwapMnemonic
 
-Set the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
 
 | Request | Response |
 | ------- | -------- |
