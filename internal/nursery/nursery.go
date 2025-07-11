@@ -249,7 +249,7 @@ func (nursery *Nursery) startSwapListener() {
 		for {
 			select {
 			case notification := <-notifier:
-				if err := nursery.checkExternalReverseSwaps(notification.Currency, notification.TxId); err != nil {
+				if err := nursery.checkExternalReverseSwaps(notification.Currency); err != nil {
 					logger.Errorf("Could not check external reverse swaps: %v", err)
 				}
 			case <-nursery.ctx.Done():
@@ -365,13 +365,22 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 	return
 }
 
-func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {
+func (nursery *Nursery) GetFeeEstimations() (boltz.FeeEstimations, error) {
 	fees := make(boltz.FeeEstimations)
+	var err error
 	fees[boltz.CurrencyLiquid], err = nursery.onchain.EstimateFee(boltz.CurrencyLiquid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fees[boltz.CurrencyBtc], err = nursery.onchain.EstimateFee(boltz.CurrencyBtc)
+	if err != nil {
+		return nil, err
+	}
+	return fees, nil
+}
+
+func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {
+	fees, err := nursery.GetFeeEstimations()
 	if err != nil {
 		return err
 	}

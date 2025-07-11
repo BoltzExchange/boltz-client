@@ -8,3 +8,7 @@
 [submodule "gdk"]
 	path = gdk
 	url = https://github.com/Blockstream/gdk
+[submodule "lwk"]
+	path = lwk
+	url = https://github.com/Blockstream/lwk
+	branch = main
