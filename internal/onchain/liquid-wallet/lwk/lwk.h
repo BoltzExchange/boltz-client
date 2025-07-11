@@ -649,6 +649,11 @@ void* uniffi_lwk_fn_clone_esploraclient(void* ptr, RustCallStatus *out_status
 void uniffi_lwk_fn_free_esploraclient(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ESPLORACLIENT_FROM_BUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ESPLORACLIENT_FROM_BUILDER
+void* uniffi_lwk_fn_constructor_esploraclient_from_builder(RustBuffer builder, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ESPLORACLIENT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ESPLORACLIENT_NEW
 void* uniffi_lwk_fn_constructor_esploraclient_new(RustBuffer url, void* network, RustCallStatus *out_status
@@ -3053,6 +3058,12 @@ uint16_t uniffi_lwk_checksum_constructor_contract_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ELECTRUMCLIENT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ELECTRUMCLIENT_NEW
 uint16_t uniffi_lwk_checksum_constructor_electrumclient_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ESPLORACLIENT_FROM_BUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ESPLORACLIENT_FROM_BUILDER
+uint16_t uniffi_lwk_checksum_constructor_esploraclient_from_builder(void
     
 );
 #endif

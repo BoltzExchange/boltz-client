@@ -1773,6 +1773,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_esploraclient_from_builder()
+		})
+		if checksum != 10195 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_esploraclient_from_builder: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_esploraclient_new()
 		})
 		if checksum != 42490 {
@@ -3175,6 +3184,18 @@ type EsploraClient struct {
 func NewEsploraClient(url string, network *Network) (*EsploraClient, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_esploraclient_new(FfiConverterStringINSTANCE.Lower(url), FfiConverterNetworkINSTANCE.Lower(network), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *EsploraClient
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterEsploraClientINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func EsploraClientFromBuilder(builder EsploraClientBuilder) (*EsploraClient, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_esploraclient_from_builder(FfiConverterEsploraClientBuilderINSTANCE.Lower(builder), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *EsploraClient
@@ -7280,6 +7301,58 @@ func (c FfiConverterWolletDescriptor) Write(writer io.Writer, value *WolletDescr
 type FfiDestroyerWolletDescriptor struct{}
 
 func (_ FfiDestroyerWolletDescriptor) Destroy(value *WolletDescriptor) {
+	value.Destroy()
+}
+
+type EsploraClientBuilder struct {
+	BaseUrl     string
+	Network     *Network
+	Waterfalls  bool
+	Concurrency *uint32
+	Timeout     *uint8
+}
+
+func (r *EsploraClientBuilder) Destroy() {
+	FfiDestroyerString{}.Destroy(r.BaseUrl)
+	FfiDestroyerNetwork{}.Destroy(r.Network)
+	FfiDestroyerBool{}.Destroy(r.Waterfalls)
+	FfiDestroyerOptionalUint32{}.Destroy(r.Concurrency)
+	FfiDestroyerOptionalUint8{}.Destroy(r.Timeout)
+}
+
+type FfiConverterEsploraClientBuilder struct{}
+
+var FfiConverterEsploraClientBuilderINSTANCE = FfiConverterEsploraClientBuilder{}
+
+func (c FfiConverterEsploraClientBuilder) Lift(rb RustBufferI) EsploraClientBuilder {
+	return LiftFromRustBuffer[EsploraClientBuilder](c, rb)
+}
+
+func (c FfiConverterEsploraClientBuilder) Read(reader io.Reader) EsploraClientBuilder {
+	return EsploraClientBuilder{
+		FfiConverterStringINSTANCE.Read(reader),
+		FfiConverterNetworkINSTANCE.Read(reader),
+		FfiConverterBoolINSTANCE.Read(reader),
+		FfiConverterOptionalUint32INSTANCE.Read(reader),
+		FfiConverterOptionalUint8INSTANCE.Read(reader),
+	}
+}
+
+func (c FfiConverterEsploraClientBuilder) Lower(value EsploraClientBuilder) C.RustBuffer {
+	return LowerIntoRustBuffer[EsploraClientBuilder](c, value)
+}
+
+func (c FfiConverterEsploraClientBuilder) Write(writer io.Writer, value EsploraClientBuilder) {
+	FfiConverterStringINSTANCE.Write(writer, value.BaseUrl)
+	FfiConverterNetworkINSTANCE.Write(writer, value.Network)
+	FfiConverterBoolINSTANCE.Write(writer, value.Waterfalls)
+	FfiConverterOptionalUint32INSTANCE.Write(writer, value.Concurrency)
+	FfiConverterOptionalUint8INSTANCE.Write(writer, value.Timeout)
+}
+
+type FfiDestroyerEsploraClientBuilder struct{}
+
+func (_ FfiDestroyerEsploraClientBuilder) Destroy(value EsploraClientBuilder) {
 	value.Destroy()
 }
 
