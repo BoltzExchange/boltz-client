@@ -64,6 +64,9 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 }
 
 func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
+	if err := wallet.Sync(); err != nil {
+		return err
+	}
 	balance, err := wallet.GetBalance()
 	if err != nil {
 		return err

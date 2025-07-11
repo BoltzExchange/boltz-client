@@ -86,38 +86,6 @@ func TestWallet_Funded(t *testing.T) {
 	fundedWallet := newWallet(t, defaultBackend(t), test.WalletCredentials(boltz.CurrencyLiquid))
 	require.NoError(t, test.FundWallet(boltz.CurrencyLiquid, fundedWallet))
 
-	t.Run("SendToAddress", func(t *testing.T) {
-		address := test.GetNewAddress(test.LiquidCli)
-		amount := int64(10000)
-		txId, err := fundedWallet.SendToAddress(onchain.WalletSendArgs{
-			Address:     address,
-			Amount:      uint64(amount),
-			SatPerVbyte: 1,
-			SendAll:     false,
-		})
-		require.NoError(t, err)
-		require.NotEmpty(t, txId)
-		test.MineBlock()
-
-		require.Eventually(t, func() bool {
-			transactions, err := fundedWallet.GetTransactions(0, 0)
-			require.NoError(t, err)
-			require.NotNil(t, transactions)
-			for _, tx := range transactions {
-				if tx.Id == txId {
-					// TODO: fix this
-					//require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
-					//return o.Address == address
-					//}))
-					fee := int64(tx.Outputs[0].Amount)
-					require.Equal(t, -amount-fee, tx.BalanceChange)
-					return true
-				}
-			}
-			return false
-		}, 5*syncInterval, syncInterval/2)
-	})
-
 	t.Run("SendFee", func(t *testing.T) {
 		address := test.GetNewAddress(test.LiquidCli)
 		amount, fee, err := fundedWallet.GetSendFee(onchain.WalletSendArgs{
@@ -130,6 +98,67 @@ func TestWallet_Funded(t *testing.T) {
 		balance, err := fundedWallet.GetBalance()
 		require.NoError(t, err)
 		require.Equal(t, balance.Total, amount+fee)
+	})
+
+	t.Run("SendToAddress", func(t *testing.T) {
+		address := test.GetNewAddress(test.LiquidCli)
+
+		t.Run("Amount", func(t *testing.T) {
+			amount := int64(10000)
+			args := onchain.WalletSendArgs{
+				Address:     address,
+				Amount:      uint64(amount),
+				SatPerVbyte: 1,
+				SendAll:     false,
+			}
+			txId, err := fundedWallet.SendToAddress(args)
+			require.NoError(t, err)
+			require.NotEmpty(t, txId)
+
+			test.MineBlock()
+
+			require.Eventually(t, func() bool {
+				transactions, err := fundedWallet.GetTransactions(0, 0)
+				require.NoError(t, err)
+				require.NotNil(t, transactions)
+				for _, tx := range transactions {
+					if tx.Id == txId {
+						// TODO: fix this
+						//require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
+						//return o.Address == address
+						//}))
+						fee := int64(tx.Outputs[0].Amount)
+						require.Equal(t, -amount-fee, tx.BalanceChange)
+						return true
+					}
+				}
+				return false
+			}, 5*syncInterval, syncInterval/2)
+		})
+
+		t.Run("All", func(t *testing.T) {
+			args := onchain.WalletSendArgs{
+				Address:     address,
+				SatPerVbyte: 1,
+				SendAll:     true,
+			}
+
+			txId, err := fundedWallet.SendToAddress(args)
+			require.NoError(t, err)
+			require.NotEmpty(t, txId)
+
+			// fails because of spent outputs map
+			_, err = fundedWallet.SendToAddress(args)
+			require.Error(t, err)
+
+			require.NoError(t, fundedWallet.Sync())
+
+			balance, err := fundedWallet.GetBalance()
+			require.NoError(t, err)
+			require.Zero(t, balance.Total)
+
+			test.MineBlock()
+		})
 	})
 }
 

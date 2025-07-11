@@ -26,12 +26,14 @@ type Persister interface {
 
 type Wallet struct {
 	*lwk.Wollet
-	signer     *lwk.Signer
-	descriptor *lwk.WolletDescriptor
-	backend    *BlockchainBackend
-	info       onchain.WalletInfo
-	syncCancel context.CancelFunc
-	syncWait   sync.WaitGroup
+	signer           *lwk.Signer
+	descriptor       *lwk.WolletDescriptor
+	backend          *BlockchainBackend
+	info             onchain.WalletInfo
+	syncCancel       context.CancelFunc
+	syncWait         sync.WaitGroup
+	spentOutputs     map[string]bool
+	spentOutputsLock sync.RWMutex
 }
 
 type EsploraConfig struct {
@@ -181,8 +183,9 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 	}
 
 	result := &Wallet{
-		backend: backend,
-		info:    credentials.WalletInfo,
+		backend:      backend,
+		info:         credentials.WalletInfo,
+		spentOutputs: make(map[string]bool),
 	}
 
 	if credentials.CoreDescriptor == "" {
@@ -256,6 +259,9 @@ func (w *Wallet) Sync() error {
 		if err := w.autoConsolidate(); err != nil {
 			return fmt.Errorf("auto consolidate: %w", err)
 		}
+		w.spentOutputsLock.Lock()
+		w.spentOutputs = make(map[string]bool)
+		w.spentOutputsLock.Unlock()
 	}
 	return nil
 }
@@ -415,6 +421,26 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 	if err != nil {
 		return nil, err
 	}
+
+	utxos, err := w.Utxos()
+	if err != nil {
+		return nil, err
+	}
+
+	var outpoints []*lwk.OutPoint
+	for _, output := range utxos {
+		outpoint := output.Outpoint()
+		if !w.spentOutputs[outpoint.String()] {
+			outpoints = append(outpoints, outpoint)
+		} else {
+			logger.Debugf("Ignoring outpoint %s since it is marked as spent", outpoint.String())
+		}
+	}
+
+	if err := builder.SetWalletUtxos(outpoints); err != nil {
+		return nil, fmt.Errorf("set wallet utxos: %w", err)
+	}
+
 	if args.SendAll {
 		if err := builder.DrainLbtcTo(addr); err != nil {
 			return nil, fmt.Errorf("drain lbtc: %w", err)
@@ -456,15 +482,28 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 }
 
 func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
+	w.spentOutputsLock.Lock()
+	defer w.spentOutputsLock.Unlock()
 	tx, err := w.createTransaction(args)
 	if err != nil {
 		return "", err
 	}
 
-	return w.backend.BroadcastTransaction(tx)
+	txId, err := w.backend.BroadcastTransaction(tx)
+	if err != nil {
+		return "", err
+	}
+
+	for _, input := range tx.Inputs() {
+		w.spentOutputs[input.Outpoint().String()] = true
+	}
+
+	return txId, nil
 }
 
 func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
+	w.spentOutputsLock.RLock()
+	defer w.spentOutputsLock.RUnlock()
 	tx, err := w.createTransaction(args)
 	if err != nil {
 		return 0, 0, err
