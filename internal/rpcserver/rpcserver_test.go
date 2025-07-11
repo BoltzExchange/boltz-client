@@ -1845,7 +1845,7 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 				mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
 					return confirmed, nil
 				})
-				mockTx.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(currency.Tx.BroadcastTransaction)
+				mockTx.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(currency.Tx.BroadcastTransaction).Maybe()
 				currency.Tx = mockTx
 			}
 
@@ -1880,10 +1880,15 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 			require.Empty(t, swap.Id)
 
 			_, statusStream := swapStream(t, client, reverseSwap.Id)
-			// it only gets to mempool state on liquid since its using gdk - btc uses the node wallet
 			if !tc.zeroconf {
+				if tc.currency == boltzrpc.Currency_BTC {
+					// for btc, we only check on new blocks, so we mine one here,
+					// but the mocked tx provider says that the tx isn't confirmed yet
+					test.MineBlock()
+				}
 				statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionDirectMempool)
 			}
+
 			confirmed = true
 			test.MineBlock()
 			info := statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionDirect)
