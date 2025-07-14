@@ -152,10 +152,15 @@ func TestWallet_Funded(t *testing.T) {
 			_, err = fundedWallet.SendToAddress(args)
 			require.Error(t, err)
 
+			// zero immediately after sending because of spent outputs map
+			balance, err := fundedWallet.GetBalance()
+			require.NoError(t, err)
+			require.Zero(t, balance.Total)
+
 			require.NoError(t, fundedWallet.Sync())
 			require.Empty(t, fundedWallet.spentOutputs)
 
-			balance, err := fundedWallet.GetBalance()
+			balance, err = fundedWallet.GetBalance()
 			require.NoError(t, err)
 			require.Zero(t, balance.Total)
 

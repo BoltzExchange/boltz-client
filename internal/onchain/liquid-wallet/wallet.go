@@ -313,6 +313,8 @@ func (w *Wallet) GetWalletInfo() onchain.WalletInfo {
 }
 
 func (w *Wallet) GetBalance() (*onchain.Balance, error) {
+	w.spentOutputsLock.RLock()
+	defer w.spentOutputsLock.RUnlock()
 	var result onchain.Balance
 	utxos, err := w.Utxos()
 	if err != nil {
@@ -320,7 +322,7 @@ func (w *Wallet) GetBalance() (*onchain.Balance, error) {
 	}
 	assetId := w.assetId()
 	for _, utxo := range utxos {
-		if utxo.Unblinded().Asset() == assetId {
+		if utxo.Unblinded().Asset() == assetId && !w.spentOutputs[utxo.Outpoint().String()] {
 			value := utxo.Unblinded().Value()
 			if utxo.Height() != nil {
 				result.Confirmed += value
