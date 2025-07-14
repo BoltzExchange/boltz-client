@@ -4,6 +4,7 @@ package liquid_wallet
 
 import (
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/vulpemventures/go-elements/address"
 )
 
 const syncInterval = 1 * time.Second
@@ -100,12 +102,12 @@ func TestWallet_Funded(t *testing.T) {
 	})
 
 	t.Run("SendToAddress", func(t *testing.T) {
-		address := test.GetNewAddress(test.LiquidCli)
+		toAddress := test.GetNewAddress(test.LiquidCli)
 
 		t.Run("Amount", func(t *testing.T) {
 			amount := int64(10000)
 			args := onchain.WalletSendArgs{
-				Address:     address,
+				Address:     toAddress,
 				Amount:      uint64(amount),
 				SatPerVbyte: 1,
 				SendAll:     false,
@@ -123,10 +125,11 @@ func TestWallet_Funded(t *testing.T) {
 				require.NotNil(t, transactions)
 				for _, tx := range transactions {
 					if tx.Id == txId {
-						// TODO: fix this
-						//require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
-						//return o.Address == address
-						//}))
+						addressInfo, err := address.FromConfidential(toAddress)
+						require.NoError(t, err)
+						require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
+							return o.Address == addressInfo.Address
+						}))
 						fee := int64(tx.Outputs[0].Amount)
 						require.Equal(t, -amount-fee, tx.BalanceChange)
 						return true
@@ -138,7 +141,7 @@ func TestWallet_Funded(t *testing.T) {
 
 		t.Run("All", func(t *testing.T) {
 			args := onchain.WalletSendArgs{
-				Address:     address,
+				Address:     toAddress,
 				SatPerVbyte: 1,
 				SendAll:     true,
 			}
