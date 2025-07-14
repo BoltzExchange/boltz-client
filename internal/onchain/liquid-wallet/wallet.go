@@ -49,6 +49,7 @@ type Config struct {
 	SyncInterval           time.Duration
 	ConsolidationThreshold uint64
 	TxProvider             onchain.TxProvider
+	FeeProvider            onchain.FeeProvider
 	Persister              Persister
 }
 
@@ -278,10 +279,13 @@ func (w *Wallet) autoConsolidate() error {
 		if err != nil {
 			return fmt.Errorf("new address: %w", err)
 		}
+		feeRate, err := w.backend.cfg.FeeProvider.EstimateFee()
+		if err != nil {
+			return fmt.Errorf("estimate fee: %w", err)
+		}
 		txId, err := w.SendToAddress(onchain.WalletSendArgs{
-			SendAll: true,
-			// TODO: proper fee estimation
-			SatPerVbyte: 0.1,
+			SendAll:     true,
+			SatPerVbyte: feeRate,
 			Address:     address,
 		})
 		if err != nil {

@@ -17,6 +17,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type RegtestFeeProvider struct{}
+
+func (p *RegtestFeeProvider) EstimateFee() (float64, error) {
+	return 0.1, nil
+}
+
 const syncInterval = 1 * time.Second
 
 func dbPersister(t *testing.T) Persister {
@@ -44,6 +50,7 @@ func defaultConfig(t *testing.T) Config {
 		DataDir:      "test-data",
 		SyncInterval: syncInterval,
 		Persister:    dbPersister(t),
+		FeeProvider:  &RegtestFeeProvider{},
 	}
 }
 
