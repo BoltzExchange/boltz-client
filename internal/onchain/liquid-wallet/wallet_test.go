@@ -130,7 +130,7 @@ func TestWallet_Funded(t *testing.T) {
 						require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
 							return o.Address == addressInfo.Address
 						}))
-						fee := int64(tx.Outputs[0].Amount)
+						fee := int64(tx.Outputs[len(tx.Outputs)-1].Amount)
 						require.Equal(t, -amount-fee, tx.BalanceChange)
 						return true
 					}
