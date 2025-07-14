@@ -396,6 +396,9 @@ func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransac
 					result.IsOurAddress = true
 				}
 			}
+			if asset := output.Asset(); asset != nil && *asset != w.assetId() {
+				result.Amount = 0
+			}
 			out.Outputs = append(out.Outputs, result)
 		}
 		result = append(result, out)
