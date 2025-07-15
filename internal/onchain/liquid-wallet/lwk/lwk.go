@@ -1026,6 +1026,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_script_is_provably_unspendable()
+		})
+		if checksum != 33321 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_script_is_provably_unspendable: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_secretkey_bytes()
 		})
 		if checksum != 44270 {
@@ -1305,6 +1314,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txout_unconfidential_address()
+		})
+		if checksum != 3790 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txout_unconfidential_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txout_value()
 		})
 		if checksum != 6745 {
@@ -1332,6 +1350,24 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txoutsecrets_asset_commitment()
+		})
+		if checksum != 16600 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_asset_commitment: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txoutsecrets_is_explicit()
+		})
+		if checksum != 10268 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_is_explicit: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_value()
 		})
 		if checksum != 64117 {
@@ -1346,6 +1382,15 @@ func uniffiCheckChecksums() {
 		if checksum != 4095 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_value_bf: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txoutsecrets_value_commitment()
+		})
+		if checksum != 41762 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_value_commitment: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1607,6 +1652,15 @@ func uniffiCheckChecksums() {
 		if checksum != 25068 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_descriptor: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_extract_wallet_utxos()
+		})
+		if checksum != 43538 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_extract_wallet_utxos: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -5089,6 +5143,7 @@ func (_ FfiDestroyerRecipient) Destroy(value *Recipient) {
 type ScriptInterface interface {
 	Asm() string
 	Bytes() []byte
+	IsProvablyUnspendable() bool
 }
 type Script struct {
 	ffiObject FfiObject
@@ -5126,6 +5181,15 @@ func (_self *Script) Bytes() []byte {
 			inner: C.uniffi_lwk_fn_method_script_bytes(
 				_pointer, _uniffiStatus),
 		}
+	}))
+}
+
+func (_self *Script) IsProvablyUnspendable() bool {
+	_pointer := _self.ffiObject.incrementPointer("*Script")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_script_is_provably_unspendable(
+			_pointer, _uniffiStatus)
 	}))
 }
 
@@ -5945,6 +6009,8 @@ type TxOutInterface interface {
 	ScriptPubkey() *Script
 	// Unblind the output
 	Unblind(secretKey *SecretKey) (*TxOutSecrets, error)
+	// Unconfidential address
+	UnconfidentialAddress(network *Network) **Address
 	// If explicit returns the value, if confidential [None]
 	Value() *uint64
 }
@@ -6010,6 +6076,18 @@ func (_self *TxOut) Unblind(secretKey *SecretKey) (*TxOutSecrets, error) {
 	}
 }
 
+// Unconfidential address
+func (_self *TxOut) UnconfidentialAddress(network *Network) **Address {
+	_pointer := _self.ffiObject.incrementPointer("*TxOut")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalAddressINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_txout_unconfidential_address(
+				_pointer, FfiConverterNetworkINSTANCE.Lower(network), _uniffiStatus),
+		}
+	}))
+}
+
 // If explicit returns the value, if confidential [None]
 func (_self *TxOut) Value() *uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*TxOut")
@@ -6073,8 +6151,17 @@ func (_ FfiDestroyerTxOut) Destroy(value *TxOut) {
 type TxOutSecretsInterface interface {
 	Asset() AssetId
 	AssetBf() Hex
+	// Get the asset commitment
+	//
+	// If the output is explicit, returns the empty string
+	AssetCommitment() Hex
+	IsExplicit() bool
 	Value() uint64
 	ValueBf() Hex
+	// Get the value commitment
+	//
+	// If the output is explicit, returns the empty string
+	ValueCommitment() Hex
 }
 type TxOutSecrets struct {
 	ffiObject FfiObject
@@ -6102,6 +6189,29 @@ func (_self *TxOutSecrets) AssetBf() Hex {
 	}))
 }
 
+// Get the asset commitment
+//
+// If the output is explicit, returns the empty string
+func (_self *TxOutSecrets) AssetCommitment() Hex {
+	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_txoutsecrets_asset_commitment(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (_self *TxOutSecrets) IsExplicit() bool {
+	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_txoutsecrets_is_explicit(
+			_pointer, _uniffiStatus)
+	}))
+}
+
 func (_self *TxOutSecrets) Value() uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
@@ -6117,6 +6227,20 @@ func (_self *TxOutSecrets) ValueBf() Hex {
 	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_txoutsecrets_value_bf(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Get the value commitment
+//
+// If the output is explicit, returns the empty string
+func (_self *TxOutSecrets) ValueCommitment() Hex {
+	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_txoutsecrets_value_commitment(
 				_pointer, _uniffiStatus),
 		}
 	}))
@@ -6892,6 +7016,8 @@ type WolletInterface interface {
 	ApplyUpdate(update *Update) error
 	Balance() (map[AssetId]uint64, error)
 	Descriptor() (*WolletDescriptor, error)
+	// Extract the wallet UTXOs that a PSET is creating
+	ExtractWalletUtxos(pset *Pset) ([]*ExternalUtxo, error)
 	Finalize(pset *Pset) (*Pset, error)
 	PsetDetails(pset *Pset) (*PsetDetails, error)
 	Transactions() ([]*WalletTx, error)
@@ -6994,6 +7120,24 @@ func (_self *Wollet) Descriptor() (*WolletDescriptor, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterWolletDescriptorINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Extract the wallet UTXOs that a PSET is creating
+func (_self *Wollet) ExtractWalletUtxos(pset *Pset) ([]*ExternalUtxo, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_wollet_extract_wallet_utxos(
+				_pointer, FfiConverterPsetINSTANCE.Lower(pset), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []*ExternalUtxo
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceExternalUtxoINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 

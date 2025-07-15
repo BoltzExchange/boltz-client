@@ -374,11 +374,6 @@ func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransac
 			Id:              r.Tx().Txid().String(),
 			BalanceChange:   r.Balance()[w.assetId()],
 			IsConsolidation: r.Type() == "redeposit",
-			Outputs: []onchain.TransactionOutput{
-				{
-					Amount: r.Fee(),
-				},
-			},
 		}
 		if timeStamp := r.Timestamp(); timeStamp != nil {
 			out.Timestamp = time.Unix(int64(*timeStamp), 0)
@@ -387,17 +382,31 @@ func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransac
 			out.BlockHeight = *height
 		}
 
-		for _, maybeOutput := range r.Outputs() {
-			if maybeOutput != nil {
-				output := *maybeOutput
-				result := onchain.TransactionOutput{
-					Address: output.Address().String(),
-					Amount:  output.Unblinded().Value(),
+		outputs := r.Outputs()
+		for i, output := range r.Tx().Outputs() {
+			maybeOutput := outputs[i]
+			result := onchain.TransactionOutput{}
+			if output.IsFee() {
+				result.Amount = r.Fee()
+			} else {
+				if maybeOutput == nil {
+					if address := output.UnconfidentialAddress(convertNetwork(w.backend.cfg.Network)); address != nil {
+						result.Address = (*address).String()
+					}
+					if amount := output.Value(); amount != nil {
+						result.Amount = *amount
+					}
+				} else {
+					result.Address = (*maybeOutput).Address().String()
+					result.Amount = (*maybeOutput).Unblinded().Value()
+					result.IsOurAddress = true
 				}
-				out.Outputs = append(out.Outputs, result)
 			}
+			if asset := output.Asset(); asset != nil && *asset != w.assetId() {
+				result.Amount = 0
+			}
+			out.Outputs = append(out.Outputs, result)
 		}
-
 		result = append(result, out)
 	}
 	return result, nil

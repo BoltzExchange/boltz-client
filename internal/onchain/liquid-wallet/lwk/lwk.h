@@ -1198,6 +1198,11 @@ RustBuffer uniffi_lwk_fn_method_script_asm(void* ptr, RustCallStatus *out_status
 RustBuffer uniffi_lwk_fn_method_script_bytes(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
+int8_t uniffi_lwk_fn_method_script_is_provably_unspendable(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_UNIFFI_TRAIT_DISPLAY
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_UNIFFI_TRAIT_DISPLAY
 RustBuffer uniffi_lwk_fn_method_script_uniffi_trait_display(void* ptr, RustCallStatus *out_status
@@ -1458,6 +1463,11 @@ void* uniffi_lwk_fn_method_txout_script_pubkey(void* ptr, RustCallStatus *out_st
 void* uniffi_lwk_fn_method_txout_unblind(void* ptr, void* secret_key, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUT_UNCONFIDENTIAL_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUT_UNCONFIDENTIAL_ADDRESS
+RustBuffer uniffi_lwk_fn_method_txout_unconfidential_address(void* ptr, void* network, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUT_VALUE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUT_VALUE
 RustBuffer uniffi_lwk_fn_method_txout_value(void* ptr, RustCallStatus *out_status
@@ -1483,6 +1493,16 @@ RustBuffer uniffi_lwk_fn_method_txoutsecrets_asset(void* ptr, RustCallStatus *ou
 RustBuffer uniffi_lwk_fn_method_txoutsecrets_asset_bf(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_ASSET_COMMITMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_ASSET_COMMITMENT
+RustBuffer uniffi_lwk_fn_method_txoutsecrets_asset_commitment(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_IS_EXPLICIT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_IS_EXPLICIT
+int8_t uniffi_lwk_fn_method_txoutsecrets_is_explicit(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_VALUE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_VALUE
 uint64_t uniffi_lwk_fn_method_txoutsecrets_value(void* ptr, RustCallStatus *out_status
@@ -1491,6 +1511,11 @@ uint64_t uniffi_lwk_fn_method_txoutsecrets_value(void* ptr, RustCallStatus *out_
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_VALUE_BF
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_VALUE_BF
 RustBuffer uniffi_lwk_fn_method_txoutsecrets_value_bf(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_VALUE_COMMITMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUTSECRETS_VALUE_COMMITMENT
+RustBuffer uniffi_lwk_fn_method_txoutsecrets_value_commitment(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_TXID
@@ -1751,6 +1776,11 @@ RustBuffer uniffi_lwk_fn_method_wollet_balance(void* ptr, RustCallStatus *out_st
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_DESCRIPTOR
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_DESCRIPTOR
 void* uniffi_lwk_fn_method_wollet_descriptor(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
+RustBuffer uniffi_lwk_fn_method_wollet_extract_wallet_utxos(void* ptr, void* pset, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_FINALIZE
@@ -2563,6 +2593,12 @@ uint16_t uniffi_lwk_checksum_method_script_bytes(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
+uint16_t uniffi_lwk_checksum_method_script_is_provably_unspendable(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SECRETKEY_BYTES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SECRETKEY_BYTES
 uint16_t uniffi_lwk_checksum_method_secretkey_bytes(void
@@ -2749,6 +2785,12 @@ uint16_t uniffi_lwk_checksum_method_txout_unblind(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUT_UNCONFIDENTIAL_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUT_UNCONFIDENTIAL_ADDRESS
+uint16_t uniffi_lwk_checksum_method_txout_unconfidential_address(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUT_VALUE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUT_VALUE
 uint16_t uniffi_lwk_checksum_method_txout_value(void
@@ -2767,6 +2809,18 @@ uint16_t uniffi_lwk_checksum_method_txoutsecrets_asset_bf(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_ASSET_COMMITMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_ASSET_COMMITMENT
+uint16_t uniffi_lwk_checksum_method_txoutsecrets_asset_commitment(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_IS_EXPLICIT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_IS_EXPLICIT
+uint16_t uniffi_lwk_checksum_method_txoutsecrets_is_explicit(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_VALUE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_VALUE
 uint16_t uniffi_lwk_checksum_method_txoutsecrets_value(void
@@ -2776,6 +2830,12 @@ uint16_t uniffi_lwk_checksum_method_txoutsecrets_value(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_VALUE_BF
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_VALUE_BF
 uint16_t uniffi_lwk_checksum_method_txoutsecrets_value_bf(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_VALUE_COMMITMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXOUTSECRETS_VALUE_COMMITMENT
+uint16_t uniffi_lwk_checksum_method_txoutsecrets_value_commitment(void
     
 );
 #endif
@@ -2950,6 +3010,12 @@ uint16_t uniffi_lwk_checksum_method_wollet_balance(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_DESCRIPTOR
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_DESCRIPTOR
 uint16_t uniffi_lwk_checksum_method_wollet_descriptor(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
+uint16_t uniffi_lwk_checksum_method_wollet_extract_wallet_utxos(void
     
 );
 #endif
