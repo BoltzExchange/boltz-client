@@ -71,7 +71,7 @@ func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
 	if err != nil {
 		return err
 	}
-	if balance.Total > 0 {
+	if balance.Confirmed > 0 {
 		return nil
 	}
 

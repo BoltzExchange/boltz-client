@@ -96,16 +96,34 @@ func TestWallet_Funded(t *testing.T) {
 
 	t.Run("SendFee", func(t *testing.T) {
 		address := test.GetNewAddress(test.LiquidCli)
-		amount, fee, err := fundedWallet.GetSendFee(onchain.WalletSendArgs{
-			Address:     address,
-			SatPerVbyte: 1,
-			SendAll:     true,
-		})
-		require.NoError(t, err)
 
-		balance, err := fundedWallet.GetBalance()
-		require.NoError(t, err)
-		require.Equal(t, balance.Total, amount+fee)
+		t.Run("Amount", func(t *testing.T) {
+			amount := uint64(10000)
+			sendAmount, fee, err := fundedWallet.GetSendFee(onchain.WalletSendArgs{
+				Address:     address,
+				SatPerVbyte: 1,
+				Amount:      amount,
+			})
+			require.NoError(t, err)
+			require.Equal(t, sendAmount, amount)
+
+			balance, err := fundedWallet.GetBalance()
+			require.NoError(t, err)
+			require.Less(t, sendAmount+fee, balance.Total)
+		})
+
+		t.Run("SendAll", func(t *testing.T) {
+			amount, fee, err := fundedWallet.GetSendFee(onchain.WalletSendArgs{
+				Address:     address,
+				SatPerVbyte: 1,
+				SendAll:     true,
+			})
+			require.NoError(t, err)
+
+			balance, err := fundedWallet.GetBalance()
+			require.NoError(t, err)
+			require.Equal(t, balance.Total, amount+fee)
+		})
 	})
 
 	t.Run("SendToAddress", func(t *testing.T) {

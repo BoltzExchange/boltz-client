@@ -1262,7 +1262,8 @@ func TestAutoSwap(t *testing.T) {
 
 		recommendations, err = autoSwap.GetRecommendations()
 		require.NoError(t, err)
-		require.NotEmpty(t, recommendations.Chain[0].Swap.GetDismissedReasons())
+		require.Len(t, recommendations.Chain, 1)
+		require.Nil(t, recommendations.Chain[0].Swap)
 
 		require.Eventually(t, func() bool {
 			recommendations, err = autoSwap.GetRecommendations()

@@ -528,6 +528,7 @@ func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint6
 		return 0, 0, err
 	}
 
+	// we calculate the amount sent by first summing up all our own inputs and subtracting all our own outputs
 	for _, input := range tx.Inputs() {
 		for _, txo := range txos {
 			if txo.Outpoint().String() == input.Outpoint().String() {
@@ -538,6 +539,12 @@ func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint6
 	}
 
 	for _, output := range tx.Outputs() {
+		if key := w.descriptor.DeriveBlindingKey(output.ScriptPubkey()); key != nil {
+			secrets, err := output.Unblind(*key)
+			if err == nil {
+				send -= secrets.Value()
+			}
+		}
 		if output.IsFee() {
 			fee = *output.Value()
 			break
