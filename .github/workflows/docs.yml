@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [master]
+    paths:
+      - 'docs/**'
 
 permissions:
   contents: read
@@ -33,6 +35,9 @@ jobs:
         uses: actions/configure-pages@v4
       - name: Install dependencies
         run: npm ci
+        working-directory: ./docs
+      - name: Prettier check
+        run: npm run prettier:check
         working-directory: ./docs
       - name: Build with VitePress
         run: npm run docs:build
