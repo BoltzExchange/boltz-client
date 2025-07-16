@@ -2055,7 +2055,6 @@ func TestWalletSendReceive(t *testing.T) {
 				desc: "SendAll",
 				request: &boltzrpc.WalletSendRequest{
 					Address: "address",
-					Amount:  1000,
 					SendAll: &sendAll,
 				},
 				result: "txid",
@@ -2063,7 +2062,6 @@ func TestWalletSendReceive(t *testing.T) {
 				setup: func(mockWallet *onchainmock.MockWallet) {
 					mockWallet.EXPECT().SendToAddress(onchain.WalletSendArgs{
 						Address:     "address",
-						Amount:      1000,
 						SatPerVbyte: defaultEstimate,
 						SendAll:     sendAll,
 					}).Return("txid", nil)

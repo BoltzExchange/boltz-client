@@ -1,8 +1,14 @@
+---
+next:
+    text: "💰 Wallets"
+    link: "/wallets"
+---
+
 # 👋 Introduction
 
 Boltz Client connects to [CLN](https://github.com/ElementsProject/lightning/) or [LND](https://github.com/lightningnetwork/lnd/) nodes and allows for fully unattended channel rebalancing or accepting Lightning payments without running a node, using [Boltz API](https://docs.boltz.exchange/v/api). It is composed of `boltzcli` and `boltzd`.
 
-Design principles:
+## Design principles
 
 - CLI-first: fine-grained control and enhanced setup UX via `boltzcli`
 - CLN-first: first-class citizen support for [CLN](https://github.com/ElementsProject/lightning) in addition to [LND](https://github.com/lightningnetwork/lnd)
@@ -37,7 +43,7 @@ docker exec boltz-client boltzcli getinfo
 
 ### Building from source
 
-To build, [Go](https://go.dev/) version `1.21` or higher is required. Boltz Client also has C dependencies, which means a C compiler has to be installed to compile the daemon successfully.
+To build, you need [Go](https://go.dev/) ≥ 1.21, the Rust toolchain (including [cargo](https://doc.rust-lang.org/cargo/) and `rustc`), and a C compiler such as `gcc` for the native dependencies used by the daemon.
 
 Boltz Client depends on [GDK](https://github.com/Blockstream/gdk) by blockstream, which can be either dynamically or statically linked. The recommended way to build from source is linking dynamically as a static link requires compiling gdk as well.
 
