@@ -35,10 +35,14 @@ type Output struct {
 	Value uint64
 }
 
+type FeeProvider interface {
+	EstimateFee() (float64, error)
+}
+
 type BlockProvider interface {
+	FeeProvider
 	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
-	EstimateFee() (float64, error)
 	Disconnect()
 	GetUnspentOutputs(address string) ([]*Output, error)
 }

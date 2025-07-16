@@ -201,6 +201,68 @@ func (_c *MockWallet_GetBalance_Call) RunAndReturn(run func() (*onchain.Balance,
 	return _c
 }
 
+// GetOutputs provides a mock function for the type MockWallet
+func (_mock *MockWallet) GetOutputs(address string) ([]*onchain.Output, error) {
+	ret := _mock.Called(address)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOutputs")
+	}
+
+	var r0 []*onchain.Output
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(string) ([]*onchain.Output, error)); ok {
+		return returnFunc(address)
+	}
+	if returnFunc, ok := ret.Get(0).(func(string) []*onchain.Output); ok {
+		r0 = returnFunc(address)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*onchain.Output)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
+		r1 = returnFunc(address)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockWallet_GetOutputs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOutputs'
+type MockWallet_GetOutputs_Call struct {
+	*mock.Call
+}
+
+// GetOutputs is a helper method to define mock.On call
+//   - address string
+func (_e *MockWallet_Expecter) GetOutputs(address interface{}) *MockWallet_GetOutputs_Call {
+	return &MockWallet_GetOutputs_Call{Call: _e.mock.On("GetOutputs", address)}
+}
+
+func (_c *MockWallet_GetOutputs_Call) Run(run func(address string)) *MockWallet_GetOutputs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockWallet_GetOutputs_Call) Return(outputs []*onchain.Output, err error) *MockWallet_GetOutputs_Call {
+	_c.Call.Return(outputs, err)
+	return _c
+}
+
+func (_c *MockWallet_GetOutputs_Call) RunAndReturn(run func(address string) ([]*onchain.Output, error)) *MockWallet_GetOutputs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSendFee provides a mock function for the type MockWallet
 func (_mock *MockWallet) GetSendFee(args onchain.WalletSendArgs) (uint64, uint64, error) {
 	ret := _mock.Called(args)
@@ -532,6 +594,50 @@ func (_c *MockWallet_SendToAddress_Call) Return(s string, err error) *MockWallet
 }
 
 func (_c *MockWallet_SendToAddress_Call) RunAndReturn(run func(args onchain.WalletSendArgs) (string, error)) *MockWallet_SendToAddress_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Sync provides a mock function for the type MockWallet
+func (_mock *MockWallet) Sync() error {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Sync")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func() error); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockWallet_Sync_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sync'
+type MockWallet_Sync_Call struct {
+	*mock.Call
+}
+
+// Sync is a helper method to define mock.On call
+func (_e *MockWallet_Expecter) Sync() *MockWallet_Sync_Call {
+	return &MockWallet_Sync_Call{Call: _e.mock.On("Sync")}
+}
+
+func (_c *MockWallet_Sync_Call) Run(run func()) *MockWallet_Sync_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockWallet_Sync_Call) Return(err error) *MockWallet_Sync_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockWallet_Sync_Call) RunAndReturn(run func() error) *MockWallet_Sync_Call {
 	_c.Call.Return(run)
 	return _c
 }

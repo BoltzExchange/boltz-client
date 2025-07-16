@@ -3,6 +3,8 @@ package autoswap
 import (
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -12,7 +14,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"sync"
 )
 
 type ChainSwap = checks

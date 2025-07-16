@@ -1515,7 +1515,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `mnemonic` | [`string`](#string) | optional | only one of these is allowed to be present |
 | `xpub` | [`string`](#string) | optional |  |
 | `core_descriptor` | [`string`](#string) | optional |  |
-| `subaccount` | [`uint64`](#uint64) | optional | only used in combination with mnemonic |
+| `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** only used in combination with mnemonic |
 
 
 

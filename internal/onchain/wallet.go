@@ -8,6 +8,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
+const DefaultTransactionsLimit = 30
+
 type Balance struct {
 	Total       uint64
 	Confirmed   uint64
@@ -54,6 +56,8 @@ type Wallet interface {
 	GetTransactions(limit, offset uint64) ([]*WalletTransaction, error)
 	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
 	GetSendFee(args WalletSendArgs) (send uint64, fee uint64, err error)
+	GetOutputs(address string) ([]*Output, error)
+	Sync() error
 }
 
 func (info WalletInfo) InsufficientBalanceError(amount uint64) error {
@@ -71,6 +75,7 @@ type WalletCredentials struct {
 	Xpub           string
 	CoreDescriptor string
 	Salt           string
+	Legacy         bool
 }
 
 func (c *WalletCredentials) Encrypted() bool {

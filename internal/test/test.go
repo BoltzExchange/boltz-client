@@ -47,6 +47,7 @@ func ClearWalletDataDir() error {
 
 const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large"
 const WalletSubaccount = 0
+const WalletId = 1
 
 func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 	sub := uint64(WalletSubaccount)
@@ -55,10 +56,52 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 			Name:     "regtest",
 			Currency: currency,
 			TenantId: database.DefaultTenantId,
+			Id:       WalletId,
 		},
 		Mnemonic:   WalletMnemonic,
 		Subaccount: &sub,
 	}
+}
+
+func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
+	if err := wallet.Sync(); err != nil {
+		return err
+	}
+	balance, err := wallet.GetBalance()
+	if err != nil {
+		return err
+	}
+	if balance.Confirmed > 0 {
+		return nil
+	}
+
+	amount := uint64(10000000)
+	txes := 3
+	for i := 0; i < txes; i++ {
+		addr, err := wallet.NewAddress()
+		if err != nil {
+			return err
+		}
+		SendToAddress(GetCli(currency), addr, amount)
+	}
+	time.Sleep(1 * time.Second)
+	MineBlock()
+	ticker := time.NewTicker(1 * time.Second)
+	timeout := time.After(15 * time.Second)
+
+	for balance.Total < uint64(txes)*amount {
+		select {
+		case <-ticker.C:
+			balance, err = wallet.GetBalance()
+			if err != nil {
+				return err
+			}
+		case <-timeout:
+			return fmt.Errorf("timeout")
+		}
+	}
+	time.Sleep(1 * time.Second)
+	return nil
 }
 
 func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
@@ -89,41 +132,9 @@ func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 			if err != nil {
 				return err
 			}
-			time.Sleep(200 * time.Millisecond)
-			balance, err := wallet.GetBalance()
-			if err != nil {
-				return err
-			}
-			if balance.Confirmed == 0 {
-				addr, err := wallet.NewAddress()
-				if err != nil {
-					return err
-				}
-				// gdk takes a bit to sync, so make sure we have plenty of utxos available
-				for i := 0; i < 10; i++ {
-					if currency == boltz.CurrencyBtc {
-						SendToAddress(BtcCli, addr, 10000000)
-					} else {
-						SendToAddress(LiquidCli, addr, 10000000)
-					}
-				}
-				MineBlock()
-				ticker := time.NewTicker(1 * time.Second)
-				timeout := time.After(15 * time.Second)
-				for balance.Confirmed == 0 {
-					select {
-					case <-ticker.C:
-						balance, err = wallet.GetBalance()
-						if err != nil {
-							return err
-						}
-					case <-timeout:
-						return fmt.Errorf("timeout")
-					}
-				}
-			}
+			time.Sleep(2 * time.Second)
 			result[currency] = wallet
-			return nil
+			return FundWallet(currency, wallet)
 		})
 	}
 	return result, eg.Wait()
