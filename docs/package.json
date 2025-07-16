@@ -4,7 +4,9 @@
   "description": "--- cover: .gitbook/assets/boltz-client (1).png coverY: 0 ---",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "prettier": "prettier *.md *.json",
+    "prettier:write": "npm run prettier -- --write",
+    "prettier:check": "npm run prettier -- --check",
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
     "docs:preview": "vitepress preview"
@@ -12,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "prettier": "^3.6.2",
     "vitepress": "^1.6.3"
   }
 }

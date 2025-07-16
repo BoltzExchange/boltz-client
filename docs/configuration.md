@@ -1,6 +1,8 @@
 # 🎛 Configuration
 
-Boltz Client can be configured via a `TOML` config file or CLI arguments. By default, the config file is called `boltz.toml` and located in the data directory of Boltz Client (`~/.boltz` by default on Linux).
+Boltz Client can be configured via a `TOML` config file or CLI arguments. By
+default, the config file is called `boltz.toml` and located in the data
+directory of Boltz Client (`~/.boltz` by default on Linux).
 
 ## Example
 
