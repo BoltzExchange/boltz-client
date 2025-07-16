@@ -72,7 +72,7 @@ func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, e
 	return txId.String(), nil
 }
 
-const DefaultSyncInterval = 30 * time.Second
+const DefaultSyncInterval = 15 * time.Second
 const DefaultConsolidationThreshold = 200
 
 func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
