@@ -2349,7 +2349,7 @@ func (server *routedBoltzServer) SetSwapMnemonic(ctx context.Context, request *b
 	}
 
 	err = server.database.RunTx(func(tx *database.Transaction) error {
-		return tx.SetSwapMnemonic(&database.SwapMnemonic{Mnemonic: mnemonic})
+		return tx.SetSwapMnemonic(mnemonic)
 	})
 	if err != nil {
 		return nil, err
@@ -2466,20 +2466,17 @@ func (server *routedBoltzServer) newKeys() (*btcec.PrivateKey, *btcec.PublicKey,
 	defer server.newKeyLock.Unlock()
 
 	var privateKey *btcec.PrivateKey
-	if err := server.database.RunTx(func(tx *database.Transaction) (err error) {
-		mnemonic, err := tx.GetSwapMnemonic()
-		if err != nil {
-			return status.Errorf(codes.FailedPrecondition, "swap mnemonic not set")
-		}
+	mnemonic, err := server.database.GetSwapMnemonic()
+	if err != nil {
+		return nil, nil, status.Errorf(codes.FailedPrecondition, "swap mnemonic not set")
+	}
 
-		privateKey, err = boltz.DeriveKey(mnemonic.Mnemonic, mnemonic.LastKeyIndex, server.network.Btc)
-		if err != nil {
-			return err
-		}
+	privateKey, err = boltz.DeriveKey(mnemonic.Mnemonic, mnemonic.LastKeyIndex, server.network.Btc)
+	if err != nil {
+		return nil, nil, err
+	}
 
-		mnemonic.LastKeyIndex++
-		return tx.SetSwapMnemonic(mnemonic)
-	}); err != nil {
+	if err := server.database.IncrementSwapMnemonicKey(mnemonic.Mnemonic); err != nil {
 		return nil, nil, err
 	}
 	return privateKey, privateKey.PubKey(), nil

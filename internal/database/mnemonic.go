@@ -15,11 +15,16 @@ func (db *Database) GetSwapMnemonic() (*SwapMnemonic, error) {
 	return &mnemonic, nil
 }
 
-func (tx *Transaction) SetSwapMnemonic(mnemonic *SwapMnemonic) error {
+func (db *Database) IncrementSwapMnemonicKey(mnemonic string) error {
+	_, err := db.Exec("UPDATE swapMnemonic SET lastKeyIndex = lastKeyIndex + 1 WHERE mnemonic = ?", mnemonic)
+	return err
+}
+
+func (tx *Transaction) SetSwapMnemonic(mnemonic string) error {
 	_, err := tx.Exec("DELETE FROM swapMnemonic")
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec("INSERT INTO swapMnemonic (mnemonic, lastKeyIndex) VALUES (?, ?)", mnemonic.Mnemonic, mnemonic.LastKeyIndex)
+	_, err = tx.Exec("INSERT INTO swapMnemonic (mnemonic) VALUES (?)", mnemonic)
 	return err
 }

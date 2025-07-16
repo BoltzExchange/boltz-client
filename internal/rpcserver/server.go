@@ -210,7 +210,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		}
 		logger.Info("Generated new swap mnemonic")
 		if err := server.database.RunTx(func(tx *database.Transaction) error {
-			return tx.SetSwapMnemonic(&database.SwapMnemonic{Mnemonic: mnemonic})
+			return tx.SetSwapMnemonic(mnemonic)
 		}); err != nil {
 			return err
 		}
