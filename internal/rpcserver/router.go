@@ -1419,7 +1419,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 		}
 		decryptedCredentials = append(decryptedCredentials, credentials)
 
-		logger.Infof("Creating new wallet %d", credentials.Id)
+		logger.Infof("Creating new wallet %s", credentials.WalletInfo)
 		imported, err = server.loginWallet(credentials)
 		if err != nil {
 			return fmt.Errorf("could not login: %w", err)
@@ -1860,7 +1860,7 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 	}
 	server.onchain.RemoveWallet(id)
 
-	logger.Debugf("Removed wallet %v", wallet)
+	logger.Infof("Removed wallet %s", wallet.GetWalletInfo())
 
 	return &boltzrpc.RemoveWalletResponse{}, nil
 }
