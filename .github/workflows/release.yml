@@ -9,7 +9,7 @@ jobs:
   build:
     name: Build binaries
 
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
 
     steps:
       - name: Check out code into the Go module directory
