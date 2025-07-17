@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
+	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet/lwk"
@@ -47,12 +48,15 @@ func defaultBackend(t *testing.T) *BlockchainBackend {
 }
 
 func defaultConfig(t *testing.T) Config {
+	txProvider, err := electrum.NewClient(onchain.RegtestElectrumConfig.Liquid)
+	require.NoError(t, err)
 	return Config{
 		Network:      boltz.Regtest,
 		DataDir:      "test-data",
 		SyncInterval: syncInterval,
 		Persister:    dbPersister(t),
 		FeeProvider:  &RegtestFeeProvider{},
+		TxProvider:   txProvider,
 	}
 }
 
