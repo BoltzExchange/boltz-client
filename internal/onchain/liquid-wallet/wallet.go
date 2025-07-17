@@ -97,15 +97,16 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 		}
 		backend.clients = append(backend.clients, client)
 	} else {
-		if cfg.Esplora == nil {
+		esplora := cfg.Esplora
+		if esplora == nil {
 			switch cfg.Network {
 			case boltz.Regtest:
-				cfg.Esplora = &EsploraConfig{
+				esplora = &EsploraConfig{
 					Url:       "http://localhost:3003",
 					Waterfall: false,
 				}
 			case boltz.MainNet:
-				cfg.Esplora = &EsploraConfig{
+				esplora = &EsploraConfig{
 					Url:       "https://esplora.bol.tz/liquid",
 					Waterfall: true,
 				}
@@ -113,24 +114,27 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 				return nil, errors.New("esplora is required")
 			}
 		}
-		logger.Infof("Using esplora client as liquid wallet backend: %s", cfg.Esplora.Url)
+		logger.Infof("Using esplora client as liquid wallet backend: %s", esplora.Url)
 		concurrency := uint32(32)
 		client, err := lwk.EsploraClientFromBuilder(lwk.EsploraClientBuilder{
-			BaseUrl:     cfg.Esplora.Url,
+			BaseUrl:     esplora.Url,
 			Network:     network,
-			Waterfalls:  cfg.Esplora.Waterfall,
+			Waterfalls:  esplora.Waterfall,
 			Concurrency: &concurrency,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("esplora client: %w", err)
 		}
 		backend.clients = append(backend.clients, client)
-	}
 
-	defaultElectrum, err := network.DefaultElectrumClient()
-	if err == nil {
-		logger.Infof("Adding default electrum client liquid backend as backup")
-		backend.clients = append(backend.clients, defaultElectrum)
+		// only add the default electrum client if no custom esplora is configured
+		if cfg.Esplora == nil {
+			defaultElectrum, err := network.DefaultElectrumClient()
+			if err == nil {
+				logger.Infof("Adding default electrum client liquid backend as backup")
+				backend.clients = append(backend.clients, defaultElectrum)
+			}
+		}
 	}
 
 	return backend, nil
