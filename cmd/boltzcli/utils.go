@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -86,12 +85,6 @@ func requireNArgs(n int, action cli.ActionFunc) cli.ActionFunc {
 	}
 }
 
-func checkName(name string) error {
-	if matched, err := regexp.MatchString("[^a-zA-Z\\d_-]", name); matched || err != nil {
-		return errors.New("wallet name must only contain alphabetic characters, numbers, hyphens, and underscores")
-	}
-	return nil
-}
 func printFees(fees *boltzrpc.SwapFees, amount uint64) {
 	fmt.Println("The fees for this service are:")
 	if amount == 0 {
