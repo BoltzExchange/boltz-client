@@ -1850,9 +1850,6 @@ func walletParams(ctx *cli.Context) (*boltzrpc.WalletParams, error) {
 
 func checkWalletName(ctx *cli.Context, name string) error {
 	client := getClient(ctx)
-	if err := checkName(name); err != nil {
-		return err
-	}
 	if _, err := client.GetWallet(name); err == nil {
 		return fmt.Errorf("wallet %s already exists", name)
 	}

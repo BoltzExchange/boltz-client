@@ -2443,8 +2443,8 @@ func checkName(name string) error {
 	if name == "" {
 		return errors.New("wallet name must not be empty")
 	}
-	if matched, err := regexp.MatchString("[^a-zA-Z\\d]", name); matched || err != nil {
-		return errors.New("wallet name must only contain alphabetic characters and numbers")
+	if matched, err := regexp.MatchString("[^a-zA-Z\\d_-]", name); matched || err != nil {
+		return errors.New("wallet name must only contain alphabetic characters, numbers, hyphens, and underscores")
 	}
 	return nil
 }
