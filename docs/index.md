@@ -67,8 +67,9 @@ blockstream, which can be either dynamically or statically linked. The
 recommended way to build from source is linking dynamically as a static link
 requires compiling gdk as well.
 
-Run `make build` to build the daemon and CLI. The binaries will be placed at the
-current path.
+First, initialise the required git submodules (e.g. `LWK`) with
+`git submodule update --init --recursive`, then build the daemon and CLI with
+`make build`. The binaries will be placed in the current directory.
 
 You can also run `make install` which will place the binaries into your `GOBIN`
 (`$HOME/go/bin` by default) directory.
