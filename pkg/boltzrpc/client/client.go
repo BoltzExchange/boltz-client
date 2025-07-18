@@ -194,3 +194,11 @@ func (boltz *Boltz) ListTenants() (*boltzrpc.ListTenantsResponse, error) {
 func (boltz *Boltz) BakeMacaroon(request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {
 	return boltz.Client.BakeMacaroon(boltz.Ctx, request)
 }
+
+func (boltz *Boltz) GetSwapMnemonic() (*boltzrpc.GetSwapMnemonicResponse, error) {
+	return boltz.Client.GetSwapMnemonic(boltz.Ctx, &boltzrpc.GetSwapMnemonicRequest{})
+}
+
+func (boltz *Boltz) SetSwapMnemonic(request *boltzrpc.SetSwapMnemonicRequest) (*boltzrpc.SetSwapMnemonicResponse, error) {
+	return boltz.Client.SetSwapMnemonic(boltz.Ctx, request)
+}

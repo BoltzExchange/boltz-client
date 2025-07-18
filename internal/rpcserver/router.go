@@ -73,6 +73,8 @@ type routedBoltzServer struct {
 
 	stop  chan bool
 	state serverState
+
+	newKeyLock sync.Mutex
 }
 
 func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func()) {
@@ -675,7 +677,7 @@ func (server *routedBoltzServer) checkMagicRoutingHint(decoded *lightning.Decode
 
 // TODO: custom refund address
 func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
-	privateKey, publicKey, err := newKeys()
+	privateKey, publicKey, err := server.newKeys()
 	if err != nil {
 		return nil, err
 	}
@@ -1013,7 +1015,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		return nil, err
 	}
 
-	privateKey, publicKey, err := newKeys()
+	privateKey, publicKey, err := server.newKeys()
 
 	if err != nil {
 		return nil, err
@@ -1182,12 +1184,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	tenantId := requireTenantId(ctx)
 
-	claimPrivateKey, claimPub, err := newKeys()
+	claimPrivateKey, claimPub, err := server.newKeys()
 	if err != nil {
 		return nil, err
 	}
 
-	refundPrivateKey, refundPub, err := newKeys()
+	refundPrivateKey, refundPub, err := server.newKeys()
 	if err != nil {
 		return nil, err
 	}
@@ -2312,6 +2314,51 @@ func (server *routedBoltzServer) ListTenants(ctx context.Context, request *boltz
 	return response, nil
 }
 
+func (server *routedBoltzServer) GetSwapMnemonic(ctx context.Context, request *boltzrpc.GetSwapMnemonicRequest) (*boltzrpc.GetSwapMnemonicResponse, error) {
+	swapMnemonic, err := server.database.GetSwapMnemonic()
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "no swap mnemonic created yet")
+		}
+		return nil, err
+	}
+
+	return &boltzrpc.GetSwapMnemonicResponse{Mnemonic: swapMnemonic.Mnemonic}, nil
+}
+
+func (server *routedBoltzServer) SetSwapMnemonic(ctx context.Context, request *boltzrpc.SetSwapMnemonicRequest) (*boltzrpc.SetSwapMnemonicResponse, error) {
+	server.newKeyLock.Lock()
+	defer server.newKeyLock.Unlock()
+
+	mnemonic := request.GetExisting()
+	if mnemonic == "" {
+		if !request.GetGenerate() {
+			return nil, status.Errorf(codes.InvalidArgument, "existing mnemonic or generate must be set")
+		}
+		var err error
+		mnemonic, err = wallet.GenerateMnemonic()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "could not generate mnemonic: %s", err.Error())
+		}
+	}
+
+	// Validate the mnemonic by trying to derive a key from it
+	_, err := boltz.DeriveKey(mnemonic, 0, server.network.Btc)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid mnemonic: %s", err)
+	}
+
+	err = server.database.RunTx(func(tx *database.Transaction) error {
+		return tx.SetSwapMnemonic(mnemonic)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info("Updated swap mnemonic")
+	return &boltzrpc.SetSwapMnemonicResponse{Mnemonic: mnemonic}, nil
+}
+
 func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, swap *database.Swap, reverseSwap *database.ReverseSwap, chainSwap *database.ChainSwap) (*boltzrpc.GetSwapInfoResponse, error) {
 	if tenantId := macaroons.TenantIdFromContext(ctx); tenantId != nil {
 		err := status.Error(codes.PermissionDenied, "tenant does not have permission to view this swap")
@@ -2414,16 +2461,25 @@ func calculateDepositLimit(limit uint64, fees *boltzrpc.Fees, isMin bool) uint64
 	return uint64(limitFloat) + uint64(fees.Miner.Normal)
 }
 
-func newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {
-	privateKey, err := btcec.NewPrivateKey()
+func (server *routedBoltzServer) newKeys() (*btcec.PrivateKey, *btcec.PublicKey, error) {
+	server.newKeyLock.Lock()
+	defer server.newKeyLock.Unlock()
 
+	var privateKey *btcec.PrivateKey
+	mnemonic, err := server.database.GetSwapMnemonic()
+	if err != nil {
+		return nil, nil, status.Errorf(codes.FailedPrecondition, "swap mnemonic not set")
+	}
+
+	privateKey, err = boltz.DeriveKey(mnemonic.Mnemonic, mnemonic.LastKeyIndex, server.network.Btc)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	publicKey := privateKey.PubKey()
-
-	return privateKey, publicKey, err
+	if err := server.database.IncrementSwapMnemonicKey(mnemonic.Mnemonic); err != nil {
+		return nil, nil, err
+	}
+	return privateKey, privateKey.PubKey(), nil
 }
 
 func newPreimage() ([]byte, []byte, error) {

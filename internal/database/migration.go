@@ -21,7 +21,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 16
+const latestSchemaVersion = 17
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -603,6 +603,19 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		ALTER TABLE wallets ADD COLUMN lastIndex INT;
 		UPDATE wallets SET legacy = TRUE;
 `
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+	case 16:
+		logMigration(oldVersion)
+
+		migration := `
+		CREATE TABLE swapMnemonic
+		(
+			mnemonic     VARCHAR PRIMARY KEY,
+			lastKeyIndex INT DEFAULT 0
+		);
+		`
 		if _, err := tx.Exec(migration); err != nil {
 			return err
 		}

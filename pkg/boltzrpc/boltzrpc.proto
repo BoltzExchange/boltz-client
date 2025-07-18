@@ -201,6 +201,16 @@ service Boltz {
     - the lightning node connected to the daemon can not be used to pay or create invoices for swaps.
      */
     rpc BakeMacaroon(BakeMacaroonRequest) returns (BakeMacaroonResponse);
+
+    /*
+    Returns mnemonic used for the key derivation of swaps, which can be used to restore swap information in the case of data loss.
+    */
+    rpc GetSwapMnemonic(GetSwapMnemonicRequest) returns (GetSwapMnemonicResponse);
+
+    /*
+    Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
+    */
+    rpc SetSwapMnemonic(SetSwapMnemonicRequest) returns (SetSwapMnemonicResponse);
 }
 
 message CreateTenantRequest {
@@ -921,4 +931,19 @@ message VerifyWalletPasswordResponse {
 message ChangeWalletPasswordRequest {
     string old = 1;
     string new = 2;
+}
+
+message GetSwapMnemonicRequest {}
+message GetSwapMnemonicResponse {
+    string mnemonic = 1;
+}
+
+message SetSwapMnemonicRequest {
+    oneof mnemonic {
+        string existing = 1;
+        bool generate = 2;
+    }
+}
+message SetSwapMnemonicResponse {
+    string mnemonic = 1;
 }
