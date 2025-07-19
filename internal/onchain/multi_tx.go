@@ -1,6 +1,9 @@
 package onchain
 
-import "github.com/BoltzExchange/boltz-client/v2/internal/logger"
+import (
+	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
+	"golang.org/x/sync/errgroup"
+)
 
 type MultiTxProvider struct {
 	TxProvider
@@ -18,13 +21,25 @@ func (m MultiTxProvider) GetRawTransaction(txId string) (hex string, err error) 
 }
 
 func (m MultiTxProvider) BroadcastTransaction(txHex string) (txId string, err error) {
+	var group errgroup.Group
 	for _, provider := range m.Providers {
-		txId, err = provider.BroadcastTransaction(txHex)
-		if err == nil {
-			return txId, nil
-		}
+		provider := provider
+		group.Go(func() error {
+			result, err := provider.BroadcastTransaction(txHex)
+			if err == nil {
+				txId = result
+				return nil
+			}
+			logger.Debugf("Error broadcasting transaction: %v", err)
+			return err
+		})
 	}
-	return "", err
+	err = group.Wait()
+	// only error if all providers failed
+	if txId == "" {
+		return "", err
+	}
+	return txId, nil
 }
 
 func (m MultiTxProvider) IsTransactionConfirmed(txId string) (confirmed bool, err error) {
