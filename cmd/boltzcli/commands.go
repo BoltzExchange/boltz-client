@@ -2343,10 +2343,6 @@ var swapMnemonicCommands = &cli.Command{
 			Action: func(ctx *cli.Context) error {
 				client := getClient(ctx)
 
-				if !prompt("Are you sure you want to overwrite your existing swap mnemonic?") {
-					return nil
-				}
-
 				mnemonic := ctx.Args().First()
 				generate := ctx.Bool("generate")
 				request := &boltzrpc.SetSwapMnemonicRequest{}
@@ -2364,6 +2360,9 @@ var swapMnemonicCommands = &cli.Command{
 					request.Mnemonic = &boltzrpc.SetSwapMnemonicRequest_Existing{
 						Existing: mnemonic,
 					}
+				}
+				if !prompt("Are you sure you want to overwrite your existing swap mnemonic?") {
+					return nil
 				}
 				response, err := client.SetSwapMnemonic(request)
 				if err != nil {
