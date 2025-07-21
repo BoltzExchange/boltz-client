@@ -2450,6 +2450,16 @@ func TestSwap(t *testing.T) {
 							return swapStream(t, admin, swap.Id)
 						}
 
+						t.Run("InvalidRefundAddress", func(t *testing.T) {
+							invalidAddress := "invalid"
+							_, err := admin.CreateSwap(&boltzrpc.CreateSwapRequest{
+								Pair:          pair,
+								RefundAddress: &invalidAddress,
+							})
+							requireCode(t, err, codes.InvalidArgument)
+							require.ErrorContains(t, err, "invalid refund address")
+						})
+
 						t.Run("Script", func(t *testing.T) {
 							boltzApi.DisablePartialSignatures = true
 							t.Cleanup(func() {
