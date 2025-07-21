@@ -2431,11 +2431,12 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 		Amount:      sendAmount,
 		SatPerVbyte: feeRate,
 	})
-	if err != nil && !errors.Is(err, errors.ErrUnsupported) {
+	if errors.Is(err, errors.ErrUnsupported) {
+		if balance.Confirmed < sendAmount {
+			return info.InsufficientBalanceError(sendAmount)
+		}
+	} else if err != nil {
 		return err
-	}
-	if balance.Confirmed < sendAmount {
-		return info.InsufficientBalanceError(sendAmount)
 	}
 	return nil
 }

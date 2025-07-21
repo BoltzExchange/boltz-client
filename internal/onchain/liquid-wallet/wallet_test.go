@@ -144,7 +144,6 @@ func TestWallet_Funded(t *testing.T) {
 			txId, err := fundedWallet.SendToAddress(args)
 			require.NoError(t, err)
 			require.NotEmpty(t, txId)
-			require.NotEmpty(t, fundedWallet.spentOutputs)
 
 			test.MineBlock()
 
@@ -178,19 +177,15 @@ func TestWallet_Funded(t *testing.T) {
 			txId, err := fundedWallet.SendToAddress(args)
 			require.NoError(t, err)
 			require.NotEmpty(t, txId)
-			require.NotEmpty(t, fundedWallet.spentOutputs)
 
-			// fails because of spent outputs map
 			_, err = fundedWallet.SendToAddress(args)
 			require.Error(t, err)
 
-			// zero immediately after sending because of spent outputs map
 			balance, err := fundedWallet.GetBalance()
 			require.NoError(t, err)
 			require.Zero(t, balance.Total)
 
 			require.NoError(t, fundedWallet.Sync())
-			require.Empty(t, fundedWallet.spentOutputs)
 
 			balance, err = fundedWallet.GetBalance()
 			require.NoError(t, err)

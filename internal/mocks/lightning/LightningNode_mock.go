@@ -39,6 +39,57 @@ func (_m *MockLightningNode) EXPECT() *MockLightningNode_Expecter {
 	return &MockLightningNode_Expecter{mock: &_m.Mock}
 }
 
+// ApplyTransaction provides a mock function for the type MockLightningNode
+func (_mock *MockLightningNode) ApplyTransaction(txHex string) error {
+	ret := _mock.Called(txHex)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ApplyTransaction")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(string) error); ok {
+		r0 = returnFunc(txHex)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockLightningNode_ApplyTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApplyTransaction'
+type MockLightningNode_ApplyTransaction_Call struct {
+	*mock.Call
+}
+
+// ApplyTransaction is a helper method to define mock.On call
+//   - txHex string
+func (_e *MockLightningNode_Expecter) ApplyTransaction(txHex interface{}) *MockLightningNode_ApplyTransaction_Call {
+	return &MockLightningNode_ApplyTransaction_Call{Call: _e.mock.On("ApplyTransaction", txHex)}
+}
+
+func (_c *MockLightningNode_ApplyTransaction_Call) Run(run func(txHex string)) *MockLightningNode_ApplyTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockLightningNode_ApplyTransaction_Call) Return(err error) *MockLightningNode_ApplyTransaction_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockLightningNode_ApplyTransaction_Call) RunAndReturn(run func(txHex string) error) *MockLightningNode_ApplyTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // BumpTransactionFee provides a mock function for the type MockLightningNode
 func (_mock *MockLightningNode) BumpTransactionFee(txId string, satPerVbyte float64) (string, error) {
 	ret := _mock.Called(txId, satPerVbyte)

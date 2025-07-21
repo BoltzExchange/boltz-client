@@ -409,6 +409,10 @@ func (lnd *LND) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64
 	return 0, 0, lightning.ErrUnsupported
 }
 
+func (lnd *LND) ApplyTransaction(txHex string) error {
+	return nil
+}
+
 func (lnd *LND) SubscribeSingleInvoice(preimageHash []byte, channel chan *lnrpc.Invoice, errChannel chan error) {
 	client, err := lnd.invoices.SubscribeSingleInvoice(lnd.ctx, &invoicesrpc.SubscribeSingleInvoiceRequest{
 		RHash: preimageHash,
