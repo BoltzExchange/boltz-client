@@ -74,7 +74,11 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 		return nil, errors.New("tx provider is required")
 	}
 	if cfg.SyncInterval == 0 {
-		cfg.SyncInterval = DefaultSyncInterval
+		if cfg.Network == boltz.Regtest {
+			cfg.SyncInterval = 1 * time.Second
+		} else {
+			cfg.SyncInterval = DefaultSyncInterval
+		}
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
