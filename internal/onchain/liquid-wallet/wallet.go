@@ -495,28 +495,30 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 		return "", err
 	}
 
-	tip, err := w.backend.clients[0].Tip()
-	if err != nil {
-		return "", err
-	}
-
-	if err := w.Wollet.ApplyTransaction(tip, tx); err != nil {
+	if err := w.applyTransaction(tx); err != nil {
 		return "", err
 	}
 
 	return txId, nil
 }
 
+func (w *Wallet) applyTransaction(tx *lwk.Transaction) error {
+	tip, err := w.backend.clients[0].Tip()
+	if err != nil {
+		return fmt.Errorf("could not fetch blockchain tip: %w", err)
+	}
+	if err := w.Wollet.ApplyTransaction(tip, tx); err != nil {
+		return fmt.Errorf("failed to apply transaction: %w", err)
+	}
+	return nil
+}
+
 func (w *Wallet) ApplyTransaction(txHex string) error {
 	tx, err := lwk.NewTransaction(txHex)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse transaction: %w", err)
 	}
-	tip, err := w.backend.clients[0].Tip()
-	if err != nil {
-		return err
-	}
-	return w.Wollet.ApplyTransaction(tip, tx)
+	return w.applyTransaction(tx)
 }
 
 func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
