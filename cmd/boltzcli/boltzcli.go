@@ -116,6 +116,7 @@ func main() {
 		walletCommands,
 		bakeMacaroonCommand,
 		tenantCommands,
+		swapMnemonicCommands,
 
 		formatMacaroonCommand,
 		shellCompletionsCommand,

@@ -2306,3 +2306,74 @@ var tenantCommands = &cli.Command{
 		},
 	},
 }
+
+var swapMnemonicCommands = &cli.Command{
+	Name: "swapmnemonic",
+	Description: "The swap mnemonic is used to derive the private keys for each swap.\n" +
+		"It is recommended to back this mnemonic up in a secure location,\n" +
+		"as it can be used to restore swap information in case the database is lost.",
+	Usage: "Manage swap mnemonic",
+	Subcommands: []*cli.Command{
+		{
+			Name:  "get",
+			Usage: "Get the current swap mnemonic",
+			Action: func(ctx *cli.Context) error {
+				client := getClient(ctx)
+				response, err := client.GetSwapMnemonic()
+				if err != nil {
+					return err
+				}
+				fmt.Println(response.Mnemonic)
+				return nil
+			},
+		},
+		{
+			Name:  "set",
+			Usage: "Set the swap mnemonic. An existing mnemonic can be provided or a new one can be generated.",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "generate",
+					Usage: "Generate a new mnemonic",
+				},
+			},
+			UsageText: "boltzcli swapmnemonic set \"abandon ... abandon about\"\nboltzcli swapmnemonic set --generate",
+			Action: func(ctx *cli.Context) error {
+				client := getClient(ctx)
+
+				mnemonic := ctx.Args().First()
+				generate := ctx.Bool("generate")
+				request := &boltzrpc.SetSwapMnemonicRequest{}
+				if generate {
+					if mnemonic != "" {
+						return errors.New("mnemonic cannot be provided when generating a new one")
+					}
+					request.Mnemonic = &boltzrpc.SetSwapMnemonicRequest_Generate{
+						Generate: true,
+					}
+				} else {
+					if mnemonic == "" {
+						return cli.ShowSubcommandHelp(ctx)
+					}
+					request.Mnemonic = &boltzrpc.SetSwapMnemonicRequest_Existing{
+						Existing: mnemonic,
+					}
+				}
+				if !prompt("Are you sure you want to overwrite your existing swap mnemonic?") {
+					return nil
+				}
+				response, err := client.SetSwapMnemonic(request)
+				if err != nil {
+					return err
+				}
+				if generate {
+					fmt.Println("Generated new swap mnemonic. Make sure to back this mnemonic up in a secure location.")
+					fmt.Println(response.Mnemonic)
+				} else {
+					fmt.Println("Swap mnemonic updated")
+				}
+
+				return nil
+			},
+		},
+	},
+}

@@ -229,6 +229,12 @@ CREATE TABLE tenants
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR UNIQUE
 );
+
+CREATE TABLE swapMnemonic
+(
+    mnemonic     VARCHAR PRIMARY KEY,
+    lastKeyIndex INT DEFAULT 0
+);
 ` + createViews
 
 type Database struct {
