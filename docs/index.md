@@ -134,9 +134,13 @@ the configuration file.
 
 ### Swap Mnemonic
 
-The swap mnemonic is used to derive the private keys for each swap. It is recommended to back this mnemonic up in a secure location, as it can be used to recover funds locked in swaps in the case the database of the daemon is lost.
+The swap mnemonic is used to derive the private keys for each swap. It is
+recommended to back this mnemonic up in a secure location, as it can be used to
+recover funds locked in swaps in the case the database of the daemon is lost.
 
-On initial startup, the client will generate a new swap mnemonic and store it in the database. It can be viewed with the `boltzcli swapmnemonic get` command or changed using the `boltzcli swapmnemonic set` command.
+On initial startup, the client will generate a new swap mnemonic and store it in
+the database. It can be viewed with the `boltzcli swapmnemonic get` command or
+changed using the `boltzcli swapmnemonic set` command.
 
 ### CLI
 
