@@ -1,0 +1,9 @@
+[package]
+name = "bdk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.99"
+bdk_wallet = { version = "2.0.0", features = ["keys-bip39", "file_store", "std", "rusqlite"] }
+miniscript = "12.3.5"
