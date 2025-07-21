@@ -26,14 +26,12 @@ type Persister interface {
 
 type Wallet struct {
 	*lwk.Wollet
-	signer           *lwk.Signer
-	descriptor       *lwk.WolletDescriptor
-	backend          *BlockchainBackend
-	info             onchain.WalletInfo
-	syncCancel       context.CancelFunc
-	syncWait         sync.WaitGroup
-	spentOutputs     map[string]bool
-	spentOutputsLock sync.RWMutex
+	signer     *lwk.Signer
+	descriptor *lwk.WolletDescriptor
+	backend    *BlockchainBackend
+	info       onchain.WalletInfo
+	syncCancel context.CancelFunc
+	syncWait   sync.WaitGroup
 }
 
 type EsploraConfig struct {
@@ -76,11 +74,7 @@ func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
 		return nil, errors.New("tx provider is required")
 	}
 	if cfg.SyncInterval == 0 {
-		if cfg.Network == boltz.Regtest {
-			cfg.SyncInterval = 1 * time.Second
-		} else {
-			cfg.SyncInterval = DefaultSyncInterval
-		}
+		cfg.SyncInterval = DefaultSyncInterval
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
@@ -194,9 +188,8 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 	}
 
 	result := &Wallet{
-		backend:      backend,
-		info:         credentials.WalletInfo,
-		spentOutputs: make(map[string]bool),
+		backend: backend,
+		info:    credentials.WalletInfo,
 	}
 
 	if credentials.CoreDescriptor == "" {
@@ -281,9 +274,6 @@ func (w *Wallet) Sync() error {
 		if err := w.autoConsolidate(); err != nil {
 			return fmt.Errorf("auto consolidate: %w", err)
 		}
-		w.spentOutputsLock.Lock()
-		w.spentOutputs = make(map[string]bool)
-		w.spentOutputsLock.Unlock()
 	}
 	return nil
 }
@@ -337,8 +327,6 @@ func (w *Wallet) GetWalletInfo() onchain.WalletInfo {
 }
 
 func (w *Wallet) GetBalance() (*onchain.Balance, error) {
-	w.spentOutputsLock.RLock()
-	defer w.spentOutputsLock.RUnlock()
 	var result onchain.Balance
 	utxos, err := w.Utxos()
 	if err != nil {
@@ -346,7 +334,7 @@ func (w *Wallet) GetBalance() (*onchain.Balance, error) {
 	}
 	assetId := w.assetId()
 	for _, utxo := range utxos {
-		if utxo.Unblinded().Asset() == assetId && !w.spentOutputs[utxo.Outpoint().String()] {
+		if utxo.Unblinded().Asset() == assetId {
 			value := utxo.Unblinded().Value()
 			if utxo.Height() != nil {
 				result.Confirmed += value
@@ -456,25 +444,6 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 		return nil, err
 	}
 
-	utxos, err := w.Utxos()
-	if err != nil {
-		return nil, err
-	}
-
-	var outpoints []*lwk.OutPoint
-	for _, output := range utxos {
-		outpoint := output.Outpoint()
-		if !w.spentOutputs[outpoint.String()] {
-			outpoints = append(outpoints, outpoint)
-		} else {
-			logger.Debugf("Ignoring outpoint %s since it is marked as spent", outpoint.String())
-		}
-	}
-
-	if err := builder.SetWalletUtxos(outpoints); err != nil {
-		return nil, fmt.Errorf("set wallet utxos: %w", err)
-	}
-
 	if args.SendAll {
 		if err := builder.DrainLbtcTo(addr); err != nil {
 			return nil, fmt.Errorf("drain lbtc: %w", err)
@@ -516,8 +485,6 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 }
 
 func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
-	w.spentOutputsLock.Lock()
-	defer w.spentOutputsLock.Unlock()
 	tx, err := w.createTransaction(args)
 	if err != nil {
 		return "", err
@@ -528,16 +495,31 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 		return "", err
 	}
 
-	for _, input := range tx.Inputs() {
-		w.spentOutputs[input.Outpoint().String()] = true
+	tip, err := w.backend.clients[0].Tip()
+	if err != nil {
+		return "", err
+	}
+
+	if err := w.Wollet.ApplyTransaction(tip, tx); err != nil {
+		return "", err
 	}
 
 	return txId, nil
 }
 
+func (w *Wallet) ApplyTransaction(txHex string) error {
+	tx, err := lwk.NewTransaction(txHex)
+	if err != nil {
+		return err
+	}
+	tip, err := w.backend.clients[0].Tip()
+	if err != nil {
+		return err
+	}
+	return w.Wollet.ApplyTransaction(tip, tx)
+}
+
 func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
-	w.spentOutputsLock.RLock()
-	defer w.spentOutputsLock.RUnlock()
 	tx, err := w.createTransaction(args)
 	if err != nil {
 		return 0, 0, err

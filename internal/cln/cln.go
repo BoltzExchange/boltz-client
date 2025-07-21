@@ -365,6 +365,10 @@ func (c *Cln) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, 
 	return 0, 0, lightning.ErrUnsupported
 }
 
+func (c *Cln) ApplyTransaction(txHex string) error {
+	return nil
+}
+
 func encodeOptionalBytes(data []byte) string {
 	if data == nil {
 		return ""

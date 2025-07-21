@@ -154,8 +154,10 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 	switch parsedStatus {
 	case boltz.TransactionDirect:
 		var blindingKey *btcec.PrivateKey
+		var wallet onchain.Wallet
 		if reverseSwap.Pair.To == boltz.CurrencyLiquid && reverseSwap.WalletId != nil {
-			wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Id: reverseSwap.WalletId, AllowReadonly: true})
+			var err error
+			wallet, err = nursery.onchain.GetAnyWallet(onchain.WalletChecker{Id: reverseSwap.WalletId, AllowReadonly: true})
 			if err != nil {
 				handleError("Could not get wallet: " + err.Error())
 				return
@@ -190,6 +192,14 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 				return
 			}
 		}
+
+		if wallet != nil {
+			if err := wallet.ApplyTransaction(event.Transaction.Hex); err != nil {
+				handleError("Could not apply transaction to wallet: " + err.Error())
+				return
+			}
+		}
+
 		nursery.handleReverseSwapDirectPayments(reverseSwap, []*onchain.Output{
 			{
 				TxId:  event.Transaction.Id,

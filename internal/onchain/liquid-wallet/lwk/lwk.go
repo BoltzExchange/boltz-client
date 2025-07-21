@@ -477,6 +477,60 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_blockheader_block_hash()
+		})
+		if checksum != 22169 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_blockheader_block_hash: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_blockheader_height()
+		})
+		if checksum != 58954 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_blockheader_height: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_blockheader_merkle_root()
+		})
+		if checksum != 53175 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_blockheader_merkle_root: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_blockheader_prev_blockhash()
+		})
+		if checksum != 46170 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_blockheader_prev_blockhash: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_blockheader_time()
+		})
+		if checksum != 56056 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_blockheader_time: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_blockheader_version()
+		})
+		if checksum != 22115 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_blockheader_version: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_electrumclient_broadcast()
 		})
 		if checksum != 41537 {
@@ -522,6 +576,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_electrumclient_tip()
+		})
+		if checksum != 30458 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_electrumclient_tip: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_esploraclient_broadcast()
 		})
 		if checksum != 54439 {
@@ -545,6 +608,15 @@ func uniffiCheckChecksums() {
 		if checksum != 37814 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_esploraclient_full_scan_to_index: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_esploraclient_tip()
+		})
+		if checksum != 31289 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_esploraclient_tip: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1620,11 +1692,29 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_add_details()
+		})
+		if checksum != 42615 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_add_details: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_address()
 		})
 		if checksum != 14903 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_apply_transaction()
+		})
+		if checksum != 5323 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_apply_transaction: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1670,6 +1760,24 @@ func uniffiCheckChecksums() {
 		if checksum != 63816 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_finalize: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_is_segwit()
+		})
+		if checksum != 18539 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_is_segwit: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_max_weight_to_satisfy()
+		})
+		if checksum != 8240 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_max_weight_to_satisfy: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1850,6 +1958,15 @@ func uniffiCheckChecksums() {
 		if checksum != 40758 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_esploraclient_new_waterfalls: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_externalutxo_new()
+		})
+		if checksum != 40531 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_externalutxo_new: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2988,6 +3105,141 @@ func (_ FfiDestroyerBip) Destroy(value *Bip) {
 	value.Destroy()
 }
 
+// Wrapper over [`elements::BlockHeader`]
+type BlockHeaderInterface interface {
+	// Get the block hash
+	BlockHash() string
+	// Get the block height
+	Height() uint32
+	// Get the merkle root
+	MerkleRoot() string
+	// Get the previous block hash
+	PrevBlockhash() string
+	// Get the block timestamp
+	Time() uint32
+	// Get the block version
+	Version() uint32
+}
+
+// Wrapper over [`elements::BlockHeader`]
+type BlockHeader struct {
+	ffiObject FfiObject
+}
+
+// Get the block hash
+func (_self *BlockHeader) BlockHash() string {
+	_pointer := _self.ffiObject.incrementPointer("*BlockHeader")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_blockheader_block_hash(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Get the block height
+func (_self *BlockHeader) Height() uint32 {
+	_pointer := _self.ffiObject.incrementPointer("*BlockHeader")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint32INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_blockheader_height(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+// Get the merkle root
+func (_self *BlockHeader) MerkleRoot() string {
+	_pointer := _self.ffiObject.incrementPointer("*BlockHeader")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_blockheader_merkle_root(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Get the previous block hash
+func (_self *BlockHeader) PrevBlockhash() string {
+	_pointer := _self.ffiObject.incrementPointer("*BlockHeader")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_blockheader_prev_blockhash(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Get the block timestamp
+func (_self *BlockHeader) Time() uint32 {
+	_pointer := _self.ffiObject.incrementPointer("*BlockHeader")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint32INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_blockheader_time(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+// Get the block version
+func (_self *BlockHeader) Version() uint32 {
+	_pointer := _self.ffiObject.incrementPointer("*BlockHeader")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint32INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_blockheader_version(
+			_pointer, _uniffiStatus)
+	}))
+}
+func (object *BlockHeader) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterBlockHeader struct{}
+
+var FfiConverterBlockHeaderINSTANCE = FfiConverterBlockHeader{}
+
+func (c FfiConverterBlockHeader) Lift(pointer unsafe.Pointer) *BlockHeader {
+	result := &BlockHeader{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_blockheader(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_blockheader(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*BlockHeader).Destroy)
+	return result
+}
+
+func (c FfiConverterBlockHeader) Read(reader io.Reader) *BlockHeader {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterBlockHeader) Lower(value *BlockHeader) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*BlockHeader")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterBlockHeader) Write(writer io.Writer, value *BlockHeader) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerBlockHeader struct{}
+
+func (_ FfiDestroyerBlockHeader) Destroy(value *BlockHeader) {
+	value.Destroy()
+}
+
 // Wrapper over [`lwk_wollet::Contract`]
 type ContractInterface interface {
 }
@@ -3077,6 +3329,7 @@ type ElectrumClientInterface interface {
 	FullScanToIndex(wollet *Wollet, index uint32) (**Update, error)
 	GetTx(txid *Txid) (*Transaction, error)
 	Ping() error
+	Tip() (*BlockHeader, error)
 }
 
 // Wrapper over [`lwk_wollet::ElectrumClient`]
@@ -3171,6 +3424,21 @@ func (_self *ElectrumClient) Ping() error {
 	})
 	return _uniffiErr.AsError()
 }
+
+func (_self *ElectrumClient) Tip() (*BlockHeader, error) {
+	_pointer := _self.ffiObject.incrementPointer("*ElectrumClient")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_electrumclient_tip(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *BlockHeader
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBlockHeaderINSTANCE.Lift(_uniffiRV), nil
+	}
+}
 func (object *ElectrumClient) Destroy() {
 	runtime.SetFinalizer(object, nil)
 	object.ffiObject.destroy()
@@ -3227,6 +3495,8 @@ type EsploraClientInterface interface {
 	FullScan(wollet *Wollet) (**Update, error)
 	// See [`BlockchainBackend::full_scan_to_index`]
 	FullScanToIndex(wollet *Wollet, index uint32) (**Update, error)
+	// See [`BlockchainBackend::tip`]
+	Tip() (*BlockHeader, error)
 }
 
 // Wrapper over [`blocking::EsploraClient`]
@@ -3322,6 +3592,22 @@ func (_self *EsploraClient) FullScanToIndex(wollet *Wollet, index uint32) (**Upd
 		return FfiConverterOptionalUpdateINSTANCE.Lift(_uniffiRV), nil
 	}
 }
+
+// See [`BlockchainBackend::tip`]
+func (_self *EsploraClient) Tip() (*BlockHeader, error) {
+	_pointer := _self.ffiObject.incrementPointer("*EsploraClient")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_esploraclient_tip(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *BlockHeader
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBlockHeaderINSTANCE.Lift(_uniffiRV), nil
+	}
+}
 func (object *EsploraClient) Destroy() {
 	runtime.SetFinalizer(object, nil)
 	object.ffiObject.destroy()
@@ -3375,6 +3661,19 @@ type ExternalUtxoInterface interface {
 }
 type ExternalUtxo struct {
 	ffiObject FfiObject
+}
+
+// Construct an ExternalUtxo
+func NewExternalUtxo(vout uint32, tx *Transaction, unblinded *TxOutSecrets, maxWeightToSatisfy uint32, isSegwit bool) (*ExternalUtxo, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_externalutxo_new(FfiConverterUint32INSTANCE.Lower(vout), FfiConverterTransactionINSTANCE.Lower(tx), FfiConverterTxOutSecretsINSTANCE.Lower(unblinded), FfiConverterUint32INSTANCE.Lower(maxWeightToSatisfy), FfiConverterBoolINSTANCE.Lower(isSegwit), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *ExternalUtxo
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterExternalUtxoINSTANCE.Lift(_uniffiRV), nil
+	}
 }
 
 func (object *ExternalUtxo) Destroy() {
@@ -7012,13 +7311,20 @@ func (_ FfiDestroyerWalletTxOut) Destroy(value *WalletTxOut) {
 
 // A Watch-Only wallet, wrapper over [`lwk_wollet::Wollet`]
 type WolletInterface interface {
+	// Add wallet details to the PSET
+	AddDetails(pset *Pset) (*Pset, error)
 	Address(index *uint32) (*AddressResult, error)
+	ApplyTransaction(tip *BlockHeader, tx *Transaction) error
 	ApplyUpdate(update *Update) error
 	Balance() (map[AssetId]uint64, error)
 	Descriptor() (*WolletDescriptor, error)
 	// Extract the wallet UTXOs that a PSET is creating
 	ExtractWalletUtxos(pset *Pset) ([]*ExternalUtxo, error)
 	Finalize(pset *Pset) (*Pset, error)
+	// Whether the wallet is segwit
+	IsSegwit() (bool, error)
+	// Max weight to satisfy for inputs belonging to this wallet
+	MaxWeightToSatisfy() (uint32, error)
 	PsetDetails(pset *Pset) (*PsetDetails, error)
 	Transactions() ([]*WalletTx, error)
 	TransactionsPaginated(offset uint32, limit uint32) ([]*WalletTx, error)
@@ -7065,6 +7371,22 @@ func WolletWithCustomPersister(network *Network, descriptor *WolletDescriptor, p
 	}
 }
 
+// Add wallet details to the PSET
+func (_self *Wollet) AddDetails(pset *Pset) (*Pset, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_wollet_add_details(
+			_pointer, FfiConverterPsetINSTANCE.Lower(pset), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Pset
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPsetINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
 func (_self *Wollet) Address(index *uint32) (*AddressResult, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7078,6 +7400,17 @@ func (_self *Wollet) Address(index *uint32) (*AddressResult, error) {
 	} else {
 		return FfiConverterAddressResultINSTANCE.Lift(_uniffiRV), nil
 	}
+}
+
+func (_self *Wollet) ApplyTransaction(tip *BlockHeader, tx *Transaction) error {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_wollet_apply_transaction(
+			_pointer, FfiConverterBlockHeaderINSTANCE.Lower(tip), FfiConverterTransactionINSTANCE.Lower(tx), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
 }
 
 func (_self *Wollet) ApplyUpdate(update *Update) error {
@@ -7153,6 +7486,38 @@ func (_self *Wollet) Finalize(pset *Pset) (*Pset, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterPsetINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Whether the wallet is segwit
+func (_self *Wollet) IsSegwit() (bool, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_wollet_is_segwit(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue bool
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoolINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Max weight to satisfy for inputs belonging to this wallet
+func (_self *Wollet) MaxWeightToSatisfy() (uint32, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_wollet_max_weight_to_satisfy(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint32
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint32INSTANCE.Lift(_uniffiRV), nil
 	}
 }
 

@@ -305,12 +305,28 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 	}
 	logger.Infof("Broadcast transaction: %s", id)
 
+	txHex, err := transaction.Serialize()
+	if err != nil {
+		return handleErr(fmt.Errorf("serialize: %w", err))
+	}
+
 	for _, output := range outputs {
 		result := results[output.SwapId]
 		if result.Err == nil {
 			if err := output.setTransaction(id, result.Fee); err != nil {
 				logger.Errorf("Could not set transaction id for %s swap %s: %s", output.SwapType, output.SwapId, err)
 				continue
+			}
+			if output.walletId != nil {
+				wallet, err := nursery.onchain.GetAnyWallet(onchain.WalletChecker{Id: output.walletId, AllowReadonly: true})
+				if err != nil {
+					results.SetErr(output.SwapId, fmt.Errorf("wallet with id %d could not be found", *output.walletId))
+					continue
+				}
+				if err := wallet.ApplyTransaction(txHex); err != nil {
+					results.SetErr(output.SwapId, fmt.Errorf("could not apply transaction to wallet %s: %w", wallet.GetWalletInfo().Name, err))
+					continue
+				}
 			}
 		}
 	}

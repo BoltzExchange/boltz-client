@@ -36,6 +36,57 @@ func (_m *MockWallet) EXPECT() *MockWallet_Expecter {
 	return &MockWallet_Expecter{mock: &_m.Mock}
 }
 
+// ApplyTransaction provides a mock function for the type MockWallet
+func (_mock *MockWallet) ApplyTransaction(txHex string) error {
+	ret := _mock.Called(txHex)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ApplyTransaction")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(string) error); ok {
+		r0 = returnFunc(txHex)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockWallet_ApplyTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApplyTransaction'
+type MockWallet_ApplyTransaction_Call struct {
+	*mock.Call
+}
+
+// ApplyTransaction is a helper method to define mock.On call
+//   - txHex string
+func (_e *MockWallet_Expecter) ApplyTransaction(txHex interface{}) *MockWallet_ApplyTransaction_Call {
+	return &MockWallet_ApplyTransaction_Call{Call: _e.mock.On("ApplyTransaction", txHex)}
+}
+
+func (_c *MockWallet_ApplyTransaction_Call) Run(run func(txHex string)) *MockWallet_ApplyTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockWallet_ApplyTransaction_Call) Return(err error) *MockWallet_ApplyTransaction_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockWallet_ApplyTransaction_Call) RunAndReturn(run func(txHex string) error) *MockWallet_ApplyTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // BumpTransactionFee provides a mock function for the type MockWallet
 func (_mock *MockWallet) BumpTransactionFee(txId string, satPerVbyte float64) (string, error) {
 	ret := _mock.Called(txId, satPerVbyte)

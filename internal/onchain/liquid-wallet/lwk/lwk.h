@@ -579,6 +579,46 @@ void* uniffi_lwk_fn_constructor_bip_new_bip87(RustCallStatus *out_status
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BLOCKHEADER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BLOCKHEADER
+void* uniffi_lwk_fn_clone_blockheader(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BLOCKHEADER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BLOCKHEADER
+void uniffi_lwk_fn_free_blockheader(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_BLOCK_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_BLOCK_HASH
+RustBuffer uniffi_lwk_fn_method_blockheader_block_hash(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_HEIGHT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_HEIGHT
+uint32_t uniffi_lwk_fn_method_blockheader_height(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_MERKLE_ROOT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_MERKLE_ROOT
+RustBuffer uniffi_lwk_fn_method_blockheader_merkle_root(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_PREV_BLOCKHASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_PREV_BLOCKHASH
+RustBuffer uniffi_lwk_fn_method_blockheader_prev_blockhash(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_TIME
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_TIME
+uint32_t uniffi_lwk_fn_method_blockheader_time(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_VERSION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BLOCKHEADER_VERSION
+uint32_t uniffi_lwk_fn_method_blockheader_version(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_CONTRACT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_CONTRACT
 void* uniffi_lwk_fn_clone_contract(void* ptr, RustCallStatus *out_status
@@ -639,6 +679,11 @@ void* uniffi_lwk_fn_method_electrumclient_get_tx(void* ptr, void* txid, RustCall
 void uniffi_lwk_fn_method_electrumclient_ping(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ELECTRUMCLIENT_TIP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ELECTRUMCLIENT_TIP
+void* uniffi_lwk_fn_method_electrumclient_tip(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ESPLORACLIENT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ESPLORACLIENT
 void* uniffi_lwk_fn_clone_esploraclient(void* ptr, RustCallStatus *out_status
@@ -679,6 +724,11 @@ RustBuffer uniffi_lwk_fn_method_esploraclient_full_scan(void* ptr, void* wollet,
 RustBuffer uniffi_lwk_fn_method_esploraclient_full_scan_to_index(void* ptr, void* wollet, uint32_t index, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ESPLORACLIENT_TIP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ESPLORACLIENT_TIP
+void* uniffi_lwk_fn_method_esploraclient_tip(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_EXTERNALUTXO
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_EXTERNALUTXO
 void* uniffi_lwk_fn_clone_externalutxo(void* ptr, RustCallStatus *out_status
@@ -687,6 +737,11 @@ void* uniffi_lwk_fn_clone_externalutxo(void* ptr, RustCallStatus *out_status
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_EXTERNALUTXO
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_EXTERNALUTXO
 void uniffi_lwk_fn_free_externalutxo(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_EXTERNALUTXO_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_EXTERNALUTXO_NEW
+void* uniffi_lwk_fn_constructor_externalutxo_new(uint32_t vout, void* tx, void* unblinded, uint32_t max_weight_to_satisfy, int8_t is_segwit, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNPERSISTER
@@ -1758,9 +1813,19 @@ void* uniffi_lwk_fn_constructor_wollet_new(void* network, void* descriptor, Rust
 void* uniffi_lwk_fn_constructor_wollet_with_custom_persister(void* network, void* descriptor, void* persister, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_ADD_DETAILS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_ADD_DETAILS
+void* uniffi_lwk_fn_method_wollet_add_details(void* ptr, void* pset, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_ADDRESS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_ADDRESS
 void* uniffi_lwk_fn_method_wollet_address(void* ptr, RustBuffer index, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_APPLY_TRANSACTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_APPLY_TRANSACTION
+void uniffi_lwk_fn_method_wollet_apply_transaction(void* ptr, void* tip, void* tx, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_APPLY_UPDATE
@@ -1786,6 +1851,16 @@ RustBuffer uniffi_lwk_fn_method_wollet_extract_wallet_utxos(void* ptr, void* pse
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_FINALIZE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_FINALIZE
 void* uniffi_lwk_fn_method_wollet_finalize(void* ptr, void* pset, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_IS_SEGWIT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_IS_SEGWIT
+int8_t uniffi_lwk_fn_method_wollet_is_segwit(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_MAX_WEIGHT_TO_SATISFY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_MAX_WEIGHT_TO_SATISFY
+uint32_t uniffi_lwk_fn_method_wollet_max_weight_to_satisfy(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_PSET_DETAILS
@@ -2227,6 +2302,42 @@ uint16_t uniffi_lwk_checksum_method_assetamount_asset(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_BLOCK_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_BLOCK_HASH
+uint16_t uniffi_lwk_checksum_method_blockheader_block_hash(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_HEIGHT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_HEIGHT
+uint16_t uniffi_lwk_checksum_method_blockheader_height(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_MERKLE_ROOT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_MERKLE_ROOT
+uint16_t uniffi_lwk_checksum_method_blockheader_merkle_root(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_PREV_BLOCKHASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_PREV_BLOCKHASH
+uint16_t uniffi_lwk_checksum_method_blockheader_prev_blockhash(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_TIME
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_TIME
+uint16_t uniffi_lwk_checksum_method_blockheader_time(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_VERSION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_VERSION
+uint16_t uniffi_lwk_checksum_method_blockheader_version(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ELECTRUMCLIENT_BROADCAST
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ELECTRUMCLIENT_BROADCAST
 uint16_t uniffi_lwk_checksum_method_electrumclient_broadcast(void
@@ -2257,6 +2368,12 @@ uint16_t uniffi_lwk_checksum_method_electrumclient_ping(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ELECTRUMCLIENT_TIP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ELECTRUMCLIENT_TIP
+uint16_t uniffi_lwk_checksum_method_electrumclient_tip(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ESPLORACLIENT_BROADCAST
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ESPLORACLIENT_BROADCAST
 uint16_t uniffi_lwk_checksum_method_esploraclient_broadcast(void
@@ -2272,6 +2389,12 @@ uint16_t uniffi_lwk_checksum_method_esploraclient_full_scan(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ESPLORACLIENT_FULL_SCAN_TO_INDEX
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ESPLORACLIENT_FULL_SCAN_TO_INDEX
 uint16_t uniffi_lwk_checksum_method_esploraclient_full_scan_to_index(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ESPLORACLIENT_TIP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ESPLORACLIENT_TIP
+uint16_t uniffi_lwk_checksum_method_esploraclient_tip(void
     
 );
 #endif
@@ -2989,9 +3112,21 @@ uint16_t uniffi_lwk_checksum_method_wallettxout_wildcard_index(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_ADD_DETAILS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_ADD_DETAILS
+uint16_t uniffi_lwk_checksum_method_wollet_add_details(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_ADDRESS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_ADDRESS
 uint16_t uniffi_lwk_checksum_method_wollet_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_APPLY_TRANSACTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_APPLY_TRANSACTION
+uint16_t uniffi_lwk_checksum_method_wollet_apply_transaction(void
     
 );
 #endif
@@ -3022,6 +3157,18 @@ uint16_t uniffi_lwk_checksum_method_wollet_extract_wallet_utxos(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_FINALIZE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_FINALIZE
 uint16_t uniffi_lwk_checksum_method_wollet_finalize(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_IS_SEGWIT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_IS_SEGWIT
+uint16_t uniffi_lwk_checksum_method_wollet_is_segwit(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_MAX_WEIGHT_TO_SATISFY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_MAX_WEIGHT_TO_SATISFY
+uint16_t uniffi_lwk_checksum_method_wollet_max_weight_to_satisfy(void
     
 );
 #endif
@@ -3142,6 +3289,12 @@ uint16_t uniffi_lwk_checksum_constructor_esploraclient_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ESPLORACLIENT_NEW_WATERFALLS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ESPLORACLIENT_NEW_WATERFALLS
 uint16_t uniffi_lwk_checksum_constructor_esploraclient_new_waterfalls(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_EXTERNALUTXO_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_EXTERNALUTXO_NEW
+uint16_t uniffi_lwk_checksum_constructor_externalutxo_new(void
     
 );
 #endif

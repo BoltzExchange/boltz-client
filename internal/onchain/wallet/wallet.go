@@ -941,3 +941,7 @@ func (wallet *Wallet) autoConsolidate() error {
 	}
 	return nil
 }
+
+func (wallet *Wallet) ApplyTransaction(txHex string) error {
+	return nil
+}
