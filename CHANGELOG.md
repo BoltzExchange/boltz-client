@@ -1,4 +1,52 @@
 
+<a name="v2.8.1"></a>
+## [v2.8.1] - 2025-07-21
+### Feat
+- validate refund address when creating submarine swap ([#521](https://github.com/BoltzExchange/boltz-client/issues/521))
+- notify wallets of claim and direct transactions immediately ([#520](https://github.com/BoltzExchange/boltz-client/issues/520))
+- derive keys from swap mnemonic ([#487](https://github.com/BoltzExchange/boltz-client/issues/487))
+
+### Fix
+- reset waterfalls recipient in lwk ([#514](https://github.com/BoltzExchange/boltz-client/issues/514))
+
+### Refactor
+- always broadcast with all providers in `MultiTxProvider` ([#517](https://github.com/BoltzExchange/boltz-client/issues/517))
+- allow hyphens and underscores in wallet name ([#516](https://github.com/BoltzExchange/boltz-client/issues/516))
+
+
+<a name="v2.8.0"></a>
+## [v2.8.0] - 2025-07-16
+### Feat
+- populate external outputs in lwk ([#505](https://github.com/BoltzExchange/boltz-client/issues/505))
+- lwk fee estimations ([#506](https://github.com/BoltzExchange/boltz-client/issues/506))
+- spent txo map in lwk ([#502](https://github.com/BoltzExchange/boltz-client/issues/502))
+- lwk esplora concurrency ([#501](https://github.com/BoltzExchange/boltz-client/issues/501))
+- lwk server integration ([#462](https://github.com/BoltzExchange/boltz-client/issues/462))
+- lwk wallet implementation ([#451](https://github.com/BoltzExchange/boltz-client/issues/451))
+
+### Fix
+- lwk `GetSendFee` send amount calculation ([#507](https://github.com/BoltzExchange/boltz-client/issues/507))
+- dont include spent outputs in balance
+- direct tx tests for btc ([#503](https://github.com/BoltzExchange/boltz-client/issues/503))
+- do not require amount param when sweeping wallet ([#498](https://github.com/BoltzExchange/boltz-client/issues/498))
+- subscribe to previous swapIds after connecting ([#491](https://github.com/BoltzExchange/boltz-client/issues/491))
+- set `swap` to nil when recommended amount is smaller than reserve ([#493](https://github.com/BoltzExchange/boltz-client/issues/493))
+- docs CI ([#492](https://github.com/BoltzExchange/boltz-client/issues/492))
+- check if reverse swap routing fee is nil ([#488](https://github.com/BoltzExchange/boltz-client/issues/488))
+- reverse swap double broadcast ([#486](https://github.com/BoltzExchange/boltz-client/issues/486))
+
+### Refactor
+- lower default sync interval to 15 seconds
+- switch docs to vitepress ([#490](https://github.com/BoltzExchange/boltz-client/issues/490))
+
+
+<a name="v2.7.2"></a>
+## [v2.7.2] - 2025-07-03
+### Fix
+- subscribe to previous swapIds after connecting ([#491](https://github.com/BoltzExchange/boltz-client/issues/491))
+- set `swap` to nil when recommended amount is smaller than reserve ([#493](https://github.com/BoltzExchange/boltz-client/issues/493))
+
+
 <a name="v2.7.1"></a>
 ## [v2.7.1] - 2025-06-13
 ### Feat
@@ -684,6 +732,9 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.0...v2.8.1
+[v2.8.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.7.2...v2.8.0
+[v2.7.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.7.1...v2.7.2
 [v2.7.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.7.0...v2.7.1
 [v2.7.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.6.1...v2.7.0
 [v2.6.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.6.0...v2.6.1
