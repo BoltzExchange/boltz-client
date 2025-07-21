@@ -807,6 +807,12 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 				return nil, status.Errorf(codes.AlreadyExists, "swap %s has the same invoice", existing.Id)
 			}
 		}
+		refundAddress := request.GetRefundAddress()
+		if refundAddress != "" {
+			if err := boltz.ValidateAddress(server.network, refundAddress, pair.From); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "invalid refund address %s: %s", refundAddress, err)
+			}
+		}
 
 		response, err := server.boltz.CreateSwap(createSwap)
 
@@ -829,7 +835,7 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 			SwapTree:            response.SwapTree.Deserialize(),
 			LockupTransactionId: "",
 			RefundTransactionId: "",
-			RefundAddress:       request.GetRefundAddress(),
+			RefundAddress:       refundAddress,
 			IsAuto:              isAuto,
 			ServiceFeePercent:   boltz.Percentage(request.AcceptedPair.Fees.Percentage),
 			TenantId:            requireTenantId(ctx),
