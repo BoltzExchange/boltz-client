@@ -2226,6 +2226,43 @@ func TestSwap(t *testing.T) {
 		}
 	})
 
+	t.Run("IgnoreMrh", func(t *testing.T) {
+		client, _, stop := setup(t, setupOptions{node: "standalone"})
+		defer stop()
+
+		externalPay := true
+
+		fundedWallet(t, client, boltzrpc.Currency_LBTC)
+
+		reverseSwap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+			ExternalPay: &externalPay,
+			Amount:      100000,
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_BTC,
+				To:   boltzrpc.Currency_LBTC,
+			},
+			AcceptZeroConf: true,
+		})
+		require.NoError(t, err)
+
+		ignoreMrh := true
+		swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+			Invoice: reverseSwap.Invoice,
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_LBTC,
+				To:   boltzrpc.Currency_BTC,
+			},
+			SendFromInternal: true,
+			IgnoreMrh:        &ignoreMrh,
+		})
+		require.NoError(t, err)
+
+		stream, _ := swapStream(t, client, swap.Id)
+		stream(boltzrpc.SwapState_PENDING)
+		test.MineBlock()
+		stream(boltzrpc.SwapState_SUCCESSFUL)
+	})
+
 	t.Run("Invoice", func(t *testing.T) {
 		cfg.Node = "Cln"
 		client, _, stop := setup(t, setupOptions{cfg: cfg})
