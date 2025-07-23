@@ -13,7 +13,7 @@ index 6129eba..ccc3014 100755
 -  swapTaproot = 10080
 +  chain = 400
 +  reverse = 400
-+  swapTaproot = 400
++  swapTaproot = 750
 +  swapMinimal = 400
 +  swapMaximal = 450
  
