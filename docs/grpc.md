@@ -720,6 +720,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `zero_conf` | [`bool`](#bool) | optional | **Deprecated.**  |
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
 | `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
+| `ignore_mrh` | [`bool`](#bool) | optional | Ignore any magic routing hints found in the specified `invoice`. |
 
 
 

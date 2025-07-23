@@ -740,9 +740,11 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid invoice or lnurl: %s", err)
 		}
-		swapResponse, err = server.checkMagicRoutingHint(decoded, invoice)
-		if err != nil {
-			return nil, err
+		if !request.GetIgnoreMrh() {
+			swapResponse, err = server.checkMagicRoutingHint(decoded, invoice)
+			if err != nil {
+				return nil, err
+			}
 		}
 		preimageHash = decoded.PaymentHash[:]
 		createSwap.Invoice = invoice
