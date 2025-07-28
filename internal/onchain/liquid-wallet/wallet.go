@@ -32,6 +32,7 @@ type Wallet struct {
 	info       onchain.WalletInfo
 	syncCancel context.CancelFunc
 	syncWait   sync.WaitGroup
+	syncLock   sync.Mutex
 }
 
 type EsploraConfig struct {
@@ -242,12 +243,18 @@ func (w *Wallet) syncLoop(ctx context.Context) {
 			if err := w.Sync(); err != nil {
 				logger.Errorf("LWK full scan for wallet %d failed: %v", w.info.Id, err)
 			}
+			if err := w.autoConsolidate(); err != nil {
+				logger.Errorf("Auto consolidation for LWK wallet %d failed: %v", w.info.Id, err)
+			}
 		}
 	}
 }
 
 func (w *Wallet) Sync() error {
 	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
+	w.syncLock.Lock()
+	defer w.syncLock.Unlock()
+
 	index, err := w.loadLastIndex()
 	if err != nil {
 		return fmt.Errorf("load last index: %w", err)
@@ -274,9 +281,6 @@ func (w *Wallet) Sync() error {
 	if update != nil {
 		if err := w.ApplyUpdate(*update); err != nil {
 			return fmt.Errorf("could not apply update: %w", err)
-		}
-		if err := w.autoConsolidate(); err != nil {
-			return fmt.Errorf("auto consolidate: %w", err)
 		}
 	}
 	return nil
@@ -507,6 +511,9 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 }
 
 func (w *Wallet) applyTransaction(tx *lwk.Transaction) error {
+	w.syncLock.Lock()
+	defer w.syncLock.Unlock()
+
 	tip, err := w.backend.clients[0].Tip()
 	if err != nil {
 		return fmt.Errorf("could not fetch blockchain tip: %w", err)
