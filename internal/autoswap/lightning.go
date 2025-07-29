@@ -82,8 +82,15 @@ func (cfg *LightningConfig) Init() error {
 	if cfg.InboundBalance == 0 && cfg.OutboundBalance == 0 {
 		cfg.outboundBalance.Relative = boltz.Percentage(cfg.OutboundBalancePercent)
 		cfg.inboundBalance.Relative = boltz.Percentage(cfg.InboundBalancePercent)
-		if cfg.OutboundBalancePercent+cfg.InboundBalancePercent >= 100 {
-			return errors.New("sum of balance percentages must be smaller than 100")
+		maxPercent := boltz.Percentage(100) - 2*cfg.reserve
+		if cfg.outboundBalance.Relative+cfg.inboundBalance.Relative > maxPercent {
+			if cfg.outboundBalance.IsZero() {
+				return fmt.Errorf("inbound threshold muss be less than %s", maxPercent)
+			} else if cfg.inboundBalance.IsZero() {
+				return fmt.Errorf("outbound threshold muss be less than %s", maxPercent)
+			} else {
+				return fmt.Errorf("sum of thresholds must be less than %s", maxPercent)
+			}
 		}
 	}
 
