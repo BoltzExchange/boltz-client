@@ -1,4 +1,14 @@
 
+<a name="v2.8.2"></a>
+## [v2.8.2] - 2025-07-29
+### Feat
+- `ignoreMrh` flag for submarine swaps ([#522](https://github.com/BoltzExchange/boltz-client/issues/522))
+
+### Fix
+- lwk create send lock ([#524](https://github.com/BoltzExchange/boltz-client/issues/524))
+- lwk sync race ([#523](https://github.com/BoltzExchange/boltz-client/issues/523))
+
+
 <a name="v2.8.1"></a>
 ## [v2.8.1] - 2025-07-21
 ### Feat
@@ -732,6 +742,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.1...v2.8.2
 [v2.8.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.0...v2.8.1
 [v2.8.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.7.2...v2.8.0
 [v2.7.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.7.1...v2.7.2
