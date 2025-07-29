@@ -33,6 +33,7 @@ type Wallet struct {
 	syncCancel context.CancelFunc
 	syncWait   sync.WaitGroup
 	syncLock   sync.Mutex
+	sendLock   sync.Mutex
 }
 
 type EsploraConfig struct {
@@ -493,6 +494,9 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 }
 
 func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
+	w.sendLock.Lock()
+	defer w.sendLock.Unlock()
+
 	tx, err := w.createTransaction(args)
 	if err != nil {
 		return "", err
