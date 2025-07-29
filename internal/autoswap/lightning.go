@@ -40,7 +40,7 @@ type LightningConfig struct {
 	executeLock sync.Mutex
 }
 
-const DefaultReserve = boltz.Percentage(10)
+const DefaultReserve = boltz.Percentage(5)
 
 func NewLightningConfig(serialized *SerializedLnConfig, shared shared) *LightningConfig {
 	return &LightningConfig{SerializedLnConfig: withLightningBase(serialized), shared: shared, reserve: DefaultReserve}
