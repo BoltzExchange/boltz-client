@@ -518,11 +518,7 @@ func (w *Wallet) applyTransaction(tx *lwk.Transaction) error {
 	w.syncLock.Lock()
 	defer w.syncLock.Unlock()
 
-	tip, err := w.backend.clients[0].Tip()
-	if err != nil {
-		return fmt.Errorf("could not fetch blockchain tip: %w", err)
-	}
-	if err := w.Wollet.ApplyTransaction(tip, tx); err != nil {
+	if err := w.Wollet.ApplyTransaction(tx); err != nil {
 		return fmt.Errorf("failed to apply transaction: %w", err)
 	}
 	return nil
