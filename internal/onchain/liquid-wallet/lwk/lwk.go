@@ -1712,7 +1712,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_apply_transaction()
 		})
-		if checksum != 5323 {
+		if checksum != 6471 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_apply_transaction: UniFFI API checksum mismatch")
 		}
@@ -7314,7 +7314,7 @@ type WolletInterface interface {
 	// Add wallet details to the PSET
 	AddDetails(pset *Pset) (*Pset, error)
 	Address(index *uint32) (*AddressResult, error)
-	ApplyTransaction(tip *BlockHeader, tx *Transaction) error
+	ApplyTransaction(tx *Transaction) error
 	ApplyUpdate(update *Update) error
 	Balance() (map[AssetId]uint64, error)
 	Descriptor() (*WolletDescriptor, error)
@@ -7402,12 +7402,12 @@ func (_self *Wollet) Address(index *uint32) (*AddressResult, error) {
 	}
 }
 
-func (_self *Wollet) ApplyTransaction(tip *BlockHeader, tx *Transaction) error {
+func (_self *Wollet) ApplyTransaction(tx *Transaction) error {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
 	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
 		C.uniffi_lwk_fn_method_wollet_apply_transaction(
-			_pointer, FfiConverterBlockHeaderINSTANCE.Lower(tip), FfiConverterTransactionINSTANCE.Lower(tx), _uniffiStatus)
+			_pointer, FfiConverterTransactionINSTANCE.Lower(tx), _uniffiStatus)
 		return false
 	})
 	return _uniffiErr.AsError()

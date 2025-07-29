@@ -1825,7 +1825,7 @@ void* uniffi_lwk_fn_method_wollet_address(void* ptr, RustBuffer index, RustCallS
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_APPLY_TRANSACTION
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_APPLY_TRANSACTION
-void uniffi_lwk_fn_method_wollet_apply_transaction(void* ptr, void* tip, void* tx, RustCallStatus *out_status
+void uniffi_lwk_fn_method_wollet_apply_transaction(void* ptr, void* tx, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_APPLY_UPDATE
