@@ -3,6 +3,7 @@ package boltz
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -48,6 +49,27 @@ type OutputDetails struct {
 	SwapType SwapType
 }
 
+// Fee represents either a fixed fee in satoshis or a fee rate per vbyte.
+// Exactly one of Sats or SatsPerVbyte should be set, not both.
+type Fee struct {
+	// Fixed fee amount in satoshis
+	Sats *uint64
+	// Fee rate in satoshis per virtual byte
+	SatsPerVbyte *float64
+}
+
+func (f *Fee) HasSats() bool {
+	return f.Sats != nil
+}
+
+func (f *Fee) HasSatsPerVbyte() bool {
+	return f.SatsPerVbyte != nil
+}
+
+func (f *Fee) IsValid() bool {
+	return (f.HasSats() && !f.HasSatsPerVbyte()) || (!f.HasSats() && f.HasSatsPerVbyte())
+}
+
 func (output *OutputDetails) IsRefund() bool {
 	return len(output.Preimage) == 0
 }
@@ -85,7 +107,7 @@ func (results Results) SetErr(id string, err error) {
 	}
 }
 
-func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, satPerVbyte float64, boltzApi *Api) (Transaction, Results, error) {
+func ConstructTransaction(network *Network, currency Currency, outputs []OutputDetails, fee Fee, boltzApi *Api) (Transaction, Results, error) {
 	construct := constructBtcTransaction
 	if currency == CurrencyLiquid {
 		construct = constructLiquidTransaction
@@ -120,21 +142,34 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 		return outValues
 	}
 
-	noFeeTransaction, err := construct(network, outputs, getOutValues(0))
-	if err != nil {
-		return nil, nil, err
+	if !fee.IsValid() {
+		return nil, nil, fmt.Errorf("invalid fee: %v", fee)
 	}
 
-	fee := uint64(math.Ceil(float64(noFeeTransaction.VSize()) * satPerVbyte))
+	var transaction Transaction
+	var err error
 
-	transaction, err := construct(network, outputs, getOutValues(fee))
-	if err != nil {
-		return nil, nil, err
+	if fee.HasSats() {
+		transaction, err = construct(network, outputs, getOutValues(*fee.Sats))
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		noFeeTransaction, err := construct(network, outputs, getOutValues(0))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		fee := uint64(math.Ceil(float64(noFeeTransaction.VSize()) * *fee.SatsPerVbyte))
+
+		transaction, err = construct(network, outputs, getOutValues(fee))
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	var valid []OutputDetails
 	reconstruct := false
-
 	for i, output := range outputs {
 		err = func() error {
 			if !output.Cooperative {
@@ -229,13 +264,11 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 	}
 
 	if reconstruct {
-		transaction, newResults, err := ConstructTransaction(network, currency, valid, satPerVbyte, boltzApi)
+		transaction, newResults, err := ConstructTransaction(network, currency, valid, fee, boltzApi)
 		if err != nil {
 			return nil, nil, err
 		}
-		for id, result := range newResults {
-			results[id] = result
-		}
+		maps.Copy(results, newResults)
 		return transaction, results, nil
 	}
 

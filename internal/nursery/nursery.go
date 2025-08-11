@@ -294,7 +294,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 
 	logger.Infof("Using fee of %v sat/vbyte for transaction", feeSatPerVbyte)
 
-	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, feeSatPerVbyte, nursery.boltz)
+	transaction, results, err := boltz.ConstructTransaction(nursery.network, currency, details, boltz.Fee{SatsPerVbyte: &feeSatPerVbyte}, nursery.boltz)
 	if err != nil {
 		return handleErr(fmt.Errorf("construct: %w", err))
 	}
