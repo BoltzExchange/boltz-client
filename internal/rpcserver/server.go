@@ -383,6 +383,7 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 		transport.Proxy = http.ProxyURL(proxy)
 		boltzApi.Client = http.Client{
 			Transport: transport,
+			Timeout:   30 * time.Second,
 		}
 	}
 
