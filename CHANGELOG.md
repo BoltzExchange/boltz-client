@@ -1,4 +1,13 @@
 
+<a name="v2.8.3"></a>
+## [v2.8.3] - 2025-08-20
+### Feat
+- allow constructing transactions with absolute fees ([#528](https://github.com/BoltzExchange/boltz-client/issues/528))
+
+### Fix
+- add Boltz API timeout ([#529](https://github.com/BoltzExchange/boltz-client/issues/529))
+
+
 <a name="v2.8.2"></a>
 ## [v2.8.2] - 2025-07-29
 ### Feat
@@ -742,6 +751,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.2...v2.8.3
 [v2.8.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.1...v2.8.2
 [v2.8.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.0...v2.8.1
 [v2.8.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.7.2...v2.8.0
