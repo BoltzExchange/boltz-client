@@ -1,9 +1,10 @@
 package autoswap
 
 import (
+	"testing"
+
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
-	"testing"
 
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
@@ -63,8 +64,22 @@ func TestLightningConfig(t *testing.T) {
 		{
 			name: "TooMuchBalance/Percent",
 			cfg: &SerializedLnConfig{
-				OutboundBalancePercent: 75,
-				InboundBalancePercent:  75,
+				OutboundBalancePercent: 50 - float32(DefaultReserve),
+				InboundBalancePercent:  50,
+			},
+			err: true,
+		},
+		{
+			name: "TooMuchBalance/Outbound",
+			cfg: &SerializedLnConfig{
+				OutboundBalancePercent: 100 - float32(DefaultReserve),
+			},
+			err: true,
+		},
+		{
+			name: "TooMuchBalance/Inbound",
+			cfg: &SerializedLnConfig{
+				InboundBalancePercent: 100 - float32(DefaultReserve),
 			},
 			err: true,
 		},
