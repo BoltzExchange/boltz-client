@@ -120,7 +120,7 @@ func reverseSwap() error {
 				return err
 			}
 
-			satPerVbyte := float64(2)
+			satsPerVbyte := float64(2)
 			claimTransaction, _, err := boltz.ConstructTransaction(
 				network,
 				boltz.CurrencyBtc,
@@ -137,7 +137,7 @@ func reverseSwap() error {
 						Cooperative:       true,
 					},
 				},
-				satPerVbyte,
+				boltz.Fee{SatsPerVbyte: &satsPerVbyte},
 				boltzApi,
 			)
 			if err != nil {
