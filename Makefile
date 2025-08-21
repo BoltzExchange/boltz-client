@@ -105,6 +105,11 @@ build: download-gdk build-bolt12 build-lwk
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
+build-examples:
+	@$(call print, "Building examples")
+	cd examples && $(GOBUILD) $(ARGS) -o bin/submarine $(LDFLAGS) ./submarine
+	cd examples && $(GOBUILD) $(ARGS) -o bin/reverse $(LDFLAGS) ./reverse
+
 static: download-gdk build-bolt12 build-lwk
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
