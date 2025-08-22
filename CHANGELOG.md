@@ -1,4 +1,7 @@
 
+<a name="v2.8.4"></a>
+## [v2.8.4] - 2025-08-22
+
 <a name="v2.8.3"></a>
 ## [v2.8.3] - 2025-08-20
 ### Feat
@@ -751,6 +754,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.3...v2.8.4
 [v2.8.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.2...v2.8.3
 [v2.8.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.1...v2.8.2
 [v2.8.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.0...v2.8.1
