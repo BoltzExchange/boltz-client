@@ -2053,7 +2053,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 		for {
 			version, err := server.boltz.GetVersion()
 			if err != nil {
-				logger.Errorf("Boltz backend be unavailable, retrying in 10 seconds: %v", err)
+				logger.Errorf("Boltz backend is unavailable, retrying in 10 seconds: %v", err)
 				server.state = stateUnavailable
 				time.Sleep(time.Second * 10)
 			} else {
