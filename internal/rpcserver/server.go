@@ -184,6 +184,10 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		return err
 	}
 
+	if server.network == boltz.TestNet {
+		return errors.New("testnet is deprecated, use regtest instead")
+	}
+
 	if server.boltz == nil {
 		server.boltz, err = initBoltz(cfg, server.network)
 		if err != nil {
