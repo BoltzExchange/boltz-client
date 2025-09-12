@@ -164,7 +164,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 			return err
 		}
 
-		if server.state == stateStopping {
+		if server.getState() == stateStopping {
 			return nil
 		}
 
