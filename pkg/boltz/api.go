@@ -527,6 +527,15 @@ func (boltz *Api) GetTransaction(transactionId string, currency Currency) (strin
 	return response.Hex, err
 }
 
+func (boltz *Api) EstimateFee(currency Currency) (float64, error) {
+	var response struct {
+		Fee float64
+	}
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/chain/%s/fee", currency), &response)
+
+	return response.Fee, err
+}
+
 func (boltz *Api) BroadcastTransaction(currency Currency, txHex string) (string, error) {
 	var response BroadcastTransactionResponse
 	err := boltz.sendPostRequest(fmt.Sprintf("/chain/%s/transaction", currency), BroadcastTransactionRequest{
