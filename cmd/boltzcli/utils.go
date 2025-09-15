@@ -100,7 +100,7 @@ func printFees(fees *boltzrpc.SwapFees, amount uint64) {
 	fmt.Println()
 }
 
-func printDeposit(amount uint64, address string, hours float32, blockHeight uint64, limits *boltzrpc.Limits) {
+func printDeposit(amount uint64, address string, limits *boltzrpc.Limits) {
 	var amountString string
 	if amount == 0 {
 		amountString = fmt.Sprintf("between %d and %d satoshis", limits.Minimal, limits.Maximal)
@@ -108,8 +108,7 @@ func printDeposit(amount uint64, address string, hours float32, blockHeight uint
 		amountString = utils.Satoshis(amount)
 	}
 
-	fmt.Printf("Please deposit %s into %s in the next ~%.1f hours (block height %d)\n",
-		amountString, address, hours, blockHeight)
+	fmt.Printf("Please deposit %s into %s\n", amountString, address)
 }
 
 var errNotNumber = errors.New("not a valid number")
