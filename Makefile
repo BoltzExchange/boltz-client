@@ -1,7 +1,7 @@
 PKG := github.com/BoltzExchange/boltz-client/v2
 VERSION := 2.8.4
 GDK_VERSION = 0.75.1
-GO_VERSION := 1.24.6
+GO_VERSION := 1.24.7-bookworm
 RUST_VERSION := 1.82.0
 
 PKG_BOLTZD := $(PKG)/cmd/boltzd

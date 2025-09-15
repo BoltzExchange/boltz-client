@@ -31,7 +31,7 @@ COPY --from=builder /boltz-client/boltzd /
 COPY --from=builder /boltz-client/boltzcli /
 
 # Start a new, final image.
-FROM ubuntu:jammy AS final
+FROM ubuntu:noble AS final
 
 RUN apt update && apt install ca-certificates -y && rm -rf /var/lib/apt/lists/*
 
