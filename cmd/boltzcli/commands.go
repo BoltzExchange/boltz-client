@@ -1194,7 +1194,7 @@ func createSwap(ctx *cli.Context) error {
 		return nil
 	} else {
 		if externalPay {
-			printDeposit(swap.ExpectedAmount, swap.Address, swap.TimeoutHours, uint64(swap.TimeoutBlockHeight), pairInfo.Limits)
+			printDeposit(swap.ExpectedAmount, swap.Address, pairInfo.Limits)
 		}
 		fmt.Println()
 		fmt.Println("Swap ID:", swap.Id)
@@ -1344,13 +1344,7 @@ func createChainSwap(ctx *cli.Context) error {
 	}
 
 	if externalPay {
-		height := info.BlockHeights.Btc
-		if pair.From == boltzrpc.Currency_LBTC {
-			height = info.BlockHeights.GetLiquid()
-		}
-		timeout := swap.FromData.TimeoutBlockHeight
-		timeoutHours := boltz.BlocksToHours(timeout-height, serializers.ParseCurrency(&pair.From))
-		printDeposit(amount, swap.FromData.LockupAddress, float32(timeoutHours), uint64(timeout), pairInfo.Limits)
+		printDeposit(amount, swap.FromData.LockupAddress, pairInfo.Limits)
 		fmt.Println()
 	}
 
