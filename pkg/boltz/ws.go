@@ -287,6 +287,9 @@ func (boltz *Websocket) Close() error {
 	// and then tries to send on the closed channel.
 	boltz.updatesLock.Lock()
 	defer boltz.updatesLock.Unlock()
+	if boltz.closed {
+		return nil
+	}
 	close(boltz.Updates)
 	boltz.closed = true
 	return boltz.close()

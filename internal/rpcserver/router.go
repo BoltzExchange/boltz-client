@@ -73,6 +73,7 @@ type routedBoltzServer struct {
 
 	stop  chan bool
 	state serverState
+	stateLock sync.RWMutex
 
 	newKeyLock sync.Mutex
 }
@@ -1915,14 +1916,16 @@ func (server *routedBoltzServer) WalletReceive(ctx context.Context, request *bol
 }
 
 func (server *routedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Empty, error) {
+	server.stateLock.Lock()
+	defer server.stateLock.Unlock()
 	if server.state == stateStopping {
 		return &empty.Empty{}, nil
 	}
+	server.state = stateStopping
 	if server.nursery != nil {
 		server.nursery.Stop()
 		logger.Debugf("Stopped nursery")
 	}
-	server.state = stateStopping
 	close(server.stop)
 	return &empty.Empty{}, nil
 }
@@ -1978,10 +1981,24 @@ func (server *routedBoltzServer) fullInit() (err error) {
 	return nil
 }
 
+func (server *routedBoltzServer) getState() serverState {
+	server.stateLock.RLock()
+	defer server.stateLock.RUnlock()
+	return server.state
+}
+
+func (server *routedBoltzServer) setState(state serverState) {
+	server.stateLock.Lock()
+	defer server.stateLock.Unlock()
+	server.state = state
+}
+
 func (server *routedBoltzServer) unlock(password string) error {
 	credentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
 		if status.Code(err) == codes.InvalidArgument {
+			server.stateLock.Lock()
+			defer server.stateLock.Unlock()
 			if server.state == stateLocked {
 				return err
 			}
@@ -2025,10 +2042,10 @@ func (server *routedBoltzServer) unlock(password string) error {
 		server.onchain.AddWallet(server.lightning)
 	}
 
-	server.state = stateSyncing
+	server.setState(stateSyncing)
 	go func() {
 		defer func() {
-			server.state = stateUnlocked
+			server.setState(stateUnlocked)
 		}()
 		var wg sync.WaitGroup
 		wg.Add(len(credentials))
@@ -2054,7 +2071,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 			version, err := server.boltz.GetVersion()
 			if err != nil {
 				logger.Errorf("Boltz backend is unavailable, retrying in 10 seconds: %v", err)
-				server.state = stateUnavailable
+				server.setState(stateUnavailable)
 				time.Sleep(time.Second * 10)
 			} else {
 				if err := checkBoltzVersion(version); err != nil {
@@ -2087,20 +2104,21 @@ func (server *routedBoltzServer) requestAllowed(fullMethod string) error {
 	if strings.Contains(fullMethod, "Stop") {
 		return nil
 	}
-	if server.state == stateUnavailable {
+	state := server.getState()
+	if state == stateUnavailable {
 		return status.Error(codes.Unavailable, "unavailable, please check logs for more information")
 	}
-	if server.state == stateLightningSyncing {
+	if state == stateLightningSyncing {
 		return status.Errorf(codes.Unavailable, "connected lightning node is syncing, please wait")
 	}
-	if server.state == stateSyncing {
+	if state == stateSyncing {
 		return status.Error(codes.Unavailable, "boltzd is syncing its wallets, please wait")
 	}
 	if strings.Contains(fullMethod, "Unlock") {
-		if server.state == stateUnlocked {
+		if state == stateUnlocked {
 			return status.Errorf(codes.FailedPrecondition, "boltzd is already unlocked")
 		}
-	} else if server.state == stateLocked {
+	} else if state == stateLocked {
 		return status.Error(codes.FailedPrecondition, "boltzd is locked, use \"unlock\" to enable full RPC access")
 	}
 	return nil
