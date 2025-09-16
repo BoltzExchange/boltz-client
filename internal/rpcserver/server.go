@@ -469,11 +469,15 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		liquidProviders = append(liquidProviders, client)
 	}
 
+	boltzBtcProvider := onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
+	boltzLiquidProvider := onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
+	chain.Btc.FeeFallback = boltzBtcProvider
+	chain.Liquid.FeeFallback = boltzLiquidProvider
 	chain.Btc.Tx = onchain.MultiTxProvider{
-		Providers: append(btcProviders, onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)),
+		Providers: append(btcProviders, boltzBtcProvider),
 	}
 	chain.Liquid.Tx = onchain.MultiTxProvider{
-		Providers: append(liquidProviders, onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)),
+		Providers: append(liquidProviders, boltzLiquidProvider),
 	}
 
 	return chain, nil

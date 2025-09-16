@@ -75,6 +75,7 @@ var RegtestElectrumConfig = ElectrumConfig{
 type Currency struct {
 	Blocks BlockProvider
 	Tx     TxProvider
+	FeeFallback FeeProvider
 
 	blockHeight uint32
 }
@@ -156,24 +157,28 @@ func (onchain *Onchain) GetWallets(checker WalletChecker) []Wallet {
 	return wallets
 }
 
+var FeeFloor = map[boltz.Currency]float64{
+	boltz.CurrencyLiquid: 0.1,
+	boltz.CurrencyBtc:   2,
+}
+
 func (onchain *Onchain) EstimateFee(currency boltz.Currency) (float64, error) {
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return 0, err
 	}
 
-	var minFee float64
-	switch currency {
-	case boltz.CurrencyLiquid:
-		minFee = 0.1
-	case boltz.CurrencyBtc:
-		minFee = 2
-	}
+	minFee := FeeFloor[currency]
 
 	fee, err := chain.Blocks.EstimateFee()
-	if err != nil && currency == boltz.CurrencyLiquid {
-		logger.Warnf("Could not get fee for liquid, falling back to hardcoded min fee: %s", err.Error())
-		return minFee, nil
+	if err != nil {
+		logger.Warnf("Could not get fee for %s from default provider: %s", currency, err.Error())
+		if chain.FeeFallback != nil {
+			logger.Infof("Using fallback provider for %s", currency)
+			fee, err = chain.FeeFallback.EstimateFee()
+		} else {
+			return 0, fmt.Errorf("could not get fee for %s: %w", currency, err)
+		}
 	}
 	return math.Max(minFee, fee), err
 }
