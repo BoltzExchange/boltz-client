@@ -8,6 +8,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	lnmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/lightning"
+	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
@@ -216,6 +217,67 @@ func TestChooseDirectOutput(t *testing.T) {
 			output, err := nursery.chooseDirectOutput(test.swap, test.feeEstimations, test.outputs)
 			test.err(t, err)
 			require.Equal(t, test.expected, output)
+		})
+	}
+}
+
+func TestGetFeeEstimations(t *testing.T) {
+	blockProvider := func(t *testing.T, fees float64, err error) *onchainmock.MockBlockProvider {
+		mock := onchainmock.NewMockBlockProvider(t)
+		mock.EXPECT().EstimateFee().Return(fees, err)
+		return mock
+	}
+	tests := []struct {
+		swapType boltz.SwapType
+		pair boltz.Pair
+		fees boltz.FeeEstimations
+		err require.ErrorAssertionFunc
+		setup func(t *testing.T, nursery *Nursery) 
+	}{
+		{
+			swapType: boltz.NormalSwap,
+			pair: boltz.Pair{From: boltz.CurrencyBtc, To: boltz.CurrencyLiquid},
+			fees: boltz.FeeEstimations{boltz.CurrencyBtc: 10},
+			setup: func(t* testing.T, nursery *Nursery) {
+				nursery.onchain.Btc.Blocks = blockProvider(t, 10, nil)
+			},
+			err: require.NoError,
+		},
+		{
+			swapType: boltz.NormalSwap,
+			pair: boltz.Pair{From: boltz.CurrencyBtc, To: boltz.CurrencyLiquid},
+			setup: func(t* testing.T, nursery *Nursery) {
+				nursery.onchain.Btc.Blocks = blockProvider(t, 10, errors.New("error"))
+			},
+			err: require.Error,
+		},
+		{
+			swapType: boltz.ReverseSwap,
+			pair: boltz.Pair{From: boltz.CurrencyBtc, To: boltz.CurrencyLiquid},
+			fees: boltz.FeeEstimations{boltz.CurrencyLiquid: 1},
+			setup: func(t* testing.T, nursery *Nursery) {
+				nursery.onchain.Liquid.Blocks = blockProvider(t, 1, nil)
+			},
+			err: require.NoError,
+		},
+		{
+			swapType: boltz.ChainSwap,
+			pair: boltz.Pair{From: boltz.CurrencyBtc, To: boltz.CurrencyLiquid},
+			fees: boltz.FeeEstimations{boltz.CurrencyBtc: 10, boltz.CurrencyLiquid: 1},
+			setup: func(t* testing.T, nursery *Nursery) {
+				nursery.onchain.Btc.Blocks = blockProvider(t, 10, nil)
+				nursery.onchain.Liquid.Blocks = blockProvider(t, 1, nil)
+			},
+			err: require.NoError,
+		},
+	}
+	for _, test := range tests {
+		t.Run(string(test.swapType), func(t *testing.T) {
+			nursery := setup(t)
+			test.setup(t, nursery)
+			fees, err := nursery.GetFeeEstimations(test.swapType, test.pair)
+			test.err(t, err)
+			require.Equal(t, test.fees, fees)
 		})
 	}
 }

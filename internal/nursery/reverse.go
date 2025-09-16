@@ -330,7 +330,7 @@ func (nursery *Nursery) chooseDirectOutput(swap *database.ReverseSwap, feeEstima
 func (nursery *Nursery) handleReverseSwapDirectPayments(swap *database.ReverseSwap, outputs []*onchain.Output) {
 	err := nursery.database.RunTx(func(tx *database.Transaction) error {
 		logger.Debugf("Found %d direct payments to Reverse Swap %s", len(outputs), swap.Id)
-		feeEstimations, err := nursery.GetFeeEstimations()
+		feeEstimations, err := nursery.GetFeeEstimations(boltz.ReverseSwap, swap.Pair)
 		if err != nil {
 			return fmt.Errorf("get fee estimations: %s", err)
 		}

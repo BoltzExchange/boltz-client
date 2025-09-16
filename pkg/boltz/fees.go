@@ -60,6 +60,19 @@ func checkTolerance(expected uint64, actual uint64) error {
 	return nil
 }
 
+func RequiredEstimations(swapType SwapType, pair Pair) []Currency {
+	currencies := make([]Currency, 0)
+	switch swapType {
+	case NormalSwap:
+		currencies = append(currencies, pair.From)
+	case ReverseSwap:
+		currencies = append(currencies, pair.To)
+	case ChainSwap:
+		currencies = append(currencies, pair.From, pair.To)
+	}
+	return currencies
+}
+
 func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount uint64, serviceFee Percentage, estimations FeeEstimations, includeClaim bool) error {
 	totalFees := sendAmount - receiveAmount
 	networkFees := totalFees
@@ -67,6 +80,12 @@ func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount
 		networkFees -= CalculatePercentage(serviceFee, receiveAmount)
 	} else {
 		networkFees -= CalculatePercentage(serviceFee, sendAmount)
+	}
+	currencies := RequiredEstimations(swapType, pair)
+	for _, currency := range currencies {
+		if _, ok := estimations[currency]; !ok {
+			return fmt.Errorf("no estimation for currency %s", currency)
+		}
 	}
 	return checkTolerance(calcNetworkFee(swapType, pair, estimations, includeClaim), networkFees)
 }

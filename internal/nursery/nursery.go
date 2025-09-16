@@ -381,22 +381,20 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 	return
 }
 
-func (nursery *Nursery) GetFeeEstimations() (boltz.FeeEstimations, error) {
+func (nursery *Nursery) GetFeeEstimations(swapType boltz.SwapType, pair boltz.Pair) (boltz.FeeEstimations, error) {
 	fees := make(boltz.FeeEstimations)
 	var err error
-	fees[boltz.CurrencyLiquid], err = nursery.onchain.EstimateFee(boltz.CurrencyLiquid)
-	if err != nil {
-		return nil, err
-	}
-	fees[boltz.CurrencyBtc], err = nursery.onchain.EstimateFee(boltz.CurrencyBtc)
-	if err != nil {
-		return nil, err
+	for _, currency := range boltz.RequiredEstimations(swapType, pair) {
+		fees[currency], err = nursery.onchain.EstimateFee(currency)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return fees, nil
 }
 
 func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, sendAmount uint64, receiveAmount uint64, serviceFee boltz.Percentage) (err error) {
-	fees, err := nursery.GetFeeEstimations()
+	fees, err := nursery.GetFeeEstimations(swapType, pair)
 	if err != nil {
 		return err
 	}
