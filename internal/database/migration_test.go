@@ -9,9 +9,9 @@ import (
 
 func TestMigration(t *testing.T) {
 	tt := []struct {
-		name        string
-		schema      string
-		successfull bool
+		name       string
+		schema     string
+		successful bool
 	}{
 		{"Original", originalSchema, true},
 		{"PendingSwaps", pendingSchema, false},
@@ -34,7 +34,7 @@ func TestMigration(t *testing.T) {
 			migrationError := database.Connect()
 			version, err := database.queryVersion()
 			require.NoError(t, err)
-			if tc.successfull {
+			if tc.successful {
 				require.NoError(t, migrationError)
 				require.Equal(t, latestSchemaVersion, version)
 				_, err := database.QuerySwaps(SwapQuery{})

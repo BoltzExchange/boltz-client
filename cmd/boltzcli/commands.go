@@ -634,7 +634,7 @@ func printStatus(prefix string, status *autoswaprpc.Status) {
 
 func printStats(stats *boltzrpc.SwapStats) {
 	colorPrintln(yellowBold, "Stats")
-	fmt.Printf(" - Successfull Swaps: %d\n", stats.SuccessCount)
+	fmt.Printf(" - Successful Swaps: %d\n", stats.SuccessCount)
 	fmt.Println(" - Amount: " + utils.Satoshis(stats.TotalAmount))
 	fmt.Println(" - Fees: " + utils.Satoshis(stats.TotalFees))
 }
