@@ -177,7 +177,7 @@ func (nursery *Nursery) recoverSwaps() error {
 	logger.Info("Recovering Swaps")
 
 	query := database.SwapQuery{
-		// we also recover the ERROR state as this might be a temporary error and any swap will eventually be successfull or expired
+		// we also recover the ERROR state as this might be a temporary error and any swap will eventually be successful or expired
 		States: []boltzrpc.SwapState{boltzrpc.SwapState_PENDING, boltzrpc.SwapState_ERROR},
 	}
 	swaps, err := nursery.database.QuerySwaps(query)
