@@ -8,7 +8,7 @@ import (
 )
 
 const minLndVersion = "0.15.0"
-const minClnVersion = "23.0.0"
+const minClnVersion = "25.05"
 const minBoltzVersion = "3.5.0"
 
 func checkLndVersion(info *lightning.LightningInfo) {

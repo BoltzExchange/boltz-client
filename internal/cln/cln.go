@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 	"time"
 
@@ -220,30 +219,17 @@ func (c *Cln) CreateInvoice(value uint64, preimage []byte, expiry int64, memo st
 func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, timeoutSeconds uint, chanIds []lightning.ChanId) (*lightning.PayInvoiceResponse, error) {
 	retry := uint32(timeoutSeconds)
 
-	var exclude []string
-
 	if len(chanIds) > 0 {
-		channels, err := c.ListChannels()
-		if err != nil {
-			return nil, err
-		}
-		for _, channel := range channels {
-			if !slices.Contains(chanIds, channel.Id) {
-				exclude = append(exclude, channel.Id.ToCln()+"/0")
-				exclude = append(exclude, channel.Id.ToCln()+"/1")
-			}
-		}
+		return nil, fmt.Errorf("chanIds are not supported for cln")
 	}
 
-	res, err := c.Client.Pay(ctx, &protos.PayRequest{
-		Bolt11:   invoice,
+	res, err := c.Client.Xpay(ctx, &protos.XpayRequest{
+		Invstring:   invoice,
 		RetryFor: &retry,
 		Maxfee: &protos.Amount{
 			Msat: uint64(feeLimit) * 1000,
 		},
-		Exclude: exclude,
 	})
-
 	if err != nil {
 		return nil, err
 	}
