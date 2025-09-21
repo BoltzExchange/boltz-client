@@ -47,6 +47,10 @@ proto: $(TOOLS_PATH)
 	@$(call print, "Generating protosbufs")
 	eval cd pkg/boltzrpc && ./gen_protos.sh
 
+cln-proto: $(TOOLS_PATH)
+	@$(call print, "Generating CLN protobufs")
+	eval cd internal/cln/protos && ./gen_protos.sh
+
 BINDGEN_GO_REPO := https://github.com/NordSecurity/uniffi-bindgen-go
 BINDGEN_GO_TAG := v0.4.0+v0.28.3
 
