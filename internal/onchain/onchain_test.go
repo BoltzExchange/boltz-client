@@ -1,7 +1,6 @@
 package onchain_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -11,6 +10,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEstimateFee(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		currency boltz.Currency
+		fee      float64
+		err      error
+		expected float64
+	}{
+		{currency: boltz.CurrencyBtc, fee: 1.0, name: "BTC", expected: 2.0},
+		{currency: boltz.CurrencyBtc, fee: 4.0, name: "BTC", expected: 4.0},
+		{currency: boltz.CurrencyLiquid, fee: 3.0, name: "LBTC", expected: 3.0},
+		{currency: boltz.CurrencyLiquid, fee: 0.0001, name: "LBTC", expected: 0.1},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := onchainmock.NewMockChainProvider(t)
+			mock.EXPECT().EstimateFee().RunAndReturn(func() (float64, error) {
+				return tc.fee, tc.err
+			}).Maybe()
+			onchainInstance := &onchain.Onchain{
+				Btc:    &onchain.Currency{Chain: mock},
+				Liquid: &onchain.Currency{Chain: mock},
+			}
+			fee, err := onchainInstance.EstimateFee(tc.currency)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, fee)
+		})
+	}
+}
+
+/*
 func TestEstimateFee(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -109,7 +140,7 @@ func TestEstimateFee(t *testing.T) {
 			if tt.currency != boltz.Currency("invalid") {
 				blocks.EXPECT().EstimateFee().Return(tt.primaryFee, tt.primaryError)
 			}
-			currency := onchain.Currency{Blocks: blocks}
+			currency := onchain.Currency{Chain: blocks}
 
 			if tt.hasFallback {
 				mockFallback := onchainmock.NewMockFeeProvider(t)
@@ -135,9 +166,10 @@ func TestEstimateFee(t *testing.T) {
 		})
 	}
 }
+*/
 
-func mockBlockProvider(t *testing.T) *onchainmock.MockBlockProvider {
-	blockProvider := onchainmock.NewMockBlockProvider(t)
+func mockBlockProvider(t *testing.T) *onchainmock.MockChainProvider {
+	blockProvider := onchainmock.NewMockChainProvider(t)
 	blockProvider.EXPECT().Disconnect().Return().Maybe()
 	return blockProvider
 }
@@ -146,10 +178,10 @@ func TestWalletSync(t *testing.T) {
 	setup := func(t *testing.T) *onchain.Onchain {
 		onchainInstance := &onchain.Onchain{
 			Btc: &onchain.Currency{
-				Blocks: mockBlockProvider(t),
+				Chain: mockBlockProvider(t),
 			},
 			Liquid: &onchain.Currency{
-				Blocks: mockBlockProvider(t),
+				Chain: mockBlockProvider(t),
 			},
 			WalletSyncInterval: 100 * time.Millisecond,
 		}

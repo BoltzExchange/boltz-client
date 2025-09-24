@@ -399,14 +399,7 @@ func (nursery *Nursery) checkExternalReverseSwaps(currency boltz.Currency) error
 		}
 		outputs, err := swapWallet.GetOutputs(swap.ClaimAddress)
 		if err != nil {
-			if errors.Is(err, errors.ErrUnsupported) && currency == boltz.CurrencyBtc {
-				outputs, err = nursery.onchain.GetUnspentOutputs(currency, swap.ClaimAddress)
-				if err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
+			return err
 		}
 		if len(outputs) > 0 {
 			nursery.handleReverseSwapDirectPayments(swap, outputs)

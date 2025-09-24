@@ -170,11 +170,10 @@ func LiquidBackendConfig(t *testing.T) liquid_wallet.Config {
 	electrumClient, err := electrum.NewClient(onchain.RegtestElectrumConfig.Liquid)
 	require.NoError(t, err)
 	return liquid_wallet.Config{
-		Network:     boltz.Regtest,
-		DataDir:     t.TempDir(),
-		Persister:   dbPersister(t),
-		FeeProvider: electrumClient,
-		TxProvider:  electrumClient,
+		Network:       boltz.Regtest,
+		DataDir:       t.TempDir(),
+		Persister:     dbPersister(t),
+		ChainProvider: electrumClient,
 	}
 }
 

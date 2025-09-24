@@ -15,6 +15,8 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
+const FeeFloor = 0.1
+
 // Persister defines methods for saving and retrieving the last used address index for a wallet.
 // The index is marked as used as soon as its corresponding address is generated, ensuring address uniqueness.
 type Persister interface {
@@ -43,8 +45,7 @@ type Config struct {
 	Esplora                *EsploraConfig
 	Electrum               *onchain.ElectrumOptions
 	ConsolidationThreshold uint64
-	TxProvider             onchain.TxProvider
-	FeeProvider            onchain.FeeProvider
+	ChainProvider          onchain.ChainProvider
 	Persister              Persister
 }
 
@@ -57,7 +58,7 @@ type BlockchainBackend struct {
 
 func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, error) {
 	raw := tx.Bytes()
-	return b.cfg.TxProvider.BroadcastTransaction(hex.EncodeToString(raw))
+	return b.cfg.ChainProvider.BroadcastTransaction(hex.EncodeToString(raw))
 }
 
 func (b *BlockchainBackend) DeriveDefaultDescriptor(mnemonic string) (string, error) {
@@ -70,8 +71,8 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	if cfg.Persister == nil {
 		return nil, errors.New("persister is required")
 	}
-	if cfg.TxProvider == nil {
-		return nil, errors.New("tx provider is required")
+	if cfg.ChainProvider == nil {
+		return nil, errors.New("chain provider is required")
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
@@ -269,10 +270,12 @@ func (w *Wallet) autoConsolidate() error {
 		if err != nil {
 			return fmt.Errorf("new address: %w", err)
 		}
-		feeRate, err := w.backend.cfg.FeeProvider.EstimateFee()
+		feeRate, err := w.backend.cfg.ChainProvider.EstimateFee()
 		if err != nil {
 			return fmt.Errorf("estimate fee: %w", err)
 		}
+		feeRate = max(FeeFloor, feeRate)
+		logger.Debugf("Using fee rate of %f sat/vbyte for consolidation", feeRate)
 		txId, err := w.SendToAddress(onchain.WalletSendArgs{
 			SendAll:     true,
 			SatPerVbyte: feeRate,
