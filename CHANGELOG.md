@@ -1,4 +1,11 @@
 
+<a name="v2.8.6"></a>
+## [v2.8.6] - 2025-09-24
+### Fix
+- respect mempool configuration value ([#553](https://github.com/BoltzExchange/boltz-client/issues/553))
+- update lwk bindings ([#551](https://github.com/BoltzExchange/boltz-client/issues/551))
+
+
 <a name="v2.8.5"></a>
 ## [v2.8.5] - 2025-09-24
 ### Feat
@@ -768,6 +775,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.5...v2.8.6
 [v2.8.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.4...v2.8.5
 [v2.8.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.3...v2.8.4
 [v2.8.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.2...v2.8.3
