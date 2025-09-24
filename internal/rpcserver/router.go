@@ -69,10 +69,10 @@ type routedBoltzServer struct {
 	macaroon   *macaroons.Service
 	referralId string
 
-	liquidBackend *liquid_wallet.BlockchainBackend
+	walletBackends map[boltz.Currency]onchain.WalletBackend
 
-	stop  chan bool
-	state serverState
+	stop      chan bool
+	state     serverState
 	stateLock sync.RWMutex
 
 	newKeyLock sync.Mutex
@@ -2468,8 +2468,11 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 }
 
 func (server *routedBoltzServer) loginWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
-	if credentials.Currency == boltz.CurrencyLiquid && !credentials.Legacy {
-		return liquid_wallet.NewWallet(server.liquidBackend, credentials)
+	if !credentials.Legacy {
+		backend, ok := server.walletBackends[credentials.Currency]
+		if ok {
+			return backend.NewWallet(credentials)
+		}
 	}
 	return wallet.Login(credentials)
 }

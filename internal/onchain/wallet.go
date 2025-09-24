@@ -122,3 +122,7 @@ func (c *WalletCredentials) Encrypt(password string) (*WalletCredentials, error)
 	}
 	return &encrypted, err
 }
+
+type WalletBackend interface {
+	NewWallet(credentials *WalletCredentials) (Wallet, error)
+}
