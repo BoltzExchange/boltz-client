@@ -1,4 +1,18 @@
 
+<a name="v2.8.5"></a>
+## [v2.8.5] - 2025-09-24
+### Feat
+- switch CLN from pay to xpay ([#546](https://github.com/BoltzExchange/boltz-client/issues/546))
+- boltz fallback fee provider ([#539](https://github.com/BoltzExchange/boltz-client/issues/539))
+- optimize fee estimation ([#543](https://github.com/BoltzExchange/boltz-client/issues/543))
+
+### Fix
+- successfull -> succesful ([#548](https://github.com/BoltzExchange/boltz-client/issues/548))
+- `Stop` race condition ([#538](https://github.com/BoltzExchange/boltz-client/issues/538))
+- Dockerfile base image versions ([#540](https://github.com/BoltzExchange/boltz-client/issues/540))
+- backend log typo ([#532](https://github.com/BoltzExchange/boltz-client/issues/532))
+
+
 <a name="v2.8.4"></a>
 ## [v2.8.4] - 2025-08-22
 
@@ -754,6 +768,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.4...v2.8.5
 [v2.8.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.3...v2.8.4
 [v2.8.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.2...v2.8.3
 [v2.8.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.1...v2.8.2
