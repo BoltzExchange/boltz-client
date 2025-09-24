@@ -394,6 +394,13 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 	return boltzApi, nil
 }
 
+func defaultValue(value string, defaultValue string) string {
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
 func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network) (*onchain.Onchain, error) {
 	chain := &onchain.Onchain{
 		Btc:     &onchain.Currency{},
@@ -446,26 +453,27 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		chain.Liquid.Blocks = client
 		liquidProviders = append(liquidProviders, client)
 	}
-	switch network {
-	case boltz.MainNet:
-		cfg.MempoolApi = "https://mempool.space/api"
-		cfg.MempoolLiquidApi = "https://liquid.bullbitcoin.com/api"
-	case boltz.TestNet:
-		cfg.MempoolApi = "https://mempool.space/testnet/api"
-		cfg.MempoolLiquidApi = "https://liquid.network/liquidtestnet/api"
+
+	if network == boltz.MainNet {
+		cfg.MempoolApi = defaultValue(cfg.MempoolApi, "https://mempool.space/api")
+		cfg.MempoolLiquidApi = defaultValue(cfg.MempoolLiquidApi, "https://liquid.bullbitcoin.com/api")
 	}
 
 	if cfg.MempoolApi != "" {
 		logger.Info("mempool.space API: " + cfg.MempoolApi)
 		client := mempool.InitClient(cfg.MempoolApi)
-		chain.Btc.Blocks = client
+		if chain.Btc.Blocks == nil {
+			chain.Btc.Blocks = client
+		}
 		btcProviders = append(btcProviders, client)
 	}
 
 	if cfg.MempoolLiquidApi != "" {
 		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
 		client := mempool.InitClient(cfg.MempoolLiquidApi)
-		chain.Liquid.Blocks = client
+		if chain.Liquid.Blocks == nil {
+			chain.Liquid.Blocks = client
+		}
 		liquidProviders = append(liquidProviders, client)
 	}
 
