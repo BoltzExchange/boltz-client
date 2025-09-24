@@ -54,9 +54,16 @@ cln-proto: $(TOOLS_PATH)
 BINDGEN_GO_REPO := https://github.com/NordSecurity/uniffi-bindgen-go
 BINDGEN_GO_TAG := v0.4.0+v0.28.3
 
-lwk-bindings: build-lwk
+bindgen-go:
 	which uniffi-bindgen-go || cargo install uniffi-bindgen-go --git $(BINDGEN_GO_REPO) --tag $(BINDGEN_GO_TAG)
+
+lwk-bindings: build-lwk bindgen-go
 	cd lwk/lwk_bindings && uniffi-bindgen-go --out-dir ../../internal/onchain/liquid-wallet/ --library ../target/release/liblwk.a
+
+bdk-bindings: build-bdk bindgen-go
+	cd $(BDK_BINDINGS_PATH) && uniffi-bindgen-go --out-dir ../internal/onchain/bitcoin-wallet/ --library ./target/release/libbdk.a
+
+
 #
 # Tests
 #
@@ -102,7 +109,16 @@ build-lwk:
 	cd lwk/lwk_bindings && cargo build --release --lib
 	cp lwk/target/release/liblwk.a lwk/target/release/liblwk.so internal/onchain/liquid-wallet/lwk/
 
-build: download-gdk build-bolt12 build-lwk
+BDK_BINDINGS_PATH := ./bdk
+
+build-bdk:
+ifeq ("$(wildcard internal/onchain/bitcoin-wallet/bdk/libbdk.a)","")
+	@$(call print, "Building bdk")
+	cd $(BDK_BINDINGS_PATH) && cargo build --release --lib
+	cp $(BDK_BINDINGS_PATH)/target/release/libbdk.a $(BDK_BINDINGS_PATH)/target/release/libbdk.so internal/onchain/bitcoin-wallet/bdk/
+endif
+
+build: download-gdk build-bolt12 build-lwk build-bdk
 	@$(call print, "Building boltz-client")
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
