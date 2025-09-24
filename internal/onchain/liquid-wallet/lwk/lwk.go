@@ -353,7 +353,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_func_is_provably_segwit()
 		})
-		if checksum != 25275 {
+		if checksum != 18100 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_func_is_provably_segwit: UniFFI API checksum mismatch")
 		}
@@ -362,7 +362,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_address_is_blinded()
 		})
-		if checksum != 34440 {
+		if checksum != 13572 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_address_is_blinded: UniFFI API checksum mismatch")
 		}
@@ -389,7 +389,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_address_script_pubkey()
 		})
-		if checksum != 23569 {
+		if checksum != 29124 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_address_script_pubkey: UniFFI API checksum mismatch")
 		}
@@ -398,7 +398,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_address_to_unconfidential()
 		})
-		if checksum != 28990 {
+		if checksum != 17427 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_address_to_unconfidential: UniFFI API checksum mismatch")
 		}
@@ -407,7 +407,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_addressresult_address()
 		})
-		if checksum != 57079 {
+		if checksum != 40671 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_addressresult_address: UniFFI API checksum mismatch")
 		}
@@ -416,9 +416,126 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_addressresult_index()
 		})
-		if checksum != 6170 {
+		if checksum != 11830 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_addressresult_index: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0_address()
+		})
+		if checksum != 28332 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0_amp_id()
+		})
+		if checksum != 48524 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0_amp_id: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0_last_index()
+		})
+		if checksum != 19251 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0_last_index: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0_sign()
+		})
+		if checksum != 4839 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0_sign: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0_wollet_descriptor()
+		})
+		if checksum != 39206 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0_wollet_descriptor: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0connected_get_challenge()
+		})
+		if checksum != 62572 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0connected_get_challenge: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0connected_login()
+		})
+		if checksum != 38625 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0connected_login: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0loggedin_create_amp0_account()
+		})
+		if checksum != 19376 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0loggedin_create_amp0_account: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0loggedin_create_watch_only()
+		})
+		if checksum != 18697 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0loggedin_create_watch_only: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0loggedin_get_amp_ids()
+		})
+		if checksum != 11011 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0loggedin_get_amp_ids: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0loggedin_next_account()
+		})
+		if checksum != 31592 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0loggedin_next_account: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0pset_blinding_nonces()
+		})
+		if checksum != 20239 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0pset_blinding_nonces: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_amp0pset_pset()
+		})
+		if checksum != 41127 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_amp0pset_pset: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -461,7 +578,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_assetamount_amount()
 		})
-		if checksum != 1080 {
+		if checksum != 49734 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_assetamount_amount: UniFFI API checksum mismatch")
 		}
@@ -470,7 +587,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_assetamount_asset()
 		})
-		if checksum != 31724 {
+		if checksum != 51371 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_assetamount_asset: UniFFI API checksum mismatch")
 		}
@@ -533,7 +650,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_electrumclient_broadcast()
 		})
-		if checksum != 41537 {
+		if checksum != 47006 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_electrumclient_broadcast: UniFFI API checksum mismatch")
 		}
@@ -542,7 +659,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_electrumclient_full_scan()
 		})
-		if checksum != 5919 {
+		if checksum != 2842 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_electrumclient_full_scan: UniFFI API checksum mismatch")
 		}
@@ -551,7 +668,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_electrumclient_full_scan_to_index()
 		})
-		if checksum != 64210 {
+		if checksum != 50918 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_electrumclient_full_scan_to_index: UniFFI API checksum mismatch")
 		}
@@ -560,7 +677,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_electrumclient_get_tx()
 		})
-		if checksum != 11605 {
+		if checksum != 33161 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_electrumclient_get_tx: UniFFI API checksum mismatch")
 		}
@@ -569,7 +686,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_electrumclient_ping()
 		})
-		if checksum != 49466 {
+		if checksum != 58048 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_electrumclient_ping: UniFFI API checksum mismatch")
 		}
@@ -578,7 +695,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_electrumclient_tip()
 		})
-		if checksum != 30458 {
+		if checksum != 29810 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_electrumclient_tip: UniFFI API checksum mismatch")
 		}
@@ -587,7 +704,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_esploraclient_broadcast()
 		})
-		if checksum != 54439 {
+		if checksum != 2593 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_esploraclient_broadcast: UniFFI API checksum mismatch")
 		}
@@ -596,7 +713,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_esploraclient_full_scan()
 		})
-		if checksum != 27446 {
+		if checksum != 50594 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_esploraclient_full_scan: UniFFI API checksum mismatch")
 		}
@@ -605,7 +722,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_esploraclient_full_scan_to_index()
 		})
-		if checksum != 37814 {
+		if checksum != 5341 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_esploraclient_full_scan_to_index: UniFFI API checksum mismatch")
 		}
@@ -623,7 +740,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_foreignpersister_get()
 		})
-		if checksum != 54855 {
+		if checksum != 44321 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_foreignpersister_get: UniFFI API checksum mismatch")
 		}
@@ -632,7 +749,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_foreignpersister_push()
 		})
-		if checksum != 22972 {
+		if checksum != 2778 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_foreignpersister_push: UniFFI API checksum mismatch")
 		}
@@ -641,7 +758,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_asset()
 		})
-		if checksum != 59545 {
+		if checksum != 3815 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_asset: UniFFI API checksum mismatch")
 		}
@@ -650,7 +767,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_asset_satoshi()
 		})
-		if checksum != 13924 {
+		if checksum != 4114 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_asset_satoshi: UniFFI API checksum mismatch")
 		}
@@ -659,7 +776,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_is_confidential()
 		})
-		if checksum != 28108 {
+		if checksum != 53528 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_is_confidential: UniFFI API checksum mismatch")
 		}
@@ -668,7 +785,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_is_issuance()
 		})
-		if checksum != 36847 {
+		if checksum != 43867 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_is_issuance: UniFFI API checksum mismatch")
 		}
@@ -677,7 +794,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_is_null()
 		})
-		if checksum != 41097 {
+		if checksum != 40661 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_is_null: UniFFI API checksum mismatch")
 		}
@@ -686,7 +803,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_is_reissuance()
 		})
-		if checksum != 19752 {
+		if checksum != 28099 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_is_reissuance: UniFFI API checksum mismatch")
 		}
@@ -695,7 +812,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_prev_txid()
 		})
-		if checksum != 29158 {
+		if checksum != 52687 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_prev_txid: UniFFI API checksum mismatch")
 		}
@@ -704,7 +821,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_prev_vout()
 		})
-		if checksum != 47940 {
+		if checksum != 53282 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_prev_vout: UniFFI API checksum mismatch")
 		}
@@ -713,7 +830,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_token()
 		})
-		if checksum != 31197 {
+		if checksum != 35389 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_token: UniFFI API checksum mismatch")
 		}
@@ -722,7 +839,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_token_satoshi()
 		})
-		if checksum != 10642 {
+		if checksum != 60126 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_issuance_token_satoshi: UniFFI API checksum mismatch")
 		}
@@ -731,7 +848,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_electrum_url()
 		})
-		if checksum != 55646 {
+		if checksum != 44900 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_electrum_url: UniFFI API checksum mismatch")
 		}
@@ -740,7 +857,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_generate()
 		})
-		if checksum != 26765 {
+		if checksum != 57601 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_generate: UniFFI API checksum mismatch")
 		}
@@ -749,7 +866,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_get_new_address()
 		})
-		if checksum != 19321 {
+		if checksum != 18169 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_get_new_address: UniFFI API checksum mismatch")
 		}
@@ -758,7 +875,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_height()
 		})
-		if checksum != 2430 {
+		if checksum != 19939 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_height: UniFFI API checksum mismatch")
 		}
@@ -767,7 +884,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_issue_asset()
 		})
-		if checksum != 1145 {
+		if checksum != 64492 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_issue_asset: UniFFI API checksum mismatch")
 		}
@@ -776,7 +893,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_send_to_address()
 		})
-		if checksum != 56643 {
+		if checksum != 578 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_send_to_address: UniFFI API checksum mismatch")
 		}
@@ -785,7 +902,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_network_default_electrum_client()
 		})
-		if checksum != 57493 {
+		if checksum != 38637 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_network_default_electrum_client: UniFFI API checksum mismatch")
 		}
@@ -794,7 +911,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_network_default_esplora_client()
 		})
-		if checksum != 7540 {
+		if checksum != 60328 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_network_default_esplora_client: UniFFI API checksum mismatch")
 		}
@@ -803,7 +920,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_network_is_mainnet()
 		})
-		if checksum != 38901 {
+		if checksum != 10603 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_network_is_mainnet: UniFFI API checksum mismatch")
 		}
@@ -812,7 +929,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_network_policy_asset()
 		})
-		if checksum != 61043 {
+		if checksum != 61911 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_network_policy_asset: UniFFI API checksum mismatch")
 		}
@@ -821,7 +938,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_network_tx_builder()
 		})
-		if checksum != 62021 {
+		if checksum != 8768 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_network_tx_builder: UniFFI API checksum mismatch")
 		}
@@ -830,7 +947,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_outpoint_txid()
 		})
-		if checksum != 59660 {
+		if checksum != 58690 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_outpoint_txid: UniFFI API checksum mismatch")
 		}
@@ -839,7 +956,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_outpoint_vout()
 		})
-		if checksum != 56493 {
+		if checksum != 28332 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_outpoint_vout: UniFFI API checksum mismatch")
 		}
@@ -866,7 +983,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_pset_combine()
 		})
-		if checksum != 29157 {
+		if checksum != 53457 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_pset_combine: UniFFI API checksum mismatch")
 		}
@@ -875,7 +992,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_pset_extract_tx()
 		})
-		if checksum != 24108 {
+		if checksum != 18364 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_pset_extract_tx: UniFFI API checksum mismatch")
 		}
@@ -893,7 +1010,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_pset_inputs()
 		})
-		if checksum != 59953 {
+		if checksum != 37869 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_pset_inputs: UniFFI API checksum mismatch")
 		}
@@ -938,7 +1055,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_psetdetails_balance()
 		})
-		if checksum != 56410 {
+		if checksum != 59666 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_psetdetails_balance: UniFFI API checksum mismatch")
 		}
@@ -947,7 +1064,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_psetdetails_inputs_issuances()
 		})
-		if checksum != 57319 {
+		if checksum != 33153 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_psetdetails_inputs_issuances: UniFFI API checksum mismatch")
 		}
@@ -956,7 +1073,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_psetdetails_signatures()
 		})
-		if checksum != 49463 {
+		if checksum != 7984 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_psetdetails_signatures: UniFFI API checksum mismatch")
 		}
@@ -1026,6 +1143,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_psetinput_sighash()
+		})
+		if checksum != 21859 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_psetinput_sighash: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_psetsignatures_has_signature()
 		})
 		if checksum != 62742 {
@@ -1082,7 +1208,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_script_asm()
 		})
-		if checksum != 38627 {
+		if checksum != 42582 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_script_asm: UniFFI API checksum mismatch")
 		}
@@ -1091,7 +1217,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_script_bytes()
 		})
-		if checksum != 31898 {
+		if checksum != 35040 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_script_bytes: UniFFI API checksum mismatch")
 		}
@@ -1100,7 +1226,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_script_is_provably_unspendable()
 		})
-		if checksum != 33321 {
+		if checksum != 12490 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_script_is_provably_unspendable: UniFFI API checksum mismatch")
 		}
@@ -1109,7 +1235,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_secretkey_bytes()
 		})
-		if checksum != 44270 {
+		if checksum != 43476 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_secretkey_bytes: UniFFI API checksum mismatch")
 		}
@@ -1125,9 +1251,36 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_signer_amp0_account_xpub()
+		})
+		if checksum != 11093 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_signer_amp0_account_xpub: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_signer_amp0_sign_challenge()
+		})
+		if checksum != 31984 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_signer_amp0_sign_challenge: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_signer_amp0_signer_data()
+		})
+		if checksum != 14976 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_signer_amp0_signer_data: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_signer_keyorigin_xpub()
 		})
-		if checksum != 15198 {
+		if checksum != 48213 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_signer_keyorigin_xpub: UniFFI API checksum mismatch")
 		}
@@ -1136,7 +1289,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_signer_mnemonic()
 		})
-		if checksum != 29480 {
+		if checksum != 41786 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_signer_mnemonic: UniFFI API checksum mismatch")
 		}
@@ -1154,7 +1307,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_signer_singlesig_desc()
 		})
-		if checksum != 28847 {
+		if checksum != 29930 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_signer_singlesig_desc: UniFFI API checksum mismatch")
 		}
@@ -1163,7 +1316,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_signer_wpkh_slip77_descriptor()
 		})
-		if checksum != 55215 {
+		if checksum != 50399 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_signer_wpkh_slip77_descriptor: UniFFI API checksum mismatch")
 		}
@@ -1172,7 +1325,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_transaction_bytes()
 		})
-		if checksum != 35387 {
+		if checksum != 48994 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_transaction_bytes: UniFFI API checksum mismatch")
 		}
@@ -1181,7 +1334,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_transaction_fee()
 		})
-		if checksum != 42284 {
+		if checksum != 21760 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_transaction_fee: UniFFI API checksum mismatch")
 		}
@@ -1190,7 +1343,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_transaction_inputs()
 		})
-		if checksum != 51474 {
+		if checksum != 47178 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_transaction_inputs: UniFFI API checksum mismatch")
 		}
@@ -1199,7 +1352,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_transaction_outputs()
 		})
-		if checksum != 59927 {
+		if checksum != 45462 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_transaction_outputs: UniFFI API checksum mismatch")
 		}
@@ -1208,7 +1361,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_transaction_txid()
 		})
-		if checksum != 8927 {
+		if checksum != 16242 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_transaction_txid: UniFFI API checksum mismatch")
 		}
@@ -1224,9 +1377,18 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txbuilder_add_explicit_recipient()
+		})
+		if checksum != 40242 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txbuilder_add_explicit_recipient: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txbuilder_add_external_utxos()
 		})
-		if checksum != 29722 {
+		if checksum != 22348 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_add_external_utxos: UniFFI API checksum mismatch")
 		}
@@ -1287,9 +1449,18 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txbuilder_finish_for_amp0()
+		})
+		if checksum != 46241 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txbuilder_finish_for_amp0: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txbuilder_issue_asset()
 		})
-		if checksum != 32494 {
+		if checksum != 48258 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_issue_asset: UniFFI API checksum mismatch")
 		}
@@ -1298,7 +1469,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txbuilder_liquidex_make()
 		})
-		if checksum != 47954 {
+		if checksum != 30487 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_liquidex_make: UniFFI API checksum mismatch")
 		}
@@ -1307,7 +1478,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txbuilder_liquidex_take()
 		})
-		if checksum != 14367 {
+		if checksum != 7163 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_liquidex_take: UniFFI API checksum mismatch")
 		}
@@ -1316,7 +1487,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txbuilder_reissue_asset()
 		})
-		if checksum != 54385 {
+		if checksum != 28240 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_reissue_asset: UniFFI API checksum mismatch")
 		}
@@ -1325,7 +1496,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txbuilder_set_wallet_utxos()
 		})
-		if checksum != 12661 {
+		if checksum != 53946 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_set_wallet_utxos: UniFFI API checksum mismatch")
 		}
@@ -1406,7 +1577,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_asset()
 		})
-		if checksum != 21742 {
+		if checksum != 26014 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_asset: UniFFI API checksum mismatch")
 		}
@@ -1415,7 +1586,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_asset_bf()
 		})
-		if checksum != 27606 {
+		if checksum != 41290 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_asset_bf: UniFFI API checksum mismatch")
 		}
@@ -1433,7 +1604,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_is_explicit()
 		})
-		if checksum != 10268 {
+		if checksum != 53000 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_is_explicit: UniFFI API checksum mismatch")
 		}
@@ -1442,7 +1613,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_value()
 		})
-		if checksum != 64117 {
+		if checksum != 16330 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_value: UniFFI API checksum mismatch")
 		}
@@ -1451,7 +1622,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_value_bf()
 		})
-		if checksum != 4095 {
+		if checksum != 54743 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_value_bf: UniFFI API checksum mismatch")
 		}
@@ -1469,7 +1640,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txid_bytes()
 		})
-		if checksum != 15950 {
+		if checksum != 6953 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txid_bytes: UniFFI API checksum mismatch")
 		}
@@ -1478,7 +1649,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_unvalidatedliquidexproposal_insecure_validate()
 		})
-		if checksum != 63611 {
+		if checksum != 45940 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_unvalidatedliquidexproposal_insecure_validate: UniFFI API checksum mismatch")
 		}
@@ -1487,7 +1658,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_unvalidatedliquidexproposal_needed_tx()
 		})
-		if checksum != 61339 {
+		if checksum != 38170 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_unvalidatedliquidexproposal_needed_tx: UniFFI API checksum mismatch")
 		}
@@ -1496,7 +1667,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_unvalidatedliquidexproposal_validate()
 		})
-		if checksum != 39721 {
+		if checksum != 11143 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_unvalidatedliquidexproposal_validate: UniFFI API checksum mismatch")
 		}
@@ -1514,7 +1685,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_update_serialize()
 		})
-		if checksum != 9990 {
+		if checksum != 15229 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_update_serialize: UniFFI API checksum mismatch")
 		}
@@ -1523,7 +1694,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_validatedliquidexproposal_input()
 		})
-		if checksum != 49227 {
+		if checksum != 14781 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_validatedliquidexproposal_input: UniFFI API checksum mismatch")
 		}
@@ -1532,7 +1703,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_validatedliquidexproposal_output()
 		})
-		if checksum != 43380 {
+		if checksum != 46590 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_validatedliquidexproposal_output: UniFFI API checksum mismatch")
 		}
@@ -1541,7 +1712,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_balance()
 		})
-		if checksum != 44398 {
+		if checksum != 48414 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_balance: UniFFI API checksum mismatch")
 		}
@@ -1550,7 +1721,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_fee()
 		})
-		if checksum != 39011 {
+		if checksum != 29198 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_fee: UniFFI API checksum mismatch")
 		}
@@ -1559,7 +1730,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_height()
 		})
-		if checksum != 12656 {
+		if checksum != 56545 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_height: UniFFI API checksum mismatch")
 		}
@@ -1568,7 +1739,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_inputs()
 		})
-		if checksum != 3951 {
+		if checksum != 45012 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_inputs: UniFFI API checksum mismatch")
 		}
@@ -1577,7 +1748,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_outputs()
 		})
-		if checksum != 55588 {
+		if checksum != 28655 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_outputs: UniFFI API checksum mismatch")
 		}
@@ -1586,7 +1757,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_timestamp()
 		})
-		if checksum != 12633 {
+		if checksum != 29251 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_timestamp: UniFFI API checksum mismatch")
 		}
@@ -1595,7 +1766,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_tx()
 		})
-		if checksum != 23689 {
+		if checksum != 18508 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_tx: UniFFI API checksum mismatch")
 		}
@@ -1604,7 +1775,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_txid()
 		})
-		if checksum != 36652 {
+		if checksum != 44692 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_txid: UniFFI API checksum mismatch")
 		}
@@ -1613,7 +1784,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_type_()
 		})
-		if checksum != 59416 {
+		if checksum != 60338 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_type_: UniFFI API checksum mismatch")
 		}
@@ -1622,7 +1793,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettx_unblinded_url()
 		})
-		if checksum != 45766 {
+		if checksum != 46683 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettx_unblinded_url: UniFFI API checksum mismatch")
 		}
@@ -1631,7 +1802,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettxout_address()
 		})
-		if checksum != 55633 {
+		if checksum != 51786 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettxout_address: UniFFI API checksum mismatch")
 		}
@@ -1640,7 +1811,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettxout_ext_int()
 		})
-		if checksum != 60402 {
+		if checksum != 47840 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettxout_ext_int: UniFFI API checksum mismatch")
 		}
@@ -1649,7 +1820,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettxout_height()
 		})
-		if checksum != 50237 {
+		if checksum != 31312 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettxout_height: UniFFI API checksum mismatch")
 		}
@@ -1658,7 +1829,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettxout_outpoint()
 		})
-		if checksum != 58785 {
+		if checksum != 22039 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettxout_outpoint: UniFFI API checksum mismatch")
 		}
@@ -1667,7 +1838,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettxout_script_pubkey()
 		})
-		if checksum != 50610 {
+		if checksum != 23842 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettxout_script_pubkey: UniFFI API checksum mismatch")
 		}
@@ -1676,7 +1847,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettxout_unblinded()
 		})
-		if checksum != 57421 {
+		if checksum != 56966 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettxout_unblinded: UniFFI API checksum mismatch")
 		}
@@ -1685,7 +1856,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wallettxout_wildcard_index()
 		})
-		if checksum != 49286 {
+		if checksum != 44054 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wallettxout_wildcard_index: UniFFI API checksum mismatch")
 		}
@@ -1703,7 +1874,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_address()
 		})
-		if checksum != 14903 {
+		if checksum != 64900 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_address: UniFFI API checksum mismatch")
 		}
@@ -1712,7 +1883,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_apply_transaction()
 		})
-		if checksum != 6471 {
+		if checksum != 55817 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_apply_transaction: UniFFI API checksum mismatch")
 		}
@@ -1721,7 +1892,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_apply_update()
 		})
-		if checksum != 55233 {
+		if checksum != 39211 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_apply_update: UniFFI API checksum mismatch")
 		}
@@ -1730,7 +1901,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_balance()
 		})
-		if checksum != 6265 {
+		if checksum != 34807 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_balance: UniFFI API checksum mismatch")
 		}
@@ -1739,7 +1910,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_descriptor()
 		})
-		if checksum != 25068 {
+		if checksum != 14476 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_descriptor: UniFFI API checksum mismatch")
 		}
@@ -1757,9 +1928,18 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_finalize()
 		})
-		if checksum != 63816 {
+		if checksum != 19423 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_finalize: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_is_amp0()
+		})
+		if checksum != 63030 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_is_amp0: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1784,7 +1964,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_pset_details()
 		})
-		if checksum != 45882 {
+		if checksum != 3928 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_pset_details: UniFFI API checksum mismatch")
 		}
@@ -1793,7 +1973,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_transactions()
 		})
-		if checksum != 35692 {
+		if checksum != 38030 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_transactions: UniFFI API checksum mismatch")
 		}
@@ -1802,7 +1982,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_transactions_paginated()
 		})
-		if checksum != 32144 {
+		if checksum != 54846 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wollet_transactions_paginated: UniFFI API checksum mismatch")
 		}
@@ -1854,9 +2034,18 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wolletdescriptor_is_amp0()
+		})
+		if checksum != 49462 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wolletdescriptor_is_amp0: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wolletdescriptor_is_mainnet()
 		})
-		if checksum != 62487 {
+		if checksum != 42870 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wolletdescriptor_is_mainnet: UniFFI API checksum mismatch")
 		}
@@ -1877,6 +2066,33 @@ func uniffiCheckChecksums() {
 		if checksum != 52129 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_address_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_amp0_new()
+		})
+		if checksum != 64357 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_amp0_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_amp0connected_new()
+		})
+		if checksum != 62535 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_amp0connected_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_amp0pset_new()
+		})
+		if checksum != 58003 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_amp0pset_new: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1937,7 +2153,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_esploraclient_from_builder()
 		})
-		if checksum != 10195 {
+		if checksum != 26617 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_esploraclient_from_builder: UniFFI API checksum mismatch")
 		}
@@ -1973,7 +2189,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_foreignpersisterlink_new()
 		})
-		if checksum != 13549 {
+		if checksum != 48168 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_foreignpersisterlink_new: UniFFI API checksum mismatch")
 		}
@@ -1982,7 +2198,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_lwktestenv_new()
 		})
-		if checksum != 23847 {
+		if checksum != 2775 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_lwktestenv_new: UniFFI API checksum mismatch")
 		}
@@ -2018,7 +2234,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_network_mainnet()
 		})
-		if checksum != 55931 {
+		if checksum != 19485 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_network_mainnet: UniFFI API checksum mismatch")
 		}
@@ -2027,7 +2243,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_network_regtest()
 		})
-		if checksum != 26689 {
+		if checksum != 43636 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_network_regtest: UniFFI API checksum mismatch")
 		}
@@ -2036,7 +2252,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_network_regtest_default()
 		})
-		if checksum != 53192 {
+		if checksum != 44487 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_network_regtest_default: UniFFI API checksum mismatch")
 		}
@@ -2045,7 +2261,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_network_testnet()
 		})
-		if checksum != 37103 {
+		if checksum != 61286 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_network_testnet: UniFFI API checksum mismatch")
 		}
@@ -2054,7 +2270,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_outpoint_new()
 		})
-		if checksum != 61639 {
+		if checksum != 3858 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_outpoint_new: UniFFI API checksum mismatch")
 		}
@@ -2081,7 +2297,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_script_new()
 		})
-		if checksum != 43814 {
+		if checksum != 12404 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_script_new: UniFFI API checksum mismatch")
 		}
@@ -2090,7 +2306,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_secretkey_from_bytes()
 		})
-		if checksum != 14021 {
+		if checksum != 11901 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_secretkey_from_bytes: UniFFI API checksum mismatch")
 		}
@@ -2099,7 +2315,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_secretkey_from_wif()
 		})
-		if checksum != 46565 {
+		if checksum != 14837 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_secretkey_from_wif: UniFFI API checksum mismatch")
 		}
@@ -2126,7 +2342,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_transaction_new()
 		})
-		if checksum != 3065 {
+		if checksum != 22016 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_transaction_new: UniFFI API checksum mismatch")
 		}
@@ -2153,7 +2369,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_unvalidatedliquidexproposal_from_pset()
 		})
-		if checksum != 42031 {
+		if checksum != 44953 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_unvalidatedliquidexproposal_from_pset: UniFFI API checksum mismatch")
 		}
@@ -2162,7 +2378,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_unvalidatedliquidexproposal_new()
 		})
-		if checksum != 8682 {
+		if checksum != 55322 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_unvalidatedliquidexproposal_new: UniFFI API checksum mismatch")
 		}
@@ -2171,7 +2387,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_update_new()
 		})
-		if checksum != 35370 {
+		if checksum != 5357 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_update_new: UniFFI API checksum mismatch")
 		}
@@ -2198,7 +2414,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_wolletdescriptor_new()
 		})
-		if checksum != 57700 {
+		if checksum != 61281 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_wolletdescriptor_new: UniFFI API checksum mismatch")
 		}
@@ -2513,7 +2729,9 @@ func (ffiObject *FfiObject) freeRustArcPtr() {
 	})
 }
 
+// A Liquid address
 type AddressInterface interface {
+	// Return true if the address is blinded.
 	IsBlinded() bool
 	// Returns a string of the QR code printable in a terminal environment
 	QrCodeText() (string, error)
@@ -2525,9 +2743,13 @@ type AddressInterface interface {
 	// and use styling to scale up the image in the browser. eg
 	// `style="image-rendering: pixelated; border: 20px solid white;"`
 	QrCodeUri(pixelPerModule *uint8) (string, error)
+	// Return the script pubkey of the address.
 	ScriptPubkey() *Script
+	// Return the unconfidential address.
 	ToUnconfidential() *Address
 }
+
+// A Liquid address
 type Address struct {
 	ffiObject FfiObject
 }
@@ -2545,6 +2767,7 @@ func NewAddress(s string) (*Address, error) {
 	}
 }
 
+// Return true if the address is blinded.
 func (_self *Address) IsBlinded() bool {
 	_pointer := _self.ffiObject.incrementPointer("*Address")
 	defer _self.ffiObject.decrementPointer()
@@ -2596,6 +2819,7 @@ func (_self *Address) QrCodeUri(pixelPerModule *uint8) (string, error) {
 	}
 }
 
+// Return the script pubkey of the address.
 func (_self *Address) ScriptPubkey() *Script {
 	_pointer := _self.ffiObject.incrementPointer("*Address")
 	defer _self.ffiObject.decrementPointer()
@@ -2605,6 +2829,7 @@ func (_self *Address) ScriptPubkey() *Script {
 	}))
 }
 
+// Return the unconfidential address.
 func (_self *Address) ToUnconfidential() *Address {
 	_pointer := _self.ffiObject.incrementPointer("*Address")
 	defer _self.ffiObject.decrementPointer()
@@ -2674,14 +2899,24 @@ func (_ FfiDestroyerAddress) Destroy(value *Address) {
 	value.Destroy()
 }
 
+// Value returned from asking an address to the wallet.
+// Containing the confidential address and its
+// derivation index (the last element in the derivation path)
 type AddressResultInterface interface {
+	// Return the address.
 	Address() *Address
+	// Return the derivation index of the address.
 	Index() uint32
 }
+
+// Value returned from asking an address to the wallet.
+// Containing the confidential address and its
+// derivation index (the last element in the derivation path)
 type AddressResult struct {
 	ffiObject FfiObject
 }
 
+// Return the address.
 func (_self *AddressResult) Address() *Address {
 	_pointer := _self.ffiObject.incrementPointer("*AddressResult")
 	defer _self.ffiObject.decrementPointer()
@@ -2691,6 +2926,7 @@ func (_self *AddressResult) Address() *Address {
 	}))
 }
 
+// Return the derivation index of the address.
 func (_self *AddressResult) Index() uint32 {
 	_pointer := _self.ffiObject.incrementPointer("*AddressResult")
 	defer _self.ffiObject.decrementPointer()
@@ -2745,6 +2981,608 @@ func (c FfiConverterAddressResult) Write(writer io.Writer, value *AddressResult)
 type FfiDestroyerAddressResult struct{}
 
 func (_ FfiDestroyerAddressResult) Destroy(value *AddressResult) {
+	value.Destroy()
+}
+
+// Context for actions related to an AMP0 (sub)account
+type Amp0Interface interface {
+	// Get an address
+	//
+	// If `index` is None, a new address is returned.
+	Address(index *uint32) (*AddressResult, error)
+	// AMP ID
+	AmpId() (string, error)
+	// Index of the last returned address
+	LastIndex() (uint32, error)
+	// Ask AMP0 server to cosign
+	Sign(pset *Amp0Pset) (*Transaction, error)
+	// Wollet descriptor
+	WolletDescriptor() (*WolletDescriptor, error)
+}
+
+// Context for actions related to an AMP0 (sub)account
+type Amp0 struct {
+	ffiObject FfiObject
+}
+
+// Construct an AMP0 context
+func NewAmp0(network *Network, username string, password string, ampId string) (*Amp0, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_amp0_new(FfiConverterNetworkINSTANCE.Lower(network), FfiConverterStringINSTANCE.Lower(username), FfiConverterStringINSTANCE.Lower(password), FfiConverterStringINSTANCE.Lower(ampId), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Amp0
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAmp0INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Get an address
+//
+// If `index` is None, a new address is returned.
+func (_self *Amp0) Address(index *uint32) (*AddressResult, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_amp0_address(
+			_pointer, FfiConverterOptionalUint32INSTANCE.Lower(index), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *AddressResult
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAddressResultINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// AMP ID
+func (_self *Amp0) AmpId() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_amp0_amp_id(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Index of the last returned address
+func (_self *Amp0) LastIndex() (uint32, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_amp0_last_index(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint32
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint32INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Ask AMP0 server to cosign
+func (_self *Amp0) Sign(pset *Amp0Pset) (*Transaction, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_amp0_sign(
+			_pointer, FfiConverterAmp0PsetINSTANCE.Lower(pset), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Transaction
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterTransactionINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Wollet descriptor
+func (_self *Amp0) WolletDescriptor() (*WolletDescriptor, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_amp0_wollet_descriptor(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *WolletDescriptor
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterWolletDescriptorINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *Amp0) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterAmp0 struct{}
+
+var FfiConverterAmp0INSTANCE = FfiConverterAmp0{}
+
+func (c FfiConverterAmp0) Lift(pointer unsafe.Pointer) *Amp0 {
+	result := &Amp0{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_amp0(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_amp0(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*Amp0).Destroy)
+	return result
+}
+
+func (c FfiConverterAmp0) Read(reader io.Reader) *Amp0 {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterAmp0) Lower(value *Amp0) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*Amp0")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterAmp0) Write(writer io.Writer, value *Amp0) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerAmp0 struct{}
+
+func (_ FfiDestroyerAmp0) Destroy(value *Amp0) {
+	value.Destroy()
+}
+
+// Session connecting to AMP0
+type Amp0ConnectedInterface interface {
+	// Obtain a login challenge
+	//
+	// This must be signed with [`Signer::amp0_sign_challenge()`].
+	GetChallenge() (string, error)
+	// Log in
+	//
+	// `sig` must be obtained from [`Signer::amp0_sign_challenge()`] called with the value returned
+	// by [`Amp0Connected::get_challenge()`]
+	Login(sig string) (*Amp0LoggedIn, error)
+}
+
+// Session connecting to AMP0
+type Amp0Connected struct {
+	ffiObject FfiObject
+}
+
+// Connect and register to AMP0
+func NewAmp0Connected(network *Network, signerData *Amp0SignerData) (*Amp0Connected, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_amp0connected_new(FfiConverterNetworkINSTANCE.Lower(network), FfiConverterAmp0SignerDataINSTANCE.Lower(signerData), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Amp0Connected
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAmp0ConnectedINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Obtain a login challenge
+//
+// This must be signed with [`Signer::amp0_sign_challenge()`].
+func (_self *Amp0Connected) GetChallenge() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0Connected")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_amp0connected_get_challenge(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Log in
+//
+// `sig` must be obtained from [`Signer::amp0_sign_challenge()`] called with the value returned
+// by [`Amp0Connected::get_challenge()`]
+func (_self *Amp0Connected) Login(sig string) (*Amp0LoggedIn, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0Connected")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_amp0connected_login(
+			_pointer, FfiConverterStringINSTANCE.Lower(sig), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Amp0LoggedIn
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAmp0LoggedInINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *Amp0Connected) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterAmp0Connected struct{}
+
+var FfiConverterAmp0ConnectedINSTANCE = FfiConverterAmp0Connected{}
+
+func (c FfiConverterAmp0Connected) Lift(pointer unsafe.Pointer) *Amp0Connected {
+	result := &Amp0Connected{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_amp0connected(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_amp0connected(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*Amp0Connected).Destroy)
+	return result
+}
+
+func (c FfiConverterAmp0Connected) Read(reader io.Reader) *Amp0Connected {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterAmp0Connected) Lower(value *Amp0Connected) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*Amp0Connected")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterAmp0Connected) Write(writer io.Writer, value *Amp0Connected) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerAmp0Connected struct{}
+
+func (_ FfiDestroyerAmp0Connected) Destroy(value *Amp0Connected) {
+	value.Destroy()
+}
+
+// Session logged in AMP0
+type Amp0LoggedInInterface interface {
+	// Create a new AMP0 account
+	//
+	// `account_xpub` must be obtained from [`Signer::amp0_account_xpub()`] called with the value obtained from
+	// [`Amp0LoggedIn::next_account()`]
+	CreateAmp0Account(pointer uint32, accountXpub string) (string, error)
+	// Create a new Watch-Only entry for this wallet
+	CreateWatchOnly(username string, password string) error
+	// List of AMP IDs.
+	GetAmpIds() ([]string, error)
+	// Get the next account for AMP0 account creation
+	//
+	// This must be given to [`Signer::amp0_account_xpub()`] to obtain the xpub to pass to
+	// [`Amp0LoggedIn::create_amp0_account()`]
+	NextAccount() (uint32, error)
+}
+
+// Session logged in AMP0
+type Amp0LoggedIn struct {
+	ffiObject FfiObject
+}
+
+// Create a new AMP0 account
+//
+// `account_xpub` must be obtained from [`Signer::amp0_account_xpub()`] called with the value obtained from
+// [`Amp0LoggedIn::next_account()`]
+func (_self *Amp0LoggedIn) CreateAmp0Account(pointer uint32, accountXpub string) (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0LoggedIn")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_amp0loggedin_create_amp0_account(
+				_pointer, FfiConverterUint32INSTANCE.Lower(pointer), FfiConverterStringINSTANCE.Lower(accountXpub), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Create a new Watch-Only entry for this wallet
+func (_self *Amp0LoggedIn) CreateWatchOnly(username string, password string) error {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0LoggedIn")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_amp0loggedin_create_watch_only(
+			_pointer, FfiConverterStringINSTANCE.Lower(username), FfiConverterStringINSTANCE.Lower(password), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
+}
+
+// List of AMP IDs.
+func (_self *Amp0LoggedIn) GetAmpIds() ([]string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0LoggedIn")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_amp0loggedin_get_amp_ids(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Get the next account for AMP0 account creation
+//
+// This must be given to [`Signer::amp0_account_xpub()`] to obtain the xpub to pass to
+// [`Amp0LoggedIn::create_amp0_account()`]
+func (_self *Amp0LoggedIn) NextAccount() (uint32, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0LoggedIn")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_amp0loggedin_next_account(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint32
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint32INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *Amp0LoggedIn) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterAmp0LoggedIn struct{}
+
+var FfiConverterAmp0LoggedInINSTANCE = FfiConverterAmp0LoggedIn{}
+
+func (c FfiConverterAmp0LoggedIn) Lift(pointer unsafe.Pointer) *Amp0LoggedIn {
+	result := &Amp0LoggedIn{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_amp0loggedin(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_amp0loggedin(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*Amp0LoggedIn).Destroy)
+	return result
+}
+
+func (c FfiConverterAmp0LoggedIn) Read(reader io.Reader) *Amp0LoggedIn {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterAmp0LoggedIn) Lower(value *Amp0LoggedIn) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*Amp0LoggedIn")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterAmp0LoggedIn) Write(writer io.Writer, value *Amp0LoggedIn) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerAmp0LoggedIn struct{}
+
+func (_ FfiDestroyerAmp0LoggedIn) Destroy(value *Amp0LoggedIn) {
+	value.Destroy()
+}
+
+// A PSET to use with AMP0
+type Amp0PsetInterface interface {
+	// Get blinding nonces
+	BlindingNonces() ([]string, error)
+	// Get the PSET
+	Pset() (*Pset, error)
+}
+
+// A PSET to use with AMP0
+type Amp0Pset struct {
+	ffiObject FfiObject
+}
+
+// Construct a PSET to use with AMP0
+func NewAmp0Pset(pset *Pset, blindingNonces []string) (*Amp0Pset, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_amp0pset_new(FfiConverterPsetINSTANCE.Lower(pset), FfiConverterSequenceStringINSTANCE.Lower(blindingNonces), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Amp0Pset
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAmp0PsetINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Get blinding nonces
+func (_self *Amp0Pset) BlindingNonces() ([]string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0Pset")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_amp0pset_blinding_nonces(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Get the PSET
+func (_self *Amp0Pset) Pset() (*Pset, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0Pset")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_amp0pset_pset(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Pset
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPsetINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *Amp0Pset) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterAmp0Pset struct{}
+
+var FfiConverterAmp0PsetINSTANCE = FfiConverterAmp0Pset{}
+
+func (c FfiConverterAmp0Pset) Lift(pointer unsafe.Pointer) *Amp0Pset {
+	result := &Amp0Pset{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_amp0pset(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_amp0pset(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*Amp0Pset).Destroy)
+	return result
+}
+
+func (c FfiConverterAmp0Pset) Read(reader io.Reader) *Amp0Pset {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterAmp0Pset) Lower(value *Amp0Pset) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*Amp0Pset")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterAmp0Pset) Write(writer io.Writer, value *Amp0Pset) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerAmp0Pset struct{}
+
+func (_ FfiDestroyerAmp0Pset) Destroy(value *Amp0Pset) {
+	value.Destroy()
+}
+
+// Signer information necessary for full login to AMP0
+type Amp0SignerDataInterface interface {
+}
+
+// Signer information necessary for full login to AMP0
+type Amp0SignerData struct {
+	ffiObject FfiObject
+}
+
+func (_self *Amp0SignerData) String() string {
+	_pointer := _self.ffiObject.incrementPointer("*Amp0SignerData")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_amp0signerdata_uniffi_trait_display(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (object *Amp0SignerData) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterAmp0SignerData struct{}
+
+var FfiConverterAmp0SignerDataINSTANCE = FfiConverterAmp0SignerData{}
+
+func (c FfiConverterAmp0SignerData) Lift(pointer unsafe.Pointer) *Amp0SignerData {
+	result := &Amp0SignerData{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_amp0signerdata(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_amp0signerdata(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*Amp0SignerData).Destroy)
+	return result
+}
+
+func (c FfiConverterAmp0SignerData) Read(reader io.Reader) *Amp0SignerData {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterAmp0SignerData) Lower(value *Amp0SignerData) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*Amp0SignerData")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterAmp0SignerData) Write(writer io.Writer, value *Amp0SignerData) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerAmp0SignerData struct{}
+
+func (_ FfiDestroyerAmp0SignerData) Destroy(value *Amp0SignerData) {
 	value.Destroy()
 }
 
@@ -2947,17 +3785,20 @@ func (_ FfiDestroyerAmp2Descriptor) Destroy(value *Amp2Descriptor) {
 	value.Destroy()
 }
 
-// Wrapper over [`lwk_wollet::AssetAmount`]
+// An asset identifier and an amount
 type AssetAmountInterface interface {
+	// Return the amount of the asset
 	Amount() uint64
+	// Return the asset of the amount
 	Asset() AssetId
 }
 
-// Wrapper over [`lwk_wollet::AssetAmount`]
+// An asset identifier and an amount
 type AssetAmount struct {
 	ffiObject FfiObject
 }
 
+// Return the amount of the asset
 func (_self *AssetAmount) Amount() uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*AssetAmount")
 	defer _self.ffiObject.decrementPointer()
@@ -2967,6 +3808,7 @@ func (_self *AssetAmount) Amount() uint64 {
 	}))
 }
 
+// Return the asset of the amount
 func (_self *AssetAmount) Asset() AssetId {
 	_pointer := _self.ffiObject.incrementPointer("*AssetAmount")
 	defer _self.ffiObject.decrementPointer()
@@ -3322,17 +4164,43 @@ func (_ FfiDestroyerContract) Destroy(value *Contract) {
 	value.Destroy()
 }
 
-// Wrapper over [`lwk_wollet::ElectrumClient`]
+// A client to issue TCP requests to an electrum server.
 type ElectrumClientInterface interface {
+	// Broadcast a transaction to the network so that a miner can include it in a block.
 	Broadcast(tx *Transaction) (*Txid, error)
+	// Scan the blockchain for the scripts generated by a watch-only wallet
+	//
+	// This method scans both external and internal address chains, stopping after finding
+	// 20 consecutive unused addresses (the gap limit) as recommended by
+	// [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#address-gap-limit).
+	//
+	// Returns `Some(Update)` if any changes were found during scanning, or `None` if no changes
+	// were detected.
+	//
+	// To scan beyond the gap limit use `full_scan_to_index()` instead.
 	FullScan(wollet *Wollet) (**Update, error)
+	// Scan the blockchain for the scripts generated by a watch-only wallet up to a specified derivation index
+	//
+	// While `full_scan()` stops after finding 20 consecutive unused addresses (the gap limit),
+	// this method will scan at least up to the given derivation index. This is useful to prevent
+	// missing funds in cases where outputs exist beyond the gap limit.
+	//
+	// Will scan both external and internal address chains up to the given index for maximum safety,
+	// even though internal addresses may not need such deep scanning.
+	//
+	// If transactions are found beyond the gap limit during this scan, subsequent calls to
+	// `full_scan()` will automatically scan up to the highest used index, preventing any
+	// previously-found transactions from being missed.
 	FullScanToIndex(wollet *Wollet, index uint32) (**Update, error)
+	// Fetch the transaction with the given id
 	GetTx(txid *Txid) (*Transaction, error)
+	// Ping the Electrum server
 	Ping() error
+	// Return the current tip of the blockchain
 	Tip() (*BlockHeader, error)
 }
 
-// Wrapper over [`lwk_wollet::ElectrumClient`]
+// A client to issue TCP requests to an electrum server.
 type ElectrumClient struct {
 	ffiObject FfiObject
 }
@@ -3350,6 +4218,7 @@ func NewElectrumClient(electrumUrl string, tls bool, validateDomain bool) (*Elec
 	}
 }
 
+// Broadcast a transaction to the network so that a miner can include it in a block.
 func (_self *ElectrumClient) Broadcast(tx *Transaction) (*Txid, error) {
 	_pointer := _self.ffiObject.incrementPointer("*ElectrumClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3365,6 +4234,16 @@ func (_self *ElectrumClient) Broadcast(tx *Transaction) (*Txid, error) {
 	}
 }
 
+// Scan the blockchain for the scripts generated by a watch-only wallet
+//
+// This method scans both external and internal address chains, stopping after finding
+// 20 consecutive unused addresses (the gap limit) as recommended by
+// [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#address-gap-limit).
+//
+// Returns `Some(Update)` if any changes were found during scanning, or `None` if no changes
+// were detected.
+//
+// To scan beyond the gap limit use `full_scan_to_index()` instead.
 func (_self *ElectrumClient) FullScan(wollet *Wollet) (**Update, error) {
 	_pointer := _self.ffiObject.incrementPointer("*ElectrumClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3382,6 +4261,18 @@ func (_self *ElectrumClient) FullScan(wollet *Wollet) (**Update, error) {
 	}
 }
 
+// Scan the blockchain for the scripts generated by a watch-only wallet up to a specified derivation index
+//
+// While `full_scan()` stops after finding 20 consecutive unused addresses (the gap limit),
+// this method will scan at least up to the given derivation index. This is useful to prevent
+// missing funds in cases where outputs exist beyond the gap limit.
+//
+// Will scan both external and internal address chains up to the given index for maximum safety,
+// even though internal addresses may not need such deep scanning.
+//
+// If transactions are found beyond the gap limit during this scan, subsequent calls to
+// `full_scan()` will automatically scan up to the highest used index, preventing any
+// previously-found transactions from being missed.
 func (_self *ElectrumClient) FullScanToIndex(wollet *Wollet, index uint32) (**Update, error) {
 	_pointer := _self.ffiObject.incrementPointer("*ElectrumClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3399,6 +4290,7 @@ func (_self *ElectrumClient) FullScanToIndex(wollet *Wollet, index uint32) (**Up
 	}
 }
 
+// Fetch the transaction with the given id
 func (_self *ElectrumClient) GetTx(txid *Txid) (*Transaction, error) {
 	_pointer := _self.ffiObject.incrementPointer("*ElectrumClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3414,6 +4306,7 @@ func (_self *ElectrumClient) GetTx(txid *Txid) (*Transaction, error) {
 	}
 }
 
+// Ping the Electrum server
 func (_self *ElectrumClient) Ping() error {
 	_pointer := _self.ffiObject.incrementPointer("*ElectrumClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3425,6 +4318,7 @@ func (_self *ElectrumClient) Ping() error {
 	return _uniffiErr.AsError()
 }
 
+// Return the current tip of the blockchain
 func (_self *ElectrumClient) Tip() (*BlockHeader, error) {
 	_pointer := _self.ffiObject.incrementPointer("*ElectrumClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3488,18 +4382,45 @@ func (_ FfiDestroyerElectrumClient) Destroy(value *ElectrumClient) {
 	value.Destroy()
 }
 
-// Wrapper over [`blocking::EsploraClient`]
+// A blockchain backend implementation based on the
+// [esplora HTTP API](https://github.com/blockstream/esplora/blob/master/API.md)
+// But can also use the [waterfalls](https://github.com/RCasatta/waterfalls) endpoint to
+// speed up the scan if supported by the server.
 type EsploraClientInterface interface {
+	// Broadcast a transaction to the network so that a miner can include it in a block.
 	Broadcast(tx *Transaction) (*Txid, error)
-	// See [`BlockchainBackend::full_scan`]
+	// Scan the blockchain for the scripts generated by a watch-only wallet
+	//
+	// This method scans both external and internal address chains, stopping after finding
+	// 20 consecutive unused addresses (the gap limit) as recommended by
+	// [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#address-gap-limit).
+	//
+	// Returns `Some(Update)` if any changes were found during scanning, or `None` if no changes
+	// were detected.
+	//
+	// To scan beyond the gap limit use `full_scan_to_index()` instead.
 	FullScan(wollet *Wollet) (**Update, error)
-	// See [`BlockchainBackend::full_scan_to_index`]
+	// Scan the blockchain for the scripts generated by a watch-only wallet up to a specified derivation index
+	//
+	// While `full_scan()` stops after finding 20 consecutive unused addresses (the gap limit),
+	// this method will scan at least up to the given derivation index. This is useful to prevent
+	// missing funds in cases where outputs exist beyond the gap limit.
+	//
+	// Will scan both external and internal address chains up to the given index for maximum safety,
+	// even though internal addresses may not need such deep scanning.
+	//
+	// If transactions are found beyond the gap limit during this scan, subsequent calls to
+	// `full_scan()` will automatically scan up to the highest used index, preventing any
+	// previously-found transactions from being missed.
 	FullScanToIndex(wollet *Wollet, index uint32) (**Update, error)
 	// See [`BlockchainBackend::tip`]
 	Tip() (*BlockHeader, error)
 }
 
-// Wrapper over [`blocking::EsploraClient`]
+// A blockchain backend implementation based on the
+// [esplora HTTP API](https://github.com/blockstream/esplora/blob/master/API.md)
+// But can also use the [waterfalls](https://github.com/RCasatta/waterfalls) endpoint to
+// speed up the scan if supported by the server.
 type EsploraClient struct {
 	ffiObject FfiObject
 }
@@ -3517,6 +4438,7 @@ func NewEsploraClient(url string, network *Network) (*EsploraClient, error) {
 	}
 }
 
+// Construct an Esplora Client from an `EsploraClientBuilder`
 func EsploraClientFromBuilder(builder EsploraClientBuilder) (*EsploraClient, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_esploraclient_from_builder(FfiConverterEsploraClientBuilderINSTANCE.Lower(builder), _uniffiStatus)
@@ -3542,6 +4464,7 @@ func EsploraClientNewWaterfalls(url string, network *Network) (*EsploraClient, e
 	}
 }
 
+// Broadcast a transaction to the network so that a miner can include it in a block.
 func (_self *EsploraClient) Broadcast(tx *Transaction) (*Txid, error) {
 	_pointer := _self.ffiObject.incrementPointer("*EsploraClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3557,7 +4480,16 @@ func (_self *EsploraClient) Broadcast(tx *Transaction) (*Txid, error) {
 	}
 }
 
-// See [`BlockchainBackend::full_scan`]
+// Scan the blockchain for the scripts generated by a watch-only wallet
+//
+// This method scans both external and internal address chains, stopping after finding
+// 20 consecutive unused addresses (the gap limit) as recommended by
+// [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#address-gap-limit).
+//
+// Returns `Some(Update)` if any changes were found during scanning, or `None` if no changes
+// were detected.
+//
+// To scan beyond the gap limit use `full_scan_to_index()` instead.
 func (_self *EsploraClient) FullScan(wollet *Wollet) (**Update, error) {
 	_pointer := _self.ffiObject.incrementPointer("*EsploraClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3575,7 +4507,18 @@ func (_self *EsploraClient) FullScan(wollet *Wollet) (**Update, error) {
 	}
 }
 
-// See [`BlockchainBackend::full_scan_to_index`]
+// Scan the blockchain for the scripts generated by a watch-only wallet up to a specified derivation index
+//
+// While `full_scan()` stops after finding 20 consecutive unused addresses (the gap limit),
+// this method will scan at least up to the given derivation index. This is useful to prevent
+// missing funds in cases where outputs exist beyond the gap limit.
+//
+// Will scan both external and internal address chains up to the given index for maximum safety,
+// even though internal addresses may not need such deep scanning.
+//
+// If transactions are found beyond the gap limit during this scan, subsequent calls to
+// `full_scan()` will automatically scan up to the highest used index, preventing any
+// previously-found transactions from being missed.
 func (_self *EsploraClient) FullScanToIndex(wollet *Wollet, index uint32) (**Update, error) {
 	_pointer := _self.ffiObject.incrementPointer("*EsploraClient")
 	defer _self.ffiObject.decrementPointer()
@@ -3657,8 +4600,11 @@ func (_ FfiDestroyerEsploraClient) Destroy(value *EsploraClient) {
 	value.Destroy()
 }
 
+// An external UTXO, owned by another wallet
 type ExternalUtxoInterface interface {
 }
+
+// An external UTXO, owned by another wallet
 type ExternalUtxo struct {
 	ffiObject FfiObject
 }
@@ -3727,7 +4673,9 @@ func (_ FfiDestroyerExternalUtxo) Destroy(value *ExternalUtxo) {
 
 // An exported trait, useful for caller-defined persistence.
 type ForeignPersister interface {
+	// Return the update at the given index
 	Get(index uint64) (**Update, error)
+	// Push an update
 	Push(update *Update) error
 }
 
@@ -3736,6 +4684,7 @@ type ForeignPersisterImpl struct {
 	ffiObject FfiObject
 }
 
+// Return the update at the given index
 func (_self *ForeignPersisterImpl) Get(index uint64) (**Update, error) {
 	_pointer := _self.ffiObject.incrementPointer("ForeignPersister")
 	defer _self.ffiObject.decrementPointer()
@@ -3753,6 +4702,7 @@ func (_self *ForeignPersisterImpl) Get(index uint64) (**Update, error) {
 	}
 }
 
+// Push an update
 func (_self *ForeignPersisterImpl) Push(update *Update) error {
 	_pointer := _self.ffiObject.incrementPointer("ForeignPersister")
 	defer _self.ffiObject.decrementPointer()
@@ -3942,15 +4892,16 @@ func (c FfiConverterForeignPersister) register() {
 	C.uniffi_lwk_fn_init_callback_vtable_foreignpersister(&UniffiVTableCallbackInterfaceForeignPersisterINSTANCE)
 }
 
-// Implements [`ForeignPersister`]
+// An object to define persistency at the caller level
 type ForeignPersisterLinkInterface interface {
 }
 
-// Implements [`ForeignPersister`]
+// An object to define persistency at the caller level
 type ForeignPersisterLink struct {
 	ffiObject FfiObject
 }
 
+// Create a new `ForeignPersisterLink`
 func NewForeignPersisterLink(persister ForeignPersister) *ForeignPersisterLink {
 	return FfiConverterForeignPersisterLinkINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_foreignpersisterlink_new(FfiConverterForeignPersisterINSTANCE.Lower(persister), _uniffiStatus)
@@ -4006,22 +4957,36 @@ func (_ FfiDestroyerForeignPersisterLink) Destroy(value *ForeignPersisterLink) {
 	value.Destroy()
 }
 
+// The details of an issuance or reissuance
 type IssuanceInterface interface {
+	// Return the asset id or None if it's a null issuance
 	Asset() *AssetId
+	// Return the amount of the asset in satoshis
 	AssetSatoshi() *uint64
+	// Return true if the issuance or reissuance is confidential
 	IsConfidential() bool
+	// Return true if this is effectively an issuance
 	IsIssuance() bool
+	// Return true if the issuance or reissuance is null
 	IsNull() bool
+	// Return true if this is effectively a reissuance
 	IsReissuance() bool
+	// Return the previous transaction id or None if it's a null issuance
 	PrevTxid() **Txid
+	// Return the previous output index or None if it's a null issuance
 	PrevVout() *uint32
+	// Return the token id or None if it's a null issuance
 	Token() *AssetId
+	// Return the amount of the reissuance token in satoshis
 	TokenSatoshi() *uint64
 }
+
+// The details of an issuance or reissuance
 type Issuance struct {
 	ffiObject FfiObject
 }
 
+// Return the asset id or None if it's a null issuance
 func (_self *Issuance) Asset() *AssetId {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4033,6 +4998,7 @@ func (_self *Issuance) Asset() *AssetId {
 	}))
 }
 
+// Return the amount of the asset in satoshis
 func (_self *Issuance) AssetSatoshi() *uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4044,6 +5010,7 @@ func (_self *Issuance) AssetSatoshi() *uint64 {
 	}))
 }
 
+// Return true if the issuance or reissuance is confidential
 func (_self *Issuance) IsConfidential() bool {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4053,6 +5020,7 @@ func (_self *Issuance) IsConfidential() bool {
 	}))
 }
 
+// Return true if this is effectively an issuance
 func (_self *Issuance) IsIssuance() bool {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4062,6 +5030,7 @@ func (_self *Issuance) IsIssuance() bool {
 	}))
 }
 
+// Return true if the issuance or reissuance is null
 func (_self *Issuance) IsNull() bool {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4071,6 +5040,7 @@ func (_self *Issuance) IsNull() bool {
 	}))
 }
 
+// Return true if this is effectively a reissuance
 func (_self *Issuance) IsReissuance() bool {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4080,6 +5050,7 @@ func (_self *Issuance) IsReissuance() bool {
 	}))
 }
 
+// Return the previous transaction id or None if it's a null issuance
 func (_self *Issuance) PrevTxid() **Txid {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4091,6 +5062,7 @@ func (_self *Issuance) PrevTxid() **Txid {
 	}))
 }
 
+// Return the previous output index or None if it's a null issuance
 func (_self *Issuance) PrevVout() *uint32 {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4102,6 +5074,7 @@ func (_self *Issuance) PrevVout() *uint32 {
 	}))
 }
 
+// Return the token id or None if it's a null issuance
 func (_self *Issuance) Token() *AssetId {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4113,6 +5086,7 @@ func (_self *Issuance) Token() *AssetId {
 	}))
 }
 
+// Return the amount of the reissuance token in satoshis
 func (_self *Issuance) TokenSatoshi() *uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*Issuance")
 	defer _self.ffiObject.decrementPointer()
@@ -4175,11 +5149,17 @@ func (_ FfiDestroyerIssuance) Destroy(value *Issuance) {
 // Represent a test environment with an elements node and an electrum server.
 // useful for testing only, wrapper over [`lwk_test_util::TestElectrumServer`]
 type LwkTestEnvInterface interface {
+	// Get the Electrum URL of the test environment
 	ElectrumUrl() string
+	// Generate `blocks` blocks from the node
 	Generate(blocks uint32)
+	// Get a new address from the node
 	GetNewAddress() *Address
+	// Get the height of the node
 	Height() uint64
+	// Issue `satoshi` of an asset from the node
 	IssueAsset(satoshi uint64) AssetId
+	// Send `satoshi` to `address` from the node
 	SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid
 }
 
@@ -4189,12 +5169,14 @@ type LwkTestEnv struct {
 	ffiObject FfiObject
 }
 
+// Creates a new test environment
 func NewLwkTestEnv() *LwkTestEnv {
 	return FfiConverterLwkTestEnvINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_lwktestenv_new(_uniffiStatus)
 	}))
 }
 
+// Get the Electrum URL of the test environment
 func (_self *LwkTestEnv) ElectrumUrl() string {
 	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
 	defer _self.ffiObject.decrementPointer()
@@ -4206,6 +5188,7 @@ func (_self *LwkTestEnv) ElectrumUrl() string {
 	}))
 }
 
+// Generate `blocks` blocks from the node
 func (_self *LwkTestEnv) Generate(blocks uint32) {
 	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
 	defer _self.ffiObject.decrementPointer()
@@ -4216,6 +5199,7 @@ func (_self *LwkTestEnv) Generate(blocks uint32) {
 	})
 }
 
+// Get a new address from the node
 func (_self *LwkTestEnv) GetNewAddress() *Address {
 	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
 	defer _self.ffiObject.decrementPointer()
@@ -4225,6 +5209,7 @@ func (_self *LwkTestEnv) GetNewAddress() *Address {
 	}))
 }
 
+// Get the height of the node
 func (_self *LwkTestEnv) Height() uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
 	defer _self.ffiObject.decrementPointer()
@@ -4234,6 +5219,7 @@ func (_self *LwkTestEnv) Height() uint64 {
 	}))
 }
 
+// Issue `satoshi` of an asset from the node
 func (_self *LwkTestEnv) IssueAsset(satoshi uint64) AssetId {
 	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
 	defer _self.ffiObject.decrementPointer()
@@ -4245,6 +5231,7 @@ func (_self *LwkTestEnv) IssueAsset(satoshi uint64) AssetId {
 	}))
 }
 
+// Send `satoshi` to `address` from the node
 func (_self *LwkTestEnv) SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid {
 	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
 	defer _self.ffiObject.decrementPointer()
@@ -4410,44 +5397,54 @@ func (_ FfiDestroyerMnemonic) Destroy(value *Mnemonic) {
 	value.Destroy()
 }
 
-// Wrapper over [`lwk_wollet::ElementsNetwork`]
+// The network of the elements blockchain.
 type NetworkInterface interface {
+	// Return the default electrum client for this network
 	DefaultElectrumClient() (*ElectrumClient, error)
+	// Return the default esplora client for this network
 	DefaultEsploraClient() (*EsploraClient, error)
+	// Return true if the network is the mainnet network
 	IsMainnet() bool
+	// Return the policy asset (eg LBTC for mainnet) for this network
 	PolicyAsset() AssetId
+	// Return a new `TxBuilder` for this network
 	TxBuilder() *TxBuilder
 }
 
-// Wrapper over [`lwk_wollet::ElementsNetwork`]
+// The network of the elements blockchain.
 type Network struct {
 	ffiObject FfiObject
 }
 
+// Return the mainnet network
 func NetworkMainnet() *Network {
 	return FfiConverterNetworkINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_network_mainnet(_uniffiStatus)
 	}))
 }
 
+// Return the regtest network with the given policy asset
 func NetworkRegtest(policyAsset AssetId) *Network {
 	return FfiConverterNetworkINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_network_regtest(FfiConverterTypeAssetIdINSTANCE.Lower(policyAsset), _uniffiStatus)
 	}))
 }
 
+// Return the default regtest network with the default policy asset
 func NetworkRegtestDefault() *Network {
 	return FfiConverterNetworkINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_network_regtest_default(_uniffiStatus)
 	}))
 }
 
+// Return the testnet network
 func NetworkTestnet() *Network {
 	return FfiConverterNetworkINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_network_testnet(_uniffiStatus)
 	}))
 }
 
+// Return the default electrum client for this network
 func (_self *Network) DefaultElectrumClient() (*ElectrumClient, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Network")
 	defer _self.ffiObject.decrementPointer()
@@ -4463,6 +5460,7 @@ func (_self *Network) DefaultElectrumClient() (*ElectrumClient, error) {
 	}
 }
 
+// Return the default esplora client for this network
 func (_self *Network) DefaultEsploraClient() (*EsploraClient, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Network")
 	defer _self.ffiObject.decrementPointer()
@@ -4478,6 +5476,7 @@ func (_self *Network) DefaultEsploraClient() (*EsploraClient, error) {
 	}
 }
 
+// Return true if the network is the mainnet network
 func (_self *Network) IsMainnet() bool {
 	_pointer := _self.ffiObject.incrementPointer("*Network")
 	defer _self.ffiObject.decrementPointer()
@@ -4487,6 +5486,7 @@ func (_self *Network) IsMainnet() bool {
 	}))
 }
 
+// Return the policy asset (eg LBTC for mainnet) for this network
 func (_self *Network) PolicyAsset() AssetId {
 	_pointer := _self.ffiObject.incrementPointer("*Network")
 	defer _self.ffiObject.decrementPointer()
@@ -4498,6 +5498,7 @@ func (_self *Network) PolicyAsset() AssetId {
 	}))
 }
 
+// Return a new `TxBuilder` for this network
 func (_self *Network) TxBuilder() *TxBuilder {
 	_pointer := _self.ffiObject.incrementPointer("*Network")
 	defer _self.ffiObject.decrementPointer()
@@ -4567,15 +5568,22 @@ func (_ FfiDestroyerNetwork) Destroy(value *Network) {
 	value.Destroy()
 }
 
+// A reference to a transaction output
 type OutPointInterface interface {
+	// Return the transaction identifier.
 	Txid() *Txid
+	// Return the output index.
 	Vout() uint32
 }
+
+// A reference to a transaction output
 type OutPoint struct {
 	ffiObject FfiObject
 }
 
-// Construct an OutPoint object
+// Construct an OutPoint object from its string representation.
+// For example: "[elements]0000000000000000000000000000000000000000000000000000000000000001:1"
+// To create the string representation of an outpoint use `to_string()`.
 func NewOutPoint(s string) (*OutPoint, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_outpoint_new(FfiConverterStringINSTANCE.Lower(s), _uniffiStatus)
@@ -4588,6 +5596,7 @@ func NewOutPoint(s string) (*OutPoint, error) {
 	}
 }
 
+// Return the transaction identifier.
 func (_self *OutPoint) Txid() *Txid {
 	_pointer := _self.ffiObject.incrementPointer("*OutPoint")
 	defer _self.ffiObject.decrementPointer()
@@ -4597,6 +5606,7 @@ func (_self *OutPoint) Txid() *Txid {
 	}))
 }
 
+// Return the output index.
 func (_self *OutPoint) Vout() uint32 {
 	_pointer := _self.ffiObject.incrementPointer("*OutPoint")
 	defer _self.ffiObject.decrementPointer()
@@ -4768,12 +5778,16 @@ func (_ FfiDestroyerPrecision) Destroy(value *Precision) {
 	value.Destroy()
 }
 
-// Partially Signed Elements Transaction, wrapper over [`elements::pset::PartiallySignedTransaction`]
+// A Partially Signed Elements Transaction
 type PsetInterface interface {
+	// Attempt to combine with another `Pset`.
 	Combine(other *Pset) (*Pset, error)
+	// Extract the Transaction from a Pset by filling in
+	// the available signature information in place.
 	ExtractTx() (*Transaction, error)
 	// Finalize and extract the PSET
 	Finalize() (*Transaction, error)
+	// Return a copy of the inputs of this PSET
 	Inputs() []*PsetInput
 	// Get the unique id of the PSET as defined by [BIP-370](https://github.com/bitcoin/bips/blob/master/bip-0370.mediawiki#unique-identification)
 	//
@@ -4781,7 +5795,7 @@ type PsetInterface interface {
 	UniqueId() (*Txid, error)
 }
 
-// Partially Signed Elements Transaction, wrapper over [`elements::pset::PartiallySignedTransaction`]
+// A Partially Signed Elements Transaction
 type Pset struct {
 	ffiObject FfiObject
 }
@@ -4799,6 +5813,7 @@ func NewPset(base64 string) (*Pset, error) {
 	}
 }
 
+// Attempt to combine with another `Pset`.
 func (_self *Pset) Combine(other *Pset) (*Pset, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Pset")
 	defer _self.ffiObject.decrementPointer()
@@ -4814,6 +5829,8 @@ func (_self *Pset) Combine(other *Pset) (*Pset, error) {
 	}
 }
 
+// Extract the Transaction from a Pset by filling in
+// the available signature information in place.
 func (_self *Pset) ExtractTx() (*Transaction, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Pset")
 	defer _self.ffiObject.decrementPointer()
@@ -4845,6 +5862,7 @@ func (_self *Pset) Finalize() (*Transaction, error) {
 	}
 }
 
+// Return a copy of the inputs of this PSET
 func (_self *Pset) Inputs() []*PsetInput {
 	_pointer := _self.ffiObject.incrementPointer("*Pset")
 	defer _self.ffiObject.decrementPointer()
@@ -5022,15 +6040,32 @@ func (_ FfiDestroyerPsetBalance) Destroy(value *PsetBalance) {
 	value.Destroy()
 }
 
+// The details of a Partially Signed Elements Transaction:
+//
+// - the net balance from the point of view of the wallet
+// - the available and missing signatures for each input
+// - for issuances and reissuances transactions contains the issuance or reissuance details
 type PsetDetailsInterface interface {
+	// Return the balance of the PSET from the point of view of the wallet
+	// that generated this via `psetDetails()`
 	Balance() *PsetBalance
+	// Return an element for every input that could possibly be a issuance or a reissuance
 	InputsIssuances() []*Issuance
+	// For each input its existing or missing signatures
 	Signatures() []*PsetSignatures
 }
+
+// The details of a Partially Signed Elements Transaction:
+//
+// - the net balance from the point of view of the wallet
+// - the available and missing signatures for each input
+// - for issuances and reissuances transactions contains the issuance or reissuance details
 type PsetDetails struct {
 	ffiObject FfiObject
 }
 
+// Return the balance of the PSET from the point of view of the wallet
+// that generated this via `psetDetails()`
 func (_self *PsetDetails) Balance() *PsetBalance {
 	_pointer := _self.ffiObject.incrementPointer("*PsetDetails")
 	defer _self.ffiObject.decrementPointer()
@@ -5040,6 +6075,7 @@ func (_self *PsetDetails) Balance() *PsetBalance {
 	}))
 }
 
+// Return an element for every input that could possibly be a issuance or a reissuance
 func (_self *PsetDetails) InputsIssuances() []*Issuance {
 	_pointer := _self.ffiObject.incrementPointer("*PsetDetails")
 	defer _self.ffiObject.decrementPointer()
@@ -5051,6 +6087,7 @@ func (_self *PsetDetails) InputsIssuances() []*Issuance {
 	}))
 }
 
+// For each input its existing or missing signatures
 func (_self *PsetDetails) Signatures() []*PsetSignatures {
 	_pointer := _self.ffiObject.incrementPointer("*PsetDetails")
 	defer _self.ffiObject.decrementPointer()
@@ -5126,6 +6163,8 @@ type PsetInputInterface interface {
 	PreviousVout() uint32
 	// Redeem script of the input
 	RedeemScript() **Script
+	// Input sighash
+	Sighash() uint32
 }
 
 // PSET input
@@ -5210,6 +6249,16 @@ func (_self *PsetInput) RedeemScript() **Script {
 			inner: C.uniffi_lwk_fn_method_psetinput_redeem_script(
 				_pointer, _uniffiStatus),
 		}
+	}))
+}
+
+// Input sighash
+func (_self *PsetInput) Sighash() uint32 {
+	_pointer := _self.ffiObject.incrementPointer("*PsetInput")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint32INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_psetinput_sighash(
+			_pointer, _uniffiStatus)
 	}))
 }
 func (object *PsetInput) Destroy() {
@@ -5439,16 +6488,24 @@ func (_ FfiDestroyerRecipient) Destroy(value *Recipient) {
 	value.Destroy()
 }
 
+// A Liquid script
 type ScriptInterface interface {
+	// Return the string representation of the script showing op codes and their arguments.
+	// For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
 	Asm() string
+	// Return the consensus encoded bytes of the script.
 	Bytes() []byte
+	// Whether a script pubkey is provably unspendable (like a burn script)
 	IsProvablyUnspendable() bool
 }
+
+// A Liquid script
 type Script struct {
 	ffiObject FfiObject
 }
 
-// Construct a Script object
+// Construct a Script object from its hex representation.
+// To create the hex representation of a script use `to_string()`.
 func NewScript(hex Hex) (*Script, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_script_new(FfiConverterTypeHexINSTANCE.Lower(hex), _uniffiStatus)
@@ -5461,6 +6518,8 @@ func NewScript(hex Hex) (*Script, error) {
 	}
 }
 
+// Return the string representation of the script showing op codes and their arguments.
+// For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
 func (_self *Script) Asm() string {
 	_pointer := _self.ffiObject.incrementPointer("*Script")
 	defer _self.ffiObject.decrementPointer()
@@ -5472,6 +6531,7 @@ func (_self *Script) Asm() string {
 	}))
 }
 
+// Return the consensus encoded bytes of the script.
 func (_self *Script) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*Script")
 	defer _self.ffiObject.decrementPointer()
@@ -5483,6 +6543,7 @@ func (_self *Script) Bytes() []byte {
 	}))
 }
 
+// Whether a script pubkey is provably unspendable (like a burn script)
 func (_self *Script) IsProvablyUnspendable() bool {
 	_pointer := _self.ffiObject.incrementPointer("*Script")
 	defer _self.ffiObject.decrementPointer()
@@ -5554,6 +6615,7 @@ func (_ FfiDestroyerScript) Destroy(value *Script) {
 
 // A secret key
 type SecretKeyInterface interface {
+	// Returns the bytes of the secret key, the bytes can be used to create a `SecretKey` with `from_bytes()`
 	Bytes() []byte
 	// Sign the given `pset`
 	Sign(pset *Pset) (*Pset, error)
@@ -5564,6 +6626,9 @@ type SecretKey struct {
 	ffiObject FfiObject
 }
 
+// Creates a `SecretKey` from a byte array
+//
+// The bytes can be used to create a `SecretKey` with `from_bytes()`
 func SecretKeyFromBytes(bytes []byte) (*SecretKey, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_secretkey_from_bytes(FfiConverterBytesINSTANCE.Lower(bytes), _uniffiStatus)
@@ -5576,6 +6641,7 @@ func SecretKeyFromBytes(bytes []byte) (*SecretKey, error) {
 	}
 }
 
+// Creates a `SecretKey` from a WIF (Wallet Import Format) string
 func SecretKeyFromWif(wif string) (*SecretKey, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_secretkey_from_wif(FfiConverterStringINSTANCE.Lower(wif), _uniffiStatus)
@@ -5588,6 +6654,7 @@ func SecretKeyFromWif(wif string) (*SecretKey, error) {
 	}
 }
 
+// Returns the bytes of the secret key, the bytes can be used to create a `SecretKey` with `from_bytes()`
 func (_self *SecretKey) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*SecretKey")
 	defer _self.ffiObject.decrementPointer()
@@ -5665,14 +6732,24 @@ func (_ FfiDestroyerSecretKey) Destroy(value *SecretKey) {
 
 // A Software signer, wrapper over [`lwk_signer::SwSigner`]
 type SignerInterface interface {
+	// AMP0 account xpub
+	Amp0AccountXpub(account uint32) (string, error)
+	// AMP0 sign login challenge
+	Amp0SignChallenge(challenge string) (string, error)
+	// AMP0 signer data for login
+	Amp0SignerData() (*Amp0SignerData, error)
+	// Return keyorigin and xpub, like "[73c5da0a/84h/1h/0h]tpub..."
 	KeyoriginXpub(bip *Bip) (string, error)
+	// Get the mnemonic of the signer
 	Mnemonic() (*Mnemonic, error)
 	// Sign the given `pset`
 	//
 	// Note from an API perspective it would be better to consume the `pset` parameter so it would
 	// be clear the signed PSET is the returned one, but it's not possible with uniffi bindings
 	Sign(pset *Pset) (*Pset, error)
+	// Generate a singlesig descriptor with the given parameters
 	SinglesigDesc(scriptVariant Singlesig, blindingVariant DescriptorBlindingKey) (*WolletDescriptor, error)
+	// Return the witness public key hash, slip77 descriptor of this signer
 	WpkhSlip77Descriptor() (*WolletDescriptor, error)
 }
 
@@ -5707,6 +6784,59 @@ func SignerRandom(network *Network) (*Signer, error) {
 	}
 }
 
+// AMP0 account xpub
+func (_self *Signer) Amp0AccountXpub(account uint32) (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Signer")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_signer_amp0_account_xpub(
+				_pointer, FfiConverterUint32INSTANCE.Lower(account), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// AMP0 sign login challenge
+func (_self *Signer) Amp0SignChallenge(challenge string) (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Signer")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_signer_amp0_sign_challenge(
+				_pointer, FfiConverterStringINSTANCE.Lower(challenge), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// AMP0 signer data for login
+func (_self *Signer) Amp0SignerData() (*Amp0SignerData, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Signer")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_signer_amp0_signer_data(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Amp0SignerData
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAmp0SignerDataINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Return keyorigin and xpub, like "[73c5da0a/84h/1h/0h]tpub..."
 func (_self *Signer) KeyoriginXpub(bip *Bip) (string, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Signer")
 	defer _self.ffiObject.decrementPointer()
@@ -5724,6 +6854,7 @@ func (_self *Signer) KeyoriginXpub(bip *Bip) (string, error) {
 	}
 }
 
+// Get the mnemonic of the signer
 func (_self *Signer) Mnemonic() (*Mnemonic, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Signer")
 	defer _self.ffiObject.decrementPointer()
@@ -5758,6 +6889,7 @@ func (_self *Signer) Sign(pset *Pset) (*Pset, error) {
 	}
 }
 
+// Generate a singlesig descriptor with the given parameters
 func (_self *Signer) SinglesigDesc(scriptVariant Singlesig, blindingVariant DescriptorBlindingKey) (*WolletDescriptor, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Signer")
 	defer _self.ffiObject.decrementPointer()
@@ -5773,6 +6905,7 @@ func (_self *Signer) SinglesigDesc(scriptVariant Singlesig, blindingVariant Desc
 	}
 }
 
+// Return the witness public key hash, slip77 descriptor of this signer
 func (_self *Signer) WpkhSlip77Descriptor() (*WolletDescriptor, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Signer")
 	defer _self.ffiObject.decrementPointer()
@@ -5836,18 +6969,28 @@ func (_ FfiDestroyerSigner) Destroy(value *Signer) {
 	value.Destroy()
 }
 
+// A Liquid transaction
 type TransactionInterface interface {
+	// Return the consensus encoded bytes of the transaction.
 	Bytes() []byte
+	// Return the fee of the transaction in the given asset.
+	// At the moment the only asset that can be used as fee is the policy asset (LBTC for mainnet).
 	Fee(policyAsset AssetId) uint64
+	// Return a copy of the inputs of the transaction.
 	Inputs() []*TxIn
+	// Return a copy of the outputs of the transaction.
 	Outputs() []*TxOut
+	// Return the transaction identifier.
 	Txid() *Txid
 }
+
+// A Liquid transaction
 type Transaction struct {
 	ffiObject FfiObject
 }
 
-// Construct a Transaction object
+// Construct a Transaction object from its hex representation.
+// To create the hex representation of a transaction use `to_string()`.
 func NewTransaction(hex Hex) (*Transaction, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_transaction_new(FfiConverterTypeHexINSTANCE.Lower(hex), _uniffiStatus)
@@ -5860,6 +7003,7 @@ func NewTransaction(hex Hex) (*Transaction, error) {
 	}
 }
 
+// Return the consensus encoded bytes of the transaction.
 func (_self *Transaction) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*Transaction")
 	defer _self.ffiObject.decrementPointer()
@@ -5871,6 +7015,8 @@ func (_self *Transaction) Bytes() []byte {
 	}))
 }
 
+// Return the fee of the transaction in the given asset.
+// At the moment the only asset that can be used as fee is the policy asset (LBTC for mainnet).
 func (_self *Transaction) Fee(policyAsset AssetId) uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*Transaction")
 	defer _self.ffiObject.decrementPointer()
@@ -5880,6 +7026,7 @@ func (_self *Transaction) Fee(policyAsset AssetId) uint64 {
 	}))
 }
 
+// Return a copy of the inputs of the transaction.
 func (_self *Transaction) Inputs() []*TxIn {
 	_pointer := _self.ffiObject.incrementPointer("*Transaction")
 	defer _self.ffiObject.decrementPointer()
@@ -5891,6 +7038,7 @@ func (_self *Transaction) Inputs() []*TxIn {
 	}))
 }
 
+// Return a copy of the outputs of the transaction.
 func (_self *Transaction) Outputs() []*TxOut {
 	_pointer := _self.ffiObject.incrementPointer("*Transaction")
 	defer _self.ffiObject.decrementPointer()
@@ -5902,6 +7050,7 @@ func (_self *Transaction) Outputs() []*TxOut {
 	}))
 }
 
+// Return the transaction identifier.
 func (_self *Transaction) Txid() *Txid {
 	_pointer := _self.ffiObject.incrementPointer("*Transaction")
 	defer _self.ffiObject.decrementPointer()
@@ -5975,7 +7124,11 @@ func (_ FfiDestroyerTransaction) Destroy(value *Transaction) {
 type TxBuilderInterface interface {
 	// Burn satoshi units of the given asset
 	AddBurn(satoshi uint64, asset AssetId) error
-	// Add external utxos, wrapper of [`lwk_wollet::TxBuilder::add_external_utxos()`]
+	// Add explicit recipient
+	AddExplicitRecipient(address *Address, satoshi uint64, asset AssetId) error
+	// Adds external UTXOs
+	//
+	// Note: unblinded UTXOs with the same scriptpubkeys as the wallet, are considered external.
 	AddExternalUtxos(utxos []*ExternalUtxo) error
 	// Add a recipient receiving L-BTC
 	AddLbtcRecipient(address *Address, satoshi uint64) error
@@ -5990,13 +7143,49 @@ type TxBuilderInterface interface {
 	FeeRate(rate *float32) error
 	// Build the transaction
 	Finish(wollet *Wollet) (*Pset, error)
-	// Issue an asset, wrapper of [`lwk_wollet::TxBuilder::issue_asset()`]
+	// Build the transaction
+	FinishForAmp0(wollet *Wollet) (*Amp0Pset, error)
+	// Issue an asset
+	//
+	// There will be `asset_sats` units of this asset that will be received by
+	// `asset_receiver` if it's set, otherwise to an address of the wallet generating the issuance.
+	//
+	// There will be `token_sats` reissuance tokens that allow token holder to reissue the created
+	// asset. Reissuance token will be received by `token_receiver` if it's some, or to an
+	// address of the wallet generating the issuance if none.
+	//
+	// If a `contract` is provided, it's metadata will be committed in the generated asset id.
+	//
+	// Can't be used if `reissue_asset` has been called
 	IssueAsset(assetSats uint64, assetReceiver **Address, tokenSats uint64, tokenReceiver **Address, contract **Contract) error
+	// Set data to create a PSET from which you
+	// can create a LiquiDEX proposal
 	LiquidexMake(utxo *OutPoint, address *Address, amount uint64, asset AssetId) error
+	// Set data to take LiquiDEX proposals
 	LiquidexTake(proposals []*ValidatedLiquidexProposal) error
-	// Reissue an asset, wrapper of [`lwk_wollet::TxBuilder::reissue_asset()`]
+	// Reissue an asset
+	//
+	// reissue the asset defined by `asset_to_reissue`, provided the reissuance token is owned
+	// by the wallet generating te reissuance.
+	//
+	// Generated transaction will create `satoshi_to_reissue` new asset units, and they will be
+	// sent to the provided `asset_receiver` address if some, or to an address from the wallet
+	// generating the reissuance transaction if none.
+	//
+	// If the issuance transaction does not involve this wallet,
+	// pass the issuance transaction in `issuance_tx`.
 	ReissueAsset(assetToReissue AssetId, satoshiToReissue uint64, assetReceiver **Address, issuanceTx **Transaction) error
-	// Manual coin selection, wrapper of [`lwk_wollet::TxBuilder::set_wallet_utxos()`]
+	// Switch to manual coin selection by giving a list of internal UTXOs to use.
+	//
+	// All passed UTXOs are added to the transaction.
+	// No other wallet UTXO is added to the transaction, caller is supposed to add enough UTXOs to
+	// cover for all recipients and fees.
+	//
+	// This method never fails, any error will be raised in [`TxBuilder::finish`].
+	//
+	// Possible errors:
+	// * OutPoint doesn't belong to the wallet
+	// * Insufficient funds (remember to include L-BTC utxos for fees)
 	SetWalletUtxos(utxos []*OutPoint) error
 }
 
@@ -6024,7 +7213,21 @@ func (_self *TxBuilder) AddBurn(satoshi uint64, asset AssetId) error {
 	return _uniffiErr.AsError()
 }
 
-// Add external utxos, wrapper of [`lwk_wollet::TxBuilder::add_external_utxos()`]
+// Add explicit recipient
+func (_self *TxBuilder) AddExplicitRecipient(address *Address, satoshi uint64, asset AssetId) error {
+	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_txbuilder_add_explicit_recipient(
+			_pointer, FfiConverterAddressINSTANCE.Lower(address), FfiConverterUint64INSTANCE.Lower(satoshi), FfiConverterTypeAssetIdINSTANCE.Lower(asset), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
+}
+
+// Adds external UTXOs
+//
+// Note: unblinded UTXOs with the same scriptpubkeys as the wallet, are considered external.
 func (_self *TxBuilder) AddExternalUtxos(utxos []*ExternalUtxo) error {
 	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
 	defer _self.ffiObject.decrementPointer()
@@ -6113,7 +7316,34 @@ func (_self *TxBuilder) Finish(wollet *Wollet) (*Pset, error) {
 	}
 }
 
-// Issue an asset, wrapper of [`lwk_wollet::TxBuilder::issue_asset()`]
+// Build the transaction
+func (_self *TxBuilder) FinishForAmp0(wollet *Wollet) (*Amp0Pset, error) {
+	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_txbuilder_finish_for_amp0(
+			_pointer, FfiConverterWolletINSTANCE.Lower(wollet), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Amp0Pset
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAmp0PsetINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Issue an asset
+//
+// There will be `asset_sats` units of this asset that will be received by
+// `asset_receiver` if it's set, otherwise to an address of the wallet generating the issuance.
+//
+// There will be `token_sats` reissuance tokens that allow token holder to reissue the created
+// asset. Reissuance token will be received by `token_receiver` if it's some, or to an
+// address of the wallet generating the issuance if none.
+//
+// If a `contract` is provided, it's metadata will be committed in the generated asset id.
+//
+// Can't be used if `reissue_asset` has been called
 func (_self *TxBuilder) IssueAsset(assetSats uint64, assetReceiver **Address, tokenSats uint64, tokenReceiver **Address, contract **Contract) error {
 	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
 	defer _self.ffiObject.decrementPointer()
@@ -6125,6 +7355,8 @@ func (_self *TxBuilder) IssueAsset(assetSats uint64, assetReceiver **Address, to
 	return _uniffiErr.AsError()
 }
 
+// Set data to create a PSET from which you
+// can create a LiquiDEX proposal
 func (_self *TxBuilder) LiquidexMake(utxo *OutPoint, address *Address, amount uint64, asset AssetId) error {
 	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
 	defer _self.ffiObject.decrementPointer()
@@ -6136,6 +7368,7 @@ func (_self *TxBuilder) LiquidexMake(utxo *OutPoint, address *Address, amount ui
 	return _uniffiErr.AsError()
 }
 
+// Set data to take LiquiDEX proposals
 func (_self *TxBuilder) LiquidexTake(proposals []*ValidatedLiquidexProposal) error {
 	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
 	defer _self.ffiObject.decrementPointer()
@@ -6147,7 +7380,17 @@ func (_self *TxBuilder) LiquidexTake(proposals []*ValidatedLiquidexProposal) err
 	return _uniffiErr.AsError()
 }
 
-// Reissue an asset, wrapper of [`lwk_wollet::TxBuilder::reissue_asset()`]
+// Reissue an asset
+//
+// reissue the asset defined by `asset_to_reissue`, provided the reissuance token is owned
+// by the wallet generating te reissuance.
+//
+// Generated transaction will create `satoshi_to_reissue` new asset units, and they will be
+// sent to the provided `asset_receiver` address if some, or to an address from the wallet
+// generating the reissuance transaction if none.
+//
+// If the issuance transaction does not involve this wallet,
+// pass the issuance transaction in `issuance_tx`.
 func (_self *TxBuilder) ReissueAsset(assetToReissue AssetId, satoshiToReissue uint64, assetReceiver **Address, issuanceTx **Transaction) error {
 	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
 	defer _self.ffiObject.decrementPointer()
@@ -6159,7 +7402,17 @@ func (_self *TxBuilder) ReissueAsset(assetToReissue AssetId, satoshiToReissue ui
 	return _uniffiErr.AsError()
 }
 
-// Manual coin selection, wrapper of [`lwk_wollet::TxBuilder::set_wallet_utxos()`]
+// Switch to manual coin selection by giving a list of internal UTXOs to use.
+//
+// All passed UTXOs are added to the transaction.
+// No other wallet UTXO is added to the transaction, caller is supposed to add enough UTXOs to
+// cover for all recipients and fees.
+//
+// This method never fails, any error will be raised in [`TxBuilder::finish`].
+//
+// Possible errors:
+// * OutPoint doesn't belong to the wallet
+// * Insufficient funds (remember to include L-BTC utxos for fees)
 func (_self *TxBuilder) SetWalletUtxos(utxos []*OutPoint) error {
 	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
 	defer _self.ffiObject.decrementPointer()
@@ -6231,10 +7484,13 @@ func (_ FfiDestroyerTxBuilder) Destroy(value *TxBuilder) {
 	value.Destroy()
 }
 
+// A transaction input.
 type TxInInterface interface {
 	// Outpoint
 	Outpoint() *OutPoint
 }
+
+// A transaction input.
 type TxIn struct {
 	ffiObject FfiObject
 }
@@ -6297,6 +7553,7 @@ func (_ FfiDestroyerTxIn) Destroy(value *TxIn) {
 	value.Destroy()
 }
 
+// A transaction output.
 type TxOutInterface interface {
 	// If explicit returns the asset, if confidential [None]
 	Asset() *AssetId
@@ -6313,6 +7570,8 @@ type TxOutInterface interface {
 	// If explicit returns the value, if confidential [None]
 	Value() *uint64
 }
+
+// A transaction output.
 type TxOut struct {
 	ffiObject FfiObject
 }
@@ -6447,25 +7706,34 @@ func (_ FfiDestroyerTxOut) Destroy(value *TxOut) {
 	value.Destroy()
 }
 
+// Contains unblinded information such as the asset and the value of a transaction output
 type TxOutSecretsInterface interface {
+	// Return the asset identifier of the output.
 	Asset() AssetId
+	// Return the asset blinding factor as a hex string.
 	AssetBf() Hex
 	// Get the asset commitment
 	//
 	// If the output is explicit, returns the empty string
 	AssetCommitment() Hex
+	// Return true if the output is explicit (no blinding factors).
 	IsExplicit() bool
+	// Return the value of the output.
 	Value() uint64
+	// Return the value blinding factor as a hex string.
 	ValueBf() Hex
 	// Get the value commitment
 	//
 	// If the output is explicit, returns the empty string
 	ValueCommitment() Hex
 }
+
+// Contains unblinded information such as the asset and the value of a transaction output
 type TxOutSecrets struct {
 	ffiObject FfiObject
 }
 
+// Return the asset identifier of the output.
 func (_self *TxOutSecrets) Asset() AssetId {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
@@ -6477,6 +7745,7 @@ func (_self *TxOutSecrets) Asset() AssetId {
 	}))
 }
 
+// Return the asset blinding factor as a hex string.
 func (_self *TxOutSecrets) AssetBf() Hex {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
@@ -6502,6 +7771,7 @@ func (_self *TxOutSecrets) AssetCommitment() Hex {
 	}))
 }
 
+// Return true if the output is explicit (no blinding factors).
 func (_self *TxOutSecrets) IsExplicit() bool {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
@@ -6511,6 +7781,7 @@ func (_self *TxOutSecrets) IsExplicit() bool {
 	}))
 }
 
+// Return the value of the output.
 func (_self *TxOutSecrets) Value() uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
@@ -6520,6 +7791,7 @@ func (_self *TxOutSecrets) Value() uint64 {
 	}))
 }
 
+// Return the value blinding factor as a hex string.
 func (_self *TxOutSecrets) ValueBf() Hex {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
@@ -6593,9 +7865,13 @@ func (_ FfiDestroyerTxOutSecrets) Destroy(value *TxOutSecrets) {
 	value.Destroy()
 }
 
+// A transaction identifier.
 type TxidInterface interface {
+	// Return the bytes of the transaction identifier.
 	Bytes() []byte
 }
+
+// A transaction identifier.
 type Txid struct {
 	ffiObject FfiObject
 }
@@ -6613,6 +7889,7 @@ func NewTxid(hex Hex) (*Txid, error) {
 	}
 }
 
+// Return the bytes of the transaction identifier.
 func (_self *Txid) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*Txid")
 	defer _self.ffiObject.decrementPointer()
@@ -6684,18 +7961,40 @@ func (_ FfiDestroyerTxid) Destroy(value *Txid) {
 	value.Destroy()
 }
 
-// Wrapper over [`lwk_wollet::LiquidexProposal<Unvalidated>`]
+// LiquiDEX swap proposal
+//
+// A LiquiDEX swap proposal is a transaction with one input and one output created by the "maker".
+// The transaction "swaps" the input for the output, meaning that the "maker" sends the input and
+// receives the output.
+// However the transaction is incomplete (unbalanced and without a fee output), thus it cannot be
+// broadcast.
+// The "taker" can "complete" the transaction (using `liquidex_take()`) by
+// adding more inputs and more outputs to balance the amounts, meaning that the "taker" sends the
+// output and receives the input.
 type UnvalidatedLiquidexProposalInterface interface {
+	// Validate the proposal output but not the input wich require fetching the previous transaction
 	InsecureValidate() (*ValidatedLiquidexProposal, error)
+	// Return the transaction id of the previous transaction needed for validation
 	NeededTx() (*Txid, error)
+	// Validate the proposal input and output, returning a validated proposal.
 	Validate(previousTx *Transaction) (*ValidatedLiquidexProposal, error)
 }
 
-// Wrapper over [`lwk_wollet::LiquidexProposal<Unvalidated>`]
+// LiquiDEX swap proposal
+//
+// A LiquiDEX swap proposal is a transaction with one input and one output created by the "maker".
+// The transaction "swaps" the input for the output, meaning that the "maker" sends the input and
+// receives the output.
+// However the transaction is incomplete (unbalanced and without a fee output), thus it cannot be
+// broadcast.
+// The "taker" can "complete" the transaction (using `liquidex_take()`) by
+// adding more inputs and more outputs to balance the amounts, meaning that the "taker" sends the
+// output and receives the input.
 type UnvalidatedLiquidexProposal struct {
 	ffiObject FfiObject
 }
 
+// Create a LiquiDEX proposal from its json string representation
 func NewUnvalidatedLiquidexProposal(s string) (*UnvalidatedLiquidexProposal, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_unvalidatedliquidexproposal_new(FfiConverterStringINSTANCE.Lower(s), _uniffiStatus)
@@ -6708,6 +8007,7 @@ func NewUnvalidatedLiquidexProposal(s string) (*UnvalidatedLiquidexProposal, err
 	}
 }
 
+// Create a LiquiDEX proposal from a PSET
 func UnvalidatedLiquidexProposalFromPset(pset *Pset) (*UnvalidatedLiquidexProposal, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_unvalidatedliquidexproposal_from_pset(FfiConverterPsetINSTANCE.Lower(pset), _uniffiStatus)
@@ -6720,6 +8020,7 @@ func UnvalidatedLiquidexProposalFromPset(pset *Pset) (*UnvalidatedLiquidexPropos
 	}
 }
 
+// Validate the proposal output but not the input wich require fetching the previous transaction
 func (_self *UnvalidatedLiquidexProposal) InsecureValidate() (*ValidatedLiquidexProposal, error) {
 	_pointer := _self.ffiObject.incrementPointer("*UnvalidatedLiquidexProposal")
 	defer _self.ffiObject.decrementPointer()
@@ -6735,6 +8036,7 @@ func (_self *UnvalidatedLiquidexProposal) InsecureValidate() (*ValidatedLiquidex
 	}
 }
 
+// Return the transaction id of the previous transaction needed for validation
 func (_self *UnvalidatedLiquidexProposal) NeededTx() (*Txid, error) {
 	_pointer := _self.ffiObject.incrementPointer("*UnvalidatedLiquidexProposal")
 	defer _self.ffiObject.decrementPointer()
@@ -6750,6 +8052,7 @@ func (_self *UnvalidatedLiquidexProposal) NeededTx() (*Txid, error) {
 	}
 }
 
+// Validate the proposal input and output, returning a validated proposal.
 func (_self *UnvalidatedLiquidexProposal) Validate(previousTx *Transaction) (*ValidatedLiquidexProposal, error) {
 	_pointer := _self.ffiObject.incrementPointer("*UnvalidatedLiquidexProposal")
 	defer _self.ffiObject.decrementPointer()
@@ -6829,6 +8132,7 @@ func (_ FfiDestroyerUnvalidatedLiquidexProposal) Destroy(value *UnvalidatedLiqui
 type UpdateInterface interface {
 	// Whether the update only changes the tip (does not affect transactions)
 	OnlyTip() bool
+	// Serialize an `Update` to a byte array, can be deserialized back with `new()`
 	Serialize() ([]byte, error)
 }
 
@@ -6837,6 +8141,7 @@ type Update struct {
 	ffiObject FfiObject
 }
 
+// Creates an `Update` from a byte array created with `serialize()`
 func NewUpdate(bytes []byte) (*Update, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_update_new(FfiConverterBytesINSTANCE.Lower(bytes), _uniffiStatus)
@@ -6859,6 +8164,7 @@ func (_self *Update) OnlyTip() bool {
 	}))
 }
 
+// Serialize an `Update` to a byte array, can be deserialized back with `new()`
 func (_self *Update) Serialize() ([]byte, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Update")
 	defer _self.ffiObject.decrementPointer()
@@ -6924,17 +8230,20 @@ func (_ FfiDestroyerUpdate) Destroy(value *Update) {
 	value.Destroy()
 }
 
-// Wrapper over [`lwk_wollet::LiquidexProposal<Validated>`]
+// Created by validating `UnvalidatedLiquidexProposal` via `validate()` or `insecure_validate()`
 type ValidatedLiquidexProposalInterface interface {
+	// The asset value and amount in the input of this validated proposal.
 	Input() *AssetAmount
+	// The asset value and amount in the output of this validated proposal.
 	Output() *AssetAmount
 }
 
-// Wrapper over [`lwk_wollet::LiquidexProposal<Validated>`]
+// Created by validating `UnvalidatedLiquidexProposal` via `validate()` or `insecure_validate()`
 type ValidatedLiquidexProposal struct {
 	ffiObject FfiObject
 }
 
+// The asset value and amount in the input of this validated proposal.
 func (_self *ValidatedLiquidexProposal) Input() *AssetAmount {
 	_pointer := _self.ffiObject.incrementPointer("*ValidatedLiquidexProposal")
 	defer _self.ffiObject.decrementPointer()
@@ -6944,6 +8253,7 @@ func (_self *ValidatedLiquidexProposal) Input() *AssetAmount {
 	}))
 }
 
+// The asset value and amount in the output of this validated proposal.
 func (_self *ValidatedLiquidexProposal) Output() *AssetAmount {
 	_pointer := _self.ffiObject.incrementPointer("*ValidatedLiquidexProposal")
 	defer _self.ffiObject.decrementPointer()
@@ -7013,22 +8323,46 @@ func (_ FfiDestroyerValidatedLiquidexProposal) Destroy(value *ValidatedLiquidexP
 	value.Destroy()
 }
 
+// Value returned by asking transactions to the wallet. Contains details about a transaction
+// from the perspective of the wallet, for example the net-balance of the transaction for the
+// wallet.
 type WalletTxInterface interface {
+	// Return the net balance of the transaction for the wallet.
 	Balance() map[AssetId]int64
+	// Return the fee of the transaction.
 	Fee() uint64
+	// Return the height of the block containing the transaction if it's confirmed.
 	Height() *uint32
+	// Return a list with the same number of elements as the inputs of the transaction.
+	// The element in the list is a `WalletTxOut` (the output spent to create the input)
+	// if it belongs to the wallet, while it is None for inputs owned by others
 	Inputs() []**WalletTxOut
+	// Return a list with the same number of elements as the outputs of the transaction.
+	// The element in the list is a `WalletTxOut` if it belongs to the wallet,
+	// while it is None for inputs owned by others
 	Outputs() []**WalletTxOut
+	// Return the timestamp of the block containing the transaction if it's confirmed.
 	Timestamp() *uint32
+	// Return a copy of the transaction.
 	Tx() *Transaction
+	// Return the transaction identifier.
 	Txid() *Txid
+	// Return the type of the transaction. Can be "issuance", "reissuance", "burn", "redeposit",
+	// "incoming", "outgoing" or "unknown".
 	Type() string
+	// Return the URL to view the transaction on the explorer. Including the information needed to
+	// unblind the transaction in the explorer UI.
 	UnblindedUrl(explorerUrl string) string
 }
+
+// Value returned by asking transactions to the wallet. Contains details about a transaction
+// from the perspective of the wallet, for example the net-balance of the transaction for the
+// wallet.
 type WalletTx struct {
 	ffiObject FfiObject
 }
 
+// Return the net balance of the transaction for the wallet.
 func (_self *WalletTx) Balance() map[AssetId]int64 {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7040,6 +8374,7 @@ func (_self *WalletTx) Balance() map[AssetId]int64 {
 	}))
 }
 
+// Return the fee of the transaction.
 func (_self *WalletTx) Fee() uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7049,6 +8384,7 @@ func (_self *WalletTx) Fee() uint64 {
 	}))
 }
 
+// Return the height of the block containing the transaction if it's confirmed.
 func (_self *WalletTx) Height() *uint32 {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7060,6 +8396,9 @@ func (_self *WalletTx) Height() *uint32 {
 	}))
 }
 
+// Return a list with the same number of elements as the inputs of the transaction.
+// The element in the list is a `WalletTxOut` (the output spent to create the input)
+// if it belongs to the wallet, while it is None for inputs owned by others
 func (_self *WalletTx) Inputs() []**WalletTxOut {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7071,6 +8410,9 @@ func (_self *WalletTx) Inputs() []**WalletTxOut {
 	}))
 }
 
+// Return a list with the same number of elements as the outputs of the transaction.
+// The element in the list is a `WalletTxOut` if it belongs to the wallet,
+// while it is None for inputs owned by others
 func (_self *WalletTx) Outputs() []**WalletTxOut {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7082,6 +8424,7 @@ func (_self *WalletTx) Outputs() []**WalletTxOut {
 	}))
 }
 
+// Return the timestamp of the block containing the transaction if it's confirmed.
 func (_self *WalletTx) Timestamp() *uint32 {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7093,6 +8436,7 @@ func (_self *WalletTx) Timestamp() *uint32 {
 	}))
 }
 
+// Return a copy of the transaction.
 func (_self *WalletTx) Tx() *Transaction {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7102,6 +8446,7 @@ func (_self *WalletTx) Tx() *Transaction {
 	}))
 }
 
+// Return the transaction identifier.
 func (_self *WalletTx) Txid() *Txid {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7111,6 +8456,8 @@ func (_self *WalletTx) Txid() *Txid {
 	}))
 }
 
+// Return the type of the transaction. Can be "issuance", "reissuance", "burn", "redeposit",
+// "incoming", "outgoing" or "unknown".
 func (_self *WalletTx) Type() string {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7122,6 +8469,8 @@ func (_self *WalletTx) Type() string {
 	}))
 }
 
+// Return the URL to view the transaction on the explorer. Including the information needed to
+// unblind the transaction in the explorer UI.
 func (_self *WalletTx) UnblindedUrl(explorerUrl string) string {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTx")
 	defer _self.ffiObject.decrementPointer()
@@ -7181,19 +8530,30 @@ func (_ FfiDestroyerWalletTx) Destroy(value *WalletTx) {
 	value.Destroy()
 }
 
+// Details of a wallet transaction output used in `WalletTx`
 type WalletTxOutInterface interface {
+	// Return the address of this `WalletTxOut`.
 	Address() *Address
+	// Return the chain of this `WalletTxOut`. Can be "Chain::External" or "Chain::Internal" (change).
 	ExtInt() Chain
+	// Return the height of the block containing this output if it's confirmed.
 	Height() *uint32
+	// Return the outpoint (txid and vout) of this `WalletTxOut`.
 	Outpoint() *OutPoint
+	// Return the script pubkey of the address of this `WalletTxOut`.
 	ScriptPubkey() *Script
+	// Return the unblinded values of this `WalletTxOut`.
 	Unblinded() *TxOutSecrets
+	// Return the wildcard index used to derive the address of this `WalletTxOut`.
 	WildcardIndex() uint32
 }
+
+// Details of a wallet transaction output used in `WalletTx`
 type WalletTxOut struct {
 	ffiObject FfiObject
 }
 
+// Return the address of this `WalletTxOut`.
 func (_self *WalletTxOut) Address() *Address {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTxOut")
 	defer _self.ffiObject.decrementPointer()
@@ -7203,6 +8563,7 @@ func (_self *WalletTxOut) Address() *Address {
 	}))
 }
 
+// Return the chain of this `WalletTxOut`. Can be "Chain::External" or "Chain::Internal" (change).
 func (_self *WalletTxOut) ExtInt() Chain {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTxOut")
 	defer _self.ffiObject.decrementPointer()
@@ -7214,6 +8575,7 @@ func (_self *WalletTxOut) ExtInt() Chain {
 	}))
 }
 
+// Return the height of the block containing this output if it's confirmed.
 func (_self *WalletTxOut) Height() *uint32 {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTxOut")
 	defer _self.ffiObject.decrementPointer()
@@ -7225,6 +8587,7 @@ func (_self *WalletTxOut) Height() *uint32 {
 	}))
 }
 
+// Return the outpoint (txid and vout) of this `WalletTxOut`.
 func (_self *WalletTxOut) Outpoint() *OutPoint {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTxOut")
 	defer _self.ffiObject.decrementPointer()
@@ -7234,6 +8597,7 @@ func (_self *WalletTxOut) Outpoint() *OutPoint {
 	}))
 }
 
+// Return the script pubkey of the address of this `WalletTxOut`.
 func (_self *WalletTxOut) ScriptPubkey() *Script {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTxOut")
 	defer _self.ffiObject.decrementPointer()
@@ -7243,6 +8607,7 @@ func (_self *WalletTxOut) ScriptPubkey() *Script {
 	}))
 }
 
+// Return the unblinded values of this `WalletTxOut`.
 func (_self *WalletTxOut) Unblinded() *TxOutSecrets {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTxOut")
 	defer _self.ffiObject.decrementPointer()
@@ -7252,6 +8617,7 @@ func (_self *WalletTxOut) Unblinded() *TxOutSecrets {
 	}))
 }
 
+// Return the wildcard index used to derive the address of this `WalletTxOut`.
 func (_self *WalletTxOut) WildcardIndex() uint32 {
 	_pointer := _self.ffiObject.incrementPointer("*WalletTxOut")
 	defer _self.ffiObject.decrementPointer()
@@ -7313,20 +8679,61 @@ func (_ FfiDestroyerWalletTxOut) Destroy(value *WalletTxOut) {
 type WolletInterface interface {
 	// Add wallet details to the PSET
 	AddDetails(pset *Pset) (*Pset, error)
+	// Get a wallet address
+	//
+	// If Some return the address at the given index,
+	// otherwise the last unused address.
 	Address(index *uint32) (*AddressResult, error)
+	// Apply a transaction to the wallet state
+	//
+	// Wallet transactions are normally obtained using `full_scan()`
+	// and applying the resulting `Update` with `apply_update()`. However a
+	// full scan involves network calls and it can take a significant amount of time.
+	//
+	// If the caller does not want to wait for a full scan containing the transaction, it can
+	// apply the transaction to the wallet state using this function.
+	//
+	// Note: if this transaction is *not* returned by a next full scan, after `apply_update()` it will disappear from the
+	// transactions list, will not be included in balance computations, and by the remaining
+	// wollet methods.
+	//
+	// Calling this method, might cause `apply_update()` to fail with a
+	// `Error::UpdateOnDifferentStatus`, make sure to either avoid it or handle the error properly.
 	ApplyTransaction(tx *Transaction) error
+	// Apply an update containing blockchain data
+	//
+	// To update the wallet you need to first obtain the blockchain data relevant for the wallet.
+	// This can be done using `full_scan()`, which
+	// returns an `Update` that contains new transaction and other data relevant for the
+	// wallet.
+	// The update must then be applied to the `Wollet` so that wollet methods such as
+	// `balance()` or `transactions()` include the new data.
+	//
+	// However getting blockchain data involves network calls, so between the full scan start and
+	// when the update is applied it might elapse a significant amount of time.
+	// In that interval, applying any update, or any transaction using `apply_transaction()`,
+	// will cause this function to return a `Error::UpdateOnDifferentStatus`.
+	// Callers should either avoid applying updates and transactions, or they can catch the error and wait for a new full scan to be completed and applied.
 	ApplyUpdate(update *Update) error
+	// Get the wallet balance
 	Balance() (map[AssetId]uint64, error)
+	// Get a copy of the wallet descriptor
 	Descriptor() (*WolletDescriptor, error)
 	// Extract the wallet UTXOs that a PSET is creating
 	ExtractWalletUtxos(pset *Pset) ([]*ExternalUtxo, error)
+	// Finalize a PSET, returning a new PSET with the finalized inputs
 	Finalize(pset *Pset) (*Pset, error)
+	// Whether the wallet is AMP0
+	IsAmp0() (bool, error)
 	// Whether the wallet is segwit
 	IsSegwit() (bool, error)
 	// Max weight to satisfy for inputs belonging to this wallet
 	MaxWeightToSatisfy() (uint32, error)
+	// Get the PSET details with respect to the wallet
 	PsetDetails(pset *Pset) (*PsetDetails, error)
+	// Get all the wallet transactions
 	Transactions() ([]*WalletTx, error)
+	// Get the wallet transactions with pagination
 	TransactionsPaginated(offset uint32, limit uint32) ([]*WalletTx, error)
 	// Get all the transaction outputs of the wallet, both spent and unspent
 	Txos() ([]*WalletTxOut, error)
@@ -7387,6 +8794,10 @@ func (_self *Wollet) AddDetails(pset *Pset) (*Pset, error) {
 	}
 }
 
+// Get a wallet address
+//
+// If Some return the address at the given index,
+// otherwise the last unused address.
 func (_self *Wollet) Address(index *uint32) (*AddressResult, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7402,6 +8813,21 @@ func (_self *Wollet) Address(index *uint32) (*AddressResult, error) {
 	}
 }
 
+// Apply a transaction to the wallet state
+//
+// Wallet transactions are normally obtained using `full_scan()`
+// and applying the resulting `Update` with `apply_update()`. However a
+// full scan involves network calls and it can take a significant amount of time.
+//
+// If the caller does not want to wait for a full scan containing the transaction, it can
+// apply the transaction to the wallet state using this function.
+//
+// Note: if this transaction is *not* returned by a next full scan, after `apply_update()` it will disappear from the
+// transactions list, will not be included in balance computations, and by the remaining
+// wollet methods.
+//
+// Calling this method, might cause `apply_update()` to fail with a
+// `Error::UpdateOnDifferentStatus`, make sure to either avoid it or handle the error properly.
 func (_self *Wollet) ApplyTransaction(tx *Transaction) error {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7413,6 +8839,20 @@ func (_self *Wollet) ApplyTransaction(tx *Transaction) error {
 	return _uniffiErr.AsError()
 }
 
+// Apply an update containing blockchain data
+//
+// To update the wallet you need to first obtain the blockchain data relevant for the wallet.
+// This can be done using `full_scan()`, which
+// returns an `Update` that contains new transaction and other data relevant for the
+// wallet.
+// The update must then be applied to the `Wollet` so that wollet methods such as
+// `balance()` or `transactions()` include the new data.
+//
+// However getting blockchain data involves network calls, so between the full scan start and
+// when the update is applied it might elapse a significant amount of time.
+// In that interval, applying any update, or any transaction using `apply_transaction()`,
+// will cause this function to return a `Error::UpdateOnDifferentStatus`.
+// Callers should either avoid applying updates and transactions, or they can catch the error and wait for a new full scan to be completed and applied.
 func (_self *Wollet) ApplyUpdate(update *Update) error {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7424,6 +8864,7 @@ func (_self *Wollet) ApplyUpdate(update *Update) error {
 	return _uniffiErr.AsError()
 }
 
+// Get the wallet balance
 func (_self *Wollet) Balance() (map[AssetId]uint64, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7441,6 +8882,7 @@ func (_self *Wollet) Balance() (map[AssetId]uint64, error) {
 	}
 }
 
+// Get a copy of the wallet descriptor
 func (_self *Wollet) Descriptor() (*WolletDescriptor, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7474,6 +8916,7 @@ func (_self *Wollet) ExtractWalletUtxos(pset *Pset) ([]*ExternalUtxo, error) {
 	}
 }
 
+// Finalize a PSET, returning a new PSET with the finalized inputs
 func (_self *Wollet) Finalize(pset *Pset) (*Pset, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7486,6 +8929,22 @@ func (_self *Wollet) Finalize(pset *Pset) (*Pset, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterPsetINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Whether the wallet is AMP0
+func (_self *Wollet) IsAmp0() (bool, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_wollet_is_amp0(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue bool
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoolINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
@@ -7521,6 +8980,7 @@ func (_self *Wollet) MaxWeightToSatisfy() (uint32, error) {
 	}
 }
 
+// Get the PSET details with respect to the wallet
 func (_self *Wollet) PsetDetails(pset *Pset) (*PsetDetails, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7536,6 +8996,7 @@ func (_self *Wollet) PsetDetails(pset *Pset) (*PsetDetails, error) {
 	}
 }
 
+// Get all the wallet transactions
 func (_self *Wollet) Transactions() ([]*WalletTx, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7553,6 +9014,7 @@ func (_self *Wollet) Transactions() ([]*WalletTx, error) {
 	}
 }
 
+// Get the wallet transactions with pagination
 func (_self *Wollet) TransactionsPaginated(offset uint32, limit uint32) ([]*WalletTx, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Wollet")
 	defer _self.ffiObject.decrementPointer()
@@ -7694,6 +9156,9 @@ func (_ FfiDestroyerWollet) Destroy(value *Wollet) {
 type WolletDescriptorInterface interface {
 	// Derive the private blinding key
 	DeriveBlindingKey(scriptPubkey *Script) **SecretKey
+	// Whether the descriptor is AMP0
+	IsAmp0() bool
+	// Whether the descriptor is on the mainnet
 	IsMainnet() bool
 	// Derive a scriptpubkey
 	ScriptPubkey(extInt Chain, index uint32) (*Script, error)
@@ -7704,6 +9169,7 @@ type WolletDescriptor struct {
 	ffiObject FfiObject
 }
 
+// Create a new descriptor from its string representation.
 func NewWolletDescriptor(descriptor string) (*WolletDescriptor, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_wolletdescriptor_new(FfiConverterStringINSTANCE.Lower(descriptor), _uniffiStatus)
@@ -7728,6 +9194,17 @@ func (_self *WolletDescriptor) DeriveBlindingKey(scriptPubkey *Script) **SecretK
 	}))
 }
 
+// Whether the descriptor is AMP0
+func (_self *WolletDescriptor) IsAmp0() bool {
+	_pointer := _self.ffiObject.incrementPointer("*WolletDescriptor")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_wolletdescriptor_is_amp0(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+// Whether the descriptor is on the mainnet
 func (_self *WolletDescriptor) IsMainnet() bool {
 	_pointer := _self.ffiObject.incrementPointer("*WolletDescriptor")
 	defer _self.ffiObject.decrementPointer()
@@ -7813,12 +9290,14 @@ func (_ FfiDestroyerWolletDescriptor) Destroy(value *WolletDescriptor) {
 	value.Destroy()
 }
 
+// A builder for the `EsploraClient`
 type EsploraClientBuilder struct {
 	BaseUrl     string
 	Network     *Network
 	Waterfalls  bool
 	Concurrency *uint32
 	Timeout     *uint8
+	UtxoOnly    bool
 }
 
 func (r *EsploraClientBuilder) Destroy() {
@@ -7827,6 +9306,7 @@ func (r *EsploraClientBuilder) Destroy() {
 	FfiDestroyerBool{}.Destroy(r.Waterfalls)
 	FfiDestroyerOptionalUint32{}.Destroy(r.Concurrency)
 	FfiDestroyerOptionalUint8{}.Destroy(r.Timeout)
+	FfiDestroyerBool{}.Destroy(r.UtxoOnly)
 }
 
 type FfiConverterEsploraClientBuilder struct{}
@@ -7844,6 +9324,7 @@ func (c FfiConverterEsploraClientBuilder) Read(reader io.Reader) EsploraClientBu
 		FfiConverterBoolINSTANCE.Read(reader),
 		FfiConverterOptionalUint32INSTANCE.Read(reader),
 		FfiConverterOptionalUint8INSTANCE.Read(reader),
+		FfiConverterBoolINSTANCE.Read(reader),
 	}
 }
 
@@ -7857,6 +9338,7 @@ func (c FfiConverterEsploraClientBuilder) Write(writer io.Writer, value EsploraC
 	FfiConverterBoolINSTANCE.Write(writer, value.Waterfalls)
 	FfiConverterOptionalUint32INSTANCE.Write(writer, value.Concurrency)
 	FfiConverterOptionalUint8INSTANCE.Write(writer, value.Timeout)
+	FfiConverterBoolINSTANCE.Write(writer, value.UtxoOnly)
 }
 
 type FfiDestroyerEsploraClientBuilder struct{}
@@ -8662,6 +10144,49 @@ func (_ FfiDestroyerOptionalTypeAssetId) Destroy(value *AssetId) {
 	}
 }
 
+type FfiConverterSequenceString struct{}
+
+var FfiConverterSequenceStringINSTANCE = FfiConverterSequenceString{}
+
+func (c FfiConverterSequenceString) Lift(rb RustBufferI) []string {
+	return LiftFromRustBuffer[[]string](c, rb)
+}
+
+func (c FfiConverterSequenceString) Read(reader io.Reader) []string {
+	length := readInt32(reader)
+	if length == 0 {
+		return nil
+	}
+	result := make([]string, 0, length)
+	for i := int32(0); i < length; i++ {
+		result = append(result, FfiConverterStringINSTANCE.Read(reader))
+	}
+	return result
+}
+
+func (c FfiConverterSequenceString) Lower(value []string) C.RustBuffer {
+	return LowerIntoRustBuffer[[]string](c, value)
+}
+
+func (c FfiConverterSequenceString) Write(writer io.Writer, value []string) {
+	if len(value) > math.MaxInt32 {
+		panic("[]string is too large to fit into Int32")
+	}
+
+	writeInt32(writer, int32(len(value)))
+	for _, item := range value {
+		FfiConverterStringINSTANCE.Write(writer, item)
+	}
+}
+
+type FfiDestroyerSequenceString struct{}
+
+func (FfiDestroyerSequenceString) Destroy(sequence []string) {
+	for _, value := range sequence {
+		FfiDestroyerString{}.Destroy(value)
+	}
+}
+
 type FfiConverterSequenceExternalUtxo struct{}
 
 var FfiConverterSequenceExternalUtxoINSTANCE = FfiConverterSequenceExternalUtxo{}
@@ -9332,6 +10857,7 @@ type FfiDestroyerTypeHex = FfiDestroyerString
 
 var FfiConverterTypeHexINSTANCE = FfiConverterString{}
 
+// Whether a script pubkey is provably segwit
 func IsProvablySegwit(scriptPubkey *Script, redeemScript **Script) bool {
 	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
 		return C.uniffi_lwk_fn_func_is_provably_segwit(FfiConverterScriptINSTANCE.Lower(scriptPubkey), FfiConverterOptionalScriptINSTANCE.Lower(redeemScript), _uniffiStatus)
