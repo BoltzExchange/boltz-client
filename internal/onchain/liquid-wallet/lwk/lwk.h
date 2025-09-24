@@ -480,6 +480,141 @@ void* uniffi_lwk_fn_method_addressresult_address(void* ptr, RustCallStatus *out_
 uint32_t uniffi_lwk_fn_method_addressresult_index(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0
+void* uniffi_lwk_fn_clone_amp0(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0
+void uniffi_lwk_fn_free_amp0(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_AMP0_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_AMP0_NEW
+void* uniffi_lwk_fn_constructor_amp0_new(void* network, RustBuffer username, RustBuffer password, RustBuffer amp_id, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_ADDRESS
+void* uniffi_lwk_fn_method_amp0_address(void* ptr, RustBuffer index, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_AMP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_AMP_ID
+RustBuffer uniffi_lwk_fn_method_amp0_amp_id(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_LAST_INDEX
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_LAST_INDEX
+uint32_t uniffi_lwk_fn_method_amp0_last_index(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_SIGN
+void* uniffi_lwk_fn_method_amp0_sign(void* ptr, void* pset, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_WOLLET_DESCRIPTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0_WOLLET_DESCRIPTOR
+void* uniffi_lwk_fn_method_amp0_wollet_descriptor(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0CONNECTED
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0CONNECTED
+void* uniffi_lwk_fn_clone_amp0connected(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0CONNECTED
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0CONNECTED
+void uniffi_lwk_fn_free_amp0connected(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_AMP0CONNECTED_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_AMP0CONNECTED_NEW
+void* uniffi_lwk_fn_constructor_amp0connected_new(void* network, void* signer_data, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0CONNECTED_GET_CHALLENGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0CONNECTED_GET_CHALLENGE
+RustBuffer uniffi_lwk_fn_method_amp0connected_get_challenge(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0CONNECTED_LOGIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0CONNECTED_LOGIN
+void* uniffi_lwk_fn_method_amp0connected_login(void* ptr, RustBuffer sig, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0LOGGEDIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0LOGGEDIN
+void* uniffi_lwk_fn_clone_amp0loggedin(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0LOGGEDIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0LOGGEDIN
+void uniffi_lwk_fn_free_amp0loggedin(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_CREATE_AMP0_ACCOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_CREATE_AMP0_ACCOUNT
+RustBuffer uniffi_lwk_fn_method_amp0loggedin_create_amp0_account(void* ptr, uint32_t pointer, RustBuffer account_xpub, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_CREATE_WATCH_ONLY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_CREATE_WATCH_ONLY
+void uniffi_lwk_fn_method_amp0loggedin_create_watch_only(void* ptr, RustBuffer username, RustBuffer password, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_GET_AMP_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_GET_AMP_IDS
+RustBuffer uniffi_lwk_fn_method_amp0loggedin_get_amp_ids(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_NEXT_ACCOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0LOGGEDIN_NEXT_ACCOUNT
+uint32_t uniffi_lwk_fn_method_amp0loggedin_next_account(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0PSET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0PSET
+void* uniffi_lwk_fn_clone_amp0pset(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0PSET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0PSET
+void uniffi_lwk_fn_free_amp0pset(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_AMP0PSET_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_AMP0PSET_NEW
+void* uniffi_lwk_fn_constructor_amp0pset_new(void* pset, RustBuffer blinding_nonces, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0PSET_BLINDING_NONCES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0PSET_BLINDING_NONCES
+RustBuffer uniffi_lwk_fn_method_amp0pset_blinding_nonces(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0PSET_PSET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0PSET_PSET
+void* uniffi_lwk_fn_method_amp0pset_pset(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0SIGNERDATA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP0SIGNERDATA
+void* uniffi_lwk_fn_clone_amp0signerdata(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0SIGNERDATA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_AMP0SIGNERDATA
+void uniffi_lwk_fn_free_amp0signerdata(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0SIGNERDATA_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP0SIGNERDATA_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_amp0signerdata_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP2
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP2
 void* uniffi_lwk_fn_clone_amp2(void* ptr, RustCallStatus *out_status
@@ -1178,6 +1313,11 @@ uint32_t uniffi_lwk_fn_method_psetinput_previous_vout(void* ptr, RustCallStatus 
 RustBuffer uniffi_lwk_fn_method_psetinput_redeem_script(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETINPUT_SIGHASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETINPUT_SIGHASH
+uint32_t uniffi_lwk_fn_method_psetinput_sighash(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PSETSIGNATURES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PSETSIGNATURES
 void* uniffi_lwk_fn_clone_psetsignatures(void* ptr, RustCallStatus *out_status
@@ -1313,6 +1453,21 @@ void* uniffi_lwk_fn_constructor_signer_new(void* mnemonic, void* network, RustCa
 void* uniffi_lwk_fn_constructor_signer_random(void* network, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_AMP0_ACCOUNT_XPUB
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_AMP0_ACCOUNT_XPUB
+RustBuffer uniffi_lwk_fn_method_signer_amp0_account_xpub(void* ptr, uint32_t account, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_AMP0_SIGN_CHALLENGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_AMP0_SIGN_CHALLENGE
+RustBuffer uniffi_lwk_fn_method_signer_amp0_sign_challenge(void* ptr, RustBuffer challenge, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_AMP0_SIGNER_DATA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_AMP0_SIGNER_DATA
+void* uniffi_lwk_fn_method_signer_amp0_signer_data(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_KEYORIGIN_XPUB
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_KEYORIGIN_XPUB
 RustBuffer uniffi_lwk_fn_method_signer_keyorigin_xpub(void* ptr, void* bip, RustCallStatus *out_status
@@ -1403,6 +1558,11 @@ void* uniffi_lwk_fn_constructor_txbuilder_new(void* network, RustCallStatus *out
 void uniffi_lwk_fn_method_txbuilder_add_burn(void* ptr, uint64_t satoshi, RustBuffer asset, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXPLICIT_RECIPIENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXPLICIT_RECIPIENT
+void uniffi_lwk_fn_method_txbuilder_add_explicit_recipient(void* ptr, void* address, uint64_t satoshi, RustBuffer asset, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 void uniffi_lwk_fn_method_txbuilder_add_external_utxos(void* ptr, RustBuffer utxos, RustCallStatus *out_status
@@ -1436,6 +1596,11 @@ void uniffi_lwk_fn_method_txbuilder_fee_rate(void* ptr, RustBuffer rate, RustCal
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_FINISH
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_FINISH
 void* uniffi_lwk_fn_method_txbuilder_finish(void* ptr, void* wollet, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_FINISH_FOR_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_FINISH_FOR_AMP0
+void* uniffi_lwk_fn_method_txbuilder_finish_for_amp0(void* ptr, void* wollet, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ISSUE_ASSET
@@ -1853,6 +2018,11 @@ RustBuffer uniffi_lwk_fn_method_wollet_extract_wallet_utxos(void* ptr, void* pse
 void* uniffi_lwk_fn_method_wollet_finalize(void* ptr, void* pset, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_IS_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_IS_AMP0
+int8_t uniffi_lwk_fn_method_wollet_is_amp0(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_IS_SEGWIT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_IS_SEGWIT
 int8_t uniffi_lwk_fn_method_wollet_is_segwit(void* ptr, RustCallStatus *out_status
@@ -1916,6 +2086,11 @@ void* uniffi_lwk_fn_constructor_wolletdescriptor_new(RustBuffer descriptor, Rust
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_DERIVE_BLINDING_KEY
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_DERIVE_BLINDING_KEY
 RustBuffer uniffi_lwk_fn_method_wolletdescriptor_derive_blinding_key(void* ptr, void* script_pubkey, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_IS_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_IS_AMP0
+int8_t uniffi_lwk_fn_method_wolletdescriptor_is_amp0(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_IS_MAINNET
@@ -2263,6 +2438,84 @@ uint16_t uniffi_lwk_checksum_method_addressresult_address(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ADDRESSRESULT_INDEX
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ADDRESSRESULT_INDEX
 uint16_t uniffi_lwk_checksum_method_addressresult_index(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_ADDRESS
+uint16_t uniffi_lwk_checksum_method_amp0_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_AMP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_AMP_ID
+uint16_t uniffi_lwk_checksum_method_amp0_amp_id(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_LAST_INDEX
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_LAST_INDEX
+uint16_t uniffi_lwk_checksum_method_amp0_last_index(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_SIGN
+uint16_t uniffi_lwk_checksum_method_amp0_sign(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_WOLLET_DESCRIPTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0_WOLLET_DESCRIPTOR
+uint16_t uniffi_lwk_checksum_method_amp0_wollet_descriptor(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0CONNECTED_GET_CHALLENGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0CONNECTED_GET_CHALLENGE
+uint16_t uniffi_lwk_checksum_method_amp0connected_get_challenge(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0CONNECTED_LOGIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0CONNECTED_LOGIN
+uint16_t uniffi_lwk_checksum_method_amp0connected_login(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_CREATE_AMP0_ACCOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_CREATE_AMP0_ACCOUNT
+uint16_t uniffi_lwk_checksum_method_amp0loggedin_create_amp0_account(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_CREATE_WATCH_ONLY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_CREATE_WATCH_ONLY
+uint16_t uniffi_lwk_checksum_method_amp0loggedin_create_watch_only(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_GET_AMP_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_GET_AMP_IDS
+uint16_t uniffi_lwk_checksum_method_amp0loggedin_get_amp_ids(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_NEXT_ACCOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0LOGGEDIN_NEXT_ACCOUNT
+uint16_t uniffi_lwk_checksum_method_amp0loggedin_next_account(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0PSET_BLINDING_NONCES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0PSET_BLINDING_NONCES
+uint16_t uniffi_lwk_checksum_method_amp0pset_blinding_nonces(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0PSET_PSET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP0PSET_PSET
+uint16_t uniffi_lwk_checksum_method_amp0pset_pset(void
     
 );
 #endif
@@ -2668,6 +2921,12 @@ uint16_t uniffi_lwk_checksum_method_psetinput_redeem_script(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETINPUT_SIGHASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETINPUT_SIGHASH
+uint16_t uniffi_lwk_checksum_method_psetinput_sighash(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETSIGNATURES_HAS_SIGNATURE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETSIGNATURES_HAS_SIGNATURE
 uint16_t uniffi_lwk_checksum_method_psetsignatures_has_signature(void
@@ -2731,6 +2990,24 @@ uint16_t uniffi_lwk_checksum_method_secretkey_bytes(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SECRETKEY_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SECRETKEY_SIGN
 uint16_t uniffi_lwk_checksum_method_secretkey_sign(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_ACCOUNT_XPUB
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_ACCOUNT_XPUB
+uint16_t uniffi_lwk_checksum_method_signer_amp0_account_xpub(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_SIGN_CHALLENGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_SIGN_CHALLENGE
+uint16_t uniffi_lwk_checksum_method_signer_amp0_sign_challenge(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_SIGNER_DATA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_SIGNER_DATA
+uint16_t uniffi_lwk_checksum_method_signer_amp0_signer_data(void
     
 );
 #endif
@@ -2800,6 +3077,12 @@ uint16_t uniffi_lwk_checksum_method_txbuilder_add_burn(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXPLICIT_RECIPIENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXPLICIT_RECIPIENT
+uint16_t uniffi_lwk_checksum_method_txbuilder_add_explicit_recipient(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 uint16_t uniffi_lwk_checksum_method_txbuilder_add_external_utxos(void
@@ -2839,6 +3122,12 @@ uint16_t uniffi_lwk_checksum_method_txbuilder_fee_rate(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_FINISH
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_FINISH
 uint16_t uniffi_lwk_checksum_method_txbuilder_finish(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_FINISH_FOR_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_FINISH_FOR_AMP0
+uint16_t uniffi_lwk_checksum_method_txbuilder_finish_for_amp0(void
     
 );
 #endif
@@ -3160,6 +3449,12 @@ uint16_t uniffi_lwk_checksum_method_wollet_finalize(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_IS_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_IS_AMP0
+uint16_t uniffi_lwk_checksum_method_wollet_is_amp0(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_IS_SEGWIT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_IS_SEGWIT
 uint16_t uniffi_lwk_checksum_method_wollet_is_segwit(void
@@ -3220,6 +3515,12 @@ uint16_t uniffi_lwk_checksum_method_wolletdescriptor_derive_blinding_key(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_IS_AMP0
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_IS_AMP0
+uint16_t uniffi_lwk_checksum_method_wolletdescriptor_is_amp0(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_IS_MAINNET
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_IS_MAINNET
 uint16_t uniffi_lwk_checksum_method_wolletdescriptor_is_mainnet(void
@@ -3235,6 +3536,24 @@ uint16_t uniffi_lwk_checksum_method_wolletdescriptor_script_pubkey(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ADDRESS_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ADDRESS_NEW
 uint16_t uniffi_lwk_checksum_constructor_address_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_AMP0_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_AMP0_NEW
+uint16_t uniffi_lwk_checksum_constructor_amp0_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_AMP0CONNECTED_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_AMP0CONNECTED_NEW
+uint16_t uniffi_lwk_checksum_constructor_amp0connected_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_AMP0PSET_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_AMP0PSET_NEW
+uint16_t uniffi_lwk_checksum_constructor_amp0pset_new(void
     
 );
 #endif

@@ -1355,17 +1355,17 @@ func TestAutoSwap(t *testing.T) {
 			require.NoError(t, err)
 
 			setupRecommendation := func(t *testing.T) {
+				// sleep for a second to make sure the lightning channel states are updated from previous tests
+				time.Sleep(1 * time.Second)
 				recommendations, err := autoSwap.GetRecommendations()
 				require.NoError(t, err)
 				recommendation := recommendations.Lightning[0]
-				if recommendation.Swap == nil {
-					offset := uint64(100000)
-					swapCfg.InboundBalance = recommendation.Channel.InboundSat + offset
-					swapCfg.OutboundBalance = recommendation.Channel.OutboundSat - offset
+				offset := uint64(100000)
+				swapCfg.InboundBalance = recommendation.Channel.InboundSat + offset
+				swapCfg.OutboundBalance = recommendation.Channel.OutboundSat - offset
 
-					_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
-					require.NoError(t, err)
-				}
+				_, err = autoSwap.UpdateLightningConfig(&autoswaprpc.UpdateLightningConfigRequest{Config: swapCfg})
+				require.NoError(t, err)
 			}
 
 			t.Run("Recommendations", func(t *testing.T) {
