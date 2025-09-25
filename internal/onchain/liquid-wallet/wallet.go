@@ -579,7 +579,9 @@ func (w *Wallet) GetOutputs(address string) ([]*onchain.Output, error) {
 		if utxo.Address().String() == address {
 			output := &onchain.Output{TxId: utxo.Outpoint().Txid().String()}
 			if unblinded := utxo.Unblinded(); unblinded != nil {
-				output.Value = unblinded.Value()
+				if unblinded.Asset() == w.assetId() {
+					output.Value = unblinded.Value()
+				}
 			}
 			outputs = append(outputs, output)
 		}
