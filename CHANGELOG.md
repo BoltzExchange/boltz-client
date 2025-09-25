@@ -1,4 +1,10 @@
 
+<a name="v2.8.7"></a>
+## [v2.8.7] - 2025-09-25
+### Feat
+- hide mrh behind flag ([#557](https://github.com/BoltzExchange/boltz-client/issues/557))
+
+
 <a name="v2.8.6"></a>
 ## [v2.8.6] - 2025-09-24
 ### Fix
@@ -775,6 +781,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.6...v2.8.7
 [v2.8.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.5...v2.8.6
 [v2.8.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.4...v2.8.5
 [v2.8.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.3...v2.8.4
