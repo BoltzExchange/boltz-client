@@ -1156,6 +1156,33 @@ func TestReverseSwap(t *testing.T) {
 		})
 	})
 
+	t.Run("NoMrh", func(t *testing.T) {
+		client, _, stop := setup(t, setupOptions{})
+		defer stop()
+
+		wallet := emptyWallet(t, client, boltzrpc.Currency_LBTC)
+		noMrh := true
+		externalPay := true
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount:      100000,
+			WalletId:    &wallet.Id,
+			ExternalPay: &externalPay,
+			NoMrh:       &noMrh,
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_BTC,
+				To:   boltzrpc.Currency_LBTC,
+			},
+		}
+		swap, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+
+		decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
+		require.NoError(t, err)
+
+		key := boltz.FindMagicRoutingHint(decoded)
+		require.Nil(t, key)
+	})
+
 }
 
 func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) *boltzrpc.Wallet {

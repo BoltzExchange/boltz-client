@@ -621,6 +621,9 @@ message CreateReverseSwapRequest {
 
     // The routing fee limit for paying the lightning invoice in ppm (parts per million)
     optional uint64 routing_fee_limit_ppm = 13;
+
+    // do not add a magic routing hint to the lightning invoice
+    optional bool no_mrh = 14;
 }
 message CreateReverseSwapResponse {
     string id = 1;

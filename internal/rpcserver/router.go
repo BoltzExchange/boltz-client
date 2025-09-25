@@ -71,8 +71,8 @@ type routedBoltzServer struct {
 
 	liquidBackend *liquid_wallet.BlockchainBackend
 
-	stop  chan bool
-	state serverState
+	stop      chan bool
+	state     serverState
 	stateLock sync.RWMutex
 
 	newKeyLock sync.Mutex
@@ -1050,7 +1050,7 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		InvoiceExpiry:   request.GetInvoiceExpiry(),
 	}
 
-	if claimAddress != "" && walletId != nil {
+	if claimAddress != "" && walletId != nil && !request.GetNoMrh() {
 		addressHash := sha256.Sum256([]byte(claimAddress))
 		signature, err := schnorr.Sign(privateKey, addressHash[:])
 		if err != nil {
