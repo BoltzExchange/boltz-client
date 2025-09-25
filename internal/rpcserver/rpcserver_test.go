@@ -23,6 +23,7 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/macaroons"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -1155,32 +1156,6 @@ func TestReverseSwap(t *testing.T) {
 			})
 		})
 	})
-
-	t.Run("NoMrh", func(t *testing.T) {
-		client, _, stop := setup(t, setupOptions{})
-		defer stop()
-
-		wallet := emptyWallet(t, client, boltzrpc.Currency_LBTC)
-		externalPay := true
-		request := &boltzrpc.CreateReverseSwapRequest{
-			Amount:      100000,
-			WalletId:    &wallet.Id,
-			ExternalPay: &externalPay,
-			Pair: &boltzrpc.Pair{
-				From: boltzrpc.Currency_BTC,
-				To:   boltzrpc.Currency_LBTC,
-			},
-		}
-		swap, err := client.CreateReverseSwap(request)
-		require.NoError(t, err)
-
-		decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
-		require.NoError(t, err)
-
-		key := boltz.FindMagicRoutingHint(decoded)
-		require.Nil(t, key)
-	})
-
 }
 
 func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency) *boltzrpc.Wallet {
@@ -1851,6 +1826,41 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 	fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	defer stop()
+
+	t.Run("AddMagicRoutingHint", func(t *testing.T) {
+		addMrh := true
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount: 100000,
+			Pair: &boltzrpc.Pair{
+				From: boltzrpc.Currency_BTC,
+				To:   boltzrpc.Currency_LBTC,
+			},
+			AddMagicRoutingHint: &addMrh,
+		}
+		_, err := client.CreateReverseSwap(request)
+		requireCode(t, err, codes.InvalidArgument)
+
+		wallet := emptyWallet(t, client, boltzrpc.Currency_LBTC)
+		externalPay := true
+		request.ExternalPay = &externalPay
+		request.WalletId = &wallet.Id
+
+		createAndCheckMrh := func() *btcec.PublicKey {
+			swap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
+
+			decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
+			require.NoError(t, err)
+			return boltz.FindMagicRoutingHint(decoded)
+		}
+
+		key := createAndCheckMrh()
+		require.NotNil(t, key)
+
+		addMrh = false
+		key = createAndCheckMrh()
+		require.Nil(t, key)
+	})
 
 	tt := []struct {
 		desc     string

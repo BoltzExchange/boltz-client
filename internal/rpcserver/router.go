@@ -1050,14 +1050,22 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		InvoiceExpiry:   request.GetInvoiceExpiry(),
 	}
 
-	if claimAddress != "" && walletId != nil && request.GetAddMagicRoutingHint() {
-		addressHash := sha256.Sum256([]byte(claimAddress))
-		signature, err := schnorr.Sign(privateKey, addressHash[:])
-		if err != nil {
-			return nil, err
+	if request.GetAddMagicRoutingHint() {
+		// the first two conditions already imply `externalPay` is true, just adding it as a sanity check here
+		if claimAddress != "" && walletId != nil && externalPay {
+			addressHash := sha256.Sum256([]byte(claimAddress))
+			signature, err := schnorr.Sign(privateKey, addressHash[:])
+			if err != nil {
+				return nil, err
+			}
+			createRequest.AddressSignature = signature.Serialize()
+			createRequest.Address = claimAddress
+		} else {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"magic routing hints can only be used with an internal wallet and the external pay flag",
+			)
 		}
-		createRequest.AddressSignature = signature.Serialize()
-		createRequest.Address = claimAddress
 	}
 
 	response, err := server.boltz.CreateReverseSwap(createRequest)
