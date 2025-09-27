@@ -32,8 +32,9 @@ type blockResponse struct {
 }
 
 type Client struct {
-	api   string
-	apiv1 string
+	httpClient *http.Client
+	api        string
+	apiv1      string
 }
 
 func InitClient(endpoint string) *Client {
@@ -44,6 +45,9 @@ func InitClient(endpoint string) *Client {
 	}
 
 	return &Client{
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 		api:   endpointStripped,
 		apiv1: endpointV1,
 	}
@@ -55,7 +59,7 @@ func (c *Client) getFeeRecommendation() (*feeEstimation, error) {
 		return nil, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +92,7 @@ func (c *Client) EstimateFee() (float64, error) {
 }
 
 func (c *Client) GetRawTransaction(txId string) (string, error) {
-	res, err := http.Get(c.api + "/tx/" + txId + "/hex")
+	res, err := c.httpClient.Get(c.api + "/tx/" + txId + "/hex")
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +108,7 @@ func (c *Client) GetRawTransaction(txId string) (string, error) {
 }
 
 func (c *Client) BroadcastTransaction(txHex string) (string, error) {
-	res, err := http.Post(c.api+"/tx", "text/plain", strings.NewReader(txHex))
+	res, err := c.httpClient.Post(c.api+"/tx", "text/plain", strings.NewReader(txHex))
 	if err != nil {
 		return "", err
 	}
@@ -200,7 +204,7 @@ func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onch
 }
 
 func (c *Client) GetBlockHeight() (uint32, error) {
-	res, err := http.Get(c.apiv1 + "/blocks/tip/height")
+	res, err := c.httpClient.Get(c.apiv1 + "/blocks/tip/height")
 	if err != nil {
 		return 0, err
 	}
@@ -228,7 +232,7 @@ type transaction struct {
 }
 
 func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
-	res, err := http.Get(c.api + "/tx/" + txId)
+	res, err := c.httpClient.Get(c.api + "/tx/" + txId)
 	if err != nil {
 		return false, err
 	}
@@ -245,7 +249,7 @@ func (c *Client) IsTransactionConfirmed(txId string) (bool, error) {
 }
 
 func (c *Client) GetUnspentOutputs(address string) ([]*onchain.Output, error) {
-	res, err := http.Get(c.api + "/address/" + address + "/utxo")
+	res, err := c.httpClient.Get(c.api + "/address/" + address + "/utxo")
 	if err != nil {
 		return nil, err
 	}
