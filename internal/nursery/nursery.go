@@ -270,10 +270,14 @@ func (nursery *Nursery) removeSwapListener(id string) {
 }
 
 func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Output) (id string, err error) {
+	logger.Debugf("Creating tx for %s and %d outputs", currency, len(outputs))
+
 	outputs, details := nursery.populateOutputs(outputs)
 	if len(details) == 0 {
 		return "", errors.New("all outputs invalid")
 	}
+
+	logger.Debugf("Got %d valid outputs", len(outputs))
 
 	results := make(boltz.Results)
 
@@ -298,6 +302,8 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 	if err != nil {
 		return handleErr(fmt.Errorf("construct: %w", err))
 	}
+
+	logger.Debugf("Constructed tx, broadcasting")
 
 	id, err = nursery.onchain.BroadcastTransaction(transaction)
 	if err != nil {
