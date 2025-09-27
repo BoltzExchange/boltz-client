@@ -1845,21 +1845,26 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 		request.ExternalPay = &externalPay
 		request.WalletId = &wallet.Id
 
-		createAndCheckMrh := func() *btcec.PublicKey {
+		createAndCheckMrh := func() (*boltzrpc.ReverseSwapInfo, *btcec.PublicKey) {
 			swap, err := client.CreateReverseSwap(request)
+			require.NoError(t, err)
+
+			swapInfo, err := client.GetSwapInfo(swap.Id)
 			require.NoError(t, err)
 
 			decoded, err := zpay32.Decode(*swap.Invoice, &chaincfg.RegressionNetParams)
 			require.NoError(t, err)
-			return boltz.FindMagicRoutingHint(decoded)
+			return swapInfo.ReverseSwap, boltz.FindMagicRoutingHint(decoded)
 		}
 
-		key := createAndCheckMrh()
+		swapInfo, key := createAndCheckMrh()
 		require.NotNil(t, key)
+		require.NotEmpty(t, swapInfo.ClaimAddress)
 
 		addMrh = false
-		key = createAndCheckMrh()
+		swapInfo, key = createAndCheckMrh()
 		require.Nil(t, key)
+		require.Empty(t, swapInfo.ClaimAddress)
 	})
 
 	tt := []struct {
