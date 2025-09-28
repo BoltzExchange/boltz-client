@@ -98,11 +98,9 @@ build-bolt12:
 	cd internal/lightning/lib/bolt12 && cargo build --release
 
 build-lwk:
-ifeq ("$(wildcard internal/onchain/liquid-wallet/lwk/liblwk.a)","")
 	@$(call print, "Building lwk")
 	cd lwk/lwk_bindings && cargo build --release --lib
 	cp lwk/target/release/liblwk.a lwk/target/release/liblwk.so internal/onchain/liquid-wallet/lwk/
-endif
 
 build: download-gdk build-bolt12 build-lwk
 	@$(call print, "Building boltz-client")
