@@ -1031,6 +1031,12 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 
 	var walletId *database.Id
 	if claimAddress != "" {
+		if request.WalletId != nil {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"claim address and wallet id cannot be used together",
+			)
+		}
 		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
 
 		if err != nil {
