@@ -988,36 +988,6 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		}
 	}
 
-	var walletId *database.Id
-	claimAddress := request.Address
-	if claimAddress != "" {
-		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
-
-		if err != nil {
-			return nil, fmt.Errorf("invalid claim address %s: %w", claimAddress, err)
-		}
-		logger.Infof("Using claim address: %s", claimAddress)
-	} else {
-		wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
-			Currency:      pair.To,
-			Id:            request.WalletId,
-			AllowReadonly: true,
-		})
-		if err != nil {
-			return nil, err
-		}
-		info := wallet.GetWalletInfo()
-		logger.Infof("Using wallet %+v as reverse swap destination", info)
-		walletId = &info.Id
-
-		if externalPay {
-			claimAddress, err = wallet.NewAddress()
-			if err != nil {
-				return nil, fmt.Errorf("could not claim address from wallet: %w", err)
-			}
-		}
-	}
-
 	preimage, preimageHash, err := newPreimage()
 
 	if err != nil {
@@ -1050,9 +1020,47 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 		InvoiceExpiry:   request.GetInvoiceExpiry(),
 	}
 
-	if request.GetAddMagicRoutingHint() {
-		// the first two conditions already imply `externalPay` is true, just adding it as a sanity check here
-		if claimAddress != "" && walletId != nil && externalPay {
+	claimAddress := request.Address
+	addMrh := request.GetAddMagicRoutingHint()
+	if addMrh && (!externalPay || claimAddress != "") {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"magic routing hints can only be used with an internal wallet and the external pay flag",
+		)
+	}
+
+	var walletId *database.Id
+	if claimAddress != "" {
+		if request.WalletId != nil {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"claim address and wallet id cannot be used together",
+			)
+		}
+		err := boltz.ValidateAddress(server.network, claimAddress, pair.To)
+
+		if err != nil {
+			return nil, fmt.Errorf("invalid claim address %s: %w", claimAddress, err)
+		}
+		logger.Infof("Using claim address: %s", claimAddress)
+	} else {
+		wallet, err := server.getAnyWallet(ctx, onchain.WalletChecker{
+			Currency:      pair.To,
+			Id:            request.WalletId,
+			AllowReadonly: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+		info := wallet.GetWalletInfo()
+		logger.Infof("Using wallet %+v as reverse swap destination", info)
+		walletId = &info.Id
+
+		if addMrh {
+			claimAddress, err = wallet.NewAddress()
+			if err != nil {
+				return nil, fmt.Errorf("could not get claim address from wallet: %w", err)
+			}
 			addressHash := sha256.Sum256([]byte(claimAddress))
 			signature, err := schnorr.Sign(privateKey, addressHash[:])
 			if err != nil {
@@ -1060,11 +1068,6 @@ func (server *routedBoltzServer) createReverseSwap(ctx context.Context, isAuto b
 			}
 			createRequest.AddressSignature = signature.Serialize()
 			createRequest.Address = claimAddress
-		} else {
-			return nil, status.Errorf(
-				codes.InvalidArgument,
-				"magic routing hints can only be used with an internal wallet and the external pay flag",
-			)
 		}
 	}
 
