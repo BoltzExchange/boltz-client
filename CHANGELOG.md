@@ -1,4 +1,16 @@
 
+<a name="v2.8.8"></a>
+## [v2.8.8] - 2025-09-29
+### Feat
+- add timeout to mempool HTTP client ([#562](https://github.com/BoltzExchange/boltz-client/issues/562))
+
+### Fix
+- do not set reverse swap claim address without MRH ([#564](https://github.com/BoltzExchange/boltz-client/issues/564))
+
+### Refactor
+- always build lwk artifacts in make command
+
+
 <a name="v2.8.7"></a>
 ## [v2.8.7] - 2025-09-25
 ### Feat
@@ -781,6 +793,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.7...v2.8.8
 [v2.8.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.6...v2.8.7
 [v2.8.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.5...v2.8.6
 [v2.8.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.4...v2.8.5
