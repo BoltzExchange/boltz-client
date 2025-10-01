@@ -1564,16 +1564,6 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 		return nil, err
 	}
 
-	// only GDK wallets have subaccounts
-	if request.Params.Currency == boltzrpc.Currency_BTC {
-		//nolint:staticcheck
-		_, err = server.SetSubaccount(ctx, &boltzrpc.SetSubaccountRequest{
-			WalletId: created.Id,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
 	return &boltzrpc.CreateWalletResponse{
 		Mnemonic: mnemonic,
 		Wallet:   created,

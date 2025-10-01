@@ -226,6 +226,39 @@ func TestWallet_Disconnect(t *testing.T) {
 	})
 }
 
+func TestWallet_BumpTransactionFee(t *testing.T) {
+	// Only test BTC as Liquid doesn't support RBF
+	t.Run("BTC", func(t *testing.T) {
+		backend := test.WalletBackend(t, boltz.CurrencyBtc)
+		wallet, err := backend.NewWallet(test.WalletCredentials(boltz.CurrencyBtc))
+		require.NoError(t, err)
+		require.NoError(t, test.FundWallet(boltz.CurrencyBtc, wallet))
+
+		cli := test.GetCli(boltz.CurrencyBtc)
+		toAddress := test.GetNewAddress(cli)
+
+		// Send a transaction first
+		txId, err := wallet.SendToAddress(onchain.WalletSendArgs{
+			Address:     toAddress,
+			Amount:      1000,
+			SatPerVbyte: 1,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, txId)
+
+		// Wait a bit to ensure transaction is in mempool
+		time.Sleep(2 * time.Second)
+
+		// Try to bump the fee
+		newTxId, err := wallet.BumpTransactionFee(txId, 2)
+		require.NoError(t, err)
+		require.NotEmpty(t, newTxId)
+		require.NotEqual(t, txId, newTxId)
+
+		test.MineBlock()
+	})
+}
+
 func TestWallet_GetOutputs(t *testing.T) {
 	walletTest(t, false, func(t *testing.T, wallet onchain.Wallet) {
 		t.Skip("TODO")
@@ -259,6 +292,26 @@ func TestWallet_ImportCredentials(t *testing.T) {
 		credentials onchain.WalletCredentials
 		shouldError bool
 	}{
+		/*
+			{
+				name: "Xpub/BTC",
+				credentials: onchain.WalletCredentials{
+					WalletInfo: onchain.WalletInfo{
+						Currency: boltz.CurrencyBtc,
+					},
+					Xpub: "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
+				},
+				shouldError: false,
+			},
+		*/
+		{
+			name:     "CoreDescriptor/BTC",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
+			},
+			shouldError: false,
+		},
 		{
 			name:     "CoreDescriptor/Liquid",
 			currency: boltz.CurrencyLiquid,
@@ -266,14 +319,6 @@ func TestWallet_ImportCredentials(t *testing.T) {
 				CoreDescriptor: "ct(slip77(099d2fa0d9e56478d00ba3044a55aa9878a2f0e1c0fd1c57962573994771f87a),elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*))#60v4fm2h",
 			},
 			shouldError: false,
-		},
-		{
-			name:     "CoreDescriptor/Liquid/NoCt",
-			currency: boltz.CurrencyLiquid,
-			credentials: onchain.WalletCredentials{
-				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
-			},
-			shouldError: true,
 		},
 	}
 
