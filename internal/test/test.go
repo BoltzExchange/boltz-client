@@ -16,6 +16,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	bitcoin_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet/bdk"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
@@ -66,6 +68,9 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 		WalletInfo: WalletInfo(currency),
 		Mnemonic:   WalletMnemonic,
 		Subaccount: &sub,
+	}
+	if currency == boltz.CurrencyBtc {
+		creds.CoreDescriptor, _ = bdk.DeriveDefaultXpub(bdk.NetworkRegtest, WalletMnemonic)
 	}
 	if currency == boltz.CurrencyLiquid {
 		creds.CoreDescriptor, _ = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, WalletMnemonic)
@@ -182,6 +187,17 @@ func WalletBackend(t *testing.T, currency boltz.Currency) onchain.WalletBackend 
 	var backend onchain.WalletBackend
 	var err error
 	switch currency {
+	case boltz.CurrencyBtc:
+		var electrumClient *electrum.Client
+		electrumClient, err = electrum.NewClient(onchain.RegtestElectrumConfig.Btc)
+		require.NoError(t, err)
+		backend, err = bitcoin_wallet.NewBackend(bitcoin_wallet.Config{
+			Network:     boltz.Regtest,
+			Electrum:    &onchain.RegtestElectrumConfig.Btc,
+			DataDir:     t.TempDir(),
+			TxProvider:  electrumClient,
+			FeeProvider: electrumClient,
+		})
 	case boltz.CurrencyLiquid:
 		backend, err = liquid_wallet.NewBackend(LiquidBackendConfig(t))
 	default:
