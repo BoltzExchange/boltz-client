@@ -94,6 +94,8 @@ type Config struct {
 	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
 	AutoConsolidateThreshold *uint64 `long:"auto-consolidate-threshold" description:"Number of UTXOs that trigger auto consolidation. Set to 0 to disable"`
 
+	WalletSyncInterval uint64 `long:"wallet-sync-interval" description:"Interval to sync internal wallets in seconds"`
+
 	Help *helpOptions `group:"Help Options"`
 }
 
@@ -159,7 +161,8 @@ func LoadConfig(dataDir string) (*Config, error) {
 			Path: "",
 		},
 
-		ReferralId: "boltz-client",
+		ReferralId:         "boltz-client",
+		WalletSyncInterval: 60,
 	}
 
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)

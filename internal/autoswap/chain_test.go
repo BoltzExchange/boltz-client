@@ -30,6 +30,7 @@ func (m mockedWallet) Create(t *testing.T) *onchainmock.MockWallet {
 	wallet := onchainmock.NewMockWallet(t)
 	wallet.EXPECT().Ready().Return(true).Maybe()
 	wallet.EXPECT().GetWalletInfo().Return(m.info)
+	wallet.EXPECT().Sync().Return(nil).Maybe()
 	if m.balance != nil {
 		wallet.EXPECT().GetBalance().Return(m.balance, nil)
 	}

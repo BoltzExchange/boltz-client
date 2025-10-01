@@ -403,9 +403,10 @@ func defaultValue(value string, defaultValue string) string {
 
 func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network) (*onchain.Onchain, error) {
 	chain := &onchain.Onchain{
-		Btc:     &onchain.Currency{},
-		Liquid:  &onchain.Currency{},
-		Network: network,
+		Btc:                &onchain.Currency{},
+		Liquid:             &onchain.Currency{},
+		Network:            network,
+		WalletSyncInterval: time.Duration(cfg.WalletSyncInterval) * time.Second,
 	}
 
 	chain.Init()
