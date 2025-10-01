@@ -1,23 +1,20 @@
 //go:build !unit
 
-package liquid_wallet
+package liquid_wallet_test
 
 import (
 	"os"
-	"slices"
 	"testing"
 	"time"
 
-	"github.com/BoltzExchange/boltz-client/v2/internal/database"
-	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet/lwk"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/vulpemventures/go-elements/address"
 )
 
 type RegtestFeeProvider struct{}
@@ -28,188 +25,24 @@ func (p *RegtestFeeProvider) EstimateFee() (float64, error) {
 
 const syncInterval = 1 * time.Second
 
-func dbPersister(t *testing.T) Persister {
-	db := database.Database{
-		Path: ":memory:",
-	}
-	err := db.Connect()
-	require.NoError(t, err)
-	err = db.CreateWallet(&database.Wallet{
-		WalletCredentials: test.WalletCredentials(boltz.CurrencyLiquid),
-	})
-	require.NoError(t, err)
-	return database.NewWalletPersister(&db)
-}
-
-func defaultBackend(t *testing.T) *BlockchainBackend {
-	backend, err := NewBlockchainBackend(defaultConfig(t))
-	require.NoError(t, err)
-	return backend
-}
-
-func defaultConfig(t *testing.T) Config {
-	txProvider, err := electrum.NewClient(onchain.RegtestElectrumConfig.Liquid)
-	require.NoError(t, err)
-	return Config{
-		Network:      boltz.Regtest,
-		DataDir:      "test-data",
-		SyncInterval: syncInterval,
-		Persister:    dbPersister(t),
-		FeeProvider:  &RegtestFeeProvider{},
-		TxProvider:   txProvider,
-	}
-}
-
 func TestMain(m *testing.M) {
 	test.InitLogger()
 	os.Exit(m.Run())
 }
-
-func TestWallet_GetBalance(t *testing.T) {
-	wallet := newWallet(t, defaultBackend(t), nil)
-	balance, err := wallet.GetBalance()
-	require.NoError(t, err)
-	require.NotNil(t, balance)
-	require.Equal(t, &onchain.Balance{}, balance)
-
-	address, err := wallet.NewAddress()
-	require.NoError(t, err)
-	require.NotEmpty(t, address)
-
-	amount := uint64(10000)
-	test.SendToAddress(test.LiquidCli, address, amount)
-
-	require.Eventually(t, func() bool {
-		balance, err = wallet.GetBalance()
-		require.NoError(t, err)
-		return balance.Total == amount && balance.Unconfirmed == amount
-	}, 10*syncInterval, syncInterval)
-
-	test.MineBlock()
-
-	require.Eventually(t, func() bool {
-		balance, err = wallet.GetBalance()
-		require.NoError(t, err)
-		return balance.Total == amount && balance.Confirmed == amount
-	}, 10*syncInterval, syncInterval)
-}
-
-func TestWallet_Funded(t *testing.T) {
-	fundedWallet := newWallet(t, defaultBackend(t), test.WalletCredentials(boltz.CurrencyLiquid))
-	require.NoError(t, test.FundWallet(boltz.CurrencyLiquid, fundedWallet))
-
-	t.Run("SendFee", func(t *testing.T) {
-		address := test.GetNewAddress(test.LiquidCli)
-
-		t.Run("Amount", func(t *testing.T) {
-			amount := uint64(10000)
-			sendAmount, fee, err := fundedWallet.GetSendFee(onchain.WalletSendArgs{
-				Address:     address,
-				SatPerVbyte: 1,
-				Amount:      amount,
-			})
-			require.NoError(t, err)
-			require.Equal(t, sendAmount, amount)
-
-			balance, err := fundedWallet.GetBalance()
-			require.NoError(t, err)
-			require.Less(t, sendAmount+fee, balance.Total)
-		})
-
-		t.Run("SendAll", func(t *testing.T) {
-			amount, fee, err := fundedWallet.GetSendFee(onchain.WalletSendArgs{
-				Address:     address,
-				SatPerVbyte: 1,
-				SendAll:     true,
-			})
-			require.NoError(t, err)
-
-			balance, err := fundedWallet.GetBalance()
-			require.NoError(t, err)
-			require.Equal(t, balance.Total, amount+fee)
-		})
-	})
-
-	t.Run("SendToAddress", func(t *testing.T) {
-		toAddress := test.GetNewAddress(test.LiquidCli)
-
-		t.Run("Amount", func(t *testing.T) {
-			amount := int64(10000)
-			args := onchain.WalletSendArgs{
-				Address:     toAddress,
-				Amount:      uint64(amount),
-				SatPerVbyte: 1,
-				SendAll:     false,
-			}
-			txId, err := fundedWallet.SendToAddress(args)
-			require.NoError(t, err)
-			require.NotEmpty(t, txId)
-
-			test.MineBlock()
-
-			require.Eventually(t, func() bool {
-				transactions, err := fundedWallet.GetTransactions(0, 0)
-				require.NoError(t, err)
-				require.NotNil(t, transactions)
-				for _, tx := range transactions {
-					if tx.Id == txId {
-						addressInfo, err := address.FromConfidential(toAddress)
-						require.NoError(t, err)
-						require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
-							return o.Address == addressInfo.Address
-						}))
-						fee := int64(tx.Outputs[len(tx.Outputs)-1].Amount)
-						require.Equal(t, -amount-fee, tx.BalanceChange)
-						return true
-					}
-				}
-				return false
-			}, 5*syncInterval, syncInterval/2)
-		})
-
-		t.Run("All", func(t *testing.T) {
-			args := onchain.WalletSendArgs{
-				Address:     toAddress,
-				SatPerVbyte: 1,
-				SendAll:     true,
-			}
-
-			txId, err := fundedWallet.SendToAddress(args)
-			require.NoError(t, err)
-			require.NotEmpty(t, txId)
-
-			_, err = fundedWallet.SendToAddress(args)
-			require.Error(t, err)
-
-			balance, err := fundedWallet.GetBalance()
-			require.NoError(t, err)
-			require.Zero(t, balance.Total)
-
-			require.NoError(t, fundedWallet.Sync())
-
-			balance, err = fundedWallet.GetBalance()
-			require.NoError(t, err)
-			require.Zero(t, balance.Total)
-
-			test.MineBlock()
-		})
-	})
-}
-
 func TestBackend_Broadcast(t *testing.T) {
 	tx, err := lwk.NewTransaction(someTx)
 	require.NoError(t, err)
 
-	backend, err := NewBlockchainBackend(defaultConfig(t))
+	backend, err := liquid_wallet.NewBackend(test.LiquidBackendConfig(t))
 	require.NoError(t, err)
 	_, err = backend.BroadcastTransaction(tx)
 	require.Error(t, err)
 
-	cfg := defaultConfig(t)
+	cfg := test.LiquidBackendConfig(t)
 	txProvider := onchainmock.NewMockTxProvider(t)
 	txProvider.EXPECT().BroadcastTransaction(mock.Anything).Return("txid", nil)
 	cfg.TxProvider = txProvider
-	backend, err = NewBlockchainBackend(cfg)
+	backend, err = liquid_wallet.NewBackend(cfg)
 	require.NoError(t, err)
 
 	txId, err := backend.BroadcastTransaction(tx)
@@ -218,28 +51,30 @@ func TestBackend_Broadcast(t *testing.T) {
 
 }
 
-func newWallet(t *testing.T, backend *BlockchainBackend, credentials *onchain.WalletCredentials) *Wallet {
+func newWallet(t *testing.T, backend *liquid_wallet.BlockchainBackend, credentials *onchain.WalletCredentials) *liquid_wallet.Wallet {
 	if credentials == nil {
-		mnemonic, err := GenerateMnemonic(boltz.Regtest)
+		mnemonic, err := liquid_wallet.GenerateMnemonic(boltz.Regtest)
 		require.NoError(t, err)
-		credentials = test.WalletCredentials(boltz.CurrencyLiquid)
-		credentials.Mnemonic = mnemonic
+		credentials = &onchain.WalletCredentials{
+			WalletInfo: test.WalletInfo(boltz.CurrencyLiquid),
+			Mnemonic:   mnemonic,
+		}
 	}
-	err := DeriveDefaultDescriptor(boltz.Regtest, credentials)
+	err := onchain.ValidateWalletCredentials(backend, credentials)
 	require.NoError(t, err)
-	wallet, err := NewWallet(backend, credentials)
+	wallet, err := backend.NewWallet(credentials)
 	require.NoError(t, err)
-	return wallet
+	return wallet.(*liquid_wallet.Wallet)
 }
 
 func TestWallet_NewAddress(t *testing.T) {
-	cfg := defaultConfig(t)
+	cfg := test.LiquidBackendConfig(t)
 
 	idx, err := cfg.Persister.LoadLastIndex(1)
 	require.NoError(t, err)
 	require.Nil(t, idx)
 
-	backend, err := NewBlockchainBackend(cfg)
+	backend, err := liquid_wallet.NewBackend(cfg)
 	require.NoError(t, err)
 	wallet := newWallet(t, backend, nil)
 	address, err := wallet.NewAddress()
@@ -258,9 +93,10 @@ func TestWallet_NewAddress(t *testing.T) {
 
 func TestWallet_AutoConsolidate(t *testing.T) {
 	numTxns := 3
-	cfg := defaultConfig(t)
+	cfg := test.LiquidBackendConfig(t)
 	cfg.ConsolidationThreshold = uint64(numTxns)
-	backend, err := NewBlockchainBackend(cfg)
+	cfg.FeeProvider = &RegtestFeeProvider{}
+	backend, err := liquid_wallet.NewBackend(cfg)
 	require.NoError(t, err)
 	wallet := newWallet(t, backend, nil)
 
@@ -275,6 +111,7 @@ func TestWallet_AutoConsolidate(t *testing.T) {
 	test.MineBlock()
 
 	require.Eventually(t, func() bool {
+		require.NoError(t, wallet.Sync())
 		txes, err := wallet.GetTransactions(0, 0)
 		require.NoError(t, err)
 		if len(txes) == numTxns+1 {
