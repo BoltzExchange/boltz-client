@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand/v2"
 	"slices"
 	"sync"
 	"time"
@@ -73,8 +74,8 @@ var RegtestElectrumConfig = ElectrumConfig{
 }
 
 type Currency struct {
-	Blocks BlockProvider
-	Tx     TxProvider
+	Blocks      BlockProvider
+	Tx          TxProvider
 	FeeFallback FeeProvider
 
 	blockHeight uint32
@@ -86,15 +87,21 @@ type Onchain struct {
 	Network        *boltz.Network
 	Wallets        []Wallet
 	OnWalletChange *utils.ChannelForwarder[[]Wallet]
+
+	syncWait   sync.WaitGroup
+	syncCtx    context.Context
+	syncCancel func()
 }
 
 func (onchain *Onchain) Init() {
 	onchain.OnWalletChange = utils.ForwardChannel(make(chan []Wallet), 0, false)
+	onchain.syncCtx, onchain.syncCancel = context.WithCancel(context.Background())
 }
 
 func (onchain *Onchain) AddWallet(wallet Wallet) {
 	onchain.Wallets = append(onchain.Wallets, wallet)
 	onchain.OnWalletChange.Send(onchain.Wallets)
+	onchain.syncLoop(wallet)
 }
 
 func (onchain *Onchain) RemoveWallet(id Id) {
@@ -102,6 +109,30 @@ func (onchain *Onchain) RemoveWallet(id Id) {
 		return current.GetWalletInfo().Id == id
 	})
 	onchain.OnWalletChange.Send(onchain.Wallets)
+}
+
+func (onchain *Onchain) syncLoop(wallet Wallet) {
+	onchain.syncWait.Add(1)
+	go func() {
+		for {
+			// avoid traffic spikes if a lot of wallets are using the same backend
+			sleep := time.Duration(float64(1) * (0.75 + rand.Float64()*0.5))
+			select {
+			case <-onchain.syncCtx.Done():
+				if err := wallet.Disconnect(); err != nil {
+					info := wallet.GetWalletInfo()
+					logger.Errorf("Error shutting down wallet %s: %s", info.String(), err.Error())
+				}
+				onchain.syncWait.Done()
+				return
+			case <-time.After(sleep):
+				if err := wallet.Sync(); err != nil {
+					info := wallet.GetWalletInfo()
+					logger.Errorf("Sync for wallet %d failed: %v", info.Id, err)
+				}
+			}
+		}
+	}()
 }
 
 func (onchain *Onchain) GetCurrency(currency boltz.Currency) (*Currency, error) {
@@ -159,7 +190,7 @@ func (onchain *Onchain) GetWallets(checker WalletChecker) []Wallet {
 
 var FeeFloor = map[boltz.Currency]float64{
 	boltz.CurrencyLiquid: 0.1,
-	boltz.CurrencyBtc:   2,
+	boltz.CurrencyBtc:    2,
 }
 
 func (onchain *Onchain) EstimateFee(currency boltz.Currency) (float64, error) {
@@ -407,22 +438,11 @@ func (onchain *Onchain) Disconnect() {
 	onchain.OnWalletChange.Close()
 	onchain.Btc.Blocks.Disconnect()
 	onchain.Liquid.Blocks.Disconnect()
-	var wg sync.WaitGroup
-	wg.Add(len(onchain.Wallets))
-
-	for _, wallet := range onchain.Wallets {
-		wallet := wallet
-		go func() {
-			if err := wallet.Disconnect(); err != nil {
-				logger.Errorf("Error shutting down wallet: %s", err.Error())
-			}
-			wg.Done()
-		}()
-	}
+	onchain.syncCancel()
 
 	done := make(chan struct{})
 	go func() {
-		wg.Wait()
+		onchain.syncWait.Wait()
 		close(done)
 	}()
 	select {

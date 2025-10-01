@@ -99,6 +99,9 @@ func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
 		case <-timeout:
 			return fmt.Errorf("timeout")
 		}
+		if err := wallet.Sync(); err != nil {
+			return err
+		}
 	}
 	time.Sleep(1 * time.Second)
 	return nil

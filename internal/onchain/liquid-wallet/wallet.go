@@ -1,11 +1,9 @@
 package liquid_wallet
 
 import (
-	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"strings"
 	"sync"
 	"time"
@@ -30,8 +28,6 @@ type Wallet struct {
 	descriptor *lwk.WolletDescriptor
 	backend    *BlockchainBackend
 	info       onchain.WalletInfo
-	syncCancel context.CancelFunc
-	syncWait   sync.WaitGroup
 	syncLock   sync.Mutex
 	sendLock   sync.Mutex
 }
@@ -224,34 +220,20 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 		return nil, err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	result.syncCancel = cancel
-	result.syncWait.Add(1)
-	go result.syncLoop(ctx)
-
 	return result, nil
 }
 
-func (w *Wallet) syncLoop(ctx context.Context) {
-	for {
-		// avoid traffic spikes if a lot of wallets are using the same backend
-		sleep := time.Duration(float64(w.backend.cfg.SyncInterval) * (0.75 + rand.Float64()*0.5))
-		select {
-		case <-ctx.Done():
-			w.syncWait.Done()
-			return
-		case <-time.After(sleep):
-			if err := w.Sync(); err != nil {
-				logger.Errorf("LWK full scan for wallet %d failed: %v", w.info.Id, err)
-			}
-			if err := w.autoConsolidate(); err != nil {
-				logger.Errorf("Auto consolidation for LWK wallet %d failed: %v", w.info.Id, err)
-			}
-		}
+func (w *Wallet) Sync() error {
+	if err := w.fullScan(); err != nil {
+		return err
 	}
+	if err := w.autoConsolidate(); err != nil {
+		return fmt.Errorf("auto consolidation: %w", err)
+	}
+	return nil
 }
 
-func (w *Wallet) Sync() error {
+func (w *Wallet) fullScan() error {
 	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
 	w.syncLock.Lock()
 	defer w.syncLock.Unlock()
@@ -322,8 +304,6 @@ func (w *Wallet) Ready() bool {
 }
 
 func (w *Wallet) Disconnect() error {
-	w.syncCancel()
-	w.syncWait.Wait()
 	return nil
 }
 
