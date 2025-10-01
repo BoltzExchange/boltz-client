@@ -22,6 +22,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/esplora"
 	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
+	bitcoin_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"google.golang.org/grpc/keepalive"
@@ -242,6 +243,17 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	server.walletBackends[boltz.CurrencyLiquid], err = liquid_wallet.NewBackend(liquidConfig)
 	if err != nil {
 		return fmt.Errorf("could not init liquid wallet backend: %v", err)
+	}
+
+	bitcoinConfig := bitcoin_wallet.Config{
+		Network:       server.network,
+		DataDir:       cfg.DataDir + "/bitcoin-wallet",
+		ChainProvider: server.onchain.Btc.Chain,
+		Electrum:      cfg.Electrum().Btc,
+	}
+	server.walletBackends[boltz.CurrencyBtc], err = bitcoin_wallet.NewBackend(bitcoinConfig)
+	if err != nil {
+		return fmt.Errorf("could not init bitcoin wallet backend: %v", err)
 	}
 
 	autoConfPath := path.Join(cfg.DataDir, "autoswap.toml")
