@@ -122,3 +122,25 @@ func (c *WalletCredentials) Encrypt(password string) (*WalletCredentials, error)
 	}
 	return &encrypted, err
 }
+
+type WalletBackend interface {
+	NewWallet(credentials *WalletCredentials) (Wallet, error)
+	DeriveDefaultDescriptor(mnemonic string) (string, error)
+}
+
+func ValidateWalletCredentials(backend WalletBackend, credentials *WalletCredentials) error {
+	if credentials.Encrypted() {
+		return errors.New("credentials are encrypted")
+	}
+	if credentials.CoreDescriptor == "" && credentials.Mnemonic == "" {
+		return errors.New("core descriptor or mnemonic is required")
+	}
+	if credentials.CoreDescriptor == "" {
+		descriptor, err := backend.DeriveDefaultDescriptor(credentials.Mnemonic)
+		if err != nil {
+			return err
+		}
+		credentials.CoreDescriptor = descriptor
+	}
+	return nil
+}
