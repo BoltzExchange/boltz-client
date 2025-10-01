@@ -60,9 +60,13 @@ func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, e
 	return b.cfg.TxProvider.BroadcastTransaction(hex.EncodeToString(raw))
 }
 
+func (b *BlockchainBackend) DeriveDefaultDescriptor(mnemonic string) (string, error) {
+	return DeriveDefaultDescriptor(b.cfg.Network, mnemonic)
+}
+
 const DefaultConsolidationThreshold = 200
 
-func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
+func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	if cfg.Persister == nil {
 		return nil, errors.New("persister is required")
 	}
@@ -157,25 +161,19 @@ func newSigner(network *boltz.Network, mnemonic string) (*lwk.Signer, error) {
 	return lwk.NewSigner(parsed, convertNetwork(network))
 }
 
-func DeriveDefaultDescriptor(network *boltz.Network, credentials *onchain.WalletCredentials) error {
-	if credentials.CoreDescriptor == "" {
-		if credentials.Mnemonic == "" {
-			return errors.New("core descriptor or mnemonic is required")
-		}
-		signer, err := newSigner(network, credentials.Mnemonic)
-		if err != nil {
-			return err
-		}
-		descriptor, err := signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
-		if err != nil {
-			return err
-		}
-		credentials.CoreDescriptor = descriptor.String()
+func DeriveDefaultDescriptor(network *boltz.Network, mnemonic string) (string, error) {
+	signer, err := newSigner(network, mnemonic)
+	if err != nil {
+		return "", err
 	}
-	return nil
+	descriptor, err := signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
+	if err != nil {
+		return "", err
+	}
+	return descriptor.String(), nil
 }
 
-func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredentials) (*Wallet, error) {
+func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
 	if backend == nil {
 		return nil, errors.New("backend instance is nil")
 	}
