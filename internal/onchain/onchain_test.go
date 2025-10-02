@@ -142,48 +142,68 @@ func mockBlockProvider(t *testing.T) *onchainmock.MockBlockProvider {
 	return blockProvider
 }
 
-func TestStartSyncLoop(t *testing.T) {
-	onchainInstance := &onchain.Onchain{
-		Btc: &onchain.Currency{
-			Blocks: mockBlockProvider(t),
-		},
-		Liquid: &onchain.Currency{
-			Blocks: mockBlockProvider(t),
-		},
-		WalletSyncInterval: 10 * time.Millisecond,
+func TestWalletSync(t *testing.T) {
+	setup := func(t *testing.T) *onchain.Onchain {
+		onchainInstance := &onchain.Onchain{
+			Btc: &onchain.Currency{
+				Blocks: mockBlockProvider(t),
+			},
+			Liquid: &onchain.Currency{
+				Blocks: mockBlockProvider(t),
+			},
+			WalletSyncInterval: 100 * time.Millisecond,
+		}
+		onchainInstance.Init()
+		return onchainInstance
 	}
-	onchainInstance.Init()
 
 	t.Run("Remove", func(t *testing.T) {
+		onchainInstance := setup(t)
 		wallet := onchainmock.NewMockWallet(t)
+		done := make(chan struct{})
 		wallet.EXPECT().Sync().RunAndReturn(func() error {
 			go func() {
 				onchainInstance.RemoveWallet(wallet.GetWalletInfo().Id)
+				close(done)
 			}()
 			return nil
 		}).Once()
 		wallet.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{Id: 1}).Maybe()
 		onchainInstance.AddWallet(wallet)
-		time.Sleep(3 * onchainInstance.WalletSyncInterval)
+
+		select {
+		case <-done:
+		case <-time.After(3 * onchainInstance.WalletSyncInterval):
+			require.Fail(t, "timed out while waiting for remove")
+		}
 		require.Empty(t, onchainInstance.Wallets)
+
+		// we sleep for a few more cycles - if the sync is called again the test will fail
+		// since we only expect it to be called once above
 		time.Sleep(2 * onchainInstance.WalletSyncInterval)
 	})
 
 	t.Run("Disconnect", func(t *testing.T) {
+		onchainInstance := setup(t)
+
 		done := make(chan struct{})
 		wallet := onchainmock.NewMockWallet(t)
 		sync := wallet.EXPECT().Sync().RunAndReturn(func() error {
 			go func() {
 				onchainInstance.Disconnect()
+				println("disconnect")
 				close(done)
 			}()
 			return nil
 		}).Once()
 		wallet.EXPECT().Disconnect().Return(nil).NotBefore(sync).Once()
 		onchainInstance.AddWallet(wallet)
-		time.Sleep(3 * onchainInstance.WalletSyncInterval)
-		_, ok := <-done
-		require.False(t, ok)
+
+		select {
+		case <-done:
+		case <-time.After(3 * onchainInstance.WalletSyncInterval):
+			require.Fail(t, "timed out while waiting for disconnect")
+		}
 	})
 
 }
