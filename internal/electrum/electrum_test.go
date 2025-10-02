@@ -1,18 +1,20 @@
 //go:build !unit
 
-package electrum
+package electrum_test
 
 import (
 	"context"
-	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"testing"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
+	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/stretchr/testify/require"
 )
 
-func client(t *testing.T) *Client {
-	client, err := NewClient(onchain.RegtestElectrumConfig.Btc)
+func client(t *testing.T) *electrum.Client {
+	client, err := electrum.NewClient(onchain.RegtestElectrumConfig.Btc)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		client.Disconnect()

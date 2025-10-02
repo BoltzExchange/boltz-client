@@ -1,11 +1,9 @@
 package liquid_wallet
 
 import (
-	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"strings"
 	"sync"
 	"time"
@@ -30,8 +28,6 @@ type Wallet struct {
 	descriptor *lwk.WolletDescriptor
 	backend    *BlockchainBackend
 	info       onchain.WalletInfo
-	syncCancel context.CancelFunc
-	syncWait   sync.WaitGroup
 	syncLock   sync.Mutex
 	sendLock   sync.Mutex
 }
@@ -46,7 +42,6 @@ type Config struct {
 	DataDir                string
 	Esplora                *EsploraConfig
 	Electrum               *onchain.ElectrumOptions
-	SyncInterval           time.Duration
 	ConsolidationThreshold uint64
 	TxProvider             onchain.TxProvider
 	FeeProvider            onchain.FeeProvider
@@ -65,22 +60,18 @@ func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, e
 	return b.cfg.TxProvider.BroadcastTransaction(hex.EncodeToString(raw))
 }
 
-const DefaultSyncInterval = 60 * time.Second
+func (b *BlockchainBackend) DeriveDefaultDescriptor(mnemonic string) (string, error) {
+	return DeriveDefaultDescriptor(b.cfg.Network, mnemonic)
+}
+
 const DefaultConsolidationThreshold = 200
 
-func NewBlockchainBackend(cfg Config) (*BlockchainBackend, error) {
+func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	if cfg.Persister == nil {
 		return nil, errors.New("persister is required")
 	}
 	if cfg.TxProvider == nil {
 		return nil, errors.New("tx provider is required")
-	}
-	if cfg.SyncInterval == 0 {
-		if cfg.Network == boltz.Regtest {
-			cfg.SyncInterval = 1 * time.Second
-		} else {
-			cfg.SyncInterval = DefaultSyncInterval
-		}
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
@@ -170,25 +161,19 @@ func newSigner(network *boltz.Network, mnemonic string) (*lwk.Signer, error) {
 	return lwk.NewSigner(parsed, convertNetwork(network))
 }
 
-func DeriveDefaultDescriptor(network *boltz.Network, credentials *onchain.WalletCredentials) error {
-	if credentials.CoreDescriptor == "" {
-		if credentials.Mnemonic == "" {
-			return errors.New("core descriptor or mnemonic is required")
-		}
-		signer, err := newSigner(network, credentials.Mnemonic)
-		if err != nil {
-			return err
-		}
-		descriptor, err := signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
-		if err != nil {
-			return err
-		}
-		credentials.CoreDescriptor = descriptor.String()
+func DeriveDefaultDescriptor(network *boltz.Network, mnemonic string) (string, error) {
+	signer, err := newSigner(network, mnemonic)
+	if err != nil {
+		return "", err
 	}
-	return nil
+	descriptor, err := signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
+	if err != nil {
+		return "", err
+	}
+	return descriptor.String(), nil
 }
 
-func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredentials) (*Wallet, error) {
+func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
 	if backend == nil {
 		return nil, errors.New("backend instance is nil")
 	}
@@ -224,34 +209,20 @@ func NewWallet(backend *BlockchainBackend, credentials *onchain.WalletCredential
 		return nil, err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	result.syncCancel = cancel
-	result.syncWait.Add(1)
-	go result.syncLoop(ctx)
-
 	return result, nil
 }
 
-func (w *Wallet) syncLoop(ctx context.Context) {
-	for {
-		// avoid traffic spikes if a lot of wallets are using the same backend
-		sleep := time.Duration(float64(w.backend.cfg.SyncInterval) * (0.75 + rand.Float64()*0.5))
-		select {
-		case <-ctx.Done():
-			w.syncWait.Done()
-			return
-		case <-time.After(sleep):
-			if err := w.Sync(); err != nil {
-				logger.Errorf("LWK full scan for wallet %d failed: %v", w.info.Id, err)
-			}
-			if err := w.autoConsolidate(); err != nil {
-				logger.Errorf("Auto consolidation for LWK wallet %d failed: %v", w.info.Id, err)
-			}
-		}
+func (w *Wallet) Sync() error {
+	if err := w.fullScan(); err != nil {
+		return err
 	}
+	if err := w.autoConsolidate(); err != nil {
+		return fmt.Errorf("auto consolidation: %w", err)
+	}
+	return nil
 }
 
-func (w *Wallet) Sync() error {
+func (w *Wallet) fullScan() error {
 	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
 	w.syncLock.Lock()
 	defer w.syncLock.Unlock()
@@ -322,8 +293,6 @@ func (w *Wallet) Ready() bool {
 }
 
 func (w *Wallet) Disconnect() error {
-	w.syncCancel()
-	w.syncWait.Wait()
 	return nil
 }
 

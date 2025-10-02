@@ -26,7 +26,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/macaroons"
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
-	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
@@ -69,7 +68,7 @@ type routedBoltzServer struct {
 	macaroon   *macaroons.Service
 	referralId string
 
-	liquidBackend *liquid_wallet.BlockchainBackend
+	walletBackends map[boltz.Currency]onchain.WalletBackend
 
 	stop      chan bool
 	state     serverState
@@ -1430,8 +1429,8 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 
 	var imported onchain.Wallet
 	err = server.database.RunTx(func(tx *database.Transaction) error {
-		if credentials.Currency == boltz.CurrencyLiquid && credentials.CoreDescriptor == "" {
-			if err := liquid_wallet.DeriveDefaultDescriptor(server.network, credentials); err != nil {
+		if backend, ok := server.walletBackends[credentials.Currency]; ok {
+			if err := onchain.ValidateWalletCredentials(backend, credentials); err != nil {
 				return err
 			}
 		}
@@ -2479,8 +2478,10 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 }
 
 func (server *routedBoltzServer) loginWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
-	if credentials.Currency == boltz.CurrencyLiquid && !credentials.Legacy {
-		return liquid_wallet.NewWallet(server.liquidBackend, credentials)
+	if !credentials.Legacy {
+		if backend, ok := server.walletBackends[credentials.Currency]; ok {
+			return backend.NewWallet(credentials)
+		}
 	}
 	return wallet.Login(credentials)
 }
