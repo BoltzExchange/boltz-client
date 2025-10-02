@@ -2540,6 +2540,8 @@ func TestSwap(t *testing.T) {
 						})
 
 						t.Run("Script", func(t *testing.T) {
+							t.Skip("Disabled until we have a way to lower timeouts through backend")
+
 							boltzApi.DisablePartialSignatures = true
 							t.Cleanup(func() {
 								boltzApi.DisablePartialSignatures = false
@@ -2971,6 +2973,8 @@ func TestChainSwap(t *testing.T) {
 				}
 
 				t.Run("Script", func(t *testing.T) {
+					t.Skip("Disabled until we have a way to lower timeouts through backend")
+
 					boltzApi.DisablePartialSignatures = true
 
 					stream, statusStream := createFailed(t, refundAddress)
