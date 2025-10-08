@@ -35,6 +35,19 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 			if err := nursery.checkExternalReverseSwaps(currency); err != nil {
 				logger.Error("Could not check external reverse swaps: " + err.Error())
 			}
+
+			logger.Debugf("Checking claimable swaps")
+			reverseSwaps, chainSwaps, err := nursery.database.QueryAllClaimableSwaps(nil, currency)
+			if err != nil {
+				logger.Error("Could not query claimable Swaps: " + err.Error())
+				continue
+			}
+			if len(reverseSwaps) > 0 || len(chainSwaps) > 0 {
+				logger.Infof("Found %d Swaps to claim at height %d", len(reverseSwaps)+len(chainSwaps), newBlock.Height)
+				if _, err := nursery.ClaimSwaps(currency, reverseSwaps, chainSwaps); err != nil {
+					logger.Error("Could not claim Swaps: " + err.Error())
+				}
+			}
 		}
 	}()
 
