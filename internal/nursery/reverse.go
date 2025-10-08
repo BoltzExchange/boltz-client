@@ -24,7 +24,8 @@ import (
 func (nursery *Nursery) sendReverseSwapUpdate(reverseSwap database.ReverseSwap) {
 	nursery.sendUpdate(reverseSwap.Id, SwapUpdate{
 		ReverseSwap: &reverseSwap,
-		IsFinal:     reverseSwap.State != boltzrpc.SwapState_PENDING,
+		// ERROR state is not final since it can be caused by transient issues
+		IsFinal: reverseSwap.State == boltzrpc.SwapState_SUCCESSFUL || reverseSwap.State == boltzrpc.SwapState_SERVER_ERROR,
 	})
 }
 
@@ -216,29 +217,24 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		fallthrough
 
 	case boltz.TransactionConfirmed:
-		// already broadcasted on transaction.mempool
+		// claimed on transaction.mempool
 		if reverseSwap.ClaimTransactionId != "" {
 			break
 		}
 
 		err := nursery.database.SetReverseSwapLockupTransactionId(reverseSwap, event.Transaction.Id)
-
 		if err != nil {
 			handleError("Could not set lockup transaction id in database: " + err.Error())
 			return
 		}
 
-		if parsedStatus == boltz.TransactionMempool && !reverseSwap.AcceptZeroConf {
-			break
-		}
-
-		logger.Infof("Constructing claim transaction for Reverse Swap %s", reverseSwap.Id)
-
-		output := nursery.getReverseSwapClaimOutput(reverseSwap)
-
-		if _, err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output}); err != nil {
-			logger.Info("Could not claim: " + err.Error())
-			return
+		if reverseSwap.AcceptZeroConf {
+			logger.Infof("Claiming Reverse Swap %s", reverseSwap.Id)
+			_, err := nursery.ClaimSwaps(reverseSwap.Pair.To, []*database.ReverseSwap{reverseSwap}, nil)
+			if err != nil {
+				logger.Errorf("could not claim reverse swap: %s", err)
+				return
+			}
 		}
 	}
 

@@ -122,6 +122,22 @@ func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmo
 	return txMock
 }
 
+// flakyTxProvider initially says that a transaction isn't confirmed, but upon retry it is
+func flakyTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
+	mockTx := onchainmock.NewMockTxProvider(t)
+	called := false
+	mockTx.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
+	mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
+		if called {
+			return true, nil
+		}
+		called = true
+		return false, nil
+	})
+	mockTx.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(original.BroadcastTransaction).Maybe()
+	return mockTx
+}
+
 func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
 	boltzApi := getBoltz(t, cfg)
 	chain, err := initOnchain(cfg, boltzApi, boltz.Regtest)
@@ -940,6 +956,32 @@ func TestReverseSwap(t *testing.T) {
 				require.Contains(t, info.ReverseSwap.Error, tc.error)
 			})
 		}
+	})
+
+	t.Run("Retry", func(t *testing.T) {
+		cfg := loadConfig(t)
+		chain := getOnchain(t, cfg)
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+		defer stop()
+
+		chain.Btc.Tx = flakyTxProvider(t, chain.Btc.Tx)
+
+		request := &boltzrpc.CreateReverseSwapRequest{
+			Amount:         100000,
+			AcceptZeroConf: false,
+		}
+
+		swap, err := client.CreateReverseSwap(request)
+		require.NoError(t, err)
+
+		_, statusStream := swapStream(t, client, swap.Id)
+		statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+		test.MineBlock()
+		// on first call, the tx provider will say its not confirmed, causing an error
+		statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionConfirmed)
+		test.MineBlock()
+		// new block triggers a retry, on which the tx provider will say its confirmed
+		statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
 	})
 
 	t.Run("Standalone", func(t *testing.T) {
@@ -2850,6 +2892,41 @@ func TestChainSwap(t *testing.T) {
 				require.Contains(t, info.ChainSwap.Error, tc.error)
 			})
 		}
+	})
+
+	t.Run("Retry", func(t *testing.T) {
+		cfg := loadConfig(t)
+		chain := getOnchain(t, cfg)
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+		defer stop()
+
+		chain.Btc.Tx = flakyTxProvider(t, chain.Btc.Tx)
+
+		acceptZeroConf := false
+		externalPay := true
+		toWallet := walletId(t, client, boltzrpc.Currency_BTC)
+		request := &boltzrpc.CreateChainSwapRequest{
+			Amount:         &swapAmount,
+			Pair:           &boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC},
+			AcceptZeroConf: &acceptZeroConf,
+			ExternalPay:    &externalPay,
+			ToWalletId:     &toWallet,
+		}
+
+		swap, err := client.CreateChainSwap(request)
+		require.NoError(t, err)
+
+		test.SendToAddress(test.LiquidCli, swap.FromData.LockupAddress, swap.FromData.Amount)
+		test.MineBlock()
+
+		_, statusStream := swapStream(t, client, swap.Id)
+		statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
+		test.MineBlock()
+		// on first call, the tx provider will say its not confirmed, causing an error
+		statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerConfirmed)
+		test.MineBlock()
+		// new block triggers a retry, on which the tx provider will say its confirmed
+		statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionClaimed)
 	})
 
 	for _, tc := range tests {
