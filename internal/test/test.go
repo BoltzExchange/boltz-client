@@ -13,8 +13,10 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
+	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/stretchr/testify/require"
@@ -49,18 +51,26 @@ const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enfor
 const WalletSubaccount = 0
 const WalletId = 1
 
+func WalletInfo(currency boltz.Currency) onchain.WalletInfo {
+	return onchain.WalletInfo{
+		Name:     "regtest",
+		Currency: currency,
+		TenantId: database.DefaultTenantId,
+		Id:       WalletId,
+	}
+}
+
 func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 	sub := uint64(WalletSubaccount)
-	return &onchain.WalletCredentials{
-		WalletInfo: onchain.WalletInfo{
-			Name:     "regtest",
-			Currency: currency,
-			TenantId: database.DefaultTenantId,
-			Id:       WalletId,
-		},
+	creds := &onchain.WalletCredentials{
+		WalletInfo: WalletInfo(currency),
 		Mnemonic:   WalletMnemonic,
 		Subaccount: &sub,
 	}
+	if currency == boltz.CurrencyLiquid {
+		creds.CoreDescriptor, _ = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, WalletMnemonic)
+	}
+	return creds
 }
 
 func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
@@ -98,6 +108,9 @@ func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
 			}
 		case <-timeout:
 			return fmt.Errorf("timeout")
+		}
+		if err := wallet.Sync(); err != nil {
+			return err
 		}
 	}
 	time.Sleep(1 * time.Second)
@@ -138,6 +151,44 @@ func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
 		})
 	}
 	return result, eg.Wait()
+}
+
+func dbPersister(t *testing.T) liquid_wallet.Persister {
+	db := database.Database{
+		Path: ":memory:",
+	}
+	err := db.Connect()
+	require.NoError(t, err)
+	err = db.CreateWallet(&database.Wallet{
+		WalletCredentials: WalletCredentials(boltz.CurrencyLiquid),
+	})
+	require.NoError(t, err)
+	return database.NewWalletPersister(&db)
+}
+
+func LiquidBackendConfig(t *testing.T) liquid_wallet.Config {
+	electrumClient, err := electrum.NewClient(onchain.RegtestElectrumConfig.Liquid)
+	require.NoError(t, err)
+	return liquid_wallet.Config{
+		Network:     boltz.Regtest,
+		DataDir:     t.TempDir(),
+		Persister:   dbPersister(t),
+		FeeProvider: electrumClient,
+		TxProvider:  electrumClient,
+	}
+}
+
+func WalletBackend(t *testing.T, currency boltz.Currency) onchain.WalletBackend {
+	var backend onchain.WalletBackend
+	var err error
+	switch currency {
+	case boltz.CurrencyLiquid:
+		backend, err = liquid_wallet.NewBackend(LiquidBackendConfig(t))
+	default:
+		require.Fail(t, "invalid currency")
+	}
+	require.NoError(t, err)
+	return backend
 }
 
 func InitLogger() {

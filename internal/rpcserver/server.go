@@ -62,11 +62,12 @@ func (server *RpcServer) Init() error {
 
 	swapper := &autoswap.AutoSwap{}
 	server.boltzServer = &routedBoltzServer{
-		database:   server.cfg.Database,
-		stop:       make(chan bool),
-		state:      stateLightningSyncing,
-		swapper:    swapper,
-		referralId: server.cfg.ReferralId,
+		database:       server.cfg.Database,
+		stop:           make(chan bool),
+		state:          stateLightningSyncing,
+		swapper:        swapper,
+		referralId:     server.cfg.ReferralId,
+		walletBackends: make(map[boltz.Currency]onchain.WalletBackend),
 	}
 	server.autoswapServer = &routedAutoSwapServer{
 		database: server.cfg.Database,
@@ -241,7 +242,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	if electrumConfig.Liquid.Url != "" {
 		liquidConfig.Electrum = &electrumConfig.Liquid
 	}
-	server.liquidBackend, err = liquid_wallet.NewBlockchainBackend(liquidConfig)
+	server.walletBackends[boltz.CurrencyLiquid], err = liquid_wallet.NewBackend(liquidConfig)
 	if err != nil {
 		return fmt.Errorf("could not init liquid wallet backend: %v", err)
 	}
