@@ -1,4 +1,10 @@
 
+<a name="v2.8.9"></a>
+## [v2.8.9] - 2025-10-09
+### Feat
+- retry reverse and chain claims ([#570](https://github.com/BoltzExchange/boltz-client/issues/570))
+
+
 <a name="v2.8.8"></a>
 ## [v2.8.8] - 2025-09-29
 ### Feat
@@ -793,6 +799,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.8.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.8...v2.8.9
 [v2.8.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.7...v2.8.8
 [v2.8.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.6...v2.8.7
 [v2.8.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.5...v2.8.6
