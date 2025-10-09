@@ -233,14 +233,13 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		}
 
 	case boltz.TransactionServerConfirmed, boltz.TransactionServerMempoool:
-		if (parsedStatus == boltz.TransactionServerMempoool && !swap.AcceptZeroConf) || swap.ToData.Transactionid != "" {
-			break
-		}
-
-		output := nursery.getChainSwapClaimOutput(swap)
-		if _, err := nursery.createTransaction(swap.Pair.To, []*Output{output}); err != nil {
-			logger.Infof("Could not claim chain swap output: %s", err)
-			return
+		if swap.AcceptZeroConf {
+			logger.Infof("Claiming Chain Swap %s", swap.Id)
+			output := nursery.getChainSwapClaimOutput(swap)
+			_, err := nursery.createTransaction(swap.Pair.To, []*Output{output})
+			if err != nil {
+				logger.Errorf("Could not claim: %s", err)
+			}
 		}
 	default:
 	}
