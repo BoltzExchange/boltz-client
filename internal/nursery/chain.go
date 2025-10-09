@@ -235,7 +235,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 	case boltz.TransactionServerConfirmed, boltz.TransactionServerMempoool:
 		if swap.AcceptZeroConf {
 			logger.Infof("Claiming Chain Swap %s", swap.Id)
-			_, err := nursery.ClaimSwaps(swap.Pair.To, nil, []*database.ChainSwap{swap})
+			output := nursery.getChainSwapClaimOutput(swap)
+			_, err := nursery.createTransaction(swap.Pair.To, []*Output{output})
 			if err != nil {
 				logger.Errorf("Could not claim: %s", err)
 			}

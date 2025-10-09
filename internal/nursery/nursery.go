@@ -39,6 +39,11 @@ type Nursery struct {
 	maxZeroConfAmount  uint64
 	maxRoutingFeePpm   uint64
 
+	// updateLock is locked when a swap update is being processed.
+	// it is used to prevent a race between a `ClaimSwaps` call where an update can be triggered
+	// before the claim tx isnt properly broadcast and the swap is updated in the db.
+	updateLock sync.Mutex
+
 	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
 	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
 }
@@ -213,6 +218,27 @@ func (nursery *Nursery) recoverSwaps() error {
 	return nursery.registerSwaps(swapIds)
 }
 
+func (nursery *Nursery) processUpdate(status boltz.SwapUpdate) error {
+	nursery.updateLock.Lock()
+	defer nursery.updateLock.Unlock()
+
+	swap, reverseSwap, chainSwap, err := nursery.database.QueryAnySwap(status.Id)
+	if err != nil {
+		return fmt.Errorf("could not query swap %s: %v", status.Id, err)
+	}
+	if status.Error != "" {
+		return fmt.Errorf("boltz could not find Swap %s: %s", status.Id, status.Error)
+	}
+	if swap != nil {
+		nursery.handleSwapStatus(swap, status.SwapStatusResponse)
+	} else if reverseSwap != nil {
+		nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
+	} else if chainSwap != nil {
+		nursery.handleChainSwapStatus(chainSwap, status.SwapStatusResponse)
+	}
+	return nil
+}
+
 func (nursery *Nursery) startSwapListener() {
 	logger.Infof("Starting swap update listener")
 
@@ -221,22 +247,8 @@ func (nursery *Nursery) startSwapListener() {
 	go func() {
 		for status := range nursery.boltzWs.Updates {
 			logger.Debugf("Swap %s status update: %s", status.Id, status.Status)
-
-			swap, reverseSwap, chainSwap, err := nursery.database.QueryAnySwap(status.Id)
-			if err != nil {
-				logger.Errorf("Could not query swap %s: %v", status.Id, err)
-				continue
-			}
-			if status.Error != "" {
-				logger.Warnf("Boltz could not find Swap %s: %s ", status.Id, status.Error)
-				continue
-			}
-			if swap != nil {
-				nursery.handleSwapStatus(swap, status.SwapStatusResponse)
-			} else if reverseSwap != nil {
-				nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
-			} else if chainSwap != nil {
-				nursery.handleChainSwapStatus(chainSwap, status.SwapStatusResponse)
+			if err := nursery.processUpdate(status); err != nil {
+				logger.Errorf("Could not process swap update: %v", err)
 			}
 		}
 		nursery.waitGroup.Done()
@@ -408,6 +420,9 @@ func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, s
 }
 
 func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
+	nursery.updateLock.Lock()
+	defer nursery.updateLock.Unlock()
+
 	var outputs []*Output
 	for _, swap := range reverseSwaps {
 		outputs = append(outputs, nursery.getReverseSwapClaimOutput(swap))

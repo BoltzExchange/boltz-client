@@ -230,7 +230,8 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 
 		if reverseSwap.AcceptZeroConf {
 			logger.Infof("Claiming Reverse Swap %s", reverseSwap.Id)
-			_, err := nursery.ClaimSwaps(reverseSwap.Pair.To, []*database.ReverseSwap{reverseSwap}, nil)
+			output := nursery.getReverseSwapClaimOutput(reverseSwap)
+			_, err := nursery.createTransaction(reverseSwap.Pair.To, []*Output{output})
 			if err != nil {
 				logger.Errorf("Could not claim: %s", err)
 				return
