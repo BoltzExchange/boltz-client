@@ -268,7 +268,7 @@ func (database *Database) QueryReverseSwapByClaimTransaction(txId string) (rever
 
 const claimableSwapsQuery = `
 SELECT * FROM reverseSwaps
-WHERE fromCurrency = ?
+WHERE toCurrency = ?
   AND reverseSwaps.lockupTransactionId != ''
   AND reverseSwaps.claimTransactionId == ''
 `
