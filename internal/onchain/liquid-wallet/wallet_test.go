@@ -17,12 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type RegtestFeeProvider struct{}
-
-func (p *RegtestFeeProvider) EstimateFee() (float64, error) {
-	return 0.1, nil
-}
-
 const syncInterval = 1 * time.Second
 
 func TestMain(m *testing.M) {
@@ -39,9 +33,9 @@ func TestBackend_Broadcast(t *testing.T) {
 	require.Error(t, err)
 
 	cfg := test.LiquidBackendConfig(t)
-	txProvider := onchainmock.NewMockTxProvider(t)
-	txProvider.EXPECT().BroadcastTransaction(mock.Anything).Return("txid", nil)
-	cfg.TxProvider = txProvider
+	chainProvider := onchainmock.NewMockChainProvider(t)
+	chainProvider.EXPECT().BroadcastTransaction(mock.Anything).Return("txid", nil)
+	cfg.ChainProvider = chainProvider
 	backend, err = liquid_wallet.NewBackend(cfg)
 	require.NoError(t, err)
 
@@ -95,7 +89,6 @@ func TestWallet_AutoConsolidate(t *testing.T) {
 	numTxns := 3
 	cfg := test.LiquidBackendConfig(t)
 	cfg.ConsolidationThreshold = uint64(numTxns)
-	cfg.FeeProvider = &RegtestFeeProvider{}
 	backend, err := liquid_wallet.NewBackend(cfg)
 	require.NoError(t, err)
 	wallet := newWallet(t, backend, nil)
