@@ -89,6 +89,7 @@ func newMockWallet(t *testing.T, chain *onchain.Onchain) (*onchainmock.MockWalle
 		return *info
 	}).Maybe()
 	mockWallet.EXPECT().Disconnect().Return(nil).Maybe()
+	mockWallet.EXPECT().Sync().Maybe()
 	chain.AddWallet(mockWallet)
 	t.Cleanup(func() {
 		chain.RemoveWallet(info.Id)
@@ -98,10 +99,20 @@ func newMockWallet(t *testing.T, chain *onchain.Onchain) (*onchainmock.MockWalle
 
 type mockWalletSetup func(mock *onchainmock.MockWallet)
 
-type txMocker func(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider
+type chainMocker func(t *testing.T, original onchain.ChainProvider) *onchainmock.MockChainProvider
 
-func lessValueTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
-	txMock := onchainmock.NewMockTxProvider(t)
+func coverChainProvider(t *testing.T, mocked *onchainmock.MockChainProvider, original onchain.ChainProvider) {
+	mocked.EXPECT().EstimateFee().RunAndReturn(original.EstimateFee).Maybe()
+	mocked.EXPECT().GetBlockHeight().RunAndReturn(original.GetBlockHeight).Maybe()
+	mocked.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction).Maybe()
+	mocked.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(original.BroadcastTransaction).Maybe()
+	mocked.EXPECT().GetUnspentOutputs(mock.Anything).RunAndReturn(original.GetUnspentOutputs).Maybe()
+	mocked.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(original.IsTransactionConfirmed).Maybe()
+	mocked.EXPECT().Disconnect().RunAndReturn(original.Disconnect).Maybe()
+}
+
+func lessValueChainProvider(t *testing.T, original onchain.ChainProvider) *onchainmock.MockChainProvider {
+	txMock := onchainmock.NewMockChainProvider(t)
 	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(func(txId string) (string, error) {
 		raw, err := original.GetRawTransaction(txId)
 		require.NoError(t, err)
@@ -112,30 +123,33 @@ func lessValueTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock
 		}
 		return transaction.Serialize()
 	})
+	coverChainProvider(t, txMock, original)
 	return txMock
 }
 
-func unconfirmedTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
-	txMock := onchainmock.NewMockTxProvider(t)
-	txMock.EXPECT().IsTransactionConfirmed(mock.Anything).Return(false, nil)
-	txMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction).Maybe()
-	return txMock
+func unconfirmedChainProvider(t *testing.T, original onchain.ChainProvider) *onchainmock.MockChainProvider {
+	chainMock := onchainmock.NewMockChainProvider(t)
+	chainMock.EXPECT().IsTransactionConfirmed(mock.Anything).Return(false, nil)
+	chainMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction).Maybe()
+	coverChainProvider(t, chainMock, original)
+	return chainMock
 }
 
-// flakyTxProvider initially says that a transaction isn't confirmed, but upon retry it is
-func flakyTxProvider(t *testing.T, original onchain.TxProvider) *onchainmock.MockTxProvider {
-	mockTx := onchainmock.NewMockTxProvider(t)
+// flakyChainProvider initially says that a transaction isn't confirmed, but upon retry it is
+func flakyChainProvider(t *testing.T, original onchain.ChainProvider) *onchainmock.MockChainProvider {
+	chainMock := onchainmock.NewMockChainProvider(t)
 	called := false
-	mockTx.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
-	mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
+	chainMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
+	chainMock.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
 		if called {
 			return true, nil
 		}
 		called = true
 		return false, nil
 	})
-	mockTx.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(original.BroadcastTransaction).Maybe()
-	return mockTx
+	chainMock.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(original.BroadcastTransaction).Maybe()
+	coverChainProvider(t, chainMock, original)
+	return chainMock
 }
 
 func getOnchain(t *testing.T, cfg *config.Config) *onchain.Onchain {
@@ -926,23 +940,23 @@ func TestReverseSwap(t *testing.T) {
 	t.Run("Invalid", func(t *testing.T) {
 		cfg := loadConfig(t)
 		chain := getOnchain(t, cfg)
-		originalTx := chain.Btc.Tx
+		originalChain := chain.Btc.Chain
 
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 		defer stop()
 
 		tests := []struct {
-			desc     string
-			txMocker txMocker
-			error    string
+			desc        string
+			chainMocker chainMocker
+			error       string
 		}{
-			{"LessValue", lessValueTxProvider, "locked up less"},
-			{"Unconfirmed", unconfirmedTxProvider, "not confirmed"},
+			{"LessValue", lessValueChainProvider, "locked up less"},
+			{"Unconfirmed", unconfirmedChainProvider, "not confirmed"},
 		}
 
 		for _, tc := range tests {
 			t.Run(tc.desc, func(t *testing.T) {
-				chain.Btc.Tx = tc.txMocker(t, originalTx)
+				chain.Btc.Chain = tc.chainMocker(t, originalChain)
 				swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
 					Amount:         100000,
 					AcceptZeroConf: false,
@@ -964,7 +978,7 @@ func TestReverseSwap(t *testing.T) {
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 		defer stop()
 
-		chain.Btc.Tx = flakyTxProvider(t, chain.Btc.Tx)
+		chain.Btc.Chain = flakyChainProvider(t, chain.Btc.Chain)
 
 		request := &boltzrpc.CreateReverseSwapRequest{
 			Amount:         100000,
@@ -1610,13 +1624,14 @@ func TestBumpTransaction(t *testing.T) {
 			desc:    "Success",
 			request: txIdRequest,
 			setup: func(t *testing.T) {
-				original := chain.Btc.Blocks
-				blockProvider := onchainmock.NewMockBlockProvider(t)
+				original := chain.Btc.Chain
+				blockProvider := onchainmock.NewMockChainProvider(t)
 				rate := float64(5)
 				blockProvider.EXPECT().EstimateFee().Return(rate, nil)
-				chain.Btc.Blocks = blockProvider
+				coverChainProvider(t, blockProvider, original)
+				chain.Btc.Chain = blockProvider
 				t.Cleanup(func() {
-					chain.Btc.Blocks = original
+					chain.Btc.Chain = original
 				})
 
 				mockWallet, _ := newMockWallet(t, chain)
@@ -1627,13 +1642,14 @@ func TestBumpTransaction(t *testing.T) {
 			desc:    "AlreadyConfirmed",
 			request: txIdRequest,
 			setup: func(t *testing.T) {
-				original := chain.Btc.Tx
-				txProvider := onchainmock.NewMockTxProvider(t)
-				txProvider.EXPECT().IsTransactionConfirmed(someTxId).Return(true, nil)
-				txProvider.EXPECT().GetRawTransaction(someTxId).RunAndReturn(original.GetRawTransaction)
-				chain.Btc.Tx = txProvider
+				original := chain.Btc.Chain
+				chainProvider := onchainmock.NewMockChainProvider(t)
+				chainProvider.EXPECT().IsTransactionConfirmed(someTxId).Return(true, nil)
+				chainProvider.EXPECT().GetRawTransaction(someTxId).RunAndReturn(original.GetRawTransaction)
+				coverChainProvider(t, chainProvider, original)
+				chain.Btc.Chain = chainProvider
 				t.Cleanup(func() {
-					chain.Btc.Tx = original
+					chain.Btc.Chain = original
 				})
 			},
 			wantErr: "already confirmed",
@@ -1929,12 +1945,13 @@ func TestDirectReverseSwapPayments(t *testing.T) {
 			confirmed := false
 			if !tc.zeroconf || tc.currency == boltzrpc.Currency_BTC {
 				currency, _ := chain.GetCurrency(serializers.ParseCurrency(&tc.currency))
-				mockTx := onchainmock.NewMockTxProvider(t)
+				mockTx := onchainmock.NewMockChainProvider(t)
 				mockTx.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
 					return confirmed, nil
 				})
-				mockTx.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(currency.Tx.BroadcastTransaction).Maybe()
-				currency.Tx = mockTx
+				mockTx.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(currency.Chain.BroadcastTransaction).Maybe()
+				coverChainProvider(t, mockTx, currency.Chain)
+				currency.Chain = mockTx
 			}
 
 			externalPay := true
@@ -2854,24 +2871,24 @@ func TestChainSwap(t *testing.T) {
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
-		originalTx := chain.Btc.Tx
+		originalTx := chain.Btc.Chain
 		t.Cleanup(func() {
-			chain.Btc.Tx = originalTx
+			chain.Btc.Chain = originalTx
 		})
 		toWallet := fundedWallet(t, client, boltzrpc.Currency_BTC)
 
 		tests := []struct {
 			desc     string
-			txMocker txMocker
+			txMocker chainMocker
 			error    string
 		}{
-			{"LessValue", lessValueTxProvider, "locked up less"},
-			{"Unconfirmed", unconfirmedTxProvider, "not confirmed"},
+			{"LessValue", lessValueChainProvider, "locked up less"},
+			{"Unconfirmed", unconfirmedChainProvider, "not confirmed"},
 		}
 
 		for _, tc := range tests {
 			t.Run(tc.desc, func(t *testing.T) {
-				chain.Btc.Tx = tc.txMocker(t, originalTx)
+				chain.Btc.Chain = tc.txMocker(t, originalTx)
 
 				externalPay := true
 				swap, err := client.CreateChainSwap(
@@ -2905,7 +2922,7 @@ func TestChainSwap(t *testing.T) {
 		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
 		defer stop()
 
-		chain.Btc.Tx = flakyTxProvider(t, chain.Btc.Tx)
+		chain.Btc.Chain = flakyChainProvider(t, chain.Btc.Chain)
 
 		acceptZeroConf := false
 		externalPay := true

@@ -536,6 +536,15 @@ func (boltz *Api) EstimateFee(currency Currency) (float64, error) {
 	return response.Fee, err
 }
 
+func (boltz *Api) GetBlockHeight(currency Currency) (uint32, error) {
+	var response struct {
+		Height uint32
+	}
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/chain/%s/height", currency), &response)
+
+	return response.Height, err
+}
+
 func (boltz *Api) BroadcastTransaction(currency Currency, txHex string) (string, error) {
 	var response BroadcastTransactionResponse
 	err := boltz.sendPostRequest(fmt.Sprintf("/chain/%s/transaction", currency), BroadcastTransactionRequest{
