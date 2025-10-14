@@ -110,6 +110,7 @@ func (onchain *Onchain) RemoveWallet(id Id) {
 func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 	onchain.syncWait.Add(1)
 	go func() {
+		defer onchain.syncWait.Done()
 		for {
 			// avoid traffic spikes if a lot of wallets are using the same backend
 			sleep := time.Duration(float64(onchain.WalletSyncInterval) * (0.75 + rand.Float64()*0.5))
@@ -119,7 +120,6 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 					info := wallet.GetWalletInfo()
 					logger.Errorf("Error shutting down wallet %s: %s", info.String(), err.Error())
 				}
-				onchain.syncWait.Done()
 				return
 			case <-time.After(sleep):
 				if slices.Contains(onchain.Wallets, wallet) {
