@@ -1134,17 +1134,14 @@ func TestReverseSwap(t *testing.T) {
 		defer stop()
 
 		createClaimable := func(t *testing.T) (*boltzrpc.ReverseSwapInfo, streamFunc, streamStatusFunc) {
-			returnImmediately := false
-
 			response, err := client.CreateWallet(&boltzrpc.WalletParams{
 				Currency: boltzrpc.Currency_BTC,
 				Name:     "temp",
 			})
 			require.NoError(t, err)
 			swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
-				Amount:            100000,
-				ReturnImmediately: &returnImmediately,
-				WalletId:          &response.Wallet.Id,
+				Amount:   100000,
+				WalletId: &response.Wallet.Id,
 			})
 			require.NoError(t, err)
 
