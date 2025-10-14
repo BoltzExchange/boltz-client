@@ -14,7 +14,7 @@ import (
 )
 
 func client(t *testing.T) *electrum.Client {
-	client, err := electrum.NewClient(onchain.RegtestElectrumConfig.Btc)
+	client, err := electrum.NewClient(*onchain.RegtestElectrumConfig.Btc)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		client.Disconnect()

@@ -53,13 +53,13 @@ type ElectrumOptions struct {
 }
 
 type ElectrumConfig struct {
-	Btc    ElectrumOptions
-	Liquid ElectrumOptions
+	Btc    *ElectrumOptions
+	Liquid *ElectrumOptions
 }
 
 var RegtestElectrumConfig = ElectrumConfig{
-	Btc:    ElectrumOptions{Url: "localhost:19001"},
-	Liquid: ElectrumOptions{Url: "localhost:19002"},
+	Btc:    &ElectrumOptions{Url: "localhost:19001"},
+	Liquid: &ElectrumOptions{Url: "localhost:19002"},
 }
 
 const DefaultWalletSyncInterval = 60 * time.Second
