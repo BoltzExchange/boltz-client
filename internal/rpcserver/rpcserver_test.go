@@ -1140,14 +1140,19 @@ func TestReverseSwap(t *testing.T) {
 			_, err = client.RemoveWallet(response.Wallet.Id)
 			require.NoError(t, err)
 
-			test.MineBlock()
-
 			info, err := client.GetInfo()
 			require.NoError(t, err)
-			require.Len(t, info.ClaimableSwaps, 1)
-			require.Equal(t, info.ClaimableSwaps[0], swap.Id)
+			require.NotContains(t, info.ClaimableSwaps, swap.Id)
 
-			return stream(boltzrpc.SwapState_ERROR).ReverseSwap, stream, statusStream
+			test.MineBlock()
+
+			update := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionConfirmed)
+
+			info, err = client.GetInfo()
+			require.NoError(t, err)
+			require.Contains(t, info.ClaimableSwaps, swap.Id)
+
+			return update.ReverseSwap, stream, statusStream
 		}
 
 		t.Run("Address", func(t *testing.T) {
@@ -3194,13 +3199,19 @@ func TestChainSwap(t *testing.T) {
 						stream, statusStream := swapStream(t, client, swap.Id)
 						statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
 
+						info, err := client.GetInfo()
+						require.NoError(t, err)
+						require.NotContains(t, info.ClaimableSwaps, swap.Id)
+
 						test.MineBlock()
 
-						info, err := client.GetInfo()
+						update := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerConfirmed)
+
+						info, err = client.GetInfo()
 						require.NoError(t, err)
 						require.Contains(t, info.ClaimableSwaps, swap.Id)
 
-						return stream(boltzrpc.SwapState_ERROR).ChainSwap, stream, statusStream
+						return update.ChainSwap, stream, statusStream
 					}
 
 					t.Run("Address", func(t *testing.T) {

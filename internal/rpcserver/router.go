@@ -177,12 +177,12 @@ func (server *routedBoltzServer) queryClaimableSwaps(ctx context.Context) (
 	reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap, err error,
 ) {
 	tenantId := macaroons.TenantIdFromContext(ctx)
-	reverseSwaps, chainSwaps, err = server.database.QueryAllClaimableSwaps(tenantId, boltz.CurrencyBtc)
+	reverseSwaps, chainSwaps, err = server.nursery.QueryClaimableSwaps(tenantId, boltz.CurrencyBtc)
 	if err != nil {
 		return
 	}
 
-	liquidReverseSwaps, liquidChainSwaps, liquidErr := server.database.QueryAllClaimableSwaps(tenantId, boltz.CurrencyLiquid)
+	liquidReverseSwaps, liquidChainSwaps, liquidErr := server.nursery.QueryClaimableSwaps(tenantId, boltz.CurrencyLiquid)
 	if liquidErr != nil {
 		err = liquidErr
 		return
