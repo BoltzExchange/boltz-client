@@ -437,7 +437,7 @@ func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*data
 func (nursery *Nursery) QueryClaimableSwaps(tenantId *database.Id, currency boltz.Currency) (
 	[]*database.ReverseSwap, []*database.ChainSwap, error,
 ) {
-	reverseSwaps, chainSwaps, err := nursery.database.QueryAllClaimableSwaps(tenantId, boltz.CurrencyBtc)
+	reverseSwaps, chainSwaps, err := nursery.database.QueryAllClaimableSwaps(tenantId, currency)
 	if err != nil {
 		return nil, nil, err
 	}
