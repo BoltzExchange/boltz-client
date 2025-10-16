@@ -139,15 +139,13 @@ func unconfirmedChainProvider(t *testing.T, original onchain.ChainProvider) *onc
 func flakyChainProvider(t *testing.T, original onchain.ChainProvider) *onchainmock.MockChainProvider {
 	chainMock := onchainmock.NewMockChainProvider(t)
 	called := false
-	chainMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction)
-	chainMock.EXPECT().IsTransactionConfirmed(mock.Anything).RunAndReturn(func(string) (bool, error) {
+	chainMock.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(func(txHex string) (string, error) {
 		if called {
-			return true, nil
+			return original.BroadcastTransaction(txHex)
 		}
 		called = true
-		return false, nil
-	})
-	chainMock.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(original.BroadcastTransaction).Maybe()
+		return "", errors.New("flaky")
+	}).Maybe()
 	coverChainProvider(t, chainMock, original)
 	return chainMock
 }
@@ -991,10 +989,10 @@ func TestReverseSwap(t *testing.T) {
 		_, statusStream := swapStream(t, client, swap.Id)
 		statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
 		test.MineBlock()
-		// on first call, the tx provider will say its not confirmed, causing an error
+		// on first call, the broadcast will fail
 		statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionConfirmed)
 		test.MineBlock()
-		// new block triggers a retry, on which the tx provider will say its confirmed
+		// new block triggers a retry, on which the broadcast will succeed
 		statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
 	})
 
@@ -1158,6 +1156,9 @@ func TestReverseSwap(t *testing.T) {
 			test.MineBlock()
 
 			update := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionConfirmed)
+
+			// we add a small sleep here to avoid the race where boltz says confirmed but the chain provider hasn't synced
+			time.Sleep(100 * time.Millisecond)
 
 			info, err = client.GetInfo()
 			require.NoError(t, err)
@@ -2941,10 +2942,10 @@ func TestChainSwap(t *testing.T) {
 		_, statusStream := swapStream(t, client, swap.Id)
 		statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
 		test.MineBlock()
-		// on first call, the tx provider will say its not confirmed, causing an error
+		// on first call, the broadcast will fail
 		statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerConfirmed)
 		test.MineBlock()
-		// new block triggers a retry, on which the tx provider will say its confirmed
+		// new block triggers a retry, on which the broadcast will succeed
 		statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionClaimed)
 	})
 
@@ -3220,6 +3221,9 @@ func TestChainSwap(t *testing.T) {
 						test.MineBlock()
 
 						update := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionServerConfirmed)
+
+						// we add a small sleep here to avoid the race where boltz says confirmed but the chain provider hasn't synced
+						time.Sleep(100 * time.Millisecond)
 
 						info, err = client.GetInfo()
 						require.NoError(t, err)
