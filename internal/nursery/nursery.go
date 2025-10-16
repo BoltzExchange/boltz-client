@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
@@ -431,4 +432,39 @@ func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*data
 		outputs = append(outputs, nursery.getChainSwapClaimOutput(swap))
 	}
 	return nursery.createTransaction(currency, outputs)
+}
+
+func (nursery *Nursery) QueryClaimableSwaps(tenantId *database.Id, currency boltz.Currency) (
+	[]*database.ReverseSwap, []*database.ChainSwap, error,
+) {
+	reverseSwaps, chainSwaps, err := nursery.database.QueryAllClaimableSwaps(tenantId, currency)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reverseSwaps = slices.DeleteFunc(reverseSwaps, func(reverseSwap *database.ReverseSwap) bool {
+		if !reverseSwap.AcceptZeroConf {
+			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, reverseSwap.LockupTransactionId, false)
+			if err != nil {
+				logger.Errorf("Could not check if reverse swap lockup %s is confirmed: %v", reverseSwap.Id, err)
+				return true
+			}
+			return !confirmed
+		}
+		return false
+	})
+
+	chainSwaps = slices.DeleteFunc(chainSwaps, func(chainSwap *database.ChainSwap) bool {
+		if !chainSwap.AcceptZeroConf {
+			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, chainSwap.ToData.LockupTransactionId, false)
+			if err != nil {
+				logger.Errorf("Could not check if chain swap lockup %s is confirmed: %v", chainSwap.Id, err)
+				return true
+			}
+			return !confirmed
+		}
+		return false
+	})
+
+	return reverseSwaps, chainSwaps, nil
 }

@@ -37,7 +37,7 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 			}
 
 			logger.Debugf("Checking claimable swaps")
-			reverseSwaps, chainSwaps, err := nursery.database.QueryAllClaimableSwaps(nil, currency)
+			reverseSwaps, chainSwaps, err := nursery.QueryClaimableSwaps(nil, currency)
 			if err != nil {
 				logger.Error("Could not query claimable Swaps: " + err.Error())
 				continue
