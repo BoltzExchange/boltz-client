@@ -214,7 +214,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 
 	switch parsedStatus {
 	case boltz.TransactionMempool:
-		fallthrough
+		break
 
 	case boltz.TransactionConfirmed:
 		// Set the invoice of Swaps that were created with only a preimage hash
