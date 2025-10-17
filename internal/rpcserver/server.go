@@ -19,6 +19,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/config"
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
+	"github.com/BoltzExchange/boltz-client/v2/internal/esplora"
 	"github.com/BoltzExchange/boltz-client/v2/internal/mempool"
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
@@ -232,15 +233,11 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	)
 
 	liquidConfig := liquid_wallet.Config{
-		Network:     server.network,
-		DataDir:     cfg.DataDir + "/liquid-wallet",
-		TxProvider:  server.onchain.Liquid.Tx,
-		FeeProvider: server.onchain.Liquid.Blocks,
-		Persister:   database.NewWalletPersister(server.database),
-	}
-	electrumConfig := cfg.Electrum()
-	if electrumConfig.Liquid.Url != "" {
-		liquidConfig.Electrum = &electrumConfig.Liquid
+		Network:       server.network,
+		DataDir:       cfg.DataDir + "/liquid-wallet",
+		ChainProvider: server.onchain.Liquid.Chain,
+		Persister:     database.NewWalletPersister(server.database),
+		Electrum:      cfg.Electrum().Liquid,
 	}
 	server.walletBackends[boltz.CurrencyLiquid], err = liquid_wallet.NewBackend(liquidConfig)
 	if err != nil {
@@ -395,29 +392,56 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 	return boltzApi, nil
 }
 
-func defaultValue(value string, defaultValue string) string {
-	if value == "" {
-		return defaultValue
+func defaultChainProvider(cfg *config.Config, boltzApi *boltz.Api, currency boltz.Currency, network *boltz.Network) onchain.ChainProvider {
+	var clients []onchain.ChainProvider
+	switch network {
+	case boltz.MainNet:
+		if currency == boltz.CurrencyBtc {
+			clients = []onchain.ChainProvider{
+				mempool.InitClient("https://mempool.space/api"),
+				mempool.InitClient("https://mempool.bullbitcoin.com/api"),
+				esplora.InitClient("https://blockstream.info/api"),
+			}
+		}
+		if currency == boltz.CurrencyLiquid {
+			clients = []onchain.ChainProvider{
+				mempool.InitClient("https://liquid.network/api"),
+				mempool.InitClient("https://liquid.bullbitcoin.com/api"),
+				esplora.InitClient("https://blockstream.info/liquid/api"),
+			}
+		}
+	case boltz.Regtest:
+		if currency == boltz.CurrencyBtc {
+			clients = []onchain.ChainProvider{
+				esplora.InitClient("http://localhost:4002/api"),
+			}
+		}
+		if currency == boltz.CurrencyLiquid {
+			clients = []onchain.ChainProvider{
+				esplora.InitClient("http://localhost:4003/api"),
+			}
+		}
 	}
-	return value
+	return onchain.MultiChainProvider{
+		Providers: clients,
+		Boltz:     onchain.NewBoltzChainProvider(boltzApi, currency),
+	}
 }
 
 func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network) (*onchain.Onchain, error) {
 	chain := &onchain.Onchain{
-		Btc:     &onchain.Currency{},
-		Liquid:  &onchain.Currency{},
+		Btc: &onchain.Currency{
+			Chain: defaultChainProvider(cfg, boltzApi, boltz.CurrencyBtc, network),
+		},
+		Liquid: &onchain.Currency{
+			Chain: defaultChainProvider(cfg, boltzApi, boltz.CurrencyLiquid, network),
+		},
 		Network: network,
 	}
 
 	chain.Init()
 
-	var btcProviders []onchain.TxProvider
-	var liquidProviders []onchain.TxProvider
-
 	electrumConfig := cfg.Electrum()
-	if network == boltz.Regtest && electrumConfig.Btc.Url == "" && electrumConfig.Liquid.Url == "" {
-		electrumConfig = onchain.RegtestElectrumConfig
-	}
 
 	if !wallet.Initialized() {
 		if cfg.AutoConsolidateThreshold == nil {
@@ -436,57 +460,31 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		}
 	}
 
-	if electrumConfig.Btc.Url != "" {
+	if electrumConfig.Btc != nil {
 		logger.Info("Using configured Electrum BTC RPC: " + electrumConfig.Btc.Url)
-		client, err := electrum.NewClient(electrumConfig.Btc)
+		client, err := electrum.NewClient(*electrumConfig.Btc)
 		if err != nil {
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
-		chain.Btc.Blocks = client
-		btcProviders = append(btcProviders, client)
+		chain.Btc.Chain = client
 	}
-	if electrumConfig.Liquid.Url != "" {
+	if electrumConfig.Liquid != nil {
 		logger.Info("Using configured Electrum Liquid RPC: " + electrumConfig.Liquid.Url)
-		client, err := electrum.NewClient(electrumConfig.Liquid)
+		client, err := electrum.NewClient(*electrumConfig.Liquid)
 		if err != nil {
 			return nil, fmt.Errorf("could not connect to electrum: %v", err)
 		}
-		chain.Liquid.Blocks = client
-		liquidProviders = append(liquidProviders, client)
-	}
-
-	if network == boltz.MainNet {
-		cfg.MempoolApi = defaultValue(cfg.MempoolApi, "https://mempool.space/api")
-		cfg.MempoolLiquidApi = defaultValue(cfg.MempoolLiquidApi, "https://liquid.bullbitcoin.com/api")
+		chain.Liquid.Chain = client
 	}
 
 	if cfg.MempoolApi != "" {
 		logger.Info("mempool.space API: " + cfg.MempoolApi)
-		client := mempool.InitClient(cfg.MempoolApi)
-		if chain.Btc.Blocks == nil {
-			chain.Btc.Blocks = client
-		}
-		btcProviders = append(btcProviders, client)
+		chain.Btc.Chain = mempool.InitClient(cfg.MempoolApi)
 	}
 
 	if cfg.MempoolLiquidApi != "" {
 		logger.Info("liquid.network API: " + cfg.MempoolLiquidApi)
-		client := mempool.InitClient(cfg.MempoolLiquidApi)
-		if chain.Liquid.Blocks == nil {
-			chain.Liquid.Blocks = client
-		}
-		liquidProviders = append(liquidProviders, client)
-	}
-
-	boltzBtcProvider := onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyBtc)
-	boltzLiquidProvider := onchain.NewBoltzTxProvider(boltzApi, boltz.CurrencyLiquid)
-	chain.Btc.FeeFallback = boltzBtcProvider
-	chain.Liquid.FeeFallback = boltzLiquidProvider
-	chain.Btc.Tx = onchain.MultiTxProvider{
-		Providers: append(btcProviders, boltzBtcProvider),
-	}
-	chain.Liquid.Tx = onchain.MultiTxProvider{
-		Providers: append(liquidProviders, boltzLiquidProvider),
+		chain.Liquid.Chain = mempool.InitClient(cfg.MempoolLiquidApi)
 	}
 
 	return chain, nil

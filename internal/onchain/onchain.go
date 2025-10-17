@@ -8,6 +8,7 @@ import (
 	"math/rand/v2"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
@@ -36,26 +37,14 @@ type Output struct {
 	Value uint64
 }
 
-type FeeProvider interface {
+type ChainProvider interface {
 	EstimateFee() (float64, error)
-}
-
-type BlockProvider interface {
-	FeeProvider
-	RegisterBlockListener(ctx context.Context, channel chan<- *BlockEpoch) error
 	GetBlockHeight() (uint32, error)
-	Disconnect()
-	GetUnspentOutputs(address string) ([]*Output, error)
-}
-
-type TxProvider interface {
 	GetRawTransaction(txId string) (string, error)
 	BroadcastTransaction(txHex string) (string, error)
 	IsTransactionConfirmed(txId string) (bool, error)
-}
-
-type AddressProvider interface {
-	IsUsed(address string) (bool, error)
+	GetUnspentOutputs(address string) ([]*Output, error)
+	Disconnect()
 }
 
 type ElectrumOptions struct {
@@ -64,23 +53,20 @@ type ElectrumOptions struct {
 }
 
 type ElectrumConfig struct {
-	Btc    ElectrumOptions
-	Liquid ElectrumOptions
+	Btc    *ElectrumOptions
+	Liquid *ElectrumOptions
 }
 
 var RegtestElectrumConfig = ElectrumConfig{
-	Btc:    ElectrumOptions{Url: "localhost:19001"},
-	Liquid: ElectrumOptions{Url: "localhost:19002"},
+	Btc:    &ElectrumOptions{Url: "localhost:19001"},
+	Liquid: &ElectrumOptions{Url: "localhost:19002"},
 }
 
 const DefaultWalletSyncInterval = 60 * time.Second
 
 type Currency struct {
-	Blocks      BlockProvider
-	Tx          TxProvider
-	FeeFallback FeeProvider
-
-	blockHeight uint32
+	Chain       ChainProvider
+	blockHeight atomic.Uint32
 }
 
 type Onchain struct {
@@ -124,6 +110,7 @@ func (onchain *Onchain) RemoveWallet(id Id) {
 func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 	onchain.syncWait.Add(1)
 	go func() {
+		defer onchain.syncWait.Done()
 		for {
 			// avoid traffic spikes if a lot of wallets are using the same backend
 			sleep := time.Duration(float64(onchain.WalletSyncInterval) * (0.75 + rand.Float64()*0.5))
@@ -133,7 +120,6 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 					info := wallet.GetWalletInfo()
 					logger.Errorf("Error shutting down wallet %s: %s", info.String(), err.Error())
 				}
-				onchain.syncWait.Done()
 				return
 			case <-time.After(sleep):
 				if slices.Contains(onchain.Wallets, wallet) {
@@ -215,16 +201,7 @@ func (onchain *Onchain) EstimateFee(currency boltz.Currency) (float64, error) {
 
 	minFee := FeeFloor[currency]
 
-	fee, err := chain.Blocks.EstimateFee()
-	if err != nil {
-		logger.Warnf("Could not get fee for %s from default provider: %s", currency, err.Error())
-		if chain.FeeFallback != nil {
-			logger.Infof("Using fallback provider for %s", currency)
-			fee, err = chain.FeeFallback.EstimateFee()
-		} else {
-			return 0, fmt.Errorf("could not get fee for %s: %w", currency, err)
-		}
-	}
+	fee, err := chain.Chain.EstimateFee()
 	return math.Max(minFee, fee), err
 }
 
@@ -239,7 +216,7 @@ func (onchain *Onchain) GetTransaction(currency boltz.Currency, txId string, our
 	retryCount := 5
 	for {
 		// Check if the transaction is in the mempool
-		hex, err := chain.Tx.GetRawTransaction(txId)
+		hex, err := chain.Chain.GetRawTransaction(txId)
 		if err != nil {
 			if retryCount == 0 || !retry {
 				return nil, err
@@ -287,55 +264,57 @@ func (onchain *Onchain) GetTransactionFee(transaction boltz.Transaction) (uint64
 	return 0, fmt.Errorf("unknown transaction type")
 }
 
-const retryInterval = 15 * time.Second
-
 func (onchain *Onchain) RegisterBlockListener(ctx context.Context, currency boltz.Currency) *utils.ChannelForwarder[*BlockEpoch] {
 	chain, err := onchain.GetCurrency(currency)
-	if err != nil || chain.Blocks == nil {
+	if err != nil || chain.Chain == nil {
 		logger.Warnf("no block listener for %s", currency)
 		return nil
 	}
 
 	logger.Infof("Connecting to block %s epoch stream", currency)
-	blocks := make(chan *BlockEpoch)
 	blockNotifier := utils.ForwardChannel(make(chan *BlockEpoch), 0, false)
 
 	go func() {
-		defer func() {
-			blockNotifier.Close()
-			logger.Debugf("Closed block listener for %s", currency)
-		}()
+		blockTime := time.Duration(boltz.GetBlockTime(currency) * float64(time.Minute))
+		tickerDuration := blockTime / 10
+		if onchain.Network == boltz.Regtest {
+			tickerDuration = 1 * time.Second
+		}
+		ticker := time.NewTicker(tickerDuration)
+		defer ticker.Stop()
+		defer blockNotifier.Close()
+		var prevHeight uint32
 		for {
-			err := chain.Blocks.RegisterBlockListener(ctx, blocks)
-			if err != nil && ctx.Err() == nil {
-				logger.Errorf("Lost connection to %s block epoch stream: %s", currency, err.Error())
-				logger.Infof("Retrying connection in %s", retryInterval)
-			}
 			select {
 			case <-ctx.Done():
+				logger.Debugf("Stopped block listener for %s", currency)
 				return
-			case <-time.After(retryInterval):
+			case <-ticker.C:
+				height, err := chain.Chain.GetBlockHeight()
+				if err != nil {
+					logger.Errorf("Could not get block height for %s: %s", currency, err.Error())
+					continue
+				}
+				if height != prevHeight {
+					prevHeight = height
+					chain.blockHeight.Store(height)
+					block := &BlockEpoch{Height: height}
+					blockNotifier.Send(block)
+				}
 			}
-		}
-	}()
-
-	go func() {
-		for block := range blocks {
-			chain.blockHeight = block.Height
-			blockNotifier.Send(block)
 		}
 	}()
 
 	return blockNotifier
 }
 
-func (onchain *Onchain) GetBlockProvider(currency boltz.Currency) BlockProvider {
+func (onchain *Onchain) GetBlockProvider(currency boltz.Currency) ChainProvider {
 	chain, err := onchain.GetCurrency(currency)
 	if err != nil {
 		return nil
 	}
 
-	return chain.Blocks
+	return chain.Chain
 }
 
 func (onchain *Onchain) GetBlockHeight(currency boltz.Currency) (uint32, error) {
@@ -343,10 +322,15 @@ func (onchain *Onchain) GetBlockHeight(currency boltz.Currency) (uint32, error) 
 	if err != nil {
 		return 0, err
 	}
-	if chain.blockHeight == 0 {
-		chain.blockHeight, err = chain.Blocks.GetBlockHeight()
+	height := chain.blockHeight.Load()
+	if height == 0 {
+		height, err = chain.Chain.GetBlockHeight()
+		if err != nil {
+			return 0, err
+		}
+		chain.blockHeight.Store(height)
 	}
-	return chain.blockHeight, err
+	return height, nil
 }
 
 func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (string, error) {
@@ -360,7 +344,7 @@ func (onchain *Onchain) BroadcastTransaction(transaction boltz.Transaction) (str
 		return "", err
 	}
 
-	return chain.Tx.BroadcastTransaction(serialized)
+	return chain.Chain.BroadcastTransaction(serialized)
 }
 
 func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId string, retry bool) (bool, error) {
@@ -371,7 +355,7 @@ func (onchain *Onchain) IsTransactionConfirmed(currency boltz.Currency, txId str
 
 	retryCount := 5
 	for {
-		confirmed, err := chain.Tx.IsTransactionConfirmed(txId)
+		confirmed, err := chain.Chain.IsTransactionConfirmed(txId)
 		if err != nil {
 			if errors.Is(err, errors.ErrUnsupported) {
 				logger.Warnf("Transaction confirmation check not supported for %s", currency)
@@ -395,7 +379,7 @@ func (onchain *Onchain) GetUnspentOutputs(currency boltz.Currency, address strin
 	if err != nil {
 		return nil, err
 	}
-	return chain.Blocks.GetUnspentOutputs(address)
+	return chain.Chain.GetUnspentOutputs(address)
 }
 
 type OutputArgs struct {
@@ -450,8 +434,8 @@ func (onchain *Onchain) FindOutput(info OutputArgs) (*OutputResult, error) {
 
 func (onchain *Onchain) Disconnect() {
 	onchain.OnWalletChange.Close()
-	onchain.Btc.Blocks.Disconnect()
-	onchain.Liquid.Blocks.Disconnect()
+	onchain.Btc.Chain.Disconnect()
+	onchain.Liquid.Chain.Disconnect()
 	onchain.syncCancel()
 
 	done := make(chan struct{})

@@ -13,7 +13,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
-	"github.com/BoltzExchange/boltz-client/v2/internal/electrum"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
@@ -167,14 +166,14 @@ func dbPersister(t *testing.T) liquid_wallet.Persister {
 }
 
 func LiquidBackendConfig(t *testing.T) liquid_wallet.Config {
-	electrumClient, err := electrum.NewClient(onchain.RegtestElectrumConfig.Liquid)
-	require.NoError(t, err)
 	return liquid_wallet.Config{
-		Network:     boltz.Regtest,
-		DataDir:     t.TempDir(),
-		Persister:   dbPersister(t),
-		FeeProvider: electrumClient,
-		TxProvider:  electrumClient,
+		Network:   boltz.Regtest,
+		DataDir:   t.TempDir(),
+		Persister: dbPersister(t),
+		ChainProvider: onchain.NewBoltzChainProvider(
+			&boltz.Api{URL: boltz.Regtest.DefaultBoltzUrl},
+			boltz.CurrencyLiquid,
+		),
 	}
 }
 

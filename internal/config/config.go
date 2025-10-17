@@ -98,10 +98,14 @@ type Config struct {
 }
 
 func (c *Config) Electrum() onchain.ElectrumConfig {
-	return onchain.ElectrumConfig{
-		Btc:    onchain.ElectrumOptions{Url: c.ElectrumUrl, SSL: c.ElectrumSSL},
-		Liquid: onchain.ElectrumOptions{Url: c.ElectrumLiquidUrl, SSL: c.ElectrumLiquidSSL},
+	config := onchain.ElectrumConfig{}
+	if c.ElectrumUrl != "" {
+		config.Btc = &onchain.ElectrumOptions{Url: c.ElectrumUrl, SSL: c.ElectrumSSL}
 	}
+	if c.ElectrumLiquidUrl != "" {
+		config.Liquid = &onchain.ElectrumOptions{Url: c.ElectrumLiquidUrl, SSL: c.ElectrumLiquidSSL}
+	}
+	return config
 }
 
 func LoadConfig(dataDir string) (*Config, error) {

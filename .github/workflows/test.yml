@@ -46,7 +46,7 @@ jobs:
 
       - name: Start Regtest
         env:
-          COMPOSE_PROFILES: ci
+          COMPOSE_PROFILES: ci,esplora
         run: chmod -R 777 regtest && make start-regtest
 
       - name: Backend logs

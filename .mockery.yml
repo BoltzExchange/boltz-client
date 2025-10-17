@@ -14,7 +14,5 @@ packages:
       LightningNode: {}
   github.com/BoltzExchange/boltz-client/v2/internal/onchain:
     interfaces:
-      BlockProvider: {}
-      TxProvider: {}
+      ChainProvider: {}
       Wallet: {}
-      FeeProvider: {}

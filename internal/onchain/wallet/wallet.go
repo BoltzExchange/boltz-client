@@ -290,10 +290,13 @@ func (wallet *Wallet) Connect() error {
 		"gap_limit":     GapLimit,
 		"discount_fees": true,
 	}
-	var electrum onchain.ElectrumOptions
+	var electrum *onchain.ElectrumOptions
 	switch wallet.Currency {
 	case boltz.CurrencyBtc:
 		electrum = config.Electrum.Btc
+		if electrum == nil {
+			electrum = onchain.RegtestElectrumConfig.Btc
+		}
 		switch config.Network {
 		case boltz.MainNet:
 			params["name"] = "electrum-mainnet"
@@ -306,6 +309,9 @@ func (wallet *Wallet) Connect() error {
 		}
 	case boltz.CurrencyLiquid:
 		electrum = config.Electrum.Liquid
+		if electrum == nil {
+			electrum = onchain.RegtestElectrumConfig.Liquid
+		}
 		switch config.Network {
 		case boltz.MainNet:
 			params["name"] = "electrum-liquid"
@@ -319,7 +325,7 @@ func (wallet *Wallet) Connect() error {
 	default:
 		return errors.New("unknown currency")
 	}
-	if electrum.Url != "" {
+	if electrum != nil {
 		params["electrum_url"] = electrum.Url
 		params["electrum_tls"] = electrum.SSL
 	}
