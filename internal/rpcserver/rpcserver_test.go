@@ -881,14 +881,14 @@ func TestReverseSwap(t *testing.T) {
 							info, err = client.GetSwapInfo(swap.Id)
 							require.NoError(t, err)
 						} else {
-							_, statusStream := swapStream(t, client, swap.Id)
-							statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+							status, _ := swapStream(t, client, swap.Id)
+							status(boltzrpc.SwapState_PENDING)
 
 							if !tc.zeroConf {
 								test.MineBlock()
 							}
 
-							info = statusStream(boltzrpc.SwapState_SUCCESSFUL, boltz.InvoiceSettled)
+							info = status(boltzrpc.SwapState_SUCCESSFUL)
 						}
 
 					}
