@@ -383,12 +383,11 @@ func (onchain *Onchain) GetUnspentOutputs(currency boltz.Currency, address strin
 }
 
 type OutputArgs struct {
-	TransactionId    string
-	Currency         boltz.Currency
-	Address          string
-	BlindingKey      *btcec.PrivateKey
-	ExpectedAmount   uint64
-	RequireConfirmed bool
+	TransactionId  string
+	Currency       boltz.Currency
+	Address        string
+	BlindingKey    *btcec.PrivateKey
+	ExpectedAmount uint64
 }
 
 type OutputResult struct {
@@ -412,17 +411,6 @@ func (onchain *Onchain) FindOutput(info OutputArgs) (*OutputResult, error) {
 
 	if info.ExpectedAmount != 0 && value < info.ExpectedAmount {
 		return nil, fmt.Errorf("locked up less onchain coins than expected: %d < %d", value, info.ExpectedAmount)
-	}
-	if info.RequireConfirmed {
-		confirmed, err := onchain.IsTransactionConfirmed(info.Currency, info.TransactionId, false)
-		if !errors.Is(err, errors.ErrUnsupported) {
-			if err != nil {
-				return nil, errors.New("Could not check if lockup transaction is confirmed: " + err.Error())
-			}
-			if !confirmed {
-				return nil, ErrNotConfirmed
-			}
-		}
 	}
 
 	return &OutputResult{

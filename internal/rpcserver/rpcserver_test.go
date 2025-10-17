@@ -127,14 +127,6 @@ func lessValueChainProvider(t *testing.T, original onchain.ChainProvider) *oncha
 	return txMock
 }
 
-func unconfirmedChainProvider(t *testing.T, original onchain.ChainProvider) *onchainmock.MockChainProvider {
-	chainMock := onchainmock.NewMockChainProvider(t)
-	chainMock.EXPECT().IsTransactionConfirmed(mock.Anything).Return(false, nil)
-	chainMock.EXPECT().GetRawTransaction(mock.Anything).RunAndReturn(original.GetRawTransaction).Maybe()
-	coverChainProvider(t, chainMock, original)
-	return chainMock
-}
-
 // flakyChainProvider initially says that a transaction isn't confirmed, but upon retry it is
 func flakyChainProvider(t *testing.T, original onchain.ChainProvider) *onchainmock.MockChainProvider {
 	chainMock := onchainmock.NewMockChainProvider(t)
@@ -949,7 +941,6 @@ func TestReverseSwap(t *testing.T) {
 			error       string
 		}{
 			{"LessValue", lessValueChainProvider, "locked up less"},
-			{"Unconfirmed", unconfirmedChainProvider, "not confirmed"},
 		}
 
 		for _, tc := range tests {
@@ -1149,6 +1140,7 @@ func TestReverseSwap(t *testing.T) {
 			_, err = client.RemoveWallet(response.Wallet.Id)
 			require.NoError(t, err)
 
+			// we dont accept zero conf, so the swap is not claimable yet
 			info, err := client.GetInfo()
 			require.NoError(t, err)
 			require.NotContains(t, info.ClaimableSwaps, swap.Id)
@@ -2881,7 +2873,6 @@ func TestChainSwap(t *testing.T) {
 			error    string
 		}{
 			{"LessValue", lessValueChainProvider, "locked up less"},
-			{"Unconfirmed", unconfirmedChainProvider, "not confirmed"},
 		}
 
 		for _, tc := range tests {
@@ -3214,6 +3205,7 @@ func TestChainSwap(t *testing.T) {
 						stream, statusStream := swapStream(t, client, swap.Id)
 						statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
 
+						// we dont accept zero conf, so the swap is not claimable yet
 						info, err := client.GetInfo()
 						require.NoError(t, err)
 						require.NotContains(t, info.ClaimableSwaps, swap.Id)
