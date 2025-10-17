@@ -70,6 +70,23 @@ func chainOutputArgs(data *database.ChainSwapData) onchain.OutputArgs {
 	return info
 }
 
+func (nursery *Nursery) finalizeChainSwap(swap *database.ChainSwap) error {
+	serviceFee := boltz.CalculatePercentage(swap.ServiceFeePercent, int64(swap.FromData.Amount))
+
+	logger.Infof("Chain Swap service fee: %dsat onchain fee: %dsat", serviceFee, *swap.OnchainFee)
+
+	if err := nursery.database.SetChainSwapServiceFee(swap, serviceFee); err != nil {
+		return fmt.Errorf("could not set swap service fee in database: %w", err)
+	}
+
+	if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
+		return fmt.Errorf("could not update state of Chain Swap %s: %w", swap.Id, err)
+	}
+
+	nursery.sendChainSwapUpdate(*swap)
+	return nil
+}
+
 func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Output {
 	info := chainOutputArgs(swap.ToData)
 	info.ExpectedAmount = swap.ToData.Amount
@@ -95,7 +112,7 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 				return fmt.Errorf("could not set lockup transaction in database: %w", err)
 			}
 
-			return nil
+			return nursery.finalizeChainSwap(swap)
 		},
 		setError: func(err error) {
 			nursery.handleChainSwapError(swap, err)
@@ -252,21 +269,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status b
 		return
 	}
 
-	if parsedStatus.IsCompletedStatus() {
-		serviceFee := boltz.CalculatePercentage(swap.ServiceFeePercent, int64(swap.FromData.Amount))
-
-		logger.Infof("Chain Swap service fee: %dsat onchain fee: %dsat", serviceFee, *swap.OnchainFee)
-
-		if err := nursery.database.SetChainSwapServiceFee(swap, serviceFee); err != nil {
-			handleError("Could not set swap service fee in database: " + err.Error())
-			return
-		}
-
-		if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
-			handleError(err.Error())
-			return
-		}
-	} else if parsedStatus.IsFailedStatus() {
+	if parsedStatus.IsFailedStatus() {
 		// only set to SERVER_ERROR if we are not eligible for a new quote
 		if parsedStatus != boltz.TransactionLockupFailed || quoteError != nil {
 			logger.Infof("Chain Swap %s failed", swap.Id)
