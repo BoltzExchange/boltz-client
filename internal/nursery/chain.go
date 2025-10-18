@@ -72,7 +72,6 @@ func chainOutputArgs(data *database.ChainSwapData) onchain.OutputArgs {
 
 func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Output {
 	info := chainOutputArgs(swap.ToData)
-	info.RequireConfirmed = !swap.AcceptZeroConf
 	info.ExpectedAmount = swap.ToData.Amount
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
