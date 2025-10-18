@@ -682,7 +682,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `invoice_expiry` | [`uint64`](#uint64) | optional | Expiry of the reverse swap invoice in seconds |
 | `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
 | `routing_fee_limit_ppm` | [`uint64`](#uint64) | optional | The routing fee limit for paying the lightning invoice in ppm (parts per million) |
-| `add_magic_routing_hint` | [`bool`](#bool) | optional | add a magic routing hint to the lightning invoice |
+| `add_magic_routing_hint` | [`bool`](#bool) | optional | add a magic routing hint to the lightning invoice if `external_pay` is true and an internal `wallet` is used. |
 
 
 
@@ -1569,15 +1569,41 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 #### WalletCredentials
 
+WalletCredentials describes a BIP32 deterministic wallet that can be either:
+- hot (private keys present), derived from a BIP-39 mnemonic, or
+- watch-only (public keys only), imported via a descriptor.
 
+Hot wallet:
+- Provide `mnemonic`. The master key is derived per BIP-39.
+- Optional: provide `core_descriptor` to override the default address scheme.
+If omitted, a chain-specific default will be derived.
+
+Watch-only wallet:
+- Provide only `core_descriptor` (no `mnemonic`).
+
+Mainchain (Bitcoin):
+- Default descriptor: Bitcoin Core descriptor using a BIP-84 derivation path.
+- Descriptor format:
+https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md
+
+Liquid (Elements):
+- Default descriptor:
+CT Descriptor using a BIP-84 derivation path and SLIP77 for blinding key derivation.
+- Descriptor format: 
+https://github.com/ElementsProject/ELIPs/blob/main/elip-0150.mediawiki
+
+Descriptor requirements:
+- Must be valid according to the currency-specific format
+- Should describe the wallet’s external keychain.
+- For hot wallets, the descriptor must be derived from the mnemonic’s master key.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `mnemonic` | [`string`](#string) | optional | only one of these is allowed to be present |
-| `xpub` | [`string`](#string) | optional |  |
-| `core_descriptor` | [`string`](#string) | optional |  |
+| `mnemonic` | [`string`](#string) | optional | the mnemonic to derive the wallet master private key (BIP39). |
+| `core_descriptor` | [`string`](#string) | optional | public key descriptor for the wallets external keychain. |
 | `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** only used in combination with mnemonic |
+| `xpub` | [`string`](#string) | optional | **Deprecated.**  |
 
 
 
