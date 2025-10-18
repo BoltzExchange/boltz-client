@@ -89,6 +89,42 @@ func (nursery *Nursery) payReverseSwap(reverseSwap *database.ReverseSwap) error 
 	return nil
 }
 
+func (nursery *Nursery) finalizeReverseSwap(reverseSwap *database.ReverseSwap) error {
+	if nursery.lightning != nil && !reverseSwap.ExternalPay {
+		status, err := nursery.lightning.PaymentStatus(reverseSwap.PreimageHash())
+		if err != nil {
+			return fmt.Errorf("could not get payment status: %w", err)
+		} else if status.State == lightning.PaymentSucceeded {
+			if err := nursery.database.SetReverseSwapRoutingFee(reverseSwap, status.FeeMsat); err != nil {
+				return fmt.Errorf("could not set reverse swap routing fee in database: %w", err)
+			}
+		} else {
+			logger.Warnf("Reverse Swap %s has state completed but payment did not succeed", reverseSwap.Id)
+		}
+	}
+
+	invoiceAmount := int64(reverseSwap.InvoiceAmount)
+	serviceFee := boltz.CalculatePercentage(reverseSwap.ServiceFeePercent, invoiceAmount)
+	boltzOnchainFee := invoiceAmount - int64(reverseSwap.OnchainAmount) - serviceFee
+	if boltzOnchainFee < 0 {
+		logger.Warnf("Reverse Swap %s has negative boltz onchain fee: %dsat", reverseSwap.Id, boltzOnchainFee)
+		boltzOnchainFee = 0
+	}
+
+	logger.Infof("Reverse Swap service fee: %dsat; boltz onchain fee: %dsat", serviceFee, boltzOnchainFee)
+
+	if err := nursery.database.SetReverseSwapServiceFee(reverseSwap, serviceFee, uint64(boltzOnchainFee)); err != nil {
+		return fmt.Errorf("could not set reverse swap service fee in database: %w", err)
+	}
+	if err := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
+		return fmt.Errorf("could not update state of Reverse Swap %s: %w", reverseSwap.Id, err)
+	}
+
+	nursery.sendReverseSwapUpdate(*reverseSwap)
+
+	return nil
+}
+
 func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseSwap) *Output {
 	var blindingKey *btcec.PublicKey
 	if reverseSwap.BlindingKey != nil {
@@ -120,7 +156,7 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 			if err := nursery.database.SetReverseSwapClaimTransactionId(reverseSwap, transactionId, fee); err != nil {
 				return fmt.Errorf("could not set claim transaction id in database: %w", err)
 			}
-			return nil
+			return nursery.finalizeReverseSwap(reverseSwap)
 		},
 		setError: func(err error) {
 			nursery.handleReverseSwapError(reverseSwap, err)
@@ -243,40 +279,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 		return
 	}
 
-	if parsedStatus.IsCompletedStatus() {
-		if nursery.lightning != nil && !reverseSwap.ExternalPay {
-			status, err := nursery.lightning.PaymentStatus(reverseSwap.PreimageHash())
-			if err != nil {
-				handleError("Could not get payment status: " + err.Error())
-			} else if status.State == lightning.PaymentSucceeded {
-				if err := nursery.database.SetReverseSwapRoutingFee(reverseSwap, status.FeeMsat); err != nil {
-					handleError("Could not set reverse swap routing fee in database: " + err.Error())
-					return
-				}
-			} else {
-				logger.Warnf("Reverse Swap %s has state completed but payment did not succeed", reverseSwap.Id)
-			}
-		}
-
-		invoiceAmount := int64(reverseSwap.InvoiceAmount)
-		serviceFee := boltz.CalculatePercentage(reverseSwap.ServiceFeePercent, invoiceAmount)
-		boltzOnchainFee := invoiceAmount - int64(reverseSwap.OnchainAmount) - serviceFee
-		if boltzOnchainFee < 0 {
-			logger.Warnf("Reverse Swap %s has negative boltz onchain fee: %dsat", reverseSwap.Id, boltzOnchainFee)
-			boltzOnchainFee = 0
-		}
-
-		logger.Infof("Reverse Swap service fee: %dsat; boltz onchain fee: %dsat", serviceFee, boltzOnchainFee)
-
-		if err := nursery.database.SetReverseSwapServiceFee(reverseSwap, serviceFee, uint64(boltzOnchainFee)); err != nil {
-			handleError("Could not set reverse swap service fee in database: " + err.Error())
-			return
-		}
-		if err := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SUCCESSFUL, ""); err != nil {
-			handleError("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
-			return
-		}
-	} else if parsedStatus.IsFailedStatus() {
+	if parsedStatus.IsFailedStatus() {
 		if reverseSwap.State == boltzrpc.SwapState_PENDING {
 			if err := nursery.database.UpdateReverseSwapState(reverseSwap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
 				handleError("Could not update state of Reverse Swap " + reverseSwap.Id + ": " + err.Error())
