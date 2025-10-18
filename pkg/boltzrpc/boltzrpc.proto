@@ -730,11 +730,11 @@ message Budget {
 message WalletCredentials {
     // only one of these is allowed to be present
     optional string mnemonic = 1;
-    optional string xpub = 2;
     optional string core_descriptor = 3;
 
     // only used in combination with mnemonic
     optional uint64 subaccount = 4 [deprecated = true];
+    optional string xpub = 2 [deprecated = true];
 }
 
 message WalletParams {
