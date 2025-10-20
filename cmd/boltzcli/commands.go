@@ -385,7 +385,8 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 					}
 				case boltz.TransactionMempool:
 					fmt.Printf("Lockup transaction ID: %s\n", swap.LockupTransactionId)
-				case boltz.InvoiceSettled:
+				}
+				if swap.State == boltzrpc.SwapState_SUCCESSFUL {
 					fmt.Printf("Claim transaction ID: %s\n", swap.ClaimTransactionId)
 					if swap.ExternalPay || swap.RoutingFeeMsat == nil {
 						fmt.Printf("Paid %d sat onchain fee and %d sat boltz fee\n", *swap.OnchainFee, *swap.ServiceFee)
@@ -415,7 +416,9 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 					fmt.Printf("User transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.From, swap.FromData.GetLockupTransactionId(), swap.FromData.Amount)
 				case boltz.TransactionServerMempoool:
 					fmt.Printf("Server transaction ID (%s): %s\nAmount: %dsat\n", swap.Pair.To, swap.ToData.GetLockupTransactionId(), swap.ToData.Amount)
-				case boltz.TransactionClaimed:
+				}
+
+				if swap.State == boltzrpc.SwapState_SUCCESSFUL {
 					fmt.Printf("Paid %d sat onchain fee and %d sat boltz fee\n", *swap.OnchainFee, *swap.ServiceFee)
 				}
 			}
