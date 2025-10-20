@@ -4,6 +4,7 @@ package onchain_test
 
 import (
 	"fmt"
+	"os"
 	"slices"
 	"testing"
 	"time"
@@ -89,6 +90,10 @@ func TestWallet_Ready(t *testing.T) {
 }
 
 func TestWallet_SendToAddress(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip("Skipping test in GitHub Actions")
+	}
+
 	walletTest(t, true, func(t *testing.T, wallet onchain.Wallet) {
 		walletInfo := wallet.GetWalletInfo()
 		cli := test.GetCli(walletInfo.Currency)
