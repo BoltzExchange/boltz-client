@@ -1577,7 +1577,7 @@ var walletCommands = &cli.Command{
 			Usage:     "Imports an existing wallet",
 			ArgsUsage: "name currency",
 			Description: "Imports an existing wallet for the specified currency with an unique name.\n" +
-				"You can either choose to import a full mnemonic to give the daemon full control over the wallet or import a readonly wallet using a xpub or core descriptor.\n" +
+				"You can either choose to import a full mnemonic to give the daemon full control over the wallet or import a readonly wallet using a core descriptor.\n" +
 				"Currency has to be BTC ot LBTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
 				info, err := walletParams(ctx)
@@ -1592,7 +1592,7 @@ var walletCommands = &cli.Command{
 			Name:        "credentials",
 			ArgsUsage:   "name",
 			Usage:       "Show the credentials of a wallet",
-			Description: "Shows the credentials of a wallet. These will be a xpub or core descriptor in case of a readonly wallet and a mnemonic otherwise.",
+			Description: "Shows the credentials of a wallet. These will be a core descriptor in case of a readonly wallet and a mnemonic otherwise.",
 			Action:      requireNArgs(1, showCredentials),
 		},
 		{
@@ -1867,9 +1867,6 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 			Options: []string{"mnemonic", "core descriptor"},
 			Default: "mnemonic",
 		}
-		if params.Currency == boltzrpc.Currency_BTC {
-			prompt.Options = append(prompt.Options, "xpub")
-		}
 		if err := survey.AskOne(prompt, &importType); err != nil {
 			return nil, err
 		}
@@ -1886,8 +1883,6 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 	switch importType {
 	case "mnemonic":
 		credentials.Mnemonic = &mnemonic
-	case "xpub":
-		credentials.Xpub = &mnemonic
 	case "core descriptor":
 		credentials.CoreDescriptor = &mnemonic
 	}
