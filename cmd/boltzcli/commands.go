@@ -1592,7 +1592,7 @@ var walletCommands = &cli.Command{
 			Name:        "credentials",
 			ArgsUsage:   "name",
 			Usage:       "Show the credentials of a wallet",
-			Description: "Shows the credentials of a wallet. These will be a core descriptor in case of a readonly wallet and a mnemonic otherwise.",
+			Description: "Shows the the core descriptor of the wallet and the mnemonic if it is a hot wallet.",
 			Action:      requireNArgs(1, showCredentials),
 		},
 		{
