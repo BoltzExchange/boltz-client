@@ -38,15 +38,9 @@ func (database *Database) migrate() error {
 		return err
 	}
 
-	tx, err := database.BeginTx()
-	if err != nil {
-		return fmt.Errorf("failed to start transaction for migration: %w", err)
-	}
-
-	if err = database.performMigration(tx, version); err != nil {
-		return tx.Rollback(err)
-	}
-	return tx.Commit()
+	return database.RunTx(func(tx *Transaction) error {
+		return database.performMigration(tx, version)
+	})
 }
 
 func (database *Database) performMigration(tx *Transaction, oldVersion int) error {
