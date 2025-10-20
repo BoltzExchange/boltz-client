@@ -10,6 +10,24 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
+func (nursery *Nursery) checkClaimableSwaps(currency boltz.Currency) error {
+	nursery.updateLock.Lock()
+	defer nursery.updateLock.Unlock()
+
+	logger.Debugf("Checking claimable swaps")
+	reverseSwaps, chainSwaps, err := nursery.QueryClaimableSwaps(nil, currency)
+	if err != nil {
+		return fmt.Errorf("could not query claimable Swaps: %w", err)
+	}
+	if len(reverseSwaps) > 0 || len(chainSwaps) > 0 {
+		logger.Infof("Found %d claimable Swaps", len(reverseSwaps)+len(chainSwaps))
+		if _, err := nursery.claimSwaps(currency, reverseSwaps, chainSwaps); err != nil {
+			return fmt.Errorf("could not claim Swaps: %w", err)
+		}
+	}
+	return nil
+}
+
 func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
 	blockNotifier := nursery.onchain.RegisterBlockListener(nursery.ctx, currency)
 
@@ -36,17 +54,9 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 				logger.Error("Could not check external reverse swaps: " + err.Error())
 			}
 
-			logger.Debugf("Checking claimable swaps")
-			reverseSwaps, chainSwaps, err := nursery.QueryClaimableSwaps(nil, currency)
-			if err != nil {
-				logger.Error("Could not query claimable Swaps: " + err.Error())
+			if err := nursery.checkClaimableSwaps(currency); err != nil {
+				logger.Error("Could not check claimable Swaps: " + err.Error())
 				continue
-			}
-			if len(reverseSwaps) > 0 || len(chainSwaps) > 0 {
-				logger.Infof("Found %d Swaps to claim at height %d", len(reverseSwaps)+len(chainSwaps), newBlock.Height)
-				if _, err := nursery.ClaimSwaps(currency, reverseSwaps, chainSwaps); err != nil {
-					logger.Error("Could not claim Swaps: " + err.Error())
-				}
 			}
 		}
 	}()
