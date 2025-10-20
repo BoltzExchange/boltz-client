@@ -727,14 +727,44 @@ message Budget {
     int64 end_date = 4;
 }
 
+/*
+WalletCredentials describes a BIP32 deterministic wallet that can be either:
+- hot (private keys present), derived from a BIP-39 mnemonic, or
+- watch-only (public keys only), imported via a descriptor.
+
+Hot wallet:
+- Provide `mnemonic`. The master key is derived per BIP-39.
+- Optional: provide `core_descriptor` to override the default address scheme.
+  If omitted, a chain-specific default will be derived.
+
+Watch-only wallet:
+- Provide only `core_descriptor` (no `mnemonic`).
+
+Mainchain (Bitcoin):
+- Default descriptor: Bitcoin Core descriptor using a BIP-84 derivation path.
+- Descriptor format:
+  https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md
+
+Liquid (Elements):
+- Default descriptor:
+  CT Descriptor using a BIP-84 derivation path and SLIP77 for blinding key derivation.
+- Descriptor format: 
+  https://github.com/ElementsProject/ELIPs/blob/main/elip-0150.mediawiki
+
+Descriptor requirements:
+- Must be valid according to the currency-specific format
+- Should describe the wallet’s external keychain.
+- For hot wallets, the descriptor must be derived from the mnemonic’s master key.
+*/
 message WalletCredentials {
-    // only one of these is allowed to be present
+    // the mnemonic to derive the wallet master private key (BIP39).
     optional string mnemonic = 1;
-    optional string xpub = 2;
+    // public key descriptor for the wallets external keychain.
     optional string core_descriptor = 3;
 
     // only used in combination with mnemonic
     optional uint64 subaccount = 4 [deprecated = true];
+    optional string xpub = 2 [deprecated = true];
 }
 
 message WalletParams {
