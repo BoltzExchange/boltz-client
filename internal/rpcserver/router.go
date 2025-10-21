@@ -1479,7 +1479,8 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 			Currency: currency,
 			TenantId: requireTenantId(ctx),
 		},
-		Mnemonic:       request.Credentials.GetMnemonic(),
+		Mnemonic: request.Credentials.GetMnemonic(),
+		//nolint:staticcheck
 		Xpub:           request.Credentials.GetXpub(),
 		CoreDescriptor: request.Credentials.GetCoreDescriptor(),
 		//nolint:staticcheck

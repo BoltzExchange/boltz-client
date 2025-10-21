@@ -881,10 +881,10 @@ func TestReverseSwap(t *testing.T) {
 							info, err = client.GetSwapInfo(swap.Id)
 							require.NoError(t, err)
 						} else {
-							status, _ := swapStream(t, client, swap.Id)
-							status(boltzrpc.SwapState_PENDING)
+							status, statusStream := swapStream(t, client, swap.Id)
 
 							if !tc.zeroConf {
+								statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
 								test.MineBlock()
 							}
 
@@ -2861,11 +2861,11 @@ func TestChainSwap(t *testing.T) {
 			})
 			require.NoError(t, err)
 
+			stream, _ := swapStream(t, client, swap.Id)
+
 			amount := pairInfo.Limits.Minimal
 			test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, amount)
 			test.MineBlock()
-
-			stream, _ := swapStream(t, client, swap.Id)
 
 			update := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
 			require.Equal(t, amount, update.FromData.Amount)
@@ -3032,14 +3032,14 @@ func TestChainSwap(t *testing.T) {
 				require.NotEmpty(t, swap.Id)
 				require.NotEmpty(t, swap.ToData.Address)
 
-				_, streamStatus := swapStream(t, client, swap.Id)
+				status, streamStatus := swapStream(t, client, swap.Id)
 				test.SendToAddress(fromCli, swap.FromData.LockupAddress, swap.FromData.Amount)
 				streamStatus(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
 				test.MineBlock()
 				streamStatus(boltzrpc.SwapState_PENDING, boltz.TransactionConfirmed)
 				streamStatus(boltzrpc.SwapState_PENDING, boltz.TransactionServerMempoool)
 				test.MineBlock()
-				info := streamStatus(boltzrpc.SwapState_SUCCESSFUL, boltz.TransactionClaimed).ChainSwap
+				info := status(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
 
 				to := parseCurrency(tc.to)
 				checkTxOutAddress(t, chain, to, info.ToData.GetTransactionId(), info.ToData.GetAddress(), true)

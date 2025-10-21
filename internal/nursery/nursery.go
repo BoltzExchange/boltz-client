@@ -424,6 +424,10 @@ func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*data
 	nursery.updateLock.Lock()
 	defer nursery.updateLock.Unlock()
 
+	return nursery.claimSwaps(currency, reverseSwaps, chainSwaps)
+}
+
+func (nursery *Nursery) claimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
 	var outputs []*Output
 	for _, swap := range reverseSwaps {
 		outputs = append(outputs, nursery.getReverseSwapClaimOutput(swap))
