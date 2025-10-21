@@ -1,4 +1,36 @@
 
+<a name="v2.9.0"></a>
+## [v2.9.0] - 2025-10-21
+### Feat
+- add esplora http client
+- retry reverse and chain claims ([#570](https://github.com/BoltzExchange/boltz-client/issues/570))
+- introduce `WalletBackend` interface
+
+### Fix
+- check if chain swap is already claimed in status update
+- aquire update lock before querying claimable swaps
+- flaky status checks in reverse and chain tests
+- check for successfull state and not status in cli
+- sync loop synchronization
+- check for confirmation when querying claimable swaps ([#571](https://github.com/BoltzExchange/boltz-client/issues/571))
+
+### Refactor
+- finalize chain and reverse swaps after claim ([#573](https://github.com/BoltzExchange/boltz-client/issues/573))
+- rm `RequireConfirmed` flag when finding output
+- simplify manual claim test
+- default electrum config
+- use `MultiChainProvider` in rpcserver as default
+- consolidate onchain interfaces into single `ChainProvider`
+- abstract basic liquid wallet tests out into onchain package
+- move sync loop out of liquid wallet
+
+
+<a name="v2.8.9"></a>
+## [v2.8.9] - 2025-10-09
+### Feat
+- retry reverse and chain claims ([#570](https://github.com/BoltzExchange/boltz-client/issues/570))
+
+
 <a name="v2.8.8"></a>
 ## [v2.8.8] - 2025-09-29
 ### Feat
@@ -793,6 +825,8 @@
 - improve Channel Creation enforcement
 
 
+[v2.9.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.9...v2.9.0
+[v2.8.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.8...v2.8.9
 [v2.8.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.7...v2.8.8
 [v2.8.7]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.6...v2.8.7
 [v2.8.6]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.5...v2.8.6
