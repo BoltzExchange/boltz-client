@@ -2235,6 +2235,7 @@ func TestImportDuplicateCredentials(t *testing.T) {
 	require.Error(t, err)
 
 	second.Currency = boltzrpc.Currency_BTC
+	credentials.CoreDescriptor = nil
 	_, err = client.ImportWallet(second, credentials)
 	require.NoError(t, err)
 }
