@@ -20,7 +20,7 @@ const checkInterval = 1 * time.Second
 
 func walletTest(t *testing.T, funded bool, f func(t *testing.T, wallet onchain.Wallet)) {
 	test.InitLogger()
-	for _, currency := range []boltz.Currency{boltz.CurrencyLiquid} {
+	for _, currency := range []boltz.Currency{boltz.CurrencyLiquid, boltz.CurrencyBtc} {
 		t.Run(string(currency), func(t *testing.T) {
 			t.Parallel()
 			backend := test.WalletBackend(t, currency)
