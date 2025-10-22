@@ -246,7 +246,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	}
 
 	btcDir := path.Join(cfg.DataDir, "bitcoin-wallet")
-	if err := os.MkdirAll(btcDir, 0o755); err != nil {
+	if err := os.MkdirAll(btcDir, 0o700); err != nil {
 		return fmt.Errorf("prepare bitcoin wallet datadir: %v", err)
 	}
 	bitcoinConfig := bitcoin_wallet.Config{
