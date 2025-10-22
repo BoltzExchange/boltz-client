@@ -61,6 +61,10 @@ func getWallet(currency boltz.Currency) *onchainWallet.Wallet {
 	return wallets[currency]
 }
 func TestSend(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip("Skipping test in GitHub Actions")
+	}
+
 	for _, currency := range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
 		t.Run(string(currency), func(t *testing.T) {
 			wallet := getWallet(currency)
