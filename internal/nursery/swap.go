@@ -381,13 +381,16 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				handleError(err.Error())
 				return
 			}
+
+			if swap.LockupTransactionId != "" {
+				logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
+				if _, err := nursery.RefundSwaps(swap.Pair.From, []*database.Swap{swap}, nil); err != nil {
+					handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
+					return
+				}
+			}
 		}
 
-		logger.Infof("Swap %s failed, trying to refund cooperatively", swap.Id)
-		if _, err := nursery.RefundSwaps(swap.Pair.From, []*database.Swap{swap}, nil); err != nil {
-			handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
-			return
-		}
 	}
 	nursery.sendSwapUpdate(*swap)
 }
