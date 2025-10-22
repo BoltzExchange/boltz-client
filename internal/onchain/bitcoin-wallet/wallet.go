@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -23,6 +24,7 @@ type Wallet struct {
 	*bdk.Wallet
 	info          onchain.WalletInfo
 	chainProvider onchain.ChainProvider
+	sendLock      sync.Mutex
 }
 
 type Config struct {
@@ -153,6 +155,9 @@ func (w *Wallet) sendToAddress(args onchain.WalletSendArgs) (*bdk.WalletSendResu
 }
 
 func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
+	w.sendLock.Lock()
+	defer w.sendLock.Unlock()
+
 	result, err := w.sendToAddress(args)
 	if err != nil {
 		return "", err
