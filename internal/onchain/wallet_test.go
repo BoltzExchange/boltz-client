@@ -250,7 +250,7 @@ func TestWallet_BumpTransactionFee(t *testing.T) {
 		time.Sleep(2 * time.Second)
 
 		// Try to bump the fee
-		newTxId, err := wallet.BumpTransactionFee(txId, 2)
+		newTxId, err := wallet.BumpTransactionFee(txId, 3)
 		require.NoError(t, err)
 		require.NotEmpty(t, newTxId)
 		require.NotEqual(t, txId, newTxId)
