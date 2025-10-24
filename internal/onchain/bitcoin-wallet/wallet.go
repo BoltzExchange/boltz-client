@@ -9,22 +9,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet/bdk"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
 
 type Backend struct {
-	*bdk.Backend
-	cfg           Config
-	ChainProvider onchain.ChainProvider
+	cfg             Config
+	electrumServers []*onchain.ElectrumOptions
+	chainClients    sync.Map
 }
 
 type Wallet struct {
 	*bdk.Wallet
-	info          onchain.WalletInfo
-	chainProvider onchain.ChainProvider
-	sendLock      sync.Mutex
+	backend  *Backend
+	info     onchain.WalletInfo
+	sendLock sync.Mutex
 }
 
 type Config struct {
@@ -35,26 +36,60 @@ type Config struct {
 	ChainProvider onchain.ChainProvider
 }
 
-func NewBackend(cfg Config) (*Backend, error) {
-	var url string
-	if cfg.Electrum == nil {
-		url = "tcp://localhost:19001"
+func newChainClient(electrum *onchain.ElectrumOptions) (*bdk.ChainClient, error) {
+	url := electrum.Url
+	if electrum.SSL {
+		url = "ssl://" + url
 	} else {
-		url = cfg.Electrum.Url
-		if cfg.Electrum.SSL {
-			url = "ssl://" + url
-		} else {
-			url = "tcp://" + url
+		url = "tcp://" + url
+	}
+	return bdk.NewChainClient(url)
+}
+
+func NewBackend(cfg Config) (*Backend, error) {
+	electrum := cfg.Electrum
+	if electrum == nil {
+		switch cfg.Network {
+		case boltz.MainNet:
+			electrum = &onchain.ElectrumOptions{
+				Url: "bitcoin-mainnet.blockstream.info:50002",
+				SSL: true,
+			}
+		case boltz.Regtest:
+			electrum = onchain.RegtestElectrumConfig.Btc
+		default:
+			return nil, errors.New("unknown network")
 		}
 	}
-	backend, err := bdk.NewBackend(
-		convertNetwork(cfg.Network),
-		url,
-	)
+	electrumServers := []*onchain.ElectrumOptions{electrum}
+	if cfg.Electrum == nil && cfg.Network == boltz.MainNet {
+		logger.Infof("Adding boltz electrum server as sync backup for BTC")
+		electrumServers = append(electrumServers, &onchain.ElectrumOptions{
+			// TODO: add boltz electrum server url here
+			Url: "",
+			SSL: true,
+		})
+	}
+	return &Backend{
+		chainClients:    sync.Map{},
+		electrumServers: electrumServers,
+		cfg:             cfg,
+	}, nil
+}
+
+// we do lazy initialization of the electrum clients
+// to avoid blocking startup if we experience connectivity issues
+func (backend *Backend) getChainClient(electrum *onchain.ElectrumOptions) (*bdk.ChainClient, error) {
+	client, ok := backend.chainClients.Load(electrum.Url)
+	if ok {
+		return client.(*bdk.ChainClient), nil
+	}
+	newClient, err := newChainClient(electrum)
 	if err != nil {
 		return nil, err
 	}
-	return &Backend{backend, cfg, cfg.ChainProvider}, nil
+	backend.chainClients.Store(electrum.Url, newClient)
+	return newClient, nil
 }
 
 func convertNetwork(network *boltz.Network) bdk.Network {
@@ -84,15 +119,15 @@ func (backend *Backend) NewWallet(credentials *onchain.WalletCredentials) (oncha
 	// each wallet requires its own db
 	dbName := fmt.Sprintf("bdk-%d-%x.sqlite", info.Id, descriptorHash[:8])
 	wallet, err := bdk.NewWallet(
-		backend.Backend,
 		creds,
 		path.Join(backend.cfg.DataDir, dbName),
+		convertNetwork(backend.cfg.Network),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Wallet{Wallet: wallet, chainProvider: backend.ChainProvider, info: info}, nil
+	return &Wallet{Wallet: wallet, backend: backend, info: info}, nil
 }
 
 func (backend *Backend) DeriveDefaultDescriptor(mnemonic string) (string, error) {
@@ -120,7 +155,7 @@ func (w *Wallet) ApplyTransaction(txHex string) error {
 }
 
 func (w *Wallet) broadcastTransaction(txHex string) (string, error) {
-	txId, err := w.chainProvider.BroadcastTransaction(txHex)
+	txId, err := w.backend.cfg.ChainProvider.BroadcastTransaction(txHex)
 	if err != nil {
 		return "", err
 	}
@@ -166,7 +201,21 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 }
 
 func (w *Wallet) Sync() error {
-	return w.Wallet.Sync()
+	var err error
+	for i, electrum := range w.backend.electrumServers {
+		chainClient, err := w.backend.getChainClient(electrum)
+		if err != nil {
+			logger.Errorf("Client %d failed to get chain client: %v", i, err)
+			continue
+		}
+		err = w.Wallet.Sync(chainClient)
+		if err != nil {
+			logger.Errorf("Client %d failed to sync wallet %d: %v", i, w.info.Id, err)
+			continue
+		}
+		return nil
+	}
+	return fmt.Errorf("all clients failed to sync, last error: %w", err)
 }
 
 func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {

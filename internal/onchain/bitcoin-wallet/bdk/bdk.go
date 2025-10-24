@@ -413,25 +413,25 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_bdk_checksum_method_wallet_sync()
 		})
-		if checksum != 38629 {
+		if checksum != 33564 {
 			// If this happens try cleaning and rebuilding your project
 			panic("bdk: uniffi_bdk_checksum_method_wallet_sync: UniFFI API checksum mismatch")
 		}
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_bdk_checksum_constructor_backend_new()
+			return C.uniffi_bdk_checksum_constructor_chainclient_new()
 		})
-		if checksum != 42387 {
+		if checksum != 11797 {
 			// If this happens try cleaning and rebuilding your project
-			panic("bdk: uniffi_bdk_checksum_constructor_backend_new: UniFFI API checksum mismatch")
+			panic("bdk: uniffi_bdk_checksum_constructor_chainclient_new: UniFFI API checksum mismatch")
 		}
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_bdk_checksum_constructor_wallet_new()
 		})
-		if checksum != 57184 {
+		if checksum != 16998 {
 			// If this happens try cleaning and rebuilding your project
 			panic("bdk: uniffi_bdk_checksum_constructor_wallet_new: UniFFI API checksum mismatch")
 		}
@@ -678,70 +678,70 @@ func (ffiObject *FfiObject) freeRustArcPtr() {
 	})
 }
 
-type BackendInterface interface {
+type ChainClientInterface interface {
 }
-type Backend struct {
+type ChainClient struct {
 	ffiObject FfiObject
 }
 
-func NewBackend(network Network, electrumUrl string) (*Backend, error) {
+func NewChainClient(electrumUrl string) (*ChainClient, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[Error](FfiConverterError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_bdk_fn_constructor_backend_new(FfiConverterNetworkINSTANCE.Lower(network), FfiConverterStringINSTANCE.Lower(electrumUrl), _uniffiStatus)
+		return C.uniffi_bdk_fn_constructor_chainclient_new(FfiConverterStringINSTANCE.Lower(electrumUrl), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
-		var _uniffiDefaultValue *Backend
+		var _uniffiDefaultValue *ChainClient
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
-		return FfiConverterBackendINSTANCE.Lift(_uniffiRV), nil
+		return FfiConverterChainClientINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
-func (object *Backend) Destroy() {
+func (object *ChainClient) Destroy() {
 	runtime.SetFinalizer(object, nil)
 	object.ffiObject.destroy()
 }
 
-type FfiConverterBackend struct{}
+type FfiConverterChainClient struct{}
 
-var FfiConverterBackendINSTANCE = FfiConverterBackend{}
+var FfiConverterChainClientINSTANCE = FfiConverterChainClient{}
 
-func (c FfiConverterBackend) Lift(pointer unsafe.Pointer) *Backend {
-	result := &Backend{
+func (c FfiConverterChainClient) Lift(pointer unsafe.Pointer) *ChainClient {
+	result := &ChainClient{
 		newFfiObject(
 			pointer,
 			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
-				return C.uniffi_bdk_fn_clone_backend(pointer, status)
+				return C.uniffi_bdk_fn_clone_chainclient(pointer, status)
 			},
 			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
-				C.uniffi_bdk_fn_free_backend(pointer, status)
+				C.uniffi_bdk_fn_free_chainclient(pointer, status)
 			},
 		),
 	}
-	runtime.SetFinalizer(result, (*Backend).Destroy)
+	runtime.SetFinalizer(result, (*ChainClient).Destroy)
 	return result
 }
 
-func (c FfiConverterBackend) Read(reader io.Reader) *Backend {
+func (c FfiConverterChainClient) Read(reader io.Reader) *ChainClient {
 	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
 }
 
-func (c FfiConverterBackend) Lower(value *Backend) unsafe.Pointer {
+func (c FfiConverterChainClient) Lower(value *ChainClient) unsafe.Pointer {
 	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
 	// because the pointer will be decremented immediately after this function returns,
 	// and someone will be left holding onto a non-locked pointer.
-	pointer := value.ffiObject.incrementPointer("*Backend")
+	pointer := value.ffiObject.incrementPointer("*ChainClient")
 	defer value.ffiObject.decrementPointer()
 	return pointer
 
 }
 
-func (c FfiConverterBackend) Write(writer io.Writer, value *Backend) {
+func (c FfiConverterChainClient) Write(writer io.Writer, value *ChainClient) {
 	writeUint64(writer, uint64(uintptr(c.Lower(value))))
 }
 
-type FfiDestroyerBackend struct{}
+type FfiDestroyerChainClient struct{}
 
-func (_ FfiDestroyerBackend) Destroy(value *Backend) {
+func (_ FfiDestroyerChainClient) Destroy(value *ChainClient) {
 	value.Destroy()
 }
 
@@ -752,15 +752,15 @@ type WalletInterface interface {
 	GetTransactions(limit uint64, offset uint64) ([]WalletTransaction, error)
 	NewAddress() (string, error)
 	SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (WalletSendResult, error)
-	Sync() error
+	Sync(chainClient *ChainClient) error
 }
 type Wallet struct {
 	ffiObject FfiObject
 }
 
-func NewWallet(backend *Backend, credentials WalletCredentials, dbPath string) (*Wallet, error) {
+func NewWallet(credentials WalletCredentials, dbPath string, network Network) (*Wallet, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[Error](FfiConverterError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_bdk_fn_constructor_wallet_new(FfiConverterBackendINSTANCE.Lower(backend), FfiConverterWalletCredentialsINSTANCE.Lower(credentials), FfiConverterStringINSTANCE.Lower(dbPath), _uniffiStatus)
+		return C.uniffi_bdk_fn_constructor_wallet_new(FfiConverterWalletCredentialsINSTANCE.Lower(credentials), FfiConverterStringINSTANCE.Lower(dbPath), FfiConverterNetworkINSTANCE.Lower(network), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *Wallet
@@ -866,12 +866,12 @@ func (_self *Wallet) SendToAddress(address string, amount uint64, satPerVbyte fl
 	}
 }
 
-func (_self *Wallet) Sync() error {
+func (_self *Wallet) Sync(chainClient *ChainClient) error {
 	_pointer := _self.ffiObject.incrementPointer("*Wallet")
 	defer _self.ffiObject.decrementPointer()
 	_, _uniffiErr := rustCallWithError[Error](FfiConverterError{}, func(_uniffiStatus *C.RustCallStatus) bool {
 		C.uniffi_bdk_fn_method_wallet_sync(
-			_pointer, _uniffiStatus)
+			_pointer, FfiConverterChainClientINSTANCE.Lower(chainClient), _uniffiStatus)
 		return false
 	})
 	return _uniffiErr.AsError()

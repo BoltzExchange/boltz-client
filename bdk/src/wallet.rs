@@ -133,20 +133,18 @@ impl WalletCredentials {
 }
 
 #[derive(uniffi::Object)]
-pub struct Backend {
+pub struct ChainClient {
     pub(crate) electrum: BdkElectrumClient<electrum_client::Client>,
-    pub(crate) network: BdkNetwork,
 }
 
 #[uniffi::export]
-impl Backend {
+impl ChainClient {
     #[uniffi::constructor]
-    pub fn new(network: Network, electrum_url: String) -> Result<Self, Error> {
+    pub fn new(electrum_url: String) -> Result<Self, Error> {
         let client = electrum_client::Client::new(electrum_url.as_str())
             .context("create electrum client")?;
         Ok(Self {
             electrum: BdkElectrumClient::new(client),
-            network: network.into(),
         })
     }
 }
@@ -159,30 +157,30 @@ fn parse_fee_rate(sat_per_vbyte: f64) -> FeeRate {
 pub struct Wallet {
     inner: Mutex<PersistedWallet<Connection>>,
     db: Mutex<Connection>,
-    backend: Arc<Backend>,
+    network: BdkNetwork,
 }
 
 #[uniffi::export]
 impl Wallet {
     #[uniffi::constructor]
     pub fn new(
-        backend: Arc<Backend>,
         credentials: WalletCredentials,
         db_path: String,
+        network: Network,
     ) -> Result<Self, Error> {
+        let network: BdkNetwork = network.into();
         let external = credentials
-            .get_wallet_descriptor(KeychainKind::External, backend.network)?
+            .get_wallet_descriptor(KeychainKind::External, network)?
             .ok_or(Error::Generic(
                 "external descriptor is required".to_string(),
             ))?;
-        let internal =
-            credentials.get_wallet_descriptor(KeychainKind::Internal, backend.network)?;
+        let internal = credentials.get_wallet_descriptor(KeychainKind::Internal, network)?;
         let mut db = Connection::open(db_path.as_str()).context("open db")?;
         let wallet_opt = BdkWallet::load()
             .descriptor(KeychainKind::External, Some(external.clone()))
             .descriptor(KeychainKind::Internal, internal.clone())
             .extract_keys()
-            .check_network(backend.network)
+            .check_network(network)
             .load_wallet(&mut db)
             .context("load wallet")?;
         let wallet = match wallet_opt {
@@ -193,7 +191,7 @@ impl Wallet {
                     None => BdkWallet::create_single(external),
                 };
                 params
-                    .network(backend.network)
+                    .network(network)
                     .create_wallet(&mut db)
                     .context("create wallet")?
             }
@@ -201,16 +199,15 @@ impl Wallet {
 
         Ok(Self {
             inner: Mutex::new(wallet),
-            backend: backend.clone(),
             db: Mutex::new(db),
+            network,
         })
     }
 
-    pub fn sync(&self) -> Result<(), Error> {
+    pub fn sync(&self, chain_client: Arc<ChainClient>) -> Result<(), Error> {
         let mut wallet = self.get_wallet()?;
         let request = wallet.start_full_scan();
-        let update = self
-            .backend
+        let update = chain_client
             .electrum
             .full_scan(request, 20, 50, false)
             .context("full scan")?;
@@ -270,7 +267,7 @@ impl Wallet {
         let fee_rate = parse_fee_rate(sat_per_vbyte);
         let address = Address::from_str(&address)
             .context("parse address")?
-            .require_network(self.backend.network)
+            .require_network(self.network)
             .context("require network")?
             .script_pubkey();
 
@@ -332,7 +329,7 @@ impl Wallet {
                     .output
                     .iter()
                     .map(|out| WalletTransactionOutput {
-                        address: Address::from_script(&out.script_pubkey, &self.backend.network)
+                        address: Address::from_script(&out.script_pubkey, &self.network)
                             .map(|a| a.to_string())
                             .unwrap_or_default(),
                         amount: out.value.to_sat(),

@@ -378,19 +378,19 @@ static void call_UniffiForeignFutureCompleteVoid(
 
 
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_CLONE_BACKEND
-#define UNIFFI_FFIDEF_UNIFFI_BDK_FN_CLONE_BACKEND
-void* uniffi_bdk_fn_clone_backend(void* ptr, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_CLONE_CHAINCLIENT
+#define UNIFFI_FFIDEF_UNIFFI_BDK_FN_CLONE_CHAINCLIENT
+void* uniffi_bdk_fn_clone_chainclient(void* ptr, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_FREE_BACKEND
-#define UNIFFI_FFIDEF_UNIFFI_BDK_FN_FREE_BACKEND
-void uniffi_bdk_fn_free_backend(void* ptr, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_FREE_CHAINCLIENT
+#define UNIFFI_FFIDEF_UNIFFI_BDK_FN_FREE_CHAINCLIENT
+void uniffi_bdk_fn_free_chainclient(void* ptr, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_CONSTRUCTOR_BACKEND_NEW
-#define UNIFFI_FFIDEF_UNIFFI_BDK_FN_CONSTRUCTOR_BACKEND_NEW
-void* uniffi_bdk_fn_constructor_backend_new(RustBuffer network, RustBuffer electrum_url, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_CONSTRUCTOR_CHAINCLIENT_NEW
+#define UNIFFI_FFIDEF_UNIFFI_BDK_FN_CONSTRUCTOR_CHAINCLIENT_NEW
+void* uniffi_bdk_fn_constructor_chainclient_new(RustBuffer electrum_url, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_CLONE_WALLET
@@ -405,7 +405,7 @@ void uniffi_bdk_fn_free_wallet(void* ptr, RustCallStatus *out_status
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_CONSTRUCTOR_WALLET_NEW
 #define UNIFFI_FFIDEF_UNIFFI_BDK_FN_CONSTRUCTOR_WALLET_NEW
-void* uniffi_bdk_fn_constructor_wallet_new(void* backend, RustBuffer credentials, RustBuffer db_path, RustCallStatus *out_status
+void* uniffi_bdk_fn_constructor_wallet_new(RustBuffer credentials, RustBuffer db_path, RustBuffer network, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_METHOD_WALLET_APPLY_TRANSACTION
@@ -440,7 +440,7 @@ RustBuffer uniffi_bdk_fn_method_wallet_send_to_address(void* ptr, RustBuffer add
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_METHOD_WALLET_SYNC
 #define UNIFFI_FFIDEF_UNIFFI_BDK_FN_METHOD_WALLET_SYNC
-void uniffi_bdk_fn_method_wallet_sync(void* ptr, RustCallStatus *out_status
+void uniffi_bdk_fn_method_wallet_sync(void* ptr, void* chain_client, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_FUNC_DERIVE_DEFAULT_XPUB
@@ -776,9 +776,9 @@ uint16_t uniffi_bdk_checksum_method_wallet_sync(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_CONSTRUCTOR_BACKEND_NEW
-#define UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_CONSTRUCTOR_BACKEND_NEW
-uint16_t uniffi_bdk_checksum_constructor_backend_new(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_CONSTRUCTOR_CHAINCLIENT_NEW
+#define UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_CONSTRUCTOR_CHAINCLIENT_NEW
+uint16_t uniffi_bdk_checksum_constructor_chainclient_new(void
     
 );
 #endif
