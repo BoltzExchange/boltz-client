@@ -112,11 +112,9 @@ build-lwk:
 BDK_BINDINGS_PATH := ./bdk
 
 build-bdk:
-ifeq ("$(wildcard internal/onchain/bitcoin-wallet/bdk/libbdk.a)","")
 	@$(call print, "Building bdk")
 	cd $(BDK_BINDINGS_PATH) && cargo build --release --lib
 	cp $(BDK_BINDINGS_PATH)/target/release/libbdk.a $(BDK_BINDINGS_PATH)/target/release/libbdk.so internal/onchain/bitcoin-wallet/bdk/
-endif
 
 build: download-gdk build-bolt12 build-lwk build-bdk
 	@$(call print, "Building boltz-client")
