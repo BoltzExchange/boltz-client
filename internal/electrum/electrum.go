@@ -3,6 +3,7 @@ package electrum
 import (
 	"context"
 	"crypto/tls"
+	"sync/atomic"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
@@ -14,7 +15,7 @@ type Client struct {
 	client *electrum.Client
 	ctx    context.Context
 
-	blockHeight uint32
+	blockHeight atomic.Uint32
 }
 
 func NewClient(options onchain.ElectrumOptions) (*Client, error) {
@@ -48,6 +49,11 @@ func NewClient(options onchain.ElectrumOptions) (*Client, error) {
 	if _, _, err := c.client.ServerVersion(ctx); err != nil {
 		return nil, err
 	}
+
+	if err := c.subscribeHeaders(); err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
@@ -55,23 +61,25 @@ func (c *Client) timeoutContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(c.ctx, 5*time.Second)
 }
 
-func (c *Client) RegisterBlockListener(ctx context.Context, channel chan<- *onchain.BlockEpoch) error {
+func (c *Client) subscribeHeaders() error {
+	ctx, cancel := c.timeoutContext()
+	defer cancel()
 	results, err := c.client.SubscribeHeaders(ctx)
 	if err != nil {
 		return err
 	}
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case result := <-results:
-			c.blockHeight = uint32(result.Height)
-			channel <- &onchain.BlockEpoch{Height: c.blockHeight}
+	go func() {
+		for result := range results {
+			if c.client.IsShutdown() {
+				return
+			}
+			c.blockHeight.Store(uint32(result.Height))
 		}
-	}
+	}()
+	return nil
 }
 func (c *Client) GetBlockHeight() (uint32, error) {
-	return c.blockHeight, nil
+	return c.blockHeight.Load(), nil
 }
 
 func (c *Client) EstimateFee() (float64, error) {
