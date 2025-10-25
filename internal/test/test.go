@@ -15,6 +15,8 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	bitcoin_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet/bdk"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
@@ -65,6 +67,9 @@ func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 		WalletInfo: WalletInfo(currency),
 		Mnemonic:   WalletMnemonic,
 		Subaccount: &sub,
+	}
+	if currency == boltz.CurrencyBtc {
+		creds.CoreDescriptor, _ = bdk.DeriveDefaultXpub(bdk.NetworkRegtest, WalletMnemonic)
 	}
 	if currency == boltz.CurrencyLiquid {
 		creds.CoreDescriptor, _ = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, WalletMnemonic)
@@ -165,15 +170,19 @@ func dbPersister(t *testing.T) liquid_wallet.Persister {
 	return database.NewWalletPersister(&db)
 }
 
+func boltzChainProvider(t *testing.T, currency boltz.Currency) onchain.ChainProvider {
+	return onchain.NewBoltzChainProvider(
+		&boltz.Api{URL: boltz.Regtest.DefaultBoltzUrl},
+		currency,
+	)
+}
+
 func LiquidBackendConfig(t *testing.T) liquid_wallet.Config {
 	return liquid_wallet.Config{
-		Network:   boltz.Regtest,
-		DataDir:   t.TempDir(),
-		Persister: dbPersister(t),
-		ChainProvider: onchain.NewBoltzChainProvider(
-			&boltz.Api{URL: boltz.Regtest.DefaultBoltzUrl},
-			boltz.CurrencyLiquid,
-		),
+		Network:       boltz.Regtest,
+		DataDir:       t.TempDir(),
+		Persister:     dbPersister(t),
+		ChainProvider: boltzChainProvider(t, boltz.CurrencyLiquid),
 	}
 }
 
@@ -181,6 +190,13 @@ func WalletBackend(t *testing.T, currency boltz.Currency) onchain.WalletBackend 
 	var backend onchain.WalletBackend
 	var err error
 	switch currency {
+	case boltz.CurrencyBtc:
+		backend, err = bitcoin_wallet.NewBackend(bitcoin_wallet.Config{
+			Network:       boltz.Regtest,
+			Electrum:      onchain.RegtestElectrumConfig.Btc,
+			DataDir:       t.TempDir(),
+			ChainProvider: boltzChainProvider(t, boltz.CurrencyBtc),
+		})
 	case boltz.CurrencyLiquid:
 		backend, err = liquid_wallet.NewBackend(LiquidBackendConfig(t))
 	default:
