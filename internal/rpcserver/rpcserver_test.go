@@ -2565,10 +2565,11 @@ func TestSwap(t *testing.T) {
 						})
 						require.NoError(t, err)
 
+						stream, statusStream := swapStream(t, admin, swap.Id)
 						test.SendToAddress(tc.cli, swap.Address, 100000)
-						test.MineBlock()
+						statusStream(boltzrpc.SwapState_PENDING, boltz.InvoiceSet)
 
-						stream, _ := swapStream(t, admin, swap.Id)
+						test.MineBlock()
 						info := stream(boltzrpc.SwapState_SUCCESSFUL)
 						checkSwap(t, info.Swap)
 					})
