@@ -124,40 +124,38 @@ const insertChainSwap = `
 `
 
 func (database *Database) CreateChainSwap(swap ChainSwap) error {
-	tx, err := database.BeginTx()
-	if err != nil {
-		return err
-	}
-	serialized := swap.Serialize()
-	_, err = tx.Exec(
-		insertChainSwap,
-		serialized.Id,
-		serialized.FromCurrency,
-		serialized.ToCurrency,
-		serialized.State,
-		serialized.Error,
-		serialized.Status,
-		serialized.AcceptZeroConf,
-		serialized.Preimage,
-		serialized.IsAuto,
-		serialized.ServiceFee,
-		serialized.ServiceFeePercent,
-		serialized.OnchainFee,
-		serialized.CreatedAt,
-		serialized.TenantId,
-		FormatTime(swap.CreatedAt),
-	)
-	if err != nil {
-		return tx.Rollback(err)
-	}
-	if err := tx.createChainSwapData(*swap.FromData); err != nil {
-		return tx.Rollback(err)
-	}
-	if err := tx.createChainSwapData(*swap.ToData); err != nil {
-		return tx.Rollback(err)
-	}
+	return database.RunTx(func(tx *Transaction) error {
+		serialized := swap.Serialize()
+		_, err := tx.Exec(
+			insertChainSwap,
+			serialized.Id,
+			serialized.FromCurrency,
+			serialized.ToCurrency,
+			serialized.State,
+			serialized.Error,
+			serialized.Status,
+			serialized.AcceptZeroConf,
+			serialized.Preimage,
+			serialized.IsAuto,
+			serialized.ServiceFee,
+			serialized.ServiceFeePercent,
+			serialized.OnchainFee,
+			serialized.CreatedAt,
+			serialized.TenantId,
+			FormatTime(swap.CreatedAt),
+		)
+		if err != nil {
+			return err
+		}
+		if err := tx.createChainSwapData(*swap.FromData); err != nil {
+			return err
+		}
+		if err := tx.createChainSwapData(*swap.ToData); err != nil {
+			return err
+		}
 
-	return tx.Commit()
+		return nil
+	})
 }
 
 const insertChainSwapData = `

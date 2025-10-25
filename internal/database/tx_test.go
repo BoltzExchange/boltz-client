@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,25 +26,25 @@ func TestTransaction(t *testing.T) {
 	}
 
 	t.Run("Rollback", func(t *testing.T) {
-		tx, err := db.BeginTx()
-		require.NoError(t, err)
-		statements(t, tx)
+		err := db.RunTx(func(tx *Transaction) error {
+			statements(t, tx)
+			return errors.New("rollback!")
+		})
+		require.Error(t, err)
+		require.NotContains(t, err.Error(), "rollback")
 
-		assert.NoError(t, tx.Rollback(nil))
 		row := db.QueryRow("SELECT * FROM test")
 		assert.Error(t, row.Err())
 	})
 
 	t.Run("Commit", func(t *testing.T) {
-		tx, err := db.BeginTx()
+		err = db.RunTx(func(tx *Transaction) error {
+			statements(t, tx)
+			return nil
+		})
 		require.NoError(t, err)
 
-		statements(t, tx)
 		row := db.QueryRow("SELECT * FROM test")
-		assert.Error(t, row.Err())
-
-		assert.NoError(t, tx.Commit())
-		row = db.QueryRow("SELECT * FROM test")
 		assert.NoError(t, row.Err())
 
 	})
