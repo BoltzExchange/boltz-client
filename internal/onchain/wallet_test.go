@@ -297,18 +297,74 @@ func TestWallet_ImportCredentials(t *testing.T) {
 		credentials onchain.WalletCredentials
 		shouldError bool
 	}{
-		/*
-			{
-				name: "Xpub/BTC",
-				credentials: onchain.WalletCredentials{
-					WalletInfo: onchain.WalletInfo{
-						Currency: boltz.CurrencyBtc,
-					},
-					Xpub: "vpub5XzEwP9YWe4cJD6pB3njrMgWahQbzHhfGAyuErnswtPuzm6QdLqHH79DSZ6YW3McdE1pwxvr7wHU2nMtVbPZ1jW4tqg8ggx4ZV19U7i69pd",
-				},
-				shouldError: false,
+		{
+			name:     "Mnemonic/BTC",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: test.WalletMnemonic,
 			},
-		*/
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/BTC/DoesntMatchDescriptor",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
+			},
+			shouldError: true,
+		},
+		{
+			name:     "Mnemonic/BTC/CustomDescriptor",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "tr([8c3c63c2/86'/0'/0']tpubDCG5AotNoktxBFUJe6j1pRXGsVrRrgP89yvVsUgpjKFHZrRjv5jfX9MUGuS3fwmJ1w5b3xipUAN7quZdsFLkfJ4HSBKYKhfJKUYRbhLGzfL/<0;1>/*)#hpjjkysq",
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/BTC/Invalid",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: "wrong wrong",
+			},
+			shouldError: true,
+		},
+		{
+			name:     "Mnemonic/Liquid",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: test.WalletMnemonic,
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/Liquid/CustomDescriptor",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "ct(slip77(d8c35317b53f91b333d9b48cbab27458aa8f9824cb866854f8d4b5429e74cb03),elsh(wpkh([8c3c63c2/49'/1'/0']tpubDCHHxjYzHQTEii8P6CfdfzG1gf7BmMdxwFHCFcMLiG4wNRMQoP8j1RKB2GmYDBdDjpwBPiyfi65mw6WHrLz41YHX7ntpxc9kmnmdL3XUtbN/<0;1>/*)))#h3qyl7ss",
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/Liquid/DoesntMatch",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "ct(slip77(099d2fa0d9e56478d00ba3044a55aa9878a2f0e1c0fd1c57962573994771f87a),elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*))#60v4fm2h",
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/Liquid/Invalid",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: "wrong wrong",
+			},
+			shouldError: true,
+		},
 		{
 			name:     "CoreDescriptor/BTC",
 			currency: boltz.CurrencyBtc,
@@ -318,6 +374,14 @@ func TestWallet_ImportCredentials(t *testing.T) {
 			shouldError: false,
 		},
 		{
+			name:     "CoreDescriptor/Invalid",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				CoreDescriptor: "asdfsadf",
+			},
+			shouldError: true,
+		},
+		{
 			name:     "CoreDescriptor/Liquid",
 			currency: boltz.CurrencyLiquid,
 			credentials: onchain.WalletCredentials{
@@ -325,17 +389,36 @@ func TestWallet_ImportCredentials(t *testing.T) {
 			},
 			shouldError: false,
 		},
+		{
+			name:     "CoreDescriptor/Liquid/NoCt",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				CoreDescriptor: "elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*)",
+			},
+			shouldError: true,
+		},
+		{
+			name:     "CoreDescriptor/Liquid/Invalid",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				CoreDescriptor: "asdfasdf",
+			},
+			shouldError: true,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			backend := test.WalletBackend(t, tc.currency)
 			tc.credentials.WalletInfo = test.WalletInfo(tc.currency)
+			_ = onchain.ValidateWalletCredentials(backend, &tc.credentials)
 			wallet, err := backend.NewWallet(&tc.credentials)
 			if tc.shouldError {
 				require.Error(t, err)
+				t.Log(err.Error())
 			} else {
 				require.NoError(t, err)
+				t.Log(tc.credentials.CoreDescriptor)
 
 				// Test basic functionality
 				address, err := wallet.NewAddress()
