@@ -201,16 +201,26 @@ func TestWallet_GetTransactions(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, transactions)
 
-		transactions, err = wallet.GetTransactions(10, 0)
+		first := transactions[0]
+		count := len(transactions)
+
+		transactions, err = wallet.GetTransactions(uint64(count), 0)
 		require.NoError(t, err)
 		require.NotNil(t, transactions)
-		require.LessOrEqual(t, len(transactions), 10)
+		require.Equal(t, count, len(transactions))
+		require.Equal(t, first, transactions[0])
 
-		if len(transactions) > 0 {
-			transactions, err = wallet.GetTransactions(5, 1)
-			require.NoError(t, err)
-			require.NotNil(t, transactions)
-		}
+		transactions, err = wallet.GetTransactions(uint64(count), 1)
+		require.NoError(t, err)
+		require.NotNil(t, transactions)
+		require.Equal(t, count-1, len(transactions))
+		require.NotEqual(t, first, transactions[0])
+
+		transactions, err = wallet.GetTransactions(1, 1)
+		require.NoError(t, err)
+		require.NotNil(t, transactions)
+		require.Equal(t, 1, len(transactions))
+		require.NotEqual(t, first, transactions[0])
 	})
 }
 

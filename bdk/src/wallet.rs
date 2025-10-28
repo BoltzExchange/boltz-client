@@ -311,12 +311,12 @@ impl Wallet {
 
         let transactions = wallet
             .transactions()
+            .skip(offset as usize)
             .take(if limit > 0 {
                 limit as usize
             } else {
                 usize::MAX
             })
-            .skip(offset as usize)
             .filter_map(|tx| wallet.tx_details(tx.tx_node.txid))
             .map(|details| WalletTransaction {
                 id: details.txid.to_string(),
