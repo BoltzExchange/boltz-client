@@ -133,6 +133,9 @@ func ValidateWalletCredentials(backend WalletBackend, credentials *WalletCredent
 		return errors.New("credentials are encrypted")
 	}
 	if credentials.CoreDescriptor == "" && credentials.Mnemonic == "" {
+		if credentials.Xpub != "" {
+			return errors.New("xpub is deprecated, use core descriptor and / or mnemonic")
+		}
 		return errors.New("core descriptor or mnemonic is required")
 	}
 	if credentials.CoreDescriptor == "" {

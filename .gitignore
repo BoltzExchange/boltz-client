@@ -29,6 +29,7 @@ boltz.toml
 !internal/rpcserver/test/boltz.toml
 internal/rpcserver/test/wallet
 internal/rpcserver/test/liquid-wallet/
+internal/rpcserver/test/bitcoin-wallet/
 internal/rpcserver/test/autoswap.toml
 boltz.db
 boltz.log
