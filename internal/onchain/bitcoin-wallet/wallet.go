@@ -43,6 +43,7 @@ func newChainClient(electrum *onchain.ElectrumOptions) (*bdk.ChainClient, error)
 	} else {
 		url = "tcp://" + url
 	}
+	logger.Debugf("Connecting to electrum server: %s", url)
 	return bdk.NewChainClient(url)
 }
 
@@ -63,12 +64,12 @@ func NewBackend(cfg Config) (*Backend, error) {
 	}
 	electrumServers := []*onchain.ElectrumOptions{electrum}
 	if cfg.Electrum == nil && cfg.Network == boltz.MainNet {
-		logger.Infof("Adding boltz electrum server as sync backup for BTC")
-		electrumServers = append(electrumServers, &onchain.ElectrumOptions{
-			// TODO: add boltz electrum server url here
-			Url: "",
+		boltzElectrum := &onchain.ElectrumOptions{
+			Url: "esplora.bol.tz:50002",
 			SSL: true,
-		})
+		}
+		logger.Infof("Adding boltz electrum server as sync fallback BTC: %s", boltzElectrum)
+		electrumServers = append(electrumServers, boltzElectrum)
 	}
 	return &Backend{
 		chainClients:    sync.Map{},
@@ -202,15 +203,16 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 
 func (w *Wallet) Sync() error {
 	var err error
-	for i, electrum := range w.backend.electrumServers {
+	for _, electrum := range w.backend.electrumServers {
+		logger.Debugf("Syncing wallet %d with electrum server: %s", w.info.Id, electrum)
 		chainClient, err := w.backend.getChainClient(electrum)
 		if err != nil {
-			logger.Errorf("Client %d failed to get chain client: %v", i, err)
+			logger.Errorf("Client %s failed to get chain client: %v", electrum, err)
 			continue
 		}
 		err = w.Wallet.Sync(chainClient)
 		if err != nil {
-			logger.Errorf("Client %d failed to sync wallet %d: %v", i, w.info.Id, err)
+			logger.Errorf("Client %s failed to sync wallet %d: %v", electrum, w.info.Id, err)
 			continue
 		}
 		return nil
