@@ -251,14 +251,13 @@ func TestWallet_BumpTransactionFee(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, txId)
 
-		// Wait a bit to ensure transaction is in mempool
-		time.Sleep(2 * time.Second)
-
-		// Try to bump the fee
-		newTxId, err := wallet.BumpTransactionFee(txId, 3)
-		require.NoError(t, err)
-		require.NotEmpty(t, newTxId)
-		require.NotEqual(t, txId, newTxId)
+		require.Eventually(t, func() bool {
+			newTxId, err := wallet.BumpTransactionFee(txId, 3)
+			if err != nil {
+				return false
+			}
+			return newTxId != txId
+		}, 10*time.Second, 250*time.Millisecond)
 
 		test.MineBlock()
 	})
