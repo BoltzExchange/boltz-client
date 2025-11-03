@@ -9,13 +9,14 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
-func mnemonicToHdKey(mnemonic string, network *chaincfg.Params) (*hdkeychain.ExtendedKey, error) {
+func mnemonicToHdKey(mnemonic string) (*hdkeychain.ExtendedKey, error) {
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate seed: %w", err)
 	}
 
-	return hdkeychain.NewMaster(seed, network)
+	// boltz backend and web app also use main net params across all networks
+	return hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
 }
 
 func deriveKey(hdKey *hdkeychain.ExtendedKey, index uint32) (*hdkeychain.ExtendedKey, error) {
@@ -34,8 +35,8 @@ func deriveKey(hdKey *hdkeychain.ExtendedKey, index uint32) (*hdkeychain.Extende
 	return extendedKey, nil
 }
 
-func DeriveKey(mnemonic string, index uint32, network *chaincfg.Params) (*btcec.PrivateKey, error) {
-	hdKey, err := mnemonicToHdKey(mnemonic, network)
+func DeriveKey(mnemonic string, index uint32) (*btcec.PrivateKey, error) {
+	hdKey, err := mnemonicToHdKey(mnemonic)
 	if err != nil {
 		return nil, err
 	}
