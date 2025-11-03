@@ -3,7 +3,6 @@
 package onchain_test
 
 import (
-	"fmt"
 	"slices"
 	"testing"
 	"time"
@@ -124,7 +123,6 @@ func TestWallet_SendToAddress(t *testing.T) {
 						}
 						require.NoError(t, err)
 						require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
-							fmt.Println(o.Address, searchAddress)
 							return o.Address == searchAddress
 						}))
 						require.Negative(t, tx.BalanceChange)
@@ -149,17 +147,20 @@ func TestWallet_SendToAddress(t *testing.T) {
 			_, err = wallet.SendToAddress(args)
 			require.Error(t, err)
 
-			balance, err := wallet.GetBalance()
-			require.NoError(t, err)
-			require.Zero(t, balance.Total)
-
-			require.NoError(t, wallet.Sync())
-
 			balance, err = wallet.GetBalance()
 			require.NoError(t, err)
 			require.Zero(t, balance.Total)
 
 			test.MineBlock()
+
+			require.Eventually(t, func() bool {
+				require.NoError(t, wallet.Sync())
+
+				balance, err = wallet.GetBalance()
+				require.NoError(t, err)
+				t.Log(balance.Total)
+				return balance.Total == 0
+			}, 5*checkInterval, checkInterval/2)
 		})
 	})
 }
