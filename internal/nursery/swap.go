@@ -160,7 +160,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 	// if we're at invoice.set, there is no lockup transaction yet.
 	// since there is the possibility that `transaction.mempool` is transitioned through while the client is offline
 	// we have to check if the transaction is empty aswell
-	if parsedStatus != boltz.InvoiceSet && (parsedStatus == boltz.TransactionMempool || swap.LockupTransactionId == "") {
+	if parsedStatus != boltz.InvoiceSet && (parsedStatus == boltz.TransactionMempool || parsedStatus == boltz.TransactionConfirmed || swap.LockupTransactionId == "") {
 		swapTransactionResponse, err := nursery.boltz.GetSwapTransaction(swap.Id)
 		if err != nil {
 			var boltzErr boltz.Error
