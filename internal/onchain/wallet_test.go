@@ -147,7 +147,7 @@ func TestWallet_SendToAddress(t *testing.T) {
 			_, err = wallet.SendToAddress(args)
 			require.Error(t, err)
 
-			balance, err = wallet.GetBalance()
+			balance, err := wallet.GetBalance()
 			require.NoError(t, err)
 			require.Zero(t, balance.Total)
 
