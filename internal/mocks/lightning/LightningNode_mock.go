@@ -384,6 +384,50 @@ func (_c *MockLightningNode_Disconnect_Call) RunAndReturn(run func() error) *Moc
 	return _c
 }
 
+// FullScan provides a mock function for the type MockLightningNode
+func (_mock *MockLightningNode) FullScan() error {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for FullScan")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func() error); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockLightningNode_FullScan_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FullScan'
+type MockLightningNode_FullScan_Call struct {
+	*mock.Call
+}
+
+// FullScan is a helper method to define mock.On call
+func (_e *MockLightningNode_Expecter) FullScan() *MockLightningNode_FullScan_Call {
+	return &MockLightningNode_FullScan_Call{Call: _e.mock.On("FullScan")}
+}
+
+func (_c *MockLightningNode_FullScan_Call) Run(run func()) *MockLightningNode_FullScan_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockLightningNode_FullScan_Call) Return(err error) *MockLightningNode_FullScan_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockLightningNode_FullScan_Call) RunAndReturn(run func() error) *MockLightningNode_FullScan_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetBalance provides a mock function for the type MockLightningNode
 func (_mock *MockLightningNode) GetBalance() (*onchain.Balance, error) {
 	ret := _mock.Called()

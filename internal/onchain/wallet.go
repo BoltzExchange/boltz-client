@@ -58,6 +58,7 @@ type Wallet interface {
 	GetSendFee(args WalletSendArgs) (send uint64, fee uint64, err error)
 	GetOutputs(address string) ([]*Output, error)
 	Sync() error
+	FullScan() error
 	ApplyTransaction(txHex string) error
 }
 

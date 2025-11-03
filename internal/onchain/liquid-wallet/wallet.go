@@ -212,7 +212,7 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 }
 
 func (w *Wallet) Sync() error {
-	if err := w.fullScan(); err != nil {
+	if err := w.fullScan(false); err != nil {
 		return err
 	}
 	if err := w.autoConsolidate(); err != nil {
@@ -221,7 +221,17 @@ func (w *Wallet) Sync() error {
 	return nil
 }
 
-func (w *Wallet) fullScan() error {
+func (w *Wallet) FullScan() error {
+	if err := w.fullScan(true); err != nil {
+		return err
+	}
+	if err := w.autoConsolidate(); err != nil {
+		return fmt.Errorf("auto consolidation: %w", err)
+	}
+	return nil
+}
+
+func (w *Wallet) fullScan(all bool) error {
 	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
 	w.syncLock.Lock()
 	defer w.syncLock.Unlock()
@@ -230,9 +240,9 @@ func (w *Wallet) fullScan() error {
 	if err != nil {
 		return fmt.Errorf("load last index: %w", err)
 	}
-	if index == nil {
-		all := uint32(0)
-		index = &all
+	if index == nil || all {
+		idx := uint32(0)
+		index = &idx
 	}
 	// Try each client until one succeeds
 	var update **lwk.Update

@@ -2059,8 +2059,8 @@ func (server *routedBoltzServer) unlock(password string) error {
 					logger.Errorf("Could not login to wallet %s: %v", creds.String(), err)
 				} else {
 					logger.Debugf("Logged into wallet: %s", wallet.GetWalletInfo().String())
-					if err := wallet.Sync(); err != nil {
-						logger.Errorf("Failed to sync wallet %s: %v", wallet.GetWalletInfo().String(), err)
+					if err := wallet.FullScan(); err != nil {
+						logger.Errorf("Failed to full scan wallet %s: %v", wallet.GetWalletInfo().String(), err)
 					}
 					server.onchain.AddWallet(wallet)
 				}

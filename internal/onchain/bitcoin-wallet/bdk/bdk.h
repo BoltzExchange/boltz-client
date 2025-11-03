@@ -423,6 +423,11 @@ RustBuffer uniffi_bdk_fn_method_wallet_balance(void* ptr, RustCallStatus *out_st
 RustBuffer uniffi_bdk_fn_method_wallet_bump_transaction_fee(void* ptr, RustBuffer tx_id, double sat_per_vbyte, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_METHOD_WALLET_FULL_SCAN
+#define UNIFFI_FFIDEF_UNIFFI_BDK_FN_METHOD_WALLET_FULL_SCAN
+void uniffi_bdk_fn_method_wallet_full_scan(void* ptr, void* chain_client, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_BDK_FN_METHOD_WALLET_GET_TRANSACTIONS
 #define UNIFFI_FFIDEF_UNIFFI_BDK_FN_METHOD_WALLET_GET_TRANSACTIONS
 RustBuffer uniffi_bdk_fn_method_wallet_get_transactions(void* ptr, uint64_t limit, uint64_t offset, RustCallStatus *out_status
@@ -749,6 +754,12 @@ uint16_t uniffi_bdk_checksum_method_wallet_balance(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_METHOD_WALLET_BUMP_TRANSACTION_FEE
 #define UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_METHOD_WALLET_BUMP_TRANSACTION_FEE
 uint16_t uniffi_bdk_checksum_method_wallet_bump_transaction_fee(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_METHOD_WALLET_FULL_SCAN
+#define UNIFFI_FFIDEF_UNIFFI_BDK_CHECKSUM_METHOD_WALLET_FULL_SCAN
+uint16_t uniffi_bdk_checksum_method_wallet_full_scan(void
     
 );
 #endif

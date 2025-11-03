@@ -204,13 +204,25 @@ impl Wallet {
         })
     }
 
-    pub fn sync(&self, chain_client: Arc<ChainClient>) -> Result<(), Error> {
+    pub fn full_scan(&self, chain_client: Arc<ChainClient>) -> Result<(), Error> {
         let mut wallet = self.get_wallet()?;
         let request = wallet.start_full_scan();
         let update = chain_client
             .electrum
             .full_scan(request, 20, 50, false)
             .context("full scan")?;
+        wallet.apply_update(update).context("apply update")?;
+        self.persist(&mut wallet)?;
+        Ok(())
+    }
+
+    pub fn sync(&self, chain_client: Arc<ChainClient>) -> Result<(), Error> {
+        let mut wallet = self.get_wallet()?;
+        let request = wallet.start_sync_with_revealed_spks();
+        let update = chain_client
+            .electrum
+            .sync(request, 50, false)
+            .context("sync")?;
         wallet.apply_update(update).context("apply update")?;
         self.persist(&mut wallet)?;
         Ok(())

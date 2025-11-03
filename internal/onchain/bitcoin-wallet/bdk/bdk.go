@@ -384,6 +384,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_bdk_checksum_method_wallet_full_scan()
+		})
+		if checksum != 30015 {
+			// If this happens try cleaning and rebuilding your project
+			panic("bdk: uniffi_bdk_checksum_method_wallet_full_scan: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_bdk_checksum_method_wallet_get_transactions()
 		})
 		if checksum != 56003 {
@@ -749,6 +758,7 @@ type WalletInterface interface {
 	ApplyTransaction(txHex string) error
 	Balance() (Balance, error)
 	BumpTransactionFee(txId string, satPerVbyte float64) (string, error)
+	FullScan(chainClient *ChainClient) error
 	GetTransactions(limit uint64, offset uint64) ([]WalletTransaction, error)
 	NewAddress() (string, error)
 	SendToAddress(address string, amount uint64, satPerVbyte float64, sendAll bool) (WalletSendResult, error)
@@ -813,6 +823,17 @@ func (_self *Wallet) BumpTransactionFee(txId string, satPerVbyte float64) (strin
 	} else {
 		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
 	}
+}
+
+func (_self *Wallet) FullScan(chainClient *ChainClient) error {
+	_pointer := _self.ffiObject.incrementPointer("*Wallet")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[Error](FfiConverterError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_bdk_fn_method_wallet_full_scan(
+			_pointer, FfiConverterChainClientINSTANCE.Lower(chainClient), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
 }
 
 func (_self *Wallet) GetTransactions(limit uint64, offset uint64) ([]WalletTransaction, error) {
