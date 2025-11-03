@@ -294,7 +294,7 @@ func (wallet *Wallet) Connect() error {
 	switch wallet.Currency {
 	case boltz.CurrencyBtc:
 		electrum = config.Electrum.Btc
-		if electrum == nil {
+		if electrum == nil && config.Network == boltz.Regtest {
 			electrum = onchain.RegtestElectrumConfig.Btc
 		}
 		switch config.Network {
@@ -309,7 +309,7 @@ func (wallet *Wallet) Connect() error {
 		}
 	case boltz.CurrencyLiquid:
 		electrum = config.Electrum.Liquid
-		if electrum == nil {
+		if electrum == nil && config.Network == boltz.Regtest {
 			electrum = onchain.RegtestElectrumConfig.Liquid
 		}
 		switch config.Network {
