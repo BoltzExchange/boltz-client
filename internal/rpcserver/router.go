@@ -2380,7 +2380,7 @@ func (server *routedBoltzServer) SetSwapMnemonic(ctx context.Context, request *b
 	}
 
 	// Validate the mnemonic by trying to derive a key from it
-	_, err := boltz.DeriveKey(mnemonic, 0, server.network.Btc)
+	_, err := boltz.DeriveKey(mnemonic, 0)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid mnemonic: %s", err)
 	}
@@ -2511,7 +2511,7 @@ func (server *routedBoltzServer) newKeys() (*btcec.PrivateKey, *btcec.PublicKey,
 		return nil, nil, status.Errorf(codes.FailedPrecondition, "swap mnemonic not set")
 	}
 
-	privateKey, err = boltz.DeriveKey(mnemonic.Mnemonic, mnemonic.LastKeyIndex, server.network.Btc)
+	privateKey, err = boltz.DeriveKey(mnemonic.Mnemonic, mnemonic.LastKeyIndex)
 	if err != nil {
 		return nil, nil, err
 	}

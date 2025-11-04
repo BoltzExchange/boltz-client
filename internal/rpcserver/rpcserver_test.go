@@ -3395,7 +3395,7 @@ func TestSwapMnemonic(t *testing.T) {
 		mnemonic, err := client.GetSwapMnemonic()
 		require.NoError(t, err)
 
-		privateKey, err := boltz.DeriveKey(mnemonic.Mnemonic, expectedKeyIndex, boltz.Regtest.Btc)
+		privateKey, err := boltz.DeriveKey(mnemonic.Mnemonic, expectedKeyIndex)
 		require.NoError(t, err)
 		require.Equal(t, hex.EncodeToString(privateKey.Serialize()), swapInfo.Swap.PrivateKey)
 	}
