@@ -52,6 +52,13 @@ type ElectrumOptions struct {
 	SSL bool
 }
 
+func (e *ElectrumOptions) String() string {
+	if e.SSL {
+		return fmt.Sprintf("ssl://%s", e.Url)
+	}
+	return fmt.Sprintf("tcp://%s", e.Url)
+}
+
 type ElectrumConfig struct {
 	Btc    *ElectrumOptions
 	Liquid *ElectrumOptions

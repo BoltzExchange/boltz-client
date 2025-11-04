@@ -1564,16 +1564,6 @@ func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *bolt
 		return nil, err
 	}
 
-	// only GDK wallets have subaccounts
-	if request.Params.Currency == boltzrpc.Currency_BTC {
-		//nolint:staticcheck
-		_, err = server.SetSubaccount(ctx, &boltzrpc.SetSubaccountRequest{
-			WalletId: created.Id,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
 	return &boltzrpc.CreateWalletResponse{
 		Mnemonic: mnemonic,
 		Wallet:   created,
@@ -2069,8 +2059,8 @@ func (server *routedBoltzServer) unlock(password string) error {
 					logger.Errorf("Could not login to wallet %s: %v", creds.String(), err)
 				} else {
 					logger.Debugf("Logged into wallet: %s", wallet.GetWalletInfo().String())
-					if err := wallet.Sync(); err != nil {
-						logger.Errorf("Failed to sync wallet %s: %v", wallet.GetWalletInfo().String(), err)
+					if err := wallet.FullScan(); err != nil {
+						logger.Errorf("Failed to full scan wallet %s: %v", wallet.GetWalletInfo().String(), err)
 					}
 					server.onchain.AddWallet(wallet)
 				}

@@ -3,8 +3,6 @@
 package onchain_test
 
 import (
-	"fmt"
-	"os"
 	"slices"
 	"testing"
 	"time"
@@ -20,7 +18,7 @@ const checkInterval = 1 * time.Second
 
 func walletTest(t *testing.T, funded bool, f func(t *testing.T, wallet onchain.Wallet)) {
 	test.InitLogger()
-	for _, currency := range []boltz.Currency{boltz.CurrencyLiquid} {
+	for _, currency := range []boltz.Currency{boltz.CurrencyLiquid, boltz.CurrencyBtc} {
 		t.Run(string(currency), func(t *testing.T) {
 			t.Parallel()
 			backend := test.WalletBackend(t, currency)
@@ -90,10 +88,6 @@ func TestWallet_Ready(t *testing.T) {
 }
 
 func TestWallet_SendToAddress(t *testing.T) {
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		t.Skip("Skipping test in GitHub Actions")
-	}
-
 	walletTest(t, true, func(t *testing.T, wallet onchain.Wallet) {
 		walletInfo := wallet.GetWalletInfo()
 		cli := test.GetCli(walletInfo.Currency)
@@ -129,7 +123,6 @@ func TestWallet_SendToAddress(t *testing.T) {
 						}
 						require.NoError(t, err)
 						require.True(t, slices.ContainsFunc(tx.Outputs, func(o onchain.TransactionOutput) bool {
-							fmt.Println(o.Address, searchAddress)
 							return o.Address == searchAddress
 						}))
 						require.Negative(t, tx.BalanceChange)
@@ -158,13 +151,16 @@ func TestWallet_SendToAddress(t *testing.T) {
 			require.NoError(t, err)
 			require.Zero(t, balance.Total)
 
-			require.NoError(t, wallet.Sync())
-
-			balance, err = wallet.GetBalance()
-			require.NoError(t, err)
-			require.Zero(t, balance.Total)
-
 			test.MineBlock()
+
+			require.Eventually(t, func() bool {
+				require.NoError(t, wallet.Sync())
+
+				balance, err = wallet.GetBalance()
+				require.NoError(t, err)
+				t.Log(balance.Total)
+				return balance.Total == 0
+			}, 5*checkInterval, checkInterval/2)
 		})
 	})
 }
@@ -206,16 +202,26 @@ func TestWallet_GetTransactions(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, transactions)
 
-		transactions, err = wallet.GetTransactions(10, 0)
+		first := transactions[0]
+		count := len(transactions)
+
+		transactions, err = wallet.GetTransactions(uint64(count), 0)
 		require.NoError(t, err)
 		require.NotNil(t, transactions)
-		require.LessOrEqual(t, len(transactions), 10)
+		require.Equal(t, count, len(transactions))
+		require.Equal(t, first, transactions[0])
 
-		if len(transactions) > 0 {
-			transactions, err = wallet.GetTransactions(5, 1)
-			require.NoError(t, err)
-			require.NotNil(t, transactions)
-		}
+		transactions, err = wallet.GetTransactions(uint64(count), 1)
+		require.NoError(t, err)
+		require.NotNil(t, transactions)
+		require.Equal(t, count-1, len(transactions))
+		require.NotEqual(t, first, transactions[0])
+
+		transactions, err = wallet.GetTransactions(1, 1)
+		require.NoError(t, err)
+		require.NotNil(t, transactions)
+		require.Equal(t, 1, len(transactions))
+		require.NotEqual(t, first, transactions[0])
 	})
 }
 
@@ -223,6 +229,38 @@ func TestWallet_Disconnect(t *testing.T) {
 	walletTest(t, false, func(t *testing.T, wallet onchain.Wallet) {
 		err := wallet.Disconnect()
 		require.NoError(t, err)
+	})
+}
+
+func TestWallet_BumpTransactionFee(t *testing.T) {
+	// Only test BTC as Liquid doesn't support RBF
+	t.Run("BTC", func(t *testing.T) {
+		backend := test.WalletBackend(t, boltz.CurrencyBtc)
+		wallet, err := backend.NewWallet(test.WalletCredentials(boltz.CurrencyBtc))
+		require.NoError(t, err)
+		require.NoError(t, test.FundWallet(boltz.CurrencyBtc, wallet))
+
+		cli := test.GetCli(boltz.CurrencyBtc)
+		toAddress := test.GetNewAddress(cli)
+
+		// Send a transaction first
+		txId, err := wallet.SendToAddress(onchain.WalletSendArgs{
+			Address:     toAddress,
+			Amount:      1000,
+			SatPerVbyte: 1,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, txId)
+
+		require.Eventually(t, func() bool {
+			newTxId, err := wallet.BumpTransactionFee(txId, 3)
+			if err != nil {
+				return false
+			}
+			return newTxId != txId
+		}, 10*time.Second, 250*time.Millisecond)
+
+		test.MineBlock()
 	})
 }
 
@@ -260,6 +298,90 @@ func TestWallet_ImportCredentials(t *testing.T) {
 		shouldError bool
 	}{
 		{
+			name:     "Mnemonic/BTC",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: test.WalletMnemonic,
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/BTC/DoesntMatchDescriptor",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
+			},
+			shouldError: true,
+		},
+		{
+			name:     "Mnemonic/BTC/CustomDescriptor",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "tr([8c3c63c2/86'/0'/0']tpubDCG5AotNoktxBFUJe6j1pRXGsVrRrgP89yvVsUgpjKFHZrRjv5jfX9MUGuS3fwmJ1w5b3xipUAN7quZdsFLkfJ4HSBKYKhfJKUYRbhLGzfL/<0;1>/*)#hpjjkysq",
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/BTC/Invalid",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: "wrong wrong",
+			},
+			shouldError: true,
+		},
+		{
+			name:     "Mnemonic/Liquid",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: test.WalletMnemonic,
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/Liquid/CustomDescriptor",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "ct(slip77(d8c35317b53f91b333d9b48cbab27458aa8f9824cb866854f8d4b5429e74cb03),elsh(wpkh([8c3c63c2/49'/1'/0']tpubDCHHxjYzHQTEii8P6CfdfzG1gf7BmMdxwFHCFcMLiG4wNRMQoP8j1RKB2GmYDBdDjpwBPiyfi65mw6WHrLz41YHX7ntpxc9kmnmdL3XUtbN/<0;1>/*)))#h3qyl7ss",
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/Liquid/DoesntMatch",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic:       test.WalletMnemonic,
+				CoreDescriptor: "ct(slip77(099d2fa0d9e56478d00ba3044a55aa9878a2f0e1c0fd1c57962573994771f87a),elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*))#60v4fm2h",
+			},
+			shouldError: false,
+		},
+		{
+			name:     "Mnemonic/Liquid/Invalid",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				Mnemonic: "wrong wrong",
+			},
+			shouldError: true,
+		},
+		{
+			name:     "CoreDescriptor/BTC",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
+			},
+			shouldError: false,
+		},
+		{
+			name:     "CoreDescriptor/Invalid",
+			currency: boltz.CurrencyBtc,
+			credentials: onchain.WalletCredentials{
+				CoreDescriptor: "asdfsadf",
+			},
+			shouldError: true,
+		},
+		{
 			name:     "CoreDescriptor/Liquid",
 			currency: boltz.CurrencyLiquid,
 			credentials: onchain.WalletCredentials{
@@ -271,7 +393,15 @@ func TestWallet_ImportCredentials(t *testing.T) {
 			name:     "CoreDescriptor/Liquid/NoCt",
 			currency: boltz.CurrencyLiquid,
 			credentials: onchain.WalletCredentials{
-				CoreDescriptor: "wpkh([72411c95/84'/1'/0']tpubDC2Q4xK4XH72JQHXbEJa4shGP8ScAPNVNuAWszA2wo6Qjzf4zo2ke69SshBpmJv8CKDX76QN64QPiiSJjC69hGgUtV2AgiVSzSQ6zgpZFGU/1/*)#tv66wgk5",
+				CoreDescriptor: "elwpkh([a2e8a626/84'/1'/0']tpubDC2Q4xK4XH72HUSL1DTS5ZCyqTKGV71RSCYS46eE9ei45qPLFWEVNr1gmkSXw6NCXmnLdnCx6YPv5fFMenHBmM4UXfPXP56MwikvmPFsh2b/0/*)",
+			},
+			shouldError: true,
+		},
+		{
+			name:     "CoreDescriptor/Liquid/Invalid",
+			currency: boltz.CurrencyLiquid,
+			credentials: onchain.WalletCredentials{
+				CoreDescriptor: "asdfasdf",
 			},
 			shouldError: true,
 		},
@@ -281,11 +411,14 @@ func TestWallet_ImportCredentials(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			backend := test.WalletBackend(t, tc.currency)
 			tc.credentials.WalletInfo = test.WalletInfo(tc.currency)
+			_ = onchain.ValidateWalletCredentials(backend, &tc.credentials)
 			wallet, err := backend.NewWallet(&tc.credentials)
 			if tc.shouldError {
 				require.Error(t, err)
+				t.Log(err.Error())
 			} else {
 				require.NoError(t, err)
+				t.Log(tc.credentials.CoreDescriptor)
 
 				// Test basic functionality
 				address, err := wallet.NewAddress()

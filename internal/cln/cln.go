@@ -102,6 +102,10 @@ func (c *Cln) Sync() error {
 	return nil
 }
 
+func (c *Cln) FullScan() error {
+	return nil
+}
+
 func (c *Cln) SetupWallet(info onchain.WalletInfo) {
 	c.walletInfo = info
 }
@@ -224,8 +228,8 @@ func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, tim
 	}
 
 	res, err := c.Client.Xpay(ctx, &protos.XpayRequest{
-		Invstring:   invoice,
-		RetryFor: &retry,
+		Invstring: invoice,
+		RetryFor:  &retry,
 		Maxfee: &protos.Amount{
 			Msat: uint64(feeLimit) * 1000,
 		},

@@ -516,6 +516,10 @@ func (wallet *Wallet) Sync() error {
 	return nil
 }
 
+func (wallet *Wallet) FullScan() error {
+	return nil
+}
+
 func GenerateMnemonic() (string, error) {
 	mnemonic := C.CString("")
 	defer C.free(unsafe.Pointer(mnemonic))

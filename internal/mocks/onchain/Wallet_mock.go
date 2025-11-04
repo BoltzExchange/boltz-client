@@ -197,6 +197,50 @@ func (_c *MockWallet_Disconnect_Call) RunAndReturn(run func() error) *MockWallet
 	return _c
 }
 
+// FullScan provides a mock function for the type MockWallet
+func (_mock *MockWallet) FullScan() error {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for FullScan")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func() error); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockWallet_FullScan_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FullScan'
+type MockWallet_FullScan_Call struct {
+	*mock.Call
+}
+
+// FullScan is a helper method to define mock.On call
+func (_e *MockWallet_Expecter) FullScan() *MockWallet_FullScan_Call {
+	return &MockWallet_FullScan_Call{Call: _e.mock.On("FullScan")}
+}
+
+func (_c *MockWallet_FullScan_Call) Run(run func()) *MockWallet_FullScan_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockWallet_FullScan_Call) Return(err error) *MockWallet_FullScan_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockWallet_FullScan_Call) RunAndReturn(run func() error) *MockWallet_FullScan_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetBalance provides a mock function for the type MockWallet
 func (_mock *MockWallet) GetBalance() (*onchain.Balance, error) {
 	ret := _mock.Called()

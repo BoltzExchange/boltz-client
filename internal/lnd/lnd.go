@@ -78,6 +78,10 @@ func (lnd *LND) Sync() error {
 	return nil
 }
 
+func (lnd *LND) FullScan() error {
+	return nil
+}
+
 func (lnd *LND) Name() string {
 	return "LND"
 }
