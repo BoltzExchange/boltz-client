@@ -438,13 +438,17 @@ func TestWallet_EncryptedCredentials(t *testing.T) {
 		WalletInfo: onchain.WalletInfo{
 			Currency: boltz.CurrencyBtc,
 		},
-		Mnemonic: test.WalletMnemonic,
+		Mnemonic:       test.WalletMnemonic,
+		CoreDescriptor: "some-descriptor",
 	}
 
 	// Test encryption
 	encrypted, err := credentials.Encrypt(password)
 	require.NoError(t, err)
 	require.True(t, encrypted.Encrypted())
+
+	require.NotEqual(t, encrypted.Mnemonic, credentials.Mnemonic)
+	require.NotEqual(t, encrypted.CoreDescriptor, credentials.CoreDescriptor)
 
 	// Test that already encrypted credentials can't be encrypted again
 	_, err = encrypted.Encrypt(password)
@@ -455,8 +459,28 @@ func TestWallet_EncryptedCredentials(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, decrypted.Encrypted())
 	require.Equal(t, credentials.Mnemonic, decrypted.Mnemonic)
+	require.Equal(t, credentials.CoreDescriptor, decrypted.CoreDescriptor)
 
 	// Test that decrypted credentials can't be decrypted again
 	_, err = decrypted.Decrypt(password)
 	require.Error(t, err)
+
+	t.Run("Partial", func(t *testing.T) {
+		credentials := &onchain.WalletCredentials{
+			WalletInfo: onchain.WalletInfo{
+				Currency: boltz.CurrencyBtc,
+			},
+			CoreDescriptor: "some-descriptor",
+			Mnemonic:       test.WalletMnemonic,
+		}
+		encrypted, err := credentials.Encrypt(password)
+		require.NoError(t, err)
+		require.True(t, encrypted.Encrypted())
+
+		encrypted.Mnemonic = test.WalletMnemonic
+
+		decrypted, err := encrypted.Decrypt(password)
+		require.NoError(t, err)
+		require.Equal(t, credentials, decrypted)
+	})
 }

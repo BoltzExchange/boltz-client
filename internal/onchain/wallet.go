@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
+	"github.com/tyler-smith/go-bip39"
 )
 
 const DefaultTransactionsLimit = 30
@@ -93,10 +94,28 @@ func (c *WalletCredentials) Decrypt(password string) (*WalletCredentials, error)
 
 	if decrypted.Xpub != "" {
 		decrypted.Xpub, err = decrypt(decrypted.Xpub, password, decrypted.Salt)
-	} else if decrypted.CoreDescriptor != "" {
+		if err != nil {
+			return nil, fmt.Errorf("could not decrypt xpub: %w", err)
+		}
+	}
+	if decrypted.CoreDescriptor != "" {
 		decrypted.CoreDescriptor, err = decrypt(decrypted.CoreDescriptor, password, decrypted.Salt)
-	} else if decrypted.Mnemonic != "" {
-		decrypted.Mnemonic, err = decrypt(decrypted.Mnemonic, password, decrypted.Salt)
+		if err != nil {
+			return nil, fmt.Errorf("could not decrypt core descriptor: %w", err)
+		}
+	}
+	if decrypted.Mnemonic != "" {
+		// due to an implementation issue,
+		// there can be cases for new wallets (core descriptor + mnemonic - xpub deprecated)
+		// that we only have partial encryption where the core descriptor is encrypted but the mnemonic is not
+		// which is why we first check if the mnemonic is actually not encrypted
+		_, err = bip39.NewSeedWithErrorChecking(decrypted.Mnemonic, "")
+		if err != nil {
+			decrypted.Mnemonic, err = decrypt(decrypted.Mnemonic, password, decrypted.Salt)
+			if err != nil {
+				return nil, fmt.Errorf("could not decrypt mnemonic: %w", err)
+			}
+		}
 	}
 	decrypted.Salt = ""
 	return &decrypted, err
@@ -116,10 +135,21 @@ func (c *WalletCredentials) Encrypt(password string) (*WalletCredentials, error)
 
 	if encrypted.Xpub != "" {
 		encrypted.Xpub, err = encrypt(encrypted.Xpub, password, encrypted.Salt)
-	} else if encrypted.CoreDescriptor != "" {
+		if err != nil {
+			return nil, fmt.Errorf("could not encrypt xpub: %w", err)
+		}
+	}
+	if encrypted.CoreDescriptor != "" {
 		encrypted.CoreDescriptor, err = encrypt(encrypted.CoreDescriptor, password, encrypted.Salt)
-	} else if encrypted.Mnemonic != "" {
+		if err != nil {
+			return nil, fmt.Errorf("could not encrypt core descriptor: %w", err)
+		}
+	}
+	if encrypted.Mnemonic != "" {
 		encrypted.Mnemonic, err = encrypt(encrypted.Mnemonic, password, encrypted.Salt)
+		if err != nil {
+			return nil, fmt.Errorf("could not encrypt mnemonic: %w", err)
+		}
 	}
 	return &encrypted, err
 }
