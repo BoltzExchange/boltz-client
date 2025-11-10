@@ -301,7 +301,7 @@ func (s *PublicKeyScanner) Scan(src any) (err error) {
 	return fmt.Errorf("unsupported type: %T", src)
 }
 
-func (database *Database) BeginTx() (*Transaction, error) {
+func (database *Database) beginTx() (*Transaction, error) {
 	tx, err := database.db.Begin()
 	if err != nil {
 		return nil, err
@@ -312,21 +312,23 @@ func (database *Database) BeginTx() (*Transaction, error) {
 }
 
 func (database *Database) RunTx(run func(tx *Transaction) error) error {
-	tx, err := database.BeginTx()
+	database.lock.Lock()
+	defer database.lock.Unlock()
+	tx, err := database.beginTx()
 	if err != nil {
 		return err
 	}
 	if err := run(tx); err != nil {
-		return tx.Rollback(err)
+		return tx.rollback(err)
 	}
-	return tx.Commit()
+	return tx.commit()
 }
 
-func (transaction *Transaction) Commit() error {
+func (transaction *Transaction) commit() error {
 	return transaction.tx.Commit()
 }
 
-func (transaction *Transaction) Rollback(cause error) error {
+func (transaction *Transaction) rollback(cause error) error {
 	if err := transaction.tx.Rollback(); err != nil {
 		return fmt.Errorf("failed to rollback: %w: %w", err, cause)
 	}
@@ -434,12 +436,13 @@ func (database *Database) Connect() error {
 }
 
 func (database *Database) Exec(query string, args ...any) (sql.Result, error) {
-	database.lock.Lock()
-	defer database.lock.Unlock()
 	logger.Silly("Executing query: " + query)
+	// if we are in a tx, the lock is already held
 	if database.tx != nil {
 		return database.tx.Exec(query, args...)
 	}
+	database.lock.Lock()
+	defer database.lock.Unlock()
 	return database.db.Exec(query, args...)
 }
 
