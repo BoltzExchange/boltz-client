@@ -1461,7 +1461,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 	}
 
 	// TODO: maybe allow returning without sync here
-	return imported.Sync()
+	return imported.FullScan()
 }
 
 func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *boltzrpc.ImportWalletRequest) (*boltzrpc.Wallet, error) {
