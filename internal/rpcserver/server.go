@@ -152,7 +152,7 @@ func (server *routedBoltzServer) initLightning(cfg *config.Config) error {
 	} else if isLndConfigured {
 		server.lightning = cfg.LND
 	} else {
-		return errors.New("no lightning node configured. Configure either CLN or LND")
+		return errors.New("no Lightning node configured, start with --standalone to run without connecting to a Lightning node")
 	}
 	return nil
 }
