@@ -93,9 +93,11 @@ func (c *WalletCredentials) Decrypt(password string) (*WalletCredentials, error)
 
 	if decrypted.Xpub != "" {
 		decrypted.Xpub, err = decrypt(decrypted.Xpub, password, decrypted.Salt)
-	} else if decrypted.CoreDescriptor != "" {
+	}
+	if decrypted.CoreDescriptor != "" {
 		decrypted.CoreDescriptor, err = decrypt(decrypted.CoreDescriptor, password, decrypted.Salt)
-	} else if decrypted.Mnemonic != "" {
+	}
+	if decrypted.Mnemonic != "" {
 		decrypted.Mnemonic, err = decrypt(decrypted.Mnemonic, password, decrypted.Salt)
 	}
 	decrypted.Salt = ""
@@ -116,9 +118,11 @@ func (c *WalletCredentials) Encrypt(password string) (*WalletCredentials, error)
 
 	if encrypted.Xpub != "" {
 		encrypted.Xpub, err = encrypt(encrypted.Xpub, password, encrypted.Salt)
-	} else if encrypted.CoreDescriptor != "" {
+	}
+	if encrypted.CoreDescriptor != "" {
 		encrypted.CoreDescriptor, err = encrypt(encrypted.CoreDescriptor, password, encrypted.Salt)
-	} else if encrypted.Mnemonic != "" {
+	}
+	if encrypted.Mnemonic != "" {
 		encrypted.Mnemonic, err = encrypt(encrypted.Mnemonic, password, encrypted.Salt)
 	}
 	return &encrypted, err
