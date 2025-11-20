@@ -69,7 +69,10 @@ var RegtestElectrumConfig = ElectrumConfig{
 	Liquid: &ElectrumOptions{Url: "localhost:19002"},
 }
 
-const DefaultWalletSyncInterval = 60 * time.Second
+var DefaultWalletSyncIntervals = map[boltz.Currency]time.Duration{
+	boltz.CurrencyBtc:    3 * time.Minute,
+	boltz.CurrencyLiquid: 1 * time.Minute,
+}
 
 type Currency struct {
 	Chain       ChainProvider
@@ -77,12 +80,12 @@ type Currency struct {
 }
 
 type Onchain struct {
-	Btc                *Currency
-	Liquid             *Currency
-	Network            *boltz.Network
-	Wallets            []Wallet
-	OnWalletChange     *utils.ChannelForwarder[[]Wallet]
-	WalletSyncInterval time.Duration
+	Btc                 *Currency
+	Liquid              *Currency
+	Network             *boltz.Network
+	Wallets             []Wallet
+	OnWalletChange      *utils.ChannelForwarder[[]Wallet]
+	WalletSyncIntervals map[boltz.Currency]time.Duration
 
 	syncWait   sync.WaitGroup
 	syncCtx    context.Context
@@ -92,12 +95,8 @@ type Onchain struct {
 func (onchain *Onchain) Init() {
 	onchain.OnWalletChange = utils.ForwardChannel(make(chan []Wallet), 0, false)
 	onchain.syncCtx, onchain.syncCancel = context.WithCancel(context.Background())
-	if onchain.WalletSyncInterval == 0 {
-		if onchain.Network == boltz.Regtest {
-			onchain.WalletSyncInterval = 1 * time.Second
-		} else {
-			onchain.WalletSyncInterval = DefaultWalletSyncInterval
-		}
+	if onchain.WalletSyncIntervals == nil {
+		onchain.WalletSyncIntervals = DefaultWalletSyncIntervals
 	}
 }
 
@@ -120,7 +119,13 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 		defer onchain.syncWait.Done()
 		for {
 			// avoid traffic spikes if a lot of wallets are using the same backend
-			sleep := time.Duration(float64(onchain.WalletSyncInterval) * (0.75 + rand.Float64()*0.5))
+			currency := wallet.GetWalletInfo().Currency
+			interval, ok := onchain.WalletSyncIntervals[currency]
+			if !ok {
+				logger.Warnf("No sync interval found for currency %s", currency)
+				return
+			}
+			sleep := time.Duration(float64(interval) * (0.75 + rand.Float64()*0.5))
 			select {
 			case <-onchain.syncCtx.Done():
 				if err := wallet.Disconnect(); err != nil {
