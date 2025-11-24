@@ -253,26 +253,6 @@ func (c *Cln) NewAddress() (string, error) {
 	return *res.Bech32, nil
 }
 
-func (c *Cln) CheckInvoicePaid(paymentHash []byte) (bool, error) {
-	res, err := c.Client.ListInvoices(context.Background(), &protos.ListinvoicesRequest{
-		PaymentHash: paymentHash,
-	})
-	if err != nil {
-		return false, err
-	}
-
-	if len(res.Invoices) == 0 {
-		return false, lightning.ErrInvoiceNotFound
-	}
-
-	for _, invoice := range res.Invoices {
-		if invoice.Status == *protos.ListinvoicesInvoices_PAID.Enum() {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 func (c *Cln) PaymentStatus(paymentHash []byte) (*lightning.PaymentStatus, error) {
 	res, err := c.Client.ListPays(context.Background(), &protos.ListpaysRequest{
 		PaymentHash: paymentHash,

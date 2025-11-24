@@ -2409,7 +2409,9 @@ func TestSwap(t *testing.T) {
 		})
 
 		t.Run("Valid", func(t *testing.T) {
-			invoice, err := node.CreateInvoice(100000, nil, 0, "test")
+			preimage, _, err := newPreimage()
+			require.NoError(t, err)
+			invoice, err := node.CreateInvoice(100000, preimage, 0, "test")
 			require.NoError(t, err)
 			swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
 				Invoice:          &invoice.PaymentRequest,
@@ -2429,11 +2431,8 @@ func TestSwap(t *testing.T) {
 			require.Equal(t, invoice.PaymentRequest, info.Swap.Invoice)
 
 			test.MineBlock()
-			stream(boltzrpc.SwapState_SUCCESSFUL)
-
-			paid, err := node.CheckInvoicePaid(invoice.PaymentHash)
-			require.NoError(t, err)
-			require.True(t, paid)
+			info = stream(boltzrpc.SwapState_SUCCESSFUL)
+			require.Equal(t, hex.EncodeToString(preimage), info.Swap.Preimage)
 		})
 
 		t.Run("LNURL", func(t *testing.T) {

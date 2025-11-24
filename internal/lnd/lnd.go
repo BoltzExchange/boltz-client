@@ -241,19 +241,6 @@ func (lnd *LND) CreateInvoice(value uint64, preimage []byte, expiry int64, memo 
 	}, nil
 }
 
-func (lnd *LND) CheckInvoicePaid(paymentHash []byte) (bool, error) {
-	invoice, err := lnd.client.LookupInvoice(lnd.ctx, &lnrpc.PaymentHash{
-		RHash: paymentHash,
-	})
-	if err != nil {
-		if strings.Contains(err.Error(), "there are no existing invoices") {
-			return false, lightning.ErrInvoiceNotFound
-		}
-		return false, err
-	}
-	return invoice.State == lnrpc.Invoice_SETTLED, nil
-}
-
 func (lnd *LND) CheckPaymentFee(paymentHash []byte) (uint64, error) {
 	client, err := lnd.router.TrackPaymentV2(lnd.ctx, &routerrpc.TrackPaymentRequest{
 		PaymentHash:       paymentHash,

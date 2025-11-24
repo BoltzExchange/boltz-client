@@ -94,7 +94,6 @@ type LightningNode interface {
 
 	GetInfo() (*LightningInfo, error)
 
-	CheckInvoicePaid(paymentHash []byte) (bool, error)
 	ListChannels() ([]*LightningChannel, error)
 	//GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error)
 
