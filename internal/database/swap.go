@@ -323,12 +323,12 @@ SELECT * FROM swaps
 WHERE fromCurrency = ?
   AND swaps.lockupTransactionId != ''
   AND swaps.refundTransactionId == ''
-  AND (state IN (?, ?) OR (state != ? AND swaps.timeoutBlockheight < ?))
+  AND (state = ? OR (state != ? AND swaps.timeoutBlockheight < ?))
 `
 
 func (database *Database) QueryRefundableSwaps(tenantId *Id, currency boltz.Currency, currentBlockHeight uint32) ([]*Swap, error) {
 	query := refundableSwapsQuery
-	values := []any{currency, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight}
+	values := []any{currency, boltzrpc.SwapState_SERVER_ERROR, boltzrpc.SwapState_SUCCESSFUL, currentBlockHeight}
 	if tenantId != nil {
 		query += " AND tenantId = ?"
 		values = append(values, tenantId)
