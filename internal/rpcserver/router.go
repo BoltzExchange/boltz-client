@@ -1936,14 +1936,28 @@ func (server *routedBoltzServer) decryptWalletCredentials(password string) (decr
 	if err != nil {
 		return nil, err
 	}
+	partialEncryption := false
 	for _, creds := range credentials {
 		if creds.Encrypted() {
-			if creds, err = creds.Decrypt(password); err != nil {
+			decrypted, err := creds.Decrypt(password)
+			if err != nil {
 				logger.Debugf("failed to decrypted wallet credentials: %s", err)
 				return nil, status.Errorf(codes.InvalidArgument, "wrong password")
 			}
+			if decrypted.Mnemonic == creds.Mnemonic {
+				partialEncryption = true
+			}
+			creds = decrypted
 		}
 		decrypted = append(decrypted, creds)
+	}
+	if partialEncryption {
+		logger.Infof("Detected partial encryption, re-encrypting all wallets")
+		if server.database.RunTx(func(tx *database.Transaction) error {
+			return server.encryptWalletCredentials(tx, password, decrypted)
+		}) != nil {
+			logger.Errorf("Failed to re-encrypt wallets: %v", err)
+		}
 	}
 	return decrypted, nil
 }
