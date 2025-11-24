@@ -82,7 +82,7 @@ Fetches all available pairs for submarine and reverse swaps.
 
 | Request | Response |
 | ------- | -------- |
-| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`GetPairsResponse`](#getpairsresponse) |
+| `.google.protobuf.Empty` | [`GetPairsResponse`](#getpairsresponse) |
 
 #### ListSwaps
 
@@ -282,7 +282,7 @@ Gracefully stops the daemon.
 
 | Request | Response |
 | ------- | -------- |
-| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
+| `.google.protobuf.Empty` | `.google.protobuf.Empty` |
 
 #### Unlock
 
@@ -290,7 +290,7 @@ Unlocks the server. This will be required on startup if there are any encrypted 
 
 | Request | Response |
 | ------- | -------- |
-| [`UnlockRequest`](#unlockrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
+| [`UnlockRequest`](#unlockrequest) | `.google.protobuf.Empty` |
 
 #### VerifyWalletPassword
 
@@ -306,7 +306,7 @@ Changes the password for wallet encryption.
 
 | Request | Response |
 | ------- | -------- |
-| [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
+| [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | `.google.protobuf.Empty` |
 
 #### CreateTenant
 
@@ -326,11 +326,19 @@ Returns all tenants.
 
 #### GetTenant
 
-Get a specifiy tenant.
+Get a specific tenant.
 
 | Request | Response |
 | ------- | -------- |
 | [`GetTenantRequest`](#gettenantrequest) | [`Tenant`](#tenant) |
+
+#### RemoveTenant
+
+Removes a tenant. Only allowed if the tenant has no associated wallets.
+
+| Request | Response |
+| ------- | -------- |
+| [`RemoveTenantRequest`](#removetenantrequest) | `.google.protobuf.Empty` |
 
 #### BakeMacaroon
 
@@ -1285,6 +1293,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### RemoveTenantRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [`string`](#string) |  |  |
+
+
+
+
+
 #### RemoveWalletRequest
 
 
@@ -1863,7 +1884,7 @@ Reloads the configuration from disk.
 
 | Request | Response |
 | ------- | -------- |
-| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`Config`](#config) |
+| `.google.protobuf.Empty` | [`Config`](#config) |
 
 
 

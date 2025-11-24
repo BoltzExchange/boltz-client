@@ -41,6 +41,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type serverState string
@@ -2353,6 +2354,40 @@ func (server *routedBoltzServer) ListTenants(ctx context.Context, request *boltz
 	}
 
 	return response, nil
+}
+
+func (server *routedBoltzServer) RemoveTenant(ctx context.Context, request *boltzrpc.RemoveTenantRequest) (*emptypb.Empty, error) {
+	tenant, err := server.database.GetTenantByName(request.Name)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "tenant %s does not exist", request.Name)
+		}
+		return nil, err
+	}
+
+	if tenant.Id == database.DefaultTenantId {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot remove default tenant")
+	}
+
+	err = server.database.RunTx(func(tx *database.Transaction) error {
+		hasWallets, err := tx.HasTenantWallets(tenant.Id)
+		if err != nil {
+			return err
+		}
+		if hasWallets {
+			return status.Errorf(codes.FailedPrecondition, "cannot remove tenant with associated wallets")
+		}
+
+		if err := tx.DeleteTenant(int64(tenant.Id)); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 func (server *routedBoltzServer) GetSwapMnemonic(ctx context.Context, request *boltzrpc.GetSwapMnemonicRequest) (*boltzrpc.GetSwapMnemonicResponse, error) {
