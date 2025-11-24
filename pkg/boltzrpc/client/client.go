@@ -191,6 +191,11 @@ func (boltz *Boltz) ListTenants() (*boltzrpc.ListTenantsResponse, error) {
 	return boltz.Client.ListTenants(boltz.Ctx, &boltzrpc.ListTenantsRequest{})
 }
 
+func (boltz *Boltz) RemoveTenant(name string) error {
+	_, err := boltz.Client.RemoveTenant(boltz.Ctx, &boltzrpc.RemoveTenantRequest{Name: name})
+	return err
+}
+
 func (boltz *Boltz) BakeMacaroon(request *boltzrpc.BakeMacaroonRequest) (*boltzrpc.BakeMacaroonResponse, error) {
 	return boltz.Client.BakeMacaroon(boltz.Ctx, request)
 }

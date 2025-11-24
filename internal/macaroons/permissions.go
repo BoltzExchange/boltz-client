@@ -197,6 +197,10 @@ var (
 			Entity: "admin",
 			Action: "read",
 		}},
+		"/boltzrpc.Boltz/RemoveTenant": {{
+			Entity: "admin",
+			Action: "write",
+		}},
 		"/boltzrpc.Boltz/BakeMacaroon": {{
 			Entity: "admin",
 			Action: "write",

@@ -1554,8 +1554,8 @@ func createReverseSwap(ctx *cli.Context) error {
 
 var walletCommands = &cli.Command{
 	Name:     "wallet",
-	Category: "wallet",
-	Usage:    "Manage the wallets used by the client",
+	Category: "Wallet",
+	Usage:    "Manage wallets",
 	Subcommands: []*cli.Command{
 		{
 			Name:      "create",
@@ -1578,7 +1578,7 @@ var walletCommands = &cli.Command{
 			ArgsUsage: "name currency",
 			Description: "Imports an existing wallet for the specified currency with an unique name.\n" +
 				"You can either choose to import a full mnemonic to give the daemon full control over the wallet or import a readonly wallet using a core descriptor.\n" +
-				"Currency has to be BTC ot LBTC (case insensitive).",
+				"Currency has to be BTC or LBTC (case insensitive).",
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
 				info, err := walletParams(ctx)
 				if err != nil {
@@ -2295,6 +2295,36 @@ var tenantCommands = &cli.Command{
 				printJson(response)
 				return nil
 			},
+		},
+		{
+			Name:      "remove",
+			Usage:     "Remove a tenant",
+			ArgsUsage: "name",
+			Description: "Removes a tenant. Only allowed if the tenant has no associated wallets.",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "force",
+					Aliases: []string{"f"},
+					Usage:   "Skip confirmation prompt",
+				},
+			},
+			Action: requireNArgs(1, func(ctx *cli.Context) error {
+				tenantName := ctx.Args().First()
+
+				if !ctx.Bool("force") {
+					if !prompt(fmt.Sprintf("Are you sure you want to remove tenant '%s'?", tenantName)) {
+						return nil
+					}
+				}
+
+				client := getClient(ctx)
+				err := client.RemoveTenant(tenantName)
+				if err != nil {
+					return err
+				}
+				fmt.Println("Tenant removed successfully")
+				return nil
+			}),
 		},
 	},
 }

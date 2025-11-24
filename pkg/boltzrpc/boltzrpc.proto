@@ -190,9 +190,14 @@ service Boltz {
     rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse);
 
     /*
-    Get a specifiy tenant.
+    Get a specific tenant.
      */
     rpc GetTenant(GetTenantRequest) returns (Tenant);
+
+    /*
+    Removes a tenant. Only allowed if the tenant has no associated wallets.
+     */
+    rpc RemoveTenant(RemoveTenantRequest) returns (google.protobuf.Empty);
 
     /*
     Bakes a new macaroon with the specified permissions.
@@ -223,6 +228,10 @@ message ListTenantsResponse {
 }
 
 message GetTenantRequest {
+    string name = 1;
+}
+
+message RemoveTenantRequest {
     string name = 1;
 }
 

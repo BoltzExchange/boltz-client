@@ -525,6 +525,54 @@ func TestMacaroons(t *testing.T) {
 		hasWallets(t, global, 3)
 	})
 
+	t.Run("RemoveTenant", func(t *testing.T) {
+		t.Run("NonExistent", func(t *testing.T) {
+			err := admin.RemoveTenant("nonexistent")
+			requireCode(t, err, codes.NotFound)
+			require.ErrorContains(t, err, "does not exist")
+		})
+
+		t.Run("Default", func(t *testing.T) {
+			err := admin.RemoveTenant("admin")
+			requireCode(t, err, codes.InvalidArgument)
+			require.ErrorContains(t, err, "default tenant")
+		})
+
+		t.Run("WithWallets", func(t *testing.T) {
+			err := admin.RemoveTenant(tenantName)
+			requireCode(t, err, codes.FailedPrecondition)
+			require.ErrorContains(t, err, "associated wallets")
+		})
+
+		t.Run("WithoutWallets", func(t *testing.T) {
+			emptyTenantName := "empty-tenant"
+			emptyTenant, err := admin.CreateTenant(emptyTenantName)
+			require.NoError(t, err)
+			require.NotZero(t, emptyTenant.Id)
+
+			_, err = admin.GetTenant(emptyTenantName)
+			require.NoError(t, err)
+
+			err = admin.RemoveTenant(emptyTenantName)
+			require.NoError(t, err)
+
+			_, err = admin.GetTenant(emptyTenantName)
+			requireCode(t, err, codes.NotFound)
+		})
+
+		t.Run("Permission", func(t *testing.T) {
+			removableTenant := "removable-tenant"
+			_, err := admin.CreateTenant(removableTenant)
+			require.NoError(t, err)
+
+			err = tenant.RemoveTenant(removableTenant)
+			requireCode(t, err, codes.PermissionDenied)
+
+			err = admin.RemoveTenant(removableTenant)
+			require.NoError(t, err)
+		})
+	})
+
 	t.Run("Swaps", func(t *testing.T) {
 		hasSwaps := func(t *testing.T, client client.Boltz, length int) {
 			swaps, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
