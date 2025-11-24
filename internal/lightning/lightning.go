@@ -82,22 +82,12 @@ type LightningNode interface {
 
 	Connect() error
 	Name() string
-	//NodeType() LightningNodeType
 	PaymentStatus(paymentHash []byte) (*PaymentStatus, error)
-
-	//SendPayment(invoice string, feeLimit uint64, timeout int32) (<-chan *PaymentUpdate, error)
-	//PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32) (int64, error)
 	PayInvoice(ctx context.Context, invoice string, feeLimit uint, timeoutSeconds uint, channelIds []ChanId) (*PayInvoiceResponse, error)
 	CreateInvoice(value uint64, preimage []byte, expiry int64, memo string) (*AddInvoiceResponse, error)
-
 	NewAddress() (string, error)
-
 	GetInfo() (*LightningInfo, error)
-
-	CheckInvoicePaid(paymentHash []byte) (bool, error)
 	ListChannels() ([]*LightningChannel, error)
-	//GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error)
-
 	SetupWallet(info onchain.WalletInfo)
 }
 

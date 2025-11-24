@@ -274,27 +274,6 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 		}
 
 	case boltz.TransactionClaimPending, boltz.TransactionClaimed:
-		// Verify that the invoice was actually paid
-		decodedInvoice, err := lightning.DecodeInvoice(swap.Invoice, nursery.network.Btc)
-
-		if err != nil {
-			handleError("Could not decode invoice: " + err.Error())
-			return
-		}
-
-		if nursery.lightning != nil {
-			paid, err := nursery.lightning.CheckInvoicePaid(decodedInvoice.PaymentHash[:])
-			if err != nil {
-				if !errors.Is(err, lightning.ErrInvoiceNotFound) {
-					handleError("Could not get invoice information from lightning node: " + err.Error())
-					return
-				}
-			} else if !paid {
-				logger.Warnf("Swap %s was not actually settled. Refunding at block %d", swap.Id, swap.TimoutBlockHeight)
-				return
-			}
-		}
-
 		logger.Infof("Swap %s succeeded", swap.Id)
 
 		if parsedStatus == boltz.TransactionClaimPending {
