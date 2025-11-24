@@ -118,12 +118,12 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 	go func() {
 		defer onchain.syncWait.Done()
 		for {
-			// avoid traffic spikes if a lot of wallets are using the same backend
 			currency := wallet.GetWalletInfo().Currency
 			interval, ok := onchain.WalletSyncIntervals[currency]
 			if !ok {
 				interval = DefaultWalletSyncIntervals[currency]
 			}
+			// avoid traffic spikes if a lot of wallets are using the same backend
 			sleep := time.Duration(float64(interval) * (0.75 + rand.Float64()*0.5))
 			select {
 			case <-onchain.syncCtx.Done():
