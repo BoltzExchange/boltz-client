@@ -71,7 +71,7 @@ var RegtestElectrumConfig = ElectrumConfig{
 
 var DefaultWalletSyncIntervals = map[boltz.Currency]time.Duration{
 	boltz.CurrencyBtc:    3 * time.Minute,
-	boltz.CurrencyLiquid: 1 * time.Minute,
+	boltz.CurrencyLiquid: time.Minute,
 }
 
 type Currency struct {
@@ -122,8 +122,7 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 			currency := wallet.GetWalletInfo().Currency
 			interval, ok := onchain.WalletSyncIntervals[currency]
 			if !ok {
-				logger.Warnf("No sync interval found for currency %s", currency)
-				return
+				interval = DefaultWalletSyncIntervals[currency]
 			}
 			sleep := time.Duration(float64(interval) * (0.75 + rand.Float64()*0.5))
 			select {
