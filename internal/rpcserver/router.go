@@ -1953,9 +1953,9 @@ func (server *routedBoltzServer) decryptWalletCredentials(password string) (decr
 	}
 	if partialEncryption {
 		logger.Infof("Detected partial encryption, re-encrypting all wallets")
-		if server.database.RunTx(func(tx *database.Transaction) error {
+		if err := server.database.RunTx(func(tx *database.Transaction) error {
 			return server.encryptWalletCredentials(tx, password, decrypted)
-		}) != nil {
+		}); err != nil {
 			logger.Errorf("Failed to re-encrypt wallets: %v", err)
 		}
 	}
