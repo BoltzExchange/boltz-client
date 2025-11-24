@@ -63,6 +63,7 @@ func (b *BlockchainBackend) DeriveDefaultDescriptor(mnemonic string) (string, er
 	return DeriveDefaultDescriptor(b.cfg.Network, mnemonic)
 }
 
+const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
 const DefaultConsolidationThreshold = 200
 
 func NewBackend(cfg Config) (*BlockchainBackend, error) {
@@ -80,7 +81,7 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	network := convertNetwork(cfg.Network)
 
 	if cfg.Electrum != nil {
-		logger.Infof("Using electrum client as liquid wallet backend: %s", cfg.Electrum.Url)
+		logger.Infof("Liquid: wallet backend: %s", cfg.Electrum.Url)
 		client, err := lwk.NewElectrumClient(cfg.Electrum.Url, cfg.Electrum.SSL, false)
 		if err != nil {
 			return nil, fmt.Errorf("new electrum client: %w", err)
@@ -104,7 +105,7 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 				return nil, errors.New("esplora is required")
 			}
 		}
-		logger.Infof("Using esplora client as liquid wallet backend: %s", esplora.Url)
+		logger.Infof("Liquid: wallet backend: %s", esplora.Url)
 		concurrency := uint32(32)
 		client, err := lwk.EsploraClientFromBuilder(lwk.EsploraClientBuilder{
 			BaseUrl:     esplora.Url,
@@ -119,10 +120,15 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 
 		// only add the default electrum client if no custom esplora is configured
 		if cfg.Esplora == nil {
-			defaultElectrum, err := network.DefaultElectrumClient()
-			if err == nil {
-				logger.Infof("Adding default electrum client liquid backend as backup")
-				backend.clients = append(backend.clients, defaultElectrum)
+			if cfg.Network == boltz.MainNet {
+				url := MainnetElectrumBackup
+				defaultElectrum, err := lwk.NewElectrumClient(url, true, true)
+				if err == nil {
+					logger.Infof("Liquid: wallet backend fallback: ssl://%s", url)
+					backend.clients = append(backend.clients, defaultElectrum)
+				} else {
+					logger.Error(err.Error())
+				}
 			}
 		}
 	}

@@ -61,6 +61,7 @@ func NewBackend(cfg Config) (*Backend, error) {
 		default:
 			return nil, errors.New("unknown network")
 		}
+		logger.Infof("BTC: wallet backend: %s", electrum)
 	}
 	electrumServers := []*onchain.ElectrumOptions{electrum}
 	if cfg.Electrum == nil && cfg.Network == boltz.MainNet {
@@ -68,7 +69,7 @@ func NewBackend(cfg Config) (*Backend, error) {
 			Url: "esplora.bol.tz:50002",
 			SSL: true,
 		}
-		logger.Infof("Adding boltz electrum server as sync fallback BTC: %s", boltzElectrum)
+		logger.Infof("BTC: wallet backend fallback: %s", boltzElectrum)
 		electrumServers = append(electrumServers, boltzElectrum)
 	}
 	return &Backend{
