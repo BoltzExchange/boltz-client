@@ -35,28 +35,15 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 	go func() {
 		defer nursery.waitGroup.Done()
 		for newBlock := range blockNotifier.Get() {
-			logger.Debugf("Received new block, checking refundable and externally paid reverse swaps: %d", newBlock.Height)
-			swaps, chainSwaps, err := nursery.database.QueryAllRefundableSwaps(nil, currency, newBlock.Height)
-			if err != nil {
-				logger.Error("Could not query refundable Swaps: " + err.Error())
-				continue
+			logger.Debugf("Processing new block for currency %s: %d", currency, newBlock.Height)
+			if err := nursery.checkRefundableSwaps(currency, newBlock.Height); err != nil {
+				logger.Error("Could not check refundable Swaps: " + err.Error())
 			}
-
-			if len(swaps) > 0 || len(chainSwaps) > 0 {
-				logger.Infof("Found %d Swaps to refund at height %d", len(swaps)+len(chainSwaps), newBlock.Height)
-
-				if _, err := nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
-					logger.Error("Could not refund Swaps: " + err.Error())
-				}
-			}
-
 			if err := nursery.checkExternalReverseSwaps(currency); err != nil {
 				logger.Error("Could not check external reverse swaps: " + err.Error())
 			}
-
 			if err := nursery.checkClaimableSwaps(currency); err != nil {
 				logger.Error("Could not check claimable Swaps: " + err.Error())
-				continue
 			}
 		}
 	}()
@@ -64,14 +51,36 @@ func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.Chann
 	return blockNotifier
 }
 
+func (nursery *Nursery) checkRefundableSwaps(currency boltz.Currency, height uint32) error {
+	swaps, chainSwaps, err := nursery.database.QueryAllRefundableSwaps(nil, currency, height)
+	if err != nil {
+		return fmt.Errorf("could not query refundable Swaps: %w", err)
+	}
+	if len(swaps) > 0 || len(chainSwaps) > 0 {
+		logger.Infof("Found %d Swaps to refund at height %d", len(swaps)+len(chainSwaps), height)
+		if _, err := nursery.RefundSwaps(currency, swaps, chainSwaps); err != nil {
+			return fmt.Errorf("could not refund Swaps: %w", err)
+		}
+	}
+	return nil
+}
+
 func (nursery *Nursery) RefundSwaps(currency boltz.Currency, swaps []*database.Swap, chainSwaps []*database.ChainSwap) (string, error) {
 	var outputs []*Output
 
 	for _, swap := range swaps {
-		outputs = append(outputs, nursery.getRefundOutput(swap))
+		if swap.RefundAddress == "" && swap.WalletId == nil {
+			logger.Infof("Swap %s has no refund address or wallet set, has to be refunded manually", swap.Id)
+		} else {
+			outputs = append(outputs, nursery.getRefundOutput(swap))
+		}
 	}
 	for _, swap := range chainSwaps {
-		outputs = append(outputs, nursery.getChainSwapRefundOutput(swap))
+		if swap.FromData.Address == "" && swap.FromData.WalletId == nil {
+			logger.Infof("Chain Swap %s has no refund address or wallet set, has to be refunded manually", swap.Id)
+		} else {
+			outputs = append(outputs, nursery.getChainSwapRefundOutput(swap))
+		}
 	}
 
 	height, err := nursery.onchain.GetBlockHeight(currency)
