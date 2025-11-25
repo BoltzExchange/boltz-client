@@ -175,6 +175,7 @@ func mockBlockProvider(t *testing.T) *onchainmock.MockChainProvider {
 }
 
 func TestWalletSync(t *testing.T) {
+	syncInterval := 100 * time.Millisecond
 	setup := func(t *testing.T) *onchain.Onchain {
 		onchainInstance := &onchain.Onchain{
 			Btc: &onchain.Currency{
@@ -183,7 +184,10 @@ func TestWalletSync(t *testing.T) {
 			Liquid: &onchain.Currency{
 				Chain: mockBlockProvider(t),
 			},
-			WalletSyncInterval: 100 * time.Millisecond,
+			WalletSyncIntervals: map[boltz.Currency]time.Duration{
+				boltz.CurrencyBtc:    syncInterval,
+				boltz.CurrencyLiquid: syncInterval,
+			},
 		}
 		onchainInstance.Init()
 		return onchainInstance
@@ -200,19 +204,19 @@ func TestWalletSync(t *testing.T) {
 			}()
 			return nil
 		}).Once()
-		wallet.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{Id: 1}).Maybe()
+		wallet.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{Id: 1, Currency: boltz.CurrencyBtc}).Maybe()
 		onchainInstance.AddWallet(wallet)
 
 		select {
 		case <-done:
-		case <-time.After(3 * onchainInstance.WalletSyncInterval):
+		case <-time.After(3 * syncInterval):
 			require.Fail(t, "timed out while waiting for remove")
 		}
 		require.Empty(t, onchainInstance.Wallets)
 
 		// we sleep for a few more cycles - if the sync is called again the test will fail
 		// since we only expect it to be called once above
-		time.Sleep(2 * onchainInstance.WalletSyncInterval)
+		time.Sleep(2 * syncInterval)
 	})
 
 	t.Run("Disconnect", func(t *testing.T) {
@@ -229,11 +233,12 @@ func TestWalletSync(t *testing.T) {
 			return nil
 		}).Once()
 		wallet.EXPECT().Disconnect().Return(nil).NotBefore(sync).Once()
+		wallet.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{Id: 1, Currency: boltz.CurrencyBtc}).Maybe()
 		onchainInstance.AddWallet(wallet)
 
 		select {
 		case <-done:
-		case <-time.After(3 * onchainInstance.WalletSyncInterval):
+		case <-time.After(3 * onchainInstance.WalletSyncIntervals[boltz.CurrencyBtc]):
 			require.Fail(t, "timed out while waiting for disconnect")
 		}
 	})
