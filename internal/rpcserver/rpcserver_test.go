@@ -2696,7 +2696,7 @@ func TestSwap(t *testing.T) {
 							t.Run("Manual", func(t *testing.T) {
 								setup := func(t *testing.T) *boltzrpc.SwapInfo {
 									_, statusStream := createFailed(t, "")
-									info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).Swap
+									info := statusStream(boltzrpc.SwapState_SERVER_ERROR, boltz.TransactionLockupFailed).Swap
 									clientInfo, err := admin.GetInfo()
 									require.NoError(t, err)
 									require.Len(t, clientInfo.RefundableSwaps, 1)
@@ -2897,8 +2897,7 @@ func TestChainSwap(t *testing.T) {
 			test.MineBlock()
 
 			_, statusStream := swapStream(t, client, swap.Id)
-			info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed)
-			require.NotEmpty(t, info.ChainSwap.Error)
+			statusStream(boltzrpc.SwapState_SERVER_ERROR, boltz.TransactionLockupFailed)
 		})
 
 		t.Run("Amountless", func(t *testing.T) {
@@ -3154,7 +3153,7 @@ func TestChainSwap(t *testing.T) {
 					t.Run("Manual", func(t *testing.T) {
 						setup := func(t *testing.T) (*boltzrpc.ChainSwapInfo, streamStatusFunc) {
 							_, statusStream := createFailed(t, "")
-							info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).ChainSwap
+							info := statusStream(boltzrpc.SwapState_SERVER_ERROR, boltz.TransactionLockupFailed).ChainSwap
 							clientInfo, err := client.GetInfo()
 							require.NoError(t, err)
 							require.Contains(t, clientInfo.RefundableSwaps, info.Id)
