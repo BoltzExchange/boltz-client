@@ -96,7 +96,14 @@ func (onchain *Onchain) Init() {
 	onchain.OnWalletChange = utils.ForwardChannel(make(chan []Wallet), 0, false)
 	onchain.syncCtx, onchain.syncCancel = context.WithCancel(context.Background())
 	if onchain.WalletSyncIntervals == nil {
-		onchain.WalletSyncIntervals = DefaultWalletSyncIntervals
+		if onchain.Network == boltz.Regtest {
+			onchain.WalletSyncIntervals = map[boltz.Currency]time.Duration{
+				boltz.CurrencyBtc:    1 * time.Second,
+				boltz.CurrencyLiquid: 1 * time.Second,
+			}
+		} else {
+			onchain.WalletSyncIntervals = DefaultWalletSyncIntervals
+		}
 	}
 }
 
