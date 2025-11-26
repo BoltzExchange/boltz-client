@@ -2048,7 +2048,7 @@ func createWallet(ctx *cli.Context, params *boltzrpc.WalletParams) (wallet *bolt
 	fmt.Println()
 	fmt.Println("Mnemonic:\n" + credentials.Mnemonic)
 	fmt.Println()
-	fmt.Println("We highly recommend to import the mnemonic shown above into an external wallet like Blockstream Green (https://blockstream.com/green). " +
+	fmt.Println("We highly recommend to import the mnemonic shown above into an external wallet like the Blockstream App (https://blockstream.com/app). " +
 		"This serves as backup and allows you to view transactions and control your funds.")
 	return credentials.Wallet, nil
 }
@@ -2297,9 +2297,9 @@ var tenantCommands = &cli.Command{
 			},
 		},
 		{
-			Name:      "remove",
-			Usage:     "Remove a tenant",
-			ArgsUsage: "name",
+			Name:        "remove",
+			Usage:       "Remove a tenant",
+			ArgsUsage:   "name",
 			Description: "Removes a tenant. Only allowed if the tenant has no associated wallets.",
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
