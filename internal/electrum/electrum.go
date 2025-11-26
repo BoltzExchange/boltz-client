@@ -21,11 +21,13 @@ type Client struct {
 func NewClient(options onchain.ElectrumOptions) (*Client, error) {
 	// Establishing a new SSL connection to an ElectrumX server
 	c := &Client{ctx: context.Background()}
+	connectCtx, connectCancel := c.timeoutContext()
+	defer connectCancel()
 	var err error
 	if options.SSL {
-		c.client, err = electrum.NewClientSSL(c.ctx, options.Url, &tls.Config{})
+		c.client, err = electrum.NewClientSSL(connectCtx, options.Url, &tls.Config{})
 	} else {
-		c.client, err = electrum.NewClientTCP(c.ctx, options.Url)
+		c.client, err = electrum.NewClientTCP(connectCtx, options.Url)
 	}
 	if err != nil {
 		return nil, err
