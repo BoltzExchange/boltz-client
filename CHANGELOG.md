@@ -1,4 +1,32 @@
 
+<a name="v2.10.0"></a>
+## [v2.10.0] - 2025-11-26
+### Feat
+- add command to remove tenant ([#597](https://github.com/BoltzExchange/boltz-client/issues/597))
+- bdk rust bindings ([#566](https://github.com/BoltzExchange/boltz-client/issues/566))
+
+### Fix
+- do not to refund swaps without address or wallet ([#606](https://github.com/BoltzExchange/boltz-client/issues/606))
+- go electrum connection timeout context ([#607](https://github.com/BoltzExchange/boltz-client/issues/607))
+- add migration for legacy btc wallets ([#604](https://github.com/BoltzExchange/boltz-client/issues/604))
+- always encrypt all wallet credentials fields ([#588](https://github.com/BoltzExchange/boltz-client/issues/588))
+- full scan wallet on import ([#587](https://github.com/BoltzExchange/boltz-client/issues/587))
+- also update submarine lockup tx on `transaction.confirmed` ([#584](https://github.com/BoltzExchange/boltz-client/issues/584))
+- only try refunding submarine swap if funds were locked ([#577](https://github.com/BoltzExchange/boltz-client/issues/577))
+
+### Refactor
+- liquid backend initialization ([#605](https://github.com/BoltzExchange/boltz-client/issues/605))
+- increase default BDK sync interval ([#592](https://github.com/BoltzExchange/boltz-client/issues/592))
+- use tempdir as datadir in integration tests ([#602](https://github.com/BoltzExchange/boltz-client/issues/602))
+- wallet backend logs ([#603](https://github.com/BoltzExchange/boltz-client/issues/603))
+- rm redundant invoice paid check ([#600](https://github.com/BoltzExchange/boltz-client/issues/600))
+- use rustls for electrum ([#590](https://github.com/BoltzExchange/boltz-client/issues/590))
+- always use mainnet for rescue keychain ([#585](https://github.com/BoltzExchange/boltz-client/issues/585))
+
+
+<a name="v2.9.1"></a>
+## [v2.9.1] - 2025-11-14
+
 <a name="v2.9.0"></a>
 ## [v2.9.0] - 2025-10-21
 ### Feat
@@ -825,6 +853,8 @@
 - improve Channel Creation enforcement
 
 
+[v2.10.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.9.1...v2.10.0
+[v2.9.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.9.0...v2.9.1
 [v2.9.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.9...v2.9.0
 [v2.8.9]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.8...v2.8.9
 [v2.8.8]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.7...v2.8.8
