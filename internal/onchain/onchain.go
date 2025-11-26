@@ -278,7 +278,7 @@ func (onchain *Onchain) RegisterBlockListener(ctx context.Context, currency bolt
 		return nil
 	}
 
-	logger.Infof("Connecting to block %s epoch stream", currency)
+	logger.Infof("Listening to new blocks for %s", currency)
 	blockNotifier := utils.ForwardChannel(make(chan *BlockEpoch), 0, false)
 
 	go func() {
