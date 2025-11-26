@@ -47,11 +47,18 @@ type Config struct {
 	Persister              Persister
 }
 
+type clientConfig struct {
+	electrum *onchain.ElectrumOptions
+	esplora  *EsploraConfig
+}
+
 type BlockchainBackend struct {
 	// cfg used for buliding this instance
 	cfg Config
 	// electrum also satisfies the EsploraClientInterface
-	clients []lwk.EsploraClientInterface
+	clientConfigs []clientConfig
+	clients       sync.Map
+	connectLock   sync.Mutex
 }
 
 func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, error) {
@@ -61,6 +68,70 @@ func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, e
 
 func (b *BlockchainBackend) DeriveDefaultDescriptor(mnemonic string) (string, error) {
 	return DeriveDefaultDescriptor(b.cfg.Network, mnemonic)
+}
+
+const ConnectTimeout = 10 * time.Second
+
+func (b *BlockchainBackend) connectClient(config clientConfig) (lwk.EsploraClientInterface, error) {
+	if config.electrum != nil {
+		logger.Debugf("Connecting to Liquid electrum server: %s", config.electrum)
+		validateDomain := config.electrum.SSL
+		client, err := lwk.NewElectrumClient(config.electrum.Url, config.electrum.SSL, validateDomain)
+		if err != nil {
+			return nil, fmt.Errorf("new electrum client: %w", err)
+		}
+		return client, nil
+	} else {
+		logger.Debugf("Connecting to Liquid esplora server: %s", config.esplora.Url)
+		concurrency := uint32(32)
+		client, err := lwk.EsploraClientFromBuilder(lwk.EsploraClientBuilder{
+			BaseUrl:     config.esplora.Url,
+			Network:     convertNetwork(b.cfg.Network),
+			Waterfalls:  config.esplora.Waterfall,
+			Concurrency: &concurrency,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("esplora client: %w", err)
+		}
+		return client, nil
+	}
+}
+
+func (b *BlockchainBackend) getClient(config clientConfig) (lwk.EsploraClientInterface, error) {
+	var key string
+	if config.electrum != nil {
+		key = "electrum:" + config.electrum.Url
+	} else {
+		key = "esplora:" + config.esplora.Url
+	}
+
+	b.connectLock.Lock()
+	defer b.connectLock.Unlock()
+
+	if client, ok := b.clients.Load(key); ok {
+		return client.(lwk.EsploraClientInterface), nil
+	}
+
+	res := make(chan error)
+	var result lwk.EsploraClientInterface
+	go func() {
+		client, err := b.connectClient(config)
+		if err == nil {
+			b.clients.Store(key, client)
+			result = client
+		}
+		res <- err
+	}()
+
+	select {
+	case err := <-res:
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	case <-time.After(ConnectTimeout):
+		return nil, errors.New("connection timeout")
+	}
 }
 
 const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
@@ -77,16 +148,16 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
 	}
 
-	backend := &BlockchainBackend{cfg: cfg}
-	network := convertNetwork(cfg.Network)
+	backend := &BlockchainBackend{
+		cfg:     cfg,
+		clients: sync.Map{},
+	}
 
 	if cfg.Electrum != nil {
-		logger.Infof("Liquid: wallet backend: %s", cfg.Electrum.Url)
-		client, err := lwk.NewElectrumClient(cfg.Electrum.Url, cfg.Electrum.SSL, false)
-		if err != nil {
-			return nil, fmt.Errorf("new electrum client: %w", err)
-		}
-		backend.clients = append(backend.clients, client)
+		logger.Infof("Liquid: wallet backend: %s", cfg.Electrum)
+		backend.clientConfigs = append(backend.clientConfigs, clientConfig{
+			electrum: cfg.Electrum,
+		})
 	} else {
 		esplora := cfg.Esplora
 		if esplora == nil {
@@ -106,29 +177,21 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 			}
 		}
 		logger.Infof("Liquid: wallet backend: %s", esplora.Url)
-		concurrency := uint32(32)
-		client, err := lwk.EsploraClientFromBuilder(lwk.EsploraClientBuilder{
-			BaseUrl:     esplora.Url,
-			Network:     network,
-			Waterfalls:  esplora.Waterfall,
-			Concurrency: &concurrency,
+		backend.clientConfigs = append(backend.clientConfigs, clientConfig{
+			esplora: esplora,
 		})
-		if err != nil {
-			return nil, fmt.Errorf("esplora client: %w", err)
-		}
-		backend.clients = append(backend.clients, client)
 
 		// only add the default electrum client if no custom esplora is configured
 		if cfg.Esplora == nil {
 			if cfg.Network == boltz.MainNet {
 				url := MainnetElectrumBackup
-				defaultElectrum, err := lwk.NewElectrumClient(url, true, true)
-				if err == nil {
-					logger.Infof("Liquid: wallet backend fallback: ssl://%s", url)
-					backend.clients = append(backend.clients, defaultElectrum)
-				} else {
-					logger.Error(err.Error())
-				}
+				logger.Infof("Liquid: wallet backend fallback: ssl://%s", url)
+				backend.clientConfigs = append(backend.clientConfigs, clientConfig{
+					electrum: &onchain.ElectrumOptions{
+						Url: url,
+						SSL: true,
+					},
+				})
 			}
 		}
 	}
@@ -253,7 +316,13 @@ func (w *Wallet) fullScan(all bool) error {
 	// Try each client until one succeeds
 	var update **lwk.Update
 	var lastErr error
-	for i, client := range w.backend.clients {
+	for i, config := range w.backend.clientConfigs {
+		client, err := w.backend.getClient(config)
+		if err != nil {
+			logger.Debugf("Client %d failed to get client for wallet %d: %v", i, w.info.Id, err)
+			lastErr = err
+			continue
+		}
 		update, err = client.FullScanToIndex(w.Wollet, *index)
 		if err != nil {
 			logger.Debugf("Client %d failed to sync wallet %d: %v", i, w.info.Id, err)
