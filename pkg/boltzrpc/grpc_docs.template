@@ -55,7 +55,7 @@ Paths for the REST proxy of the gRPC interface can be found [here](https://githu
 {{range .Methods -}}
 #### {{.Name}}
 
-{{nobr .Description}}
+{{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}
 
 | Request | Response |
 | ------- | -------- |

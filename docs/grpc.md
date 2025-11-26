@@ -62,7 +62,7 @@ Gets general information about the daemon like the chain of the lightning node i
 
 #### GetServiceInfo
 
-Fetches the latest limits and fees from the Boltz backend API it is connected to.
+**Deprecated.** Fetches the latest limits and fees from the Boltz backend API it is connected to.
 
 | Request | Response |
 | ------- | -------- |
@@ -82,7 +82,7 @@ Fetches all available pairs for submarine and reverse swaps.
 
 | Request | Response |
 | ------- | -------- |
-| `.google.protobuf.Empty` | [`GetPairsResponse`](#getpairsresponse) |
+| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`GetPairsResponse`](#getpairsresponse) |
 
 #### ListSwaps
 
@@ -134,7 +134,7 @@ Returns the entire history of the swap if is still pending and streams updates i
 
 #### Deposit
 
-This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address. The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which will try to pay it and if that is not possible, create a new channel to make the swap succeed.
+**Deprecated.** This is a wrapper for channel creation swaps. The daemon only returns the ID, timeout block height and lockup address. The Boltz backend takes care of the rest. When an amount of onchain coins that is in the limits is sent to the address before the timeout block height, the daemon creates a new lightning invoice, sends it to the Boltz backend which will try to pay it and if that is not possible, create a new channel to make the swap succeed.
 
 | Request | Response |
 | ------- | -------- |
@@ -150,7 +150,7 @@ Creates a new swap from onchain to lightning.
 
 #### CreateChannel
 
-Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs is coming trough a new channel channel opened by Boltz.
+**Deprecated.** Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs is coming trough a new channel channel opened by Boltz.
 
 | Request | Response |
 | ------- | -------- |
@@ -190,7 +190,7 @@ Imports an existing wallet.
 
 #### SetSubaccount
 
-Sets the subaccount of a wallet. Not supported for readonly wallets.
+**Deprecated.** Sets the subaccount of a wallet. Not supported for readonly wallets.
 
 | Request | Response |
 | ------- | -------- |
@@ -198,7 +198,7 @@ Sets the subaccount of a wallet. Not supported for readonly wallets.
 
 #### GetSubaccounts
 
-Returns all subaccounts for a given wallet. Not supported for readonly wallets.
+**Deprecated.** Returns all subaccounts for a given wallet. Not supported for readonly wallets.
 
 | Request | Response |
 | ------- | -------- |
@@ -282,7 +282,7 @@ Gracefully stops the daemon.
 
 | Request | Response |
 | ------- | -------- |
-| `.google.protobuf.Empty` | `.google.protobuf.Empty` |
+| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
 #### Unlock
 
@@ -290,7 +290,7 @@ Unlocks the server. This will be required on startup if there are any encrypted 
 
 | Request | Response |
 | ------- | -------- |
-| [`UnlockRequest`](#unlockrequest) | `.google.protobuf.Empty` |
+| [`UnlockRequest`](#unlockrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
 #### VerifyWalletPassword
 
@@ -306,7 +306,7 @@ Changes the password for wallet encryption.
 
 | Request | Response |
 | ------- | -------- |
-| [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | `.google.protobuf.Empty` |
+| [`ChangeWalletPasswordRequest`](#changewalletpasswordrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
 #### CreateTenant
 
@@ -338,7 +338,7 @@ Removes a tenant. Only allowed if the tenant has no associated wallets.
 
 | Request | Response |
 | ------- | -------- |
-| [`RemoveTenantRequest`](#removetenantrequest) | `.google.protobuf.Empty` |
+| [`RemoveTenantRequest`](#removetenantrequest) | [`.google.protobuf.Empty`](#.google.protobuf.empty) |
 
 #### BakeMacaroon
 
@@ -1884,7 +1884,7 @@ Reloads the configuration from disk.
 
 | Request | Response |
 | ------- | -------- |
-| `.google.protobuf.Empty` | [`Config`](#config) |
+| [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`Config`](#config) |
 
 
 
