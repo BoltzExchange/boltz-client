@@ -126,7 +126,7 @@ build-examples:
 	cd examples && $(GOBUILD) $(ARGS) -o bin/submarine $(LDFLAGS) ./submarine
 	cd examples && $(GOBUILD) $(ARGS) -o bin/reverse $(LDFLAGS) ./reverse
 
-static: download-gdk build-bolt12 build-lwk
+static: download-gdk build-bolt12 build-lwk build-bdk
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -tags static -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
