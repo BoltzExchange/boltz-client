@@ -1,4 +1,14 @@
 
+<a name="v2.10.1"></a>
+## [v2.10.1] - 2025-12-12
+### Feat
+- use p2tr when generating cln addresses
+
+### Fix
+- check for transaction.refunded when querying claimable reverse swaps ([#616](https://github.com/BoltzExchange/boltz-client/issues/616))
+- build bdk in static build
+
+
 <a name="v2.10.0"></a>
 ## [v2.10.0] - 2025-11-26
 ### Feat
@@ -853,6 +863,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.10.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.0...v2.10.1
 [v2.10.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.9.1...v2.10.0
 [v2.9.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.9.0...v2.9.1
 [v2.9.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.8.9...v2.9.0
