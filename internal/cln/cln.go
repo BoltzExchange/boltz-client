@@ -245,12 +245,12 @@ func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, tim
 
 func (c *Cln) NewAddress() (string, error) {
 	res, err := c.Client.NewAddr(context.Background(), &protos.NewaddrRequest{
-		//Addresstype: &protos.NewaddrRequest_BECH32,
+		Addresstype: protos.NewaddrRequest_P2TR.Enum(),
 	})
 	if err != nil {
 		return "", err
 	}
-	return *res.Bech32, nil
+	return res.GetP2Tr(), nil
 }
 
 func (c *Cln) PaymentStatus(paymentHash []byte) (*lightning.PaymentStatus, error) {
