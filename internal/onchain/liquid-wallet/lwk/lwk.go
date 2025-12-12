@@ -335,6 +335,7 @@ func readFloat64(reader io.Reader) float64 {
 func init() {
 
 	FfiConverterForeignPersisterINSTANCE.register()
+	FfiConverterLoggingINSTANCE.register()
 	uniffiCheckChecksums()
 }
 
@@ -348,6 +349,24 @@ func uniffiCheckChecksums() {
 	if bindingsContractVersion != int(scaffoldingContractVersion) {
 		// If this happens try cleaning and rebuilding your project
 		panic("lwk: UniFFI contract version mismatch")
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_func_derive_asset_id()
+		})
+		if checksum != 63625 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_func_derive_asset_id: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_func_derive_token_id()
+		})
+		if checksum != 30312 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_func_derive_token_id: UniFFI API checksum mismatch")
+		}
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
@@ -558,11 +577,11 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_amp2_register()
+			return C.uniffi_lwk_checksum_method_amp2_register_wallet()
 		})
-		if checksum != 53300 {
+		if checksum != 64376 {
 			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_amp2_register: UniFFI API checksum mismatch")
+			panic("lwk: uniffi_lwk_checksum_method_amp2_register_wallet: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -644,6 +663,213 @@ func uniffiCheckChecksums() {
 		if checksum != 22115 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_blockheader_version: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_amount_milli_satoshis()
+		})
+		if checksum != 5904 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_amount_milli_satoshis: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_expiry_time()
+		})
+		if checksum != 5862 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_expiry_time: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_invoice_description()
+		})
+		if checksum != 18758 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_invoice_description: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_min_final_cltv_expiry_delta()
+		})
+		if checksum != 6149 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_min_final_cltv_expiry_delta: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_network()
+		})
+		if checksum != 15186 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_network: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_payee_pub_key()
+		})
+		if checksum != 52337 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_payee_pub_key: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_payment_hash()
+		})
+		if checksum != 35521 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_payment_hash: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_payment_secret()
+		})
+		if checksum != 58541 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_payment_secret: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_bolt11invoice_timestamp()
+		})
+		if checksum != 21308 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_bolt11invoice_timestamp: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_btc_to_lbtc()
+		})
+		if checksum != 27295 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_btc_to_lbtc: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_fetch_swaps_info()
+		})
+		if checksum != 41140 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_fetch_swaps_info: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_invoice()
+		})
+		if checksum != 64828 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_lbtc_to_btc()
+		})
+		if checksum != 24979 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_lbtc_to_btc: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_next_index_to_use()
+		})
+		if checksum != 9036 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_next_index_to_use: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_prepare_pay()
+		})
+		if checksum != 58796 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_prepare_pay: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_rescue_file()
+		})
+		if checksum != 51537 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_rescue_file: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_restorable_reverse_swaps()
+		})
+		if checksum != 52536 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_restorable_reverse_swaps: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_restorable_submarine_swaps()
+		})
+		if checksum != 8598 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_restorable_submarine_swaps: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_restore_invoice()
+		})
+		if checksum != 56233 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_restore_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_restore_lockup()
+		})
+		if checksum != 29841 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_restore_lockup: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_restore_prepare_pay()
+		})
+		if checksum != 43475 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_restore_prepare_pay: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_set_next_index_to_use()
+		})
+		if checksum != 46243 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_set_next_index_to_use: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_swap_restore()
+		})
+		if checksum != 45430 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_swap_restore: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -756,6 +982,78 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_advance()
+		})
+		if checksum != 28093 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_advance: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_bolt11_invoice()
+		})
+		if checksum != 7912 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_bolt11_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_boltz_fee()
+		})
+		if checksum != 64005 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_boltz_fee: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_claim_txid()
+		})
+		if checksum != 30631 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_claim_txid: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_complete_pay()
+		})
+		if checksum != 2434 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_complete_pay: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_fee()
+		})
+		if checksum != 49159 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_fee: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_serialize()
+		})
+		if checksum != 38841 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_serialize: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoiceresponse_swap_id()
+		})
+		if checksum != 63267 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoiceresponse_swap_id: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_issuance_asset()
 		})
 		if checksum != 3815 {
@@ -846,11 +1144,110 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice()
+		})
+		if checksum != 41990 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_advance()
+		})
+		if checksum != 46331 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_advance: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_chain_from()
+		})
+		if checksum != 2081 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_chain_from: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_chain_to()
+		})
+		if checksum != 10065 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_chain_to: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_complete()
+		})
+		if checksum != 62964 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_complete: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_expected_amount()
+		})
+		if checksum != 53174 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_expected_amount: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_lockup_address()
+		})
+		if checksum != 49127 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_lockup_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_serialize()
+		})
+		if checksum != 43231 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_serialize: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lockupresponse_swap_id()
+		})
+		if checksum != 36526 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lockupresponse_swap_id: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_logging_log()
+		})
+		if checksum != 50033 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_logging_log: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_electrum_url()
 		})
 		if checksum != 44900 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_electrum_url: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_esplora_url()
+		})
+		if checksum != 37949 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_esplora_url: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -896,6 +1293,24 @@ func uniffiCheckChecksums() {
 		if checksum != 578 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_send_to_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_waterfalls_url()
+		})
+		if checksum != 39201 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_waterfalls_url: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_mnemonic_word_count()
+		})
+		if checksum != 61849 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_mnemonic_word_count: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -981,6 +1396,87 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_advance()
+		})
+		if checksum != 45947 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_advance: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_boltz_fee()
+		})
+		if checksum != 897 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_boltz_fee: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_complete_pay()
+		})
+		if checksum != 40255 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_complete_pay: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_fee()
+		})
+		if checksum != 46693 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_fee: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_serialize()
+		})
+		if checksum != 33437 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_serialize: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_swap_id()
+		})
+		if checksum != 47814 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_swap_id: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_uri()
+		})
+		if checksum != 64009 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_uri: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_uri_address()
+		})
+		if checksum != 16815 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_uri_address: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_uri_amount()
+		})
+		if checksum != 36278 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_uri_amount: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_pset_combine()
 		})
 		if checksum != 53457 {
@@ -1058,6 +1554,24 @@ func uniffiCheckChecksums() {
 		if checksum != 59666 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_psetdetails_balance: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_psetdetails_fingerprints_has()
+		})
+		if checksum != 6688 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_psetdetails_fingerprints_has: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_psetdetails_fingerprints_missing()
+		})
+		if checksum != 9065 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_psetdetails_fingerprints_missing: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1206,15 +1720,6 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_lwk_checksum_method_script_asm()
-		})
-		if checksum != 42582 {
-			// If this happens try cleaning and rebuilding your project
-			panic("lwk: uniffi_lwk_checksum_method_script_asm: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_script_bytes()
 		})
 		if checksum != 35040 {
@@ -1229,6 +1734,15 @@ func uniffiCheckChecksums() {
 		if checksum != 12490 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_script_is_provably_unspendable: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_script_to_asm()
+		})
+		if checksum != 32896 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_script_to_asm: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1274,6 +1788,24 @@ func uniffiCheckChecksums() {
 		if checksum != 14976 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_signer_amp0_signer_data: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_signer_derive_bip85_mnemonic()
+		})
+		if checksum != 32162 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_signer_derive_bip85_mnemonic: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_signer_fingerprint()
+		})
+		if checksum != 51686 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_signer_fingerprint: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1328,6 +1860,15 @@ func uniffiCheckChecksums() {
 		if checksum != 48994 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_transaction_bytes: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_transaction_discount_vsize()
+		})
+		if checksum != 15950 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_transaction_discount_vsize: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1391,6 +1932,15 @@ func uniffiCheckChecksums() {
 		if checksum != 22348 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txbuilder_add_external_utxos: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txbuilder_add_input_rangeproofs()
+		})
+		if checksum != 13756 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txbuilder_add_input_rangeproofs: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1917,6 +2467,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wollet_dwid()
+		})
+		if checksum != 60794 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wollet_dwid: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wollet_extract_wallet_utxos()
 		})
 		if checksum != 43538 {
@@ -2061,6 +2620,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wolletdescriptor_url_encoded_descriptor()
+		})
+		if checksum != 11792 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wolletdescriptor_url_encoded_descriptor: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_address_new()
 		})
 		if checksum != 52129 {
@@ -2106,6 +2674,24 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_anyclient_from_electrum()
+		})
+		if checksum != 61969 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_anyclient_from_electrum: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_anyclient_from_esplora()
+		})
+		if checksum != 17175 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_anyclient_from_esplora: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_bip_new_bip49()
 		})
 		if checksum != 34169 {
@@ -2133,11 +2719,56 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_bitcoinaddress_new()
+		})
+		if checksum != 46661 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_bitcoinaddress_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_bolt11invoice_new()
+		})
+		if checksum != 63126 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_bolt11invoice_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_boltzsession_from_builder()
+		})
+		if checksum != 64185 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_boltzsession_from_builder: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_boltzsession_new()
+		})
+		if checksum != 40021 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_boltzsession_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_contract_new()
 		})
 		if checksum != 55905 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_contract_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_electrumclient_from_url()
+		})
+		if checksum != 21158 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_electrumclient_from_url: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2192,6 +2823,33 @@ func uniffiCheckChecksums() {
 		if checksum != 48168 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_foreignpersisterlink_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_lightningpayment_from_bolt11_invoice()
+		})
+		if checksum != 15133 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_lightningpayment_from_bolt11_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_lightningpayment_new()
+		})
+		if checksum != 20178 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_lightningpayment_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_logginglink_new()
+		})
+		if checksum != 31235 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_logginglink_new: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2390,6 +3048,15 @@ func uniffiCheckChecksums() {
 		if checksum != 5357 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_update_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_webhook_new()
+		})
+		if checksum != 14880 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_webhook_new: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -3593,7 +4260,7 @@ type Amp2Interface interface {
 	// Create an AMP2 wallet descriptor from the keyorigin xpub of a signer
 	DescriptorFromStr(keyoriginXpub string) (*Amp2Descriptor, error)
 	// Register an AMP2 wallet with the AMP2 server
-	Register(desc *Amp2Descriptor) (string, error)
+	RegisterWallet(desc *Amp2Descriptor) (string, error)
 }
 
 // Wrapper over [`lwk_wollet::amp2::Amp2`]
@@ -3641,12 +4308,12 @@ func (_self *Amp2) DescriptorFromStr(keyoriginXpub string) (*Amp2Descriptor, err
 }
 
 // Register an AMP2 wallet with the AMP2 server
-func (_self *Amp2) Register(desc *Amp2Descriptor) (string, error) {
+func (_self *Amp2) RegisterWallet(desc *Amp2Descriptor) (string, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Amp2")
 	defer _self.ffiObject.decrementPointer()
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
-			inner: C.uniffi_lwk_fn_method_amp2_register(
+			inner: C.uniffi_lwk_fn_method_amp2_register_wallet(
 				_pointer, FfiConverterAmp2DescriptorINSTANCE.Lower(desc), _uniffiStatus),
 		}
 	})
@@ -3782,6 +4449,73 @@ func (c FfiConverterAmp2Descriptor) Write(writer io.Writer, value *Amp2Descripto
 type FfiDestroyerAmp2Descriptor struct{}
 
 func (_ FfiDestroyerAmp2Descriptor) Destroy(value *Amp2Descriptor) {
+	value.Destroy()
+}
+
+type AnyClientInterface interface {
+}
+type AnyClient struct {
+	ffiObject FfiObject
+}
+
+func AnyClientFromElectrum(client *ElectrumClient) *AnyClient {
+	return FfiConverterAnyClientINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_anyclient_from_electrum(FfiConverterElectrumClientINSTANCE.Lower(client), _uniffiStatus)
+	}))
+}
+
+func AnyClientFromEsplora(client *EsploraClient) *AnyClient {
+	return FfiConverterAnyClientINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_anyclient_from_esplora(FfiConverterEsploraClientINSTANCE.Lower(client), _uniffiStatus)
+	}))
+}
+
+func (object *AnyClient) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterAnyClient struct{}
+
+var FfiConverterAnyClientINSTANCE = FfiConverterAnyClient{}
+
+func (c FfiConverterAnyClient) Lift(pointer unsafe.Pointer) *AnyClient {
+	result := &AnyClient{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_anyclient(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_anyclient(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*AnyClient).Destroy)
+	return result
+}
+
+func (c FfiConverterAnyClient) Read(reader io.Reader) *AnyClient {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterAnyClient) Lower(value *AnyClient) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*AnyClient")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterAnyClient) Write(writer io.Writer, value *AnyClient) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerAnyClient struct{}
+
+func (_ FfiDestroyerAnyClient) Destroy(value *AnyClient) {
 	value.Destroy()
 }
 
@@ -3947,6 +4681,88 @@ func (_ FfiDestroyerBip) Destroy(value *Bip) {
 	value.Destroy()
 }
 
+// A valid Bitcoin address
+type BitcoinAddressInterface interface {
+}
+
+// A valid Bitcoin address
+type BitcoinAddress struct {
+	ffiObject FfiObject
+}
+
+// Construct an Address object
+func NewBitcoinAddress(s string) (*BitcoinAddress, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_bitcoinaddress_new(FfiConverterStringINSTANCE.Lower(s), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *BitcoinAddress
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBitcoinAddressINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *BitcoinAddress) String() string {
+	_pointer := _self.ffiObject.incrementPointer("*BitcoinAddress")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bitcoinaddress_uniffi_trait_display(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (object *BitcoinAddress) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterBitcoinAddress struct{}
+
+var FfiConverterBitcoinAddressINSTANCE = FfiConverterBitcoinAddress{}
+
+func (c FfiConverterBitcoinAddress) Lift(pointer unsafe.Pointer) *BitcoinAddress {
+	result := &BitcoinAddress{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_bitcoinaddress(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_bitcoinaddress(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*BitcoinAddress).Destroy)
+	return result
+}
+
+func (c FfiConverterBitcoinAddress) Read(reader io.Reader) *BitcoinAddress {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterBitcoinAddress) Lower(value *BitcoinAddress) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*BitcoinAddress")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterBitcoinAddress) Write(writer io.Writer, value *BitcoinAddress) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerBitcoinAddress struct{}
+
+func (_ FfiDestroyerBitcoinAddress) Destroy(value *BitcoinAddress) {
+	value.Destroy()
+}
+
 // Wrapper over [`elements::BlockHeader`]
 type BlockHeaderInterface interface {
 	// Get the block hash
@@ -4082,6 +4898,565 @@ func (_ FfiDestroyerBlockHeader) Destroy(value *BlockHeader) {
 	value.Destroy()
 }
 
+// Represents a syntactically and semantically correct lightning BOLT11 invoice.
+type Bolt11InvoiceInterface interface {
+	// Returns the amount in millisatoshis if present, None if it's an "any amount" invoice
+	AmountMilliSatoshis() *uint64
+	// Returns the expiry time in seconds (default is 3600 seconds / 1 hour if not specified)
+	ExpiryTime() uint64
+	// Returns the invoice description as a string
+	InvoiceDescription() string
+	// Returns the minimum CLTV expiry delta
+	MinFinalCltvExpiryDelta() uint64
+	// Returns the network (bitcoin, testnet, signet, regtest)
+	Network() string
+	// Returns the payee's public key if present as a hex string
+	PayeePubKey() *string
+	// Returns the payment hash as a hex string
+	PaymentHash() string
+	// Returns the payment secret as a debug string
+	PaymentSecret() string
+	// Returns the invoice timestamp as seconds since Unix epoch
+	Timestamp() uint64
+}
+
+// Represents a syntactically and semantically correct lightning BOLT11 invoice.
+type Bolt11Invoice struct {
+	ffiObject FfiObject
+}
+
+// Construct a Bolt11Invoice from a string
+func NewBolt11Invoice(s string) (*Bolt11Invoice, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_bolt11invoice_new(FfiConverterStringINSTANCE.Lower(s), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Bolt11Invoice
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBolt11InvoiceINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Returns the amount in millisatoshis if present, None if it's an "any amount" invoice
+func (_self *Bolt11Invoice) AmountMilliSatoshis() *uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bolt11invoice_amount_milli_satoshis(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns the expiry time in seconds (default is 3600 seconds / 1 hour if not specified)
+func (_self *Bolt11Invoice) ExpiryTime() uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_bolt11invoice_expiry_time(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+// Returns the invoice description as a string
+func (_self *Bolt11Invoice) InvoiceDescription() string {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bolt11invoice_invoice_description(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns the minimum CLTV expiry delta
+func (_self *Bolt11Invoice) MinFinalCltvExpiryDelta() uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_bolt11invoice_min_final_cltv_expiry_delta(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+// Returns the network (bitcoin, testnet, signet, regtest)
+func (_self *Bolt11Invoice) Network() string {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bolt11invoice_network(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns the payee's public key if present as a hex string
+func (_self *Bolt11Invoice) PayeePubKey() *string {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bolt11invoice_payee_pub_key(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns the payment hash as a hex string
+func (_self *Bolt11Invoice) PaymentHash() string {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bolt11invoice_payment_hash(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns the payment secret as a debug string
+func (_self *Bolt11Invoice) PaymentSecret() string {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bolt11invoice_payment_secret(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns the invoice timestamp as seconds since Unix epoch
+func (_self *Bolt11Invoice) Timestamp() uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_bolt11invoice_timestamp(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+func (_self *Bolt11Invoice) String() string {
+	_pointer := _self.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_bolt11invoice_uniffi_trait_display(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (object *Bolt11Invoice) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterBolt11Invoice struct{}
+
+var FfiConverterBolt11InvoiceINSTANCE = FfiConverterBolt11Invoice{}
+
+func (c FfiConverterBolt11Invoice) Lift(pointer unsafe.Pointer) *Bolt11Invoice {
+	result := &Bolt11Invoice{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_bolt11invoice(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_bolt11invoice(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*Bolt11Invoice).Destroy)
+	return result
+}
+
+func (c FfiConverterBolt11Invoice) Read(reader io.Reader) *Bolt11Invoice {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterBolt11Invoice) Lower(value *Bolt11Invoice) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*Bolt11Invoice")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterBolt11Invoice) Write(writer io.Writer, value *Bolt11Invoice) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerBolt11Invoice struct{}
+
+func (_ FfiDestroyerBolt11Invoice) Destroy(value *Bolt11Invoice) {
+	value.Destroy()
+}
+
+// A session to pay and receive lightning payments.
+//
+// Lightning payments are done via LBTC swaps using Boltz.
+//
+// See `BoltzSessionBuilder` for various options to configure the session.
+type BoltzSessionInterface interface {
+	// Create an onchain swap to convert BTC to LBTC
+	BtcToLbtc(amount uint64, refundAddress *BitcoinAddress, claimAddress *Address, webhook **WebHook) (*LockupResponse, error)
+	// Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
+	FetchSwapsInfo() (string, error)
+	// Create a new invoice for a given amount and a claim address to receive the payment
+	Invoice(amount uint64, description *string, claimAddress *Address, webhook **WebHook) (*InvoiceResponse, error)
+	// Create an onchain swap to convert LBTC to BTC
+	LbtcToBtc(amount uint64, refundAddress *Address, claimAddress *BitcoinAddress, webhook **WebHook) (*LockupResponse, error)
+	// Get the next index to use for deriving keypairs
+	NextIndexToUse() uint32
+	// Prepare to pay a bolt11 invoice
+	PreparePay(lightningPayment *LightningPayment, refundAddress *Address, webhook **WebHook) (*PreparePayResponse, error)
+	// Generate a rescue file with lightning session mnemonic.
+	//
+	// The rescue file is a JSON file that contains the swaps mnemonic.
+	// It can be used on the Boltz web app to bring non terminated swaps to completition.
+	RescueFile() (string, error)
+	// Filter the swap list to only include restorable reverse swaps
+	RestorableReverseSwaps(swapList *SwapList, claimAddress *Address) ([]string, error)
+	// Filter the swap list to only include restorable submarine swaps
+	RestorableSubmarineSwaps(swapList *SwapList, refundAddress *Address) ([]string, error)
+	// Restore an invoice flow from its serialized data see `InvoiceResponse::serialize`
+	RestoreInvoice(data string) (*InvoiceResponse, error)
+	// Restore an onchain swap from its serialized data see `LockupResponse::serialize`
+	RestoreLockup(data string) (*LockupResponse, error)
+	// Restore a payment from its serialized data see `PreparePayResponse::serialize`
+	RestorePreparePay(data string) (*PreparePayResponse, error)
+	// Set the next index to use for deriving keypairs
+	//
+	// This may be necessary to handle multiple sessions with the same mnemonic.
+	SetNextIndexToUse(nextIndexToUse uint32)
+	// Returns a the list of all the swaps ever done with the session mnemonic.
+	//
+	// The object returned can be converted to a json String with toString()
+	SwapRestore() (*SwapList, error)
+}
+
+// A session to pay and receive lightning payments.
+//
+// Lightning payments are done via LBTC swaps using Boltz.
+//
+// See `BoltzSessionBuilder` for various options to configure the session.
+type BoltzSession struct {
+	ffiObject FfiObject
+}
+
+// Create the lightning session with default settings
+//
+// This uses default timeout and generates a random mnemonic.
+// For custom configuration, use [`BoltzSession::from_builder()`] instead.
+func NewBoltzSession(network *Network, client *AnyClient) (*BoltzSession, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_boltzsession_new(FfiConverterNetworkINSTANCE.Lower(network), FfiConverterAnyClientINSTANCE.Lower(client), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *BoltzSession
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoltzSessionINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Create the lightning session from a builder
+func BoltzSessionFromBuilder(builder BoltzSessionBuilder) (*BoltzSession, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_boltzsession_from_builder(FfiConverterBoltzSessionBuilderINSTANCE.Lower(builder), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *BoltzSession
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoltzSessionINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Create an onchain swap to convert BTC to LBTC
+func (_self *BoltzSession) BtcToLbtc(amount uint64, refundAddress *BitcoinAddress, claimAddress *Address, webhook **WebHook) (*LockupResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_btc_to_lbtc(
+			_pointer, FfiConverterUint64INSTANCE.Lower(amount), FfiConverterBitcoinAddressINSTANCE.Lower(refundAddress), FfiConverterAddressINSTANCE.Lower(claimAddress), FfiConverterOptionalWebHookINSTANCE.Lower(webhook), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *LockupResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterLockupResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
+func (_self *BoltzSession) FetchSwapsInfo() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_boltzsession_fetch_swaps_info(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Create a new invoice for a given amount and a claim address to receive the payment
+func (_self *BoltzSession) Invoice(amount uint64, description *string, claimAddress *Address, webhook **WebHook) (*InvoiceResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_invoice(
+			_pointer, FfiConverterUint64INSTANCE.Lower(amount), FfiConverterOptionalStringINSTANCE.Lower(description), FfiConverterAddressINSTANCE.Lower(claimAddress), FfiConverterOptionalWebHookINSTANCE.Lower(webhook), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *InvoiceResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterInvoiceResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Create an onchain swap to convert LBTC to BTC
+func (_self *BoltzSession) LbtcToBtc(amount uint64, refundAddress *Address, claimAddress *BitcoinAddress, webhook **WebHook) (*LockupResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_lbtc_to_btc(
+			_pointer, FfiConverterUint64INSTANCE.Lower(amount), FfiConverterAddressINSTANCE.Lower(refundAddress), FfiConverterBitcoinAddressINSTANCE.Lower(claimAddress), FfiConverterOptionalWebHookINSTANCE.Lower(webhook), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *LockupResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterLockupResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Get the next index to use for deriving keypairs
+func (_self *BoltzSession) NextIndexToUse() uint32 {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint32INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_boltzsession_next_index_to_use(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+// Prepare to pay a bolt11 invoice
+func (_self *BoltzSession) PreparePay(lightningPayment *LightningPayment, refundAddress *Address, webhook **WebHook) (*PreparePayResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_prepare_pay(
+			_pointer, FfiConverterLightningPaymentINSTANCE.Lower(lightningPayment), FfiConverterAddressINSTANCE.Lower(refundAddress), FfiConverterOptionalWebHookINSTANCE.Lower(webhook), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *PreparePayResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPreparePayResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Generate a rescue file with lightning session mnemonic.
+//
+// The rescue file is a JSON file that contains the swaps mnemonic.
+// It can be used on the Boltz web app to bring non terminated swaps to completition.
+func (_self *BoltzSession) RescueFile() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_boltzsession_rescue_file(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Filter the swap list to only include restorable reverse swaps
+func (_self *BoltzSession) RestorableReverseSwaps(swapList *SwapList, claimAddress *Address) ([]string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_boltzsession_restorable_reverse_swaps(
+				_pointer, FfiConverterSwapListINSTANCE.Lower(swapList), FfiConverterAddressINSTANCE.Lower(claimAddress), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Filter the swap list to only include restorable submarine swaps
+func (_self *BoltzSession) RestorableSubmarineSwaps(swapList *SwapList, refundAddress *Address) ([]string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_boltzsession_restorable_submarine_swaps(
+				_pointer, FfiConverterSwapListINSTANCE.Lower(swapList), FfiConverterAddressINSTANCE.Lower(refundAddress), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Restore an invoice flow from its serialized data see `InvoiceResponse::serialize`
+func (_self *BoltzSession) RestoreInvoice(data string) (*InvoiceResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_restore_invoice(
+			_pointer, FfiConverterStringINSTANCE.Lower(data), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *InvoiceResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterInvoiceResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Restore an onchain swap from its serialized data see `LockupResponse::serialize`
+func (_self *BoltzSession) RestoreLockup(data string) (*LockupResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_restore_lockup(
+			_pointer, FfiConverterStringINSTANCE.Lower(data), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *LockupResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterLockupResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Restore a payment from its serialized data see `PreparePayResponse::serialize`
+func (_self *BoltzSession) RestorePreparePay(data string) (*PreparePayResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_restore_prepare_pay(
+			_pointer, FfiConverterStringINSTANCE.Lower(data), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *PreparePayResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPreparePayResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Set the next index to use for deriving keypairs
+//
+// This may be necessary to handle multiple sessions with the same mnemonic.
+func (_self *BoltzSession) SetNextIndexToUse(nextIndexToUse uint32) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	rustCall(func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_boltzsession_set_next_index_to_use(
+			_pointer, FfiConverterUint32INSTANCE.Lower(nextIndexToUse), _uniffiStatus)
+		return false
+	})
+}
+
+// Returns a the list of all the swaps ever done with the session mnemonic.
+//
+// The object returned can be converted to a json String with toString()
+func (_self *BoltzSession) SwapRestore() (*SwapList, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_swap_restore(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *SwapList
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSwapListINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *BoltzSession) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterBoltzSession struct{}
+
+var FfiConverterBoltzSessionINSTANCE = FfiConverterBoltzSession{}
+
+func (c FfiConverterBoltzSession) Lift(pointer unsafe.Pointer) *BoltzSession {
+	result := &BoltzSession{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_boltzsession(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_boltzsession(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*BoltzSession).Destroy)
+	return result
+}
+
+func (c FfiConverterBoltzSession) Read(reader io.Reader) *BoltzSession {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterBoltzSession) Lower(value *BoltzSession) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*BoltzSession")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterBoltzSession) Write(writer io.Writer, value *BoltzSession) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerBoltzSession struct{}
+
+func (_ FfiDestroyerBoltzSession) Destroy(value *BoltzSession) {
+	value.Destroy()
+}
+
 // Wrapper over [`lwk_wollet::Contract`]
 type ContractInterface interface {
 }
@@ -4209,6 +5584,19 @@ type ElectrumClient struct {
 func NewElectrumClient(electrumUrl string, tls bool, validateDomain bool) (*ElectrumClient, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_constructor_electrumclient_new(FfiConverterStringINSTANCE.Lower(electrumUrl), FfiConverterBoolINSTANCE.Lower(tls), FfiConverterBoolINSTANCE.Lower(validateDomain), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *ElectrumClient
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterElectrumClientINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Construct an electrum client from an Electrum URL
+func ElectrumClientFromUrl(electrumUrl string) (*ElectrumClient, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_electrumclient_from_url(FfiConverterStringINSTANCE.Lower(electrumUrl), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *ElectrumClient
@@ -4957,6 +6345,222 @@ func (_ FfiDestroyerForeignPersisterLink) Destroy(value *ForeignPersisterLink) {
 	value.Destroy()
 }
 
+type InvoiceResponseInterface interface {
+	Advance() (PaymentState, error)
+	Bolt11Invoice() (*Bolt11Invoice, error)
+	// The fee of the swap provider
+	//
+	// It is equal to the invoice amount multiplied by the boltz fee rate.
+	// For example for receiving an invoice of 10000 satoshi with a 0.25% rate would be 25 satoshi.
+	BoltzFee() (*uint64, error)
+	// The txid of the claim transaction of the swap
+	ClaimTxid() (*string, error)
+	CompletePay() (bool, error)
+	// The fee of the swap provider and the network fee
+	//
+	// It is equal to the amount of the invoice minus the amount of the onchain transaction.
+	Fee() (*uint64, error)
+	// Serialize the prepare pay response data to a json string
+	//
+	// This can be used to restore the prepare pay response after a crash
+	Serialize() (string, error)
+	SwapId() (string, error)
+}
+type InvoiceResponse struct {
+	ffiObject FfiObject
+}
+
+func (_self *InvoiceResponse) Advance() (PaymentState, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoiceresponse_advance(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue PaymentState
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPaymentStateINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *InvoiceResponse) Bolt11Invoice() (*Bolt11Invoice, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_invoiceresponse_bolt11_invoice(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Bolt11Invoice
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBolt11InvoiceINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// The fee of the swap provider
+//
+// It is equal to the invoice amount multiplied by the boltz fee rate.
+// For example for receiving an invoice of 10000 satoshi with a 0.25% rate would be 25 satoshi.
+func (_self *InvoiceResponse) BoltzFee() (*uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoiceresponse_boltz_fee(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// The txid of the claim transaction of the swap
+func (_self *InvoiceResponse) ClaimTxid() (*string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoiceresponse_claim_txid(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *InvoiceResponse) CompletePay() (bool, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_invoiceresponse_complete_pay(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue bool
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoolINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// The fee of the swap provider and the network fee
+//
+// It is equal to the amount of the invoice minus the amount of the onchain transaction.
+func (_self *InvoiceResponse) Fee() (*uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoiceresponse_fee(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Serialize the prepare pay response data to a json string
+//
+// This can be used to restore the prepare pay response after a crash
+func (_self *InvoiceResponse) Serialize() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoiceresponse_serialize(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *InvoiceResponse) SwapId() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*InvoiceResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoiceresponse_swap_id(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *InvoiceResponse) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterInvoiceResponse struct{}
+
+var FfiConverterInvoiceResponseINSTANCE = FfiConverterInvoiceResponse{}
+
+func (c FfiConverterInvoiceResponse) Lift(pointer unsafe.Pointer) *InvoiceResponse {
+	result := &InvoiceResponse{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_invoiceresponse(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_invoiceresponse(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*InvoiceResponse).Destroy)
+	return result
+}
+
+func (c FfiConverterInvoiceResponse) Read(reader io.Reader) *InvoiceResponse {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterInvoiceResponse) Lower(value *InvoiceResponse) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*InvoiceResponse")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterInvoiceResponse) Write(writer io.Writer, value *InvoiceResponse) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerInvoiceResponse struct{}
+
+func (_ FfiDestroyerInvoiceResponse) Destroy(value *InvoiceResponse) {
+	value.Destroy()
+}
+
 // The details of an issuance or reissuance
 type IssuanceInterface interface {
 	// Return the asset id or None if it's a null issuance
@@ -5146,11 +6750,485 @@ func (_ FfiDestroyerIssuance) Destroy(value *Issuance) {
 	value.Destroy()
 }
 
-// Represent a test environment with an elements node and an electrum server.
-// useful for testing only, wrapper over [`lwk_test_util::TestElectrumServer`]
+// Represents a lightning payment (bolt11 invoice or bolt12 offer)
+type LightningPaymentInterface interface {
+	// Returns the bolt11 invoice if the lightning payment is a bolt11 invoice
+	Bolt11Invoice() **Bolt11Invoice
+}
+
+// Represents a lightning payment (bolt11 invoice or bolt12 offer)
+type LightningPayment struct {
+	ffiObject FfiObject
+}
+
+// Construct a lightning payment (bolt11 invoice or bolt12 offer) from a string
+func NewLightningPayment(s string) (*LightningPayment, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_lightningpayment_new(FfiConverterStringINSTANCE.Lower(s), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *LightningPayment
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterLightningPaymentINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Construct a lightning payment (bolt11 invoice or bolt12 offer) from a bolt11 invoice
+func LightningPaymentFromBolt11Invoice(invoice *Bolt11Invoice) *LightningPayment {
+	return FfiConverterLightningPaymentINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_lightningpayment_from_bolt11_invoice(FfiConverterBolt11InvoiceINSTANCE.Lower(invoice), _uniffiStatus)
+	}))
+}
+
+// Returns the bolt11 invoice if the lightning payment is a bolt11 invoice
+func (_self *LightningPayment) Bolt11Invoice() **Bolt11Invoice {
+	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalBolt11InvoiceINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lightningpayment_bolt11_invoice(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+func (object *LightningPayment) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterLightningPayment struct{}
+
+var FfiConverterLightningPaymentINSTANCE = FfiConverterLightningPayment{}
+
+func (c FfiConverterLightningPayment) Lift(pointer unsafe.Pointer) *LightningPayment {
+	result := &LightningPayment{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_lightningpayment(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_lightningpayment(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*LightningPayment).Destroy)
+	return result
+}
+
+func (c FfiConverterLightningPayment) Read(reader io.Reader) *LightningPayment {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterLightningPayment) Lower(value *LightningPayment) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*LightningPayment")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterLightningPayment) Write(writer io.Writer, value *LightningPayment) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerLightningPayment struct{}
+
+func (_ FfiDestroyerLightningPayment) Destroy(value *LightningPayment) {
+	value.Destroy()
+}
+
+type LockupResponseInterface interface {
+	Advance() (PaymentState, error)
+	ChainFrom() (string, error)
+	ChainTo() (string, error)
+	Complete() (bool, error)
+	ExpectedAmount() (uint64, error)
+	LockupAddress() (string, error)
+	Serialize() (string, error)
+	SwapId() (string, error)
+}
+type LockupResponse struct {
+	ffiObject FfiObject
+}
+
+func (_self *LockupResponse) Advance() (PaymentState, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lockupresponse_advance(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue PaymentState
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPaymentStateINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *LockupResponse) ChainFrom() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lockupresponse_chain_from(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *LockupResponse) ChainTo() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lockupresponse_chain_to(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *LockupResponse) Complete() (bool, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_lockupresponse_complete(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue bool
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoolINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *LockupResponse) ExpectedAmount() (uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_lockupresponse_expected_amount(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *LockupResponse) LockupAddress() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lockupresponse_lockup_address(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *LockupResponse) Serialize() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lockupresponse_serialize(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *LockupResponse) SwapId() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LockupResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lockupresponse_swap_id(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *LockupResponse) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterLockupResponse struct{}
+
+var FfiConverterLockupResponseINSTANCE = FfiConverterLockupResponse{}
+
+func (c FfiConverterLockupResponse) Lift(pointer unsafe.Pointer) *LockupResponse {
+	result := &LockupResponse{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_lockupresponse(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_lockupresponse(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*LockupResponse).Destroy)
+	return result
+}
+
+func (c FfiConverterLockupResponse) Read(reader io.Reader) *LockupResponse {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterLockupResponse) Lower(value *LockupResponse) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*LockupResponse")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterLockupResponse) Write(writer io.Writer, value *LockupResponse) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerLockupResponse struct{}
+
+func (_ FfiDestroyerLockupResponse) Destroy(value *LockupResponse) {
+	value.Destroy()
+}
+
+// An exported trait for handling logging messages.
+//
+// Implement this trait to receive and handle logging messages from the lightning session.
+type Logging interface {
+	// Log a message with the given level
+	Log(level LogLevel, message string)
+}
+
+// An exported trait for handling logging messages.
+//
+// Implement this trait to receive and handle logging messages from the lightning session.
+type LoggingImpl struct {
+	ffiObject FfiObject
+}
+
+// Log a message with the given level
+func (_self *LoggingImpl) Log(level LogLevel, message string) {
+	_pointer := _self.ffiObject.incrementPointer("Logging")
+	defer _self.ffiObject.decrementPointer()
+	rustCall(func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_logging_log(
+			_pointer, FfiConverterLogLevelINSTANCE.Lower(level), FfiConverterStringINSTANCE.Lower(message), _uniffiStatus)
+		return false
+	})
+}
+func (object *LoggingImpl) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterLogging struct {
+	handleMap *concurrentHandleMap[Logging]
+}
+
+var FfiConverterLoggingINSTANCE = FfiConverterLogging{
+	handleMap: newConcurrentHandleMap[Logging](),
+}
+
+func (c FfiConverterLogging) Lift(pointer unsafe.Pointer) Logging {
+	result := &LoggingImpl{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_logging(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_logging(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*LoggingImpl).Destroy)
+	return result
+}
+
+func (c FfiConverterLogging) Read(reader io.Reader) Logging {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterLogging) Lower(value Logging) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := unsafe.Pointer(uintptr(c.handleMap.insert(value)))
+	return pointer
+
+}
+
+func (c FfiConverterLogging) Write(writer io.Writer, value Logging) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerLogging struct{}
+
+func (_ FfiDestroyerLogging) Destroy(value Logging) {
+	if val, ok := value.(*LoggingImpl); ok {
+		val.Destroy()
+	} else {
+		panic("Expected *LoggingImpl")
+	}
+}
+
+//export lwk_cgo_dispatchCallbackInterfaceLoggingMethod0
+func lwk_cgo_dispatchCallbackInterfaceLoggingMethod0(uniffiHandle C.uint64_t, level C.RustBuffer, message C.RustBuffer, uniffiOutReturn *C.void, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterLoggingINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	uniffiObj.Log(
+		FfiConverterLogLevelINSTANCE.Lift(GoRustBuffer{
+			inner: level,
+		}),
+		FfiConverterStringINSTANCE.Lift(GoRustBuffer{
+			inner: message,
+		}),
+	)
+
+}
+
+var UniffiVTableCallbackInterfaceLoggingINSTANCE = C.UniffiVTableCallbackInterfaceLogging{
+	log: (C.UniffiCallbackInterfaceLoggingMethod0)(C.lwk_cgo_dispatchCallbackInterfaceLoggingMethod0),
+
+	uniffiFree: (C.UniffiCallbackInterfaceFree)(C.lwk_cgo_dispatchCallbackInterfaceLoggingFree),
+}
+
+//export lwk_cgo_dispatchCallbackInterfaceLoggingFree
+func lwk_cgo_dispatchCallbackInterfaceLoggingFree(handle C.uint64_t) {
+	FfiConverterLoggingINSTANCE.handleMap.remove(uint64(handle))
+}
+
+func (c FfiConverterLogging) register() {
+	C.uniffi_lwk_fn_init_callback_vtable_logging(&UniffiVTableCallbackInterfaceLoggingINSTANCE)
+}
+
+// An object to define logging at the caller level
+type LoggingLinkInterface interface {
+}
+
+// An object to define logging at the caller level
+type LoggingLink struct {
+	ffiObject FfiObject
+}
+
+// Create a new `LoggingLink`
+func NewLoggingLink(logging Logging) *LoggingLink {
+	return FfiConverterLoggingLinkINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_logginglink_new(FfiConverterLoggingINSTANCE.Lower(logging), _uniffiStatus)
+	}))
+}
+
+func (object *LoggingLink) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterLoggingLink struct{}
+
+var FfiConverterLoggingLinkINSTANCE = FfiConverterLoggingLink{}
+
+func (c FfiConverterLoggingLink) Lift(pointer unsafe.Pointer) *LoggingLink {
+	result := &LoggingLink{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_logginglink(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_logginglink(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*LoggingLink).Destroy)
+	return result
+}
+
+func (c FfiConverterLoggingLink) Read(reader io.Reader) *LoggingLink {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterLoggingLink) Lower(value *LoggingLink) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*LoggingLink")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterLoggingLink) Write(writer io.Writer, value *LoggingLink) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerLoggingLink struct{}
+
+func (_ FfiDestroyerLoggingLink) Destroy(value *LoggingLink) {
+	value.Destroy()
+}
+
+// Test environment
+//
+// Regtest with:
+// * Elements node
+// * Electrum server
+// * Esplora server
+// * Waterfalls server
+//
+// Wrapper over [`lwk_test_util::TestEnv`]
 type LwkTestEnvInterface interface {
 	// Get the Electrum URL of the test environment
 	ElectrumUrl() string
+	// Get the Esplora URL of the test environment
+	EsploraUrl() string
 	// Generate `blocks` blocks from the node
 	Generate(blocks uint32)
 	// Get a new address from the node
@@ -5161,10 +7239,19 @@ type LwkTestEnvInterface interface {
 	IssueAsset(satoshi uint64) AssetId
 	// Send `satoshi` to `address` from the node
 	SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid
+	// Get the Waterfalls URL of the test environment
+	WaterfallsUrl() string
 }
 
-// Represent a test environment with an elements node and an electrum server.
-// useful for testing only, wrapper over [`lwk_test_util::TestElectrumServer`]
+// Test environment
+//
+// Regtest with:
+// * Elements node
+// * Electrum server
+// * Esplora server
+// * Waterfalls server
+//
+// Wrapper over [`lwk_test_util::TestEnv`]
 type LwkTestEnv struct {
 	ffiObject FfiObject
 }
@@ -5183,6 +7270,18 @@ func (_self *LwkTestEnv) ElectrumUrl() string {
 	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_lwktestenv_electrum_url(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Get the Esplora URL of the test environment
+func (_self *LwkTestEnv) EsploraUrl() string {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lwktestenv_esplora_url(
 				_pointer, _uniffiStatus),
 		}
 	}))
@@ -5240,6 +7339,18 @@ func (_self *LwkTestEnv) SendToAddress(address *Address, satoshi uint64, asset *
 			_pointer, FfiConverterAddressINSTANCE.Lower(address), FfiConverterUint64INSTANCE.Lower(satoshi), FfiConverterOptionalTypeAssetIdINSTANCE.Lower(asset), _uniffiStatus)
 	}))
 }
+
+// Get the Waterfalls URL of the test environment
+func (_self *LwkTestEnv) WaterfallsUrl() string {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lwktestenv_waterfalls_url(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
 func (object *LwkTestEnv) Destroy() {
 	runtime.SetFinalizer(object, nil)
 	object.ffiObject.destroy()
@@ -5291,6 +7402,8 @@ func (_ FfiDestroyerLwkTestEnv) Destroy(value *LwkTestEnv) {
 
 // Wrapper over [`bip39::Mnemonic`]
 type MnemonicInterface interface {
+	// Get the number of words in this mnemonic
+	WordCount() uint8
 }
 
 // Wrapper over [`bip39::Mnemonic`]
@@ -5335,6 +7448,16 @@ func MnemonicFromRandom(wordCount uint8) (*Mnemonic, error) {
 	} else {
 		return FfiConverterMnemonicINSTANCE.Lift(_uniffiRV), nil
 	}
+}
+
+// Get the number of words in this mnemonic
+func (_self *Mnemonic) WordCount() uint8 {
+	_pointer := _self.ffiObject.incrementPointer("*Mnemonic")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint8INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint8_t {
+		return C.uniffi_lwk_fn_method_mnemonic_word_count(
+			_pointer, _uniffiStatus)
+	}))
 }
 
 func (_self *Mnemonic) String() string {
@@ -5778,6 +7901,236 @@ func (_ FfiDestroyerPrecision) Destroy(value *Precision) {
 	value.Destroy()
 }
 
+type PreparePayResponseInterface interface {
+	Advance() (PaymentState, error)
+	// The fee of the swap provider
+	//
+	// It is equal to the invoice amount multiplied by the boltz fee rate.
+	// For example for paying an invoice of 1000 satoshi with a 0.1% rate would be 1 satoshi.
+	BoltzFee() (*uint64, error)
+	CompletePay() (bool, error)
+	// The fee of the swap provider and the network fee
+	//
+	// It is equal to the amount requested onchain minus the amount of the bolt11 invoice
+	Fee() (*uint64, error)
+	// Serialize the prepare pay response data to a json string
+	//
+	// This can be used to restore the prepare pay response after a crash
+	Serialize() (string, error)
+	SwapId() (string, error)
+	Uri() (string, error)
+	UriAddress() (*Address, error)
+	UriAmount() (uint64, error)
+}
+type PreparePayResponse struct {
+	ffiObject FfiObject
+}
+
+func (_self *PreparePayResponse) Advance() (PaymentState, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_preparepayresponse_advance(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue PaymentState
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPaymentStateINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// The fee of the swap provider
+//
+// It is equal to the invoice amount multiplied by the boltz fee rate.
+// For example for paying an invoice of 1000 satoshi with a 0.1% rate would be 1 satoshi.
+func (_self *PreparePayResponse) BoltzFee() (*uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_preparepayresponse_boltz_fee(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *PreparePayResponse) CompletePay() (bool, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_preparepayresponse_complete_pay(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue bool
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoolINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// The fee of the swap provider and the network fee
+//
+// It is equal to the amount requested onchain minus the amount of the bolt11 invoice
+func (_self *PreparePayResponse) Fee() (*uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_preparepayresponse_fee(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Serialize the prepare pay response data to a json string
+//
+// This can be used to restore the prepare pay response after a crash
+func (_self *PreparePayResponse) Serialize() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_preparepayresponse_serialize(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *PreparePayResponse) SwapId() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_preparepayresponse_swap_id(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *PreparePayResponse) Uri() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_preparepayresponse_uri(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *PreparePayResponse) UriAddress() (*Address, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_preparepayresponse_uri_address(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Address
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAddressINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *PreparePayResponse) UriAmount() (uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_preparepayresponse_uri_amount(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *PreparePayResponse) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterPreparePayResponse struct{}
+
+var FfiConverterPreparePayResponseINSTANCE = FfiConverterPreparePayResponse{}
+
+func (c FfiConverterPreparePayResponse) Lift(pointer unsafe.Pointer) *PreparePayResponse {
+	result := &PreparePayResponse{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_preparepayresponse(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_preparepayresponse(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*PreparePayResponse).Destroy)
+	return result
+}
+
+func (c FfiConverterPreparePayResponse) Read(reader io.Reader) *PreparePayResponse {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterPreparePayResponse) Lower(value *PreparePayResponse) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*PreparePayResponse")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterPreparePayResponse) Write(writer io.Writer, value *PreparePayResponse) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerPreparePayResponse struct{}
+
+func (_ FfiDestroyerPreparePayResponse) Destroy(value *PreparePayResponse) {
+	value.Destroy()
+}
+
 // A Partially Signed Elements Transaction
 type PsetInterface interface {
 	// Attempt to combine with another `Pset`.
@@ -6049,6 +8402,10 @@ type PsetDetailsInterface interface {
 	// Return the balance of the PSET from the point of view of the wallet
 	// that generated this via `psetDetails()`
 	Balance() *PsetBalance
+	// Set of fingerprints for which the PSET has a signature
+	FingerprintsHas() []string
+	// Set of fingerprints for which the PSET is missing a signature
+	FingerprintsMissing() []string
 	// Return an element for every input that could possibly be a issuance or a reissuance
 	InputsIssuances() []*Issuance
 	// For each input its existing or missing signatures
@@ -6072,6 +8429,30 @@ func (_self *PsetDetails) Balance() *PsetBalance {
 	return FfiConverterPsetBalanceINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_method_psetdetails_balance(
 			_pointer, _uniffiStatus)
+	}))
+}
+
+// Set of fingerprints for which the PSET has a signature
+func (_self *PsetDetails) FingerprintsHas() []string {
+	_pointer := _self.ffiObject.incrementPointer("*PsetDetails")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterSequenceStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_psetdetails_fingerprints_has(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Set of fingerprints for which the PSET is missing a signature
+func (_self *PsetDetails) FingerprintsMissing() []string {
+	_pointer := _self.ffiObject.incrementPointer("*PsetDetails")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterSequenceStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_psetdetails_fingerprints_missing(
+				_pointer, _uniffiStatus),
+		}
 	}))
 }
 
@@ -6490,13 +8871,13 @@ func (_ FfiDestroyerRecipient) Destroy(value *Recipient) {
 
 // A Liquid script
 type ScriptInterface interface {
-	// Return the string representation of the script showing op codes and their arguments.
-	// For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
-	Asm() string
 	// Return the consensus encoded bytes of the script.
 	Bytes() []byte
 	// Whether a script pubkey is provably unspendable (like a burn script)
 	IsProvablyUnspendable() bool
+	// Return the string representation of the script showing op codes and their arguments.
+	// For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
+	ToAsm() string
 }
 
 // A Liquid script
@@ -6518,19 +8899,6 @@ func NewScript(hex Hex) (*Script, error) {
 	}
 }
 
-// Return the string representation of the script showing op codes and their arguments.
-// For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
-func (_self *Script) Asm() string {
-	_pointer := _self.ffiObject.incrementPointer("*Script")
-	defer _self.ffiObject.decrementPointer()
-	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
-		return GoRustBuffer{
-			inner: C.uniffi_lwk_fn_method_script_asm(
-				_pointer, _uniffiStatus),
-		}
-	}))
-}
-
 // Return the consensus encoded bytes of the script.
 func (_self *Script) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*Script")
@@ -6550,6 +8918,19 @@ func (_self *Script) IsProvablyUnspendable() bool {
 	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
 		return C.uniffi_lwk_fn_method_script_is_provably_unspendable(
 			_pointer, _uniffiStatus)
+	}))
+}
+
+// Return the string representation of the script showing op codes and their arguments.
+// For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
+func (_self *Script) ToAsm() string {
+	_pointer := _self.ffiObject.incrementPointer("*Script")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_script_to_asm(
+				_pointer, _uniffiStatus),
+		}
 	}))
 }
 
@@ -6738,6 +9119,24 @@ type SignerInterface interface {
 	Amp0SignChallenge(challenge string) (string, error)
 	// AMP0 signer data for login
 	Amp0SignerData() (*Amp0SignerData, error)
+	// Derive a BIP85 mnemonic from this signer
+	//
+	// # Arguments
+	// * `index` - The index for the derived mnemonic (0-based)
+	// * `word_count` - The number of words in the derived mnemonic (12 or 24)
+	//
+	// # Returns
+	// * `Ok(Mnemonic)` - The derived BIP85 mnemonic
+	// * `Err(LwkError)` - If BIP85 derivation fails
+	//
+	// # Example
+	// ```python
+	// signer = Signer.new(mnemonic, network)
+	// derived_mnemonic = signer.derive_bip85_mnemonic(0, 12)
+	// ```
+	DeriveBip85Mnemonic(index uint32, wordCount uint32) (*Mnemonic, error)
+	// Return the signer fingerprint
+	Fingerprint() (string, error)
 	// Return keyorigin and xpub, like "[73c5da0a/84h/1h/0h]tpub..."
 	KeyoriginXpub(bip *Bip) (string, error)
 	// Get the mnemonic of the signer
@@ -6833,6 +9232,54 @@ func (_self *Signer) Amp0SignerData() (*Amp0SignerData, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterAmp0SignerDataINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Derive a BIP85 mnemonic from this signer
+//
+// # Arguments
+// * `index` - The index for the derived mnemonic (0-based)
+// * `word_count` - The number of words in the derived mnemonic (12 or 24)
+//
+// # Returns
+// * `Ok(Mnemonic)` - The derived BIP85 mnemonic
+// * `Err(LwkError)` - If BIP85 derivation fails
+//
+// # Example
+// ```python
+// signer = Signer.new(mnemonic, network)
+// derived_mnemonic = signer.derive_bip85_mnemonic(0, 12)
+// ```
+func (_self *Signer) DeriveBip85Mnemonic(index uint32, wordCount uint32) (*Mnemonic, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Signer")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_signer_derive_bip85_mnemonic(
+			_pointer, FfiConverterUint32INSTANCE.Lower(index), FfiConverterUint32INSTANCE.Lower(wordCount), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Mnemonic
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterMnemonicINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Return the signer fingerprint
+func (_self *Signer) Fingerprint() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Signer")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_signer_fingerprint(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
@@ -6969,10 +9416,78 @@ func (_ FfiDestroyerSigner) Destroy(value *Signer) {
 	value.Destroy()
 }
 
+type SwapListInterface interface {
+}
+type SwapList struct {
+	ffiObject FfiObject
+}
+
+func (_self *SwapList) String() string {
+	_pointer := _self.ffiObject.incrementPointer("*SwapList")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_swaplist_uniffi_trait_display(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (object *SwapList) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterSwapList struct{}
+
+var FfiConverterSwapListINSTANCE = FfiConverterSwapList{}
+
+func (c FfiConverterSwapList) Lift(pointer unsafe.Pointer) *SwapList {
+	result := &SwapList{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_swaplist(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_swaplist(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*SwapList).Destroy)
+	return result
+}
+
+func (c FfiConverterSwapList) Read(reader io.Reader) *SwapList {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterSwapList) Lower(value *SwapList) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*SwapList")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterSwapList) Write(writer io.Writer, value *SwapList) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerSwapList struct{}
+
+func (_ FfiDestroyerSwapList) Destroy(value *SwapList) {
+	value.Destroy()
+}
+
 // A Liquid transaction
 type TransactionInterface interface {
 	// Return the consensus encoded bytes of the transaction.
 	Bytes() []byte
+	// Returns the "discount virtual size" of this transaction.
+	DiscountVsize() uint32
 	// Return the fee of the transaction in the given asset.
 	// At the moment the only asset that can be used as fee is the policy asset (LBTC for mainnet).
 	Fee(policyAsset AssetId) uint64
@@ -7012,6 +9527,16 @@ func (_self *Transaction) Bytes() []byte {
 			inner: C.uniffi_lwk_fn_method_transaction_bytes(
 				_pointer, _uniffiStatus),
 		}
+	}))
+}
+
+// Returns the "discount virtual size" of this transaction.
+func (_self *Transaction) DiscountVsize() uint32 {
+	_pointer := _self.ffiObject.incrementPointer("*Transaction")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint32INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint32_t {
+		return C.uniffi_lwk_fn_method_transaction_discount_vsize(
+			_pointer, _uniffiStatus)
 	}))
 }
 
@@ -7130,6 +9655,8 @@ type TxBuilderInterface interface {
 	//
 	// Note: unblinded UTXOs with the same scriptpubkeys as the wallet, are considered external.
 	AddExternalUtxos(utxos []*ExternalUtxo) error
+	// Add input rangeproofs
+	AddInputRangeproofs(addRangeproofs bool) error
 	// Add a recipient receiving L-BTC
 	AddLbtcRecipient(address *Address, satoshi uint64) error
 	// Add a recipient receiving the given asset
@@ -7234,6 +9761,18 @@ func (_self *TxBuilder) AddExternalUtxos(utxos []*ExternalUtxo) error {
 	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
 		C.uniffi_lwk_fn_method_txbuilder_add_external_utxos(
 			_pointer, FfiConverterSequenceExternalUtxoINSTANCE.Lower(utxos), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
+}
+
+// Add input rangeproofs
+func (_self *TxBuilder) AddInputRangeproofs(addRangeproofs bool) error {
+	_pointer := _self.ffiObject.incrementPointer("*TxBuilder")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_txbuilder_add_input_rangeproofs(
+			_pointer, FfiConverterBoolINSTANCE.Lower(addRangeproofs), _uniffiStatus)
 		return false
 	})
 	return _uniffiErr.AsError()
@@ -8675,6 +11214,67 @@ func (_ FfiDestroyerWalletTxOut) Destroy(value *WalletTxOut) {
 	value.Destroy()
 }
 
+type WebHookInterface interface {
+}
+type WebHook struct {
+	ffiObject FfiObject
+}
+
+func NewWebHook(url string, status []string) *WebHook {
+	return FfiConverterWebHookINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_webhook_new(FfiConverterStringINSTANCE.Lower(url), FfiConverterSequenceStringINSTANCE.Lower(status), _uniffiStatus)
+	}))
+}
+
+func (object *WebHook) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterWebHook struct{}
+
+var FfiConverterWebHookINSTANCE = FfiConverterWebHook{}
+
+func (c FfiConverterWebHook) Lift(pointer unsafe.Pointer) *WebHook {
+	result := &WebHook{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_webhook(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_webhook(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*WebHook).Destroy)
+	return result
+}
+
+func (c FfiConverterWebHook) Read(reader io.Reader) *WebHook {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterWebHook) Lower(value *WebHook) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*WebHook")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterWebHook) Write(writer io.Writer, value *WebHook) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerWebHook struct{}
+
+func (_ FfiDestroyerWebHook) Destroy(value *WebHook) {
+	value.Destroy()
+}
+
 // A Watch-Only wallet, wrapper over [`lwk_wollet::Wollet`]
 type WolletInterface interface {
 	// Add wallet details to the PSET
@@ -8719,6 +11319,8 @@ type WolletInterface interface {
 	Balance() (map[AssetId]uint64, error)
 	// Get a copy of the wallet descriptor
 	Descriptor() (*WolletDescriptor, error)
+	// Return the [ELIP152](https://github.com/ElementsProject/ELIPs/blob/main/elip-0152.mediawiki) deterministic wallet identifier.
+	Dwid() (string, error)
 	// Extract the wallet UTXOs that a PSET is creating
 	ExtractWalletUtxos(pset *Pset) ([]*ExternalUtxo, error)
 	// Finalize a PSET, returning a new PSET with the finalized inputs
@@ -8895,6 +11497,24 @@ func (_self *Wollet) Descriptor() (*WolletDescriptor, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterWolletDescriptorINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Return the [ELIP152](https://github.com/ElementsProject/ELIPs/blob/main/elip-0152.mediawiki) deterministic wallet identifier.
+func (_self *Wollet) Dwid() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Wollet")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_wollet_dwid(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
@@ -9162,6 +11782,8 @@ type WolletDescriptorInterface interface {
 	IsMainnet() bool
 	// Derive a scriptpubkey
 	ScriptPubkey(extInt Chain, index uint32) (*Script, error)
+	// Return the descriptor encoded so that can be part of an URL
+	UrlEncodedDescriptor() string
 }
 
 // The output descriptors, wrapper over [`lwk_wollet::WolletDescriptor`]
@@ -9230,6 +11852,18 @@ func (_self *WolletDescriptor) ScriptPubkey(extInt Chain, index uint32) (*Script
 	}
 }
 
+// Return the descriptor encoded so that can be part of an URL
+func (_self *WolletDescriptor) UrlEncodedDescriptor() string {
+	_pointer := _self.ffiObject.incrementPointer("*WolletDescriptor")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_wolletdescriptor_url_encoded_descriptor(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
 func (_self *WolletDescriptor) String() string {
 	_pointer := _self.ffiObject.incrementPointer("*WolletDescriptor")
 	defer _self.ffiObject.decrementPointer()
@@ -9287,6 +11921,83 @@ func (c FfiConverterWolletDescriptor) Write(writer io.Writer, value *WolletDescr
 type FfiDestroyerWolletDescriptor struct{}
 
 func (_ FfiDestroyerWolletDescriptor) Destroy(value *WolletDescriptor) {
+	value.Destroy()
+}
+
+// A builder for the `BoltzSession`
+type BoltzSessionBuilder struct {
+	Network                  *Network
+	Client                   *AnyClient
+	Timeout                  *uint64
+	Mnemonic                 **Mnemonic
+	Logging                  *Logging
+	Polling                  bool
+	TimeoutAdvance           *uint64
+	NextIndexToUse           *uint32
+	ReferralId               *string
+	BitcoinElectrumClientUrl *string
+	RandomPreimages          bool
+}
+
+func (r *BoltzSessionBuilder) Destroy() {
+	FfiDestroyerNetwork{}.Destroy(r.Network)
+	FfiDestroyerAnyClient{}.Destroy(r.Client)
+	FfiDestroyerOptionalUint64{}.Destroy(r.Timeout)
+	FfiDestroyerOptionalMnemonic{}.Destroy(r.Mnemonic)
+	FfiDestroyerOptionalLogging{}.Destroy(r.Logging)
+	FfiDestroyerBool{}.Destroy(r.Polling)
+	FfiDestroyerOptionalUint64{}.Destroy(r.TimeoutAdvance)
+	FfiDestroyerOptionalUint32{}.Destroy(r.NextIndexToUse)
+	FfiDestroyerOptionalString{}.Destroy(r.ReferralId)
+	FfiDestroyerOptionalString{}.Destroy(r.BitcoinElectrumClientUrl)
+	FfiDestroyerBool{}.Destroy(r.RandomPreimages)
+}
+
+type FfiConverterBoltzSessionBuilder struct{}
+
+var FfiConverterBoltzSessionBuilderINSTANCE = FfiConverterBoltzSessionBuilder{}
+
+func (c FfiConverterBoltzSessionBuilder) Lift(rb RustBufferI) BoltzSessionBuilder {
+	return LiftFromRustBuffer[BoltzSessionBuilder](c, rb)
+}
+
+func (c FfiConverterBoltzSessionBuilder) Read(reader io.Reader) BoltzSessionBuilder {
+	return BoltzSessionBuilder{
+		FfiConverterNetworkINSTANCE.Read(reader),
+		FfiConverterAnyClientINSTANCE.Read(reader),
+		FfiConverterOptionalUint64INSTANCE.Read(reader),
+		FfiConverterOptionalMnemonicINSTANCE.Read(reader),
+		FfiConverterOptionalLoggingINSTANCE.Read(reader),
+		FfiConverterBoolINSTANCE.Read(reader),
+		FfiConverterOptionalUint64INSTANCE.Read(reader),
+		FfiConverterOptionalUint32INSTANCE.Read(reader),
+		FfiConverterOptionalStringINSTANCE.Read(reader),
+		FfiConverterOptionalStringINSTANCE.Read(reader),
+		FfiConverterBoolINSTANCE.Read(reader),
+	}
+}
+
+func (c FfiConverterBoltzSessionBuilder) Lower(value BoltzSessionBuilder) C.RustBuffer {
+	return LowerIntoRustBuffer[BoltzSessionBuilder](c, value)
+}
+
+func (c FfiConverterBoltzSessionBuilder) Write(writer io.Writer, value BoltzSessionBuilder) {
+	FfiConverterNetworkINSTANCE.Write(writer, value.Network)
+	FfiConverterAnyClientINSTANCE.Write(writer, value.Client)
+	FfiConverterOptionalUint64INSTANCE.Write(writer, value.Timeout)
+	FfiConverterOptionalMnemonicINSTANCE.Write(writer, value.Mnemonic)
+	FfiConverterOptionalLoggingINSTANCE.Write(writer, value.Logging)
+	FfiConverterBoolINSTANCE.Write(writer, value.Polling)
+	FfiConverterOptionalUint64INSTANCE.Write(writer, value.TimeoutAdvance)
+	FfiConverterOptionalUint32INSTANCE.Write(writer, value.NextIndexToUse)
+	FfiConverterOptionalStringINSTANCE.Write(writer, value.ReferralId)
+	FfiConverterOptionalStringINSTANCE.Write(writer, value.BitcoinElectrumClientUrl)
+	FfiConverterBoolINSTANCE.Write(writer, value.RandomPreimages)
+}
+
+type FfiDestroyerBoltzSessionBuilder struct{}
+
+func (_ FfiDestroyerBoltzSessionBuilder) Destroy(value BoltzSessionBuilder) {
 	value.Destroy()
 }
 
@@ -9416,6 +12127,45 @@ type FfiDestroyerDescriptorBlindingKey struct{}
 func (_ FfiDestroyerDescriptorBlindingKey) Destroy(value DescriptorBlindingKey) {
 }
 
+// Log level for logging messages
+type LogLevel uint
+
+const (
+	// Debug level
+	LogLevelDebug LogLevel = 1
+	// Info level
+	LogLevelInfo LogLevel = 2
+	// Warning level
+	LogLevelWarn LogLevel = 3
+	// Error level
+	LogLevelError LogLevel = 4
+)
+
+type FfiConverterLogLevel struct{}
+
+var FfiConverterLogLevelINSTANCE = FfiConverterLogLevel{}
+
+func (c FfiConverterLogLevel) Lift(rb RustBufferI) LogLevel {
+	return LiftFromRustBuffer[LogLevel](c, rb)
+}
+
+func (c FfiConverterLogLevel) Lower(value LogLevel) C.RustBuffer {
+	return LowerIntoRustBuffer[LogLevel](c, value)
+}
+func (FfiConverterLogLevel) Read(reader io.Reader) LogLevel {
+	id := readInt32(reader)
+	return LogLevel(id)
+}
+
+func (FfiConverterLogLevel) Write(writer io.Writer, value LogLevel) {
+	writeInt32(writer, int32(value))
+}
+
+type FfiDestroyerLogLevel struct{}
+
+func (_ FfiDestroyerLogLevel) Destroy(value LogLevel) {
+}
+
 // Possible errors emitted
 type LwkError struct {
 	err error
@@ -9442,6 +12192,10 @@ func (err LwkError) Unwrap() error {
 // Err* are used for checking error type with `errors.Is`
 var ErrLwkErrorGeneric = fmt.Errorf("LwkErrorGeneric")
 var ErrLwkErrorPoisonError = fmt.Errorf("LwkErrorPoisonError")
+var ErrLwkErrorMagicRoutingHint = fmt.Errorf("LwkErrorMagicRoutingHint")
+var ErrLwkErrorSwapExpired = fmt.Errorf("LwkErrorSwapExpired")
+var ErrLwkErrorNoBoltzUpdate = fmt.Errorf("LwkErrorNoBoltzUpdate")
+var ErrLwkErrorObjectConsumed = fmt.Errorf("LwkErrorObjectConsumed")
 
 // Variant structs
 type LwkErrorGeneric struct {
@@ -9500,6 +12254,119 @@ func (self LwkErrorPoisonError) Is(target error) bool {
 	return target == ErrLwkErrorPoisonError
 }
 
+type LwkErrorMagicRoutingHint struct {
+	Address string
+	Amount  uint64
+	Uri     string
+}
+
+func NewLwkErrorMagicRoutingHint(
+	address string,
+	amount uint64,
+	uri string,
+) *LwkError {
+	return &LwkError{err: &LwkErrorMagicRoutingHint{
+		Address: address,
+		Amount:  amount,
+		Uri:     uri}}
+}
+
+func (e LwkErrorMagicRoutingHint) destroy() {
+	FfiDestroyerString{}.Destroy(e.Address)
+	FfiDestroyerUint64{}.Destroy(e.Amount)
+	FfiDestroyerString{}.Destroy(e.Uri)
+}
+
+func (err LwkErrorMagicRoutingHint) Error() string {
+	return fmt.Sprint("MagicRoutingHint",
+		": ",
+
+		"Address=",
+		err.Address,
+		", ",
+		"Amount=",
+		err.Amount,
+		", ",
+		"Uri=",
+		err.Uri,
+	)
+}
+
+func (self LwkErrorMagicRoutingHint) Is(target error) bool {
+	return target == ErrLwkErrorMagicRoutingHint
+}
+
+type LwkErrorSwapExpired struct {
+	SwapId string
+	Status string
+}
+
+func NewLwkErrorSwapExpired(
+	swapId string,
+	status string,
+) *LwkError {
+	return &LwkError{err: &LwkErrorSwapExpired{
+		SwapId: swapId,
+		Status: status}}
+}
+
+func (e LwkErrorSwapExpired) destroy() {
+	FfiDestroyerString{}.Destroy(e.SwapId)
+	FfiDestroyerString{}.Destroy(e.Status)
+}
+
+func (err LwkErrorSwapExpired) Error() string {
+	return fmt.Sprint("SwapExpired",
+		": ",
+
+		"SwapId=",
+		err.SwapId,
+		", ",
+		"Status=",
+		err.Status,
+	)
+}
+
+func (self LwkErrorSwapExpired) Is(target error) bool {
+	return target == ErrLwkErrorSwapExpired
+}
+
+type LwkErrorNoBoltzUpdate struct {
+}
+
+func NewLwkErrorNoBoltzUpdate() *LwkError {
+	return &LwkError{err: &LwkErrorNoBoltzUpdate{}}
+}
+
+func (e LwkErrorNoBoltzUpdate) destroy() {
+}
+
+func (err LwkErrorNoBoltzUpdate) Error() string {
+	return fmt.Sprint("NoBoltzUpdate")
+}
+
+func (self LwkErrorNoBoltzUpdate) Is(target error) bool {
+	return target == ErrLwkErrorNoBoltzUpdate
+}
+
+type LwkErrorObjectConsumed struct {
+}
+
+func NewLwkErrorObjectConsumed() *LwkError {
+	return &LwkError{err: &LwkErrorObjectConsumed{}}
+}
+
+func (e LwkErrorObjectConsumed) destroy() {
+}
+
+func (err LwkErrorObjectConsumed) Error() string {
+	return fmt.Sprint("ObjectConsumed")
+}
+
+func (self LwkErrorObjectConsumed) Is(target error) bool {
+	return target == ErrLwkErrorObjectConsumed
+}
+
 type FfiConverterLwkError struct{}
 
 var FfiConverterLwkErrorINSTANCE = FfiConverterLwkError{}
@@ -9524,6 +12391,21 @@ func (c FfiConverterLwkError) Read(reader io.Reader) *LwkError {
 		return &LwkError{&LwkErrorPoisonError{
 			Msg: FfiConverterStringINSTANCE.Read(reader),
 		}}
+	case 3:
+		return &LwkError{&LwkErrorMagicRoutingHint{
+			Address: FfiConverterStringINSTANCE.Read(reader),
+			Amount:  FfiConverterUint64INSTANCE.Read(reader),
+			Uri:     FfiConverterStringINSTANCE.Read(reader),
+		}}
+	case 4:
+		return &LwkError{&LwkErrorSwapExpired{
+			SwapId: FfiConverterStringINSTANCE.Read(reader),
+			Status: FfiConverterStringINSTANCE.Read(reader),
+		}}
+	case 5:
+		return &LwkError{&LwkErrorNoBoltzUpdate{}}
+	case 6:
+		return &LwkError{&LwkErrorObjectConsumed{}}
 	default:
 		panic(fmt.Sprintf("Unknown error code %d in FfiConverterLwkError.Read()", errorID))
 	}
@@ -9537,6 +12419,19 @@ func (c FfiConverterLwkError) Write(writer io.Writer, value *LwkError) {
 	case *LwkErrorPoisonError:
 		writeInt32(writer, 2)
 		FfiConverterStringINSTANCE.Write(writer, variantValue.Msg)
+	case *LwkErrorMagicRoutingHint:
+		writeInt32(writer, 3)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.Address)
+		FfiConverterUint64INSTANCE.Write(writer, variantValue.Amount)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.Uri)
+	case *LwkErrorSwapExpired:
+		writeInt32(writer, 4)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.SwapId)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.Status)
+	case *LwkErrorNoBoltzUpdate:
+		writeInt32(writer, 5)
+	case *LwkErrorObjectConsumed:
+		writeInt32(writer, 6)
 	default:
 		_ = variantValue
 		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterLwkError.Write", value))
@@ -9551,10 +12446,51 @@ func (_ FfiDestroyerLwkError) Destroy(value *LwkError) {
 		variantValue.destroy()
 	case LwkErrorPoisonError:
 		variantValue.destroy()
+	case LwkErrorMagicRoutingHint:
+		variantValue.destroy()
+	case LwkErrorSwapExpired:
+		variantValue.destroy()
+	case LwkErrorNoBoltzUpdate:
+		variantValue.destroy()
+	case LwkErrorObjectConsumed:
+		variantValue.destroy()
 	default:
 		_ = variantValue
 		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerLwkError.Destroy", value))
 	}
+}
+
+type PaymentState uint
+
+const (
+	PaymentStateContinue PaymentState = 1
+	PaymentStateSuccess  PaymentState = 2
+	PaymentStateFailed   PaymentState = 3
+)
+
+type FfiConverterPaymentState struct{}
+
+var FfiConverterPaymentStateINSTANCE = FfiConverterPaymentState{}
+
+func (c FfiConverterPaymentState) Lift(rb RustBufferI) PaymentState {
+	return LiftFromRustBuffer[PaymentState](c, rb)
+}
+
+func (c FfiConverterPaymentState) Lower(value PaymentState) C.RustBuffer {
+	return LowerIntoRustBuffer[PaymentState](c, value)
+}
+func (FfiConverterPaymentState) Read(reader io.Reader) PaymentState {
+	id := readInt32(reader)
+	return PaymentState(id)
+}
+
+func (FfiConverterPaymentState) Write(writer io.Writer, value PaymentState) {
+	writeInt32(writer, int32(value))
+}
+
+type FfiDestroyerPaymentState struct{}
+
+func (_ FfiDestroyerPaymentState) Destroy(value PaymentState) {
 }
 
 type Singlesig uint
@@ -9811,6 +12747,43 @@ func (_ FfiDestroyerOptionalAddress) Destroy(value **Address) {
 	}
 }
 
+type FfiConverterOptionalBolt11Invoice struct{}
+
+var FfiConverterOptionalBolt11InvoiceINSTANCE = FfiConverterOptionalBolt11Invoice{}
+
+func (c FfiConverterOptionalBolt11Invoice) Lift(rb RustBufferI) **Bolt11Invoice {
+	return LiftFromRustBuffer[**Bolt11Invoice](c, rb)
+}
+
+func (_ FfiConverterOptionalBolt11Invoice) Read(reader io.Reader) **Bolt11Invoice {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterBolt11InvoiceINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalBolt11Invoice) Lower(value **Bolt11Invoice) C.RustBuffer {
+	return LowerIntoRustBuffer[**Bolt11Invoice](c, value)
+}
+
+func (_ FfiConverterOptionalBolt11Invoice) Write(writer io.Writer, value **Bolt11Invoice) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterBolt11InvoiceINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalBolt11Invoice struct{}
+
+func (_ FfiDestroyerOptionalBolt11Invoice) Destroy(value **Bolt11Invoice) {
+	if value != nil {
+		FfiDestroyerBolt11Invoice{}.Destroy(*value)
+	}
+}
+
 type FfiConverterOptionalContract struct{}
 
 var FfiConverterOptionalContractINSTANCE = FfiConverterOptionalContract{}
@@ -9882,6 +12855,80 @@ type FfiDestroyerOptionalIssuance struct{}
 func (_ FfiDestroyerOptionalIssuance) Destroy(value **Issuance) {
 	if value != nil {
 		FfiDestroyerIssuance{}.Destroy(*value)
+	}
+}
+
+type FfiConverterOptionalLogging struct{}
+
+var FfiConverterOptionalLoggingINSTANCE = FfiConverterOptionalLogging{}
+
+func (c FfiConverterOptionalLogging) Lift(rb RustBufferI) *Logging {
+	return LiftFromRustBuffer[*Logging](c, rb)
+}
+
+func (_ FfiConverterOptionalLogging) Read(reader io.Reader) *Logging {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterLoggingINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalLogging) Lower(value *Logging) C.RustBuffer {
+	return LowerIntoRustBuffer[*Logging](c, value)
+}
+
+func (_ FfiConverterOptionalLogging) Write(writer io.Writer, value *Logging) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterLoggingINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalLogging struct{}
+
+func (_ FfiDestroyerOptionalLogging) Destroy(value *Logging) {
+	if value != nil {
+		FfiDestroyerLogging{}.Destroy(*value)
+	}
+}
+
+type FfiConverterOptionalMnemonic struct{}
+
+var FfiConverterOptionalMnemonicINSTANCE = FfiConverterOptionalMnemonic{}
+
+func (c FfiConverterOptionalMnemonic) Lift(rb RustBufferI) **Mnemonic {
+	return LiftFromRustBuffer[**Mnemonic](c, rb)
+}
+
+func (_ FfiConverterOptionalMnemonic) Read(reader io.Reader) **Mnemonic {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterMnemonicINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalMnemonic) Lower(value **Mnemonic) C.RustBuffer {
+	return LowerIntoRustBuffer[**Mnemonic](c, value)
+}
+
+func (_ FfiConverterOptionalMnemonic) Write(writer io.Writer, value **Mnemonic) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterMnemonicINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalMnemonic struct{}
+
+func (_ FfiDestroyerOptionalMnemonic) Destroy(value **Mnemonic) {
+	if value != nil {
+		FfiDestroyerMnemonic{}.Destroy(*value)
 	}
 }
 
@@ -10104,6 +13151,43 @@ type FfiDestroyerOptionalWalletTxOut struct{}
 func (_ FfiDestroyerOptionalWalletTxOut) Destroy(value **WalletTxOut) {
 	if value != nil {
 		FfiDestroyerWalletTxOut{}.Destroy(*value)
+	}
+}
+
+type FfiConverterOptionalWebHook struct{}
+
+var FfiConverterOptionalWebHookINSTANCE = FfiConverterOptionalWebHook{}
+
+func (c FfiConverterOptionalWebHook) Lift(rb RustBufferI) **WebHook {
+	return LiftFromRustBuffer[**WebHook](c, rb)
+}
+
+func (_ FfiConverterOptionalWebHook) Read(reader io.Reader) **WebHook {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterWebHookINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalWebHook) Lower(value **WebHook) C.RustBuffer {
+	return LowerIntoRustBuffer[**WebHook](c, value)
+}
+
+func (_ FfiConverterOptionalWebHook) Write(writer io.Writer, value **WebHook) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterWebHookINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalWebHook struct{}
+
+func (_ FfiDestroyerOptionalWebHook) Destroy(value **WebHook) {
+	if value != nil {
+		FfiDestroyerWebHook{}.Destroy(*value)
 	}
 }
 
@@ -10856,6 +13940,36 @@ type FfiConverterTypeHex = FfiConverterString
 type FfiDestroyerTypeHex = FfiDestroyerString
 
 var FfiConverterTypeHexINSTANCE = FfiConverterString{}
+
+// Derive asset id from contract and transaction input
+func DeriveAssetId(txin *TxIn, contract *Contract) (AssetId, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_func_derive_asset_id(FfiConverterTxInINSTANCE.Lower(txin), FfiConverterContractINSTANCE.Lower(contract), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue AssetId
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterTypeAssetIdINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Derive token id from contract and transaction input
+func DeriveTokenId(txin *TxIn, contract *Contract) (AssetId, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_func_derive_token_id(FfiConverterTxInINSTANCE.Lower(txin), FfiConverterContractINSTANCE.Lower(contract), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue AssetId
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterTypeAssetIdINSTANCE.Lift(_uniffiRV), nil
+	}
+}
 
 // Whether a script pubkey is provably segwit
 func IsProvablySegwit(scriptPubkey *Script, redeemScript **Script) bool {

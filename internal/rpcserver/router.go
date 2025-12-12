@@ -2507,6 +2507,7 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 		Amount:      sendAmount,
 		SatPerVbyte: feeRate,
 	})
+	logger.Errorf("GetSendFee error: %v", err)
 	if errors.Is(err, errors.ErrUnsupported) {
 		if balance.Confirmed < sendAmount {
 			return info.InsufficientBalanceError(sendAmount)

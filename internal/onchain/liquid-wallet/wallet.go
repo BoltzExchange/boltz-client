@@ -524,6 +524,7 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 
 	pset, err := builder.Finish(w.Wollet)
 	if err != nil {
+		logger.Errorf("Finish error: %v", err)
 		if strings.Contains(err.Error(), "InsufficientFunds") {
 			return nil, w.info.InsufficientBalanceError(args.Amount)
 		}
