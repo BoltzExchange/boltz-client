@@ -271,11 +271,12 @@ SELECT * FROM reverseSwaps
 WHERE toCurrency = ?
   AND reverseSwaps.lockupTransactionId != ''
   AND reverseSwaps.claimTransactionId == ''
+  AND reverseSwaps.status != ?
 `
 
 func (database *Database) QueryClaimableReverseSwaps(tenantId *Id, currency boltz.Currency) ([]*ReverseSwap, error) {
 	query := claimableSwapsQuery
-	values := []any{currency}
+	values := []any{currency, boltz.TransactionRefunded.String()}
 	if tenantId != nil {
 		query += " AND tenantId = ?"
 		values = append(values, *tenantId)
