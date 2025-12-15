@@ -1365,7 +1365,7 @@ var refundSwapCommand = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "lockup-transaction-id",
-			Usage: "Manually specify the lockup transaction of the swap to be refunded. Only use if you know what you are doing.",
+			Usage: "Manually specify the lockup transaction of the swap to be refunded. Use this only if you know what you are doing.",
 		},
 	},
 }
