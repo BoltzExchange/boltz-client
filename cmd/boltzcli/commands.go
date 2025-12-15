@@ -1362,6 +1362,12 @@ var refundSwapCommand = &cli.Command{
 	Usage:     "Refund a chain-to-x swap manually to an onchain address or internal wallet",
 	ArgsUsage: "id address|wallet",
 	Action:    requireNArgs(2, refundSwap),
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "lockup-transaction-id",
+			Usage: "Manually specify the lockup transaction of the swap to be refunded. Only use if you know what you are doing.",
+		},
+	},
 }
 
 func refundSwap(ctx *cli.Context) error {
@@ -1374,6 +1380,9 @@ func refundSwap(ctx *cli.Context) error {
 		request.Destination = &boltzrpc.RefundSwapRequest_WalletId{WalletId: *walletId}
 	} else {
 		request.Destination = &boltzrpc.RefundSwapRequest_Address{Address: destination}
+	}
+	if lockupTransactionId := ctx.String("lockup-transaction-id"); lockupTransactionId != "" {
+		request.LockupTransactionId = &lockupTransactionId
 	}
 	swap, err := client.RefundSwap(request)
 	if err != nil {

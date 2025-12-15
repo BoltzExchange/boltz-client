@@ -1288,6 +1288,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `id` | [`string`](#string) |  |  |
 | `address` | [`string`](#string) |  |  |
 | `wallet_id` | [`uint64`](#uint64) |  |  |
+| `lockup_transaction_id` | [`string`](#string) | optional |  |
 
 
 

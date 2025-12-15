@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
@@ -237,7 +236,7 @@ func (database *Database) QuerySwap(id string) (swap *Swap, err error) {
 			return swap, err
 		}
 	} else {
-		return swap, errors.New("could not find Swap " + id)
+		return swap, sql.ErrNoRows
 	}
 
 	return swap, err
