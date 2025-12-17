@@ -18,6 +18,8 @@ import (
 const reconnectInterval = 15 * time.Second
 const pingInterval = 30 * time.Second
 const pongWait = 5 * time.Second
+const readBufferSize = 1024 * 1024 // 1MB
+const updatesChannelBuffer = 50
 
 type SwapUpdate struct {
 	SwapStatusResponse `mapstructure:",squash"`
@@ -53,12 +55,13 @@ func (boltz *Api) NewWebsocket() *Websocket {
 	if ok {
 		dialer.Proxy = httpTransport.Proxy
 	}
+	dialer.ReadBufferSize = readBufferSize
 
 	return &Websocket{
 		apiUrl:            boltz.URL,
 		subscriptions:     make(chan bool),
 		dialer:            &dialer,
-		Updates:           make(chan SwapUpdate),
+		Updates:           make(chan SwapUpdate, updatesChannelBuffer),
 		reconnectInterval: reconnectInterval,
 	}
 }
