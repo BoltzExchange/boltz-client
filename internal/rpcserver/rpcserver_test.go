@@ -2737,8 +2737,10 @@ func TestSwap(t *testing.T) {
 
 										checkTxOutAddress(t, chain, from, info.RefundTransactionId, refundAddress, true)
 
+										test.MineBlock()
+
 										_, err = admin.RefundSwap(request)
-										requireCode(t, err, codes.NotFound)
+										require.Error(t, err)
 									})
 								})
 
@@ -2770,7 +2772,31 @@ func TestSwap(t *testing.T) {
 										require.NotZero(t, fromWallet.Balance.Unconfirmed)
 
 										_, err = admin.RefundSwap(request)
-										requireCode(t, err, codes.NotFound)
+										require.Error(t, err)
+									})
+
+									t.Run("MultiLockup", func(t *testing.T) {
+										destination.WalletId = walletId(t, admin, pair.From)
+
+										info := setup(t)
+										nTxs := 3
+										var lockups []string
+										for i := 0; i < nTxs; i++ {
+											lockups = append(lockups, test.SendToAddress(tc.cli, info.LockupAddress, info.ExpectedAmount))
+										}
+										test.MineBlock()
+										time.Sleep(1 * time.Second)
+										request := &boltzrpc.RefundSwapRequest{Id: info.Id, Destination: destination}
+										response, err := admin.RefundSwap(request)
+										require.NoError(t, err)
+										require.Equal(t, response.Swap.State, boltzrpc.SwapState_REFUNDED)
+
+										for i := 0; i < nTxs; i++ {
+											request := &boltzrpc.RefundSwapRequest{Id: info.Id, Destination: destination, LockupTransactionId: &lockups[i]}
+											response, err := admin.RefundSwap(request)
+											require.NoError(t, err)
+											require.Equal(t, response.Swap.State, boltzrpc.SwapState_REFUNDED)
+										}
 									})
 								})
 							})
@@ -3191,8 +3217,10 @@ func TestChainSwap(t *testing.T) {
 
 								checkTxOutAddress(t, chain, from, info.FromData.GetTransactionId(), refundAddress, true)
 
+								test.MineBlock()
+
 								_, err = client.RefundSwap(request)
-								requireCode(t, err, codes.NotFound)
+								require.Error(t, err)
 							})
 						})
 						t.Run("Wallet", func(t *testing.T) {
@@ -3231,7 +3259,7 @@ func TestChainSwap(t *testing.T) {
 								}, 10*time.Second, 250*time.Millisecond)
 
 								_, err = client.RefundSwap(request)
-								requireCode(t, err, codes.NotFound)
+								require.Error(t, err)
 							})
 						})
 					})

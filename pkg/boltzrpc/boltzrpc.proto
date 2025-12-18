@@ -509,6 +509,9 @@ message RefundSwapRequest {
         string address = 2;
         uint64 wallet_id = 3;
     }
+    // Manually specify the lockup transaction of the swap to be refunded.
+    // This can be used in cases where the client missed the lockup of the swap or a swap received multiple lockups.
+    optional string lockup_transaction_id = 4;
 }
 
 message ClaimSwapsRequest {
