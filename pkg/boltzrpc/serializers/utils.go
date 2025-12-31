@@ -45,6 +45,17 @@ func SerializeSwapType(currency boltz.SwapType) boltzrpc.SwapType {
 	}
 }
 
+func ParseSwapType(grpcType boltzrpc.SwapType) boltz.SwapType {
+	switch grpcType {
+	case boltzrpc.SwapType_SUBMARINE:
+		return boltz.NormalSwap
+	case boltzrpc.SwapType_REVERSE:
+		return boltz.ReverseSwap
+	default:
+		return boltz.ChainSwap
+	}
+}
+
 func SerializePair(pair boltz.Pair) *boltzrpc.Pair {
 	return &boltzrpc.Pair{
 		From: SerializeCurrency(pair.From),

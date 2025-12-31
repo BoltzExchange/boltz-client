@@ -24,6 +24,7 @@ const (
 	Boltz_GetServiceInfo_FullMethodName         = "/boltzrpc.Boltz/GetServiceInfo"
 	Boltz_GetPairInfo_FullMethodName            = "/boltzrpc.Boltz/GetPairInfo"
 	Boltz_GetPairs_FullMethodName               = "/boltzrpc.Boltz/GetPairs"
+	Boltz_GetSwapQuote_FullMethodName           = "/boltzrpc.Boltz/GetSwapQuote"
 	Boltz_ListSwaps_FullMethodName              = "/boltzrpc.Boltz/ListSwaps"
 	Boltz_GetStats_FullMethodName               = "/boltzrpc.Boltz/GetStats"
 	Boltz_RefundSwap_FullMethodName             = "/boltzrpc.Boltz/RefundSwap"
@@ -76,6 +77,9 @@ type BoltzClient interface {
 	GetPairInfo(ctx context.Context, in *GetPairInfoRequest, opts ...grpc.CallOption) (*PairInfo, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error)
+	// Gets a quote for a swap with fee breakdown.
+	// Allows specifying either the send amount or the receive amount.
+	GetSwapQuote(ctx context.Context, in *GetSwapQuoteRequest, opts ...grpc.CallOption) (*GetSwapQuoteResponse, error)
 	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(ctx context.Context, in *ListSwapsRequest, opts ...grpc.CallOption) (*ListSwapsResponse, error)
 	// Returns stats of all swaps, reverse swaps, and chain swaps in the database.
@@ -209,6 +213,15 @@ func (c *boltzClient) GetPairInfo(ctx context.Context, in *GetPairInfoRequest, o
 func (c *boltzClient) GetPairs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetPairsResponse, error) {
 	out := new(GetPairsResponse)
 	err := c.cc.Invoke(ctx, Boltz_GetPairs_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetSwapQuote(ctx context.Context, in *GetSwapQuoteRequest, opts ...grpc.CallOption) (*GetSwapQuoteResponse, error) {
+	out := new(GetSwapQuoteResponse)
+	err := c.cc.Invoke(ctx, Boltz_GetSwapQuote_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -572,6 +585,9 @@ type BoltzServer interface {
 	GetPairInfo(context.Context, *GetPairInfoRequest) (*PairInfo, error)
 	// Fetches all available pairs for submarine and reverse swaps.
 	GetPairs(context.Context, *emptypb.Empty) (*GetPairsResponse, error)
+	// Gets a quote for a swap with fee breakdown.
+	// Allows specifying either the send amount or the receive amount.
+	GetSwapQuote(context.Context, *GetSwapQuoteRequest) (*GetSwapQuoteResponse, error)
 	// Returns a list of all swaps, reverse swaps, and chain swaps in the database.
 	ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error)
 	// Returns stats of all swaps, reverse swaps, and chain swaps in the database.
@@ -682,6 +698,9 @@ func (UnimplementedBoltzServer) GetPairInfo(context.Context, *GetPairInfoRequest
 }
 func (UnimplementedBoltzServer) GetPairs(context.Context, *emptypb.Empty) (*GetPairsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPairs not implemented")
+}
+func (UnimplementedBoltzServer) GetSwapQuote(context.Context, *GetSwapQuoteRequest) (*GetSwapQuoteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSwapQuote not implemented")
 }
 func (UnimplementedBoltzServer) ListSwaps(context.Context, *ListSwapsRequest) (*ListSwapsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSwaps not implemented")
@@ -869,6 +888,24 @@ func _Boltz_GetPairs_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).GetPairs(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetSwapQuote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSwapQuoteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetSwapQuote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetSwapQuote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetSwapQuote(ctx, req.(*GetSwapQuoteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1528,6 +1565,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPairs",
 			Handler:    _Boltz_GetPairs_Handler,
+		},
+		{
+			MethodName: "GetSwapQuote",
+			Handler:    _Boltz_GetSwapQuote_Handler,
 		},
 		{
 			MethodName: "ListSwaps",

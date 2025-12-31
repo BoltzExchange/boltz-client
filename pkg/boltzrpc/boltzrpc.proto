@@ -29,6 +29,12 @@ service Boltz {
     rpc GetPairs (google.protobuf.Empty) returns (GetPairsResponse);
 
     /*
+    Gets a quote for a swap with fee breakdown.
+    Allows specifying either the send amount or the receive amount.
+    */
+    rpc GetSwapQuote (GetSwapQuoteRequest) returns (GetSwapQuoteResponse);
+
+    /*
     Returns a list of all swaps, reverse swaps, and chain swaps in the database.
     */
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
@@ -335,6 +341,31 @@ message PairInfo {
     SwapFees fees = 2;
     Limits limits = 3;
     string hash = 4;
+}
+
+message GetSwapQuoteRequest {
+    SwapType type = 1;
+    Pair pair = 2;
+    // Specify exactly one of send_amount or receive_amount
+    oneof amount {
+        // The amount you want to send
+        uint64 send_amount = 3;
+        // The amount you want to receive
+        uint64 receive_amount = 4;
+    }
+}
+
+message GetSwapQuoteResponse {
+    // The amount you will send
+    uint64 send_amount = 1;
+    // The amount you will receive
+    uint64 receive_amount = 2;
+    // Service fee charged by Boltz
+    uint64 boltz_fee = 3;
+    // Network/miner fees
+    uint64 network_fee = 4;
+    // The pair info with current limits
+    PairInfo pair_info = 5;
 }
 
 /*

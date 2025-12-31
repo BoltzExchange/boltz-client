@@ -45,6 +45,10 @@ func (boltz *Boltz) GetPairInfo(swapType boltzrpc.SwapType, pair *boltzrpc.Pair)
 	return boltz.Client.GetPairInfo(boltz.Ctx, &boltzrpc.GetPairInfoRequest{Pair: pair, Type: swapType})
 }
 
+func (boltz *Boltz) GetSwapQuote(request *boltzrpc.GetSwapQuoteRequest) (*boltzrpc.GetSwapQuoteResponse, error) {
+	return boltz.Client.GetSwapQuote(boltz.Ctx, request)
+}
+
 func (boltz *Boltz) ListSwaps(request *boltzrpc.ListSwapsRequest) (*boltzrpc.ListSwapsResponse, error) {
 	return boltz.Client.ListSwaps(boltz.Ctx, request)
 }

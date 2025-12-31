@@ -308,6 +308,74 @@ func (server *routedBoltzServer) GetPairInfo(_ context.Context, request *boltzrp
 	}
 }
 
+func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *boltzrpc.GetSwapQuoteRequest) (*boltzrpc.GetSwapQuoteResponse, error) {
+	// Apply currency constraints based on swap type
+	pair := request.Pair
+	if pair == nil {
+		pair = &boltzrpc.Pair{}
+	}
+
+	switch request.Type {
+	case boltzrpc.SwapType_SUBMARINE:
+		// Submarine: on-chain → Lightning. To is always BTC (Lightning)
+		pair.To = boltzrpc.Currency_BTC
+	case boltzrpc.SwapType_REVERSE:
+		// Reverse: Lightning → on-chain. From is always BTC (Lightning)
+		pair.From = boltzrpc.Currency_BTC
+	case boltzrpc.SwapType_CHAIN:
+		// Chain: both must be explicitly specified
+		if request.Pair == nil {
+			return nil, status.Errorf(codes.InvalidArgument, "chain swaps require both from and to currencies to be specified")
+		}
+	}
+
+	pairInfo, err := server.GetPairInfo(ctx, &boltzrpc.GetPairInfoRequest{Type: request.Type, Pair: pair})
+	if err != nil {
+		return nil, err
+	}
+
+	swapType := serializers.ParseSwapType(request.Type)
+
+	var sendAmount, receiveAmount uint64
+
+	switch amt := request.Amount.(type) {
+	case *boltzrpc.GetSwapQuoteRequest_SendAmount:
+		sendAmount = amt.SendAmount
+	case *boltzrpc.GetSwapQuoteRequest_ReceiveAmount:
+		receiveAmount = amt.ReceiveAmount
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "either send_amount or receive_amount must be specified")
+	}
+
+	quote := utils.CalculateSwapQuote(swapType, sendAmount, receiveAmount, pairInfo.Fees)
+
+	// Validate against limits
+	var amountToCheck uint64
+	switch request.Type {
+	case boltzrpc.SwapType_SUBMARINE:
+		// Submarine limits are on the receive (lightning) amount
+		amountToCheck = quote.ReceiveAmount
+	case boltzrpc.SwapType_REVERSE, boltzrpc.SwapType_CHAIN:
+		// Reverse/Chain limits are on the send amount
+		amountToCheck = quote.SendAmount
+	}
+
+	if amountToCheck < pairInfo.Limits.Minimal {
+		return nil, status.Errorf(codes.InvalidArgument, "amount %d is below minimum %d", amountToCheck, pairInfo.Limits.Minimal)
+	}
+	if amountToCheck > pairInfo.Limits.Maximal {
+		return nil, status.Errorf(codes.InvalidArgument, "amount %d exceeds maximum %d", amountToCheck, pairInfo.Limits.Maximal)
+	}
+
+	return &boltzrpc.GetSwapQuoteResponse{
+		SendAmount:    quote.SendAmount,
+		ReceiveAmount: quote.ReceiveAmount,
+		BoltzFee:      quote.BoltzFee,
+		NetworkFee:    quote.NetworkFee,
+		PairInfo:      pairInfo,
+	}, nil
+}
+
 func (server *routedBoltzServer) GetServiceInfo(_ context.Context, request *boltzrpc.GetServiceInfoRequest) (*boltzrpc.GetServiceInfoResponse, error) {
 	fees, limits, err := server.getPairs(boltz.PairBtc)
 
