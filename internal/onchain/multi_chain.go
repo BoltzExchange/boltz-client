@@ -3,7 +3,6 @@ package onchain
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/hashicorp/go-multierror"
@@ -39,33 +38,37 @@ func (m MultiChainProvider) GetRawTransaction(txId string) (hex string, err erro
 }
 
 func (m MultiChainProvider) BroadcastTransaction(txHex string) (txId string, err error) {
-	var group sync.WaitGroup
-	var merr multierror.Error
-	var mutex sync.Mutex
 	providers := m.allProviders()
-	group.Add(len(providers))
+	resultChan := make(chan string)
+	errChan := make(chan error, len(providers))
+
 	// Broadcasting transactions via all known (including boltz) providers is fine
 	for _, provider := range providers {
 		provider := provider
 		go func() {
-			defer group.Done()
 			result, err := provider.BroadcastTransaction(txHex)
-			mutex.Lock()
-			defer mutex.Unlock()
-
 			if err == nil {
-				txId = result
+				select {
+				case resultChan <- result:
+				default:
+				}
 			} else {
 				logger.Debugf("Error broadcasting transaction via %s: %v", provider, err)
-				merr.Errors = append(merr.Errors, err)
+				errChan <- err
 			}
 		}()
 	}
-	group.Wait()
-	if len(providers) == len(merr.Errors) {
-		return "", &merr
+
+	var merr multierror.Error
+	for range providers {
+		select {
+		case txId = <-resultChan:
+			return txId, nil
+		case err := <-errChan:
+			merr.Errors = append(merr.Errors, err)
+		}
 	}
-	return txId, nil
+	return "", &merr
 }
 
 func (m MultiChainProvider) IsTransactionConfirmed(txId string) (confirmed bool, err error) {
