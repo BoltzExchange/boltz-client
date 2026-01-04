@@ -2,6 +2,7 @@ package onchain_test
 
 import (
 	"testing"
+	"time"
 
 	onchainmock "github.com/BoltzExchange/boltz-client/v2/internal/mocks/onchain"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -84,7 +85,12 @@ func TestMultiChainProvider_GetRawTransaction(t *testing.T) {
 func TestMultiChainProvider_BroadcastTransaction(t *testing.T) {
 	successProvider := func(t *testing.T) onchain.ChainProvider {
 		mockChain := onchainmock.NewMockChainProvider(t)
-		mockChain.EXPECT().BroadcastTransaction(txHex).Return(txId, nil)
+		mockChain.EXPECT().BroadcastTransaction(txHex).RunAndReturn(func(txHex string) (string, error) {
+			// without the delay, the test is flaky because it could succeed on the result of the first provider
+			// before the second one is called
+			time.Sleep(10 * time.Millisecond)
+			return txId, nil
+		})
 		return mockChain
 	}
 
