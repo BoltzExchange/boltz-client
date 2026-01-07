@@ -63,7 +63,7 @@ Type can be: submarine, reverse, or chain
 
 Currency defaults by swap type:
   - submarine: --to is always BTC (lightning), --from defaults to BTC
-  - reverse: --from is always BTC (lightning), --to defaults to LBTC
+  - reverse: --from is always BTC (lightning), --to defaults to BTC
   - chain: both --from and --to must be specified
 
 Examples:
