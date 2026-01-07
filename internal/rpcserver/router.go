@@ -413,43 +413,47 @@ func (server *routedBoltzServer) RefundSwap(ctx context.Context, request *boltzr
 	var chainSwaps []*database.ChainSwap
 	var currency boltz.Currency
 
-	heights, err := server.queryHeights()
-	if err != nil {
-		return nil, err
-	}
-
-	refundableSwaps, refundableChainSwaps, err := server.queryRefundableSwaps(ctx, heights)
-	if err != nil {
-		return nil, err
-	}
-
 	var setAddress func(address string) error
 	var setWallet func(walletId uint64) error
 
-	for _, swap := range refundableSwaps {
-		if swap.Id == request.Id {
-			currency = swap.Pair.From
-			setAddress = func(address string) error {
-				return server.database.SetSwapRefundAddress(swap, address)
+	swap, err := server.database.QuerySwap(request.Id)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	if swap != nil {
+		currency = swap.Pair.From
+		if request.GetLockupTransactionId() != "" {
+			if err := server.database.SetSwapLockupTransactionId(swap, request.GetLockupTransactionId()); err != nil {
+				return nil, err
 			}
-			setWallet = func(walletId uint64) error {
-				return server.database.SetSwapRefundWallet(swap, walletId)
-			}
-			swaps = append(swaps, swap)
 		}
+		setAddress = func(address string) error {
+			return server.database.SetSwapRefundAddress(swap, address)
+		}
+		setWallet = func(walletId uint64) error {
+			return server.database.SetSwapRefundWallet(swap, walletId)
+		}
+		swaps = append(swaps, swap)
 	}
 
-	for _, chainSwap := range refundableChainSwaps {
-		if chainSwap.Id == request.Id {
-			currency = chainSwap.Pair.From
-			setAddress = func(address string) error {
-				return server.database.SetChainSwapAddress(chainSwap.FromData, address)
+	chainSwap, err := server.database.QueryChainSwap(request.Id)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	if chainSwap != nil {
+		if request.GetLockupTransactionId() != "" {
+			if err := server.database.SetChainSwapLockupTransactionId(chainSwap.FromData, request.GetLockupTransactionId()); err != nil {
+				return nil, err
 			}
-			setWallet = func(walletId uint64) error {
-				return server.database.SetChainSwapWallet(chainSwap.FromData, walletId)
-			}
-			chainSwaps = append(chainSwaps, chainSwap)
 		}
+		currency = chainSwap.Pair.From
+		setAddress = func(address string) error {
+			return server.database.SetChainSwapAddress(chainSwap.FromData, address)
+		}
+		setWallet = func(walletId uint64) error {
+			return server.database.SetChainSwapWallet(chainSwap.FromData, walletId)
+		}
+		chainSwaps = append(chainSwaps, chainSwap)
 	}
 
 	if len(swaps) == 0 && len(chainSwaps) == 0 {
