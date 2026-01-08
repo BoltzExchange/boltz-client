@@ -347,7 +347,10 @@ func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *bolt
 		return nil, status.Errorf(codes.InvalidArgument, "either send_amount or receive_amount must be specified")
 	}
 
-	quote := utils.CalculateSwapQuote(swapType, sendAmount, receiveAmount, pairInfo.Fees)
+	quote, err := utils.CalculateSwapQuote(swapType, sendAmount, receiveAmount, pairInfo.Fees)
+	if err != nil {
+		return nil, err
+	}
 
 	// Validate against limits
 	var amountToCheck uint64

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
@@ -19,12 +20,19 @@ type SwapQuote struct {
 	NetworkFee    uint64
 }
 
-func CalculateSwapQuote(swapType boltz.SwapType, sendAmount, receiveAmount uint64, fees *boltzrpc.SwapFees) *SwapQuote {
+func CalculateSwapQuote(swapType boltz.SwapType, sendAmount, receiveAmount uint64, fees *boltzrpc.SwapFees) (*SwapQuote, error) {
 	percentage := boltz.Percentage(fees.Percentage)
 	minerFee := fees.MinerFees
 
 	quote := &SwapQuote{
 		NetworkFee: minerFee,
+	}
+
+	if sendAmount > 0 && receiveAmount > 0 {
+		return nil, fmt.Errorf("cant have both send and receive amount")
+	}
+	if sendAmount == 0 && receiveAmount == 0 {
+		return nil, fmt.Errorf("either send or receive amount have to be specified")
 	}
 
 	if sendAmount > 0 {
@@ -57,5 +65,5 @@ func CalculateSwapQuote(swapType boltz.SwapType, sendAmount, receiveAmount uint6
 		}
 	}
 
-	return quote
+	return quote, nil
 }
