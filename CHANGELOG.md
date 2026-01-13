@@ -1,4 +1,14 @@
 
+<a name="v2.11.0"></a>
+## [v2.11.0] - 2026-01-13
+### Feat
+- `GetSwapQuotes` rpc ([#624](https://github.com/BoltzExchange/boltz-client/issues/624))
+- allow manual refund of explicit lockups for swaps ([#619](https://github.com/BoltzExchange/boltz-client/issues/619))
+
+### Refactor
+- return on first successfull broadcast ([#625](https://github.com/BoltzExchange/boltz-client/issues/625))
+
+
 <a name="v2.10.2"></a>
 ## [v2.10.2] - 2025-12-17
 ### Feat
@@ -869,6 +879,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.11.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.2...v2.11.0
 [v2.10.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.1...v2.10.2
 [v2.10.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.0...v2.10.1
 [v2.10.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.9.1...v2.10.0
