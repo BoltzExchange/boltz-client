@@ -53,6 +53,159 @@ var getPairsCommand = &cli.Command{
 	},
 }
 
+var getSwapQuoteCommand = &cli.Command{
+	Name:      "quote",
+	Category:  "Infos",
+	Usage:     "Get a fee quote for a swap",
+	ArgsUsage: "<type>",
+	Description: `Gets a detailed quote for a swap including fee breakdown.
+Type can be: submarine, reverse, or chain
+
+Currency defaults by swap type:
+  - submarine: --to is always BTC (lightning), --from defaults to BTC
+  - reverse: --from is always BTC (lightning), --to defaults to BTC
+  - chain: both --from and --to must be specified
+
+Examples:
+  Get quote for a submarine swap receiving 100000 sats on lightning:
+  > boltzcli quote submarine --receive 100000
+
+  Get quote for a reverse swap sending 100000 sats from lightning to L-BTC:
+  > boltzcli quote reverse --send 100000
+
+  Get quote for a chain swap from BTC to L-BTC:
+  > boltzcli quote chain --send 100000 --from BTC --to LBTC`,
+	Action: getSwapQuote,
+	Flags: []cli.Flag{
+		jsonFlag,
+		&cli.Uint64Flag{
+			Name:  "send",
+			Usage: "Amount to send (in satoshis)",
+		},
+		&cli.Uint64Flag{
+			Name:  "receive",
+			Usage: "Amount to receive (in satoshis)",
+		},
+		&cli.StringFlag{
+			Name:  "from",
+			Usage: "Currency to swap from (BTC or LBTC). For reverse swaps, always BTC.",
+		},
+		&cli.StringFlag{
+			Name:  "to",
+			Usage: "Currency to swap to (BTC or LBTC). For submarine swaps, always BTC.",
+		},
+	},
+}
+
+func getSwapQuote(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return cli.ShowSubcommandHelp(ctx)
+	}
+
+	client := getClient(ctx)
+
+	typeStr := strings.ToLower(ctx.Args().First())
+	var swapType boltzrpc.SwapType
+	switch typeStr {
+	case "submarine", "sub":
+		swapType = boltzrpc.SwapType_SUBMARINE
+	case "reverse", "rev":
+		swapType = boltzrpc.SwapType_REVERSE
+	case "chain":
+		swapType = boltzrpc.SwapType_CHAIN
+	default:
+		return fmt.Errorf("invalid swap type: %s (use submarine, reverse, or chain)", typeStr)
+	}
+
+	var from, to boltzrpc.Currency
+	var err error
+
+	// Apply currency defaults/constraints based on swap type
+	switch swapType {
+	case boltzrpc.SwapType_SUBMARINE:
+		// Submarine: on-chain → Lightning. To is always BTC (Lightning)
+		to = boltzrpc.Currency_BTC
+		fromStr := ctx.String("from")
+		if fromStr != "" {
+			from, err = parseCurrency(fromStr)
+			if err != nil {
+				return err
+			}
+		}
+	case boltzrpc.SwapType_REVERSE:
+		// Reverse: Lightning → on-chain. From is always BTC (Lightning)
+		from = boltzrpc.Currency_BTC
+		toStr := ctx.String("to")
+		if toStr != "" {
+			to, err = parseCurrency(toStr)
+			if err != nil {
+				return err
+			}
+		}
+	case boltzrpc.SwapType_CHAIN:
+		// Chain: both must be specified explicitly
+		fromStr := ctx.String("from")
+		toStr := ctx.String("to")
+		if fromStr == "" || toStr == "" {
+			return fmt.Errorf("chain swaps require both --from and --to to be specified")
+		}
+		from, err = parseCurrency(fromStr)
+		if err != nil {
+			return err
+		}
+		to, err = parseCurrency(toStr)
+		if err != nil {
+			return err
+		}
+	}
+
+	request := &boltzrpc.GetSwapQuoteRequest{
+		Type: swapType,
+		Pair: &boltzrpc.Pair{From: from, To: to},
+	}
+
+	sendAmount := ctx.Uint64("send")
+	receiveAmount := ctx.Uint64("receive")
+
+	if sendAmount > 0 && receiveAmount > 0 {
+		return fmt.Errorf("specify either --send or --receive, not both")
+	}
+	if sendAmount == 0 && receiveAmount == 0 {
+		return fmt.Errorf("specify either --send or --receive")
+	}
+
+	if sendAmount > 0 {
+		request.Amount = &boltzrpc.GetSwapQuoteRequest_SendAmount{SendAmount: sendAmount}
+	} else {
+		request.Amount = &boltzrpc.GetSwapQuoteRequest_ReceiveAmount{ReceiveAmount: receiveAmount}
+	}
+
+	quote, err := client.GetSwapQuote(request)
+	if err != nil {
+		return err
+	}
+
+	if ctx.Bool("json") {
+		printJson(quote)
+		return nil
+	}
+
+	fmt.Printf("Swap Quote (%s)\n", swapType)
+	fmt.Printf("  %s -> %s\n", from, to)
+	fmt.Println()
+	fmt.Printf("  Send Amount:    %s\n", utils.Satoshis(quote.SendAmount))
+	fmt.Printf("  Receive Amount: %s\n", utils.Satoshis(quote.ReceiveAmount))
+	fmt.Println()
+	fmt.Println("Fee Breakdown:")
+	fmt.Printf("  Boltz Fee:   %s (%.2f%%)\n", utils.Satoshis(quote.BoltzFee), quote.PairInfo.Fees.Percentage)
+	fmt.Printf("  Network Fee: %s\n", utils.Satoshis(quote.NetworkFee))
+	fmt.Printf("  Total Fee:   %s\n", utils.Satoshis(quote.BoltzFee+quote.NetworkFee))
+	fmt.Println()
+	fmt.Printf("Limits: %s - %s\n", utils.Satoshis(quote.PairInfo.Limits.Minimal), utils.Satoshis(quote.PairInfo.Limits.Maximal))
+
+	return nil
+}
+
 func getPairs(ctx *cli.Context) error {
 	client := getClient(ctx)
 	pairs, err := client.GetPairs()

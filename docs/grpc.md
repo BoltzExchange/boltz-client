@@ -84,6 +84,14 @@ Fetches all available pairs for submarine and reverse swaps.
 | ------- | -------- |
 | [`.google.protobuf.Empty`](#.google.protobuf.empty) | [`GetPairsResponse`](#getpairsresponse) |
 
+#### GetSwapQuote
+
+Gets a quote for a swap with fee breakdown. Allows specifying either the send amount or the receive amount.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetSwapQuoteRequest`](#getswapquoterequest) | [`GetSwapQuoteResponse`](#getswapquoteresponse) |
+
 #### ListSwaps
 
 Returns a list of all swaps, reverse swaps, and chain swaps in the database.
@@ -1026,6 +1034,39 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### GetSwapQuoteRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [`SwapType`](#swaptype) |  |  |
+| `pair` | [`Pair`](#pair) |  |  |
+| `send_amount` | [`uint64`](#uint64) |  | The amount you want to send |
+| `receive_amount` | [`uint64`](#uint64) |  | The amount you want to receive |
+
+
+
+
+
+#### GetSwapQuoteResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `send_amount` | [`uint64`](#uint64) |  | The amount you will send |
+| `receive_amount` | [`uint64`](#uint64) |  | The amount you will receive |
+| `boltz_fee` | [`uint64`](#uint64) |  | Service fee charged by Boltz |
+| `network_fee` | [`uint64`](#uint64) |  | Network/miner fees |
+| `pair_info` | [`PairInfo`](#pairinfo) |  | The pair info with current limits |
+
+
+
+
+
 #### GetTenantRequest
 
 
@@ -1288,7 +1329,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `id` | [`string`](#string) |  |  |
 | `address` | [`string`](#string) |  |  |
 | `wallet_id` | [`uint64`](#uint64) |  |  |
-| `lockup_transaction_id` | [`string`](#string) | optional |  |
+| `lockup_transaction_id` | [`string`](#string) | optional | Manually specify the lockup transaction of the swap to be refunded. This can be used in cases where the client missed the lockup of the swap or a swap received multiple lockups. |
 
 
 
