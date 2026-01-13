@@ -41,13 +41,14 @@ func CalculateSwapQuote(swapType boltz.SwapType, sendAmount, receiveAmount uint6
 		switch swapType {
 		case boltz.NormalSwap:
 			// Submarine: service fee on receive, so receive = (send - minerFee) / (1 + rate)
-			rate := percentage.Ratio()
-			quote.ReceiveAmount = uint64(float64(sendAmount-minerFee) / (1 + rate))
+			rate := 1 + percentage.Ratio()
+			receive := max(0, float64(sendAmount)-float64(minerFee)) / rate
+			quote.ReceiveAmount = uint64(receive)
 			quote.BoltzFee = percentage.Calculate(quote.ReceiveAmount)
 		case boltz.ReverseSwap, boltz.ChainSwap:
 			// Reverse/Chain: service fee on send
 			quote.BoltzFee = percentage.Calculate(sendAmount)
-			quote.ReceiveAmount = sendAmount - quote.BoltzFee - minerFee
+			quote.ReceiveAmount = uint64(max(0, int64(sendAmount)-int64(quote.BoltzFee)-int64(minerFee)))
 		}
 	} else {
 		quote.ReceiveAmount = receiveAmount
@@ -59,8 +60,12 @@ func CalculateSwapQuote(swapType boltz.SwapType, sendAmount, receiveAmount uint6
 			quote.SendAmount = receiveAmount + quote.BoltzFee + minerFee
 		case boltz.ReverseSwap, boltz.ChainSwap:
 			// Reverse/Chain: service fee on send, so send = (receive + minerFee) / (1 - rate)
-			rate := percentage.Ratio()
-			quote.SendAmount = uint64(math.Ceil(float64(receiveAmount+minerFee) / (1 - rate)))
+			rate := 1 - percentage.Ratio()
+			if rate == 0 {
+				return nil, fmt.Errorf("division by zero")
+			}
+			sendAmount := math.Ceil(float64(receiveAmount+minerFee) / rate)
+			quote.SendAmount = uint64(sendAmount)
 			quote.BoltzFee = percentage.Calculate(quote.SendAmount)
 		}
 	}
