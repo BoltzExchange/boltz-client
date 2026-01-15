@@ -26,7 +26,7 @@ type shared struct {
 
 type swapper[T commonConfig] struct {
 	shared
-	stop        chan bool
+	stop        chan struct{}
 	err         error
 	swapperType SwapperType
 	cfg         T
@@ -37,7 +37,7 @@ type commonConfig interface {
 	GetEnabled() bool
 	GetBudgetInterval() uint64
 	GetBudget() uint64
-	run(stop <-chan bool)
+	run(stop <-chan struct{})
 }
 
 type RpcProvider interface {
@@ -328,7 +328,7 @@ func (c *swapper[T]) setConfig(cfg T) error {
 func (c *swapper[T]) Stop() {
 	if c.stop != nil {
 		logger.Infof("Stopping %s auto swapper", c.swapperType)
-		c.stop <- true
+		c.stop <- struct{}{}
 		c.stop = nil
 		c.err = nil
 	}
@@ -343,7 +343,7 @@ func (c *swapper[T]) start() {
 	}
 	if c.cfg.GetEnabled() {
 		logger.Infof("Starting %s auto swapper", c.swapperType)
-		c.stop = make(chan bool)
+		c.stop = make(chan struct{})
 		go c.cfg.run(c.stop)
 	}
 }

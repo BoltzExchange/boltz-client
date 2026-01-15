@@ -427,7 +427,7 @@ func (cfg *LightningConfig) execute(recommendation *autoswaprpc.LightningRecomme
 	return err
 }
 
-func (cfg *LightningConfig) run(stop <-chan bool) {
+func (cfg *LightningConfig) run(stop <-chan struct{}) {
 	ticker := time.NewTicker(time.Duration(cfg.ChannelPollInterval) * time.Second)
 
 	for {
