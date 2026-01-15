@@ -228,7 +228,7 @@ func (cfg *ChainConfig) execute(swap *autoswaprpc.ChainSwap, accepted *autoswapr
 	return nil
 }
 
-func (cfg *ChainConfig) run(stop <-chan bool) {
+func (cfg *ChainConfig) run(stop <-chan struct{}) {
 	updates, stopUpdates := cfg.rpc.GetBlockUpdates(cfg.pair.From)
 	defer stopUpdates()
 	for {
