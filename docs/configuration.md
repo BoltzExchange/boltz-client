@@ -108,4 +108,10 @@ readOnlyMacaroonPath = ""
 
 # Password for authentication (alternative to macaroons and takes precedence if set)
 password = ""
+
+# Allowed origins for CORS (use * for all)
+corsAllowedOrigins = ["*"]
+
+# Allow credentials in CORS requests
+corsAllowCredentials = false
 ```
