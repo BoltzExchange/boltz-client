@@ -344,7 +344,19 @@ func (server *RpcServer) Start() chan error {
 
 			httpServer = &http.Server{Addr: restUrl, Handler: mux}
 
-			c := cors.AllowAll()
+			c := cors.New(cors.Options{
+				AllowedOrigins: cfg.CorsAllowedOrigins,
+				AllowedMethods: []string{
+					http.MethodHead,
+					http.MethodGet,
+					http.MethodPost,
+					http.MethodPut,
+					http.MethodPatch,
+					http.MethodDelete,
+				},
+				AllowedHeaders:   []string{"*"},
+				AllowCredentials: cfg.CorsAllowCredentials,
+			})
 			httpServer.Handler = c.Handler(httpServer.Handler)
 
 			if cfg.NoTls {

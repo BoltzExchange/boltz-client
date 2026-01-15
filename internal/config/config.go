@@ -46,6 +46,9 @@ type RpcOptions struct {
 	AdminMacaroonPath    string `long:"rpc.adminmacaroonpath" description:"Path to the admin Macaroon"`
 	ReadonlyMacaroonPath string `long:"rpc.readonlymacaroonpath" description:"Path to the readonly macaroon"`
 	Password             string `long:"rpc.password" description:"Password for authentication (alternative to macaroons and takes precedence if set)" json:"-"`
+
+	CorsAllowedOrigins   []string `long:"rpc.cors.allowed-origins" description:"Allowed origins for CORS (use * for all)"`
+	CorsAllowCredentials bool     `long:"rpc.cors.allow-credentials" description:"Allow credentials in CORS requests"`
 }
 
 type LightningOptions struct {
@@ -157,6 +160,9 @@ func LoadConfig(dataDir string) (*Config, error) {
 			NoMacaroons:          false,
 			AdminMacaroonPath:    "",
 			ReadonlyMacaroonPath: "",
+
+			CorsAllowedOrigins:   []string{"*"},
+			CorsAllowCredentials: false,
 		},
 
 		Database: &database.Database{
