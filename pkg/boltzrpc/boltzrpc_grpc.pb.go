@@ -20,46 +20,51 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Boltz_GetInfo_FullMethodName                = "/boltzrpc.Boltz/GetInfo"
-	Boltz_GetServiceInfo_FullMethodName         = "/boltzrpc.Boltz/GetServiceInfo"
-	Boltz_GetPairInfo_FullMethodName            = "/boltzrpc.Boltz/GetPairInfo"
-	Boltz_GetPairs_FullMethodName               = "/boltzrpc.Boltz/GetPairs"
-	Boltz_GetSwapQuote_FullMethodName           = "/boltzrpc.Boltz/GetSwapQuote"
-	Boltz_ListSwaps_FullMethodName              = "/boltzrpc.Boltz/ListSwaps"
-	Boltz_GetStats_FullMethodName               = "/boltzrpc.Boltz/GetStats"
-	Boltz_RefundSwap_FullMethodName             = "/boltzrpc.Boltz/RefundSwap"
-	Boltz_ClaimSwaps_FullMethodName             = "/boltzrpc.Boltz/ClaimSwaps"
-	Boltz_GetSwapInfo_FullMethodName            = "/boltzrpc.Boltz/GetSwapInfo"
-	Boltz_GetSwapInfoStream_FullMethodName      = "/boltzrpc.Boltz/GetSwapInfoStream"
-	Boltz_Deposit_FullMethodName                = "/boltzrpc.Boltz/Deposit"
-	Boltz_CreateSwap_FullMethodName             = "/boltzrpc.Boltz/CreateSwap"
-	Boltz_CreateChannel_FullMethodName          = "/boltzrpc.Boltz/CreateChannel"
-	Boltz_CreateReverseSwap_FullMethodName      = "/boltzrpc.Boltz/CreateReverseSwap"
-	Boltz_CreateChainSwap_FullMethodName        = "/boltzrpc.Boltz/CreateChainSwap"
-	Boltz_CreateWallet_FullMethodName           = "/boltzrpc.Boltz/CreateWallet"
-	Boltz_ImportWallet_FullMethodName           = "/boltzrpc.Boltz/ImportWallet"
-	Boltz_SetSubaccount_FullMethodName          = "/boltzrpc.Boltz/SetSubaccount"
-	Boltz_GetSubaccounts_FullMethodName         = "/boltzrpc.Boltz/GetSubaccounts"
-	Boltz_GetWallets_FullMethodName             = "/boltzrpc.Boltz/GetWallets"
-	Boltz_GetWallet_FullMethodName              = "/boltzrpc.Boltz/GetWallet"
-	Boltz_GetWalletSendFee_FullMethodName       = "/boltzrpc.Boltz/GetWalletSendFee"
-	Boltz_ListWalletTransactions_FullMethodName = "/boltzrpc.Boltz/ListWalletTransactions"
-	Boltz_BumpTransaction_FullMethodName        = "/boltzrpc.Boltz/BumpTransaction"
-	Boltz_GetWalletCredentials_FullMethodName   = "/boltzrpc.Boltz/GetWalletCredentials"
-	Boltz_RemoveWallet_FullMethodName           = "/boltzrpc.Boltz/RemoveWallet"
-	Boltz_WalletSend_FullMethodName             = "/boltzrpc.Boltz/WalletSend"
-	Boltz_WalletReceive_FullMethodName          = "/boltzrpc.Boltz/WalletReceive"
-	Boltz_Stop_FullMethodName                   = "/boltzrpc.Boltz/Stop"
-	Boltz_Unlock_FullMethodName                 = "/boltzrpc.Boltz/Unlock"
-	Boltz_VerifyWalletPassword_FullMethodName   = "/boltzrpc.Boltz/VerifyWalletPassword"
-	Boltz_ChangeWalletPassword_FullMethodName   = "/boltzrpc.Boltz/ChangeWalletPassword"
-	Boltz_CreateTenant_FullMethodName           = "/boltzrpc.Boltz/CreateTenant"
-	Boltz_ListTenants_FullMethodName            = "/boltzrpc.Boltz/ListTenants"
-	Boltz_GetTenant_FullMethodName              = "/boltzrpc.Boltz/GetTenant"
-	Boltz_RemoveTenant_FullMethodName           = "/boltzrpc.Boltz/RemoveTenant"
-	Boltz_BakeMacaroon_FullMethodName           = "/boltzrpc.Boltz/BakeMacaroon"
-	Boltz_GetSwapMnemonic_FullMethodName        = "/boltzrpc.Boltz/GetSwapMnemonic"
-	Boltz_SetSwapMnemonic_FullMethodName        = "/boltzrpc.Boltz/SetSwapMnemonic"
+	Boltz_GetInfo_FullMethodName                 = "/boltzrpc.Boltz/GetInfo"
+	Boltz_GetServiceInfo_FullMethodName          = "/boltzrpc.Boltz/GetServiceInfo"
+	Boltz_GetPairInfo_FullMethodName             = "/boltzrpc.Boltz/GetPairInfo"
+	Boltz_GetPairs_FullMethodName                = "/boltzrpc.Boltz/GetPairs"
+	Boltz_GetSwapQuote_FullMethodName            = "/boltzrpc.Boltz/GetSwapQuote"
+	Boltz_ListSwaps_FullMethodName               = "/boltzrpc.Boltz/ListSwaps"
+	Boltz_GetStats_FullMethodName                = "/boltzrpc.Boltz/GetStats"
+	Boltz_RefundSwap_FullMethodName              = "/boltzrpc.Boltz/RefundSwap"
+	Boltz_ClaimSwaps_FullMethodName              = "/boltzrpc.Boltz/ClaimSwaps"
+	Boltz_GetSwapInfo_FullMethodName             = "/boltzrpc.Boltz/GetSwapInfo"
+	Boltz_GetSwapInfoStream_FullMethodName       = "/boltzrpc.Boltz/GetSwapInfoStream"
+	Boltz_Deposit_FullMethodName                 = "/boltzrpc.Boltz/Deposit"
+	Boltz_CreateSwap_FullMethodName              = "/boltzrpc.Boltz/CreateSwap"
+	Boltz_CreateChannel_FullMethodName           = "/boltzrpc.Boltz/CreateChannel"
+	Boltz_CreateReverseSwap_FullMethodName       = "/boltzrpc.Boltz/CreateReverseSwap"
+	Boltz_CreateChainSwap_FullMethodName         = "/boltzrpc.Boltz/CreateChainSwap"
+	Boltz_CreateWallet_FullMethodName            = "/boltzrpc.Boltz/CreateWallet"
+	Boltz_ImportWallet_FullMethodName            = "/boltzrpc.Boltz/ImportWallet"
+	Boltz_SetSubaccount_FullMethodName           = "/boltzrpc.Boltz/SetSubaccount"
+	Boltz_GetSubaccounts_FullMethodName          = "/boltzrpc.Boltz/GetSubaccounts"
+	Boltz_GetWallets_FullMethodName              = "/boltzrpc.Boltz/GetWallets"
+	Boltz_GetWallet_FullMethodName               = "/boltzrpc.Boltz/GetWallet"
+	Boltz_GetWalletSendFee_FullMethodName        = "/boltzrpc.Boltz/GetWalletSendFee"
+	Boltz_ListWalletTransactions_FullMethodName  = "/boltzrpc.Boltz/ListWalletTransactions"
+	Boltz_BumpTransaction_FullMethodName         = "/boltzrpc.Boltz/BumpTransaction"
+	Boltz_GetWalletCredentials_FullMethodName    = "/boltzrpc.Boltz/GetWalletCredentials"
+	Boltz_RemoveWallet_FullMethodName            = "/boltzrpc.Boltz/RemoveWallet"
+	Boltz_WalletSend_FullMethodName              = "/boltzrpc.Boltz/WalletSend"
+	Boltz_WalletReceive_FullMethodName           = "/boltzrpc.Boltz/WalletReceive"
+	Boltz_Stop_FullMethodName                    = "/boltzrpc.Boltz/Stop"
+	Boltz_Unlock_FullMethodName                  = "/boltzrpc.Boltz/Unlock"
+	Boltz_VerifyWalletPassword_FullMethodName    = "/boltzrpc.Boltz/VerifyWalletPassword"
+	Boltz_ChangeWalletPassword_FullMethodName    = "/boltzrpc.Boltz/ChangeWalletPassword"
+	Boltz_CreateTenant_FullMethodName            = "/boltzrpc.Boltz/CreateTenant"
+	Boltz_ListTenants_FullMethodName             = "/boltzrpc.Boltz/ListTenants"
+	Boltz_GetTenant_FullMethodName               = "/boltzrpc.Boltz/GetTenant"
+	Boltz_RemoveTenant_FullMethodName            = "/boltzrpc.Boltz/RemoveTenant"
+	Boltz_BakeMacaroon_FullMethodName            = "/boltzrpc.Boltz/BakeMacaroon"
+	Boltz_GetSwapMnemonic_FullMethodName         = "/boltzrpc.Boltz/GetSwapMnemonic"
+	Boltz_SetSwapMnemonic_FullMethodName         = "/boltzrpc.Boltz/SetSwapMnemonic"
+	Boltz_CreateFundingAddress_FullMethodName    = "/boltzrpc.Boltz/CreateFundingAddress"
+	Boltz_ListFundingAddresses_FullMethodName    = "/boltzrpc.Boltz/ListFundingAddresses"
+	Boltz_GetFundingAddressStream_FullMethodName = "/boltzrpc.Boltz/GetFundingAddressStream"
+	Boltz_FundSwap_FullMethodName                = "/boltzrpc.Boltz/FundSwap"
+	Boltz_RefundFundingAddress_FullMethodName    = "/boltzrpc.Boltz/RefundFundingAddress"
 )
 
 // BoltzClient is the client API for Boltz service.
@@ -172,6 +177,19 @@ type BoltzClient interface {
 	GetSwapMnemonic(ctx context.Context, in *GetSwapMnemonicRequest, opts ...grpc.CallOption) (*GetSwapMnemonicResponse, error)
 	// Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
 	SetSwapMnemonic(ctx context.Context, in *SetSwapMnemonicRequest, opts ...grpc.CallOption) (*SetSwapMnemonicResponse, error)
+	// Creates a new funding address for pre-funding swaps.
+	CreateFundingAddress(ctx context.Context, in *CreateFundingAddressRequest, opts ...grpc.CallOption) (*FundingAddressInfo, error)
+	// Returns a list of all funding addresses in the database.
+	ListFundingAddresses(ctx context.Context, in *ListFundingAddressesRequest, opts ...grpc.CallOption) (*ListFundingAddressesResponse, error)
+	// Streams updates for funding addresses in real time.
+	// If the id is empty or "*" updates for all funding addresses will be streamed.
+	GetFundingAddressStream(ctx context.Context, in *GetFundingAddressStreamRequest, opts ...grpc.CallOption) (Boltz_GetFundingAddressStreamClient, error)
+	// Funds a swap using a funding address. This uses the signing details flow to cooperatively
+	// spend from the funding address to the swap lockup address.
+	FundSwap(ctx context.Context, in *FundSwapRequest, opts ...grpc.CallOption) (*FundSwapResponse, error)
+	// Refunds a funding address by cooperatively signing with Boltz to move funds to a destination address or wallet.
+	// This can be used to recover funds from a funding address that hasn't been used for a swap.
+	RefundFundingAddress(ctx context.Context, in *RefundFundingAddressRequest, opts ...grpc.CallOption) (*RefundFundingAddressResponse, error)
 }
 
 type boltzClient struct {
@@ -570,6 +588,74 @@ func (c *boltzClient) SetSwapMnemonic(ctx context.Context, in *SetSwapMnemonicRe
 	return out, nil
 }
 
+func (c *boltzClient) CreateFundingAddress(ctx context.Context, in *CreateFundingAddressRequest, opts ...grpc.CallOption) (*FundingAddressInfo, error) {
+	out := new(FundingAddressInfo)
+	err := c.cc.Invoke(ctx, Boltz_CreateFundingAddress_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) ListFundingAddresses(ctx context.Context, in *ListFundingAddressesRequest, opts ...grpc.CallOption) (*ListFundingAddressesResponse, error) {
+	out := new(ListFundingAddressesResponse)
+	err := c.cc.Invoke(ctx, Boltz_ListFundingAddresses_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) GetFundingAddressStream(ctx context.Context, in *GetFundingAddressStreamRequest, opts ...grpc.CallOption) (Boltz_GetFundingAddressStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Boltz_ServiceDesc.Streams[1], Boltz_GetFundingAddressStream_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &boltzGetFundingAddressStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Boltz_GetFundingAddressStreamClient interface {
+	Recv() (*FundingAddressInfo, error)
+	grpc.ClientStream
+}
+
+type boltzGetFundingAddressStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *boltzGetFundingAddressStreamClient) Recv() (*FundingAddressInfo, error) {
+	m := new(FundingAddressInfo)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *boltzClient) FundSwap(ctx context.Context, in *FundSwapRequest, opts ...grpc.CallOption) (*FundSwapResponse, error) {
+	out := new(FundSwapResponse)
+	err := c.cc.Invoke(ctx, Boltz_FundSwap_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *boltzClient) RefundFundingAddress(ctx context.Context, in *RefundFundingAddressRequest, opts ...grpc.CallOption) (*RefundFundingAddressResponse, error) {
+	out := new(RefundFundingAddressResponse)
+	err := c.cc.Invoke(ctx, Boltz_RefundFundingAddress_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BoltzServer is the server API for Boltz service.
 // All implementations must embed UnimplementedBoltzServer
 // for forward compatibility
@@ -680,6 +766,19 @@ type BoltzServer interface {
 	GetSwapMnemonic(context.Context, *GetSwapMnemonicRequest) (*GetSwapMnemonicResponse, error)
 	// Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
 	SetSwapMnemonic(context.Context, *SetSwapMnemonicRequest) (*SetSwapMnemonicResponse, error)
+	// Creates a new funding address for pre-funding swaps.
+	CreateFundingAddress(context.Context, *CreateFundingAddressRequest) (*FundingAddressInfo, error)
+	// Returns a list of all funding addresses in the database.
+	ListFundingAddresses(context.Context, *ListFundingAddressesRequest) (*ListFundingAddressesResponse, error)
+	// Streams updates for funding addresses in real time.
+	// If the id is empty or "*" updates for all funding addresses will be streamed.
+	GetFundingAddressStream(*GetFundingAddressStreamRequest, Boltz_GetFundingAddressStreamServer) error
+	// Funds a swap using a funding address. This uses the signing details flow to cooperatively
+	// spend from the funding address to the swap lockup address.
+	FundSwap(context.Context, *FundSwapRequest) (*FundSwapResponse, error)
+	// Refunds a funding address by cooperatively signing with Boltz to move funds to a destination address or wallet.
+	// This can be used to recover funds from a funding address that hasn't been used for a swap.
+	RefundFundingAddress(context.Context, *RefundFundingAddressRequest) (*RefundFundingAddressResponse, error)
 	mustEmbedUnimplementedBoltzServer()
 }
 
@@ -806,6 +905,21 @@ func (UnimplementedBoltzServer) GetSwapMnemonic(context.Context, *GetSwapMnemoni
 }
 func (UnimplementedBoltzServer) SetSwapMnemonic(context.Context, *SetSwapMnemonicRequest) (*SetSwapMnemonicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetSwapMnemonic not implemented")
+}
+func (UnimplementedBoltzServer) CreateFundingAddress(context.Context, *CreateFundingAddressRequest) (*FundingAddressInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateFundingAddress not implemented")
+}
+func (UnimplementedBoltzServer) ListFundingAddresses(context.Context, *ListFundingAddressesRequest) (*ListFundingAddressesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFundingAddresses not implemented")
+}
+func (UnimplementedBoltzServer) GetFundingAddressStream(*GetFundingAddressStreamRequest, Boltz_GetFundingAddressStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetFundingAddressStream not implemented")
+}
+func (UnimplementedBoltzServer) FundSwap(context.Context, *FundSwapRequest) (*FundSwapResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FundSwap not implemented")
+}
+func (UnimplementedBoltzServer) RefundFundingAddress(context.Context, *RefundFundingAddressRequest) (*RefundFundingAddressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefundFundingAddress not implemented")
 }
 func (UnimplementedBoltzServer) mustEmbedUnimplementedBoltzServer() {}
 
@@ -1543,6 +1657,99 @@ func _Boltz_SetSwapMnemonic_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_CreateFundingAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateFundingAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).CreateFundingAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_CreateFundingAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).CreateFundingAddress(ctx, req.(*CreateFundingAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_ListFundingAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFundingAddressesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).ListFundingAddresses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_ListFundingAddresses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).ListFundingAddresses(ctx, req.(*ListFundingAddressesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_GetFundingAddressStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetFundingAddressStreamRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BoltzServer).GetFundingAddressStream(m, &boltzGetFundingAddressStreamServer{stream})
+}
+
+type Boltz_GetFundingAddressStreamServer interface {
+	Send(*FundingAddressInfo) error
+	grpc.ServerStream
+}
+
+type boltzGetFundingAddressStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *boltzGetFundingAddressStreamServer) Send(m *FundingAddressInfo) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Boltz_FundSwap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FundSwapRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).FundSwap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_FundSwap_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).FundSwap(ctx, req.(*FundSwapRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Boltz_RefundFundingAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefundFundingAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).RefundFundingAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_RefundFundingAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).RefundFundingAddress(ctx, req.(*RefundFundingAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Boltz_ServiceDesc is the grpc.ServiceDesc for Boltz service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1706,11 +1913,32 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "SetSwapMnemonic",
 			Handler:    _Boltz_SetSwapMnemonic_Handler,
 		},
+		{
+			MethodName: "CreateFundingAddress",
+			Handler:    _Boltz_CreateFundingAddress_Handler,
+		},
+		{
+			MethodName: "ListFundingAddresses",
+			Handler:    _Boltz_ListFundingAddresses_Handler,
+		},
+		{
+			MethodName: "FundSwap",
+			Handler:    _Boltz_FundSwap_Handler,
+		},
+		{
+			MethodName: "RefundFundingAddress",
+			Handler:    _Boltz_RefundFundingAddress_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "GetSwapInfoStream",
 			Handler:       _Boltz_GetSwapInfoStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetFundingAddressStream",
+			Handler:       _Boltz_GetFundingAddressStream_Handler,
 			ServerStreams: true,
 		},
 	},

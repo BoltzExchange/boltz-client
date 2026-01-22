@@ -29,6 +29,43 @@ const (
 	TransactionDirectMempool
 )
 
+type FundingUpdateEvent int
+
+const (
+	FundingAddressCreated FundingUpdateEvent = iota
+	FundingAddressExpired
+	FundingAddressMempool
+	FundingAddressConfirmed
+	FundingAddressClaimed
+	FundingAddressRefunded
+)
+
+var fundingUpdateEventStrings = map[string]FundingUpdateEvent{
+	"created":               FundingAddressCreated,
+	"expired":               FundingAddressExpired,
+	"transaction.mempool":   FundingAddressMempool,
+	"transaction.confirmed": FundingAddressConfirmed,
+	"transaction.claimed":   FundingAddressClaimed,
+	"transaction.refunded":  FundingAddressRefunded,
+}
+
+func (event FundingUpdateEvent) String() string {
+	for key, value := range fundingUpdateEventStrings {
+		if event == value {
+			return key
+		}
+	}
+	return ""
+}
+
+func (event FundingUpdateEvent) IsFinalStatus() bool {
+	return event == FundingAddressClaimed || event == FundingAddressExpired
+}
+
+func ParseFundingEvent(event string) FundingUpdateEvent {
+	return fundingUpdateEventStrings[event]
+}
+
 var swapUpdateEventStrings = map[string]SwapUpdateEvent{
 	"swap.created": SwapCreated,
 	"swap.expired": SwapExpired,

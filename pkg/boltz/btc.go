@@ -149,39 +149,48 @@ func constructBtcTransaction(network *Network, outputs []OutputDetails, outValue
 		if output.Cooperative {
 			// dummy signature for accurate fee estimation - actual signature is added later
 			transaction.TxIn[i].Witness = wire.TxWitness{dummySignature}
-		} else {
-			lockupTx := output.LockupTransaction.(*BtcTransaction)
-			txOut := lockupTx.MsgTx().TxOut[output.Vout]
-
-			isRefund := output.IsRefund()
-			leaf := output.SwapTree.GetLeaf(isRefund)
-
-			signature, err := txscript.RawTxInTapscriptSignature(
-				transaction,
-				sigHashes,
-				i,
-				txOut.Value,
-				txOut.PkScript,
-				leaf,
-				sigHashType,
-				output.PrivateKey,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("could not sign Taproot input: %w", err)
-			}
-
-			witness := wire.TxWitness{signature}
-			if !isRefund {
-				witness = append(witness, output.Preimage)
-			}
-
-			controlBlockBytes, err := output.SwapTree.GetControlBlock(isRefund)
-			if err != nil {
-				return nil, fmt.Errorf("could not create control block: %w", err)
-			}
-
-			transaction.TxIn[i].Witness = append(witness, leaf.Script, controlBlockBytes)
+			continue
 		}
+
+		lockupTx := output.LockupTransaction.(*BtcTransaction)
+		txOut := lockupTx.MsgTx().TxOut[output.Vout]
+
+		var leaf TapLeaf
+		var controlBlockBytes []byte
+		var err error
+
+		if output.FundingAddressTree != nil {
+			leaf = output.FundingAddressTree.GetLeaf()
+			controlBlockBytes, err = output.FundingAddressTree.GetControlBlock()
+		} else {
+			isRefund := output.IsRefund()
+			leaf = output.SwapTree.GetLeaf(isRefund)
+			controlBlockBytes, err = output.SwapTree.GetControlBlock(isRefund)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("could not create control block: %w", err)
+		}
+
+		signature, err := txscript.RawTxInTapscriptSignature(
+			transaction,
+			sigHashes,
+			i,
+			txOut.Value,
+			txOut.PkScript,
+			leaf,
+			sigHashType,
+			output.PrivateKey,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("could not sign Taproot input: %w", err)
+		}
+		witness := [][]byte{signature}
+		if output.Preimage != nil {
+			witness = append(witness, output.Preimage)
+		}
+		witness = append(witness, leaf.Script, controlBlockBytes)
+
+		transaction.TxIn[i].Witness = witness
 	}
 
 	return &BtcTransaction{

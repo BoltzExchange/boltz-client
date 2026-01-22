@@ -97,6 +97,26 @@ var (
 			Entity: "swap",
 			Action: "write",
 		}},
+		"/boltzrpc.Boltz/CreateFundingAddress": {{
+			Entity: "swap",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/ListFundingAddresses": {{
+			Entity: "swap",
+			Action: "read",
+		}},
+		"/boltzrpc.Boltz/RefundFundingAddress": {{
+			Entity: "swap",
+			Action: "write",
+		}},
+		"/boltzrpc.Boltz/GetFundingAddressStream": {{
+			Entity: "swap",
+			Action: "read",
+		}},
+		"/boltzrpc.Boltz/FundSwap": {{
+			Entity: "swap",
+			Action: "write",
+		}},
 		"/boltzrpc.Boltz/CreateSwap": {{
 			Entity: "swap",
 			Action: "write",

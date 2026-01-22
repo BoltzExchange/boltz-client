@@ -112,6 +112,12 @@ func main() {
 		refundSwapCommand,
 		claimSwapsCommand,
 
+		createFundingCommand,
+		listFundingAddressesCommand,
+		fundingAddressStreamCommand,
+		fundSwapCommand,
+		refundFundingAddressCommand,
+
 		autoSwapCommands,
 
 		walletCommands,

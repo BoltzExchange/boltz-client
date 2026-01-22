@@ -211,3 +211,27 @@ func (boltz *Boltz) GetSwapMnemonic() (*boltzrpc.GetSwapMnemonicResponse, error)
 func (boltz *Boltz) SetSwapMnemonic(request *boltzrpc.SetSwapMnemonicRequest) (*boltzrpc.SetSwapMnemonicResponse, error) {
 	return boltz.Client.SetSwapMnemonic(boltz.Ctx, request)
 }
+
+func (boltz *Boltz) CreateFundingAddress(request *boltzrpc.CreateFundingAddressRequest) (*boltzrpc.FundingAddressInfo, error) {
+	return boltz.Client.CreateFundingAddress(boltz.Ctx, request)
+}
+
+func (boltz *Boltz) ListFundingAddresses(request *boltzrpc.ListFundingAddressesRequest) (*boltzrpc.ListFundingAddressesResponse, error) {
+	return boltz.Client.ListFundingAddresses(boltz.Ctx, request)
+}
+
+func (boltz *Boltz) GetFundingAddressStream(id string) (boltzrpc.Boltz_GetFundingAddressStreamClient, error) {
+	var idPtr *string
+	if id != "" {
+		idPtr = &id
+	}
+	return boltz.Client.GetFundingAddressStream(boltz.Ctx, &boltzrpc.GetFundingAddressStreamRequest{Id: idPtr})
+}
+
+func (boltz *Boltz) FundSwap(request *boltzrpc.FundSwapRequest) (*boltzrpc.FundSwapResponse, error) {
+	return boltz.Client.FundSwap(boltz.Ctx, request)
+}
+
+func (boltz *Boltz) RefundFundingAddress(request *boltzrpc.RefundFundingAddressRequest) (*boltzrpc.RefundFundingAddressResponse, error) {
+	return boltz.Client.RefundFundingAddress(boltz.Ctx, request)
+}

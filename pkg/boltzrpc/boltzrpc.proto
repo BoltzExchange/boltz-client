@@ -222,6 +222,34 @@ service Boltz {
     Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
     */
     rpc SetSwapMnemonic(SetSwapMnemonicRequest) returns (SetSwapMnemonicResponse);
+
+    /*
+    Creates a new funding address for pre-funding swaps.
+    */
+    rpc CreateFundingAddress(CreateFundingAddressRequest) returns (FundingAddressInfo);
+
+    /*
+    Returns a list of all funding addresses in the database.
+    */
+    rpc ListFundingAddresses(ListFundingAddressesRequest) returns (ListFundingAddressesResponse);
+
+    /*
+    Streams updates for funding addresses in real time.
+    If the id is empty or "*" updates for all funding addresses will be streamed.
+    */
+    rpc GetFundingAddressStream(GetFundingAddressStreamRequest) returns (stream FundingAddressInfo);
+
+    /*
+    Funds a swap using a funding address. This uses the signing details flow to cooperatively
+    spend from the funding address to the swap lockup address.
+    */
+    rpc FundSwap(FundSwapRequest) returns (FundSwapResponse);
+
+    /*
+    Refunds a funding address by cooperatively signing with Boltz to move funds to a destination address or wallet.
+    This can be used to recover funds from a funding address that hasn't been used for a swap.
+    */
+    rpc RefundFundingAddress(RefundFundingAddressRequest) returns (RefundFundingAddressResponse);
 }
 
 message CreateTenantRequest {
@@ -1024,4 +1052,64 @@ message SetSwapMnemonicRequest {
 }
 message SetSwapMnemonicResponse {
     string mnemonic = 1;
+}
+
+message CreateFundingAddressRequest {
+    Currency currency = 1;
+}
+
+message FundingAddressInfo {
+    string id = 1;
+    Currency currency = 2;
+    string address = 3;
+    uint32 timeout_block_height = 4;
+    string boltz_public_key = 5;
+    string status = 6;
+    optional string lockup_transaction_id = 7;
+    optional string swap_id = 8;
+    int64 created_at = 9;
+    uint64 tenant_id = 10;
+    optional string blinding_key = 11;
+}
+
+message ListFundingAddressesRequest {
+    optional Currency currency = 1;
+}
+
+message ListFundingAddressesResponse {
+    repeated FundingAddressInfo funding_addresses = 1;
+}
+
+message GetFundingAddressStreamRequest {
+    // If empty or "*", streams updates for all funding addresses
+    optional string id = 1;
+}
+
+message FundSwapRequest {
+    // The funding address ID to spend from
+    string funding_address_id = 1;
+    // The swap ID to fund
+    string swap_id = 2;
+}
+
+message FundSwapResponse {
+    // The transaction ID of the funding transaction
+    string transaction_id = 1;
+}
+
+message RefundFundingAddressRequest {
+    // The funding address ID to refund
+    string funding_address_id = 1;
+    // Destination for the refunded funds - either an address or wallet ID
+    oneof destination {
+        // External address to send refunded funds to
+        string address = 2;
+        // Wallet ID to send refunded funds to
+        uint64 wallet_id = 3;
+    }
+}
+
+message RefundFundingAddressResponse {
+    // The transaction ID of the refund transaction
+    string transaction_id = 1;
 }
