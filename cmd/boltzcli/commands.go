@@ -864,6 +864,17 @@ func printConfig(ctx *cli.Context, autoSwapType *client.AutoSwapType, key string
 }
 
 func autoSwapSetup(ctx *cli.Context, swapper *client.AutoSwapType) error {
+	// Check if server is running in standalone mode
+	client := getClient(ctx)
+	info, err := client.GetInfo()
+	if err != nil {
+		return err
+	}
+
+	if info.Node == "standalone" {
+		return errors.New("autoswap is not available in standalone mode")
+	}
+
 	if swapper == nil || *swapper == lightning {
 		if err := autoSwapLightningSetup(ctx); err != nil {
 			return err
