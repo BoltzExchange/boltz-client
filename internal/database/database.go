@@ -235,6 +235,22 @@ CREATE TABLE swapMnemonic
     mnemonic     VARCHAR PRIMARY KEY,
     lastKeyIndex INT DEFAULT 0
 );
+
+CREATE TABLE fundingAddresses
+(
+    id                  VARCHAR PRIMARY KEY,
+    currency            VARCHAR,
+    address             VARCHAR,
+    timeoutBlockheight  INTEGER,
+    boltzPublicKey      VARCHAR,
+    privateKey          VARCHAR,
+    blindingKey         VARCHAR,
+    status              VARCHAR,
+    lockupTransactionId VARCHAR,
+    swapId              VARCHAR,
+    createdAt           INT,
+    tenantId            INT REFERENCES tenants (id)
+);
 ` + createViews
 
 type Database struct {

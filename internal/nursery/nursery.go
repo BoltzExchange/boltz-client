@@ -15,7 +15,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 
-	"github.com/BoltzExchange/boltz-client/v2/internal/database"
+	dbpkg "github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 )
@@ -31,7 +31,7 @@ type Nursery struct {
 	onchain  *onchain.Onchain
 	boltz    *boltz.Api
 	boltzWs  *boltz.Websocket
-	database *database.Database
+	database *dbpkg.Database
 
 	eventListeners     map[string]swapListener
 	eventListenersLock sync.RWMutex
@@ -47,6 +47,8 @@ type Nursery struct {
 
 	BtcBlocks    *utils.ChannelForwarder[*onchain.BlockEpoch]
 	LiquidBlocks *utils.ChannelForwarder[*onchain.BlockEpoch]
+
+	FundingAddressUpdates *utils.ChannelForwarder[*dbpkg.FundingAddress]
 }
 
 func New(
@@ -56,18 +58,19 @@ func New(
 	lightning lightning.LightningNode,
 	chain *onchain.Onchain,
 	boltzClient *boltz.Api,
-	database *database.Database,
+	database *dbpkg.Database,
 ) *Nursery {
 	nursery := &Nursery{
-		network:          network,
-		lightning:        lightning,
-		onchain:          chain,
-		boltz:            boltzClient,
-		database:         database,
-		eventListeners:   make(map[string]swapListener),
-		globalListener:   utils.ForwardChannel(make(chan SwapUpdate), 0, false),
-		boltzWs:          boltzClient.NewWebsocket(),
-		maxRoutingFeePpm: maxRoutingFeePpm,
+		network:               network,
+		lightning:             lightning,
+		onchain:               chain,
+		boltz:                 boltzClient,
+		database:              database,
+		eventListeners:        make(map[string]swapListener),
+		globalListener:        utils.ForwardChannel(make(chan SwapUpdate), 0, false),
+		boltzWs:               boltzClient.NewWebsocket(),
+		maxRoutingFeePpm:      maxRoutingFeePpm,
+		FundingAddressUpdates: utils.ForwardChannel[*dbpkg.FundingAddress](make(chan *dbpkg.FundingAddress), 0, false),
 	}
 	if maxZeroConfAmount != nil {
 		nursery.maxZeroConfAmount = *maxZeroConfAmount
@@ -77,9 +80,9 @@ func New(
 }
 
 type SwapUpdate struct {
-	Swap        *database.Swap
-	ReverseSwap *database.ReverseSwap
-	ChainSwap   *database.ChainSwap
+	Swap        *dbpkg.Swap
+	ReverseSwap *dbpkg.ReverseSwap
+	ChainSwap   *dbpkg.ChainSwap
 	IsFinal     bool
 }
 
@@ -145,8 +148,13 @@ func (nursery *Nursery) Init() error {
 	nursery.LiquidBlocks = nursery.startBlockListener(boltz.CurrencyLiquid)
 
 	nursery.startSwapListener()
+	nursery.startFundingListener()
 
-	return nursery.recoverSwaps()
+	if err := nursery.recoverSwaps(); err != nil {
+		return err
+	}
+
+	return nursery.recoverFundingAddresses()
 }
 
 func (nursery *Nursery) Stop() {
@@ -159,6 +167,7 @@ func (nursery *Nursery) Stop() {
 		nursery.removeSwapListener(id)
 	}
 	nursery.globalListener.Close()
+	nursery.FundingAddressUpdates.Close()
 	logger.Debugf("Closed all event listeners")
 	nursery.onchain.Disconnect()
 }
@@ -182,7 +191,7 @@ func (nursery *Nursery) registerSwaps(swapIds []string) error {
 func (nursery *Nursery) recoverSwaps() error {
 	logger.Info("Recovering Swaps")
 
-	query := database.SwapQuery{
+	query := dbpkg.SwapQuery{
 		// we also recover the ERROR state as this might be a temporary error and any swap will eventually be successful or expired
 		States: []boltzrpc.SwapState{boltzrpc.SwapState_PENDING, boltzrpc.SwapState_ERROR},
 	}
@@ -354,7 +363,7 @@ func (nursery *Nursery) createTransaction(currency boltz.Currency, outputs []*Ou
 }
 
 func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, details []boltz.OutputDetails) {
-	addresses := make(map[database.Id]string)
+	addresses := make(map[dbpkg.Id]string)
 	for _, output := range outputs {
 		handleErr := func(err error) {
 			verb := "claim"
@@ -420,14 +429,14 @@ func (nursery *Nursery) CheckAmounts(swapType boltz.SwapType, pair boltz.Pair, s
 	return boltz.CheckAmounts(swapType, pair, sendAmount, receiveAmount, serviceFee, fees, false)
 }
 
-func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
+func (nursery *Nursery) ClaimSwaps(currency boltz.Currency, reverseSwaps []*dbpkg.ReverseSwap, chainSwaps []*dbpkg.ChainSwap) (string, error) {
 	nursery.updateLock.Lock()
 	defer nursery.updateLock.Unlock()
 
 	return nursery.claimSwaps(currency, reverseSwaps, chainSwaps)
 }
 
-func (nursery *Nursery) claimSwaps(currency boltz.Currency, reverseSwaps []*database.ReverseSwap, chainSwaps []*database.ChainSwap) (string, error) {
+func (nursery *Nursery) claimSwaps(currency boltz.Currency, reverseSwaps []*dbpkg.ReverseSwap, chainSwaps []*dbpkg.ChainSwap) (string, error) {
 	var outputs []*Output
 	for _, swap := range reverseSwaps {
 		outputs = append(outputs, nursery.getReverseSwapClaimOutput(swap))
@@ -438,15 +447,15 @@ func (nursery *Nursery) claimSwaps(currency boltz.Currency, reverseSwaps []*data
 	return nursery.createTransaction(currency, outputs)
 }
 
-func (nursery *Nursery) QueryClaimableSwaps(tenantId *database.Id, currency boltz.Currency) (
-	[]*database.ReverseSwap, []*database.ChainSwap, error,
+func (nursery *Nursery) QueryClaimableSwaps(tenantId *dbpkg.Id, currency boltz.Currency) (
+	[]*dbpkg.ReverseSwap, []*dbpkg.ChainSwap, error,
 ) {
 	reverseSwaps, chainSwaps, err := nursery.database.QueryAllClaimableSwaps(tenantId, currency)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	reverseSwaps = slices.DeleteFunc(reverseSwaps, func(reverseSwap *database.ReverseSwap) bool {
+	reverseSwaps = slices.DeleteFunc(reverseSwaps, func(reverseSwap *dbpkg.ReverseSwap) bool {
 		if !reverseSwap.AcceptZeroConf {
 			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, reverseSwap.LockupTransactionId, false)
 			if err != nil {
@@ -458,7 +467,7 @@ func (nursery *Nursery) QueryClaimableSwaps(tenantId *database.Id, currency bolt
 		return false
 	})
 
-	chainSwaps = slices.DeleteFunc(chainSwaps, func(chainSwap *database.ChainSwap) bool {
+	chainSwaps = slices.DeleteFunc(chainSwaps, func(chainSwap *dbpkg.ChainSwap) bool {
 		if !chainSwap.AcceptZeroConf {
 			confirmed, err := nursery.onchain.IsTransactionConfirmed(currency, chainSwap.ToData.LockupTransactionId, false)
 			if err != nil {
@@ -471,4 +480,116 @@ func (nursery *Nursery) QueryClaimableSwaps(tenantId *database.Id, currency bolt
 	})
 
 	return reverseSwaps, chainSwaps, nil
+}
+
+func (nursery *Nursery) RegisterFundingAddress(fa *dbpkg.FundingAddress) error {
+	return nursery.boltzWs.SubscribeFunding([]string{fa.Id})
+}
+
+func (nursery *Nursery) startFundingListener() {
+	logger.Infof("Starting funding address update listener")
+
+	nursery.waitGroup.Add(1)
+
+	go func() {
+		defer nursery.waitGroup.Done()
+		for update := range nursery.boltzWs.FundingUpdates {
+			logger.Debugf("Funding address %s status update: %s", update.Id, update.Status)
+			if err := nursery.processFundingUpdate(update); err != nil {
+				logger.Errorf("Could not process funding update: %v", err)
+			}
+		}
+	}()
+}
+
+func (nursery *Nursery) processFundingUpdate(update boltz.FundingUpdate) error {
+	logger.Debugf("Processing funding update: %s", update.Id)
+	event := boltz.ParseFundingEvent(update.Status)
+	fa, err := nursery.database.QueryFundingAddress(update.Id)
+	if err != nil {
+		return fmt.Errorf("could not query funding address %s: %v", update.Id, err)
+	}
+
+	// Update status
+	if err := nursery.database.UpdateFundingAddressStatus(fa, update.Status); err != nil {
+		return fmt.Errorf("could not update funding address status: %v", err)
+	}
+
+	// Update lockup transaction ID if present
+	if update.Transaction != nil && update.Transaction.Id != "" {
+		if err := nursery.database.SetFundingAddressLockupTransactionId(fa, update.Transaction.Id); err != nil {
+			return fmt.Errorf("could not update funding address lockup transaction: %v", err)
+		}
+	}
+
+	// Update swap ID if present
+	if update.SwapId != "" {
+		if err := nursery.database.SetFundingAddressSwapId(fa, update.SwapId); err != nil {
+			return fmt.Errorf("could not update funding address swap id: %v", err)
+		}
+	}
+
+	// Send update to stream listeners
+	nursery.FundingAddressUpdates.Send(fa)
+
+	// Check if this is a final status (spent, expired, refunded)
+	if event.IsFinalStatus() {
+		nursery.boltzWs.UnsubscribeFunding(update.Id)
+	}
+
+	return nil
+}
+
+func (nursery *Nursery) SignFundingAddress(fundingAddress *dbpkg.FundingAddress) error {
+	// Get signing details from Boltz API
+	signingDetails, err := nursery.boltz.GetFundingAddressSigningDetails(fundingAddress.Id, fundingAddress.SwapId)
+	if err != nil {
+		return fmt.Errorf("failed to get signing details from boltz: %v", err)
+	}
+
+	fundingTree, err := fundingAddress.GetFundingTree()
+	if err != nil {
+		return fmt.Errorf("failed to create funding tree: %v", err)
+	}
+	// Create signing session
+	session, err := boltz.NewFundingSigningSession(fundingTree)
+	if err != nil {
+		return fmt.Errorf("failed to create signing session: %v", err)
+	}
+
+	// Sign the transaction hash
+	partial, err := session.Sign(signingDetails)
+	if err != nil {
+		return fmt.Errorf("failed to sign transaction: %v", err)
+	}
+
+	// Send our partial signature to Boltz
+	if err := nursery.boltz.SendFundingAddressSignature(fundingAddress.Id, partial); err != nil {
+		return fmt.Errorf("failed to send signature to boltz: %v", err)
+	}
+
+	// Update funding address with the swap ID
+	if err := nursery.database.SetFundingAddressSwapId(fundingAddress, fundingAddress.SwapId); err != nil {
+		logger.Warnf("Failed to update funding address %s with swap ID: %v", fundingAddress.Id, err)
+	}
+
+	return nil
+}
+
+func (nursery *Nursery) recoverFundingAddresses() error {
+	addresses, err := nursery.database.QueryPendingFundingAddresses()
+	if err != nil {
+		return err
+	}
+
+	if len(addresses) == 0 {
+		return nil
+	}
+
+	var fundingIds []string
+	for _, fa := range addresses {
+		fundingIds = append(fundingIds, fa.Id)
+	}
+
+	return nursery.boltzWs.SubscribeFunding(fundingIds)
 }

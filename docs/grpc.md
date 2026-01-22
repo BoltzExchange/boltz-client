@@ -372,6 +372,46 @@ Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be 
 | ------- | -------- |
 | [`SetSwapMnemonicRequest`](#setswapmnemonicrequest) | [`SetSwapMnemonicResponse`](#setswapmnemonicresponse) |
 
+#### CreateFundingAddress
+
+Creates a new funding address for pre-funding swaps.
+
+| Request | Response |
+| ------- | -------- |
+| [`CreateFundingAddressRequest`](#createfundingaddressrequest) | [`FundingAddressInfo`](#fundingaddressinfo) |
+
+#### ListFundingAddresses
+
+Returns a list of all funding addresses in the database.
+
+| Request | Response |
+| ------- | -------- |
+| [`ListFundingAddressesRequest`](#listfundingaddressesrequest) | [`ListFundingAddressesResponse`](#listfundingaddressesresponse) |
+
+#### GetFundingAddressStream
+
+Streams updates for funding addresses in real time. If the id is empty or "*" updates for all funding addresses will be streamed.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetFundingAddressStreamRequest`](#getfundingaddressstreamrequest) | [`FundingAddressInfo`](#fundingaddressinfo) stream |
+
+#### FundSwap
+
+Funds a swap using a funding address. This uses the signing details flow to cooperatively spend from the funding address to the swap lockup address.
+
+| Request | Response |
+| ------- | -------- |
+| [`FundSwapRequest`](#fundswaprequest) | [`FundSwapResponse`](#fundswapresponse) |
+
+#### ClaimFundingAddress
+
+Claims a funding address by cooperatively signing with Boltz to move funds to a destination address or wallet. This can be used to recover funds from a funding address that hasn't been used for a swap.
+
+| Request | Response |
+| ------- | -------- |
+| [`ClaimFundingAddressRequest`](#claimfundingaddressrequest) | [`ClaimFundingAddressResponse`](#claimfundingaddressresponse) |
+
 
 
 
@@ -598,6 +638,34 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### ClaimFundingAddressRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `funding_address_id` | [`string`](#string) |  | The funding address ID to claim |
+| `address` | [`string`](#string) |  | External address to send claimed funds to |
+| `wallet_id` | [`uint64`](#uint64) |  | Wallet ID to send claimed funds to |
+
+
+
+
+
+#### ClaimFundingAddressResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transaction_id` | [`string`](#string) |  | The transaction ID of the claim transaction |
+
+
+
+
+
 #### ClaimSwapsRequest
 
 
@@ -673,6 +741,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`int64`](#int64) |  |  |
 | `inbound_liquidity` | [`uint32`](#uint32) |  | Percentage of inbound liquidity the channel that is opened should have. 25 by default. |
 | `private` | [`bool`](#bool) |  |  |
+
+
+
+
+
+#### CreateFundingAddressRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `currency` | [`Currency`](#currency) |  |  |
 
 
 
@@ -839,6 +920,69 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
 | `miner` | [`MinerFees`](#minerfees) |  |  |
+
+
+
+
+
+#### FundSwapRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `funding_address_id` | [`string`](#string) |  | The funding address ID to spend from |
+| `swap_id` | [`string`](#string) |  | The swap ID to fund |
+
+
+
+
+
+#### FundSwapResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transaction_id` | [`string`](#string) |  | The transaction ID of the funding transaction |
+
+
+
+
+
+#### FundingAddressInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `currency` | [`Currency`](#currency) |  |  |
+| `address` | [`string`](#string) |  |  |
+| `timeout_block_height` | [`uint32`](#uint32) |  |  |
+| `boltz_public_key` | [`string`](#string) |  |  |
+| `status` | [`string`](#string) |  |  |
+| `lockup_transaction_id` | [`string`](#string) | optional |  |
+| `swap_id` | [`string`](#string) | optional |  |
+| `created_at` | [`int64`](#int64) |  |  |
+| `tenant_id` | [`uint64`](#uint64) |  |  |
+| `blinding_key` | [`string`](#string) | optional |  |
+
+
+
+
+
+#### GetFundingAddressStreamRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) | optional | If empty or "*", streams updates for all funding addresses |
 
 
 
@@ -1171,6 +1315,32 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `minimal` | [`uint64`](#uint64) |  |  |
 | `maximal` | [`uint64`](#uint64) |  |  |
 | `maximal_zero_conf_amount` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### ListFundingAddressesRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `currency` | [`Currency`](#currency) | optional |  |
+
+
+
+
+
+#### ListFundingAddressesResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `funding_addresses` | [`FundingAddressInfo`](#fundingaddressinfo) | repeated |  |
 
 
 
