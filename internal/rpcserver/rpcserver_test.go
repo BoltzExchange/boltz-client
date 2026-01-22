@@ -330,6 +330,44 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) (streamFunc, s
 	}, streamFunc
 }
 
+type fundingStreamFunc func(status boltz.FundingUpdateEvent) *boltzrpc.FundingAddressInfo
+
+func fundingAddressStream(t *testing.T, client client.Boltz, fundingId string) fundingStreamFunc {
+	stream, err := client.GetFundingAddressStream(fundingId)
+	require.NoError(t, err)
+
+	updates := make(chan *boltzrpc.FundingAddressInfo, 3)
+
+	go func() {
+		for {
+			info, err := stream.Recv()
+			if err != nil {
+				close(updates)
+				return
+			}
+			updates <- info
+		}
+	}()
+
+	return func(status boltz.FundingUpdateEvent) *boltzrpc.FundingAddressInfo {
+		for {
+			select {
+			case update, ok := <-updates:
+				if ok {
+					if update.Status == status.String() {
+						return update
+					}
+				} else {
+					require.Fail(t, fmt.Sprintf("update stream for funding address %s stopped before status %s", fundingId, status))
+				}
+			case <-time.After(15 * time.Second):
+				test.PrintBackendLogs()
+				require.Fail(t, fmt.Sprintf("timed out while waiting for funding address %s to reach status %s", fundingId, status))
+			}
+		}
+	}
+}
+
 func TestGetInfo(t *testing.T) {
 	nodes := []string{"CLN", "LND", "Standalone"}
 
@@ -3509,5 +3547,478 @@ func TestSwapMnemonic(t *testing.T) {
 			Amount: swapAmount,
 		})
 		requireCode(t, err, codes.FailedPrecondition)
+	})
+}
+
+func TestFundingAddress(t *testing.T) {
+	cfg := loadConfig(t)
+	chain := getOnchain(t, cfg)
+	boltzClient, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+	defer stop()
+
+	// Ensure we have a funded Liquid wallet for LBTC tests
+	fundedWallet(t, boltzClient, boltzrpc.Currency_LBTC)
+
+	// Helper to get CLI for a currency
+	getCli := func(currency boltzrpc.Currency) func(string) string {
+		if currency == boltzrpc.Currency_BTC {
+			return test.BtcCli
+		}
+		return test.LiquidCli
+	}
+
+	// Currency test cases used across multiple tests
+	currencies := []struct {
+		desc     string
+		currency boltzrpc.Currency
+	}{
+		{"BTC", boltzrpc.Currency_BTC},
+		{"Liquid", boltzrpc.Currency_LBTC},
+	}
+
+	t.Run("CreateAndList", func(t *testing.T) {
+		for _, tc := range currencies {
+			t.Run(tc.desc, func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.currency,
+				})
+				require.NoError(t, err)
+				require.NotEmpty(t, fundingAddress.Id)
+				require.NotEmpty(t, fundingAddress.Address)
+				require.NotEmpty(t, fundingAddress.BoltzPublicKey)
+				require.NotZero(t, fundingAddress.TimeoutBlockHeight)
+				require.Equal(t, boltz.FundingAddressCreated.String(), fundingAddress.Status)
+
+				// Verify it appears in the list
+				list, err := boltzClient.ListFundingAddresses(&boltzrpc.ListFundingAddressesRequest{})
+				require.NoError(t, err)
+				found := false
+				for _, fa := range list.FundingAddresses {
+					if fa.Id == fundingAddress.Id {
+						found = true
+						require.Equal(t, tc.currency, fa.Currency)
+						break
+					}
+				}
+				require.True(t, found, "created funding address should be in list")
+
+				// Verify currency filter works
+				list, err = boltzClient.ListFundingAddresses(&boltzrpc.ListFundingAddressesRequest{
+					Currency: &tc.currency,
+				})
+				require.NoError(t, err)
+				require.NotEmpty(t, list.FundingAddresses)
+				for _, fa := range list.FundingAddresses {
+					require.Equal(t, tc.currency, fa.Currency)
+				}
+			})
+		}
+	})
+
+	t.Run("FundSwap", func(t *testing.T) {
+		for _, tc := range currencies {
+			t.Run(tc.desc, func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.currency,
+				})
+				require.NoError(t, err)
+
+				faStream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+				test.SendToAddress(getCli(tc.currency), fundingAddress.Address, swapAmount+10000)
+				test.MineBlock()
+				faStream(boltz.FundingAddressConfirmed)
+
+				pair := &boltzrpc.Pair{From: tc.currency, To: boltzrpc.Currency_BTC}
+				if tc.currency == boltzrpc.Currency_BTC {
+					pair = pairBtc
+				}
+				swap, err := boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
+					Amount: swapAmount,
+					Pair:   pair,
+				})
+				require.NoError(t, err)
+
+				_, err = boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
+					FundingAddressId: fundingAddress.Id,
+					SwapId:           swap.Id,
+				})
+				require.NoError(t, err)
+
+				swapStreamFn, _ := swapStream(t, boltzClient, swap.Id)
+				test.MineBlock()
+				info := swapStreamFn(boltzrpc.SwapState_SUCCESSFUL)
+				require.Equal(t, swap.Id, info.Swap.Id)
+			})
+		}
+	})
+
+	t.Run("FundChainSwap", func(t *testing.T) {
+		chainPairs := []struct {
+			desc string
+			from boltzrpc.Currency
+			to   boltzrpc.Currency
+		}{
+			{"BTC->LBTC", boltzrpc.Currency_BTC, boltzrpc.Currency_LBTC},
+			{"LBTC->BTC", boltzrpc.Currency_LBTC, boltzrpc.Currency_BTC},
+		}
+
+		for _, tc := range chainPairs {
+			t.Run(tc.desc, func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.from,
+				})
+				require.NoError(t, err)
+
+				faStream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+				test.SendToAddress(getCli(tc.from), fundingAddress.Address, swapAmount+10000)
+				test.MineBlock()
+				faStream(boltz.FundingAddressConfirmed)
+
+				externalPay := true
+				acceptZeroConf := true
+				toAddress := getCli(tc.to)("getnewaddress")
+
+				chainSwap, err := boltzClient.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+					Amount:         &swapAmount,
+					Pair:           &boltzrpc.Pair{From: tc.from, To: tc.to},
+					ExternalPay:    &externalPay,
+					ToAddress:      &toAddress,
+					AcceptZeroConf: &acceptZeroConf,
+				})
+				require.NoError(t, err)
+
+				_, err = boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
+					FundingAddressId: fundingAddress.Id,
+					SwapId:           chainSwap.Id,
+				})
+				require.NoError(t, err)
+
+				swapStreamFn, _ := swapStream(t, boltzClient, chainSwap.Id)
+				test.MineBlock()
+				info := swapStreamFn(boltzrpc.SwapState_SUCCESSFUL)
+				require.Equal(t, chainSwap.Id, info.ChainSwap.Id)
+			})
+		}
+	})
+
+	t.Run("Errors", func(t *testing.T) {
+		t.Run("InvalidFundingAddressId", func(t *testing.T) {
+			swap, err := boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Amount: swapAmount,
+				Pair:   pairBtc,
+			})
+			require.NoError(t, err)
+
+			_, err = boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
+				FundingAddressId: "invalid-id",
+				SwapId:           swap.Id,
+			})
+			require.Error(t, err)
+			requireCode(t, err, codes.NotFound)
+		})
+
+		t.Run("MissingFundingAddressId", func(t *testing.T) {
+			_, err := boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
+				SwapId: "some-swap-id",
+			})
+			require.Error(t, err)
+			requireCode(t, err, codes.InvalidArgument)
+		})
+
+		t.Run("MissingSwapId", func(t *testing.T) {
+			fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+				Currency: boltzrpc.Currency_BTC,
+			})
+			require.NoError(t, err)
+
+			_, err = boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
+				FundingAddressId: fundingAddress.Id,
+			})
+			require.Error(t, err)
+			requireCode(t, err, codes.InvalidArgument)
+		})
+
+		t.Run("CurrencyMismatch", func(t *testing.T) {
+			// Create funding addresses for both currencies
+			btcFunding, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+				Currency: boltzrpc.Currency_BTC,
+			})
+			require.NoError(t, err)
+
+			lbtcFunding, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+				Currency: boltzrpc.Currency_LBTC,
+			})
+			require.NoError(t, err)
+
+			// Create swaps for both currencies
+			btcSwap, err := boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Amount: swapAmount,
+				Pair:   pairBtc,
+			})
+			require.NoError(t, err)
+
+			lbtcSwap, err := boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Amount: swapAmount,
+				Pair:   &boltzrpc.Pair{From: boltzrpc.Currency_LBTC, To: boltzrpc.Currency_BTC},
+			})
+			require.NoError(t, err)
+
+			// Cross-currency funding should fail
+			_, err = boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
+				FundingAddressId: lbtcFunding.Id,
+				SwapId:           btcSwap.Id,
+			})
+			require.Error(t, err)
+
+			_, err = boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
+				FundingAddressId: btcFunding.Id,
+				SwapId:           lbtcSwap.Id,
+			})
+			require.Error(t, err)
+		})
+	})
+
+	t.Run("Tenants", func(t *testing.T) {
+		_, write, _ := createTenant(t, boltzClient, "funding-test-tenant")
+		tenant := client.NewBoltzClient(write)
+
+		for _, tc := range currencies {
+			t.Run(tc.desc, func(t *testing.T) {
+				tenantFunding, err := tenant.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.currency,
+				})
+				require.NoError(t, err)
+
+				adminFunding, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.currency,
+				})
+				require.NoError(t, err)
+
+				// Tenant should only see their own
+				tenantList, err := tenant.ListFundingAddresses(&boltzrpc.ListFundingAddressesRequest{
+					Currency: &tc.currency,
+				})
+				require.NoError(t, err)
+				for _, fa := range tenantList.FundingAddresses {
+					require.Equal(t, tenantFunding.TenantId, fa.TenantId)
+					require.NotEqual(t, adminFunding.Id, fa.Id)
+				}
+
+				// Admin should see both
+				adminList, err := boltzClient.ListFundingAddresses(&boltzrpc.ListFundingAddressesRequest{
+					Currency: &tc.currency,
+				})
+				require.NoError(t, err)
+				foundTenant, foundAdmin := false, false
+				for _, fa := range adminList.FundingAddresses {
+					if fa.Id == tenantFunding.Id {
+						foundTenant = true
+					}
+					if fa.Id == adminFunding.Id {
+						foundAdmin = true
+					}
+				}
+				require.True(t, foundTenant && foundAdmin, "admin should see both funding addresses")
+			})
+		}
+
+		t.Run("PermissionDenied", func(t *testing.T) {
+			adminFunding, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+				Currency: boltzrpc.Currency_BTC,
+			})
+			require.NoError(t, err)
+
+			swap, err := tenant.CreateSwap(&boltzrpc.CreateSwapRequest{
+				Invoice: func() *string {
+					node := cfg.LND
+					_, err := connectLightning(nil, node)
+					require.NoError(t, err)
+					invoice, err := node.CreateInvoice(swapAmount, nil, 3600, "test")
+					require.NoError(t, err)
+					return &invoice.PaymentRequest
+				}(),
+			})
+			require.NoError(t, err)
+
+			_, err = tenant.FundSwap(&boltzrpc.FundSwapRequest{
+				FundingAddressId: adminFunding.Id,
+				SwapId:           swap.Id,
+			})
+			require.Error(t, err)
+			requireCode(t, err, codes.PermissionDenied)
+		})
+	})
+
+	t.Run("RefundFundingAddress", func(t *testing.T) {
+		t.Run("RefundToAddress", func(t *testing.T) {
+			for _, tc := range currencies {
+				t.Run(tc.desc, func(t *testing.T) {
+					fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+						Currency: tc.currency,
+					})
+					require.NoError(t, err)
+
+					stream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+					cli := getCli(tc.currency)
+					test.SendToAddress(cli, fundingAddress.Address, swapAmount)
+					test.MineBlock()
+					stream(boltz.FundingAddressConfirmed)
+
+					destAddress := cli("getnewaddress")
+					claimResp, err := boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+						FundingAddressId: fundingAddress.Id,
+						Destination:      &boltzrpc.RefundFundingAddressRequest_Address{Address: destAddress},
+					})
+					require.NoError(t, err)
+					require.NotEmpty(t, claimResp.TransactionId)
+
+					test.MineBlock()
+				})
+			}
+		})
+
+		t.Run("RefundToWallet", func(t *testing.T) {
+			for _, tc := range currencies {
+				t.Run(tc.desc, func(t *testing.T) {
+					wallet := fundedWallet(t, boltzClient, tc.currency)
+
+					fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+						Currency: tc.currency,
+					})
+					require.NoError(t, err)
+
+					stream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+					cli := getCli(tc.currency)
+					test.SendToAddress(cli, fundingAddress.Address, swapAmount)
+					test.MineBlock()
+					stream(boltz.FundingAddressConfirmed)
+
+					claimResp, err := boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+						FundingAddressId: fundingAddress.Id,
+						Destination:      &boltzrpc.RefundFundingAddressRequest_WalletId{WalletId: wallet.Id},
+					})
+					require.NoError(t, err)
+					require.NotEmpty(t, claimResp.TransactionId)
+
+					test.MineBlock()
+				})
+			}
+		})
+
+		t.Run("Errors", func(t *testing.T) {
+			t.Run("NotFunded", func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: boltzrpc.Currency_BTC,
+				})
+				require.NoError(t, err)
+
+				destAddress := test.BtcCli("getnewaddress")
+				_, err = boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+					FundingAddressId: fundingAddress.Id,
+					Destination:      &boltzrpc.RefundFundingAddressRequest_Address{Address: destAddress},
+				})
+				require.Error(t, err)
+				requireCode(t, err, codes.FailedPrecondition)
+			})
+
+			t.Run("InvalidFundingAddressId", func(t *testing.T) {
+				destAddress := test.BtcCli("getnewaddress")
+				_, err := boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+					FundingAddressId: "invalid-id",
+					Destination:      &boltzrpc.RefundFundingAddressRequest_Address{Address: destAddress},
+				})
+				require.Error(t, err)
+				requireCode(t, err, codes.NotFound)
+			})
+
+			t.Run("MissingFundingAddressId", func(t *testing.T) {
+				destAddress := test.BtcCli("getnewaddress")
+				_, err := boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+					Destination: &boltzrpc.RefundFundingAddressRequest_Address{Address: destAddress},
+				})
+				require.Error(t, err)
+				requireCode(t, err, codes.InvalidArgument)
+			})
+
+			t.Run("Destination", func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: boltzrpc.Currency_BTC,
+				})
+				require.NoError(t, err)
+
+				stream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+				test.SendToAddress(test.BtcCli, fundingAddress.Address, swapAmount)
+				test.MineBlock()
+
+				stream(boltz.FundingAddressConfirmed)
+				_, err = boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+					FundingAddressId: fundingAddress.Id,
+				})
+				require.Error(t, err)
+				requireCode(t, err, codes.InvalidArgument)
+
+				invalidWalletId := uint64(999999)
+				_, err = boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+					FundingAddressId: fundingAddress.Id,
+					Destination:      &boltzrpc.RefundFundingAddressRequest_WalletId{WalletId: invalidWalletId},
+				})
+				require.Error(t, err)
+				requireCode(t, err, codes.NotFound)
+			})
+		})
+
+		t.Run("TenantPermissionDenied", func(t *testing.T) {
+			_, write, _ := createTenant(t, boltzClient, "refund-funding-tenant")
+			tenantClient := client.NewBoltzClient(write)
+
+			adminFunding, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+				Currency: boltzrpc.Currency_BTC,
+			})
+			require.NoError(t, err)
+
+			stream := fundingAddressStream(t, boltzClient, adminFunding.Id)
+			test.SendToAddress(test.BtcCli, adminFunding.Address, swapAmount)
+			test.MineBlock()
+			stream(boltz.FundingAddressConfirmed)
+
+			destAddress := test.BtcCli("getnewaddress")
+			_, err = tenantClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+				FundingAddressId: adminFunding.Id,
+				Destination:      &boltzrpc.RefundFundingAddressRequest_Address{Address: destAddress},
+			})
+			require.Error(t, err)
+			requireCode(t, err, codes.PermissionDenied)
+		})
+
+		t.Run("Expired", func(t *testing.T) {
+			for _, tc := range currencies {
+				t.Run(tc.desc, func(t *testing.T) {
+					fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+						Currency: tc.currency,
+					})
+					require.NoError(t, err)
+
+					stream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+					cli := getCli(tc.currency)
+					test.SendToAddress(cli, fundingAddress.Address, swapAmount)
+					test.MineBlock()
+					stream(boltz.FundingAddressConfirmed)
+
+					test.MineUntil(t, test.GetCli(parseCurrency(tc.currency)), int64(fundingAddress.TimeoutBlockHeight))
+					time.Sleep(3 * time.Second)
+					stream(boltz.FundingAddressExpired)
+
+					destAddress := cli("getnewaddress")
+					claimResp, err := boltzClient.RefundFundingAddress(&boltzrpc.RefundFundingAddressRequest{
+						FundingAddressId: fundingAddress.Id,
+						Destination:      &boltzrpc.RefundFundingAddressRequest_Address{Address: destAddress},
+					})
+					require.NoError(t, err)
+					require.NotEmpty(t, claimResp.TransactionId)
+
+					test.MineBlock()
+				})
+			}
+		})
 	})
 }

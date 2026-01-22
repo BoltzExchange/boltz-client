@@ -21,7 +21,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 18
+const latestSchemaVersion = 19
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -624,6 +624,29 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 
 		migration := `
 		UPDATE wallets SET legacy = TRUE WHERE currency = 'BTC';
+		`
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+	case 18:
+		logMigration(oldVersion)
+
+		migration := `
+		CREATE TABLE fundingAddresses
+		(
+			id                  VARCHAR PRIMARY KEY,
+			currency            VARCHAR,
+			address             VARCHAR,
+			timeoutBlockheight  INTEGER,
+			boltzPublicKey      VARCHAR,
+			privateKey          VARCHAR,
+			blindingKey         VARCHAR,
+			status              VARCHAR,
+			lockupTransactionId VARCHAR,
+			swapId              VARCHAR,
+			createdAt           INT,
+			tenantId            INT REFERENCES tenants (id)
+		);
 		`
 		if _, err := tx.Exec(migration); err != nil {
 			return err

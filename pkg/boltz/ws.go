@@ -26,9 +26,19 @@ type SwapUpdate struct {
 	Id                 string `json:"id"`
 }
 
+type FundingUpdate struct {
+	Id          string `json:"id" mapstructure:"id"`
+	Status      string `json:"status" mapstructure:"status"`
+	Transaction *struct {
+		Id string `json:"id" mapstructure:"id"`
+	} `json:"transaction,omitempty" mapstructure:"transaction,omitempty"`
+	SwapId string `json:"swapId,omitempty" mapstructure:"swapId,omitempty"`
+}
+
 type Websocket struct {
-	Updates     chan SwapUpdate
-	updatesLock sync.Mutex
+	Updates        chan SwapUpdate
+	FundingUpdates chan FundingUpdate
+	updatesLock    sync.Mutex
 
 	apiUrl            string
 	subscriptions     chan bool
@@ -37,7 +47,9 @@ type Websocket struct {
 	closed            bool
 	dialer            *websocket.Dialer
 	swapIds           []string
+	fundingIds        []string
 	swapIdsLock       sync.Mutex
+	fundingIdsLock    sync.Mutex
 	reconnectInterval time.Duration
 }
 
@@ -62,6 +74,7 @@ func (boltz *Api) NewWebsocket() *Websocket {
 		subscriptions:     make(chan bool),
 		dialer:            &dialer,
 		Updates:           make(chan SwapUpdate, updatesChannelBuffer),
+		FundingUpdates:    make(chan FundingUpdate, updatesChannelBuffer),
 		reconnectInterval: reconnectInterval,
 	}
 }
@@ -165,6 +178,17 @@ func (boltz *Websocket) Connect() error {
 		}
 	}
 
+	boltz.fundingIdsLock.Lock()
+	fundingIds := make([]string, len(boltz.fundingIds))
+	copy(fundingIds, boltz.fundingIds)
+	boltz.fundingIdsLock.Unlock()
+
+	if len(fundingIds) > 0 {
+		if err := boltz.subscribeFunding(fundingIds); err != nil {
+			return fmt.Errorf("failed to subscribe to existing funding addresses: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -189,6 +213,14 @@ func (boltz *Websocket) handleTextMessage(data []byte) error {
 					return fmt.Errorf("invalid boltz response: %v", err)
 				}
 				boltz.Updates <- update
+			}
+		case "funding.update":
+			for _, arg := range response.Args {
+				var update FundingUpdate
+				if err := mapstructure.Decode(arg, &update); err != nil {
+					return fmt.Errorf("invalid boltz funding response: %v", err)
+				}
+				boltz.FundingUpdates <- update
 			}
 		default:
 			logger.Warnf("unknown update channel: %s", response.Channel)
@@ -259,17 +291,87 @@ func (boltz *Websocket) Subscribe(swapIds []string) error {
 
 func (boltz *Websocket) Unsubscribe(swapId string) {
 	boltz.swapIdsLock.Lock()
-	defer boltz.swapIdsLock.Unlock()
 	boltz.swapIds = slices.DeleteFunc(boltz.swapIds, func(id string) bool {
 		return id == swapId
 	})
+	swapCount := len(boltz.swapIds)
+	boltz.swapIdsLock.Unlock()
 	logger.Debugf("Unsubscribed from swap %s", swapId)
-	if len(boltz.swapIds) == 0 {
-		logger.Debugf("No more pending swaps, disconnecting websocket")
+	boltz.checkDisconnect(swapCount)
+}
+
+func (boltz *Websocket) checkDisconnect(swapCount int) {
+	boltz.fundingIdsLock.Lock()
+	fundingCount := len(boltz.fundingIds)
+	boltz.fundingIdsLock.Unlock()
+
+	if swapCount == 0 && fundingCount == 0 {
+		logger.Debugf("No more pending swaps or funding addresses, disconnecting websocket")
 		if err := boltz.close(); err != nil {
 			logger.Warnf("could not close boltz ws: %v", err)
 		}
 	}
+}
+
+func (boltz *Websocket) subscribeFunding(fundingIds []string) error {
+	if boltz.closed {
+		return errors.New("websocket is closed")
+	}
+	logger.Infof("Subscribing to Funding Addresses: %v", fundingIds)
+	if len(fundingIds) == 0 {
+		return nil
+	}
+	if err := boltz.writeJson(map[string]any{
+		"op":      "subscribe",
+		"channel": "funding.update",
+		"args":    fundingIds,
+	}); err != nil {
+		return err
+	}
+	select {
+	case <-boltz.subscriptions:
+		return nil
+	case <-time.After(5 * time.Second):
+		return errors.New("no answer from boltz")
+	}
+}
+
+func (boltz *Websocket) SubscribeFunding(fundingIds []string) error {
+	if len(fundingIds) == 0 {
+		return nil
+	}
+	if !boltz.Connected() {
+		if err := boltz.Connect(); err != nil {
+			return fmt.Errorf("could not connect boltz ws: %w", err)
+		}
+	}
+	if err := boltz.subscribeFunding(fundingIds); err != nil {
+		// the connection might be dead, so forcefully reconnect
+		if err := boltz.Reconnect(); err != nil {
+			return fmt.Errorf("could not reconnect boltz ws: %w", err)
+		}
+		if err := boltz.subscribeFunding(fundingIds); err != nil {
+			return err
+		}
+	}
+	boltz.fundingIdsLock.Lock()
+	boltz.fundingIds = append(boltz.fundingIds, fundingIds...)
+	boltz.fundingIdsLock.Unlock()
+	return nil
+}
+
+func (boltz *Websocket) UnsubscribeFunding(fundingId string) {
+	boltz.swapIdsLock.Lock()
+	swapCount := len(boltz.swapIds)
+	boltz.swapIdsLock.Unlock()
+
+	boltz.fundingIdsLock.Lock()
+	boltz.fundingIds = slices.DeleteFunc(boltz.fundingIds, func(id string) bool {
+		return id == fundingId
+	})
+	boltz.fundingIdsLock.Unlock()
+	logger.Debugf("Unsubscribed from funding address %s", fundingId)
+	boltz.checkDisconnect(swapCount)
 }
 
 func (boltz *Websocket) close() error {
@@ -294,6 +396,7 @@ func (boltz *Websocket) Close() error {
 		return nil
 	}
 	close(boltz.Updates)
+	close(boltz.FundingUpdates)
 	boltz.closed = true
 	return boltz.close()
 }

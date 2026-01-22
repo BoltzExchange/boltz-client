@@ -1,6 +1,7 @@
 package rpcserver
 
 import (
+	"encoding/hex"
 	"time"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
@@ -267,5 +268,33 @@ func serializeTenant(tenant *database.Tenant) *boltzrpc.Tenant {
 	return &boltzrpc.Tenant{
 		Id:   tenant.Id,
 		Name: tenant.Name,
+	}
+}
+
+func serializeFundingAddress(fa *database.FundingAddress) *boltzrpc.FundingAddressInfo {
+	if fa == nil {
+		return nil
+	}
+	boltzPubKey := ""
+	if fa.BoltzPublicKey != nil {
+		boltzPubKey = hex.EncodeToString(fa.BoltzPublicKey.SerializeCompressed())
+	}
+	var blindingKey *string
+	if fa.BlindingKey != nil {
+		key := hex.EncodeToString(fa.BlindingKey.Serialize())
+		blindingKey = &key
+	}
+	return &boltzrpc.FundingAddressInfo{
+		Id:                  fa.Id,
+		Currency:            serializeCurrency(fa.Currency),
+		Address:             fa.Address,
+		TimeoutBlockHeight:  fa.TimeoutBlockHeight,
+		BoltzPublicKey:      boltzPubKey,
+		Status:              fa.Status,
+		LockupTransactionId: serializeOptionalString(fa.LockupTransactionId),
+		SwapId:              serializeOptionalString(fa.SwapId),
+		CreatedAt:           serializeTime(fa.CreatedAt),
+		TenantId:            fa.TenantId,
+		BlindingKey:         blindingKey,
 	}
 }

@@ -297,18 +297,20 @@ type RefundRequest struct {
 }
 
 type SwapClaimDetails struct {
-	PubNonce        HexString `json:"pubNonce"`
-	TransactionHash HexString `json:"transactionHash"`
-	Preimage        HexString `json:"preimage"`
-	PublicKey       HexString `json:"publicKey"`
+	PubNonce         HexString `json:"pubNonce"`
+	TransactionHash  HexString `json:"transactionHash"`
+	Preimage         HexString `json:"preimage"`
+	PublicKey        HexString `json:"publicKey"`
+	FundingAddressId string    `json:"fundingAddressId"`
 
 	Error string `json:"error"`
 }
 
 type ChainSwapSigningDetails struct {
-	PubNonce        HexString `json:"pubNonce"`
-	TransactionHash HexString `json:"transactionHash"`
-	PublicKey       HexString `json:"publicKey"`
+	PubNonce         HexString `json:"pubNonce"`
+	TransactionHash  HexString `json:"transactionHash"`
+	PublicKey        HexString `json:"publicKey"`
+	FundingAddressId string    `json:"fundingAddressId"`
 
 	Error string `json:"error"`
 }
@@ -412,6 +414,37 @@ type PartialSignature struct {
 
 type ErrorMessage struct {
 	Error string `json:"error"`
+}
+
+// Funding Address types
+type FundingAddressRequest struct {
+	Symbol          Currency  `json:"symbol"`
+	RefundPublicKey HexString `json:"refundPublicKey"`
+}
+
+type FundingAddressResponse struct {
+	Id                 string    `json:"id"`
+	Address            string    `json:"address"`
+	TimeoutBlockHeight uint32    `json:"timeoutBlockHeight"`
+	ServerPublicKey    HexString `json:"serverPublicKey"`
+	BlindingKey        HexString `json:"blindingKey,omitempty"`
+
+	Error string `json:"error"`
+}
+
+type FundingAddressSigningDetails struct {
+	PubNonce        HexString `json:"pubNonce"`
+	PublicKey       HexString `json:"publicKey"`
+	TransactionHex  string    `json:"transactionHex"`
+	TransactionHash HexString `json:"transactionHash"`
+
+	Error string `json:"error"`
+}
+
+// FundingAddressRefundRequest is used to request a partial signature for refunding a funding address
+type FundingAddressRefundRequest struct {
+	PubNonce        HexString `json:"pubNonce"`
+	TransactionHash HexString `json:"transactionHash"`
 }
 
 func (boltz *Api) GetVersion() (*GetVersionResponse, error) {
@@ -765,6 +798,60 @@ func (boltz *Api) FetchBolt12Invoice(offer string, amountSat uint64) (string, er
 	return response.Invoice, err
 }
 
+func (boltz *Api) CreateFundingAddress(request FundingAddressRequest) (*FundingAddressResponse, error) {
+	var response FundingAddressResponse
+	err := boltz.sendPostRequest("/funding", request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Api) GetFundingAddressSigningDetails(fundingId string, swapId string) (*FundingAddressSigningDetails, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, ErrPartialSignaturesDisabled
+	}
+	var response FundingAddressSigningDetails
+	err := boltz.sendGetRequestV2(fmt.Sprintf("/funding/%s/signature?swapId=%s", fundingId, swapId), &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
+func (boltz *Api) SendFundingAddressSignature(fundingId string, signature *PartialSignature) error {
+	if boltz.DisablePartialSignatures {
+		return ErrPartialSignaturesDisabled
+	}
+	var response ErrorMessage
+	err := boltz.sendRequest(http.MethodPatch, fmt.Sprintf("/funding/%s/signature", fundingId), signature, &response)
+
+	if response.Error != "" {
+		return Error(errors.New(response.Error))
+	}
+
+	return err
+}
+
+// RefundFundingAddress requests a partial signature from Boltz to refund a funding address
+func (boltz *Api) RefundFundingAddress(fundingId string, request *FundingAddressRefundRequest) (*PartialSignature, error) {
+	if boltz.DisablePartialSignatures {
+		return nil, ErrPartialSignaturesDisabled
+	}
+	var response PartialSignature
+	err := boltz.sendPostRequest(fmt.Sprintf("/funding/%s/refund", fundingId), request, &response)
+
+	if response.Error != "" {
+		return nil, Error(errors.New(response.Error))
+	}
+
+	return &response, err
+}
+
 func (boltz *Api) sendGetRequest(endpoint string, response interface{}) error {
 	request, err := http.NewRequest("GET", boltz.URL+endpoint, nil)
 	if err != nil {
@@ -786,20 +873,31 @@ func (boltz *Api) sendGetRequestV2(endpoint string, response interface{}) error 
 }
 
 func (boltz *Api) sendPostRequest(endpoint string, requestBody interface{}, response interface{}) error {
+	return boltz.sendRequest(http.MethodPost, endpoint, requestBody, response)
+}
+
+func (boltz *Api) sendRequest(method string, endpoint string, requestBody interface{}, response interface{}) error {
 	rawBody, err := json.Marshal(requestBody)
 
 	if err != nil {
 		return err
 	}
 
-	res, err := boltz.Client.Post(boltz.URL+"/v2"+endpoint, "application/json", bytes.NewBuffer(rawBody))
+	req, err := http.NewRequest(method, boltz.URL+"/v2"+endpoint, bytes.NewBuffer(rawBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := boltz.Client.Do(req)
 
 	if err != nil {
 		return err
 	}
-
-	if err := unmarshalJson(res.Body, &response); err != nil {
-		return fmt.Errorf("could not parse boltz response with status %d: %v", res.StatusCode, err)
+	if res.StatusCode != http.StatusNoContent {
+		if err := unmarshalJson(res.Body, &response); err != nil {
+			return fmt.Errorf("could not parse boltz response with status %d: %v", res.StatusCode, err)
+		}
 	}
 	return nil
 }

@@ -85,8 +85,13 @@ func liquidTaprootHash(transaction *liquidtx.Transaction, network *Network, outp
 	var leafHash *chainhash.Hash
 	if !cooperative {
 		output := outputs[index]
-		hash := output.SwapTree.GetLeafHash(output.IsRefund())
-		leafHash = &hash
+		if output.FundingAddressTree != nil {
+			hash := output.FundingAddressTree.GetLeafHash()
+			leafHash = &hash
+		} else {
+			hash := output.SwapTree.GetLeafHash(output.IsRefund())
+			leafHash = &hash
+		}
 	}
 	genesisHash, _ := chainhash.NewHashFromStr(network.Liquid.GenesisBlockHash)
 
@@ -269,18 +274,26 @@ func constructLiquidTransaction(network *Network, outputs []OutputDetails, outVa
 				return nil, err
 			}
 
-			tree := output.SwapTree
-			isRefund := output.IsRefund()
-			controlBlock, err := tree.GetControlBlock(isRefund)
+			var leaf TapLeaf
+			var controlBlock []byte
+
+			if output.FundingAddressTree != nil {
+				leaf = output.FundingAddressTree.GetLeaf()
+				controlBlock, err = output.FundingAddressTree.GetControlBlock()
+			} else {
+				isRefund := output.IsRefund()
+				leaf = output.SwapTree.GetLeaf(isRefund)
+				controlBlock, err = output.SwapTree.GetControlBlock(isRefund)
+			}
 			if err != nil {
 				return nil, err
 			}
 
 			witness = [][]byte{signature.Serialize()}
-			if !isRefund {
+			if output.Preimage != nil {
 				witness = append(witness, output.Preimage)
 			}
-			witness = append(witness, tree.GetLeaf(isRefund).Script, controlBlock)
+			witness = append(witness, leaf.Script, controlBlock)
 		}
 		p.Inputs[i].FinalScriptWitness, err = writeTxWitness(witness...)
 		if err != nil {

@@ -94,10 +94,11 @@ func (session *MusigSession) Finalize(transaction Transaction, outputs []OutputD
 		return err
 	}
 
-	s := &secp256k1.ModNScalar{}
-	s.SetByteSlice(boltzSignature.PartialSignature)
-	partial := musig2.NewPartialSignature(s, nil)
-	haveFinal, err := session.CombineSig(&partial)
+	partial, err := decodePartialSignature(boltzSignature.PartialSignature)
+	if err != nil {
+		return fmt.Errorf("could not decode Boltz partial signature: %w", err)
+	}
+	haveFinal, err := session.CombineSig(partial)
 	if err != nil {
 		return fmt.Errorf("could not combine signatures: %w", err)
 	}
