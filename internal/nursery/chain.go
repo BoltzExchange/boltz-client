@@ -1,6 +1,7 @@
 package nursery
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -31,13 +32,39 @@ func (nursery *Nursery) RegisterChainSwap(chainSwap database.ChainSwap) error {
 	return nil
 }
 
+func (nursery *Nursery) checkFundingOutput(swap *database.ChainSwap, data *database.ChainSwapData) *onchain.OutputArgs {
+	fa, err := nursery.database.QueryFundingAddressesBySwapId(swap.Id)
+	if err != nil {
+		return nil
+	}
+	if fa.Currency != data.Currency {
+		return nil
+	}
+
+	if fa.BlindingKey != nil {
+		logger.Infof("hi")
+	}
+
+	return &onchain.OutputArgs{
+		TransactionId: fa.LockupTransactionId,
+		Currency:      data.Currency,
+		Address:       fa.Address,
+		BlindingKey:   fa.BlindingKey,
+	}
+}
+
 func (nursery *Nursery) setChainSwapLockupTransaction(swap *database.ChainSwap, data *database.ChainSwapData, transaction *boltz.ChainSwapTransaction) error {
 	if transaction == nil || data.LockupTransactionId == transaction.Transaction.Id {
 		return nil
 	}
 	transactionId := transaction.Transaction.Id
 	data.LockupTransactionId = transactionId
-	result, err := nursery.onchain.FindOutput(chainOutputArgs(data))
+	fundingOutput := nursery.checkFundingOutput(swap, data)
+	if fundingOutput == nil {
+		out := chainOutputArgs(data)
+		fundingOutput = &out
+	}
+	result, err := nursery.onchain.FindOutput(*fundingOutput)
 	if err != nil {
 		return fmt.Errorf("could not find lockup vout: %s", err)
 	}
@@ -90,19 +117,29 @@ func (nursery *Nursery) finalizeChainSwap(swap *database.ChainSwap) error {
 func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Output {
 	info := chainOutputArgs(swap.ToData)
 	info.ExpectedAmount = swap.ToData.Amount
+
+	details := &boltz.OutputDetails{
+		SwapId:         swap.Id,
+		SwapType:       boltz.ChainSwap,
+		Preimage:       swap.Preimage,
+		PrivateKey:     swap.ToData.PrivateKey,
+		SwapTree:       swap.ToData.Tree,
+		Cooperative:    true,
+		RefundSwapTree: swap.FromData.Tree,
+		Address:        swap.ToData.Address,
+	}
+
+	fundingAddress, err := nursery.database.QueryFundingAddressesBySwapId(swap.Id)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		logger.Errorf("Could not query funding address: %s", err)
+	}
+	if fundingAddress != nil {
+		details.FundingAddressTree, _ = fundingAddress.GetFundingTree()
+	}
 	return &Output{
-		OutputDetails: &boltz.OutputDetails{
-			SwapId:         swap.Id,
-			SwapType:       boltz.ChainSwap,
-			Preimage:       swap.Preimage,
-			PrivateKey:     swap.ToData.PrivateKey,
-			SwapTree:       swap.ToData.Tree,
-			Cooperative:    true,
-			RefundSwapTree: swap.FromData.Tree,
-			Address:        swap.ToData.Address,
-		},
-		walletId:   swap.ToData.WalletId,
-		outputArgs: info,
+		OutputDetails: details,
+		walletId:      swap.ToData.WalletId,
+		outputArgs:    info,
 		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.ToData, transactionId); err != nil {
 				return fmt.Errorf("could not set lockup transaction in database: %w", err)

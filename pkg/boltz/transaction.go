@@ -23,27 +23,19 @@ type Transaction interface {
 }
 
 type OutputDetails struct {
-	LockupTransaction Transaction
-	Vout              uint32
-	// the absolute fee to pay for this output
-	Fee uint64
-
-	// which address to use as the destination for the output
-	Address string
-
-	PrivateKey *btcec.PrivateKey
-
-	// Should be set to an empty array in case of a refund
-	Preimage []byte
-
-	// Can be zero in case of a claim transaction
+	LockupTransaction  Transaction
+	Vout               uint32
+	Fee                uint64
+	Address            string
+	PrivateKey         *btcec.PrivateKey
+	Preimage           []byte // empty for refunds
 	TimeoutBlockHeight uint32
 
-	// taproot only
-	SwapTree    *SwapTree
-	Cooperative bool
-	// swap tree of server lockup transaction, required when cooperatively claiming a chain swap
-	RefundSwapTree *SwapTree
+	SwapTree           *SwapTree
+	Cooperative        bool
+	RefundSwapTree     *SwapTree    // required for cooperative chain swap claims
+	FundingAddressTree *FundingTree // required for funding address refunds
+	FundingAddressId   string       // when set, triggers direct funding address refund flow
 
 	SwapId   string
 	SwapType SwapType
@@ -175,13 +167,19 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 			if !output.Cooperative {
 				return nil
 			}
-			serialized, err := transaction.Serialize()
-			if err != nil {
-				return fmt.Errorf("could not serialize transaction: %w", err)
-			}
 
 			if boltzApi == nil {
 				return errors.New("boltzApi is required for cooperative transactions")
+			}
+
+			// Handle direct funding address refund (not through a swap)
+			if output.FundingAddressId != "" {
+				return handleFundingAddressRefund(network, currency, transaction, outputs, i, boltzApi)
+			}
+
+			serialized, err := transaction.Serialize()
+			if err != nil {
+				return fmt.Errorf("could not serialize transaction: %w", err)
 			}
 
 			session, err := NewSigningSession(outputs[i].SwapTree)
@@ -212,18 +210,33 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 					if output.IsRefund() {
 						return boltzApi.RefundChainSwap(output.SwapId, refundRequest)
 					}
-					if output.RefundSwapTree == nil {
-						return nil, errors.New("RefundSwapTree is required for cooperatively claiming chain swap")
-					}
-					boltzSession, err := NewSigningSession(output.RefundSwapTree)
-					if err != nil {
-						return nil, fmt.Errorf("could not initialize signing session: %w", err)
-					}
 					details, err := boltzApi.GetChainSwapClaimDetails(output.SwapId)
 					if err != nil {
 						return nil, err
 					}
-					boltzSignature, err := boltzSession.Sign(details.TransactionHash, details.PubNonce)
+					var boltzSignature *PartialSignature
+					if details.FundingAddressId != "" {
+						if output.FundingAddressTree == nil {
+							return nil, fmt.Errorf("FundingAddressTree is required for cooperatively signing chain swap with funding address")
+						}
+						boltzSession, err := NewFundingSigningSession(output.FundingAddressTree)
+						if err != nil {
+							return nil, fmt.Errorf("could not initialize signing session: %w", err)
+						}
+						boltzSignature, err = boltzSession.Sign(&FundingAddressSigningDetails{
+							TransactionHash: details.TransactionHash,
+							PubNonce:        details.PubNonce,
+						})
+					} else {
+						if output.RefundSwapTree == nil {
+							return nil, errors.New("RefundSwapTree is required for cooperatively claiming chain swap")
+						}
+						boltzSession, err := NewSigningSession(output.RefundSwapTree)
+						if err != nil {
+							return nil, fmt.Errorf("could not initialize signing session: %w", err)
+						}
+						boltzSignature, err = boltzSession.Sign(details.TransactionHash, details.PubNonce)
+					}
 					if err != nil {
 						return nil, fmt.Errorf("could not sign transaction: %w", err)
 					}
@@ -273,4 +286,88 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 	}
 
 	return transaction, results, err
+}
+
+// handleFundingAddressRefund handles cooperative signing for direct funding address refunds.
+func handleFundingAddressRefund(
+	network *Network,
+	currency Currency,
+	transaction Transaction,
+	outputs []OutputDetails,
+	index int,
+	boltzApi *Api,
+) error {
+	output := outputs[index]
+
+	if output.FundingAddressTree == nil {
+		return errors.New("FundingAddressTree is required for refunding funding address")
+	}
+
+	var txHash []byte
+	var err error
+	if currency == CurrencyLiquid {
+		txHash = liquidTaprootHash(&transaction.(*LiquidTransaction).Transaction, network, outputs, index, true)
+	} else {
+		txHash, err = btcTaprootHash(transaction, outputs, index)
+	}
+	if err != nil {
+		return fmt.Errorf("could not compute transaction hash: %w", err)
+	}
+
+	session, err := NewFundingSigningSession(output.FundingAddressTree)
+	if err != nil {
+		return fmt.Errorf("could not create signing session: %w", err)
+	}
+
+	ourNonce := session.PublicNonce()
+	refundRequest := &FundingAddressRefundRequest{
+		PubNonce:        ourNonce[:],
+		TransactionHash: txHash,
+	}
+
+	boltzSignature, err := boltzApi.RefundFundingAddress(output.FundingAddressId, refundRequest)
+	if err != nil {
+		return fmt.Errorf("could not get partial signature from Boltz: %w", err)
+	}
+
+	haveAllNonces, err := session.RegisterPubNonce([66]byte(boltzSignature.PubNonce))
+	if err != nil {
+		return fmt.Errorf("could not register Boltz nonce: %w", err)
+	}
+	if !haveAllNonces {
+		return errors.New("could not combine all nonces")
+	}
+
+	_, err = session.Session.Sign([32]byte(txHash))
+	if err != nil {
+		return fmt.Errorf("could not create partial signature: %w", err)
+	}
+
+	boltzPartial, err := decodePartialSignature(boltzSignature.PartialSignature)
+	if err != nil {
+		return fmt.Errorf("could not decode Boltz partial signature: %w", err)
+	}
+
+	finalSig, err := session.CombineSig(boltzPartial)
+	if err != nil {
+		return fmt.Errorf("could not combine Boltz signature: %w", err)
+	}
+	if !finalSig {
+		return errors.New("could not finalize signature after combining both partials")
+	}
+
+	finalSchnorrSig := session.FinalSig()
+	if finalSchnorrSig == nil {
+		return errors.New("final signature is nil")
+	}
+
+	signatureBytes := finalSchnorrSig.Serialize()
+	if currency == CurrencyLiquid {
+		tx := &transaction.(*LiquidTransaction).Transaction
+		tx.Inputs[index].Witness = [][]byte{signatureBytes}
+	} else {
+		tx := transaction.(*BtcTransaction).MsgTx()
+		tx.TxIn[index].Witness = [][]byte{signatureBytes}
+	}
+	return nil
 }
