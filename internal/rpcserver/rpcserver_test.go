@@ -1733,7 +1733,7 @@ func TestBumpTransaction(t *testing.T) {
 			desc: "FeeRate/Less",
 			request: &boltzrpc.BumpTransactionRequest{
 				Previous:    txIdRequest.Previous,
-				SatPerVbyte: feeRate(1),
+				SatPerVbyte: feeRate(0.1),
 			},
 			wantErr: "fee rate has to be higher",
 		},
