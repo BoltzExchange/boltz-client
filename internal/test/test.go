@@ -211,7 +211,7 @@ func InitLogger() {
 }
 
 func BtcCli(cmd string) string {
-	return run("bitcoin-cli-sim-server " + cmd)
+	return run("bitcoin-cli-sim-client " + cmd)
 }
 
 func GetCli(pair boltz.Currency) Cli {
