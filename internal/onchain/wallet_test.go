@@ -193,6 +193,13 @@ func TestWallet_GetSendFee(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, balance.Total, amount+fee)
+
+		_, err = wallet.SendToAddress(onchain.WalletSendArgs{
+			Address:     toAddress,
+			Amount:      amount,
+			SatPerVbyte: 1,
+		})
+		require.NoError(t, err)
 	})
 }
 
