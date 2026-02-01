@@ -553,6 +553,24 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 	defer w.sendLock.Unlock()
 
 	tx, err := w.createTransaction(args)
+	if err != nil && strings.Contains(err.Error(), "insufficient") {
+		// LWK can't handle the scenario where the amount for a sweep is calculated via
+		// GetSendFee and then passed to SendToAddress without SendAll specified.
+		if !args.SendAll {
+			args.SendAll = true
+			sendAllTx, sendAllErr := w.createTransaction(args)
+			if sendAllErr == nil {
+				sendAmount, _, sendAllErr := w.getSendAmount(sendAllTx)
+				if sendAllErr != nil {
+					return "", sendAllErr
+				}
+				if sendAmount == args.Amount {
+					tx = sendAllTx
+					err = nil
+				}
+			}
+		}
+	}
 	if err != nil {
 		return "", err
 	}
@@ -587,12 +605,9 @@ func (w *Wallet) ApplyTransaction(txHex string) error {
 	return w.applyTransaction(tx)
 }
 
-func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
-	tx, err := w.createTransaction(args)
-	if err != nil {
-		return 0, 0, err
-	}
-
+func (w *Wallet) getSendAmount(tx *lwk.Transaction) (uint64, uint64, error) {
+	var send uint64
+	var fee uint64
 	txos, err := w.Txos()
 	if err != nil {
 		return 0, 0, err
@@ -616,11 +631,21 @@ func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint6
 			}
 		}
 		if output.IsFee() {
-			fee = *output.Value()
-			break
+			if v := output.Value(); v != nil {
+				fee = *v
+			}
 		}
 	}
 	return send - fee, fee, nil
+}
+
+func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
+	tx, err := w.createTransaction(args)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return w.getSendAmount(tx)
 }
 
 func (w *Wallet) GetOutputs(address string) ([]*onchain.Output, error) {
