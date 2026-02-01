@@ -631,8 +631,9 @@ func (w *Wallet) getSendAmount(tx *lwk.Transaction) (uint64, uint64, error) {
 			}
 		}
 		if output.IsFee() {
-			fee = *output.Value()
-			break
+			if v := output.Value(); v != nil {
+				fee = *v
+			}
 		}
 	}
 	return send - fee, fee, nil
