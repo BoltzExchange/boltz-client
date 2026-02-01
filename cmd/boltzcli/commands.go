@@ -68,13 +68,13 @@ Currency defaults by swap type:
 
 Examples:
   Get quote for a submarine swap receiving 100000 sats on lightning:
-  > boltzcli quote submarine --receive 100000
+  > boltzcli quote --receive 100000 submarine
 
   Get quote for a reverse swap sending 100000 sats from lightning to L-BTC:
-  > boltzcli quote reverse --send 100000
+  > boltzcli quote --send 100000 reverse
 
   Get quote for a chain swap from BTC to L-BTC:
-  > boltzcli quote chain --send 100000 --from BTC --to LBTC`,
+  > boltzcli quote --send 100000 --from BTC --to LBTC chain`,
 	Action: getSwapQuote,
 	Flags: []cli.Flag{
 		jsonFlag,
