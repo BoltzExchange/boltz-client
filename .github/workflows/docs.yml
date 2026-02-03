@@ -39,6 +39,10 @@ jobs:
       - name: Prettier check
         run: npm run prettier:check
         working-directory: ./docs
+      - name: Spell check
+        uses: crate-ci/typos@master
+        with:
+          files: ./docs/
       - name: Build with VitePress
         run: npm run docs:build
         working-directory: ./docs
