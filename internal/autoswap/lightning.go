@@ -58,7 +58,7 @@ func withLightningBase(config *SerializedLnConfig) *SerializedLnConfig {
 
 func DefaultLightningConfig() *SerializedLnConfig {
 	// we can't include values like currency in the base config
-	// since we couldn't know wether the user didn't set the currency at all or set it to BTC
+	// since we couldn't know whether the user didn't set the currency at all or set it to BTC
 	return withLightningBase(&SerializedLnConfig{
 		OutboundBalancePercent: 25,
 		InboundBalancePercent:  25,
@@ -85,9 +85,9 @@ func (cfg *LightningConfig) Init() error {
 		maxPercent := boltz.Percentage(100) - 2*cfg.reserve
 		if cfg.outboundBalance.Relative+cfg.inboundBalance.Relative > maxPercent {
 			if cfg.outboundBalance.IsZero() {
-				return fmt.Errorf("inbound threshold muss be less than %s", maxPercent)
+				return fmt.Errorf("inbound threshold must be less than %s", maxPercent)
 			} else if cfg.inboundBalance.IsZero() {
-				return fmt.Errorf("outbound threshold muss be less than %s", maxPercent)
+				return fmt.Errorf("outbound threshold must be less than %s", maxPercent)
 			} else {
 				return fmt.Errorf("sum of thresholds must be less than %s", maxPercent)
 			}

@@ -1,6 +1,6 @@
 # GDK
 
-The gdk build process is split in two parts: the builder image inside the gdk
+The gdk build process is split into two parts: the builder image inside the gdk
 repo and the `gdk.Dockerfile` located in this repo. The builder image contains
 all the prebuilt dependencies and the `gdk.Dockerfile` uses it to build the
 static and dynamic version of the library and then publish just those 2

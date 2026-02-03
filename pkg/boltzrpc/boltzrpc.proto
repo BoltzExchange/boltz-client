@@ -81,8 +81,8 @@ service Boltz {
     rpc CreateSwap (CreateSwapRequest) returns (CreateSwapResponse);
 
     /*
-    Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
-    is coming trough a new channel channel opened by Boltz.
+    Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLC
+    is coming through a new channel opened by Boltz.
     */
     rpc CreateChannel (CreateChannelRequest) returns (CreateSwapResponse) { option deprecated = true; };
 
@@ -308,7 +308,7 @@ message SwapInfo {
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     /*
-    If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the
+    If the swap times out or fails for some other reason, the daemon will automatically refund the coins sent to the
     `lockup_address` back to the configured wallet or the address specified in the `refund_address` field.
     */
     string refund_transaction_id = 13;
@@ -373,7 +373,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 */
 message ChannelCreationInfo {
     option deprecated = true;
-    // ID of the swap to which this channel channel belongs
+    // ID of the swap to which this channel belongs
     string swap_id = 1;
     string status = 2;
     uint32 inbound_liquidity = 3;
@@ -500,7 +500,7 @@ message AnySwapInfo {
     uint64 to_amount = 13;
     int64 created_at = 8;
     optional int64 service_fee = 9;
-    // inclues the routing fee for reverse swaps
+    // includes the routing fee for reverse swaps
     optional uint64 onchain_fee = 10;
     bool is_auto = 11;
     uint64 tenant_id = 12;
@@ -513,7 +513,7 @@ message ListSwapsRequest {
     IncludeSwaps include = 5;
     optional uint64 limit = 6;
     optional uint64 offset = 7;
-    // wether to return swaps in the shared `all_swaps` list or in the detailed lists.
+    // whether to return swaps in the shared `all_swaps` list or in the detailed lists.
     // the `limit` and `offset` are only considered when `unify` is true.
     optional bool unify = 8;
 }
@@ -922,7 +922,7 @@ message TransactionInfo {
 message TransactionOutput {
     string address = 1;
     uint64 amount = 2;
-    // wether the address is controlled by the wallet
+    // whether the address is controlled by the wallet
     bool is_our_address = 3;
 }
 

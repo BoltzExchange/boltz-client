@@ -298,7 +298,7 @@ var listSwapsCommand = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "to",
-			Usage: "Destinaion swap currency",
+			Usage: "Destination swap currency",
 		},
 		&cli.BoolFlag{
 			Name:  "pending",

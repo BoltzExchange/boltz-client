@@ -1,7 +1,0 @@
-site_name: boltz-client documentation
-theme: readthedocs
-
-nav:
-  - Home: index.md
-  - gRPC: grpc.md
-  - Configuration: configuration.md

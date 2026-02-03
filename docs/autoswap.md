@@ -19,7 +19,7 @@ via `boltzcli autoswap config --reload`.
 
 While autoswap won't create any swaps if `enabled` is set to false, you can
 still view swap recommendations, swaps which were to be executed with the
-current configuration, using `boltzcli autoswap recommendations.`
+current configuration, using `boltzcli autoswap recommendations`.
 
 Autoswap can either rebalance individual channels or only look at the total
 balance of your node. This behavior can be controlled with the `perChannel`
