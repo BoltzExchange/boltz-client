@@ -106,8 +106,8 @@ type BoltzClient interface {
 	CreateSwap(ctx context.Context, in *CreateSwapRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
 	// Deprecated: Do not use.
 	//
-	// Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
-	// is coming trough a new channel channel opened by Boltz.
+	// Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLC
+	// is coming through a new channel opened by Boltz.
 	CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*CreateSwapResponse, error)
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
@@ -614,8 +614,8 @@ type BoltzServer interface {
 	CreateSwap(context.Context, *CreateSwapRequest) (*CreateSwapResponse, error)
 	// Deprecated: Do not use.
 	//
-	// Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs
-	// is coming trough a new channel channel opened by Boltz.
+	// Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLC
+	// is coming through a new channel opened by Boltz.
 	CreateChannel(context.Context, *CreateChannelRequest) (*CreateSwapResponse, error)
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.

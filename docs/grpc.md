@@ -158,7 +158,7 @@ Creates a new swap from onchain to lightning.
 
 #### CreateChannel
 
-**Deprecated.** Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLCs is coming trough a new channel channel opened by Boltz.
+**Deprecated.** Create a new swap from onchain to a new lightning channel. The daemon will only accept the invoice payment if the HTLC is coming through a new channel opened by Boltz.
 
 | Request | Response |
 | ------- | -------- |
@@ -394,7 +394,7 @@ Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be 
 | `to_amount` | [`uint64`](#uint64) |  | `from_amount` minus the service and network fee. |
 | `created_at` | [`int64`](#int64) |  |  |
 | `service_fee` | [`int64`](#int64) | optional |  |
-| `onchain_fee` | [`uint64`](#uint64) | optional | inclues the routing fee for reverse swaps |
+| `onchain_fee` | [`uint64`](#uint64) | optional | includes the routing fee for reverse swaps |
 | `is_auto` | [`bool`](#bool) |  |  |
 | `tenant_id` | [`uint64`](#uint64) |  |  |
 
@@ -573,7 +573,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `swap_id` | [`string`](#string) |  | ID of the swap to which this channel channel belongs |
+| `swap_id` | [`string`](#string) |  | ID of the swap to which this channel belongs |
 | `status` | [`string`](#string) |  |  |
 | `inbound_liquidity` | [`uint32`](#uint32) |  |  |
 | `private` | [`bool`](#bool) |  |  |
@@ -1189,7 +1189,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `include` | [`IncludeSwaps`](#includeswaps) |  |  |
 | `limit` | [`uint64`](#uint64) | optional |  |
 | `offset` | [`uint64`](#uint64) | optional |  |
-| `unify` | [`bool`](#bool) | optional | wether to return swaps in the shared `all_swaps` list or in the detailed lists. the `limit` and `offset` are only considered when `unify` is true. |
+| `unify` | [`bool`](#bool) | optional | whether to return swaps in the shared `all_swaps` list or in the detailed lists. the `limit` and `offset` are only considered when `unify` is true. |
 
 
 
@@ -1497,7 +1497,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `expected_amount` | [`uint64`](#uint64) |  |  |
 | `timeout_block_height` | [`uint32`](#uint32) |  |  |
 | `lockup_transaction_id` | [`string`](#string) |  |  |
-| `refund_transaction_id` | [`string`](#string) |  | If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the `lockup_address` back to the configured wallet or the address specified in the `refund_address` field. |
+| `refund_transaction_id` | [`string`](#string) |  | If the swap times out or fails for some other reason, the daemon will automatically refund the coins sent to the `lockup_address` back to the configured wallet or the address specified in the `refund_address` field. |
 | `refund_address` | [`string`](#string) | optional |  |
 | `chan_ids` | [`ChannelId`](#channelid) | repeated |  |
 | `blinding_key` | [`string`](#string) | optional |  |
@@ -1567,7 +1567,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `address` | [`string`](#string) |  |  |
 | `amount` | [`uint64`](#uint64) |  |  |
-| `is_our_address` | [`bool`](#bool) |  | wether the address is controlled by the wallet |
+| `is_our_address` | [`bool`](#bool) |  | whether the address is controlled by the wallet |
 
 
 

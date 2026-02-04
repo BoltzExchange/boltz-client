@@ -27,7 +27,7 @@ node, using [Boltz API](https://docs.boltz.exchange/v/api). It is composed of
 
 ### `boltzd`
 
-`boltzd` is a daemon that should run alongside of your lightning node. It
+`boltzd` is a daemon that should run alongside your lightning node. It
 connects to your lightning node and the Boltz API to create and execute swaps.
 
 ### `boltzcli`
@@ -39,14 +39,14 @@ exposes.
 
 ### Binaries
 
-Boltz Client is available for linux on `amd64` and `arm64`. Download the latest
+Boltz Client is available for Linux on `amd64` and `arm64`. Download the latest
 binaries from the
 [release](https://github.com/BoltzExchange/boltz-client/releases) page. If you
 are on another platform, use the docker image below.
 
 ### Docker
 
-Boltz Client is also available as
+Boltz Client is also available as a
 [docker image](https://hub.docker.com/r/boltz/boltz-client/tags). Assuming your
 lnd macaroon and certificate are placed in `~/.lnd`, run:
 
@@ -64,10 +64,10 @@ To build, you need [Go](https://go.dev/) ≥ 1.21, the Rust toolchain (including
 
 Boltz Client depends on [GDK](https://github.com/Blockstream/gdk) by
 blockstream, which can be either dynamically or statically linked. The
-recommended way to build from source is linking dynamically as a static link
+recommended way to build from source is by linking dynamically, as a static link
 requires compiling gdk as well.
 
-First, initialise the required git submodules (e.g. `LWK`) with
+First, initialize the required git submodules (e.g. `LWK`) with
 `git submodule update --init --recursive`, then build the daemon and CLI with
 `make build`. The binaries will be placed in the current directory.
 
@@ -104,12 +104,12 @@ from Lightning Labs releases include them):
 - `chainrpc` (block listener)
 - `walletrpc` (fee estimations)
 
-By default, boltzd will attempt to connect to lnd running at `localhost:10009`
-(`lnd.host` and `lnd.port`) and looking for certificate and macaroon inside the
+By default, boltzd will attempt to connect to LND running at `localhost:10009`
+(`lnd.host` and `lnd.port`) and look for the certificate and macaroon inside the
 data directory `~/.lnd` (`lnd.datadir`).
 
 You can manually set the location of the tls certificate (`lnd.certificate`) and
-admin macaroon (`lnd.macaroon`) instead of speciyfing the data directory as
+admin macaroon (`lnd.macaroon`) instead of specifying the data directory as
 well.
 
 #### CLN
@@ -123,7 +123,7 @@ The daemon connects to CLN through
 - `--cln.datadir` data directory of cln (`~/.lightning` by default)
 
 You can manually set the paths of `cln.rootcert`, `cln.privatekey` and
-`cln.certchain` instead of speciyfing the data directory as well. You might have
+`cln.certchain` instead of specifying the data directory as well. You might have
 to set the `cln.servername` option as well, if you are using a custom
 certificate.
 

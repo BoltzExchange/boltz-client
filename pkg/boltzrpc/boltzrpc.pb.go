@@ -832,7 +832,7 @@ type SwapInfo struct {
 	ExpectedAmount      uint64 `protobuf:"varint,10,opt,name=expected_amount,json=expectedAmount,proto3" json:"expected_amount,omitempty"`
 	TimeoutBlockHeight  uint32 `protobuf:"varint,11,opt,name=timeout_block_height,json=timeoutBlockHeight,proto3" json:"timeout_block_height,omitempty"`
 	LockupTransactionId string `protobuf:"bytes,12,opt,name=lockup_transaction_id,json=lockupTransactionId,proto3" json:"lockup_transaction_id,omitempty"`
-	// If the swap times out or fails for some other reason, the damon will automatically refund the coins sent to the
+	// If the swap times out or fails for some other reason, the daemon will automatically refund the coins sent to the
 	// `lockup_address` back to the configured wallet or the address specified in the `refund_address` field.
 	RefundTransactionId string       `protobuf:"bytes,13,opt,name=refund_transaction_id,json=refundTransactionId,proto3" json:"refund_transaction_id,omitempty"`
 	RefundAddress       *string      `protobuf:"bytes,19,opt,name=refund_address,json=refundAddress,proto3,oneof" json:"refund_address,omitempty"`
@@ -1359,7 +1359,7 @@ type ChannelCreationInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of the swap to which this channel channel belongs
+	// ID of the swap to which this channel belongs
 	SwapId                 string `protobuf:"bytes,1,opt,name=swap_id,json=swapId,proto3" json:"swap_id,omitempty"`
 	Status                 string `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
 	InboundLiquidity       uint32 `protobuf:"varint,3,opt,name=inbound_liquidity,json=inboundLiquidity,proto3" json:"inbound_liquidity,omitempty"`
@@ -2399,7 +2399,7 @@ type AnySwapInfo struct {
 	ToAmount   uint64 `protobuf:"varint,13,opt,name=to_amount,json=toAmount,proto3" json:"to_amount,omitempty"`
 	CreatedAt  int64  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	ServiceFee *int64 `protobuf:"varint,9,opt,name=service_fee,json=serviceFee,proto3,oneof" json:"service_fee,omitempty"`
-	// inclues the routing fee for reverse swaps
+	// includes the routing fee for reverse swaps
 	OnchainFee *uint64 `protobuf:"varint,10,opt,name=onchain_fee,json=onchainFee,proto3,oneof" json:"onchain_fee,omitempty"`
 	IsAuto     bool    `protobuf:"varint,11,opt,name=is_auto,json=isAuto,proto3" json:"is_auto,omitempty"`
 	TenantId   uint64  `protobuf:"varint,12,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
@@ -2539,7 +2539,7 @@ type ListSwapsRequest struct {
 	Include IncludeSwaps `protobuf:"varint,5,opt,name=include,proto3,enum=boltzrpc.IncludeSwaps" json:"include,omitempty"`
 	Limit   *uint64      `protobuf:"varint,6,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
 	Offset  *uint64      `protobuf:"varint,7,opt,name=offset,proto3,oneof" json:"offset,omitempty"`
-	// wether to return swaps in the shared `all_swaps` list or in the detailed lists.
+	// whether to return swaps in the shared `all_swaps` list or in the detailed lists.
 	// the `limit` and `offset` are only considered when `unify` is true.
 	Unify *bool `protobuf:"varint,8,opt,name=unify,proto3,oneof" json:"unify,omitempty"`
 }
@@ -5644,7 +5644,7 @@ type TransactionOutput struct {
 
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Amount  uint64 `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	// wether the address is controlled by the wallet
+	// whether the address is controlled by the wallet
 	IsOurAddress bool `protobuf:"varint,3,opt,name=is_our_address,json=isOurAddress,proto3" json:"is_our_address,omitempty"`
 }
 

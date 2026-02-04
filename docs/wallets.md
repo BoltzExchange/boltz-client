@@ -11,7 +11,7 @@ wallet like [Green](https://blockstream.com/green/) on a second device. This
 serves as backup and UI to be able to monitor and control funds. Optionally,
 wallets can be encrypted with a passphrase that will be required on startup.
 
-To create a new Liquid called "MyLiquidWallet" run:
+To create a new Liquid wallet called "MyLiquidWallet" run:
 
 `boltzcli wallet create MyLiquidWallet LBTC`
 
