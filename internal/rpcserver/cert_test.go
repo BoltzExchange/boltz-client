@@ -1,9 +1,10 @@
 package rpcserver
 
 import (
-	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 	"os"
 	"testing"
+
+	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 
 	"github.com/stretchr/testify/assert"
 )
