@@ -27,8 +27,8 @@ node, using [Boltz API](https://docs.boltz.exchange/v/api). It is composed of
 
 ### `boltzd`
 
-`boltzd` is a daemon that should run alongside your lightning node. It
-connects to your lightning node and the Boltz API to create and execute swaps.
+`boltzd` is a daemon that should run alongside your lightning node. It connects
+to your lightning node and the Boltz API to create and execute swaps.
 
 ### `boltzcli`
 
