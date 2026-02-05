@@ -80,7 +80,6 @@ setup-regtest:
 ifeq ("$(wildcard regtest/docker-compose.override.yml)","")
 	@$(call print, "Downloading regtest")
 	make submodules
-	cp regtest.override.yml regtest/docker-compose.override.yml
 	cd regtest && git apply ../regtest.patch
 endif
 
