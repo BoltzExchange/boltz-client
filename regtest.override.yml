@@ -1,8 +1,0 @@
-services:
-  boltz-client:
-    profiles: !override [ "none" ]
-
-  scripts:
-    depends_on: !override
-      boltz-backend:
-        condition: service_healthy
