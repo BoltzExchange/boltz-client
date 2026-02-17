@@ -262,6 +262,7 @@ func TestWallet_BumpTransactionFee(t *testing.T) {
 		require.Eventually(t, func() bool {
 			newTxId, err := wallet.BumpTransactionFee(txId, 3)
 			if err != nil {
+				t.Log(err.Error())
 				return false
 			}
 			return newTxId != txId
