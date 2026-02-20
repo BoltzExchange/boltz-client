@@ -175,6 +175,13 @@ mockery:
 	@$(call print, "Generating mocks")
 	mockery
 
+abigen:
+	@$(call print, "Generating EVM contract bindings")
+	abigen --abi internal/evm/contracts/abi/EtherSwap.json \
+		--pkg etherswap --out internal/evm/contracts/etherswap/etherswap.go
+	abigen --abi internal/evm/contracts/abi/ERC20Swap.json \
+		--pkg erc20swap --out internal/evm/contracts/erc20swap/erc20swap.go
+
 fmt:
 	@$(call print, "Formatting source")
 	gofmt -l -s -w .
