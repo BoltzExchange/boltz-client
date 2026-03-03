@@ -1767,16 +1767,12 @@ var fundSwapCommand = &cli.Command{
 	ArgsUsage: "<funding_address_id> <swap_id>",
 	Description: "Uses the signing details flow to cooperatively spend from a funding address to fund a swap.\n" +
 		"This allows paying a swap from a pre-funded address without requiring a wallet.",
-	Action: fundSwap,
+	Action: requireNArgs(2, fundSwap),
 	Flags:  []cli.Flag{jsonFlag},
 }
 
 func fundSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
-
-	if ctx.NArg() < 2 {
-		return errors.New("funding_address_id and swap_id are required")
-	}
 
 	fundingAddressId := ctx.Args().Get(0)
 	swapId := ctx.Args().Get(1)
@@ -1812,16 +1808,12 @@ var refundFundingAddressCommand = &cli.Command{
 	Description: "Refunds a funded funding address by cooperatively signing with Boltz.\n" +
 		"The destination can be either an onchain address or a wallet name/ID.\n" +
 		"Use this to recover funds from a funding address that hasn't been used for a swap.",
-	Action: refundFundingAddress,
+	Action: requireNArgs(2, refundFundingAddress),
 	Flags:  []cli.Flag{jsonFlag},
 }
 
 func refundFundingAddress(ctx *cli.Context) error {
 	client := getClient(ctx)
-
-	if ctx.NArg() < 2 {
-		return errors.New("funding_address_id and destination (address or wallet) are required")
-	}
 
 	fundingAddressId := ctx.Args().Get(0)
 	destination := ctx.Args().Get(1)
