@@ -49,6 +49,9 @@ jobs:
           COMPOSE_PROFILES: ci,esplora
         run: chmod -R 777 regtest && make start-regtest
 
+      - name: Normalize Regtest File Permissions
+        run: sudo chmod -R 777 regtest
+
       - name: Backend logs
         if: failure()
         run: docker logs boltz-backend
