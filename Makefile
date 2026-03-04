@@ -77,9 +77,11 @@ integration: start-regtest
 	$(GOTEST) ./... -v
 
 setup-regtest:
-	@$(call print, "Downloading regtest")
-	make submodules
-	cd regtest && git apply ../regtest.patch > /dev/null 2>&1 || true
+	@$(call print, "Preparing regtest")
+	@if [ ! -d regtest/.git ]; then \
+		make submodules; \
+	fi
+	@cd regtest && (git apply --reverse --check ../regtest.patch > /dev/null 2>&1 || git apply ../regtest.patch)
 
 clear-wallet-data:
 	rm -rf internal/onchain/liquid-wallet/test-data
