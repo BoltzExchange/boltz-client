@@ -1,4 +1,17 @@
 
+<a name="v2.11.1"></a>
+## [v2.11.1] - 2026-03-05
+### Feat
+- add basic cors configuration ([#630](https://github.com/BoltzExchange/boltz-client/issues/630))
+
+### Fix
+- ignore unknown currencies ([#649](https://github.com/BoltzExchange/boltz-client/issues/649))
+- lwk send all workaround ([#632](https://github.com/BoltzExchange/boltz-client/issues/632))
+
+### Refactor
+- replacing bool channels to empty struct ([#628](https://github.com/BoltzExchange/boltz-client/issues/628))
+
+
 <a name="v2.11.0"></a>
 ## [v2.11.0] - 2026-01-13
 ### Feat
@@ -879,6 +892,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.11.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.0...v2.11.1
 [v2.11.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.2...v2.11.0
 [v2.10.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.1...v2.10.2
 [v2.10.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.0...v2.10.1
