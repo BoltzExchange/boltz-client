@@ -132,6 +132,15 @@ type SubmarinePair struct {
 
 type SubmarinePairs map[Currency]map[Currency]SubmarinePair
 
+func (pairs *SubmarinePairs) UnmarshalJSON(text []byte) error {
+	parsed, err := unmarshalCurrencies[SubmarinePair](text)
+	if err != nil {
+		return err
+	}
+	*pairs = parsed
+	return nil
+}
+
 type ReversePair struct {
 	Hash   string  `json:"hash"`
 	Rate   float64 `json:"rate"`
@@ -149,6 +158,15 @@ type ReversePair struct {
 }
 
 type ReversePairs map[Currency]map[Currency]ReversePair
+
+func (pairs *ReversePairs) UnmarshalJSON(text []byte) error {
+	parsed, err := unmarshalCurrencies[ReversePair](text)
+	if err != nil {
+		return err
+	}
+	*pairs = parsed
+	return nil
+}
 
 type ChainPair struct {
 	Hash   string  `json:"hash"`
@@ -171,6 +189,15 @@ type ChainPair struct {
 }
 
 type ChainPairs map[Currency]map[Currency]ChainPair
+
+func (pairs *ChainPairs) UnmarshalJSON(text []byte) error {
+	parsed, err := unmarshalCurrencies[ChainPair](text)
+	if err != nil {
+		return err
+	}
+	*pairs = parsed
+	return nil
+}
 
 type symbolMinerFees struct {
 	Normal  uint64 `json:"normal"`
@@ -812,4 +839,35 @@ func unmarshalJson(body io.ReadCloser, response interface{}) error {
 	}
 
 	return json.Unmarshal(rawBody, &response)
+}
+
+func unmarshalCurrencies[T any](text []byte) (map[Currency]map[Currency]T, error) {
+	var raw map[string]map[string]T
+	if err := json.Unmarshal(text, &raw); err != nil {
+		return nil, err
+	}
+
+	parsed := make(map[Currency]map[Currency]T, len(raw))
+	for fromRaw, toPairs := range raw {
+		// The backend might support currencies we don't know, so simply ignore them.
+		from, err := ParseCurrency(fromRaw)
+		if err != nil {
+			continue
+		}
+
+		parsedPairs := make(map[Currency]T, len(toPairs))
+		for toRaw, pair := range toPairs {
+			to, err := ParseCurrency(toRaw)
+			if err != nil {
+				continue
+			}
+			parsedPairs[to] = pair
+		}
+
+		if len(parsedPairs) > 0 {
+			parsed[from] = parsedPairs
+		}
+	}
+
+	return parsed, nil
 }
