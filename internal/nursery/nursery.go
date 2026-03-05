@@ -230,12 +230,17 @@ func (nursery *Nursery) processUpdate(status boltz.SwapUpdate) error {
 	if status.Error != "" {
 		return fmt.Errorf("boltz could not find Swap %s: %s", status.Id, status.Error)
 	}
+	parsedStatus := boltz.ParseEvent(status.Status)
+	if parsedStatus == boltz.SwapUnknown {
+		logger.Warnf("Received unknown status for swap %s: %s", status.Id, status.Status)
+		return nil
+	}
 	if swap != nil {
-		nursery.handleSwapStatus(swap, status.SwapStatusResponse)
+		nursery.handleSwapStatus(swap, parsedStatus, status.SwapStatusResponse)
 	} else if reverseSwap != nil {
-		nursery.handleReverseSwapStatus(reverseSwap, status.SwapStatusResponse)
+		nursery.handleReverseSwapStatus(reverseSwap, parsedStatus, status.SwapStatusResponse)
 	} else if chainSwap != nil {
-		nursery.handleChainSwapStatus(chainSwap, status.SwapStatusResponse)
+		nursery.handleChainSwapStatus(chainSwap, parsedStatus, status.SwapStatusResponse)
 	}
 	return nil
 }

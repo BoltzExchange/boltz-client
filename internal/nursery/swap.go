@@ -142,9 +142,7 @@ func (nursery *Nursery) handleSwapError(swap *database.Swap, err error) {
 	nursery.sendSwapUpdate(*swap)
 }
 
-func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapStatusResponse) {
-	parsedStatus := boltz.ParseEvent(status.Status)
-
+func (nursery *Nursery) handleSwapStatus(swap *database.Swap, parsedStatus boltz.SwapUpdateEvent, status boltz.SwapStatusResponse) {
 	// transaction mempool can be sent multiple times in case of RBF
 	if parsedStatus == swap.Status && parsedStatus != boltz.TransactionMempool {
 		logger.Debugf("Status of Swap %s is %s already", swap.Id, parsedStatus)
