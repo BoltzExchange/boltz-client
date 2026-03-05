@@ -173,9 +173,7 @@ func (nursery *Nursery) handleReverseSwapError(reverseSwap *database.ReverseSwap
 }
 
 // TODO: fail swap after "transaction.failed" event
-func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse) {
-	parsedStatus := boltz.ParseEvent(event.Status)
-
+func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, parsedStatus boltz.SwapUpdateEvent, event boltz.SwapStatusResponse) {
 	if parsedStatus == reverseSwap.Status {
 		logger.Debugf("Status of Reverse Swap %s is %s already", reverseSwap.Id, parsedStatus)
 		return

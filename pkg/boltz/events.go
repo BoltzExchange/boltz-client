@@ -2,6 +2,8 @@ package boltz
 
 type SwapUpdateEvent int
 
+const SwapUnknown SwapUpdateEvent = -1
+
 const (
 	SwapCreated SwapUpdateEvent = iota
 	SwapExpired
@@ -79,7 +81,11 @@ func (event SwapUpdateEvent) String() string {
 }
 
 func ParseEvent(event string) SwapUpdateEvent {
-	return swapUpdateEventStrings[event]
+	parsed, ok := swapUpdateEventStrings[event]
+	if !ok {
+		return SwapUnknown
+	}
+	return parsed
 }
 
 func (event SwapUpdateEvent) IsCompletedStatus() bool {

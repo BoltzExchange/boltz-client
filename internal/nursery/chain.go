@@ -164,9 +164,7 @@ func (nursery *Nursery) handleChainSwapError(swap *database.ChainSwap, err error
 	nursery.sendChainSwapUpdate(*swap)
 }
 
-func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, status boltz.SwapStatusResponse) {
-	parsedStatus := boltz.ParseEvent(status.Status)
-
+func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedStatus boltz.SwapUpdateEvent, status boltz.SwapStatusResponse) {
 	isMempool := parsedStatus == boltz.TransactionMempool || parsedStatus == boltz.TransactionServerMempoool
 	if parsedStatus == swap.Status && !isMempool {
 		logger.Debugf("Status of Chain Swap %s is %s already", swap.Id, parsedStatus)
