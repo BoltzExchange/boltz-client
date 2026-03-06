@@ -623,7 +623,10 @@ message DepositResponse {
 message CreateSwapRequest {
     // amount of sats to be received on lightning. 
     // related: `invoice` field
+    // If `funding_address` is set, the server derives this from the funded onchain amount and current fees.
     uint64 amount = 1;
+    // The swap pair. For submarine swaps, `pair.to` is always BTC.
+    // If `funding_address` is set, `pair.from` is derived from the funding address currency.
     Pair pair = 2;
 
     // the daemon will pay the swap using the onchain wallet specified in the `wallet` field 
@@ -646,6 +649,9 @@ message CreateSwapRequest {
     optional PairInfo accepted_pair = 10;
     // Ignore any magic routing hints found in the specified `invoice`.
     optional bool ignore_mrh = 11;
+    // Funding address ID to fund the swap from.
+    // If set, the server derives `pair.from` from the funding address currency and `amount` from the funded amount.
+    optional string funding_address = 12;
 }
 message CreateSwapResponse {
     string id = 1;
@@ -718,7 +724,11 @@ message CreateReverseSwapResponse {
 message CreateChainSwapRequest {
     // Amount of satoshis to swap. It is the amount expected to be sent to the lockup address.
     // If left empty, any amount within the limits will be accepted.
+    // If `funding_address` is set, the server derives this from the funded amount.
     optional uint64 amount = 1;
+    // The swap pair.
+    // If `funding_address` is set, `pair.from` is derived from the funding address currency.
+    // `pair.to` still has to identify the destination chain.
     Pair pair = 2;
     // Address where funds will be swept to if the swap succeeds
     optional string to_address = 3;
@@ -740,6 +750,9 @@ message CreateChainSwapRequest {
     // Rates to accept for the swap. Queries latest from boltz otherwise
     // The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
     optional PairInfo accepted_pair = 11;
+    // Funding address ID to fund the swap from.
+    // If set, the server derives `pair.from` from the funding address currency and `amount` from the funded amount.
+    optional string funding_address = 12;
 }
 
 message ChainSwapInfo {

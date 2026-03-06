@@ -47,6 +47,20 @@ func swapOutputArgs(swap *database.Swap) onchain.OutputArgs {
 	}
 }
 
+func (nursery *Nursery) fundingOutputArgs(swap *database.Swap) *onchain.OutputArgs {
+	fundingAddress, err := nursery.database.QueryFundingAddressesBySwapId(swap.Id)
+	if err != nil || fundingAddress.Currency != swap.Pair.From || fundingAddress.LockupTransactionId == "" {
+		return nil
+	}
+
+	return &onchain.OutputArgs{
+		TransactionId: fundingAddress.LockupTransactionId,
+		Currency:      swap.Pair.From,
+		Address:       fundingAddress.Address,
+		BlindingKey:   fundingAddress.BlindingKey,
+	}
+}
+
 func (nursery *Nursery) getRefundOutput(swap *database.Swap) *Output {
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
@@ -199,7 +213,12 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, status boltz.SwapS
 				return
 			}
 
-			result, err := nursery.onchain.FindOutput(swapOutputArgs(swap))
+			outputArgs := swapOutputArgs(swap)
+			if fundingOutput := nursery.fundingOutputArgs(swap); fundingOutput != nil {
+				outputArgs = *fundingOutput
+			}
+
+			result, err := nursery.onchain.FindOutput(outputArgs)
 			if err != nil {
 				handleError(err.Error())
 				return
