@@ -480,18 +480,21 @@ func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency)
 		wallet, err = client.ImportWallet(params, creds)
 		require.NoError(t, err)
 	}
-	if wallet.Balance.Total == 0 {
-		for i := 0; i < 5; i++ {
-			receive, err := client.WalletReceive(wallet.Id)
-			require.NoError(t, err)
-			test.SendToAddress(getCli(currency), receive.Address, 10_000_000)
-			time.Sleep(200 * time.Millisecond)
+	balance := wallet.Balance
+	if balance.Confirmed == 0 || balance.Confirmed != balance.Total {
+		if balance.Total == 0 {
+			for i := 0; i < 5; i++ {
+				receive, err := client.WalletReceive(wallet.Id)
+				require.NoError(t, err)
+				test.SendToAddress(getCli(currency), receive.Address, 10_000_000)
+				time.Sleep(200 * time.Millisecond)
+			}
 		}
 		test.MineBlock()
 		require.Eventually(t, func() bool {
 			wallet, err = client.GetWalletById(wallet.Id)
 			require.NoError(t, err)
-			return wallet.Balance.Total > 0
+			return wallet.Balance.Confirmed > 0 && wallet.Balance.Confirmed == wallet.Balance.Total
 		}, 10*time.Second, 250*time.Millisecond)
 	}
 	return wallet
