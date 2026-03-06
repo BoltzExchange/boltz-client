@@ -434,7 +434,7 @@ Refunds a funding address by cooperatively signing with Boltz to move funds to a
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `type` | [`SwapType`](#swaptype) |  |  |
-| `pair` | [`Pair`](#pair) |  |  |
+| `pair` | [`Pair`](#pair) |  | The swap pair. If `funding_address` is set, `pair.from` is derived from the funding address currency. `pair.to` still has to identify the destination chain. |
 | `state` | [`SwapState`](#swapstate) |  |  |
 | `error` | [`string`](#string) | optional |  |
 | `status` | [`string`](#string) |  |  |
@@ -695,7 +695,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) | optional | Amount of satoshis to swap. It is the amount expected to be sent to the lockup address. If left empty, any amount within the limits will be accepted. |
+| `amount` | [`uint64`](#uint64) | optional | Amount of satoshis to swap. It is the amount expected to be sent to the lockup address. If left empty, any amount within the limits will be accepted. If `funding_address` is set, the server derives this from the funded amount. |
 | `pair` | [`Pair`](#pair) |  |  |
 | `to_address` | [`string`](#string) | optional | Address where funds will be swept to if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | Address where the coins should be refunded to if the swap fails. |
@@ -706,6 +706,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `lockup_zero_conf` | [`bool`](#bool) | optional | **Deprecated.**  |
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
 | `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
+| `funding_address` | [`string`](#string) | optional | Funding address ID to fund the swap from. If set, the server derives `pair.from` from the funding address currency and `amount` from the funded amount. |
 
 
 
@@ -749,7 +750,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`uint64`](#uint64) |  | amount of satoshis to swap |
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new address from the lightning node |
 | `accept_zero_conf` | [`bool`](#bool) |  | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
-| `pair` | [`Pair`](#pair) |  |  |
+| `pair` | [`Pair`](#pair) |  | The swap pair. For submarine swaps, `pair.to` is always BTC. If `funding_address` is set, `pair.from` is derived from the funding address currency. |
 | `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style. |
 | `wallet_id` | [`uint64`](#uint64) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
 | `return_immediately` | [`bool`](#bool) | optional | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
@@ -789,7 +790,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) |  | amount of sats to be received on lightning. related: `invoice` field |
+| `amount` | [`uint64`](#uint64) |  | amount of sats to be received on lightning. related: `invoice` field If `funding_address` is set, the server derives this from the funded onchain amount and current fees. |
 | `pair` | [`Pair`](#pair) |  |  |
 | `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or the first internal wallet with the correct currency otherwise. |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
@@ -799,6 +800,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
 | `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
 | `ignore_mrh` | [`bool`](#bool) | optional | Ignore any magic routing hints found in the specified `invoice`. |
+| `funding_address` | [`string`](#string) | optional | Funding address ID to fund the swap from. If set, the server derives `pair.from` from the funding address currency and `amount` from the funded onchain amount. |
 
 
 

@@ -157,7 +157,7 @@ func TestFundingAddress(t *testing.T) {
 				require.NoError(t, err)
 
 				faStream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
-				test.SendToAddress(getCli(tc.currency), fundingAddress.Address, swapAmount+10000)
+				test.SendToAddress(getCli(tc.currency), fundingAddress.Address, swapAmount)
 				test.MineBlock()
 				faStream(boltz.FundingAddressConfirmed)
 
@@ -165,9 +165,17 @@ func TestFundingAddress(t *testing.T) {
 				if tc.currency == boltzrpc.Currency_BTC {
 					pair = pairBtc
 				}
+				quote, err := boltzClient.GetSwapQuote(&boltzrpc.GetSwapQuoteRequest{
+					Type: boltzrpc.SwapType_SUBMARINE,
+					Pair: pair,
+					Amount: &boltzrpc.GetSwapQuoteRequest_SendAmount{
+						SendAmount: swapAmount,
+					},
+				})
+				require.NoError(t, err)
 
 				swap, err := boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
-					Amount: swapAmount,
+					Amount: quote.ReceiveAmount,
 					Pair:   pair,
 				})
 				require.NoError(t, err)
@@ -175,6 +183,32 @@ func TestFundingAddress(t *testing.T) {
 				_, err = boltzClient.FundSwap(&boltzrpc.FundSwapRequest{
 					FundingAddressId: fundingAddress.Id,
 					SwapId:           swap.Id,
+				})
+				require.NoError(t, err)
+
+				swapStreamFn, _ := swapStream(t, boltzClient, swap.Id)
+				test.MineBlock()
+				info := swapStreamFn(boltzrpc.SwapState_SUCCESSFUL)
+				require.Equal(t, swap.Id, info.Swap.Id)
+			})
+		}
+	})
+
+	t.Run("CreateSwapWithFundingAddress", func(t *testing.T) {
+		for _, tc := range currencies {
+			t.Run(tc.desc, func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.currency,
+				})
+				require.NoError(t, err)
+
+				faStream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+				test.SendToAddress(getCli(tc.currency), fundingAddress.Address, swapAmount+10000)
+				test.MineBlock()
+				faStream(boltz.FundingAddressConfirmed)
+
+				swap, err := boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
+					FundingAddress: &fundingAddress.Id,
 				})
 				require.NoError(t, err)
 
@@ -204,17 +238,18 @@ func TestFundingAddress(t *testing.T) {
 				require.NoError(t, err)
 
 				faStream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
-				test.SendToAddress(getCli(tc.from), fundingAddress.Address, swapAmount+10000)
+				test.SendToAddress(getCli(tc.from), fundingAddress.Address, swapAmount)
 				test.MineBlock()
 				faStream(boltz.FundingAddressConfirmed)
 
 				externalPay := true
 				acceptZeroConf := true
 				toAddress := getCli(tc.to)("getnewaddress")
+				pair := &boltzrpc.Pair{From: tc.from, To: tc.to}
 
 				chainSwap, err := boltzClient.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
 					Amount:         &swapAmount,
-					Pair:           &boltzrpc.Pair{From: tc.from, To: tc.to},
+					Pair:           pair,
 					ExternalPay:    &externalPay,
 					ToAddress:      &toAddress,
 					AcceptZeroConf: &acceptZeroConf,
@@ -235,7 +270,78 @@ func TestFundingAddress(t *testing.T) {
 		}
 	})
 
+	t.Run("CreateChainSwapWithFundingAddress", func(t *testing.T) {
+		chainPairs := []struct {
+			desc string
+			from boltzrpc.Currency
+			to   boltzrpc.Currency
+		}{
+			{"BTC->LBTC", boltzrpc.Currency_BTC, boltzrpc.Currency_LBTC},
+			{"LBTC->BTC", boltzrpc.Currency_LBTC, boltzrpc.Currency_BTC},
+		}
+
+		for _, tc := range chainPairs {
+			t.Run(tc.desc, func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.from,
+				})
+				require.NoError(t, err)
+
+				faStream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+				test.SendToAddress(getCli(tc.from), fundingAddress.Address, swapAmount)
+				test.MineBlock()
+				faStream(boltz.FundingAddressConfirmed)
+
+				acceptZeroConf := true
+				toAddress := getCli(tc.to)("getnewaddress")
+				chainSwap, err := boltzClient.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+					Pair:           &boltzrpc.Pair{To: tc.to},
+					ToAddress:      &toAddress,
+					AcceptZeroConf: &acceptZeroConf,
+					FundingAddress: &fundingAddress.Id,
+				})
+				require.NoError(t, err)
+
+				swapStreamFn, _ := swapStream(t, boltzClient, chainSwap.Id)
+				test.MineBlock()
+				info := swapStreamFn(boltzrpc.SwapState_SUCCESSFUL)
+				require.Equal(t, chainSwap.Id, info.ChainSwap.Id)
+			})
+		}
+	})
+
 	t.Run("Errors", func(t *testing.T) {
+		t.Run("CreateSwapRequiresFundedFundingAddressToDeriveAmount", func(t *testing.T) {
+			fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+				Currency: boltzrpc.Currency_BTC,
+			})
+			require.NoError(t, err)
+
+			_, err = boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
+				FundingAddress: &fundingAddress.Id,
+			})
+			require.Error(t, err)
+			requireCode(t, err, codes.InvalidArgument)
+		})
+
+		t.Run("CreateChainSwapRequiresFundedFundingAddressToDeriveAmount", func(t *testing.T) {
+			fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+				Currency: boltzrpc.Currency_BTC,
+			})
+			require.NoError(t, err)
+
+			acceptZeroConf := true
+			toAddress := test.LiquidCli("getnewaddress")
+			_, err = boltzClient.CreateChainSwap(&boltzrpc.CreateChainSwapRequest{
+				Pair:           &boltzrpc.Pair{To: boltzrpc.Currency_LBTC},
+				ToAddress:      &toAddress,
+				AcceptZeroConf: &acceptZeroConf,
+				FundingAddress: &fundingAddress.Id,
+			})
+			require.Error(t, err)
+			requireCode(t, err, codes.InvalidArgument)
+		})
+
 		t.Run("InvalidFundingAddressId", func(t *testing.T) {
 			swap, err := boltzClient.CreateSwap(&boltzrpc.CreateSwapRequest{
 				Amount: swapAmount,

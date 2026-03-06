@@ -194,6 +194,31 @@ func (server *routedBoltzServer) queryClaimableSwaps(ctx context.Context) (
 	return
 }
 
+func (server *routedBoltzServer) getFundingAddress(ctx context.Context, fundingAddressId string) (*database.FundingAddress, error) {
+	fundingAddress, err := server.database.QueryFundingAddress(fundingAddressId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "funding address not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to query funding address: %v", err)
+	}
+
+	tenantId := macaroons.TenantIdFromContext(ctx)
+	if tenantId != nil && fundingAddress.TenantId != *tenantId {
+		return nil, status.Error(codes.PermissionDenied, "funding address belongs to a different tenant")
+	}
+
+	return fundingAddress, nil
+}
+
+func requireFundingAddressAmount(fundingAddress *database.FundingAddress) (uint64, error) {
+	if fundingAddress.Amount == 0 {
+		return 0, status.Error(codes.InvalidArgument, "funding address has not received any funds yet")
+	}
+
+	return fundingAddress.Amount, nil
+}
+
 func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
 
 	pendingSwaps, err := server.database.QueryPendingSwaps()
@@ -351,17 +376,9 @@ func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *bolt
 			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id can only be used for swaps with onchain send amounts")
 		}
 
-		fundingAddress, err := server.database.QueryFundingAddress(amt.FundingAddressId)
+		fundingAddress, err := server.getFundingAddress(ctx, amt.FundingAddressId)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, status.Error(codes.NotFound, "funding address not found")
-			}
-			return nil, status.Errorf(codes.Internal, "failed to query funding address: %v", err)
-		}
-
-		tenantId := macaroons.TenantIdFromContext(ctx)
-		if tenantId != nil && fundingAddress.TenantId != *tenantId {
-			return nil, status.Error(codes.PermissionDenied, "funding address belongs to a different tenant")
+			return nil, err
 		}
 
 		sendCurrency := serializers.ParsePair(pair).From
@@ -374,9 +391,9 @@ func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *bolt
 			)
 		}
 
-		sendAmount = fundingAddress.Amount
-		if sendAmount == 0 {
-			return nil, status.Errorf(codes.InvalidArgument, "funding address has not received any funds yet")
+		sendAmount, err = requireFundingAddressAmount(fundingAddress)
+		if err != nil {
+			return nil, err
 		}
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "one of send_amount, receive_amount or funding_address_id must be specified")
@@ -793,13 +810,52 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		return nil, err
 	}
 
+	fundingAddressId := request.GetFundingAddress()
+	var fundingAddress *database.FundingAddress
 	pair := serializers.ParsePair(request.Pair)
+	if fundingAddressId != "" {
+		if request.SendFromInternal {
+			return nil, status.Error(codes.InvalidArgument, "funding_address cannot be used with send_from_internal")
+		}
+		if request.WalletId != nil {
+			return nil, status.Error(codes.InvalidArgument, "funding_address cannot be used with wallet_id")
+		}
 
-	if request.AcceptedPair == nil {
-		request.AcceptedPair, err = server.getSubmarinePair(request.Pair)
+		fundingAddress, err = server.getFundingAddress(ctx, fundingAddressId)
 		if err != nil {
 			return nil, err
 		}
+		pair.From = fundingAddress.Currency
+	}
+
+	if request.AcceptedPair == nil {
+		request.AcceptedPair, err = server.getSubmarinePair(serializers.SerializePair(pair))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var derivedAmount uint64
+	if fundingAddress != nil {
+		sendAmount, err := requireFundingAddressAmount(fundingAddress)
+		if err != nil {
+			return nil, err
+		}
+		quote, err := utils.CalculateSwapQuote(boltz.NormalSwap, sendAmount, 0, request.AcceptedPair.Fees)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to derive amount from funding address: %v", err)
+		}
+		derivedAmount = quote.ReceiveAmount
+		if request.Amount != 0 && request.Amount != derivedAmount {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"amount %d does not match funding address amount %d (derived receive amount: %d)",
+				request.Amount,
+				sendAmount,
+				derivedAmount,
+			)
+		}
+		request.Amount = derivedAmount
 	}
 
 	createSwap := boltz.CreateSwapRequest{
@@ -887,6 +943,16 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
 
 		createSwap.PreimageHash = preimageHash
+	}
+
+	if fundingAddress != nil && request.Amount != derivedAmount {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"amount %d does not match funding address amount %d (derived receive amount: %d)",
+			request.Amount,
+			fundingAddress.Amount,
+			derivedAmount,
+		)
 	}
 
 	feeRate, err := server.estimateFee(request.GetSatPerVbyte(), pair.From)
@@ -1050,6 +1116,15 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		}
 
 		logger.Infof("Sent %d to address %s for MRH in: %s", swapResponse.ExpectedAmount, swapResponse.Address, swapResponse.TxId)
+	}
+
+	if fundingAddressId != "" {
+		if swapResponse.GetId() == "" {
+			return nil, status.Error(codes.InvalidArgument, "funding_address is not supported for this swap type")
+		}
+		if err := server.fundSwapWithFundingAddress(ctx, fundingAddressId, swapResponse.Id); err != nil {
+			return nil, err
+		}
 	}
 
 	return swapResponse, nil
@@ -1326,10 +1401,33 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	pair := serializers.ParsePair(request.Pair)
 	amount := request.GetAmount()
+	fundingAddressId := request.GetFundingAddress()
+	var fundingAddress *database.FundingAddress
+	if fundingAddressId != "" {
+		fundingAddress, err = server.getFundingAddress(ctx, fundingAddressId)
+		if err != nil {
+			return nil, err
+		}
+		pair.From = fundingAddress.Currency
+		fundingAmount, err := requireFundingAddressAmount(fundingAddress)
+		if err != nil {
+			return nil, err
+		}
+		if amount != 0 && amount != fundingAmount {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"amount %d does not match funding address amount %d",
+				amount,
+				fundingAmount,
+			)
+		}
+		amount = fundingAmount
+		request.Amount = &amount
+	}
 	logger.Infof("Creating Chain Swap for %d sats from %s to %s", amount, pair.From, pair.To)
 
 	if request.AcceptedPair == nil {
-		request.AcceptedPair, err = server.getChainPair(request.Pair)
+		request.AcceptedPair, err = server.getChainPair(serializers.SerializePair(pair))
 		if err != nil {
 			return nil, err
 		}
@@ -1365,6 +1463,15 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	}
 
 	externalPay := request.GetExternalPay()
+	if fundingAddressId != "" {
+		if request.FromWalletId != nil {
+			return nil, status.Error(codes.InvalidArgument, "funding_address cannot be used with from_wallet_id")
+		}
+		if request.ExternalPay != nil && !request.GetExternalPay() {
+			return nil, status.Error(codes.InvalidArgument, "funding_address requires external_pay to be true")
+		}
+		externalPay = true
+	}
 	var fromWallet, toWallet onchain.Wallet
 	if request.FromWalletId != nil {
 		fromWallet, err = server.getWallet(ctx, onchain.WalletChecker{
@@ -1518,6 +1625,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	if err := server.nursery.RegisterChainSwap(chainSwap); err != nil {
 		return nil, err
+	}
+
+	if fundingAddressId != "" {
+		if err := server.fundSwapWithFundingAddress(ctx, fundingAddressId, chainSwap.Id); err != nil {
+			return nil, err
+		}
 	}
 
 	return serializeChainSwap(&chainSwap), nil
@@ -2927,39 +3040,48 @@ func (server *routedBoltzServer) GetFundingAddressStream(request *boltzrpc.GetFu
 }
 
 func (server *routedBoltzServer) FundSwap(ctx context.Context, request *boltzrpc.FundSwapRequest) (*boltzrpc.FundSwapResponse, error) {
-	// Validate inputs
-	if request.FundingAddressId == "" {
-		return nil, status.Error(codes.InvalidArgument, "funding_address_id is required")
+	if err := server.fundSwapWithFundingAddress(ctx, request.FundingAddressId, request.SwapId); err != nil {
+		return nil, err
 	}
-	if request.SwapId == "" {
-		return nil, status.Error(codes.InvalidArgument, "swap_id is required")
+	// Return response - the transaction ID will be available via the swap/funding address updates
+	return &boltzrpc.FundSwapResponse{
+		TransactionId: "", // The transaction hex is returned, but ID will come from status update
+	}, nil
+}
+
+func (server *routedBoltzServer) fundSwapWithFundingAddress(ctx context.Context, fundingAddressId string, swapId string) error {
+	// Validate inputs
+	if fundingAddressId == "" {
+		return status.Error(codes.InvalidArgument, "funding_address_id is required")
+	}
+	if swapId == "" {
+		return status.Error(codes.InvalidArgument, "swap_id is required")
 	}
 
 	// Get the funding address from database
-	fundingAddress, err := server.database.QueryFundingAddress(request.FundingAddressId)
+	fundingAddress, err := server.database.QueryFundingAddress(fundingAddressId)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "funding address not found: %v", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return status.Error(codes.NotFound, "funding address not found")
+		}
+		return status.Errorf(codes.Internal, "failed to query funding address: %v", err)
 	}
 
 	// Check tenant access
 	tenantId := macaroons.TenantIdFromContext(ctx)
 	if tenantId != nil && fundingAddress.TenantId != *tenantId {
-		return nil, status.Error(codes.PermissionDenied, "funding address belongs to a different tenant")
+		return status.Error(codes.PermissionDenied, "funding address belongs to a different tenant")
 	}
 
-	fundingAddress.SwapId = request.SwapId
+	fundingAddress.SwapId = swapId
 
 	err = server.nursery.SignFundingAddress(fundingAddress)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to sign funding address: %v", err)
+		return status.Errorf(codes.Internal, "failed to sign funding address: %v", err)
 	}
 
-	logger.Infof("Funded swap %s from funding address %s", request.SwapId, fundingAddress.Id)
-
-	// Return response - the transaction ID will be available via the swap/funding address updates
-	return &boltzrpc.FundSwapResponse{
-		TransactionId: "", // The transaction hex is returned, but ID will come from status update
-	}, nil
+	logger.Infof("Funded swap %s from funding address %s", swapId, fundingAddress.Id)
+	return nil
 }
 
 func (server *routedBoltzServer) RefundFundingAddress(ctx context.Context, request *boltzrpc.RefundFundingAddressRequest) (*boltzrpc.RefundFundingAddressResponse, error) {

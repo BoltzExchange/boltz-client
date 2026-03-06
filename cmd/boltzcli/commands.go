@@ -1273,7 +1273,7 @@ var createSwapCommand = &cli.Command{
 	Name:      "createswap",
 	Category:  "Swaps",
 	Usage:     "Create a new chain-to-lightning swap",
-	ArgsUsage: "currency [amount]",
+	ArgsUsage: "[currency] [amount]",
 	Description: "Creates a new swap (e.g. BTC -> Lightning) specifying the amount in satoshis.\n" +
 		"If the --any-amount flag is specified, any amount within the displayed limits can be paid to the lockup address.\n" +
 		"\nExamples\n" +
@@ -1281,9 +1281,11 @@ var createSwapCommand = &cli.Command{
 		"> boltzcli createswap btc 100000\n" +
 		"Create a swap from liquid for any amount of satoshis that can be paid manually:\n" +
 		"> boltzcli createswap --any-amount lbtc\n" +
+		"Create a swap from an existing funding address:\n" +
+		"> boltzcli createswap --from-funding <id>\n" +
 		"Create a swap from mainchain using an existing invoice:\n" +
 		"> boltzcli createswap --invoice lnbcrt1m1pja7adjpp59xdpx33l80wf8rsmqkwjyccdzccsedp9qgy9agf0k8m5g8ttrnzsdq8w3jhxaqcqp5xqzjcsp528qsd7mec4jml9zy302tmr0t995fe9uu80qwgg4zegerh3weyn8s9qyyssqpwecwyvndxh9ar0crgpe4crr93pr4g682u5sstzfk6e0g73s6urxm320j5yuamlszxnk5fzzrtx2hkxw8ehy6kntrx4cr4kcq6zc4uqqy7tcst btc",
-	Action: requireNArgs(1, createSwap),
+	Action: createSwap,
 	Flags: []cli.Flag{
 		jsonFlag,
 		&cli.StringFlag{
@@ -1306,15 +1308,52 @@ var createSwapCommand = &cli.Command{
 			Name:  "invoice",
 			Usage: "Invoice which should be paid",
 		},
+		&cli.StringFlag{
+			Name:  "from-funding",
+			Usage: "Funding address ID to fund the swap from; prompts to select one if omitted",
+		},
 	},
 }
 
 func createSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
 
-	currency, err := parseCurrency(ctx.Args().First())
-	if err != nil {
-		return err
+	fundingAddressSet := ctx.IsSet("from-funding")
+	fundingAddress := ctx.String("from-funding")
+	var err error
+	if fundingAddressSet && fundingAddress == "" {
+		fundingAddress, err = askForFundingAddress(ctx, "Select funding address to fund the swap from", nil)
+		if err != nil {
+			return err
+		}
+	}
+	fromWallet := ctx.String("from-wallet")
+	if fundingAddress != "" && fromWallet != "" {
+		return errors.New("from-wallet and from-funding cannot be used together")
+	}
+
+	amountArgIndex := 1
+	var currency boltzrpc.Currency
+	if fundingAddress != "" {
+		if ctx.Args().Len() > 0 {
+			return errors.New("currency and amount cannot be used together with --from-funding")
+		}
+
+		fundingCurrency, err := getFundingAddressCurrency(ctx, fundingAddress)
+		if err != nil {
+			return err
+		}
+		currency = fundingCurrency
+	} else {
+		if ctx.Args().First() == "" {
+			return cli.ShowSubcommandHelp(ctx)
+		}
+
+		var err error
+		currency, err = parseCurrency(ctx.Args().First())
+		if err != nil {
+			return err
+		}
 	}
 
 	pair := &boltzrpc.Pair{
@@ -1326,18 +1365,50 @@ func createSwap(ctx *cli.Context) error {
 	invoice := ctx.String("invoice")
 	refundAddress := ctx.String("refund")
 	externalPay := ctx.Bool("external-pay")
+	if fundingAddress != "" {
+		externalPay = true
+	}
 	var amount uint64
-	if rawAmount := ctx.Args().Get(1); rawAmount != "" {
+	var pairInfo *boltzrpc.PairInfo
+	if fundingAddress != "" {
+		fundingQuote, err := client.GetSwapQuote(&boltzrpc.GetSwapQuoteRequest{
+			Type: boltzrpc.SwapType_SUBMARINE,
+			Pair: pair,
+			Amount: &boltzrpc.GetSwapQuoteRequest_FundingAddressId{
+				FundingAddressId: fundingAddress,
+			},
+		})
+		if err != nil {
+			return err
+		}
+		pairInfo = fundingQuote.PairInfo
+		amount = fundingQuote.ReceiveAmount
+	} else if rawAmount := ctx.Args().Get(amountArgIndex); rawAmount != "" {
 		amount = parseUint64(rawAmount, "amount")
 	} else if ctx.Bool("any-amount") {
 		externalPay = true
-	} else if invoice == "" {
-		return cli.ShowSubcommandHelp(ctx)
 	}
 
-	pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
-	if err != nil {
-		return err
+	if fundingAddress != "" && invoice == "" {
+		info, err := client.GetInfo()
+		if err != nil {
+			return err
+		}
+
+		if info.Node == "standalone" {
+			invoicePrompt := &survey.Input{
+				Message: fmt.Sprintf("Enter invoice, lnurl, or lnaddress for %s:", utils.Satoshis(amount)),
+			}
+			if err := survey.AskOne(invoicePrompt, &invoice, survey.WithValidator(survey.Required)); err != nil {
+				return err
+			}
+		}
+	}
+	if pairInfo == nil {
+		pairInfo, err = client.GetPairInfo(boltzrpc.SwapType_SUBMARINE, pair)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !json {
@@ -1352,14 +1423,18 @@ func createSwap(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	swap, err := client.CreateSwap(&boltzrpc.CreateSwapRequest{
+	request := &boltzrpc.CreateSwapRequest{
 		Amount:           amount,
 		Pair:             pair,
 		RefundAddress:    &refundAddress,
 		SendFromInternal: !externalPay,
 		WalletId:         walletId,
 		Invoice:          &invoice,
-	})
+	}
+	if fundingAddress != "" {
+		request.FundingAddress = &fundingAddress
+	}
+	swap, err := client.CreateSwap(request)
 	if err != nil {
 		return err
 	}
@@ -1391,7 +1466,7 @@ var createChainSwapCommand = &cli.Command{
 	Name:      "createchainswap",
 	Category:  "Swaps",
 	Usage:     "Create a new chain-to-chain swap",
-	ArgsUsage: "amount",
+	ArgsUsage: "[amount]",
 	Description: "Creates a new chain swap (e.g. BTC -> L-BTC) specifying the amount in satoshis.\n" +
 		"\nExamples" +
 		"\nCreate a chain swap for 100000 satoshis from the L-BTC wallet 'autoswap' to the BTC wallet 'cold':" +
@@ -1399,7 +1474,9 @@ var createChainSwapCommand = &cli.Command{
 		"\nCreate a chain swap for 100000 satoshis from the L-BTC wallet 'autoswap' to a BTC address:" +
 		"\n> boltzcli createchainswap --from-wallet autoswap --to-address bcrt1q0akydfs98pjmqqplz0kvaa5hphg237vcvgaez2 100000" +
 		"\nCreate a chain swap for 100000 satoshis from BTC to the L-BTC wallet 'autoswap' which has to be paid manually:" +
-		"\n> boltzcli createchainswap --from-external LBTC --to-wallet autoswap 100000",
+		"\n> boltzcli createchainswap --from-external LBTC --to-wallet autoswap 100000" +
+		"\nCreate a chain swap from an existing funding address without specifying the amount again:" +
+		"\n> boltzcli createchainswap --from-funding <id> --to-address <address>",
 	Action: createChainSwap,
 	Flags: []cli.Flag{
 		jsonFlag,
@@ -1427,21 +1504,21 @@ var createChainSwapCommand = &cli.Command{
 			Name:  "refund-address",
 			Usage: "Address to refund to in case the swap fails",
 		},
+		&cli.StringFlag{
+			Name:  "from-funding",
+			Usage: "Funding address ID to fund the swap from; prompts to select one if omitted",
+		},
 	},
 }
 
 func createChainSwap(ctx *cli.Context) error {
 	client := getClient(ctx)
-	var amount uint64
-	if ctx.Args().First() != "" {
-		amount = parseUint64(ctx.Args().First(), "amount")
-	} else if !ctx.Bool("any-amount") {
-		return cli.ShowSubcommandHelp(ctx)
-	}
-
+	fundingAddressSet := ctx.IsSet("from-funding")
 	pair := &boltzrpc.Pair{}
 	var err error
+	fromExternalSpecified := false
 	if from := ctx.String("from-external"); from != "" {
+		fromExternalSpecified = true
 		pair.From, err = parseCurrency(from)
 		if err != nil {
 			return err
@@ -1450,12 +1527,48 @@ func createChainSwap(ctx *cli.Context) error {
 
 	acceptZeroConf := !ctx.Bool("no-zero-conf")
 	fromWallet := ctx.String("from-wallet")
-	externalPay := fromWallet == ""
+	fundingAddress := ctx.String("from-funding")
+	if fundingAddressSet && fundingAddress == "" {
+		fundingAddress, err = askForFundingAddress(ctx, "Select funding address to fund the swap from", nil)
+		if err != nil {
+			return err
+		}
+	}
+	if fundingAddress != "" && fromWallet != "" {
+		return errors.New("from-wallet and from-funding cannot be used together")
+	}
+	if fundingAddress != "" && fromExternalSpecified {
+		return errors.New("from-external and from-funding cannot be used together")
+	}
+
+	var amount uint64
+	if rawAmount := ctx.Args().First(); rawAmount != "" {
+		if fundingAddress != "" {
+			return errors.New("amount cannot be used together with --from-funding")
+		}
+		amount = parseUint64(rawAmount, "amount")
+	} else if fundingAddress == "" {
+		return cli.ShowSubcommandHelp(ctx)
+	}
+
+	if fundingAddress != "" {
+		fundingCurrency, err := getFundingAddressCurrency(ctx, fundingAddress)
+		if err != nil {
+			return err
+		}
+		pair.From = fundingCurrency
+	}
+
+	externalPay := fromWallet == "" || fundingAddress != ""
 	request := &boltzrpc.CreateChainSwapRequest{
-		Amount:         &amount,
 		Pair:           pair,
 		ExternalPay:    &externalPay,
 		AcceptZeroConf: &acceptZeroConf,
+	}
+	if fundingAddress != "" {
+		request.FundingAddress = &fundingAddress
+	} else {
+		request.Amount = &amount
 	}
 
 	info, err := client.GetInfo()
@@ -1478,7 +1591,14 @@ func createChainSwap(ctx *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		pair.From = serializers.SerializeCurrency(from)
+		refundCurrency := serializers.SerializeCurrency(from)
+		if fundingAddress != "" {
+			if refundCurrency != pair.From {
+				return fmt.Errorf("refund address currency %s does not match funding address currency %s", refundCurrency, pair.From)
+			}
+		} else {
+			pair.From = refundCurrency
+		}
 		request.RefundAddress = &refundAddress
 	}
 
@@ -1503,6 +1623,20 @@ func createChainSwap(ctx *cli.Context) error {
 	request.FromWalletId, err = getWalletId(ctx, ctx.String("from-wallet"))
 	if err != nil {
 		return err
+	}
+
+	if fundingAddress != "" {
+		quote, err := client.GetSwapQuote(&boltzrpc.GetSwapQuoteRequest{
+			Type: boltzrpc.SwapType_CHAIN,
+			Pair: pair,
+			Amount: &boltzrpc.GetSwapQuoteRequest_FundingAddressId{
+				FundingAddressId: fundingAddress,
+			},
+		})
+		if err != nil {
+			return err
+		}
+		amount = quote.SendAmount
 	}
 
 	pairInfo, err := client.GetPairInfo(boltzrpc.SwapType_CHAIN, pair)
@@ -1538,18 +1672,31 @@ func createChainSwap(ctx *cli.Context) error {
 	return swapInfoStream(ctx, swap.Id, false)
 }
 
+var fundingCommands = &cli.Command{
+	Name:     "funding",
+	Category: "Funding",
+	Usage:    "Manage funding addresses",
+	Subcommands: []*cli.Command{
+		createFundingCommand,
+		listFundingAddressesCommand,
+		restoreCommand,
+		fundingAddressStreamCommand,
+		fundSwapCommand,
+		refundFundingAddressCommand,
+	},
+}
+
 var createFundingCommand = &cli.Command{
-	Name:      "createfunding",
-	Category:  "Funding",
+	Name:      "create",
 	Usage:     "Create a new funding address for pre-funding swaps",
 	ArgsUsage: "currency",
 	Description: "Creates a new funding address that can be used to pre-fund swaps.\n" +
 		"Currency has to be BTC or LBTC (case insensitive).\n" +
 		"\nExamples\n" +
 		"Create a BTC funding address:\n" +
-		"> boltzcli createfunding BTC\n" +
+		"> boltzcli funding create BTC\n" +
 		"Create an L-BTC funding address:\n" +
-		"> boltzcli createfunding LBTC",
+		"> boltzcli funding create LBTC",
 	Action: requireNArgs(1, createFunding),
 	Flags:  []cli.Flag{jsonFlag},
 }
@@ -1585,8 +1732,7 @@ func createFunding(ctx *cli.Context) error {
 }
 
 var listFundingAddressesCommand = &cli.Command{
-	Name:      "listfunding",
-	Category:  "Funding",
+	Name:      "list",
 	Usage:     "List all funding addresses",
 	ArgsUsage: "",
 	Action:    listFundingAddresses,
@@ -1648,9 +1794,9 @@ var restoreCommand = &cli.Command{
 		"Provide a mnemonic as argument or via --mnemonic.\n" +
 		"\nExamples\n" +
 		"Restore using mnemonic argument:\n" +
-		"> boltzcli restorefunding \"abandon ... about\"\n" +
+		"> boltzcli funding restore \"abandon ... about\"\n" +
 		"Restore using mnemonic flag:\n" +
-		"> boltzcli restorefunding --mnemonic \"abandon ... about\"",
+		"> boltzcli funding restore --mnemonic \"abandon ... about\"",
 	Flags: []cli.Flag{
 		jsonFlag,
 		&cli.StringFlag{
@@ -1703,8 +1849,7 @@ func restoreFunding(ctx *cli.Context) error {
 }
 
 var fundingAddressStreamCommand = &cli.Command{
-	Name:      "fundingstream",
-	Category:  "Funding",
+	Name:      "stream",
 	Usage:     "Streams updates for funding addresses",
 	ArgsUsage: "[id]",
 	Description: "Streams real-time updates for funding addresses.\n" +
@@ -1762,7 +1907,6 @@ func fundingAddressStream(ctx *cli.Context, id string, json bool) error {
 
 var fundSwapCommand = &cli.Command{
 	Name:      "fundswap",
-	Category:  "Funding",
 	Usage:     "Fund a swap using a funding address",
 	ArgsUsage: "<funding_address_id> <swap_id>",
 	Description: "Uses the signing details flow to cooperatively spend from a funding address to fund a swap.\n" +
@@ -1801,8 +1945,7 @@ func fundSwap(ctx *cli.Context) error {
 }
 
 var refundFundingAddressCommand = &cli.Command{
-	Name:      "refundfunding",
-	Category:  "Funding",
+	Name:      "refund",
 	Usage:     "Refund a funding address to an address or wallet",
 	ArgsUsage: "<funding_address_id> <address|wallet>",
 	Description: "Refunds a funded funding address by cooperatively signing with Boltz.\n" +
@@ -1983,6 +2126,76 @@ func getWalletId(ctx *cli.Context, name string) (*uint64, error) {
 		return &wallet.Id, nil
 	}
 	return nil, nil
+}
+
+func askForFundingAddress(ctx *cli.Context, message string, currency *boltzrpc.Currency) (string, error) {
+	client := getClient(ctx)
+
+	request := &boltzrpc.ListFundingAddressesRequest{}
+	if currency != nil {
+		request.Currency = currency
+	}
+
+	response, err := client.ListFundingAddresses(request)
+	if err != nil {
+		return "", err
+	}
+
+	fundingAddressesById := make(map[string]*boltzrpc.FundingAddressInfo)
+	options := make([]string, 0, len(response.FundingAddresses))
+	for _, fundingAddress := range response.FundingAddresses {
+		if fundingAddress.Amount == 0 {
+			continue
+		}
+
+		switch fundingAddress.Status {
+		case boltz.FundingAddressMempool.String(), boltz.FundingAddressConfirmed.String():
+			fundingAddressesById[fundingAddress.Id] = fundingAddress
+			options = append(options, fundingAddress.Id)
+		}
+	}
+
+	if len(options) == 0 {
+		if currency != nil {
+			return "", fmt.Errorf("no funded %s funding addresses in transaction.mempool or transaction.confirmed state found", currency.String())
+		}
+		return "", errors.New("no funded funding addresses in transaction.mempool or transaction.confirmed state found")
+	}
+	if len(options) == 1 {
+		return options[0], nil
+	}
+
+	prompt := &survey.Select{
+		Message: message,
+		Options: options,
+		Description: func(value string, index int) string {
+			fundingAddress := fundingAddressesById[value]
+			return fmt.Sprintf("%s | %s | %s", fundingAddress.Currency, utils.Satoshis(fundingAddress.Amount), fundingAddress.Status)
+		},
+	}
+
+	var choice string
+	if err := survey.AskOne(prompt, &choice); err != nil {
+		return "", err
+	}
+
+	return choice, nil
+}
+
+func getFundingAddressCurrency(ctx *cli.Context, id string) (boltzrpc.Currency, error) {
+	client := getClient(ctx)
+	response, err := client.ListFundingAddresses(&boltzrpc.ListFundingAddressesRequest{})
+	if err != nil {
+		return boltzrpc.Currency_BTC, err
+	}
+
+	for _, fundingAddress := range response.FundingAddresses {
+		if fundingAddress.Id == id {
+			return fundingAddress.Currency, nil
+		}
+	}
+
+	return boltzrpc.Currency_BTC, fmt.Errorf("funding address %s not found", id)
 }
 
 func createReverseSwap(ctx *cli.Context) error {
