@@ -1,11 +1,14 @@
 network = "regtest"
 
+[BOLTZ]
+url = "http://127.0.0.1:9006"
+
 [LND]
 host = "127.0.0.1"
 port = 10009
-datadir = "../../regtest/data/lnd1"
+datadir = "../../../boltz-backend/regtest/data/lnd1"
 
 [CLN]
 host = "127.0.0.1"
-port = 9736
-datadir = "../../regtest/data/cln1"
+port = 9737
+datadir = "../../../boltz-backend/regtest/data/cln1"
