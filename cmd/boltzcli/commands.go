@@ -1794,10 +1794,11 @@ var walletCommands = &cli.Command{
 		},
 		{
 			Name:        "subaccounts",
-			Usage:       "Show the subaccounts of a wallet",
-			Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
+			Usage:       "DEPRECATED: Show the subaccounts of a wallet (GDK-only)",
+			Description: "DEPRECATED: GDK-only feature. Select the subaccount for a wallet. Not possible for readonly wallets.",
 			ArgsUsage:   "name",
 			Action: requireNArgs(1, func(ctx *cli.Context) error {
+				printSubaccountsDeprecatedWarning()
 				walletId, err := getWalletId(ctx, ctx.Args().First())
 				if err != nil {
 					return err
@@ -1813,8 +1814,8 @@ var walletCommands = &cli.Command{
 			Subcommands: []*cli.Command{
 				{
 					Name:        "select",
-					Usage:       "Select the subaccount for a wallet",
-					Description: "Select the subaccount for a wallet. Not possible for readonly wallets.",
+					Usage:       "DEPRECATED: Select the subaccount for a wallet (GDK-only)",
+					Description: "DEPRECATED: GDK-only feature. Select the subaccount for a wallet. Not possible for readonly wallets.",
 					ArgsUsage:   "name",
 					Action: requireNArgs(1, func(ctx *cli.Context) error {
 						walletId, err := getWalletId(ctx, ctx.Args().First())
@@ -2076,6 +2077,8 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 }
 
 func selectSubaccount(ctx *cli.Context, walletId uint64) error {
+	printSubaccountsDeprecatedWarning()
+
 	client := getClient(ctx)
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
@@ -2130,6 +2133,10 @@ func selectSubaccount(ctx *cli.Context, walletId uint64) error {
 
 	printSubaccount(response)
 	return nil
+}
+
+func printSubaccountsDeprecatedWarning() {
+	fmt.Println("Warning: `wallet subaccounts` is deprecated and only supported for deprecated GDK wallets.")
 }
 
 func removeWallet(ctx *cli.Context) error {
