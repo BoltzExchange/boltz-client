@@ -491,12 +491,18 @@ func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency)
 			}
 		}
 		test.MineBlock()
-		require.Eventually(t, func() bool {
-			wallet, err = client.GetWalletById(wallet.Id)
-			require.NoError(t, err)
-			return wallet.Balance.Confirmed > 0 && wallet.Balance.Confirmed == wallet.Balance.Total
-		}, 10*time.Second, 250*time.Millisecond)
 	}
+
+	require.Eventually(t, func() bool {
+		wallet, err = client.GetWalletById(wallet.Id)
+		require.NoError(t, err)
+
+		return wallet.Balance != nil &&
+			wallet.Balance.Confirmed > 0 &&
+			wallet.Balance.Confirmed == wallet.Balance.Total
+	}, 10*time.Second, 200*time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
+
 	return wallet
 }
 
