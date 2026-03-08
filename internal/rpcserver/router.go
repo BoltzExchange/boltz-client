@@ -2413,7 +2413,10 @@ func (server *routedBoltzServer) getSubmarinePair(request *boltzrpc.Pair) (*bolt
 	}
 	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
-	return serializeSubmarinePair(pair, found), err
+	if err != nil {
+		return nil, err
+	}
+	return serializeSubmarinePair(pair, found), nil
 }
 
 func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
@@ -2423,7 +2426,10 @@ func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltzr
 	}
 	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
-	return serializeReversePair(pair, found), err
+	if err != nil {
+		return nil, err
+	}
+	return serializeReversePair(pair, found), nil
 }
 
 func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
@@ -2433,7 +2439,10 @@ func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltzrpc
 	}
 	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
-	return serializeChainPair(pair, found), err
+	if err != nil {
+		return nil, err
+	}
+	return serializeChainPair(pair, found), nil
 }
 
 func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltzrpc.GetPairsResponse, error) {
