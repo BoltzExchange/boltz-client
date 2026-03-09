@@ -194,6 +194,34 @@ func TestFundingAddress(t *testing.T) {
 		}
 	})
 
+	t.Run("QuoteUsesFundingAddressCurrency", func(t *testing.T) {
+		for _, tc := range currencies {
+			t.Run(tc.desc, func(t *testing.T) {
+				fundingAddress, err := boltzClient.CreateFundingAddress(&boltzrpc.CreateFundingAddressRequest{
+					Currency: tc.currency,
+				})
+				require.NoError(t, err)
+
+				faStream := fundingAddressStream(t, boltzClient, fundingAddress.Id)
+				test.SendToAddress(getCli(tc.currency), fundingAddress.Address, swapAmount)
+				test.MineBlock()
+				faStream(boltz.FundingAddressConfirmed)
+
+				quote, err := boltzClient.GetSwapQuote(&boltzrpc.GetSwapQuoteRequest{
+					Type: boltzrpc.SwapType_SUBMARINE,
+					Amount: &boltzrpc.GetSwapQuoteRequest_FundingAddressId{
+						FundingAddressId: fundingAddress.Id,
+					},
+				})
+				require.NoError(t, err)
+				require.Equal(t, swapAmount, quote.SendAmount)
+				require.NotNil(t, quote.PairInfo)
+				require.Equal(t, tc.currency, quote.PairInfo.Pair.From)
+				require.Equal(t, boltzrpc.Currency_BTC, quote.PairInfo.Pair.To)
+			})
+		}
+	})
+
 	t.Run("CreateSwapWithFundingAddress", func(t *testing.T) {
 		for _, tc := range currencies {
 			t.Run(tc.desc, func(t *testing.T) {

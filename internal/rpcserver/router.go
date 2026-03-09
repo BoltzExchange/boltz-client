@@ -334,12 +334,26 @@ func (server *routedBoltzServer) GetPairInfo(_ context.Context, request *boltzrp
 }
 
 func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *boltzrpc.GetSwapQuoteRequest) (*boltzrpc.GetSwapQuoteResponse, error) {
-	// Apply currency constraints based on swap type
-	pair := request.Pair
-	if pair == nil {
-		pair = &boltzrpc.Pair{}
+	pair := request.GetPair()
+	var fundingAddress *database.FundingAddress
+	if amt, ok := request.Amount.(*boltzrpc.GetSwapQuoteRequest_FundingAddressId); ok {
+		if amt.FundingAddressId == "" {
+			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id cannot be empty")
+		}
+		if request.Type == boltzrpc.SwapType_REVERSE {
+			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id can only be used for swaps with onchain send amounts")
+		}
+
+		fundingAddress, err := server.getFundingAddress(ctx, amt.FundingAddressId)
+		if err != nil {
+			return nil, err
+		}
+
+		// The funding address determines the onchain send currency.
+		pair.From = serializers.SerializeCurrency(fundingAddress.Currency)
 	}
 
+	// Apply currency constraints based on swap type
 	switch request.Type {
 	case boltzrpc.SwapType_SUBMARINE:
 		// Submarine: on-chain → Lightning. To is always BTC (Lightning)
@@ -369,28 +383,6 @@ func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *bolt
 	case *boltzrpc.GetSwapQuoteRequest_ReceiveAmount:
 		receiveAmount = amt.ReceiveAmount
 	case *boltzrpc.GetSwapQuoteRequest_FundingAddressId:
-		if amt.FundingAddressId == "" {
-			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id cannot be empty")
-		}
-		if request.Type == boltzrpc.SwapType_REVERSE {
-			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id can only be used for swaps with onchain send amounts")
-		}
-
-		fundingAddress, err := server.getFundingAddress(ctx, amt.FundingAddressId)
-		if err != nil {
-			return nil, err
-		}
-
-		sendCurrency := serializers.ParsePair(pair).From
-		if fundingAddress.Currency != sendCurrency {
-			return nil, status.Errorf(
-				codes.InvalidArgument,
-				"funding address currency %s does not match swap send currency %s",
-				fundingAddress.Currency,
-				sendCurrency,
-			)
-		}
-
 		sendAmount, err = requireFundingAddressAmount(fundingAddress)
 		if err != nil {
 			return nil, err
