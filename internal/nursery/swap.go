@@ -146,19 +146,19 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 		if err != nil {
 			return fmt.Errorf("could not create signing session: %w", err)
 		}
-		partial, err = session.Sign(&boltz.FundingAddressSigningDetails{
-			TransactionHash: claimDetails.TransactionHash,
-			PubNonce:        claimDetails.PubNonce,
-		})
+		partial, err = session.Sign(claimDetails.PubNonce, claimDetails.TransactionHash)
+		if err != nil {
+			return fmt.Errorf("could not create partial signature: %w", err)
+		}
 	} else {
 		session, err := boltz.NewSigningSession(swap.SwapTree)
 		if err != nil {
 			return fmt.Errorf("could not create signing session: %w", err)
 		}
 		partial, err = session.Sign(claimDetails.TransactionHash, claimDetails.PubNonce)
-	}
-	if err != nil {
-		return fmt.Errorf("could not create partial signature: %w", err)
+		if err != nil {
+			return fmt.Errorf("could not create partial signature: %w", err)
+		}
 	}
 
 	if err := nursery.boltz.SendSwapClaimSignature(swap.Id, partial); err != nil {

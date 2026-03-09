@@ -223,10 +223,10 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 						if err != nil {
 							return nil, fmt.Errorf("could not initialize signing session: %w", err)
 						}
-						boltzSignature, err = boltzSession.Sign(&FundingAddressSigningDetails{
-							TransactionHash: details.TransactionHash,
-							PubNonce:        details.PubNonce,
-						})
+						boltzSignature, err = boltzSession.Sign(details.PubNonce, details.TransactionHash)
+						if err != nil {
+							return nil, fmt.Errorf("could not sign transaction: %w", err)
+						}
 					} else {
 						if output.RefundSwapTree == nil {
 							return nil, errors.New("RefundSwapTree is required for cooperatively claiming chain swap")
@@ -236,9 +236,9 @@ func ConstructTransaction(network *Network, currency Currency, outputs []OutputD
 							return nil, fmt.Errorf("could not initialize signing session: %w", err)
 						}
 						boltzSignature, err = boltzSession.Sign(details.TransactionHash, details.PubNonce)
-					}
-					if err != nil {
-						return nil, fmt.Errorf("could not sign transaction: %w", err)
+						if err != nil {
+							return nil, fmt.Errorf("could not sign transaction: %w", err)
+						}
 					}
 					return boltzApi.ExchangeChainSwapClaimSignature(output.SwapId, &ChainSwapSigningRequest{
 						Preimage:  output.Preimage,

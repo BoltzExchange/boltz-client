@@ -2,6 +2,7 @@ package nursery
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"slices"
@@ -549,6 +550,26 @@ func (nursery *Nursery) processFundingUpdate(update boltz.FundingUpdate) error {
 	return nil
 }
 
+func (nursery *Nursery) getSwapLockupAddress(swapId string) (string, error) {
+	swap, err := nursery.database.QuerySwap(swapId)
+	if err != nil && err != sql.ErrNoRows {
+		return "", fmt.Errorf("could not query swap %s: %v", swapId, err)
+	}
+	if swap != nil {
+		return swap.Address, nil
+	}
+
+	chainSwap, err := nursery.database.QueryChainSwap(swapId)
+	if err != nil && err != sql.ErrNoRows {
+		return "", fmt.Errorf("could not query reverse swap %s: %v", swapId, err)
+	}
+	if chainSwap != nil {
+		return chainSwap.FromData.LockupAddress, nil
+	}
+
+	return "", fmt.Errorf("swap %s not found", swapId)
+}
+
 func (nursery *Nursery) SignFundingAddress(fundingAddress *dbpkg.FundingAddress) error {
 	// Get signing details from Boltz API
 	signingDetails, err := nursery.boltz.GetFundingAddressSigningDetails(fundingAddress.Id, fundingAddress.SwapId)
@@ -566,10 +587,19 @@ func (nursery *Nursery) SignFundingAddress(fundingAddress *dbpkg.FundingAddress)
 		return fmt.Errorf("failed to create signing session: %v", err)
 	}
 
-	// Sign the transaction hash
-	partial, err := session.Sign(signingDetails)
+	lockupAddress, err := nursery.getSwapLockupAddress(fundingAddress.SwapId)
 	if err != nil {
-		return fmt.Errorf("failed to sign transaction: %v", err)
+		return fmt.Errorf("failed to get swap lockup address: %v", err)
+	}
+
+	lockupTransaction, err := nursery.onchain.GetTransaction(fundingAddress.Currency, fundingAddress.LockupTransactionId, fundingAddress.BlindingKey, false)
+	if err != nil {
+		return fmt.Errorf("failed to get lockup transaction: %v", err)
+	}
+
+	partial, err := session.PresignTransaction(nursery.network, lockupTransaction, lockupAddress, signingDetails)
+	if err != nil {
+		return fmt.Errorf("failed to presign transaction: %v", err)
 	}
 
 	// Send our partial signature to Boltz

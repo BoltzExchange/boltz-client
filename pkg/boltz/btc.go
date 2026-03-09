@@ -83,14 +83,6 @@ func getPrevoutFetcher(tx *wire.MsgTx, outputs []OutputDetails) txscript.PrevOut
 
 func btcTaprootHash(transaction Transaction, outputs []OutputDetails, index int) ([]byte, error) {
 	tx := transaction.(*BtcTransaction).MsgTx()
-
-	previous := make(map[wire.OutPoint]*wire.TxOut)
-	for i, input := range tx.TxIn {
-		prevOut := input.PreviousOutPoint
-		lockupTx := outputs[i].LockupTransaction.(*BtcTransaction)
-		previous[prevOut] = lockupTx.MsgTx().TxOut[prevOut.Index]
-	}
-
 	prevoutFetcher := getPrevoutFetcher(tx, outputs)
 	sigHashes := txscript.NewTxSigHashes(tx, prevoutFetcher)
 

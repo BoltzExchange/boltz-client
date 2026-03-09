@@ -3141,6 +3141,9 @@ func (server *routedBoltzServer) RefundFundingAddress(ctx context.Context, reque
 		Address:       fundingAddress.Address,
 		BlindingKey:   fundingAddress.BlindingKey,
 	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to find funding output: %v", err)
+	}
 
 	feeRate, err := server.onchain.EstimateFee(fundingAddress.Currency)
 	if err != nil {

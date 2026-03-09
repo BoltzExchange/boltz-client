@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
@@ -11,6 +12,8 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/vulpemventures/go-elements/address"
+	"github.com/vulpemventures/go-elements/elementsutil"
 	"github.com/vulpemventures/go-elements/payment"
 	"github.com/vulpemventures/go-elements/taproot"
 )
@@ -97,6 +100,9 @@ func NewFundingTree(
 		IsXOnly: true,
 	}
 	tree.aggregateKey, _, _, err = musig2.AggregateKeys(keys, false, musig2.WithKeyTweaks(tree.taprootTweak))
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate tweaked keys: %w", err)
+	}
 
 	return tree, nil
 }
@@ -190,10 +196,112 @@ func decodePartialSignature(sig HexString) (*musig2.PartialSignature, error) {
 	return partial, nil
 }
 
+func validatePresignedTransaction(network *Network, lockupTx Transaction, expectedLockupAddress string, details *FundingAddressSigningDetails) error {
+	var hash []byte
+	index := 0
+	outputDetails := []OutputDetails{
+		{
+			LockupTransaction: lockupTx,
+		},
+	}
+	if _, ok := lockupTx.(*LiquidTransaction); ok {
+		tx, err := NewLiquidTxFromHex(string(details.TransactionHex), nil)
+		if err != nil {
+			return err
+		}
+		if len(tx.Outputs) != 2 {
+			return fmt.Errorf("expected exactly two outputs, got %d", len(tx.Outputs))
+		}
+
+		expectedFeeRate := 0.1
+		expectedFee := uint64(math.Ceil(float64(tx.DiscountVirtualSize()) * expectedFeeRate))
+
+		var outScript []byte
+		var fee uint64
+		for _, output := range tx.Outputs {
+			if len(output.Script) == 0 {
+				value, err := elementsutil.ValueFromBytes(output.Value)
+				if err != nil {
+					return err
+				}
+				fee = value
+			} else {
+				outScript = output.Script
+			}
+		}
+
+		decodedAddress, err := address.FromConfidential(expectedLockupAddress)
+		if err != nil {
+			return err
+		}
+		if !bytes.Equal(decodedAddress.Script, outScript) {
+			return fmt.Errorf("expected script %v, got %v", decodedAddress.Script, outScript)
+		}
+		if fee != expectedFee {
+			return fmt.Errorf("expected fee %d, got %d", expectedFee, fee)
+		}
+
+		hash = liquidTaprootHash(&tx.Transaction, network, outputDetails, index, true)
+	} else if lockupTx, ok := lockupTx.(*BtcTransaction); ok {
+		btcTx, err := NewBtcTxFromHex(string(details.TransactionHex))
+		if err != nil {
+			return err
+		}
+
+		if len(btcTx.MsgTx().TxOut) != 1 {
+			return fmt.Errorf("expected exactly one output, got %d", len(btcTx.MsgTx().TxOut))
+		}
+
+		if len(btcTx.MsgTx().TxIn) == 0 {
+			return fmt.Errorf("transaction has no inputs")
+		}
+
+		in := btcTx.MsgTx().TxIn[0]
+		prevOut := lockupTx.MsgTx().TxOut[in.PreviousOutPoint.Index]
+		currentOut := btcTx.MsgTx().TxOut[index]
+		if prevOut.Value != currentOut.Value {
+			return fmt.Errorf("expected value %v, got %v", prevOut.Value, currentOut.Value)
+		}
+
+		decodedAddress, err := btcutil.DecodeAddress(expectedLockupAddress, network.Btc)
+		if err != nil {
+			return err
+		}
+
+		pkScript := btcTx.MsgTx().TxOut[0].PkScript
+		if len(pkScript) < 3 {
+			return fmt.Errorf("output script too short: %d bytes", len(pkScript))
+		}
+
+		expectedScript := decodedAddress.ScriptAddress()
+		actualScript := pkScript[2:]
+		if !bytes.Equal(expectedScript, actualScript) {
+			return fmt.Errorf("expected script %v, got %v", expectedScript, actualScript)
+		}
+
+		hash, err = btcTaprootHash(btcTx, outputDetails, index)
+		if err != nil {
+			return fmt.Errorf("failed to compute taproot hash: %w", err)
+		}
+	}
+	if !bytes.Equal(hash, details.TransactionHash) {
+		return fmt.Errorf("expected transaction hash %v, got %v", details.TransactionHash, hash)
+	}
+	return nil
+}
+
+// PresignTransaction validates the presigned transaction and signs it, returning the partial signature
+func (session *FundingMusigSession) PresignTransaction(network *Network, lockupTx Transaction, expectedLockupAddress string, details *FundingAddressSigningDetails) (*PartialSignature, error) {
+	if err := validatePresignedTransaction(network, lockupTx, expectedLockupAddress, details); err != nil {
+		return nil, fmt.Errorf("validation failed: %w", err)
+	}
+	return session.Sign(details.PubNonce, details.TransactionHash)
+}
+
 // Sign creates a partial signature for the given transaction hash using the boltz nonce
-func (session *FundingMusigSession) Sign(signingDetails *FundingAddressSigningDetails) (*PartialSignature, error) {
-	hash := signingDetails.TransactionHash
-	boltzNonce := signingDetails.PubNonce
+func (session *FundingMusigSession) Sign(pubNonce HexString, transactionHash HexString) (*PartialSignature, error) {
+	hash := transactionHash
+	boltzNonce := pubNonce
 
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("invalid hash length %d", len(hash))
