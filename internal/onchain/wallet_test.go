@@ -200,6 +200,14 @@ func TestWallet_GetSendFee(t *testing.T) {
 			SatPerVbyte: 1,
 		})
 		require.NoError(t, err)
+
+		test.MineBlock()
+		require.Eventually(t, func() bool {
+			require.NoError(t, wallet.Sync())
+			balance, err = wallet.GetBalance()
+			require.NoError(t, err)
+			return balance.Total == 0
+		}, 5*checkInterval, checkInterval/2)
 	})
 }
 
