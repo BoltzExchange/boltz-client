@@ -410,7 +410,13 @@ func (query *SwapQuery) ToWhereClause() (string, []any) {
 func (database *Database) Connect() error {
 	if database.db == nil {
 		logger.Info("Opening database: " + database.Path)
-		db, err := sql.Open("sqlite3", database.Path)
+		dsn := database.Path
+		if strings.Contains(dsn, "?") {
+			dsn += "&_timeout=2000"
+		} else {
+			dsn += "?_timeout=2000"
+		}
+		db, err := sql.Open("sqlite3", dsn)
 
 		if err != nil {
 			return err
