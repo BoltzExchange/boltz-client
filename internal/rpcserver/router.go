@@ -127,7 +127,7 @@ func (server *routedBoltzServer) WalletSendFee(request *boltzrpc.WalletSendReque
 }
 
 func handleError(err error) error {
-	if err != nil && status.Code(err) == codes.Unknown {
+	if err != nil {
 		logger.Warn("RPC request failed: " + err.Error())
 	}
 
