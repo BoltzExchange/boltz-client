@@ -13,7 +13,6 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0
 	github.com/fatih/color v1.15.0
 	github.com/fiatjaf/go-lnurl v1.13.1
 	github.com/git-chglog/git-chglog v0.15.4
@@ -79,6 +78,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.0.1 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/decred/dcrd/lru v1.1.2 // indirect
 	github.com/docker/cli v20.10.17+incompatible // indirect
 	github.com/docker/docker v24.0.9+incompatible // indirect

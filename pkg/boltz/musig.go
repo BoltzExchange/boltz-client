@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr/musig2"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	liquidtx "github.com/vulpemventures/go-elements/transaction"
 )
 
@@ -22,7 +22,7 @@ func NewSigningSession(tree *SwapTree) (*MusigSession, error) {
 		tree.ourKey,
 		false,
 		musig2.WithTweakedContext(tree.taprootTweak),
-		musig2.WithKnownSigners([]*secp256k1.PublicKey{tree.boltzKey, tree.ourKey.PubKey()}),
+		musig2.WithKnownSigners([]*btcec.PublicKey{tree.boltzKey, tree.ourKey.PubKey()}),
 	)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (session *MusigSession) Finalize(transaction Transaction, outputs []OutputD
 		return err
 	}
 
-	s := &secp256k1.ModNScalar{}
+	s := &btcec.ModNScalar{}
 	s.SetByteSlice(boltzSignature.PartialSignature)
 	partial := musig2.NewPartialSignature(s, nil)
 	haveFinal, err := session.CombineSig(&partial)
