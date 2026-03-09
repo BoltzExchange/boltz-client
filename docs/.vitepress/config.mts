@@ -12,8 +12,8 @@ export default defineConfig({
     search: {
       provider: "local",
       options: {
-        detailedView: true
-      }
+        detailedView: true,
+      },
     },
     nav: [{ text: "🏠 Docs Home", link: docsRoot, target: "_self" }],
     sidebar: [
@@ -21,6 +21,7 @@ export default defineConfig({
         items: [
           { text: "👋 Introduction", link: "/index" },
           { text: "💰 Wallets", link: "/wallets" },
+          { text: "💰 Funding Addresses", link: "/funding" },
           { text: "🔁 Autoswap", link: "/autoswap" },
           { text: "🏅 Boltz Pro", link: "/boltz-pro" },
           { text: "🎛️ Configuration", link: "/configuration" },

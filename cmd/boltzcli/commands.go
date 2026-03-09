@@ -1906,7 +1906,7 @@ func fundingAddressStream(ctx *cli.Context, id string, json bool) error {
 }
 
 var fundSwapCommand = &cli.Command{
-	Name:      "fundswap",
+	Name:      "swap",
 	Usage:     "Fund a swap using a funding address",
 	ArgsUsage: "<funding_address_id> <swap_id>",
 	Description: "Uses the signing details flow to cooperatively spend from a funding address to fund a swap.\n" +
