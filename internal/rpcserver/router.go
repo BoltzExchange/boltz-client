@@ -2747,29 +2747,33 @@ func (server *routedBoltzServer) Restore(ctx context.Context, request *boltzrpc.
 		}
 		if item.Transaction != nil {
 			fundingAddress.LockupTransactionId = item.Transaction.Id
+
+			result, err := server.onchain.FindOutput(onchain.OutputArgs{
+				TransactionId: item.Transaction.Id,
+				Address:       fundingAddress.Address,
+				Currency:      currency,
+				BlindingKey:   fundingAddress.BlindingKey,
+			})
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to find output for funding address %s: %v", item.Id, err)
+			}
+			fundingAddress.Amount = result.Value
 		}
 
-		existing, queryErr := server.database.QueryFundingAddress(item.Id)
-		if queryErr == nil && existing.TenantId != tenant.Id {
-			continue
+		_, queryErr := server.database.QueryFundingAddress(item.Id)
+		if queryErr != nil {
+			if errors.Is(queryErr, sql.ErrNoRows) {
+				if err := server.database.CreateFundingAddress(fundingAddress); err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to save restored funding address %s: %v", item.Id, err)
+				}
+				restored = append(restored, serializeFundingAddress(&fundingAddress))
+			} else {
+				return nil, status.Errorf(codes.Internal, "failed to query funding address %s: %v", item.Id, queryErr)
+			}
 		}
-		if queryErr != nil && !errors.Is(queryErr, sql.ErrNoRows) {
-			return nil, status.Errorf(codes.Internal, "failed to query funding address %s: %v", item.Id, queryErr)
-		}
-
-		if err := server.database.CreateFundingAddress(fundingAddress); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to save restored funding address %s: %v", item.Id, err)
-		}
-		if err := server.nursery.RegisterFundingAddress(&fundingAddress); err != nil {
-			logger.Warnf("Failed to register restored funding address %s with nursery: %v", fundingAddress.Id, err)
-		}
-
-		restored = append(restored, serializeFundingAddress(&fundingAddress))
 	}
-
 	return &boltzrpc.RestoreResponse{FundingAddresses: restored}, nil
 }
-
 func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, swap *database.Swap, reverseSwap *database.ReverseSwap, chainSwap *database.ChainSwap) (*boltzrpc.GetSwapInfoResponse, error) {
 	if tenantId := macaroons.TenantIdFromContext(ctx); tenantId != nil {
 		err := status.Error(codes.PermissionDenied, "tenant does not have permission to view this swap")
