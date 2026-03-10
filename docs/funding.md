@@ -68,9 +68,12 @@ currency or amount again.
 
 ::: info
 
-If you just pass `--from-funding` without an ID, like `boltzcli createswap --from-funding`, it 
-looks through all available funding addresses. If exactly one eligible funding address exists, it is selected
-automatically, otherwise you will be prompted to select one.
+If you just pass `--from-funding` without an ID, like
+`boltzcli createswap --from-funding` or
+`boltzcli createchainswap --from-funding --to-address <address>`, it looks
+through all available funding addresses. If exactly one eligible funding address
+exists, it is selected automatically, otherwise you will be prompted to select
+one.
 
 :::
 
@@ -82,8 +85,8 @@ Create a chain-to-lightning swap funded from an existing funding address:
 boltzcli createswap --from-funding <funding_address_id>
 ```
 
-In [standalone](standalone.md) mode, or if you want to provide the destination explicitly, also
-pass an invoice:
+In [standalone](standalone.md) mode, or if you want to provide the destination
+explicitly, also pass an invoice:
 
 ```bash
 boltzcli createswap --from-funding <funding_address_id> --invoice <bolt11_invoice>
