@@ -335,7 +335,11 @@ func (server *routedBoltzServer) GetPairInfo(_ context.Context, request *boltzrp
 
 func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *boltzrpc.GetSwapQuoteRequest) (*boltzrpc.GetSwapQuoteResponse, error) {
 	pair := request.GetPair()
+	if pair == nil {
+		pair = &boltzrpc.Pair{}
+	}
 	var fundingAddress *database.FundingAddress
+	var err error
 	if amt, ok := request.Amount.(*boltzrpc.GetSwapQuoteRequest_FundingAddressId); ok {
 		if amt.FundingAddressId == "" {
 			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id cannot be empty")
@@ -344,7 +348,7 @@ func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *bolt
 			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id can only be used for swaps with onchain send amounts")
 		}
 
-		fundingAddress, err := server.getFundingAddress(ctx, amt.FundingAddressId)
+		fundingAddress, err = server.getFundingAddress(ctx, amt.FundingAddressId)
 		if err != nil {
 			return nil, err
 		}
