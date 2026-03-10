@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -410,11 +411,15 @@ func (query *SwapQuery) ToWhereClause() (string, []any) {
 func (database *Database) Connect() error {
 	if database.db == nil {
 		logger.Info("Opening database: " + database.Path)
-		dsn := database.Path
-		if strings.Contains(dsn, "?") {
-			dsn += "&_timeout=2000"
-		} else {
-			dsn += "?_timeout=2000"
+		baseDSN, rawQuery, _ := strings.Cut(database.Path, "?")
+		query, err := url.ParseQuery(rawQuery)
+		if err != nil {
+			return fmt.Errorf("could not parse database dsn %q: %w", database.Path, err)
+		}
+		query.Set("_busy_timeout", "2000")
+		dsn := baseDSN
+		if encodedQuery := query.Encode(); encodedQuery != "" {
+			dsn += "?" + encodedQuery
 		}
 		db, err := sql.Open("sqlite3", dsn)
 
