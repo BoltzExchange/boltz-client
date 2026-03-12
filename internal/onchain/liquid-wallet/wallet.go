@@ -15,6 +15,8 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
+const MergeThreshold = 10
+
 // Persister defines methods for saving and retrieving the last used address index for a wallet.
 // The index is marked as used as soon as its corresponding address is generated, ensuring address uniqueness.
 type Persister interface {
@@ -62,7 +64,7 @@ type BlockchainBackend struct {
 }
 
 func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, error) {
-	raw := tx.Bytes()
+	raw := tx.ToBytes()
 	return b.cfg.ChainProvider.BroadcastTransaction(hex.EncodeToString(raw))
 }
 
@@ -268,13 +270,17 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 		result.info.Readonly = true
 	}
 
-	result.Wollet, err = lwk.NewWollet(
-		convertNetwork(backend.cfg.Network),
-		result.descriptor,
-		&backend.cfg.DataDir,
-	)
+	builder := lwk.NewWolletBuilder(convertNetwork(backend.cfg.Network), result.descriptor)
+	if err := builder.WithLegacyFsStore(backend.cfg.DataDir); err != nil {
+		return nil, fmt.Errorf("set store: %w", err)
+	}
+	mergeThreshold := uint32(MergeThreshold)
+	if err := builder.WithMergeThreshold(&mergeThreshold); err != nil {
+		return nil, fmt.Errorf("set merge threshold: %w", err)
+	}
+	result.Wollet, err = builder.Build()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("build wollet: %w", err)
 	}
 
 	return result, nil
@@ -598,7 +604,7 @@ func (w *Wallet) applyTransaction(tx *lwk.Transaction) error {
 }
 
 func (w *Wallet) ApplyTransaction(txHex string) error {
-	tx, err := lwk.NewTransaction(txHex)
+	tx, err := lwk.TransactionFromString(txHex)
 	if err != nil {
 		return fmt.Errorf("failed to parse transaction: %w", err)
 	}

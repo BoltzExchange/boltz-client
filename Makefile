@@ -52,7 +52,7 @@ cln-proto: $(TOOLS_PATH)
 	eval cd internal/cln/protos && ./gen_protos.sh
 
 BINDGEN_GO_REPO := https://github.com/NordSecurity/uniffi-bindgen-go
-BINDGEN_GO_TAG := v0.4.0+v0.28.3
+BINDGEN_GO_TAG := v0.5.0+v0.29.5
 
 bindgen-go:
 	which uniffi-bindgen-go || cargo install uniffi-bindgen-go --git $(BINDGEN_GO_REPO) --tag $(BINDGEN_GO_TAG)

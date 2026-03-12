@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 func TestBackend_Broadcast(t *testing.T) {
-	tx, err := lwk.NewTransaction(someTx)
+	tx, err := lwk.TransactionFromString(someTx)
 	require.NoError(t, err)
 
 	backend, err := liquid_wallet.NewBackend(test.LiquidBackendConfig(t))
