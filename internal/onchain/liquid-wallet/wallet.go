@@ -268,13 +268,17 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 		result.info.Readonly = true
 	}
 
-	result.Wollet, err = lwk.NewWollet(
-		convertNetwork(backend.cfg.Network),
-		result.descriptor,
-		&backend.cfg.DataDir,
-	)
+	builder := lwk.NewWolletBuilder(convertNetwork(backend.cfg.Network), result.descriptor)
+	if err := builder.WithLegacyFsStore(backend.cfg.DataDir); err != nil {
+		return nil, fmt.Errorf("set store: %w", err)
+	}
+		mergeThreshold := uint32(10)
+		if err := builder.WithMergeThreshold(&mergeThreshold); err != nil {
+			return nil, fmt.Errorf("set merge threshold: %w", err)
+		}
+	result.Wollet, err = builder.Build()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("build wollet: %w", err)
 	}
 
 	return result, nil
