@@ -62,63 +62,60 @@ func WalletInfo(currency boltz.Currency) onchain.WalletInfo {
 }
 
 func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
+	mnemonic, _ := liquid_wallet.GenerateMnemonic(boltz.Regtest)
 	sub := uint64(WalletSubaccount)
 	creds := &onchain.WalletCredentials{
 		WalletInfo: WalletInfo(currency),
-		Mnemonic:   WalletMnemonic,
+		Mnemonic:   mnemonic,
 		Subaccount: &sub,
 	}
 	if currency == boltz.CurrencyBtc {
-		creds.CoreDescriptor, _ = bdk.DeriveDefaultXpub(bdk.NetworkRegtest, WalletMnemonic)
+		creds.CoreDescriptor, _ = bdk.DeriveDefaultXpub(bdk.NetworkRegtest, mnemonic)
 	}
 	if currency == boltz.CurrencyLiquid {
-		creds.CoreDescriptor, _ = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, WalletMnemonic)
+		creds.CoreDescriptor, _ = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, mnemonic)
 	}
 	return creds
 }
 
 func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
-	if err := wallet.Sync(); err != nil {
+	if err := wallet.FullScan(); err != nil {
 		return err
 	}
-	balance, err := wallet.GetBalance()
-	if err != nil {
-		return err
-	}
-	if balance.Confirmed > 0 {
-		return nil
-	}
-
-	amount := uint64(10000000)
-	txes := 3
-	for i := 0; i < txes; i++ {
+	for i := 0; i < 3; i++ {
 		addr, err := wallet.NewAddress()
 		if err != nil {
 			return err
 		}
-		SendToAddress(GetCli(currency), addr, amount)
-	}
-	time.Sleep(1 * time.Second)
-	MineBlock()
-	ticker := time.NewTicker(1 * time.Second)
-	timeout := time.After(15 * time.Second)
 
-	for balance.Total < uint64(txes)*amount {
-		select {
-		case <-ticker.C:
-			balance, err = wallet.GetBalance()
-			if err != nil {
-				return err
-			}
-		case <-timeout:
-			return fmt.Errorf("timeout")
-		}
-		if err := wallet.Sync(); err != nil {
+		tx := SendToAddress(GetCli(currency), addr, 1_000_000)
+		txHex := GetRawTransaction(GetCli(currency), tx)
+		if err := wallet.ApplyTransaction(txHex); err != nil {
 			return err
 		}
 	}
-	time.Sleep(1 * time.Second)
-	return nil
+	MineBlock()
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("timeout")
+		case <-ticker.C:
+			balance, err := wallet.GetBalance()
+			if err != nil {
+				return err
+			}
+			if balance.Confirmed > 0 && balance.Confirmed == balance.Total {
+				return nil
+			}
+			err = wallet.FullScan()
+			if err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
@@ -260,6 +257,10 @@ func GetNewAddress(cli Cli) string {
 
 func SendToAddress(cli Cli, address string, amount uint64) string {
 	return cli("sendtoaddress " + address + " " + fmt.Sprint(float64(amount)/1e8))
+}
+
+func GetRawTransaction(cli Cli, txId string) string {
+	return cli("getrawtransaction " + txId)
 }
 
 func BumpFee(cli Cli, txId string) string {
