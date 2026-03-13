@@ -43,6 +43,7 @@ func (nursery *Nursery) processFundingUpdate(update boltz.FundingUpdate) error {
 	}
 
 	if update.Transaction != nil && update.Transaction.Id != "" {
+		logger.Infof("Found lockup transaction %s for funding address %s", update.Transaction.Id, fa.Id)
 		lockupTransaction, err := boltz.NewTxFromHex(fa.Currency, update.Transaction.Hex, fa.BlindingKey)
 		if err != nil {
 			return fmt.Errorf("could not deserialize lockup transaction: %v", err)
@@ -53,6 +54,12 @@ func (nursery *Nursery) processFundingUpdate(update boltz.FundingUpdate) error {
 		}
 		if err := nursery.database.SetFundingAddressLockupTransaction(fa, update.Transaction.Id, amount); err != nil {
 			return fmt.Errorf("could not update funding address lockup transaction: %v", err)
+		}
+		if fa.SwapId != "" && update.SwapId == "" {
+			logger.Infof("Resigning funding address %s for swap %s", fa.Id, fa.SwapId)
+			if err := nursery.SignFundingAddress(fa); err != nil {
+				return fmt.Errorf("could not sign funding address: %v", err)
+			}
 		}
 	}
 

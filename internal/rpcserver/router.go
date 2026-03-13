@@ -3135,14 +3135,21 @@ func (server *routedBoltzServer) RefundFundingAddress(ctx context.Context, reque
 		return nil, status.Error(codes.FailedPrecondition, "funding address has not been funded yet")
 	}
 
-	result, err := server.onchain.FindOutput(onchain.OutputArgs{
-		TransactionId: fundingAddress.LockupTransactionId,
-		Currency:      fundingAddress.Currency,
-		Address:       fundingAddress.Address,
-		BlindingKey:   fundingAddress.BlindingKey,
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to find funding output: %v", err)
+	outputs, err := server.onchain.GetUnspentOutputs(fundingAddress.Currency, fundingAddress.Address)
+	if err != nil && !errors.Is(err, errors.ErrUnsupported) {
+		return nil, status.Errorf(codes.Internal, "failed to get currency: %v", err)
+	}
+	if len(outputs) == 0 {
+		if fundingAddress.LockupTransactionId != "" {
+			outputs = []*onchain.Output{
+				{
+					TxId:  fundingAddress.LockupTransactionId,
+					Value: fundingAddress.Amount,
+				},
+			}
+		} else {
+			return nil, status.Error(codes.FailedPrecondition, "funding address has no unspent outputs")
+		}
 	}
 
 	feeRate, err := server.onchain.EstimateFee(fundingAddress.Currency)
@@ -3162,19 +3169,32 @@ func (server *routedBoltzServer) RefundFundingAddress(ctx context.Context, reque
 		return nil, status.Errorf(codes.Internal, "failed to get funding tree: %v", err)
 	}
 
-	outputs := []boltz.OutputDetails{{
-		LockupTransaction:  result.Transaction,
-		Vout:               result.Vout,
-		Address:            destinationAddress,
-		PrivateKey:         fundingAddress.PrivateKey,
-		Cooperative:        cooperative,
-		FundingAddressTree: fundingTree,
-		FundingAddressId:   fundingAddress.Id,
-		TimeoutBlockHeight: fundingAddress.TimeoutBlockHeight,
-	}}
+	var outputDetails []boltz.OutputDetails
+	for _, output := range outputs {
+		output, err := server.onchain.FindOutput(onchain.OutputArgs{
+			TransactionId:  output.TxId,
+			Currency:       fundingAddress.Currency,
+			Address:        fundingAddress.Address,
+			BlindingKey:    fundingAddress.BlindingKey,
+			ExpectedAmount: output.Value,
+		})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to find output: %v", err)
+		}
+		outputDetails = append(outputDetails, boltz.OutputDetails{
+			LockupTransaction:  output.Transaction,
+			Vout:               output.Vout,
+			Address:            destinationAddress,
+			PrivateKey:         fundingAddress.PrivateKey,
+			Cooperative:        cooperative,
+			FundingAddressTree: fundingTree,
+			FundingAddressId:   fundingAddress.Id,
+			TimeoutBlockHeight: fundingAddress.TimeoutBlockHeight,
+		})
+	}
 
 	fee := boltz.Fee{SatsPerVbyte: &feeRate}
-	claimTx, results, err := boltz.ConstructTransaction(server.network, fundingAddress.Currency, outputs, fee, server.boltz)
+	claimTx, results, err := boltz.ConstructTransaction(server.network, fundingAddress.Currency, outputDetails, fee, server.boltz)
 	// Check for any errors in results
 	for _, result := range results {
 		if result.Err != nil {

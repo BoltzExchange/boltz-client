@@ -46,7 +46,6 @@ func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
 	cfg, err := config.LoadConfig(dataDir)
 	require.NoError(t, err)
-	cfg.Log.Level = "debug"
 	cfg.Node = "lnd"
 	cfg.DataDir = t.TempDir()
 	cfg.Database.Path = cfg.DataDir + "/boltz.db"
