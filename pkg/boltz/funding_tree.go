@@ -43,20 +43,9 @@ func NewFundingTree(
 	isLiquid := currency == CurrencyLiquid
 	leafVer := leafVersion(isLiquid)
 
-	refundScript := txscript.NewScriptBuilder()
-	refundScript.AddData(toXOnly(ourKey.PubKey()))
-	refundScript.AddOp(txscript.OP_CHECKSIGVERIFY)
-	refundScript.AddInt64(int64(timeoutBlockHeight))
-	refundScript.AddOp(txscript.OP_CHECKLOCKTIMEVERIFY)
-
-	refundBytes, err := refundScript.Script()
+	refundLeaf, err := newRefundLeaf(leafVer, ourKey.PubKey(), timeoutBlockHeight)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build refund script: %w", err)
-	}
-
-	refundLeaf := TapLeaf{
-		LeafVersion: leafVer,
-		Script:      refundBytes,
+		return nil, err
 	}
 
 	tree := &FundingTree{
