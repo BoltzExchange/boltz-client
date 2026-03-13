@@ -48,3 +48,15 @@ func DeriveKey(mnemonic string, index uint32) (*btcec.PrivateKey, error) {
 
 	return extendedKey.ECPrivKey()
 }
+
+func DeriveXpub(mnemonic string) (string, error) {
+	hdKey, err := mnemonicToHdKey(mnemonic)
+	if err != nil {
+		return "", err
+	}
+	neutered, err := hdKey.Neuter()
+	if err != nil {
+		return "", err
+	}
+	return neutered.String(), nil
+}

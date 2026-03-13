@@ -207,14 +207,17 @@ func (tree *SwapTree) Check(
 		return err
 	}
 
-	refund := txscript.NewScriptBuilder()
-	refund.AddData(toXOnly(tree.refundPubKey()))
-	refund.AddOp(txscript.OP_CHECKSIGVERIFY)
-	refund.AddInt64(int64(timeoutBlockHeight))
-	refund.AddOp(txscript.OP_CHECKLOCKTIMEVERIFY)
-
-	if err := checkScript(tree.RefundLeaf.Script, refund); err != nil {
+	refundLeaf, err := newRefundLeaf(
+		leafVersion(tree.isLiquid),
+		tree.refundPubKey(),
+		timeoutBlockHeight,
+	)
+	if err != nil {
 		return err
+	}
+
+	if !bytes.Equal(tree.RefundLeaf.Script, refundLeaf.Script) {
+		return errors.New("invalid script")
 	}
 
 	return nil
@@ -232,6 +235,28 @@ func (tree *SwapTree) refundPubKey() *btcec.PublicKey {
 		return tree.boltzKey
 	}
 	return tree.ourKey.PubKey()
+}
+
+func newRefundLeaf(
+	leafVersion txscript.TapscriptLeafVersion,
+	refundPubKey *btcec.PublicKey,
+	timeoutBlockHeight uint32,
+) (TapLeaf, error) {
+	refundScript := txscript.NewScriptBuilder()
+	refundScript.AddData(toXOnly(refundPubKey))
+	refundScript.AddOp(txscript.OP_CHECKSIGVERIFY)
+	refundScript.AddInt64(int64(timeoutBlockHeight))
+	refundScript.AddOp(txscript.OP_CHECKLOCKTIMEVERIFY)
+
+	refundScriptBytes, err := refundScript.Script()
+	if err != nil {
+		return TapLeaf{}, fmt.Errorf("failed to build refund script: %w", err)
+	}
+
+	return TapLeaf{
+		LeafVersion: leafVersion,
+		Script:      refundScriptBytes,
+	}, nil
 }
 
 func toXOnly(publicKey *btcec.PublicKey) []byte {

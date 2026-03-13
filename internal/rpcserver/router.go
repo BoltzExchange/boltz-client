@@ -127,7 +127,7 @@ func (server *routedBoltzServer) WalletSendFee(request *boltzrpc.WalletSendReque
 }
 
 func handleError(err error) error {
-	if err != nil && status.Code(err) == codes.Unknown {
+	if err != nil {
 		logger.Warn("RPC request failed: " + err.Error())
 	}
 
@@ -192,6 +192,31 @@ func (server *routedBoltzServer) queryClaimableSwaps(ctx context.Context) (
 	chainSwaps = append(chainSwaps, liquidChainSwaps...)
 
 	return
+}
+
+func (server *routedBoltzServer) getFundingAddress(ctx context.Context, fundingAddressId string) (*database.FundingAddress, error) {
+	fundingAddress, err := server.database.QueryFundingAddress(fundingAddressId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "funding address not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to query funding address: %v", err)
+	}
+
+	tenantId := macaroons.TenantIdFromContext(ctx)
+	if tenantId != nil && fundingAddress.TenantId != *tenantId {
+		return nil, status.Error(codes.PermissionDenied, "funding address belongs to a different tenant")
+	}
+
+	return fundingAddress, nil
+}
+
+func requireFundingAddressAmount(fundingAddress *database.FundingAddress) (uint64, error) {
+	if fundingAddress.Amount == 0 {
+		return 0, status.Error(codes.InvalidArgument, "funding address has not received any funds yet")
+	}
+
+	return fundingAddress.Amount, nil
 }
 
 func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
@@ -309,12 +334,30 @@ func (server *routedBoltzServer) GetPairInfo(_ context.Context, request *boltzrp
 }
 
 func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *boltzrpc.GetSwapQuoteRequest) (*boltzrpc.GetSwapQuoteResponse, error) {
-	// Apply currency constraints based on swap type
-	pair := request.Pair
+	pair := request.GetPair()
 	if pair == nil {
 		pair = &boltzrpc.Pair{}
 	}
+	var fundingAddress *database.FundingAddress
+	var err error
+	if amt, ok := request.Amount.(*boltzrpc.GetSwapQuoteRequest_FundingAddressId); ok {
+		if amt.FundingAddressId == "" {
+			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id cannot be empty")
+		}
+		if request.Type == boltzrpc.SwapType_REVERSE {
+			return nil, status.Errorf(codes.InvalidArgument, "funding_address_id can only be used for swaps with onchain send amounts")
+		}
 
+		fundingAddress, err = server.getFundingAddress(ctx, amt.FundingAddressId)
+		if err != nil {
+			return nil, err
+		}
+
+		// The funding address determines the onchain send currency.
+		pair.From = serializers.SerializeCurrency(fundingAddress.Currency)
+	}
+
+	// Apply currency constraints based on swap type
 	switch request.Type {
 	case boltzrpc.SwapType_SUBMARINE:
 		// Submarine: on-chain → Lightning. To is always BTC (Lightning)
@@ -343,8 +386,13 @@ func (server *routedBoltzServer) GetSwapQuote(ctx context.Context, request *bolt
 		sendAmount = amt.SendAmount
 	case *boltzrpc.GetSwapQuoteRequest_ReceiveAmount:
 		receiveAmount = amt.ReceiveAmount
+	case *boltzrpc.GetSwapQuoteRequest_FundingAddressId:
+		sendAmount, err = requireFundingAddressAmount(fundingAddress)
+		if err != nil {
+			return nil, err
+		}
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "either send_amount or receive_amount must be specified")
+		return nil, status.Errorf(codes.InvalidArgument, "one of send_amount, receive_amount or funding_address_id must be specified")
 	}
 
 	quote, err := utils.CalculateSwapQuote(swapType, sendAmount, receiveAmount, pairInfo.Fees)
@@ -758,13 +806,52 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		return nil, err
 	}
 
+	fundingAddressId := request.GetFundingAddress()
+	var fundingAddress *database.FundingAddress
 	pair := serializers.ParsePair(request.Pair)
+	if fundingAddressId != "" {
+		if request.SendFromInternal {
+			return nil, status.Error(codes.InvalidArgument, "funding_address cannot be used with send_from_internal")
+		}
+		if request.WalletId != nil {
+			return nil, status.Error(codes.InvalidArgument, "funding_address cannot be used with wallet_id")
+		}
 
-	if request.AcceptedPair == nil {
-		request.AcceptedPair, err = server.getSubmarinePair(request.Pair)
+		fundingAddress, err = server.getFundingAddress(ctx, fundingAddressId)
 		if err != nil {
 			return nil, err
 		}
+		pair.From = fundingAddress.Currency
+	}
+
+	if request.AcceptedPair == nil {
+		request.AcceptedPair, err = server.getSubmarinePair(serializers.SerializePair(pair))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var derivedAmount uint64
+	if fundingAddress != nil {
+		sendAmount, err := requireFundingAddressAmount(fundingAddress)
+		if err != nil {
+			return nil, err
+		}
+		quote, err := utils.CalculateSwapQuote(boltz.NormalSwap, sendAmount, 0, request.AcceptedPair.Fees)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to derive amount from funding address: %v", err)
+		}
+		derivedAmount = quote.ReceiveAmount
+		if request.Amount != 0 && request.Amount != derivedAmount {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"amount %d does not match funding address amount %d (derived receive amount: %d)",
+				request.Amount,
+				sendAmount,
+				derivedAmount,
+			)
+		}
+		request.Amount = derivedAmount
 	}
 
 	createSwap := boltz.CreateSwapRequest{
@@ -852,6 +939,16 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		logger.Info("Creating Swap with preimage hash: " + hex.EncodeToString(preimageHash))
 
 		createSwap.PreimageHash = preimageHash
+	}
+
+	if fundingAddress != nil && request.Amount != derivedAmount {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"amount %d does not match funding address amount %d (derived receive amount: %d)",
+			request.Amount,
+			fundingAddress.Amount,
+			derivedAmount,
+		)
 	}
 
 	feeRate, err := server.estimateFee(request.GetSatPerVbyte(), pair.From)
@@ -1015,6 +1112,15 @@ func (server *routedBoltzServer) createSwap(ctx context.Context, isAuto bool, re
 		}
 
 		logger.Infof("Sent %d to address %s for MRH in: %s", swapResponse.ExpectedAmount, swapResponse.Address, swapResponse.TxId)
+	}
+
+	if fundingAddressId != "" {
+		if swapResponse.GetId() == "" {
+			return nil, status.Error(codes.InvalidArgument, "funding_address is not supported for this swap type")
+		}
+		if err := server.fundSwapWithFundingAddress(ctx, fundingAddressId, swapResponse.Id); err != nil {
+			return nil, err
+		}
 	}
 
 	return swapResponse, nil
@@ -1291,10 +1397,33 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	pair := serializers.ParsePair(request.Pair)
 	amount := request.GetAmount()
+	fundingAddressId := request.GetFundingAddress()
+	var fundingAddress *database.FundingAddress
+	if fundingAddressId != "" {
+		fundingAddress, err = server.getFundingAddress(ctx, fundingAddressId)
+		if err != nil {
+			return nil, err
+		}
+		pair.From = fundingAddress.Currency
+		fundingAmount, err := requireFundingAddressAmount(fundingAddress)
+		if err != nil {
+			return nil, err
+		}
+		if amount != 0 && amount != fundingAmount {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"amount %d does not match funding address amount %d",
+				amount,
+				fundingAmount,
+			)
+		}
+		amount = fundingAmount
+		request.Amount = &amount
+	}
 	logger.Infof("Creating Chain Swap for %d sats from %s to %s", amount, pair.From, pair.To)
 
 	if request.AcceptedPair == nil {
-		request.AcceptedPair, err = server.getChainPair(request.Pair)
+		request.AcceptedPair, err = server.getChainPair(serializers.SerializePair(pair))
 		if err != nil {
 			return nil, err
 		}
@@ -1330,6 +1459,15 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	}
 
 	externalPay := request.GetExternalPay()
+	if fundingAddressId != "" {
+		if request.FromWalletId != nil {
+			return nil, status.Error(codes.InvalidArgument, "funding_address cannot be used with from_wallet_id")
+		}
+		if request.ExternalPay != nil && !request.GetExternalPay() {
+			return nil, status.Error(codes.InvalidArgument, "funding_address requires external_pay to be true")
+		}
+		externalPay = true
+	}
 	var fromWallet, toWallet onchain.Wallet
 	if request.FromWalletId != nil {
 		fromWallet, err = server.getWallet(ctx, onchain.WalletChecker{
@@ -1483,6 +1621,12 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 
 	if err := server.nursery.RegisterChainSwap(chainSwap); err != nil {
 		return nil, err
+	}
+
+	if fundingAddressId != "" {
+		if err := server.fundSwapWithFundingAddress(ctx, fundingAddressId, chainSwap.Id); err != nil {
+			return nil, err
+		}
 	}
 
 	return serializeChainSwap(&chainSwap), nil
@@ -2265,7 +2409,10 @@ func (server *routedBoltzServer) getSubmarinePair(request *boltzrpc.Pair) (*bolt
 	}
 	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
-	return serializeSubmarinePair(pair, found), err
+	if err != nil {
+		return nil, err
+	}
+	return serializeSubmarinePair(pair, found), nil
 }
 
 func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
@@ -2275,7 +2422,10 @@ func (server *routedBoltzServer) getReversePair(request *boltzrpc.Pair) (*boltzr
 	}
 	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
-	return serializeReversePair(pair, found), err
+	if err != nil {
+		return nil, err
+	}
+	return serializeReversePair(pair, found), nil
 }
 
 func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltzrpc.PairInfo, error) {
@@ -2285,7 +2435,10 @@ func (server *routedBoltzServer) getChainPair(request *boltzrpc.Pair) (*boltzrpc
 	}
 	pair := serializers.ParsePair(request)
 	found, err := boltz.FindPair(pair, pairsResponse)
-	return serializeChainPair(pair, found), err
+	if err != nil {
+		return nil, err
+	}
+	return serializeChainPair(pair, found), nil
 }
 
 func (server *routedBoltzServer) GetPairs(context.Context, *empty.Empty) (*boltzrpc.GetPairsResponse, error) {
@@ -2510,6 +2663,117 @@ func (server *routedBoltzServer) SetSwapMnemonic(ctx context.Context, request *b
 	return &boltzrpc.SetSwapMnemonicResponse{Mnemonic: mnemonic}, nil
 }
 
+func parseRestoreCurrency(chain string) (boltz.Currency, error) {
+	switch strings.ToLower(chain) {
+	case "btc", "bitcoin":
+		return boltz.CurrencyBtc, nil
+	case "lbtc", "l-btc", "liquid":
+		return boltz.CurrencyLiquid, nil
+	default:
+		return "", fmt.Errorf("unknown chain: %s", chain)
+	}
+}
+
+func (server *routedBoltzServer) Restore(ctx context.Context, request *boltzrpc.RestoreRequest) (*boltzrpc.RestoreResponse, error) {
+	mnemonic := request.GetMnemonic()
+	if mnemonic == "" {
+		return nil, status.Error(codes.InvalidArgument, "mnemonic is required")
+	}
+	if _, err := boltz.DeriveKey(mnemonic, 0); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid mnemonic: %v", err)
+	}
+	xpub, err := boltz.DeriveXpub(mnemonic)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to derive xpub from mnemonic: %v", err)
+	}
+
+	tenant := macaroons.TenantFromContext(ctx)
+	if tenant == nil {
+		return nil, status.Error(codes.Internal, "no tenant found in context")
+	}
+
+	restorable, err := server.boltz.Restore(boltz.RestoreRequest{Xpub: xpub})
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	restored := make([]*boltzrpc.FundingAddressInfo, 0, len(restorable))
+	for _, item := range restorable {
+		currency, err := parseRestoreCurrency(item.Chain)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "invalid restore chain for funding address %s: %v", item.Id, err)
+		}
+
+		privateKey, err := boltz.DeriveKey(mnemonic, item.KeyIndex)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to derive key for funding address %s: %v", item.Id, err)
+		}
+		boltzPubKey, err := btcec.ParsePubKey(item.ServerPublicKey)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to parse server public key for funding address %s: %v", item.Id, err)
+		}
+
+		var blindingKey *btcec.PrivateKey
+		var blindingPubKey *btcec.PublicKey
+		if len(item.BlindingKey) > 0 {
+			blindingKey, blindingPubKey = btcec.PrivKeyFromBytes(item.BlindingKey)
+		}
+
+		fundingTree, err := boltz.NewFundingTree(currency, privateKey, boltzPubKey, item.TimeoutBlockHeight)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to reconstruct funding tree for funding address %s: %v", item.Id, err)
+		}
+		address, err := fundingTree.Address(server.network, blindingPubKey)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to derive funding address %s: %v", item.Id, err)
+		}
+
+		createdAt := time.Unix(item.CreatedAt, 0)
+		if item.CreatedAt <= 0 {
+			createdAt = time.Now()
+		}
+
+		fundingAddress := database.FundingAddress{
+			Id:                 item.Id,
+			Currency:           currency,
+			Address:            address,
+			TimeoutBlockHeight: item.TimeoutBlockHeight,
+			BoltzPublicKey:     boltzPubKey,
+			PrivateKey:         privateKey,
+			BlindingKey:        blindingKey,
+			Status:             item.Status,
+			CreatedAt:          createdAt,
+			TenantId:           tenant.Id,
+		}
+		if item.Transaction != nil {
+			fundingAddress.LockupTransactionId = item.Transaction.Id
+
+			result, err := server.onchain.FindOutput(onchain.OutputArgs{
+				TransactionId: item.Transaction.Id,
+				Address:       fundingAddress.Address,
+				Currency:      currency,
+				BlindingKey:   fundingAddress.BlindingKey,
+			})
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to find output for funding address %s: %v", item.Id, err)
+			}
+			fundingAddress.Amount = result.Value
+		}
+
+		_, queryErr := server.database.QueryFundingAddress(item.Id)
+		if queryErr != nil {
+			if errors.Is(queryErr, sql.ErrNoRows) {
+				if err := server.database.CreateFundingAddress(fundingAddress); err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to save restored funding address %s: %v", item.Id, err)
+				}
+				restored = append(restored, serializeFundingAddress(&fundingAddress))
+			} else {
+				return nil, status.Errorf(codes.Internal, "failed to query funding address %s: %v", item.Id, queryErr)
+			}
+		}
+	}
+	return &boltzrpc.RestoreResponse{FundingAddresses: restored}, nil
+}
 func (server *routedBoltzServer) serializeAnySwap(ctx context.Context, swap *database.Swap, reverseSwap *database.ReverseSwap, chainSwap *database.ChainSwap) (*boltzrpc.GetSwapInfoResponse, error) {
 	if tenantId := macaroons.TenantIdFromContext(ctx); tenantId != nil {
 		err := status.Error(codes.PermissionDenied, "tenant does not have permission to view this swap")
@@ -2657,4 +2921,299 @@ func checkName(name string) error {
 		return errors.New("wallet name must only contain alphabetic characters, numbers, hyphens, and underscores")
 	}
 	return nil
+}
+
+func (server *routedBoltzServer) CreateFundingAddress(ctx context.Context, request *boltzrpc.CreateFundingAddressRequest) (*boltzrpc.FundingAddressInfo, error) {
+	currency := serializers.ParseCurrency(&request.Currency)
+	if currency == "" {
+		return nil, status.Error(codes.InvalidArgument, "currency is required")
+	}
+
+	// Generate key pair from swap mnemonic
+	privateKey, publicKey, err := server.newKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	// Call Boltz API to create funding address
+	response, err := server.boltz.CreateFundingAddress(boltz.FundingAddressRequest{
+		Symbol:          currency,
+		RefundPublicKey: publicKey.SerializeCompressed(),
+	})
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	// Get tenant from context
+	tenant := macaroons.TenantFromContext(ctx)
+	if tenant == nil {
+		return nil, status.Error(codes.Internal, "no tenant found in context")
+	}
+
+	// Parse boltz public key
+	boltzPubKey, err := btcec.ParsePubKey(response.ServerPublicKey)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to parse boltz public key: %v", err)
+	}
+
+	var blindingKey *btcec.PrivateKey
+	var blindingPubKey *btcec.PublicKey
+	if currency == boltz.CurrencyLiquid && len(response.BlindingKey) > 0 {
+		blindingKey, blindingPubKey = btcec.PrivKeyFromBytes(response.BlindingKey)
+	}
+
+	fundingTree, err := boltz.NewFundingTree(currency, privateKey, boltzPubKey, response.TimeoutBlockHeight)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create funding tree: %v", err)
+	}
+	if err := fundingTree.CheckAddress(response.Address, server.network, blindingPubKey); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to check funding address: %v", err)
+	}
+	// Create database entry
+	fundingAddress := database.FundingAddress{
+		Id:                 response.Id,
+		Currency:           currency,
+		Address:            response.Address,
+		TimeoutBlockHeight: response.TimeoutBlockHeight,
+		BoltzPublicKey:     boltzPubKey,
+		PrivateKey:         privateKey,
+		BlindingKey:        blindingKey,
+		Status:             boltz.FundingAddressCreated.String(),
+		TenantId:           tenant.Id,
+	}
+
+	if err := server.database.CreateFundingAddress(fundingAddress); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to save funding address: %v", err)
+	}
+
+	// Register with nursery for WebSocket updates
+	if err := server.nursery.RegisterFundingAddress(&fundingAddress); err != nil {
+		logger.Warnf("Failed to register funding address %s with nursery: %v", fundingAddress.Id, err)
+	}
+
+	return serializeFundingAddress(&fundingAddress), nil
+}
+
+func (server *routedBoltzServer) ListFundingAddresses(ctx context.Context, request *boltzrpc.ListFundingAddressesRequest) (*boltzrpc.ListFundingAddressesResponse, error) {
+	query := database.FundingAddressQuery{
+		TenantId: macaroons.TenantIdFromContext(ctx),
+	}
+
+	if request.Currency != nil {
+		currency := serializers.ParseCurrency(request.Currency)
+		query.Currency = &currency
+	}
+
+	addresses, err := server.database.QueryFundingAddresses(query)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to query funding addresses: %v", err)
+	}
+
+	var result []*boltzrpc.FundingAddressInfo
+	for _, fa := range addresses {
+		result = append(result, serializeFundingAddress(fa))
+	}
+
+	return &boltzrpc.ListFundingAddressesResponse{
+		FundingAddresses: result,
+	}, nil
+}
+
+func (server *routedBoltzServer) GetFundingAddressStream(request *boltzrpc.GetFundingAddressStreamRequest, stream boltzrpc.Boltz_GetFundingAddressStreamServer) error {
+	id := request.GetId()
+	if id == "" {
+		id = "*"
+	}
+
+	// Subscribe to funding address updates
+	updates := server.nursery.FundingAddressUpdates.Get()
+	defer server.nursery.FundingAddressUpdates.Remove(updates)
+
+	for update := range updates {
+		if id != "*" && update.Id != id {
+			continue
+		}
+
+		// Check tenant access
+		tenantId := macaroons.TenantIdFromContext(stream.Context())
+		if tenantId != nil && update.TenantId != *tenantId {
+			continue
+		}
+
+		if err := stream.Send(serializeFundingAddress(update)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (server *routedBoltzServer) FundSwap(ctx context.Context, request *boltzrpc.FundSwapRequest) (*boltzrpc.FundSwapResponse, error) {
+	if err := server.fundSwapWithFundingAddress(ctx, request.FundingAddressId, request.SwapId); err != nil {
+		return nil, err
+	}
+	// Return response - the transaction ID will be available via the swap/funding address updates
+	return &boltzrpc.FundSwapResponse{
+		TransactionId: "", // The transaction hex is returned, but ID will come from status update
+	}, nil
+}
+
+func (server *routedBoltzServer) fundSwapWithFundingAddress(ctx context.Context, fundingAddressId string, swapId string) error {
+	// Validate inputs
+	if fundingAddressId == "" {
+		return status.Error(codes.InvalidArgument, "funding_address_id is required")
+	}
+	if swapId == "" {
+		return status.Error(codes.InvalidArgument, "swap_id is required")
+	}
+
+	// Get the funding address from database
+	fundingAddress, err := server.database.QueryFundingAddress(fundingAddressId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return status.Error(codes.NotFound, "funding address not found")
+		}
+		return status.Errorf(codes.Internal, "failed to query funding address: %v", err)
+	}
+
+	// Check tenant access
+	tenantId := macaroons.TenantIdFromContext(ctx)
+	if tenantId != nil && fundingAddress.TenantId != *tenantId {
+		return status.Error(codes.PermissionDenied, "funding address belongs to a different tenant")
+	}
+
+	fundingAddress.SwapId = swapId
+
+	err = server.nursery.SignFundingAddress(fundingAddress)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to sign funding address: %v", err)
+	}
+
+	logger.Infof("Funded swap %s from funding address %s", swapId, fundingAddress.Id)
+	return nil
+}
+
+func (server *routedBoltzServer) RefundFundingAddress(ctx context.Context, request *boltzrpc.RefundFundingAddressRequest) (*boltzrpc.RefundFundingAddressResponse, error) {
+	if request.FundingAddressId == "" {
+		return nil, status.Error(codes.InvalidArgument, "funding_address_id is required")
+	}
+
+	var destinationAddress string
+	switch dest := request.Destination.(type) {
+	case *boltzrpc.RefundFundingAddressRequest_Address:
+		if dest.Address == "" {
+			return nil, status.Error(codes.InvalidArgument, "address is required")
+		}
+		destinationAddress = dest.Address
+	case *boltzrpc.RefundFundingAddressRequest_WalletId:
+		wallet, err := server.getWallet(ctx, onchain.WalletChecker{Id: &dest.WalletId})
+		if err != nil {
+			return nil, status.Errorf(codes.NotFound, "wallet not found: %v", err)
+		}
+		destinationAddress, err = wallet.NewAddress()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to get wallet address: %v", err)
+		}
+	default:
+		return nil, status.Error(codes.InvalidArgument, "destination is required (address or wallet_id)")
+	}
+
+	// Get the funding address from database
+	fundingAddress, err := server.database.QueryFundingAddress(request.FundingAddressId)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "funding address not found: %v", err)
+	}
+
+	// Check tenant access
+	tenantId := macaroons.TenantIdFromContext(ctx)
+	if tenantId != nil && fundingAddress.TenantId != *tenantId {
+		return nil, status.Error(codes.PermissionDenied, "funding address belongs to a different tenant")
+	}
+
+	// Check if funding address has been funded
+	if fundingAddress.LockupTransactionId == "" {
+		return nil, status.Error(codes.FailedPrecondition, "funding address has not been funded yet")
+	}
+
+	outputs, err := server.onchain.GetUnspentOutputs(fundingAddress.Currency, fundingAddress.Address)
+	if err != nil && !errors.Is(err, errors.ErrUnsupported) {
+		return nil, status.Errorf(codes.Internal, "failed to get currency: %v", err)
+	}
+	if len(outputs) == 0 {
+		if fundingAddress.LockupTransactionId != "" {
+			outputs = []*onchain.Output{
+				{
+					TxId:  fundingAddress.LockupTransactionId,
+					Value: fundingAddress.Amount,
+				},
+			}
+		} else {
+			return nil, status.Error(codes.FailedPrecondition, "funding address has no unspent outputs")
+		}
+	}
+
+	feeRate, err := server.onchain.EstimateFee(fundingAddress.Currency)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to estimate fee: %v", err)
+	}
+
+	blockHeight, err := server.onchain.GetBlockHeight(fundingAddress.Currency)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get block height: %v", err)
+	}
+
+	cooperative := blockHeight < fundingAddress.TimeoutBlockHeight
+
+	fundingTree, err := fundingAddress.GetFundingTree()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get funding tree: %v", err)
+	}
+
+	var outputDetails []boltz.OutputDetails
+	for _, output := range outputs {
+		output, err := server.onchain.FindOutput(onchain.OutputArgs{
+			TransactionId:  output.TxId,
+			Currency:       fundingAddress.Currency,
+			Address:        fundingAddress.Address,
+			BlindingKey:    fundingAddress.BlindingKey,
+			ExpectedAmount: output.Value,
+		})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to find output: %v", err)
+		}
+		outputDetails = append(outputDetails, boltz.OutputDetails{
+			LockupTransaction:  output.Transaction,
+			Vout:               output.Vout,
+			Address:            destinationAddress,
+			PrivateKey:         fundingAddress.PrivateKey,
+			Cooperative:        cooperative,
+			FundingAddressTree: fundingTree,
+			FundingAddressId:   fundingAddress.Id,
+			TimeoutBlockHeight: fundingAddress.TimeoutBlockHeight,
+		})
+	}
+
+	fee := boltz.Fee{SatsPerVbyte: &feeRate}
+	claimTx, results, err := boltz.ConstructTransaction(server.network, fundingAddress.Currency, outputDetails, fee, server.boltz)
+	// Check for any errors in results
+	for _, result := range results {
+		if result.Err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to refund funding address: %v", result.Err)
+		}
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to construct refund transaction: %v", err)
+	}
+
+	// Broadcast the transaction
+	txId, err := server.onchain.BroadcastTransaction(claimTx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to broadcast transaction: %v", err)
+	}
+
+	logger.Infof("Refunded funding address %s to %s, txid: %s", fundingAddress.Id, destinationAddress, txId)
+
+	return &boltzrpc.RefundFundingAddressResponse{
+		TransactionId: txId,
+	}, nil
 }

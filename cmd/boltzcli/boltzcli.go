@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/build"
@@ -112,6 +113,8 @@ func main() {
 		refundSwapCommand,
 		claimSwapsCommand,
 
+		fundingCommands,
+
 		autoSwapCommands,
 
 		walletCommands,
@@ -127,10 +130,53 @@ func main() {
 		verifyPasswordCommand,
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	if err := app.Run(normalizeOptionalFundingFlagArgs(os.Args)); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+}
+
+func normalizeOptionalFundingFlagArgs(args []string) []string {
+	normalized := append([]string(nil), args...)
+
+	for i, arg := range normalized {
+		if arg != "--from-funding" && arg != "-from-funding" {
+			continue
+		}
+
+		if i+1 >= len(normalized) || strings.HasPrefix(normalized[i+1], "-") {
+			normalized[i] += "="
+			continue
+		}
+
+		switch currentCommand := getCurrentCommand(normalized[:i]); currentCommand {
+		case createSwapCommand.Name:
+			if _, err := parseCurrency(normalized[i+1]); err == nil || isUintArg(normalized[i+1]) {
+				normalized[i] += "="
+			}
+		case createChainSwapCommand.Name:
+			if isUintArg(normalized[i+1]) {
+				normalized[i] += "="
+			}
+		}
+	}
+
+	return normalized
+}
+
+func getCurrentCommand(args []string) string {
+	for i := len(args) - 1; i >= 1; i-- {
+		if args[i] == createSwapCommand.Name || args[i] == createChainSwapCommand.Name {
+			return args[i]
+		}
+	}
+
+	return ""
+}
+
+func isUintArg(value string) bool {
+	_, err := strconv.ParseUint(value, 10, 64)
+	return err == nil
 }
 
 type Key string
