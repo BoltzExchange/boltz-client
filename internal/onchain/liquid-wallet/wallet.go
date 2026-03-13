@@ -1,9 +1,13 @@
 package liquid_wallet
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -24,12 +28,20 @@ type Persister interface {
 
 type Wallet struct {
 	*lwk.Wollet
-	signer     *lwk.Signer
-	descriptor *lwk.WolletDescriptor
-	backend    *BlockchainBackend
-	info       onchain.WalletInfo
-	syncLock   sync.Mutex
-	sendLock   sync.Mutex
+	signer        *lwk.Signer
+	descriptor    *lwk.WolletDescriptor
+	backend       *BlockchainBackend
+	info          onchain.WalletInfo
+	legacyDataDir bool
+	compactCfg    walletCompactConfig
+	syncLock      sync.Mutex
+	sendLock      sync.Mutex
+}
+
+type walletCompactConfig struct {
+	interval time.Duration
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 type EsploraConfig struct {
@@ -43,6 +55,7 @@ type Config struct {
 	Esplora                *EsploraConfig
 	Electrum               *onchain.ElectrumOptions
 	ConsolidationThreshold uint64
+	CompactInterval        time.Duration
 	ChainProvider          onchain.ChainProvider
 	Persister              Persister
 }
@@ -136,6 +149,7 @@ func (b *BlockchainBackend) getClient(config clientConfig) (lwk.EsploraClientInt
 
 const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
 const DefaultConsolidationThreshold = 200
+const DefaultCompactInterval = 7 * 24 * time.Hour
 
 func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	if cfg.Persister == nil {
@@ -146,6 +160,9 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
+	}
+	if cfg.CompactInterval == 0 {
+		cfg.CompactInterval = DefaultCompactInterval
 	}
 
 	backend := &BlockchainBackend{
@@ -241,6 +258,163 @@ func DeriveDefaultDescriptor(network *boltz.Network, mnemonic string) (string, e
 	return descriptor.String(), nil
 }
 
+func walletDataDir(base string, walletId uint64) string {
+	return filepath.Join(base, "wallet-"+strconv.FormatUint(walletId, 10))
+}
+
+func walletTempDataDir(base string, walletId uint64) string {
+	return walletDataDir(base, walletId) + "-temp"
+}
+
+func (w *Wallet) tempDataDir() string {
+	return walletTempDataDir(w.backend.cfg.DataDir, w.info.Id)
+}
+
+func (backend *BlockchainBackend) hasLegacySharedDataDir() (bool, error) {
+	entries, err := os.ReadDir(backend.cfg.DataDir)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return false, fmt.Errorf("read liquid wallet base dir: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() && strings.Contains(entry.Name(), "liquid") {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (backend *BlockchainBackend) prepareWalletDataDir(walletId uint64) (current string, legacy bool, err error) {
+	current = walletDataDir(backend.cfg.DataDir, walletId)
+	if _, err := os.Stat(current); err == nil {
+		return current, false, nil
+	}
+	legacy, err = backend.hasLegacySharedDataDir()
+	if err != nil {
+		return "", false, err
+	}
+	if legacy {
+		current = backend.cfg.DataDir
+	}
+	return current, legacy, nil
+}
+
+func (w *Wallet) Compact() error {
+	logger.Infof("Compacting LWK wallet %d", w.info.Id)
+	w.syncLock.Lock()
+	defer w.syncLock.Unlock()
+
+	tempDir := w.tempDataDir()
+	if err := os.RemoveAll(tempDir); err != nil {
+		return fmt.Errorf("cleanup temporary wallet data dir: %w", err)
+	}
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
+
+	nextWollet, err := lwk.NewWollet(convertNetwork(w.backend.cfg.Network), w.descriptor, &tempDir)
+	if err != nil {
+		return fmt.Errorf("create compacted wallet instance: %w", err)
+	}
+
+	if err := w.scanWollet(nextWollet, 0, "Compaction"); err != nil {
+		return err
+	}
+
+	dataDir := walletDataDir(w.backend.cfg.DataDir, w.info.Id)
+	oldDir := dataDir + "-old"
+	if err := os.RemoveAll(oldDir); err != nil {
+		return fmt.Errorf("cleanup old wallet data dir backup: %w", err)
+	}
+
+	if !w.legacyDataDir {
+		if err := os.Rename(dataDir, oldDir); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("move current wallet data dir out of the way: %w", err)
+		}
+	}
+	if err := os.Rename(tempDir, dataDir); err != nil {
+		if !w.legacyDataDir {
+			_ = os.Rename(oldDir, dataDir)
+		}
+		return fmt.Errorf("promote compacted wallet data dir: %w", err)
+	}
+	reloaded, err := lwk.NewWollet(convertNetwork(w.backend.cfg.Network), w.descriptor, &dataDir)
+	if err != nil {
+		if !w.legacyDataDir {
+			if removeErr := os.RemoveAll(dataDir); removeErr != nil {
+				logger.Warnf("Failed to remove temporary wallet data dir %s: %v", tempDir, removeErr)
+			}
+			if renameErr := os.Rename(oldDir, dataDir); renameErr != nil {
+				logger.Warnf("Failed to restore old wallet dir %s: %v", dataDir, renameErr)
+			}
+		}
+		return fmt.Errorf("reopen wallet %d from compacted dir: %w", w.info.Id, err)
+	}
+
+	w.sendLock.Lock()
+	w.Wollet = reloaded
+	w.legacyDataDir = false
+	w.sendLock.Unlock()
+
+	if err := os.RemoveAll(oldDir); err != nil && !errors.Is(err, os.ErrNotExist) {
+		logger.Warnf("Failed to remove old wallet dir %s: %v", oldDir, err)
+	}
+
+	return nil
+}
+
+func (w *Wallet) scanWollet(target *lwk.Wollet, index uint32, scanType string) error {
+	var update **lwk.Update
+	var lastErr error
+	for i, config := range w.backend.clientConfigs {
+		client, err := w.backend.getClient(config)
+		if err != nil {
+			logger.Debugf("%s client %d failed to initialize for wallet %d: %v", scanType, i, w.info.Id, err)
+			lastErr = err
+			continue
+		}
+		update, err = client.FullScanToIndex(target, index)
+		if err != nil {
+			logger.Debugf("%s client %d failed to sync wallet %d: %v", scanType, i, w.info.Id, err)
+			lastErr = err
+			continue
+		}
+		break
+	}
+	if update == nil && lastErr != nil {
+		return fmt.Errorf("all clients failed to %s wallet, last error: %w", strings.ToLower(scanType), lastErr)
+	}
+	if update != nil {
+		if err := target.ApplyUpdate(*update); err != nil {
+			return fmt.Errorf("apply %s wallet update: %w", strings.ToLower(scanType), err)
+		}
+	}
+	return nil
+}
+
+func (w *Wallet) startCompactor() {
+	if w.compactCfg.interval <= 0 {
+		return
+	}
+	ticker := time.NewTicker(w.compactCfg.interval)
+	go func() {
+		defer ticker.Stop()
+		if err := w.Compact(); err != nil {
+			logger.Warnf("Startup wallet compaction failed for wallet %d: %v", w.info.Id, err)
+		}
+		for {
+			select {
+			case <-ticker.C:
+				if err := w.Compact(); err != nil {
+					logger.Warnf("Automatic wallet compact failed for wallet %d: %v", w.info.Id, err)
+				}
+			case <-w.compactCfg.ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
 func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
 	if backend == nil {
 		return nil, errors.New("backend instance is nil")
@@ -268,14 +442,28 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 		result.info.Readonly = true
 	}
 
+	current, legacy, err := backend.prepareWalletDataDir(credentials.Id)
+	if err != nil {
+		return nil, err
+	}
+	result.legacyDataDir = legacy
+	ctx, cancel := context.WithCancel(context.Background())
+	result.compactCfg = walletCompactConfig{
+		interval: backend.cfg.CompactInterval,
+		ctx:      ctx,
+		cancel:   cancel,
+	}
+
 	result.Wollet, err = lwk.NewWollet(
 		convertNetwork(backend.cfg.Network),
 		result.descriptor,
-		&backend.cfg.DataDir,
+		&current,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	result.startCompactor()
 
 	return result, nil
 }
@@ -313,33 +501,7 @@ func (w *Wallet) fullScan(all bool) error {
 		idx := uint32(0)
 		index = &idx
 	}
-	// Try each client until one succeeds
-	var update **lwk.Update
-	var lastErr error
-	for i, config := range w.backend.clientConfigs {
-		client, err := w.backend.getClient(config)
-		if err != nil {
-			logger.Debugf("Client %d failed to get client for wallet %d: %v", i, w.info.Id, err)
-			lastErr = err
-			continue
-		}
-		update, err = client.FullScanToIndex(w.Wollet, *index)
-		if err != nil {
-			logger.Debugf("Client %d failed to sync wallet %d: %v", i, w.info.Id, err)
-			lastErr = err
-			continue
-		}
-		break
-	}
-	if update == nil && lastErr != nil {
-		return fmt.Errorf("all clients failed to sync, last error: %w", lastErr)
-	}
-	if update != nil {
-		if err := w.ApplyUpdate(*update); err != nil {
-			return fmt.Errorf("could not apply update: %w", err)
-		}
-	}
-	return nil
+	return w.scanWollet(w.Wollet, *index, "Sync")
 }
 
 func (w *Wallet) autoConsolidate() error {
@@ -379,6 +541,7 @@ func (w *Wallet) Ready() bool {
 }
 
 func (w *Wallet) Disconnect() error {
+	w.compactCfg.cancel()
 	return nil
 }
 
