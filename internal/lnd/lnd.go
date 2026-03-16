@@ -111,7 +111,7 @@ func (lnd *LND) Connect() error {
 			return errors.New(fmt.Sprint("could not read LND certificate: ", err))
 		}
 	}
-	con, err := grpc.Dial(lnd.Host+":"+strconv.Itoa(lnd.Port), grpc.WithTransportCredentials(creds))
+	con, err := grpc.NewClient("passthrough:///"+lnd.Host+":"+strconv.Itoa(lnd.Port), grpc.WithTransportCredentials(creds))
 
 	if err != nil {
 		return errors.New(fmt.Sprint("could not create gRPC client: ", err))

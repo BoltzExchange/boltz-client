@@ -211,8 +211,8 @@ func setup(t *testing.T, options setupOptions) (client.Boltz, client.AutoSwap, f
 
 	lis := bufconn.Listen(1024 * 1024)
 
-	conn, err := grpc.DialContext(
-		context.Background(), "",
+	conn, err := grpc.NewClient(
+		"passthrough:///bufconn",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
 		}),
