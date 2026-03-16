@@ -81,7 +81,7 @@ func (c *Cln) Connect() error {
 		Certificates: []tls.Certificate{cert},
 	})
 
-	con, err := grpc.Dial(c.Host+":"+strconv.Itoa(c.Port), grpc.WithTransportCredentials(creds))
+	con, err := grpc.NewClient("passthrough:///"+c.Host+":"+strconv.Itoa(c.Port), grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return fmt.Errorf("could not create %s gRPC client: %s", serviceName, err)
 	}

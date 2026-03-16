@@ -55,7 +55,7 @@ func (connection *Connection) Connect() error {
 		}
 	}
 
-	con, err := grpc.Dial(connection.Host+":"+strconv.Itoa(connection.Port), grpc.WithTransportCredentials(creds))
+	con, err := grpc.NewClient("passthrough:///"+connection.Host+":"+strconv.Itoa(connection.Port), grpc.WithTransportCredentials(creds))
 
 	if err != nil {
 		return err
