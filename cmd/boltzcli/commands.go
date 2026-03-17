@@ -285,6 +285,11 @@ var jsonFlag = &cli.BoolFlag{
 	Usage: "Prints the output as JSON",
 }
 
+var showPrivateKeysFlag = &cli.BoolFlag{
+	Name:  "show-private-keys",
+	Usage: "Include swap private keys in JSON output",
+}
+
 var listSwapsCommand = &cli.Command{
 	Name:     "listswaps",
 	Category: "Infos",
@@ -431,6 +436,7 @@ var getSwapCommand = &cli.Command{
 	Usage:     "Gets all available information about a swap",
 	ArgsUsage: "id",
 	Action:    requireNArgs(1, swapInfo),
+	Flags:     []cli.Flag{showPrivateKeysFlag},
 }
 
 func swapInfo(ctx *cli.Context) error {
@@ -441,7 +447,7 @@ func swapInfo(ctx *cli.Context) error {
 		return err
 	}
 
-	printJson(swapInfo)
+	printJson(sanitizeSwapInfo(swapInfo, ctx.Bool("show-private-keys")))
 
 	return nil
 }
@@ -454,7 +460,7 @@ var swapInfoStreamCommand = &cli.Command{
 	Action: func(ctx *cli.Context) error {
 		return swapInfoStream(ctx, ctx.Args().First(), ctx.Bool("json"))
 	},
-	Flags: []cli.Flag{jsonFlag},
+	Flags: []cli.Flag{jsonFlag, showPrivateKeysFlag},
 }
 
 func swapInfoStream(ctx *cli.Context, id string, json bool) error {
@@ -486,7 +492,7 @@ func swapInfoStream(ctx *cli.Context, id string, json bool) error {
 		}
 
 		if json {
-			printJson(info)
+			printJson(sanitizeSwapInfo(info, ctx.Bool("show-private-keys")))
 		} else {
 			var state boltzrpc.SwapState
 			if info.Swap != nil {

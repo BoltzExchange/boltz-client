@@ -44,6 +44,31 @@ func printJson(resp proto.Message) {
 	fmt.Println(jsonMarshaler.Format(resp))
 }
 
+const RedactedValue = "<redacted>"
+
+func sanitizeSwapInfo(resp *boltzrpc.GetSwapInfoResponse, showPrivateKeys bool) *boltzrpc.GetSwapInfoResponse {
+	if resp == nil || showPrivateKeys {
+		return resp
+	}
+
+	if resp.Swap != nil {
+		resp.Swap.PrivateKey = RedactedValue
+	}
+	if resp.ReverseSwap != nil {
+		resp.ReverseSwap.PrivateKey = RedactedValue
+	}
+	if resp.ChainSwap != nil {
+		if resp.ChainSwap.FromData != nil {
+			resp.ChainSwap.FromData.PrivateKey = RedactedValue
+		}
+		if resp.ChainSwap.ToData != nil {
+			resp.ChainSwap.ToData.PrivateKey = RedactedValue
+		}
+	}
+
+	return resp
+}
+
 func liquidAccountType(accountType string) string {
 	switch accountType {
 	case "p2sh-p2wpkh":
