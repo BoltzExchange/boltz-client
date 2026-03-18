@@ -506,7 +506,7 @@ func (w *Wallet) DeriveBlindingKey(address string) (*btcec.PrivateKey, error) {
 	return privKey, nil
 }
 
-func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transaction, error) {
+func (w *Wallet) tryCreateTransaction(args onchain.WalletSendArgs) (*lwk.Transaction, error) {
 	if w.signer == nil {
 		return nil, errors.New("wallet is readonly")
 	}
@@ -557,21 +557,18 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 	return tx, nil
 }
 
-func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
-	w.sendLock.Lock()
-	defer w.sendLock.Unlock()
-
-	tx, err := w.createTransaction(args)
+func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transaction, error) {
+	tx, err := w.tryCreateTransaction(args)
 	if err != nil && strings.Contains(err.Error(), "insufficient") {
 		// LWK can't handle the scenario where the amount for a sweep is calculated via
 		// GetSendFee and then passed to SendToAddress without SendAll specified.
 		if !args.SendAll {
 			args.SendAll = true
-			sendAllTx, sendAllErr := w.createTransaction(args)
+			sendAllTx, sendAllErr := w.tryCreateTransaction(args)
 			if sendAllErr == nil {
 				sendAmount, _, sendAllErr := w.getSendAmount(sendAllTx)
 				if sendAllErr != nil {
-					return "", sendAllErr
+					return nil, sendAllErr
 				}
 				if sendAmount == args.Amount {
 					tx = sendAllTx
@@ -580,6 +577,14 @@ func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
 			}
 		}
 	}
+	return tx, err
+}
+
+func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
+	w.sendLock.Lock()
+	defer w.sendLock.Unlock()
+
+	tx, err := w.createTransaction(args)
 	if err != nil {
 		return "", err
 	}
