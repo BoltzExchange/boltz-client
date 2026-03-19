@@ -15,8 +15,6 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
-const MergeThreshold = 10
-
 // Persister defines methods for saving and retrieving the last used address index for a wallet.
 // The index is marked as used as soon as its corresponding address is generated, ensuring address uniqueness.
 type Persister interface {
@@ -44,6 +42,7 @@ type Config struct {
 	DataDir                string
 	Esplora                *EsploraConfig
 	Electrum               *onchain.ElectrumOptions
+	MergeThreshold         *uint32
 	ConsolidationThreshold uint64
 	ChainProvider          onchain.ChainProvider
 	Persister              Persister
@@ -137,6 +136,7 @@ func (b *BlockchainBackend) getClient(config clientConfig) (lwk.EsploraClientInt
 }
 
 const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
+const DefaultMergeThreshold = uint32(100)
 const DefaultConsolidationThreshold = 200
 
 func NewBackend(cfg Config) (*BlockchainBackend, error) {
@@ -148,6 +148,10 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
+	}
+	if cfg.MergeThreshold == nil {
+		threshold := DefaultMergeThreshold
+		cfg.MergeThreshold = &threshold
 	}
 
 	backend := &BlockchainBackend{
@@ -274,8 +278,7 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 	if err := builder.WithLegacyFsStore(backend.cfg.DataDir); err != nil {
 		return nil, fmt.Errorf("set store: %w", err)
 	}
-	mergeThreshold := uint32(MergeThreshold)
-	if err := builder.WithMergeThreshold(&mergeThreshold); err != nil {
+	if err := builder.WithMergeThreshold(backend.cfg.MergeThreshold); err != nil {
 		return nil, fmt.Errorf("set merge threshold: %w", err)
 	}
 	result.Wollet, err = builder.Build()
