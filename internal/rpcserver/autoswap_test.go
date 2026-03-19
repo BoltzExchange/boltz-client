@@ -42,76 +42,105 @@ func TestAutoSwap(t *testing.T) {
 	}
 
 	t.Run("Chain", func(t *testing.T) {
-		reset(t)
-		cfg := &autoswaprpc.ChainConfig{
-			FromWallet: walletName(boltzrpc.Currency_LBTC),
-			ToWallet:   cfg.Node,
-			Budget:     1_000_000,
-		}
-		fromWallet, err := admin.GetWallet(cfg.FromWallet)
-		require.NoError(t, err)
-		cfg.MaxBalance = fromWallet.Balance.Confirmed - 1000
-		cfg.ReserveBalance = cfg.MaxBalance - swapAmount
+		executeChainRecommendation := func(t *testing.T, chainCfg *autoswaprpc.ChainConfig) {
+			t.Helper()
 
-		_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: cfg})
-		require.NoError(t, err)
+			_, err := autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: chainCfg})
+			require.NoError(t, err)
 
-		status, err := autoSwap.GetStatus()
-		require.NoError(t, err)
-		require.False(t, status.Chain.Running)
+			status, err := autoSwap.GetStatus()
+			require.NoError(t, err)
+			require.False(t, status.Chain.Running)
 
-		recommendations, err := autoSwap.GetRecommendations()
-		require.NoError(t, err)
-		require.Len(t, recommendations.Chain, 1)
+			recommendations, err := autoSwap.GetRecommendations()
+			require.NoError(t, err)
+			require.Len(t, recommendations.Chain, 1)
 
-		stream, _ := swapStream(t, admin, "")
+			stream, _ := swapStream(t, admin, "")
 
-		_, err = autoSwap.ExecuteRecommendations(&autoswaprpc.ExecuteRecommendationsRequest{
-			Chain: recommendations.Chain,
-		})
-		require.NoError(t, err)
+			_, err = autoSwap.ExecuteRecommendations(&autoswaprpc.ExecuteRecommendationsRequest{
+				Chain: recommendations.Chain,
+			})
+			require.NoError(t, err)
 
-		info := stream(boltzrpc.SwapState_PENDING)
-		require.NotNil(t, info.ChainSwap)
-		id := info.ChainSwap.Id
+			info := stream(boltzrpc.SwapState_PENDING)
+			require.NotNil(t, info.ChainSwap)
+			id := info.ChainSwap.Id
 
-		recommendations, err = autoSwap.GetRecommendations()
-		require.NoError(t, err)
-		require.Len(t, recommendations.Chain, 1)
-		require.Nil(t, recommendations.Chain[0].Swap)
-
-		require.Eventually(t, func() bool {
 			recommendations, err = autoSwap.GetRecommendations()
 			require.NoError(t, err)
-			return recommendations.Chain[0].Swap == nil
-		}, 10*time.Second, 250*time.Millisecond)
+			require.Len(t, recommendations.Chain, 1)
+			require.Nil(t, recommendations.Chain[0].Swap)
 
-		response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{Include: boltzrpc.IncludeSwaps_AUTO})
-		require.Len(t, response.ChainSwaps, 1)
-		require.Equal(t, id, response.ChainSwaps[0].Id)
-		require.True(t, response.ChainSwaps[0].IsAuto)
+			require.Eventually(t, func() bool {
+				recommendations, err = autoSwap.GetRecommendations()
+				require.NoError(t, err)
+				return recommendations.Chain[0].Swap == nil
+			}, 10*time.Second, 250*time.Millisecond)
 
-		stream, _ = swapStream(t, admin, id)
-		require.NoError(t, err)
-		test.MineBlock()
-		stream(boltzrpc.SwapState_PENDING)
-		test.MineBlock()
-		stream(boltzrpc.SwapState_SUCCESSFUL)
+			response, err := admin.ListSwaps(&boltzrpc.ListSwapsRequest{Include: boltzrpc.IncludeSwaps_AUTO})
+			require.NoError(t, err)
+			require.True(t, slices.ContainsFunc(response.ChainSwaps, func(swap *boltzrpc.ChainSwapInfo) bool {
+				return swap.Id == id && swap.IsAuto
+			}))
 
-		_, write, _ := createTenant(t, admin, "test")
-		tenant := client.NewAutoSwapClient(write)
+			stream, _ = swapStream(t, admin, id)
+			test.MineBlock()
+			stream(boltzrpc.SwapState_PENDING)
+			test.MineBlock()
+			stream(boltzrpc.SwapState_SUCCESSFUL)
+		}
 
-		_, err = tenant.GetChainConfig()
-		require.Error(t, err)
+		t.Run("KeepsReserveBalance", func(t *testing.T) {
+			reset(t)
 
-		cfg.Enabled = true
-		_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: cfg})
-		require.NoError(t, err)
+			fromWallet := fundedWallet(t, admin, boltzrpc.Currency_LBTC)
+			maxBalance := fromWallet.Balance.Confirmed - 1000
+			chainCfg := &autoswaprpc.ChainConfig{
+				FromWallet:     fromWallet.Name,
+				ToWallet:       cfg.Node,
+				Budget:         1_000_000,
+				MaxBalance:     maxBalance,
+				ReserveBalance: maxBalance - swapAmount,
+			}
 
-		status, err = autoSwap.GetStatus()
-		require.NoError(t, err)
-		require.True(t, status.Chain.Running)
+			executeChainRecommendation(t, chainCfg)
 
+			_, write, _ := createTenant(t, admin, "test")
+			tenant := client.NewAutoSwapClient(write)
+
+			_, err := tenant.GetChainConfig()
+			require.Error(t, err)
+
+			chainCfg.Enabled = true
+			_, err = autoSwap.UpdateChainConfig(&autoswaprpc.UpdateChainConfigRequest{Config: chainCfg})
+			require.NoError(t, err)
+
+			status, err := autoSwap.GetStatus()
+			require.NoError(t, err)
+			require.True(t, status.Chain.Running)
+		})
+
+		t.Run("SweepsWalletToZero", func(t *testing.T) {
+			reset(t)
+
+			fromWallet := fundedWallet(t, admin, boltzrpc.Currency_LBTC)
+			chainCfg := &autoswaprpc.ChainConfig{
+				FromWallet:     fromWallet.Name,
+				ToWallet:       cfg.Node,
+				Budget:         1_000_000,
+				MaxBalance:     fromWallet.Balance.Confirmed - 1000,
+				ReserveBalance: 0,
+			}
+
+			executeChainRecommendation(t, chainCfg)
+
+			require.Eventually(t, func() bool {
+				wallet, err := admin.GetWalletById(fromWallet.Id)
+				require.NoError(t, err)
+				return wallet.Balance.GetTotal() == 0
+			}, 10*time.Second, 200*time.Millisecond)
+		})
 	})
 
 	t.Run("Lightning", func(t *testing.T) {
