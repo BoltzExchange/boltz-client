@@ -5363,7 +5363,7 @@ type WalletTransaction struct {
 	Timestamp     int64                `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Outputs       []*TransactionOutput `protobuf:"bytes,4,rep,name=outputs,proto3" json:"outputs,omitempty"`
 	BlockHeight   uint32               `protobuf:"varint,6,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
-	// additional informations about the tx (type, related swaps etc.)
+	// additional information about the tx (type, related swaps etc.)
 	Infos []*TransactionInfo `protobuf:"bytes,7,rep,name=infos,proto3" json:"infos,omitempty"`
 }
 

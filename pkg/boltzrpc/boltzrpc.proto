@@ -893,7 +893,7 @@ message WalletTransaction {
     int64 timestamp = 3;
     repeated TransactionOutput outputs = 4;
     uint32 block_height = 6;
-    // additional informations about the tx (type, related swaps etc.)
+    // additional information about the tx (type, related swaps etc.)
     repeated TransactionInfo infos = 7;
 }
 
