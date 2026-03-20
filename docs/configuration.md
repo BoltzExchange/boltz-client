@@ -28,7 +28,7 @@ pro = false
 # Custom referral ID to use when creating swaps
 referralId = "my-referral"
 
-# Threshold used to merge persisted Liquid wallet updates.
+# Threshold used to merge persisted Liquid wallet updates. Set to 0 to disable.
 # walletMergeThreshold = 100
 
 [LIGHTNING]
