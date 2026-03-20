@@ -378,41 +378,78 @@ static void call_UniffiForeignFutureCompleteVoid(
 
 
 #endif
-#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_PERSISTER_METHOD0
-#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_PERSISTER_METHOD0
-typedef void (*UniffiCallbackInterfaceForeignPersisterMethod0)(uint64_t uniffi_handle, uint64_t index, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_STORE_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_STORE_METHOD0
+typedef void (*UniffiCallbackInterfaceForeignStoreMethod0)(uint64_t uniffi_handle, RustBuffer key, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
 
 // Making function static works arround:
 // https://github.com/golang/go/issues/11263
-static void call_UniffiCallbackInterfaceForeignPersisterMethod0(
-				UniffiCallbackInterfaceForeignPersisterMethod0 cb, uint64_t uniffi_handle, uint64_t index, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
+static void call_UniffiCallbackInterfaceForeignStoreMethod0(
+				UniffiCallbackInterfaceForeignStoreMethod0 cb, uint64_t uniffi_handle, RustBuffer key, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
 {
-	return cb(uniffi_handle, index, uniffi_out_return, callStatus );
+	return cb(uniffi_handle, key, uniffi_out_return, callStatus );
 }
 
 
 #endif
-#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_PERSISTER_METHOD1
-#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_PERSISTER_METHOD1
-typedef void (*UniffiCallbackInterfaceForeignPersisterMethod1)(uint64_t uniffi_handle, void* update, void* uniffi_out_return, RustCallStatus* callStatus );
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_STORE_METHOD1
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_STORE_METHOD1
+typedef void (*UniffiCallbackInterfaceForeignStoreMethod1)(uint64_t uniffi_handle, RustBuffer key, RustBuffer value, void* uniffi_out_return, RustCallStatus* callStatus );
 
 // Making function static works arround:
 // https://github.com/golang/go/issues/11263
-static void call_UniffiCallbackInterfaceForeignPersisterMethod1(
-				UniffiCallbackInterfaceForeignPersisterMethod1 cb, uint64_t uniffi_handle, void* update, void* uniffi_out_return, RustCallStatus* callStatus )
+static void call_UniffiCallbackInterfaceForeignStoreMethod1(
+				UniffiCallbackInterfaceForeignStoreMethod1 cb, uint64_t uniffi_handle, RustBuffer key, RustBuffer value, void* uniffi_out_return, RustCallStatus* callStatus )
 {
-	return cb(uniffi_handle, update, uniffi_out_return, callStatus );
+	return cb(uniffi_handle, key, value, uniffi_out_return, callStatus );
 }
 
 
 #endif
-#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_FOREIGN_PERSISTER
-#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_FOREIGN_PERSISTER
-typedef struct UniffiVTableCallbackInterfaceForeignPersister {
-    UniffiCallbackInterfaceForeignPersisterMethod0 get;
-    UniffiCallbackInterfaceForeignPersisterMethod1 push;
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_STORE_METHOD2
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FOREIGN_STORE_METHOD2
+typedef void (*UniffiCallbackInterfaceForeignStoreMethod2)(uint64_t uniffi_handle, RustBuffer key, void* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceForeignStoreMethod2(
+				UniffiCallbackInterfaceForeignStoreMethod2 cb, uint64_t uniffi_handle, RustBuffer key, void* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, key, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_LOGGING_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_LOGGING_METHOD0
+typedef void (*UniffiCallbackInterfaceLoggingMethod0)(uint64_t uniffi_handle, RustBuffer level, RustBuffer message, void* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceLoggingMethod0(
+				UniffiCallbackInterfaceLoggingMethod0 cb, uint64_t uniffi_handle, RustBuffer level, RustBuffer message, void* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, level, message, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_FOREIGN_STORE
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_FOREIGN_STORE
+typedef struct UniffiVTableCallbackInterfaceForeignStore {
+    UniffiCallbackInterfaceForeignStoreMethod0 get;
+    UniffiCallbackInterfaceForeignStoreMethod1 put;
+    UniffiCallbackInterfaceForeignStoreMethod2 remove;
     UniffiCallbackInterfaceFree uniffiFree;
-} UniffiVTableCallbackInterfaceForeignPersister;
+} UniffiVTableCallbackInterfaceForeignStore;
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_LOGGING
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_LOGGING
+typedef struct UniffiVTableCallbackInterfaceLogging {
+    UniffiCallbackInterfaceLoggingMethod0 log;
+    UniffiCallbackInterfaceFree uniffiFree;
+} UniffiVTableCallbackInterfaceLogging;
 
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ADDRESS
@@ -433,6 +470,11 @@ void* uniffi_lwk_fn_constructor_address_new(RustBuffer s, RustCallStatus *out_st
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ADDRESS_IS_BLINDED
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ADDRESS_IS_BLINDED
 int8_t uniffi_lwk_fn_method_address_is_blinded(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ADDRESS_NETWORK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ADDRESS_NETWORK
+void* uniffi_lwk_fn_method_address_network(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ADDRESS_QR_CODE_TEXT
@@ -641,9 +683,9 @@ void* uniffi_lwk_fn_method_amp2_cosign(void* ptr, void* pset, RustCallStatus *ou
 void* uniffi_lwk_fn_method_amp2_descriptor_from_str(void* ptr, RustBuffer keyorigin_xpub, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP2_REGISTER
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP2_REGISTER
-RustBuffer uniffi_lwk_fn_method_amp2_register(void* ptr, void* desc, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP2_REGISTER_WALLET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_AMP2_REGISTER_WALLET
+RustBuffer uniffi_lwk_fn_method_amp2_register_wallet(void* ptr, void* desc, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_AMP2DESCRIPTOR
@@ -666,6 +708,26 @@ void* uniffi_lwk_fn_method_amp2descriptor_descriptor(void* ptr, RustCallStatus *
 RustBuffer uniffi_lwk_fn_method_amp2descriptor_uniffi_trait_display(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ANYCLIENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ANYCLIENT
+void* uniffi_lwk_fn_clone_anyclient(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_ANYCLIENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_ANYCLIENT
+void uniffi_lwk_fn_free_anyclient(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ANYCLIENT_FROM_ELECTRUM
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ANYCLIENT_FROM_ELECTRUM
+void* uniffi_lwk_fn_constructor_anyclient_from_electrum(void* client, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ANYCLIENT_FROM_ESPLORA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ANYCLIENT_FROM_ESPLORA
+void* uniffi_lwk_fn_constructor_anyclient_from_esplora(void* client, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ASSETAMOUNT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ASSETAMOUNT
 void* uniffi_lwk_fn_clone_assetamount(void* ptr, RustCallStatus *out_status
@@ -684,6 +746,42 @@ uint64_t uniffi_lwk_fn_method_assetamount_amount(void* ptr, RustCallStatus *out_
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ASSETAMOUNT_ASSET
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ASSETAMOUNT_ASSET
 RustBuffer uniffi_lwk_fn_method_assetamount_asset(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ASSETBLINDINGFACTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ASSETBLINDINGFACTOR
+void* uniffi_lwk_fn_clone_assetblindingfactor(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_ASSETBLINDINGFACTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_ASSETBLINDINGFACTOR
+void uniffi_lwk_fn_free_assetblindingfactor(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_BYTES
+void* uniffi_lwk_fn_constructor_assetblindingfactor_from_bytes(RustBuffer bytes, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_STRING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_STRING
+void* uniffi_lwk_fn_constructor_assetblindingfactor_from_string(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ASSETBLINDINGFACTOR_ZERO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ASSETBLINDINGFACTOR_ZERO
+void* uniffi_lwk_fn_constructor_assetblindingfactor_zero(RustCallStatus *out_status
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ASSETBLINDINGFACTOR_TO_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ASSETBLINDINGFACTOR_TO_BYTES
+RustBuffer uniffi_lwk_fn_method_assetblindingfactor_to_bytes(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ASSETBLINDINGFACTOR_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_ASSETBLINDINGFACTOR_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_assetblindingfactor_uniffi_trait_display(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BIP
@@ -712,6 +810,161 @@ void* uniffi_lwk_fn_constructor_bip_new_bip84(RustCallStatus *out_status
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BIP_NEW_BIP87
 void* uniffi_lwk_fn_constructor_bip_new_bip87(RustCallStatus *out_status
     
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BIP21
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BIP21
+void* uniffi_lwk_fn_clone_bip21(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BIP21
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BIP21
+void uniffi_lwk_fn_free_bip21(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BIP21_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BIP21_NEW
+void* uniffi_lwk_fn_constructor_bip21_new(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_ADDRESS
+void* uniffi_lwk_fn_method_bip21_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_AMOUNT
+RustBuffer uniffi_lwk_fn_method_bip21_amount(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_AS_STR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_AS_STR
+RustBuffer uniffi_lwk_fn_method_bip21_as_str(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_LABEL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_LABEL
+RustBuffer uniffi_lwk_fn_method_bip21_label(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_LIGHTNING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_LIGHTNING
+RustBuffer uniffi_lwk_fn_method_bip21_lightning(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_MESSAGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_MESSAGE
+RustBuffer uniffi_lwk_fn_method_bip21_message(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_OFFER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_OFFER
+RustBuffer uniffi_lwk_fn_method_bip21_offer(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_PAYJOIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_PAYJOIN
+RustBuffer uniffi_lwk_fn_method_bip21_payjoin(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_PAYJOIN_OUTPUT_SUBSTITUTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_PAYJOIN_OUTPUT_SUBSTITUTION
+int8_t uniffi_lwk_fn_method_bip21_payjoin_output_substitution(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_SILENT_PAYMENT_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP21_SILENT_PAYMENT_ADDRESS
+RustBuffer uniffi_lwk_fn_method_bip21_silent_payment_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BIP321
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BIP321
+void* uniffi_lwk_fn_clone_bip321(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BIP321
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BIP321
+void uniffi_lwk_fn_free_bip321(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BIP321_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BIP321_NEW
+void* uniffi_lwk_fn_constructor_bip321_new(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_AMOUNT
+RustBuffer uniffi_lwk_fn_method_bip321_amount(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_ARK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_ARK
+RustBuffer uniffi_lwk_fn_method_bip321_ark(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_AS_STR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_AS_STR
+RustBuffer uniffi_lwk_fn_method_bip321_as_str(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_LABEL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_LABEL
+RustBuffer uniffi_lwk_fn_method_bip321_label(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_LIGHTNING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_LIGHTNING
+RustBuffer uniffi_lwk_fn_method_bip321_lightning(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_MESSAGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_MESSAGE
+RustBuffer uniffi_lwk_fn_method_bip321_message(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_OFFER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_OFFER
+RustBuffer uniffi_lwk_fn_method_bip321_offer(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_PAYJOIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_PAYJOIN
+RustBuffer uniffi_lwk_fn_method_bip321_payjoin(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_PAYJOIN_OUTPUT_SUBSTITUTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_PAYJOIN_OUTPUT_SUBSTITUTION
+int8_t uniffi_lwk_fn_method_bip321_payjoin_output_substitution(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_SILENT_PAYMENT_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BIP321_SILENT_PAYMENT_ADDRESS
+RustBuffer uniffi_lwk_fn_method_bip321_silent_payment_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BITCOINADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BITCOINADDRESS
+void* uniffi_lwk_fn_clone_bitcoinaddress(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BITCOINADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BITCOINADDRESS
+void uniffi_lwk_fn_free_bitcoinaddress(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BITCOINADDRESS_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BITCOINADDRESS_NEW
+void* uniffi_lwk_fn_constructor_bitcoinaddress_new(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BITCOINADDRESS_IS_MAINNET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BITCOINADDRESS_IS_MAINNET
+int8_t uniffi_lwk_fn_method_bitcoinaddress_is_mainnet(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BITCOINADDRESS_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BITCOINADDRESS_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_bitcoinaddress_uniffi_trait_display(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BLOCKHEADER
@@ -754,6 +1007,206 @@ uint32_t uniffi_lwk_fn_method_blockheader_time(void* ptr, RustCallStatus *out_st
 uint32_t uniffi_lwk_fn_method_blockheader_version(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BOLT11INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BOLT11INVOICE
+void* uniffi_lwk_fn_clone_bolt11invoice(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BOLT11INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BOLT11INVOICE
+void uniffi_lwk_fn_free_bolt11invoice(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BOLT11INVOICE_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BOLT11INVOICE_NEW
+void* uniffi_lwk_fn_constructor_bolt11invoice_new(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_AMOUNT_MILLI_SATOSHIS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_AMOUNT_MILLI_SATOSHIS
+RustBuffer uniffi_lwk_fn_method_bolt11invoice_amount_milli_satoshis(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_EXPIRY_TIME
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_EXPIRY_TIME
+uint64_t uniffi_lwk_fn_method_bolt11invoice_expiry_time(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_INVOICE_DESCRIPTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_INVOICE_DESCRIPTION
+RustBuffer uniffi_lwk_fn_method_bolt11invoice_invoice_description(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_MIN_FINAL_CLTV_EXPIRY_DELTA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_MIN_FINAL_CLTV_EXPIRY_DELTA
+uint64_t uniffi_lwk_fn_method_bolt11invoice_min_final_cltv_expiry_delta(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_NETWORK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_NETWORK
+RustBuffer uniffi_lwk_fn_method_bolt11invoice_network(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_PAYEE_PUB_KEY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_PAYEE_PUB_KEY
+RustBuffer uniffi_lwk_fn_method_bolt11invoice_payee_pub_key(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_PAYMENT_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_PAYMENT_HASH
+RustBuffer uniffi_lwk_fn_method_bolt11invoice_payment_hash(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_PAYMENT_SECRET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_PAYMENT_SECRET
+RustBuffer uniffi_lwk_fn_method_bolt11invoice_payment_secret(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_TIMESTAMP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_TIMESTAMP
+uint64_t uniffi_lwk_fn_method_bolt11invoice_timestamp(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLT11INVOICE_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_bolt11invoice_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BOLTZSESSION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_BOLTZSESSION
+void* uniffi_lwk_fn_clone_boltzsession(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BOLTZSESSION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_BOLTZSESSION
+void uniffi_lwk_fn_free_boltzsession(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BOLTZSESSION_FROM_BUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BOLTZSESSION_FROM_BUILDER
+void* uniffi_lwk_fn_constructor_boltzsession_from_builder(RustBuffer builder, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BOLTZSESSION_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_BOLTZSESSION_NEW
+void* uniffi_lwk_fn_constructor_boltzsession_new(void* network, void* client, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_BTC_TO_LBTC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_BTC_TO_LBTC
+void* uniffi_lwk_fn_method_boltzsession_btc_to_lbtc(void* ptr, uint64_t amount, void* refund_address, void* claim_address, RustBuffer webhook, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_COMPLETED_SWAP_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_COMPLETED_SWAP_IDS
+RustBuffer uniffi_lwk_fn_method_boltzsession_completed_swap_ids(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_FETCH_SWAPS_INFO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_FETCH_SWAPS_INFO
+RustBuffer uniffi_lwk_fn_method_boltzsession_fetch_swaps_info(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_GET_SWAP_DATA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_GET_SWAP_DATA
+RustBuffer uniffi_lwk_fn_method_boltzsession_get_swap_data(void* ptr, RustBuffer swap_id, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_INVOICE
+void* uniffi_lwk_fn_method_boltzsession_invoice(void* ptr, uint64_t amount, RustBuffer description, void* claim_address, RustBuffer webhook, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_LBTC_TO_BTC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_LBTC_TO_BTC
+void* uniffi_lwk_fn_method_boltzsession_lbtc_to_btc(void* ptr, uint64_t amount, void* refund_address, void* claim_address, RustBuffer webhook, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_NEXT_INDEX_TO_USE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_NEXT_INDEX_TO_USE
+uint32_t uniffi_lwk_fn_method_boltzsession_next_index_to_use(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_PENDING_SWAP_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_PENDING_SWAP_IDS
+RustBuffer uniffi_lwk_fn_method_boltzsession_pending_swap_ids(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_PREPARE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_PREPARE_PAY
+void* uniffi_lwk_fn_method_boltzsession_prepare_pay(void* ptr, void* lightning_payment, void* refund_address, RustBuffer webhook, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_QUOTE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_QUOTE
+void* uniffi_lwk_fn_method_boltzsession_quote(void* ptr, uint64_t send_amount, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_QUOTE_RECEIVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_QUOTE_RECEIVE
+void* uniffi_lwk_fn_method_boltzsession_quote_receive(void* ptr, uint64_t receive_amount, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_REFRESH_SWAP_INFO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_REFRESH_SWAP_INFO
+void uniffi_lwk_fn_method_boltzsession_refresh_swap_info(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_REMOVE_SWAP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_REMOVE_SWAP
+void uniffi_lwk_fn_method_boltzsession_remove_swap(void* ptr, RustBuffer swap_id, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESCUE_FILE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESCUE_FILE
+RustBuffer uniffi_lwk_fn_method_boltzsession_rescue_file(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_BTC_TO_LBTC_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_BTC_TO_LBTC_SWAPS
+RustBuffer uniffi_lwk_fn_method_boltzsession_restorable_btc_to_lbtc_swaps(void* ptr, void* swap_list, void* claim_address, void* refund_address, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_LBTC_TO_BTC_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_LBTC_TO_BTC_SWAPS
+RustBuffer uniffi_lwk_fn_method_boltzsession_restorable_lbtc_to_btc_swaps(void* ptr, void* swap_list, void* claim_address, void* refund_address, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_REVERSE_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_REVERSE_SWAPS
+RustBuffer uniffi_lwk_fn_method_boltzsession_restorable_reverse_swaps(void* ptr, void* swap_list, void* claim_address, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_SUBMARINE_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORABLE_SUBMARINE_SWAPS
+RustBuffer uniffi_lwk_fn_method_boltzsession_restorable_submarine_swaps(void* ptr, void* swap_list, void* refund_address, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORE_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORE_INVOICE
+void* uniffi_lwk_fn_method_boltzsession_restore_invoice(void* ptr, RustBuffer data, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORE_LOCKUP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORE_LOCKUP
+void* uniffi_lwk_fn_method_boltzsession_restore_lockup(void* ptr, RustBuffer data, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORE_PREPARE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_RESTORE_PREPARE_PAY
+void* uniffi_lwk_fn_method_boltzsession_restore_prepare_pay(void* ptr, RustBuffer data, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_SET_NEXT_INDEX_TO_USE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_SET_NEXT_INDEX_TO_USE
+void uniffi_lwk_fn_method_boltzsession_set_next_index_to_use(void* ptr, uint32_t next_index_to_use, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_SWAP_RESTORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_BOLTZSESSION_SWAP_RESTORE
+void* uniffi_lwk_fn_method_boltzsession_swap_restore(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_CONTRACT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_CONTRACT
 void* uniffi_lwk_fn_clone_contract(void* ptr, RustCallStatus *out_status
@@ -774,6 +1227,51 @@ void* uniffi_lwk_fn_constructor_contract_new(RustBuffer domain, RustBuffer issue
 RustBuffer uniffi_lwk_fn_method_contract_uniffi_trait_display(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_CURRENCYCODE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_CURRENCYCODE
+void* uniffi_lwk_fn_clone_currencycode(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_CURRENCYCODE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_CURRENCYCODE
+void uniffi_lwk_fn_free_currencycode(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_CURRENCYCODE_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_CURRENCYCODE_NEW
+void* uniffi_lwk_fn_constructor_currencycode_new(RustBuffer alpha3, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_ALPHA3
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_ALPHA3
+RustBuffer uniffi_lwk_fn_method_currencycode_alpha3(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_EXP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_EXP
+int8_t uniffi_lwk_fn_method_currencycode_exp(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_NAME
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_NAME
+RustBuffer uniffi_lwk_fn_method_currencycode_name(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_currencycode_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_UNIFFI_TRAIT_EQ_EQ
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_UNIFFI_TRAIT_EQ_EQ
+int8_t uniffi_lwk_fn_method_currencycode_uniffi_trait_eq_eq(void* ptr, void* other, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_UNIFFI_TRAIT_EQ_NE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_CURRENCYCODE_UNIFFI_TRAIT_EQ_NE
+int8_t uniffi_lwk_fn_method_currencycode_uniffi_trait_eq_ne(void* ptr, void* other, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ELECTRUMCLIENT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ELECTRUMCLIENT
 void* uniffi_lwk_fn_clone_electrumclient(void* ptr, RustCallStatus *out_status
@@ -782,6 +1280,11 @@ void* uniffi_lwk_fn_clone_electrumclient(void* ptr, RustCallStatus *out_status
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_ELECTRUMCLIENT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_ELECTRUMCLIENT
 void uniffi_lwk_fn_free_electrumclient(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ELECTRUMCLIENT_FROM_URL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ELECTRUMCLIENT_FROM_URL
+void* uniffi_lwk_fn_constructor_electrumclient_from_url(RustBuffer electrum_url, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_ELECTRUMCLIENT_NEW
@@ -879,44 +1382,104 @@ void uniffi_lwk_fn_free_externalutxo(void* ptr, RustCallStatus *out_status
 void* uniffi_lwk_fn_constructor_externalutxo_new(uint32_t vout, void* tx, void* unblinded, uint32_t max_weight_to_satisfy, int8_t is_segwit, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNPERSISTER
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNPERSISTER
-void* uniffi_lwk_fn_clone_foreignpersister(void* ptr, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNSTORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNSTORE
+void* uniffi_lwk_fn_clone_foreignstore(void* ptr, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNPERSISTER
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNPERSISTER
-void uniffi_lwk_fn_free_foreignpersister(void* ptr, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNSTORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNSTORE
+void uniffi_lwk_fn_free_foreignstore(void* ptr, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_INIT_CALLBACK_VTABLE_FOREIGNPERSISTER
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_INIT_CALLBACK_VTABLE_FOREIGNPERSISTER
-void uniffi_lwk_fn_init_callback_vtable_foreignpersister(UniffiVTableCallbackInterfaceForeignPersister* vtable
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_INIT_CALLBACK_VTABLE_FOREIGNSTORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_INIT_CALLBACK_VTABLE_FOREIGNSTORE
+void uniffi_lwk_fn_init_callback_vtable_foreignstore(UniffiVTableCallbackInterfaceForeignStore* vtable
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNPERSISTER_GET
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNPERSISTER_GET
-RustBuffer uniffi_lwk_fn_method_foreignpersister_get(void* ptr, uint64_t index, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNSTORE_GET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNSTORE_GET
+RustBuffer uniffi_lwk_fn_method_foreignstore_get(void* ptr, RustBuffer key, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNPERSISTER_PUSH
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNPERSISTER_PUSH
-void uniffi_lwk_fn_method_foreignpersister_push(void* ptr, void* update, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNSTORE_PUT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNSTORE_PUT
+void uniffi_lwk_fn_method_foreignstore_put(void* ptr, RustBuffer key, RustBuffer value, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNPERSISTERLINK
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNPERSISTERLINK
-void* uniffi_lwk_fn_clone_foreignpersisterlink(void* ptr, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNSTORE_REMOVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_FOREIGNSTORE_REMOVE
+void uniffi_lwk_fn_method_foreignstore_remove(void* ptr, RustBuffer key, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNPERSISTERLINK
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNPERSISTERLINK
-void uniffi_lwk_fn_free_foreignpersisterlink(void* ptr, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNSTORELINK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_FOREIGNSTORELINK
+void* uniffi_lwk_fn_clone_foreignstorelink(void* ptr, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_FOREIGNPERSISTERLINK_NEW
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_FOREIGNPERSISTERLINK_NEW
-void* uniffi_lwk_fn_constructor_foreignpersisterlink_new(void* persister, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNSTORELINK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_FOREIGNSTORELINK
+void uniffi_lwk_fn_free_foreignstorelink(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_FOREIGNSTORELINK_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_FOREIGNSTORELINK_NEW
+void* uniffi_lwk_fn_constructor_foreignstorelink_new(void* store, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_INVOICERESPONSE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_INVOICERESPONSE
+void* uniffi_lwk_fn_clone_invoiceresponse(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_INVOICERESPONSE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_INVOICERESPONSE
+void uniffi_lwk_fn_free_invoiceresponse(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_ADVANCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_ADVANCE
+RustBuffer uniffi_lwk_fn_method_invoiceresponse_advance(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_BOLT11_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_BOLT11_INVOICE
+void* uniffi_lwk_fn_method_invoiceresponse_bolt11_invoice(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_BOLTZ_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_BOLTZ_FEE
+RustBuffer uniffi_lwk_fn_method_invoiceresponse_boltz_fee(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_CLAIM_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_CLAIM_TXID
+RustBuffer uniffi_lwk_fn_method_invoiceresponse_claim_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_COMPLETE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_COMPLETE_PAY
+int8_t uniffi_lwk_fn_method_invoiceresponse_complete_pay(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_FEE
+RustBuffer uniffi_lwk_fn_method_invoiceresponse_fee(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_LOCKUP_TXID
+RustBuffer uniffi_lwk_fn_method_invoiceresponse_lockup_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_SERIALIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_SERIALIZE
+RustBuffer uniffi_lwk_fn_method_invoiceresponse_serialize(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_SWAP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_INVOICERESPONSE_SWAP_ID
+RustBuffer uniffi_lwk_fn_method_invoiceresponse_swap_id(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_ISSUANCE
@@ -979,6 +1542,156 @@ RustBuffer uniffi_lwk_fn_method_issuance_token(void* ptr, RustCallStatus *out_st
 RustBuffer uniffi_lwk_fn_method_issuance_token_satoshi(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LIGHTNINGPAYMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LIGHTNINGPAYMENT
+void* uniffi_lwk_fn_clone_lightningpayment(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LIGHTNINGPAYMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LIGHTNINGPAYMENT
+void uniffi_lwk_fn_free_lightningpayment(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LIGHTNINGPAYMENT_FROM_BOLT11_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LIGHTNINGPAYMENT_FROM_BOLT11_INVOICE
+void* uniffi_lwk_fn_constructor_lightningpayment_from_bolt11_invoice(void* invoice, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LIGHTNINGPAYMENT_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LIGHTNINGPAYMENT_NEW
+void* uniffi_lwk_fn_constructor_lightningpayment_new(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LIGHTNINGPAYMENT_BOLT11_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LIGHTNINGPAYMENT_BOLT11_INVOICE
+RustBuffer uniffi_lwk_fn_method_lightningpayment_bolt11_invoice(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LOCKUPRESPONSE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LOCKUPRESPONSE
+void* uniffi_lwk_fn_clone_lockupresponse(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LOCKUPRESPONSE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LOCKUPRESPONSE
+void uniffi_lwk_fn_free_lockupresponse(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_ADVANCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_ADVANCE
+RustBuffer uniffi_lwk_fn_method_lockupresponse_advance(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_BOLTZ_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_BOLTZ_FEE
+RustBuffer uniffi_lwk_fn_method_lockupresponse_boltz_fee(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CHAIN_FROM
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CHAIN_FROM
+RustBuffer uniffi_lwk_fn_method_lockupresponse_chain_from(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CHAIN_TO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CHAIN_TO
+RustBuffer uniffi_lwk_fn_method_lockupresponse_chain_to(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CLAIM_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CLAIM_ADDRESS
+RustBuffer uniffi_lwk_fn_method_lockupresponse_claim_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CLAIM_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_CLAIM_TXID
+RustBuffer uniffi_lwk_fn_method_lockupresponse_claim_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_COMPLETE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_COMPLETE
+int8_t uniffi_lwk_fn_method_lockupresponse_complete(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_EXPECTED_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_EXPECTED_AMOUNT
+uint64_t uniffi_lwk_fn_method_lockupresponse_expected_amount(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_FEE
+RustBuffer uniffi_lwk_fn_method_lockupresponse_fee(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_LOCKUP_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_LOCKUP_ADDRESS
+RustBuffer uniffi_lwk_fn_method_lockupresponse_lockup_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_LOCKUP_TXID
+RustBuffer uniffi_lwk_fn_method_lockupresponse_lockup_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_REFUND_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_REFUND_TXID
+RustBuffer uniffi_lwk_fn_method_lockupresponse_refund_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_SERIALIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_SERIALIZE
+RustBuffer uniffi_lwk_fn_method_lockupresponse_serialize(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_SET_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_SET_LOCKUP_TXID
+void uniffi_lwk_fn_method_lockupresponse_set_lockup_txid(void* ptr, RustBuffer txid, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_SWAP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_SWAP_ID
+RustBuffer uniffi_lwk_fn_method_lockupresponse_swap_id(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_URI
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOCKUPRESPONSE_URI
+RustBuffer uniffi_lwk_fn_method_lockupresponse_uri(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LOGGING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LOGGING
+void* uniffi_lwk_fn_clone_logging(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LOGGING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LOGGING
+void uniffi_lwk_fn_free_logging(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_INIT_CALLBACK_VTABLE_LOGGING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_INIT_CALLBACK_VTABLE_LOGGING
+void uniffi_lwk_fn_init_callback_vtable_logging(UniffiVTableCallbackInterfaceLogging* vtable
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOGGING_LOG
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LOGGING_LOG
+void uniffi_lwk_fn_method_logging_log(void* ptr, RustBuffer level, RustBuffer message, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LOGGINGLINK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LOGGINGLINK
+void* uniffi_lwk_fn_clone_logginglink(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LOGGINGLINK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LOGGINGLINK
+void uniffi_lwk_fn_free_logginglink(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LOGGINGLINK_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LOGGINGLINK_NEW
+void* uniffi_lwk_fn_constructor_logginglink_new(void* logging, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LWKTESTENV
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LWKTESTENV
 void* uniffi_lwk_fn_clone_lwktestenv(void* ptr, RustCallStatus *out_status
@@ -1000,9 +1713,19 @@ void* uniffi_lwk_fn_constructor_lwktestenv_new(RustCallStatus *out_status
 RustBuffer uniffi_lwk_fn_method_lwktestenv_electrum_url(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_ESPLORA_URL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_ESPLORA_URL
+RustBuffer uniffi_lwk_fn_method_lwktestenv_esplora_url(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_GENERATE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_GENERATE
 void uniffi_lwk_fn_method_lwktestenv_generate(void* ptr, uint32_t blocks, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_GENESIS_BLOCK_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_GENESIS_BLOCK_HASH
+RustBuffer uniffi_lwk_fn_method_lwktestenv_genesis_block_hash(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_GET_NEW_ADDRESS
@@ -1023,6 +1746,41 @@ RustBuffer uniffi_lwk_fn_method_lwktestenv_issue_asset(void* ptr, uint64_t satos
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_SEND_TO_ADDRESS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_SEND_TO_ADDRESS
 void* uniffi_lwk_fn_method_lwktestenv_send_to_address(void* ptr, void* address, uint64_t satoshi, RustBuffer asset, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_WATERFALLS_URL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTENV_WATERFALLS_URL
+RustBuffer uniffi_lwk_fn_method_lwktestenv_waterfalls_url(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LWKTESTSTORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_LWKTESTSTORE
+void* uniffi_lwk_fn_clone_lwkteststore(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LWKTESTSTORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_LWKTESTSTORE
+void uniffi_lwk_fn_free_lwkteststore(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LWKTESTSTORE_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_LWKTESTSTORE_NEW
+void* uniffi_lwk_fn_constructor_lwkteststore_new(void* store, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTSTORE_READ
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTSTORE_READ
+RustBuffer uniffi_lwk_fn_method_lwkteststore_read(void* ptr, RustBuffer key, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTSTORE_REMOVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTSTORE_REMOVE
+void uniffi_lwk_fn_method_lwkteststore_remove(void* ptr, RustBuffer key, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTSTORE_WRITE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_LWKTESTSTORE_WRITE
+void uniffi_lwk_fn_method_lwkteststore_write(void* ptr, RustBuffer key, RustBuffer value, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_MNEMONIC
@@ -1048,6 +1806,11 @@ void* uniffi_lwk_fn_constructor_mnemonic_from_random(uint8_t word_count, RustCal
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_MNEMONIC_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_MNEMONIC_NEW
 void* uniffi_lwk_fn_constructor_mnemonic_new(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_MNEMONIC_WORD_COUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_MNEMONIC_WORD_COUNT
+uint8_t uniffi_lwk_fn_method_mnemonic_word_count(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_MNEMONIC_UNIFFI_TRAIT_DISPLAY
@@ -1098,6 +1861,11 @@ void* uniffi_lwk_fn_method_network_default_electrum_client(void* ptr, RustCallSt
 void* uniffi_lwk_fn_method_network_default_esplora_client(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_GENESIS_BLOCK_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_GENESIS_BLOCK_HASH
+RustBuffer uniffi_lwk_fn_method_network_genesis_block_hash(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_IS_MAINNET
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_IS_MAINNET
 int8_t uniffi_lwk_fn_method_network_is_mainnet(void* ptr, RustCallStatus *out_status
@@ -1118,6 +1886,16 @@ void* uniffi_lwk_fn_method_network_tx_builder(void* ptr, RustCallStatus *out_sta
 RustBuffer uniffi_lwk_fn_method_network_uniffi_trait_display(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_UNIFFI_TRAIT_EQ_EQ
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_UNIFFI_TRAIT_EQ_EQ
+int8_t uniffi_lwk_fn_method_network_uniffi_trait_eq_eq(void* ptr, void* other, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_UNIFFI_TRAIT_EQ_NE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_NETWORK_UNIFFI_TRAIT_EQ_NE
+int8_t uniffi_lwk_fn_method_network_uniffi_trait_eq_ne(void* ptr, void* other, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_OUTPOINT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_OUTPOINT
 void* uniffi_lwk_fn_clone_outpoint(void* ptr, RustCallStatus *out_status
@@ -1126,6 +1904,11 @@ void* uniffi_lwk_fn_clone_outpoint(void* ptr, RustCallStatus *out_status
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_OUTPOINT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_OUTPOINT
 void uniffi_lwk_fn_free_outpoint(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_OUTPOINT_FROM_PARTS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_OUTPOINT_FROM_PARTS
+void* uniffi_lwk_fn_constructor_outpoint_from_parts(void* txid, uint32_t vout, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_OUTPOINT_NEW
@@ -1146,6 +1929,141 @@ uint32_t uniffi_lwk_fn_method_outpoint_vout(void* ptr, RustCallStatus *out_statu
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_OUTPOINT_UNIFFI_TRAIT_DISPLAY
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_OUTPOINT_UNIFFI_TRAIT_DISPLAY
 RustBuffer uniffi_lwk_fn_method_outpoint_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PAYMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PAYMENT
+void* uniffi_lwk_fn_clone_payment(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_PAYMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_PAYMENT
+void uniffi_lwk_fn_free_payment(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_PAYMENT_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_PAYMENT_NEW
+void* uniffi_lwk_fn_constructor_payment_new(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BIP21
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BIP21
+RustBuffer uniffi_lwk_fn_method_payment_bip21(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BIP321
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BIP321
+RustBuffer uniffi_lwk_fn_method_payment_bip321(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BIP353
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BIP353
+RustBuffer uniffi_lwk_fn_method_payment_bip353(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BITCOIN_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_BITCOIN_ADDRESS
+RustBuffer uniffi_lwk_fn_method_payment_bitcoin_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_KIND
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_KIND
+RustBuffer uniffi_lwk_fn_method_payment_kind(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIGHTNING_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIGHTNING_INVOICE
+RustBuffer uniffi_lwk_fn_method_payment_lightning_invoice(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIGHTNING_OFFER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIGHTNING_OFFER
+RustBuffer uniffi_lwk_fn_method_payment_lightning_offer(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIGHTNING_PAYMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIGHTNING_PAYMENT
+RustBuffer uniffi_lwk_fn_method_payment_lightning_payment(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIQUID_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIQUID_ADDRESS
+RustBuffer uniffi_lwk_fn_method_payment_liquid_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIQUID_BIP21
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LIQUID_BIP21
+RustBuffer uniffi_lwk_fn_method_payment_liquid_bip21(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LNURL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PAYMENT_LNURL
+RustBuffer uniffi_lwk_fn_method_payment_lnurl(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_POSCONFIG
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_POSCONFIG
+void* uniffi_lwk_fn_clone_posconfig(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_POSCONFIG
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_POSCONFIG
+void uniffi_lwk_fn_free_posconfig(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_POSCONFIG_DECODE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_POSCONFIG_DECODE
+void* uniffi_lwk_fn_constructor_posconfig_decode(RustBuffer encoded, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_POSCONFIG_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_POSCONFIG_NEW
+void* uniffi_lwk_fn_constructor_posconfig_new(void* descriptor, void* currency, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_POSCONFIG_WITH_OPTIONS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_POSCONFIG_WITH_OPTIONS
+void* uniffi_lwk_fn_constructor_posconfig_with_options(void* descriptor, void* currency, RustBuffer show_gear, RustBuffer show_description, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_CURRENCY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_CURRENCY
+void* uniffi_lwk_fn_method_posconfig_currency(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_DESCRIPTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_DESCRIPTOR
+void* uniffi_lwk_fn_method_posconfig_descriptor(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_ENCODE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_ENCODE
+RustBuffer uniffi_lwk_fn_method_posconfig_encode(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_SHOW_DESCRIPTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_SHOW_DESCRIPTION
+RustBuffer uniffi_lwk_fn_method_posconfig_show_description(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_SHOW_GEAR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_SHOW_GEAR
+RustBuffer uniffi_lwk_fn_method_posconfig_show_gear(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_posconfig_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_UNIFFI_TRAIT_EQ_EQ
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_UNIFFI_TRAIT_EQ_EQ
+int8_t uniffi_lwk_fn_method_posconfig_uniffi_trait_eq_eq(void* ptr, void* other, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_UNIFFI_TRAIT_EQ_NE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_POSCONFIG_UNIFFI_TRAIT_EQ_NE
+int8_t uniffi_lwk_fn_method_posconfig_uniffi_trait_eq_ne(void* ptr, void* other, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PRECISION
@@ -1171,6 +2089,76 @@ RustBuffer uniffi_lwk_fn_method_precision_sats_to_string(void* ptr, int64_t sats
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PRECISION_STRING_TO_SATS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PRECISION_STRING_TO_SATS
 int64_t uniffi_lwk_fn_method_precision_string_to_sats(void* ptr, RustBuffer val, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PREPAREPAYRESPONSE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PREPAREPAYRESPONSE
+void* uniffi_lwk_fn_clone_preparepayresponse(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_PREPAREPAYRESPONSE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_PREPAREPAYRESPONSE
+void uniffi_lwk_fn_free_preparepayresponse(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_ADVANCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_ADVANCE
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_advance(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_BOLTZ_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_BOLTZ_FEE
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_boltz_fee(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_COMPLETE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_COMPLETE_PAY
+int8_t uniffi_lwk_fn_method_preparepayresponse_complete_pay(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_FEE
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_fee(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_LOCKUP_TXID
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_lockup_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_REFUND_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_REFUND_TXID
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_refund_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_SERIALIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_SERIALIZE
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_serialize(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_SET_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_SET_LOCKUP_TXID
+void uniffi_lwk_fn_method_preparepayresponse_set_lockup_txid(void* ptr, RustBuffer txid, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_SWAP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_SWAP_ID
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_swap_id(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_URI
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_URI
+RustBuffer uniffi_lwk_fn_method_preparepayresponse_uri(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_URI_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_URI_ADDRESS
+void* uniffi_lwk_fn_method_preparepayresponse_uri_address(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_URI_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PREPAREPAYRESPONSE_URI_AMOUNT
+uint64_t uniffi_lwk_fn_method_preparepayresponse_uri_amount(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PSET
@@ -1206,6 +2194,11 @@ void* uniffi_lwk_fn_method_pset_finalize(void* ptr, RustCallStatus *out_status
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSET_INPUTS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSET_INPUTS
 RustBuffer uniffi_lwk_fn_method_pset_inputs(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSET_OUTPUTS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSET_OUTPUTS
+RustBuffer uniffi_lwk_fn_method_pset_outputs(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSET_UNIQUE_ID
@@ -1258,6 +2251,16 @@ void uniffi_lwk_fn_free_psetdetails(void* ptr, RustCallStatus *out_status
 void* uniffi_lwk_fn_method_psetdetails_balance(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETDETAILS_FINGERPRINTS_HAS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETDETAILS_FINGERPRINTS_HAS
+RustBuffer uniffi_lwk_fn_method_psetdetails_fingerprints_has(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETDETAILS_FINGERPRINTS_MISSING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETDETAILS_FINGERPRINTS_MISSING
+RustBuffer uniffi_lwk_fn_method_psetdetails_fingerprints_missing(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETDETAILS_INPUTS_ISSUANCES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETDETAILS_INPUTS_ISSUANCES
 RustBuffer uniffi_lwk_fn_method_psetdetails_inputs_issuances(void* ptr, RustCallStatus *out_status
@@ -1286,6 +2289,11 @@ RustBuffer uniffi_lwk_fn_method_psetinput_issuance(void* ptr, RustCallStatus *ou
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETINPUT_ISSUANCE_ASSET
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETINPUT_ISSUANCE_ASSET
 RustBuffer uniffi_lwk_fn_method_psetinput_issuance_asset(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETINPUT_ISSUANCE_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETINPUT_ISSUANCE_IDS
+RustBuffer uniffi_lwk_fn_method_psetinput_issuance_ids(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETINPUT_ISSUANCE_TOKEN
@@ -1318,6 +2326,36 @@ RustBuffer uniffi_lwk_fn_method_psetinput_redeem_script(void* ptr, RustCallStatu
 uint32_t uniffi_lwk_fn_method_psetinput_sighash(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PSETOUTPUT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PSETOUTPUT
+void* uniffi_lwk_fn_clone_psetoutput(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_PSETOUTPUT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_PSETOUTPUT
+void uniffi_lwk_fn_free_psetoutput(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_AMOUNT
+RustBuffer uniffi_lwk_fn_method_psetoutput_amount(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_ASSET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_ASSET
+RustBuffer uniffi_lwk_fn_method_psetoutput_asset(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_BLINDER_INDEX
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_BLINDER_INDEX
+RustBuffer uniffi_lwk_fn_method_psetoutput_blinder_index(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_SCRIPT_PUBKEY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETOUTPUT_SCRIPT_PUBKEY
+void* uniffi_lwk_fn_method_psetoutput_script_pubkey(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PSETSIGNATURES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_PSETSIGNATURES
 void* uniffi_lwk_fn_clone_psetsignatures(void* ptr, RustCallStatus *out_status
@@ -1336,6 +2374,31 @@ RustBuffer uniffi_lwk_fn_method_psetsignatures_has_signature(void* ptr, RustCall
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETSIGNATURES_MISSING_SIGNATURE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_PSETSIGNATURES_MISSING_SIGNATURE
 RustBuffer uniffi_lwk_fn_method_psetsignatures_missing_signature(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_QUOTEBUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_QUOTEBUILDER
+void* uniffi_lwk_fn_clone_quotebuilder(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_QUOTEBUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_QUOTEBUILDER
+void uniffi_lwk_fn_free_quotebuilder(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_QUOTEBUILDER_BUILD
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_QUOTEBUILDER_BUILD
+RustBuffer uniffi_lwk_fn_method_quotebuilder_build(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_QUOTEBUILDER_RECEIVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_QUOTEBUILDER_RECEIVE
+void uniffi_lwk_fn_method_quotebuilder_receive(void* ptr, RustBuffer asset, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_QUOTEBUILDER_SEND
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_QUOTEBUILDER_SEND
+void uniffi_lwk_fn_method_quotebuilder_send(void* ptr, RustBuffer asset, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_RECIPIENT
@@ -1378,14 +2441,20 @@ void* uniffi_lwk_fn_clone_script(void* ptr, RustCallStatus *out_status
 void uniffi_lwk_fn_free_script(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SCRIPT_EMPTY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SCRIPT_EMPTY
+void* uniffi_lwk_fn_constructor_script_empty(RustCallStatus *out_status
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SCRIPT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SCRIPT_NEW
 void* uniffi_lwk_fn_constructor_script_new(RustBuffer hex, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_ASM
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_ASM
-RustBuffer uniffi_lwk_fn_method_script_asm(void* ptr, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SCRIPT_NEW_OP_RETURN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_SCRIPT_NEW_OP_RETURN
+void* uniffi_lwk_fn_constructor_script_new_op_return(RustBuffer data, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_BYTES
@@ -1396,6 +2465,16 @@ RustBuffer uniffi_lwk_fn_method_script_bytes(void* ptr, RustCallStatus *out_stat
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
 int8_t uniffi_lwk_fn_method_script_is_provably_unspendable(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_JET_SHA256_HEX
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_JET_SHA256_HEX
+RustBuffer uniffi_lwk_fn_method_script_jet_sha256_hex(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_TO_ASM
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_TO_ASM
+RustBuffer uniffi_lwk_fn_method_script_to_asm(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SCRIPT_UNIFFI_TRAIT_DISPLAY
@@ -1468,6 +2547,16 @@ RustBuffer uniffi_lwk_fn_method_signer_amp0_sign_challenge(void* ptr, RustBuffer
 void* uniffi_lwk_fn_method_signer_amp0_signer_data(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_DERIVE_BIP85_MNEMONIC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_DERIVE_BIP85_MNEMONIC
+void* uniffi_lwk_fn_method_signer_derive_bip85_mnemonic(void* ptr, uint32_t index, uint32_t word_count, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_FINGERPRINT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_FINGERPRINT
+RustBuffer uniffi_lwk_fn_method_signer_fingerprint(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_KEYORIGIN_XPUB
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SIGNER_KEYORIGIN_XPUB
 RustBuffer uniffi_lwk_fn_method_signer_keyorigin_xpub(void* ptr, void* bip, RustCallStatus *out_status
@@ -1493,6 +2582,21 @@ void* uniffi_lwk_fn_method_signer_singlesig_desc(void* ptr, RustBuffer script_va
 void* uniffi_lwk_fn_method_signer_wpkh_slip77_descriptor(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_SWAPLIST
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_SWAPLIST
+void* uniffi_lwk_fn_clone_swaplist(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_SWAPLIST
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_SWAPLIST
+void uniffi_lwk_fn_free_swaplist(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SWAPLIST_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_SWAPLIST_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_swaplist_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_TRANSACTION
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_TRANSACTION
 void* uniffi_lwk_fn_clone_transaction(void* ptr, RustCallStatus *out_status
@@ -1503,6 +2607,16 @@ void* uniffi_lwk_fn_clone_transaction(void* ptr, RustCallStatus *out_status
 void uniffi_lwk_fn_free_transaction(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TRANSACTION_FROM_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TRANSACTION_FROM_BYTES
+void* uniffi_lwk_fn_constructor_transaction_from_bytes(RustBuffer bytes, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TRANSACTION_FROM_STRING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TRANSACTION_FROM_STRING
+void* uniffi_lwk_fn_constructor_transaction_from_string(RustBuffer s, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TRANSACTION_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TRANSACTION_NEW
 void* uniffi_lwk_fn_constructor_transaction_new(RustBuffer hex, RustCallStatus *out_status
@@ -1511,6 +2625,11 @@ void* uniffi_lwk_fn_constructor_transaction_new(RustBuffer hex, RustCallStatus *
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_BYTES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_BYTES
 RustBuffer uniffi_lwk_fn_method_transaction_bytes(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_DISCOUNT_VSIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_DISCOUNT_VSIZE
+uint32_t uniffi_lwk_fn_method_transaction_discount_vsize(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_FEE
@@ -1528,9 +2647,19 @@ RustBuffer uniffi_lwk_fn_method_transaction_inputs(void* ptr, RustCallStatus *ou
 RustBuffer uniffi_lwk_fn_method_transaction_outputs(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_TO_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_TO_BYTES
+RustBuffer uniffi_lwk_fn_method_transaction_to_bytes(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_TXID
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_TXID
 void* uniffi_lwk_fn_method_transaction_txid(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_VERIFY_TX_AMT_PROOFS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_VERIFY_TX_AMT_PROOFS
+void uniffi_lwk_fn_method_transaction_verify_tx_amt_proofs(void* ptr, RustBuffer utxos, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TRANSACTION_UNIFFI_TRAIT_DISPLAY
@@ -1566,6 +2695,11 @@ void uniffi_lwk_fn_method_txbuilder_add_explicit_recipient(void* ptr, void* addr
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 void uniffi_lwk_fn_method_txbuilder_add_external_utxos(void* ptr, RustBuffer utxos, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_INPUT_RANGEPROOFS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_INPUT_RANGEPROOFS
+void uniffi_lwk_fn_method_txbuilder_add_input_rangeproofs(void* ptr, int8_t add_rangeproofs, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXBUILDER_ADD_LBTC_RECIPIENT
@@ -1648,6 +2782,11 @@ void uniffi_lwk_fn_free_txin(void* ptr, RustCallStatus *out_status
 void* uniffi_lwk_fn_method_txin_outpoint(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXIN_SEQUENCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXIN_SEQUENCE
+uint32_t uniffi_lwk_fn_method_txin_sequence(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_TXOUT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_TXOUT
 void* uniffi_lwk_fn_clone_txout(void* ptr, RustCallStatus *out_status
@@ -1656,6 +2795,11 @@ void* uniffi_lwk_fn_clone_txout(void* ptr, RustCallStatus *out_status
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_TXOUT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_TXOUT
 void uniffi_lwk_fn_free_txout(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TXOUT_FROM_EXPLICIT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_TXOUT_FROM_EXPLICIT
+void* uniffi_lwk_fn_constructor_txout_from_explicit(void* script_pubkey, RustBuffer asset_id, uint64_t satoshi, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_TXOUT_ASSET
@@ -1853,6 +2997,42 @@ void* uniffi_lwk_fn_method_validatedliquidexproposal_output(void* ptr, RustCallS
 RustBuffer uniffi_lwk_fn_method_validatedliquidexproposal_uniffi_trait_display(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_VALUEBLINDINGFACTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_VALUEBLINDINGFACTOR
+void* uniffi_lwk_fn_clone_valueblindingfactor(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_VALUEBLINDINGFACTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_VALUEBLINDINGFACTOR
+void uniffi_lwk_fn_free_valueblindingfactor(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_BYTES
+void* uniffi_lwk_fn_constructor_valueblindingfactor_from_bytes(RustBuffer bytes, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_STRING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_STRING
+void* uniffi_lwk_fn_constructor_valueblindingfactor_from_string(RustBuffer s, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_VALUEBLINDINGFACTOR_ZERO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_VALUEBLINDINGFACTOR_ZERO
+void* uniffi_lwk_fn_constructor_valueblindingfactor_zero(RustCallStatus *out_status
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_VALUEBLINDINGFACTOR_TO_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_VALUEBLINDINGFACTOR_TO_BYTES
+RustBuffer uniffi_lwk_fn_method_valueblindingfactor_to_bytes(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_VALUEBLINDINGFACTOR_UNIFFI_TRAIT_DISPLAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_VALUEBLINDINGFACTOR_UNIFFI_TRAIT_DISPLAY
+RustBuffer uniffi_lwk_fn_method_valueblindingfactor_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WALLETTX
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WALLETTX
 void* uniffi_lwk_fn_clone_wallettx(void* ptr, RustCallStatus *out_status
@@ -1958,6 +3138,21 @@ void* uniffi_lwk_fn_method_wallettxout_unblinded(void* ptr, RustCallStatus *out_
 uint32_t uniffi_lwk_fn_method_wallettxout_wildcard_index(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WEBHOOK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WEBHOOK
+void* uniffi_lwk_fn_clone_webhook(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_WEBHOOK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_WEBHOOK
+void uniffi_lwk_fn_free_webhook(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WEBHOOK_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WEBHOOK_NEW
+void* uniffi_lwk_fn_constructor_webhook_new(RustBuffer url, RustBuffer status, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WOLLET
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WOLLET
 void* uniffi_lwk_fn_clone_wollet(void* ptr, RustCallStatus *out_status
@@ -1973,9 +3168,9 @@ void uniffi_lwk_fn_free_wollet(void* ptr, RustCallStatus *out_status
 void* uniffi_lwk_fn_constructor_wollet_new(void* network, void* descriptor, RustBuffer datadir, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WOLLET_WITH_CUSTOM_PERSISTER
-#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WOLLET_WITH_CUSTOM_PERSISTER
-void* uniffi_lwk_fn_constructor_wollet_with_custom_persister(void* network, void* descriptor, void* persister, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WOLLET_WITH_CUSTOM_STORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WOLLET_WITH_CUSTOM_STORE
+void* uniffi_lwk_fn_constructor_wollet_with_custom_store(void* network, void* descriptor, void* store, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_ADD_DETAILS
@@ -2008,6 +3203,11 @@ RustBuffer uniffi_lwk_fn_method_wollet_balance(void* ptr, RustCallStatus *out_st
 void* uniffi_lwk_fn_method_wollet_descriptor(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_DWID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_DWID
+RustBuffer uniffi_lwk_fn_method_wollet_dwid(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
 RustBuffer uniffi_lwk_fn_method_wollet_extract_wallet_utxos(void* ptr, void* pset, RustCallStatus *out_status
@@ -2038,6 +3238,11 @@ uint32_t uniffi_lwk_fn_method_wollet_max_weight_to_satisfy(void* ptr, RustCallSt
 void* uniffi_lwk_fn_method_wollet_pset_details(void* ptr, void* pset, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TRANSACTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TRANSACTION
+void* uniffi_lwk_fn_method_wollet_transaction(void* ptr, void* txid, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TRANSACTIONS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_TRANSACTIONS
 RustBuffer uniffi_lwk_fn_method_wollet_transactions(void* ptr, RustCallStatus *out_status
@@ -2066,6 +3271,36 @@ RustBuffer uniffi_lwk_fn_method_wollet_utxos(void* ptr, RustCallStatus *out_stat
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_WAIT_FOR_TX
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLET_WAIT_FOR_TX
 void* uniffi_lwk_fn_method_wollet_wait_for_tx(void* ptr, void* txid, void* client, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WOLLETBUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WOLLETBUILDER
+void* uniffi_lwk_fn_clone_wolletbuilder(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_WOLLETBUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FREE_WOLLETBUILDER
+void uniffi_lwk_fn_free_wolletbuilder(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WOLLETBUILDER_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_CONSTRUCTOR_WOLLETBUILDER_NEW
+void* uniffi_lwk_fn_constructor_wolletbuilder_new(void* network, void* descriptor, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETBUILDER_BUILD
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETBUILDER_BUILD
+void* uniffi_lwk_fn_method_wolletbuilder_build(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETBUILDER_WITH_LEGACY_FS_STORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETBUILDER_WITH_LEGACY_FS_STORE
+void uniffi_lwk_fn_method_wolletbuilder_with_legacy_fs_store(void* ptr, RustBuffer datadir, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETBUILDER_WITH_MERGE_THRESHOLD
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETBUILDER_WITH_MERGE_THRESHOLD
+void uniffi_lwk_fn_method_wolletbuilder_with_merge_threshold(void* ptr, RustBuffer merge_threshold, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_CLONE_WOLLETDESCRIPTOR
@@ -2103,9 +3338,24 @@ int8_t uniffi_lwk_fn_method_wolletdescriptor_is_mainnet(void* ptr, RustCallStatu
 void* uniffi_lwk_fn_method_wolletdescriptor_script_pubkey(void* ptr, RustBuffer ext_int, uint32_t index, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_URL_ENCODED_DESCRIPTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_URL_ENCODED_DESCRIPTOR
+RustBuffer uniffi_lwk_fn_method_wolletdescriptor_url_encoded_descriptor(void* ptr, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_UNIFFI_TRAIT_DISPLAY
 #define UNIFFI_FFIDEF_UNIFFI_LWK_FN_METHOD_WOLLETDESCRIPTOR_UNIFFI_TRAIT_DISPLAY
 RustBuffer uniffi_lwk_fn_method_wolletdescriptor_uniffi_trait_display(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FUNC_DERIVE_ASSET_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FUNC_DERIVE_ASSET_ID
+RustBuffer uniffi_lwk_fn_func_derive_asset_id(void* txin, void* contract, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FUNC_DERIVE_TOKEN_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_FN_FUNC_DERIVE_TOKEN_ID
+RustBuffer uniffi_lwk_fn_func_derive_token_id(void* txin, void* contract, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_FN_FUNC_IS_PROVABLY_SEGWIT
@@ -2393,6 +3643,18 @@ void ffi_lwk_rust_future_free_void(uint64_t handle
 void ffi_lwk_rust_future_complete_void(uint64_t handle, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_FUNC_DERIVE_ASSET_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_FUNC_DERIVE_ASSET_ID
+uint16_t uniffi_lwk_checksum_func_derive_asset_id(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_FUNC_DERIVE_TOKEN_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_FUNC_DERIVE_TOKEN_ID
+uint16_t uniffi_lwk_checksum_func_derive_token_id(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_FUNC_IS_PROVABLY_SEGWIT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_FUNC_IS_PROVABLY_SEGWIT
 uint16_t uniffi_lwk_checksum_func_is_provably_segwit(void
@@ -2402,6 +3664,12 @@ uint16_t uniffi_lwk_checksum_func_is_provably_segwit(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ADDRESS_IS_BLINDED
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ADDRESS_IS_BLINDED
 uint16_t uniffi_lwk_checksum_method_address_is_blinded(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ADDRESS_NETWORK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ADDRESS_NETWORK
+uint16_t uniffi_lwk_checksum_method_address_network(void
     
 );
 #endif
@@ -2531,9 +3799,9 @@ uint16_t uniffi_lwk_checksum_method_amp2_descriptor_from_str(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP2_REGISTER
-#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP2_REGISTER
-uint16_t uniffi_lwk_checksum_method_amp2_register(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP2_REGISTER_WALLET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_AMP2_REGISTER_WALLET
+uint16_t uniffi_lwk_checksum_method_amp2_register_wallet(void
     
 );
 #endif
@@ -2552,6 +3820,138 @@ uint16_t uniffi_lwk_checksum_method_assetamount_amount(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ASSETAMOUNT_ASSET
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ASSETAMOUNT_ASSET
 uint16_t uniffi_lwk_checksum_method_assetamount_asset(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ASSETBLINDINGFACTOR_TO_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_ASSETBLINDINGFACTOR_TO_BYTES
+uint16_t uniffi_lwk_checksum_method_assetblindingfactor_to_bytes(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_ADDRESS
+uint16_t uniffi_lwk_checksum_method_bip21_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_AMOUNT
+uint16_t uniffi_lwk_checksum_method_bip21_amount(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_AS_STR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_AS_STR
+uint16_t uniffi_lwk_checksum_method_bip21_as_str(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_LABEL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_LABEL
+uint16_t uniffi_lwk_checksum_method_bip21_label(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_LIGHTNING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_LIGHTNING
+uint16_t uniffi_lwk_checksum_method_bip21_lightning(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_MESSAGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_MESSAGE
+uint16_t uniffi_lwk_checksum_method_bip21_message(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_OFFER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_OFFER
+uint16_t uniffi_lwk_checksum_method_bip21_offer(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_PAYJOIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_PAYJOIN
+uint16_t uniffi_lwk_checksum_method_bip21_payjoin(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_PAYJOIN_OUTPUT_SUBSTITUTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_PAYJOIN_OUTPUT_SUBSTITUTION
+uint16_t uniffi_lwk_checksum_method_bip21_payjoin_output_substitution(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_SILENT_PAYMENT_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP21_SILENT_PAYMENT_ADDRESS
+uint16_t uniffi_lwk_checksum_method_bip21_silent_payment_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_AMOUNT
+uint16_t uniffi_lwk_checksum_method_bip321_amount(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_ARK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_ARK
+uint16_t uniffi_lwk_checksum_method_bip321_ark(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_AS_STR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_AS_STR
+uint16_t uniffi_lwk_checksum_method_bip321_as_str(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_LABEL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_LABEL
+uint16_t uniffi_lwk_checksum_method_bip321_label(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_LIGHTNING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_LIGHTNING
+uint16_t uniffi_lwk_checksum_method_bip321_lightning(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_MESSAGE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_MESSAGE
+uint16_t uniffi_lwk_checksum_method_bip321_message(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_OFFER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_OFFER
+uint16_t uniffi_lwk_checksum_method_bip321_offer(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_PAYJOIN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_PAYJOIN
+uint16_t uniffi_lwk_checksum_method_bip321_payjoin(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_PAYJOIN_OUTPUT_SUBSTITUTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_PAYJOIN_OUTPUT_SUBSTITUTION
+uint16_t uniffi_lwk_checksum_method_bip321_payjoin_output_substitution(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_SILENT_PAYMENT_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BIP321_SILENT_PAYMENT_ADDRESS
+uint16_t uniffi_lwk_checksum_method_bip321_silent_payment_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BITCOINADDRESS_IS_MAINNET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BITCOINADDRESS_IS_MAINNET
+uint16_t uniffi_lwk_checksum_method_bitcoinaddress_is_mainnet(void
     
 );
 #endif
@@ -2588,6 +3988,216 @@ uint16_t uniffi_lwk_checksum_method_blockheader_time(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_VERSION
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BLOCKHEADER_VERSION
 uint16_t uniffi_lwk_checksum_method_blockheader_version(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_AMOUNT_MILLI_SATOSHIS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_AMOUNT_MILLI_SATOSHIS
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_amount_milli_satoshis(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_EXPIRY_TIME
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_EXPIRY_TIME
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_expiry_time(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_INVOICE_DESCRIPTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_INVOICE_DESCRIPTION
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_invoice_description(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_MIN_FINAL_CLTV_EXPIRY_DELTA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_MIN_FINAL_CLTV_EXPIRY_DELTA
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_min_final_cltv_expiry_delta(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_NETWORK
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_NETWORK
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_network(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_PAYEE_PUB_KEY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_PAYEE_PUB_KEY
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_payee_pub_key(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_PAYMENT_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_PAYMENT_HASH
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_payment_hash(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_PAYMENT_SECRET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_PAYMENT_SECRET
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_payment_secret(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_TIMESTAMP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLT11INVOICE_TIMESTAMP
+uint16_t uniffi_lwk_checksum_method_bolt11invoice_timestamp(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_BTC_TO_LBTC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_BTC_TO_LBTC
+uint16_t uniffi_lwk_checksum_method_boltzsession_btc_to_lbtc(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_COMPLETED_SWAP_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_COMPLETED_SWAP_IDS
+uint16_t uniffi_lwk_checksum_method_boltzsession_completed_swap_ids(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_FETCH_SWAPS_INFO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_FETCH_SWAPS_INFO
+uint16_t uniffi_lwk_checksum_method_boltzsession_fetch_swaps_info(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_GET_SWAP_DATA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_GET_SWAP_DATA
+uint16_t uniffi_lwk_checksum_method_boltzsession_get_swap_data(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_INVOICE
+uint16_t uniffi_lwk_checksum_method_boltzsession_invoice(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_LBTC_TO_BTC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_LBTC_TO_BTC
+uint16_t uniffi_lwk_checksum_method_boltzsession_lbtc_to_btc(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_NEXT_INDEX_TO_USE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_NEXT_INDEX_TO_USE
+uint16_t uniffi_lwk_checksum_method_boltzsession_next_index_to_use(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_PENDING_SWAP_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_PENDING_SWAP_IDS
+uint16_t uniffi_lwk_checksum_method_boltzsession_pending_swap_ids(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_PREPARE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_PREPARE_PAY
+uint16_t uniffi_lwk_checksum_method_boltzsession_prepare_pay(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_QUOTE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_QUOTE
+uint16_t uniffi_lwk_checksum_method_boltzsession_quote(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_QUOTE_RECEIVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_QUOTE_RECEIVE
+uint16_t uniffi_lwk_checksum_method_boltzsession_quote_receive(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_REFRESH_SWAP_INFO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_REFRESH_SWAP_INFO
+uint16_t uniffi_lwk_checksum_method_boltzsession_refresh_swap_info(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_REMOVE_SWAP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_REMOVE_SWAP
+uint16_t uniffi_lwk_checksum_method_boltzsession_remove_swap(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESCUE_FILE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESCUE_FILE
+uint16_t uniffi_lwk_checksum_method_boltzsession_rescue_file(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_BTC_TO_LBTC_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_BTC_TO_LBTC_SWAPS
+uint16_t uniffi_lwk_checksum_method_boltzsession_restorable_btc_to_lbtc_swaps(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_LBTC_TO_BTC_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_LBTC_TO_BTC_SWAPS
+uint16_t uniffi_lwk_checksum_method_boltzsession_restorable_lbtc_to_btc_swaps(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_REVERSE_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_REVERSE_SWAPS
+uint16_t uniffi_lwk_checksum_method_boltzsession_restorable_reverse_swaps(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_SUBMARINE_SWAPS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORABLE_SUBMARINE_SWAPS
+uint16_t uniffi_lwk_checksum_method_boltzsession_restorable_submarine_swaps(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORE_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORE_INVOICE
+uint16_t uniffi_lwk_checksum_method_boltzsession_restore_invoice(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORE_LOCKUP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORE_LOCKUP
+uint16_t uniffi_lwk_checksum_method_boltzsession_restore_lockup(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORE_PREPARE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_RESTORE_PREPARE_PAY
+uint16_t uniffi_lwk_checksum_method_boltzsession_restore_prepare_pay(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_SET_NEXT_INDEX_TO_USE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_SET_NEXT_INDEX_TO_USE
+uint16_t uniffi_lwk_checksum_method_boltzsession_set_next_index_to_use(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_SWAP_RESTORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_BOLTZSESSION_SWAP_RESTORE
+uint16_t uniffi_lwk_checksum_method_boltzsession_swap_restore(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_CURRENCYCODE_ALPHA3
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_CURRENCYCODE_ALPHA3
+uint16_t uniffi_lwk_checksum_method_currencycode_alpha3(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_CURRENCYCODE_EXP
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_CURRENCYCODE_EXP
+uint16_t uniffi_lwk_checksum_method_currencycode_exp(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_CURRENCYCODE_NAME
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_CURRENCYCODE_NAME
+uint16_t uniffi_lwk_checksum_method_currencycode_name(void
     
 );
 #endif
@@ -2651,15 +4261,75 @@ uint16_t uniffi_lwk_checksum_method_esploraclient_tip(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNPERSISTER_GET
-#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNPERSISTER_GET
-uint16_t uniffi_lwk_checksum_method_foreignpersister_get(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNSTORE_GET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNSTORE_GET
+uint16_t uniffi_lwk_checksum_method_foreignstore_get(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNPERSISTER_PUSH
-#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNPERSISTER_PUSH
-uint16_t uniffi_lwk_checksum_method_foreignpersister_push(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNSTORE_PUT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNSTORE_PUT
+uint16_t uniffi_lwk_checksum_method_foreignstore_put(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNSTORE_REMOVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_FOREIGNSTORE_REMOVE
+uint16_t uniffi_lwk_checksum_method_foreignstore_remove(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_ADVANCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_ADVANCE
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_advance(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_BOLT11_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_BOLT11_INVOICE
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_bolt11_invoice(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_BOLTZ_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_BOLTZ_FEE
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_boltz_fee(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_CLAIM_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_CLAIM_TXID
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_claim_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_COMPLETE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_COMPLETE_PAY
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_complete_pay(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_FEE
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_fee(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_LOCKUP_TXID
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_lockup_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_SERIALIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_SERIALIZE
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_serialize(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_SWAP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_INVOICERESPONSE_SWAP_ID
+uint16_t uniffi_lwk_checksum_method_invoiceresponse_swap_id(void
     
 );
 #endif
@@ -2723,15 +4393,135 @@ uint16_t uniffi_lwk_checksum_method_issuance_token_satoshi(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LIGHTNINGPAYMENT_BOLT11_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LIGHTNINGPAYMENT_BOLT11_INVOICE
+uint16_t uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_ADVANCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_ADVANCE
+uint16_t uniffi_lwk_checksum_method_lockupresponse_advance(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_BOLTZ_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_BOLTZ_FEE
+uint16_t uniffi_lwk_checksum_method_lockupresponse_boltz_fee(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CHAIN_FROM
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CHAIN_FROM
+uint16_t uniffi_lwk_checksum_method_lockupresponse_chain_from(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CHAIN_TO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CHAIN_TO
+uint16_t uniffi_lwk_checksum_method_lockupresponse_chain_to(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CLAIM_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CLAIM_ADDRESS
+uint16_t uniffi_lwk_checksum_method_lockupresponse_claim_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CLAIM_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_CLAIM_TXID
+uint16_t uniffi_lwk_checksum_method_lockupresponse_claim_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_COMPLETE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_COMPLETE
+uint16_t uniffi_lwk_checksum_method_lockupresponse_complete(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_EXPECTED_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_EXPECTED_AMOUNT
+uint16_t uniffi_lwk_checksum_method_lockupresponse_expected_amount(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_FEE
+uint16_t uniffi_lwk_checksum_method_lockupresponse_fee(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_LOCKUP_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_LOCKUP_ADDRESS
+uint16_t uniffi_lwk_checksum_method_lockupresponse_lockup_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_LOCKUP_TXID
+uint16_t uniffi_lwk_checksum_method_lockupresponse_lockup_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_REFUND_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_REFUND_TXID
+uint16_t uniffi_lwk_checksum_method_lockupresponse_refund_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_SERIALIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_SERIALIZE
+uint16_t uniffi_lwk_checksum_method_lockupresponse_serialize(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_SET_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_SET_LOCKUP_TXID
+uint16_t uniffi_lwk_checksum_method_lockupresponse_set_lockup_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_SWAP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_SWAP_ID
+uint16_t uniffi_lwk_checksum_method_lockupresponse_swap_id(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_URI
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOCKUPRESPONSE_URI
+uint16_t uniffi_lwk_checksum_method_lockupresponse_uri(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOGGING_LOG
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LOGGING_LOG
+uint16_t uniffi_lwk_checksum_method_logging_log(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_ELECTRUM_URL
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_ELECTRUM_URL
 uint16_t uniffi_lwk_checksum_method_lwktestenv_electrum_url(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_ESPLORA_URL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_ESPLORA_URL
+uint16_t uniffi_lwk_checksum_method_lwktestenv_esplora_url(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_GENERATE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_GENERATE
 uint16_t uniffi_lwk_checksum_method_lwktestenv_generate(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_GENESIS_BLOCK_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_GENESIS_BLOCK_HASH
+uint16_t uniffi_lwk_checksum_method_lwktestenv_genesis_block_hash(void
     
 );
 #endif
@@ -2759,6 +4549,36 @@ uint16_t uniffi_lwk_checksum_method_lwktestenv_send_to_address(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_WATERFALLS_URL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTENV_WATERFALLS_URL
+uint16_t uniffi_lwk_checksum_method_lwktestenv_waterfalls_url(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTSTORE_READ
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTSTORE_READ
+uint16_t uniffi_lwk_checksum_method_lwkteststore_read(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTSTORE_REMOVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTSTORE_REMOVE
+uint16_t uniffi_lwk_checksum_method_lwkteststore_remove(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTSTORE_WRITE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_LWKTESTSTORE_WRITE
+uint16_t uniffi_lwk_checksum_method_lwkteststore_write(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_MNEMONIC_WORD_COUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_MNEMONIC_WORD_COUNT
+uint16_t uniffi_lwk_checksum_method_mnemonic_word_count(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_NETWORK_DEFAULT_ELECTRUM_CLIENT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_NETWORK_DEFAULT_ELECTRUM_CLIENT
 uint16_t uniffi_lwk_checksum_method_network_default_electrum_client(void
@@ -2768,6 +4588,12 @@ uint16_t uniffi_lwk_checksum_method_network_default_electrum_client(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_NETWORK_DEFAULT_ESPLORA_CLIENT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_NETWORK_DEFAULT_ESPLORA_CLIENT
 uint16_t uniffi_lwk_checksum_method_network_default_esplora_client(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_NETWORK_GENESIS_BLOCK_HASH
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_NETWORK_GENESIS_BLOCK_HASH
+uint16_t uniffi_lwk_checksum_method_network_genesis_block_hash(void
     
 );
 #endif
@@ -2801,6 +4627,102 @@ uint16_t uniffi_lwk_checksum_method_outpoint_vout(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BIP21
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BIP21
+uint16_t uniffi_lwk_checksum_method_payment_bip21(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BIP321
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BIP321
+uint16_t uniffi_lwk_checksum_method_payment_bip321(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BIP353
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BIP353
+uint16_t uniffi_lwk_checksum_method_payment_bip353(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BITCOIN_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_BITCOIN_ADDRESS
+uint16_t uniffi_lwk_checksum_method_payment_bitcoin_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_KIND
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_KIND
+uint16_t uniffi_lwk_checksum_method_payment_kind(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIGHTNING_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIGHTNING_INVOICE
+uint16_t uniffi_lwk_checksum_method_payment_lightning_invoice(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIGHTNING_OFFER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIGHTNING_OFFER
+uint16_t uniffi_lwk_checksum_method_payment_lightning_offer(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIGHTNING_PAYMENT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIGHTNING_PAYMENT
+uint16_t uniffi_lwk_checksum_method_payment_lightning_payment(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIQUID_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIQUID_ADDRESS
+uint16_t uniffi_lwk_checksum_method_payment_liquid_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIQUID_BIP21
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LIQUID_BIP21
+uint16_t uniffi_lwk_checksum_method_payment_liquid_bip21(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LNURL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PAYMENT_LNURL
+uint16_t uniffi_lwk_checksum_method_payment_lnurl(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_CURRENCY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_CURRENCY
+uint16_t uniffi_lwk_checksum_method_posconfig_currency(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_DESCRIPTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_DESCRIPTOR
+uint16_t uniffi_lwk_checksum_method_posconfig_descriptor(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_ENCODE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_ENCODE
+uint16_t uniffi_lwk_checksum_method_posconfig_encode(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_SHOW_DESCRIPTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_SHOW_DESCRIPTION
+uint16_t uniffi_lwk_checksum_method_posconfig_show_description(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_SHOW_GEAR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_POSCONFIG_SHOW_GEAR
+uint16_t uniffi_lwk_checksum_method_posconfig_show_gear(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PRECISION_SATS_TO_STRING
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PRECISION_SATS_TO_STRING
 uint16_t uniffi_lwk_checksum_method_precision_sats_to_string(void
@@ -2810,6 +4732,78 @@ uint16_t uniffi_lwk_checksum_method_precision_sats_to_string(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PRECISION_STRING_TO_SATS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PRECISION_STRING_TO_SATS
 uint16_t uniffi_lwk_checksum_method_precision_string_to_sats(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_ADVANCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_ADVANCE
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_advance(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_BOLTZ_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_BOLTZ_FEE
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_boltz_fee(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_COMPLETE_PAY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_COMPLETE_PAY
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_complete_pay(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_FEE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_FEE
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_fee(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_LOCKUP_TXID
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_lockup_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_REFUND_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_REFUND_TXID
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_refund_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_SERIALIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_SERIALIZE
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_serialize(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_SET_LOCKUP_TXID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_SET_LOCKUP_TXID
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_set_lockup_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_SWAP_ID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_SWAP_ID
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_swap_id(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_URI
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_URI
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_uri(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_URI_ADDRESS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_URI_ADDRESS
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_uri_address(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_URI_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PREPAREPAYRESPONSE_URI_AMOUNT
+uint16_t uniffi_lwk_checksum_method_preparepayresponse_uri_amount(void
     
 );
 #endif
@@ -2834,6 +4828,12 @@ uint16_t uniffi_lwk_checksum_method_pset_finalize(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSET_INPUTS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSET_INPUTS
 uint16_t uniffi_lwk_checksum_method_pset_inputs(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSET_OUTPUTS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSET_OUTPUTS
+uint16_t uniffi_lwk_checksum_method_pset_outputs(void
     
 );
 #endif
@@ -2867,6 +4867,18 @@ uint16_t uniffi_lwk_checksum_method_psetdetails_balance(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETDETAILS_FINGERPRINTS_HAS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETDETAILS_FINGERPRINTS_HAS
+uint16_t uniffi_lwk_checksum_method_psetdetails_fingerprints_has(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETDETAILS_FINGERPRINTS_MISSING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETDETAILS_FINGERPRINTS_MISSING
+uint16_t uniffi_lwk_checksum_method_psetdetails_fingerprints_missing(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETDETAILS_INPUTS_ISSUANCES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETDETAILS_INPUTS_ISSUANCES
 uint16_t uniffi_lwk_checksum_method_psetdetails_inputs_issuances(void
@@ -2888,6 +4900,12 @@ uint16_t uniffi_lwk_checksum_method_psetinput_issuance(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETINPUT_ISSUANCE_ASSET
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETINPUT_ISSUANCE_ASSET
 uint16_t uniffi_lwk_checksum_method_psetinput_issuance_asset(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETINPUT_ISSUANCE_IDS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETINPUT_ISSUANCE_IDS
+uint16_t uniffi_lwk_checksum_method_psetinput_issuance_ids(void
     
 );
 #endif
@@ -2927,6 +4945,30 @@ uint16_t uniffi_lwk_checksum_method_psetinput_sighash(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_AMOUNT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_AMOUNT
+uint16_t uniffi_lwk_checksum_method_psetoutput_amount(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_ASSET
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_ASSET
+uint16_t uniffi_lwk_checksum_method_psetoutput_asset(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_BLINDER_INDEX
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_BLINDER_INDEX
+uint16_t uniffi_lwk_checksum_method_psetoutput_blinder_index(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_SCRIPT_PUBKEY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETOUTPUT_SCRIPT_PUBKEY
+uint16_t uniffi_lwk_checksum_method_psetoutput_script_pubkey(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETSIGNATURES_HAS_SIGNATURE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETSIGNATURES_HAS_SIGNATURE
 uint16_t uniffi_lwk_checksum_method_psetsignatures_has_signature(void
@@ -2936,6 +4978,24 @@ uint16_t uniffi_lwk_checksum_method_psetsignatures_has_signature(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETSIGNATURES_MISSING_SIGNATURE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_PSETSIGNATURES_MISSING_SIGNATURE
 uint16_t uniffi_lwk_checksum_method_psetsignatures_missing_signature(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_QUOTEBUILDER_BUILD
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_QUOTEBUILDER_BUILD
+uint16_t uniffi_lwk_checksum_method_quotebuilder_build(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_QUOTEBUILDER_RECEIVE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_QUOTEBUILDER_RECEIVE
+uint16_t uniffi_lwk_checksum_method_quotebuilder_receive(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_QUOTEBUILDER_SEND
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_QUOTEBUILDER_SEND
+uint16_t uniffi_lwk_checksum_method_quotebuilder_send(void
     
 );
 #endif
@@ -2963,12 +5023,6 @@ uint16_t uniffi_lwk_checksum_method_recipient_vout(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_ASM
-#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_ASM
-uint16_t uniffi_lwk_checksum_method_script_asm(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_BYTES
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_BYTES
 uint16_t uniffi_lwk_checksum_method_script_bytes(void
@@ -2978,6 +5032,18 @@ uint16_t uniffi_lwk_checksum_method_script_bytes(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_IS_PROVABLY_UNSPENDABLE
 uint16_t uniffi_lwk_checksum_method_script_is_provably_unspendable(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_JET_SHA256_HEX
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_JET_SHA256_HEX
+uint16_t uniffi_lwk_checksum_method_script_jet_sha256_hex(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_TO_ASM
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SCRIPT_TO_ASM
+uint16_t uniffi_lwk_checksum_method_script_to_asm(void
     
 );
 #endif
@@ -3008,6 +5074,18 @@ uint16_t uniffi_lwk_checksum_method_signer_amp0_sign_challenge(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_SIGNER_DATA
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_AMP0_SIGNER_DATA
 uint16_t uniffi_lwk_checksum_method_signer_amp0_signer_data(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_DERIVE_BIP85_MNEMONIC
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_DERIVE_BIP85_MNEMONIC
+uint16_t uniffi_lwk_checksum_method_signer_derive_bip85_mnemonic(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_FINGERPRINT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_SIGNER_FINGERPRINT
+uint16_t uniffi_lwk_checksum_method_signer_fingerprint(void
     
 );
 #endif
@@ -3047,6 +5125,12 @@ uint16_t uniffi_lwk_checksum_method_transaction_bytes(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_DISCOUNT_VSIZE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_DISCOUNT_VSIZE
+uint16_t uniffi_lwk_checksum_method_transaction_discount_vsize(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_FEE
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_FEE
 uint16_t uniffi_lwk_checksum_method_transaction_fee(void
@@ -3065,9 +5149,21 @@ uint16_t uniffi_lwk_checksum_method_transaction_outputs(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_TO_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_TO_BYTES
+uint16_t uniffi_lwk_checksum_method_transaction_to_bytes(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_TXID
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_TXID
 uint16_t uniffi_lwk_checksum_method_transaction_txid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_VERIFY_TX_AMT_PROOFS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TRANSACTION_VERIFY_TX_AMT_PROOFS
+uint16_t uniffi_lwk_checksum_method_transaction_verify_tx_amt_proofs(void
     
 );
 #endif
@@ -3086,6 +5182,12 @@ uint16_t uniffi_lwk_checksum_method_txbuilder_add_explicit_recipient(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_EXTERNAL_UTXOS
 uint16_t uniffi_lwk_checksum_method_txbuilder_add_external_utxos(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_INPUT_RANGEPROOFS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXBUILDER_ADD_INPUT_RANGEPROOFS
+uint16_t uniffi_lwk_checksum_method_txbuilder_add_input_rangeproofs(void
     
 );
 #endif
@@ -3164,6 +5266,12 @@ uint16_t uniffi_lwk_checksum_method_txbuilder_set_wallet_utxos(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXIN_OUTPOINT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXIN_OUTPOINT
 uint16_t uniffi_lwk_checksum_method_txin_outpoint(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXIN_SEQUENCE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_TXIN_SEQUENCE
+uint16_t uniffi_lwk_checksum_method_txin_sequence(void
     
 );
 #endif
@@ -3296,6 +5404,12 @@ uint16_t uniffi_lwk_checksum_method_validatedliquidexproposal_input(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_VALIDATEDLIQUIDEXPROPOSAL_OUTPUT
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_VALIDATEDLIQUIDEXPROPOSAL_OUTPUT
 uint16_t uniffi_lwk_checksum_method_validatedliquidexproposal_output(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_VALUEBLINDINGFACTOR_TO_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_VALUEBLINDINGFACTOR_TO_BYTES
+uint16_t uniffi_lwk_checksum_method_valueblindingfactor_to_bytes(void
     
 );
 #endif
@@ -3437,6 +5551,12 @@ uint16_t uniffi_lwk_checksum_method_wollet_descriptor(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_DWID
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_DWID
+uint16_t uniffi_lwk_checksum_method_wollet_dwid(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_EXTRACT_WALLET_UTXOS
 uint16_t uniffi_lwk_checksum_method_wollet_extract_wallet_utxos(void
@@ -3470,6 +5590,12 @@ uint16_t uniffi_lwk_checksum_method_wollet_max_weight_to_satisfy(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_PSET_DETAILS
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_PSET_DETAILS
 uint16_t uniffi_lwk_checksum_method_wollet_pset_details(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_TRANSACTION
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLET_TRANSACTION
+uint16_t uniffi_lwk_checksum_method_wollet_transaction(void
     
 );
 #endif
@@ -3509,6 +5635,24 @@ uint16_t uniffi_lwk_checksum_method_wollet_wait_for_tx(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETBUILDER_BUILD
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETBUILDER_BUILD
+uint16_t uniffi_lwk_checksum_method_wolletbuilder_build(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETBUILDER_WITH_LEGACY_FS_STORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETBUILDER_WITH_LEGACY_FS_STORE
+uint16_t uniffi_lwk_checksum_method_wolletbuilder_with_legacy_fs_store(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETBUILDER_WITH_MERGE_THRESHOLD
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETBUILDER_WITH_MERGE_THRESHOLD
+uint16_t uniffi_lwk_checksum_method_wolletbuilder_with_merge_threshold(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_DERIVE_BLINDING_KEY
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_DERIVE_BLINDING_KEY
 uint16_t uniffi_lwk_checksum_method_wolletdescriptor_derive_blinding_key(void
@@ -3530,6 +5674,12 @@ uint16_t uniffi_lwk_checksum_method_wolletdescriptor_is_mainnet(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_SCRIPT_PUBKEY
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_SCRIPT_PUBKEY
 uint16_t uniffi_lwk_checksum_method_wolletdescriptor_script_pubkey(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_URL_ENCODED_DESCRIPTOR
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_METHOD_WOLLETDESCRIPTOR_URL_ENCODED_DESCRIPTOR
+uint16_t uniffi_lwk_checksum_method_wolletdescriptor_url_encoded_descriptor(void
     
 );
 #endif
@@ -3563,6 +5713,36 @@ uint16_t uniffi_lwk_checksum_constructor_amp2_new_testnet(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ANYCLIENT_FROM_ELECTRUM
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ANYCLIENT_FROM_ELECTRUM
+uint16_t uniffi_lwk_checksum_constructor_anyclient_from_electrum(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ANYCLIENT_FROM_ESPLORA
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ANYCLIENT_FROM_ESPLORA
+uint16_t uniffi_lwk_checksum_constructor_anyclient_from_esplora(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_BYTES
+uint16_t uniffi_lwk_checksum_constructor_assetblindingfactor_from_bytes(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_STRING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ASSETBLINDINGFACTOR_FROM_STRING
+uint16_t uniffi_lwk_checksum_constructor_assetblindingfactor_from_string(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ASSETBLINDINGFACTOR_ZERO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ASSETBLINDINGFACTOR_ZERO
+uint16_t uniffi_lwk_checksum_constructor_assetblindingfactor_zero(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BIP_NEW_BIP49
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BIP_NEW_BIP49
 uint16_t uniffi_lwk_checksum_constructor_bip_new_bip49(void
@@ -3581,9 +5761,57 @@ uint16_t uniffi_lwk_checksum_constructor_bip_new_bip87(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BIP21_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BIP21_NEW
+uint16_t uniffi_lwk_checksum_constructor_bip21_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BIP321_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BIP321_NEW
+uint16_t uniffi_lwk_checksum_constructor_bip321_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BITCOINADDRESS_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BITCOINADDRESS_NEW
+uint16_t uniffi_lwk_checksum_constructor_bitcoinaddress_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BOLT11INVOICE_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BOLT11INVOICE_NEW
+uint16_t uniffi_lwk_checksum_constructor_bolt11invoice_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BOLTZSESSION_FROM_BUILDER
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BOLTZSESSION_FROM_BUILDER
+uint16_t uniffi_lwk_checksum_constructor_boltzsession_from_builder(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BOLTZSESSION_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_BOLTZSESSION_NEW
+uint16_t uniffi_lwk_checksum_constructor_boltzsession_new(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_CONTRACT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_CONTRACT_NEW
 uint16_t uniffi_lwk_checksum_constructor_contract_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_CURRENCYCODE_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_CURRENCYCODE_NEW
+uint16_t uniffi_lwk_checksum_constructor_currencycode_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ELECTRUMCLIENT_FROM_URL
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_ELECTRUMCLIENT_FROM_URL
+uint16_t uniffi_lwk_checksum_constructor_electrumclient_from_url(void
     
 );
 #endif
@@ -3617,15 +5845,39 @@ uint16_t uniffi_lwk_checksum_constructor_externalutxo_new(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_FOREIGNPERSISTERLINK_NEW
-#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_FOREIGNPERSISTERLINK_NEW
-uint16_t uniffi_lwk_checksum_constructor_foreignpersisterlink_new(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_FOREIGNSTORELINK_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_FOREIGNSTORELINK_NEW
+uint16_t uniffi_lwk_checksum_constructor_foreignstorelink_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LIGHTNINGPAYMENT_FROM_BOLT11_INVOICE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LIGHTNINGPAYMENT_FROM_BOLT11_INVOICE
+uint16_t uniffi_lwk_checksum_constructor_lightningpayment_from_bolt11_invoice(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LIGHTNINGPAYMENT_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LIGHTNINGPAYMENT_NEW
+uint16_t uniffi_lwk_checksum_constructor_lightningpayment_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LOGGINGLINK_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LOGGINGLINK_NEW
+uint16_t uniffi_lwk_checksum_constructor_logginglink_new(void
     
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LWKTESTENV_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LWKTESTENV_NEW
 uint16_t uniffi_lwk_checksum_constructor_lwktestenv_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LWKTESTSTORE_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_LWKTESTSTORE_NEW
+uint16_t uniffi_lwk_checksum_constructor_lwkteststore_new(void
     
 );
 #endif
@@ -3671,9 +5923,39 @@ uint16_t uniffi_lwk_checksum_constructor_network_testnet(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_OUTPOINT_FROM_PARTS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_OUTPOINT_FROM_PARTS
+uint16_t uniffi_lwk_checksum_constructor_outpoint_from_parts(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_OUTPOINT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_OUTPOINT_NEW
 uint16_t uniffi_lwk_checksum_constructor_outpoint_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_PAYMENT_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_PAYMENT_NEW
+uint16_t uniffi_lwk_checksum_constructor_payment_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_POSCONFIG_DECODE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_POSCONFIG_DECODE
+uint16_t uniffi_lwk_checksum_constructor_posconfig_decode(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_POSCONFIG_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_POSCONFIG_NEW
+uint16_t uniffi_lwk_checksum_constructor_posconfig_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_POSCONFIG_WITH_OPTIONS
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_POSCONFIG_WITH_OPTIONS
+uint16_t uniffi_lwk_checksum_constructor_posconfig_with_options(void
     
 );
 #endif
@@ -3689,9 +5971,21 @@ uint16_t uniffi_lwk_checksum_constructor_pset_new(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SCRIPT_EMPTY
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SCRIPT_EMPTY
+uint16_t uniffi_lwk_checksum_constructor_script_empty(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SCRIPT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SCRIPT_NEW
 uint16_t uniffi_lwk_checksum_constructor_script_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SCRIPT_NEW_OP_RETURN
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_SCRIPT_NEW_OP_RETURN
+uint16_t uniffi_lwk_checksum_constructor_script_new_op_return(void
     
 );
 #endif
@@ -3719,6 +6013,18 @@ uint16_t uniffi_lwk_checksum_constructor_signer_random(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TRANSACTION_FROM_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TRANSACTION_FROM_BYTES
+uint16_t uniffi_lwk_checksum_constructor_transaction_from_bytes(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TRANSACTION_FROM_STRING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TRANSACTION_FROM_STRING
+uint16_t uniffi_lwk_checksum_constructor_transaction_from_string(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TRANSACTION_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TRANSACTION_NEW
 uint16_t uniffi_lwk_checksum_constructor_transaction_new(void
@@ -3728,6 +6034,12 @@ uint16_t uniffi_lwk_checksum_constructor_transaction_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TXBUILDER_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TXBUILDER_NEW
 uint16_t uniffi_lwk_checksum_constructor_txbuilder_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TXOUT_FROM_EXPLICIT
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_TXOUT_FROM_EXPLICIT
+uint16_t uniffi_lwk_checksum_constructor_txout_from_explicit(void
     
 );
 #endif
@@ -3755,15 +6067,45 @@ uint16_t uniffi_lwk_checksum_constructor_update_new(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_BYTES
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_BYTES
+uint16_t uniffi_lwk_checksum_constructor_valueblindingfactor_from_bytes(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_STRING
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_VALUEBLINDINGFACTOR_FROM_STRING
+uint16_t uniffi_lwk_checksum_constructor_valueblindingfactor_from_string(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_VALUEBLINDINGFACTOR_ZERO
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_VALUEBLINDINGFACTOR_ZERO
+uint16_t uniffi_lwk_checksum_constructor_valueblindingfactor_zero(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WEBHOOK_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WEBHOOK_NEW
+uint16_t uniffi_lwk_checksum_constructor_webhook_new(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLET_NEW
 #define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLET_NEW
 uint16_t uniffi_lwk_checksum_constructor_wollet_new(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLET_WITH_CUSTOM_PERSISTER
-#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLET_WITH_CUSTOM_PERSISTER
-uint16_t uniffi_lwk_checksum_constructor_wollet_with_custom_persister(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLET_WITH_CUSTOM_STORE
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLET_WITH_CUSTOM_STORE
+uint16_t uniffi_lwk_checksum_constructor_wollet_with_custom_store(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLETBUILDER_NEW
+#define UNIFFI_FFIDEF_UNIFFI_LWK_CHECKSUM_CONSTRUCTOR_WOLLETBUILDER_NEW
+uint16_t uniffi_lwk_checksum_constructor_wolletbuilder_new(void
     
 );
 #endif
@@ -3780,6 +6122,9 @@ uint32_t ffi_lwk_uniffi_contract_version(void
 );
 #endif
 
- void lwk_cgo_dispatchCallbackInterfaceForeignPersisterMethod0(uint64_t uniffi_handle, uint64_t index, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
- void lwk_cgo_dispatchCallbackInterfaceForeignPersisterMethod1(uint64_t uniffi_handle, void* update, void* uniffi_out_return, RustCallStatus* callStatus );
- void lwk_cgo_dispatchCallbackInterfaceForeignPersisterFree(uint64_t handle);
+ void lwk_cgo_dispatchCallbackInterfaceForeignStoreMethod0(uint64_t uniffi_handle, RustBuffer key, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+ void lwk_cgo_dispatchCallbackInterfaceForeignStoreMethod1(uint64_t uniffi_handle, RustBuffer key, RustBuffer value, void* uniffi_out_return, RustCallStatus* callStatus );
+ void lwk_cgo_dispatchCallbackInterfaceForeignStoreMethod2(uint64_t uniffi_handle, RustBuffer key, void* uniffi_out_return, RustCallStatus* callStatus );
+ void lwk_cgo_dispatchCallbackInterfaceForeignStoreFree(uint64_t handle);
+ void lwk_cgo_dispatchCallbackInterfaceLoggingMethod0(uint64_t uniffi_handle, RustBuffer level, RustBuffer message, void* uniffi_out_return, RustCallStatus* callStatus );
+ void lwk_cgo_dispatchCallbackInterfaceLoggingFree(uint64_t handle);

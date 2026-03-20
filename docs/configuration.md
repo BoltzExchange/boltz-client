@@ -28,6 +28,9 @@ pro = false
 # Custom referral ID to use when creating swaps
 referralId = "my-referral"
 
+# Threshold used to merge persisted Liquid wallet updates. Set to 0 to disable.
+# walletMergeThreshold = 100
+
 [LIGHTNING]
 # Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis.
 routingFeeLimitPpm = 2500

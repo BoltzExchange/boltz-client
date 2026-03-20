@@ -42,6 +42,7 @@ type Config struct {
 	DataDir                string
 	Esplora                *EsploraConfig
 	Electrum               *onchain.ElectrumOptions
+	MergeThreshold         *uint32
 	ConsolidationThreshold uint64
 	ChainProvider          onchain.ChainProvider
 	Persister              Persister
@@ -62,7 +63,7 @@ type BlockchainBackend struct {
 }
 
 func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, error) {
-	raw := tx.Bytes()
+	raw := tx.ToBytes()
 	return b.cfg.ChainProvider.BroadcastTransaction(hex.EncodeToString(raw))
 }
 
@@ -135,6 +136,7 @@ func (b *BlockchainBackend) getClient(config clientConfig) (lwk.EsploraClientInt
 }
 
 const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
+const DefaultMergeThreshold = uint32(100)
 const DefaultConsolidationThreshold = 200
 
 func NewBackend(cfg Config) (*BlockchainBackend, error) {
@@ -146,6 +148,10 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	}
 	if cfg.ConsolidationThreshold == 0 {
 		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
+	}
+	if cfg.MergeThreshold == nil {
+		threshold := DefaultMergeThreshold
+		cfg.MergeThreshold = &threshold
 	}
 
 	backend := &BlockchainBackend{
@@ -268,13 +274,16 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 		result.info.Readonly = true
 	}
 
-	result.Wollet, err = lwk.NewWollet(
-		convertNetwork(backend.cfg.Network),
-		result.descriptor,
-		&backend.cfg.DataDir,
-	)
+	builder := lwk.NewWolletBuilder(convertNetwork(backend.cfg.Network), result.descriptor)
+	if err := builder.WithLegacyFsStore(backend.cfg.DataDir); err != nil {
+		return nil, fmt.Errorf("set store: %w", err)
+	}
+	if err := builder.WithMergeThreshold(backend.cfg.MergeThreshold); err != nil {
+		return nil, fmt.Errorf("set merge threshold: %w", err)
+	}
+	result.Wollet, err = builder.Build()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("build wollet: %w", err)
 	}
 
 	return result, nil
@@ -598,7 +607,7 @@ func (w *Wallet) applyTransaction(tx *lwk.Transaction) error {
 }
 
 func (w *Wallet) ApplyTransaction(txHex string) error {
-	tx, err := lwk.NewTransaction(txHex)
+	tx, err := lwk.TransactionFromString(txHex)
 	if err != nil {
 		return fmt.Errorf("failed to parse transaction: %w", err)
 	}

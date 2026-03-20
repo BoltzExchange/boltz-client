@@ -96,6 +96,7 @@ type Config struct {
 
 	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
 	AutoConsolidateThreshold *uint64 `long:"auto-consolidate-threshold" description:"Number of UTXOs that trigger auto consolidation. Set to 0 to disable"`
+	WalletMergeThreshold     *uint32 `long:"wallet-merge-threshold" description:"Threshold used to merge persisted Liquid wallet updates. Set to 0 to disable"`
 
 	Help *helpOptions `group:"Help Options"`
 }
