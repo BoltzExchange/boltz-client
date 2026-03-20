@@ -486,7 +486,7 @@ func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency)
 			for i := 0; i < 5; i++ {
 				receive, err := client.WalletReceive(wallet.Id)
 				require.NoError(t, err)
-				test.SendToAddress(getCli(currency), receive.Address, 10_000_000)
+				test.SendToAddress(getCli(currency), receive.Address, 1_000_000)
 				time.Sleep(200 * time.Millisecond)
 			}
 		}
