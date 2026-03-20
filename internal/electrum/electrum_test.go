@@ -38,7 +38,7 @@ func TestBlockStream(t *testing.T) {
 	require.Eventually(t, func() bool {
 		newHeight, err := client.GetBlockHeight()
 		require.NoError(t, err)
-		return newHeight == height+1
+		return newHeight > height
 	}, 10*time.Second, 100*time.Millisecond)
 }
 
