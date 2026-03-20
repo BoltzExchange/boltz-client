@@ -271,10 +271,12 @@ func (w *Wallet) GetTransactions(limit, offset uint64) ([]*onchain.WalletTransac
 	for i, tx := range transactions {
 		result[i] = &onchain.WalletTransaction{
 			Id:              tx.Id,
-			Timestamp:       time.Unix(int64(tx.Timestamp), 0),
 			BlockHeight:     tx.BlockHeight,
 			BalanceChange:   tx.BalanceChange,
 			IsConsolidation: tx.IsConsolidation,
+		}
+		if tx.Timestamp != 0 {
+			result[i].Timestamp = time.Unix(int64(tx.Timestamp), 0)
 		}
 		for _, output := range tx.Outputs {
 			result[i].Outputs = append(result[i].Outputs, onchain.TransactionOutput{

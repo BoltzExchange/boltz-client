@@ -245,6 +245,29 @@ func TestWallet_GetTransactions(t *testing.T) {
 		require.NotNil(t, transactions)
 		require.Equal(t, 1, len(transactions))
 		require.NotEqual(t, first, transactions[0])
+
+		walletInfo := wallet.GetWalletInfo()
+		cli := test.GetCli(walletInfo.Currency)
+		address := test.GetNewAddress(cli)
+
+		txId, err := wallet.SendToAddress(onchain.WalletSendArgs{
+			Address:     address,
+			Amount:      1000,
+			SatPerVbyte: 1,
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, txId)
+
+		transactions, err = wallet.GetTransactions(1, 0)
+		require.NoError(t, err)
+		require.Len(t, transactions, 1)
+
+		tx := transactions[0]
+		require.Equal(t, txId, tx.Id)
+		require.Negative(t, tx.BalanceChange)
+		require.Zero(t, tx.BlockHeight)
+		require.Zero(t, tx.Timestamp)
+
 	})
 }
 

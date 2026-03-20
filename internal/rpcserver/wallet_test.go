@@ -126,6 +126,7 @@ func TestWalletTransactions(t *testing.T) {
 			response, err := client.ListWalletTransactions(&boltzrpc.ListWalletTransactionsRequest{Id: walletInfo.Id})
 			require.NoError(t, err)
 			for _, tx := range response.Transactions {
+				require.Zero(t, tx.Timestamp)
 				if tx.Infos[0].Type == test.txType {
 					return
 				}
