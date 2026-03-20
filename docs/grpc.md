@@ -1771,7 +1771,7 @@ Descriptor requirements:
 | `timestamp` | [`int64`](#int64) |  |  |
 | `outputs` | [`TransactionOutput`](#transactionoutput) | repeated |  |
 | `block_height` | [`uint32`](#uint32) |  |  |
-| `infos` | [`TransactionInfo`](#transactioninfo) | repeated | additional informations about the tx (type, related swaps etc.) |
+| `infos` | [`TransactionInfo`](#transactioninfo) | repeated | additional information about the tx (type, related swaps etc.) |
 
 
 
