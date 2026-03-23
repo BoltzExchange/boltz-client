@@ -1768,7 +1768,7 @@ Descriptor requirements:
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `balance_change` | [`int64`](#int64) |  | balance change of the wallet in satoshis. its the sum of all output values minus the sum of all input values which are controlled by the wallet. positive values indicate incoming transactions, negative values outgoing transactions |
-| `timestamp` | [`int64`](#int64) |  |  |
+| `timestamp` | [`int64`](#int64) |  | The timestamp of the block the transaction was confirmed in or 0 if it is unconfirmed. |
 | `outputs` | [`TransactionOutput`](#transactionoutput) | repeated |  |
 | `block_height` | [`uint32`](#uint32) |  |  |
 | `infos` | [`TransactionInfo`](#transactioninfo) | repeated | additional information about the tx (type, related swaps etc.) |

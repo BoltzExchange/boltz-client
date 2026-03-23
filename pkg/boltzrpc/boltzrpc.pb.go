@@ -5359,10 +5359,11 @@ type WalletTransaction struct {
 	// balance change of the wallet in satoshis.
 	// its the sum of all output values minus the sum of all input values which are controlled by the wallet.
 	// positive values indicate incoming transactions, negative values outgoing transactions
-	BalanceChange int64                `protobuf:"varint,2,opt,name=balance_change,json=balanceChange,proto3" json:"balance_change,omitempty"`
-	Timestamp     int64                `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Outputs       []*TransactionOutput `protobuf:"bytes,4,rep,name=outputs,proto3" json:"outputs,omitempty"`
-	BlockHeight   uint32               `protobuf:"varint,6,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
+	BalanceChange int64 `protobuf:"varint,2,opt,name=balance_change,json=balanceChange,proto3" json:"balance_change,omitempty"`
+	// The timestamp of the block the transaction was confirmed in or 0 if it is unconfirmed.
+	Timestamp   int64                `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Outputs     []*TransactionOutput `protobuf:"bytes,4,rep,name=outputs,proto3" json:"outputs,omitempty"`
+	BlockHeight uint32               `protobuf:"varint,6,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 	// additional information about the tx (type, related swaps etc.)
 	Infos []*TransactionInfo `protobuf:"bytes,7,rep,name=infos,proto3" json:"infos,omitempty"`
 }

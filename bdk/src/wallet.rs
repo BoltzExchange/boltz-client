@@ -321,8 +321,9 @@ impl Wallet {
     ) -> Result<Vec<WalletTransaction>, Error> {
         let wallet = self.get_wallet()?;
 
-        let transactions = wallet
-            .transactions()
+        Ok(wallet
+            .transactions_sort_by(|a, b| b.chain_position.cmp(&a.chain_position))
+            .into_iter()
             .skip(offset as usize)
             .take(if limit > 0 {
                 limit as usize
@@ -334,7 +335,7 @@ impl Wallet {
                 id: details.txid.to_string(),
                 timestamp: match details.chain_position {
                     ChainPosition::Confirmed { anchor, .. } => anchor.confirmation_time,
-                    ChainPosition::Unconfirmed { last_seen, .. } => last_seen.unwrap_or_default(),
+                    ChainPosition::Unconfirmed { .. } => 0,
                 },
                 outputs: details
                     .tx
@@ -357,8 +358,7 @@ impl Wallet {
                 balance_change: details.balance_delta.to_sat(),
                 is_consolidation: false,
             })
-            .collect();
-        Ok(transactions)
+            .collect())
     }
 }
 
