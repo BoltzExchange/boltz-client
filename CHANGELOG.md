@@ -1,4 +1,20 @@
 
+<a name="v2.11.2"></a>
+## [v2.11.2] - 2026-03-23
+### Feat
+- lwk update merging ([#654](https://github.com/BoltzExchange/boltz-client/issues/654))
+
+### Fix
+- wallet tx timestamps and ordering ([#660](https://github.com/BoltzExchange/boltz-client/issues/660))
+- lwk send all behaviour in `GetSendFee` ([#657](https://github.com/BoltzExchange/boltz-client/issues/657))
+- docs spellcheck ([#659](https://github.com/BoltzExchange/boltz-client/issues/659))
+- hide private keys in swapinfo cmd by default ([#656](https://github.com/BoltzExchange/boltz-client/issues/656))
+- db busy timeout ([#653](https://github.com/BoltzExchange/boltz-client/issues/653))
+
+### Refactor
+- split rpcserver tests ([#638](https://github.com/BoltzExchange/boltz-client/issues/638))
+
+
 <a name="v2.11.1"></a>
 ## [v2.11.1] - 2026-03-05
 ### Feat
@@ -892,6 +908,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.11.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.1...v2.11.2
 [v2.11.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.0...v2.11.1
 [v2.11.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.2...v2.11.0
 [v2.10.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.10.1...v2.10.2
