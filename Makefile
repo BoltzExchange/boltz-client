@@ -2,7 +2,7 @@ PKG := github.com/BoltzExchange/boltz-client/v2
 VERSION := 2.11.3
 GDK_VERSION = 0.75.1
 GO_VERSION := 1.24.7-bookworm
-RUST_VERSION := 1.82.0
+RUST_VERSION := $(shell awk -F'"' '/^channel = / {print $$2}' rust-toolchain.toml)
 
 PKG_BOLTZD := $(PKG)/cmd/boltzd
 PKG_BOLTZ_CLI := $(PKG)/cmd/boltzcli
@@ -14,7 +14,7 @@ GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
 GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
 
-COMMIT := $(shell git log --pretty=format:'%h' -n 1)
+COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
 LDFLAGS := -ldflags "-X $(PKG)/internal/build.Commit=$(COMMIT) -X $(PKG)/internal/build.Version=$(VERSION) -w -s"
 
 GREEN := "\\033[0;32m"
@@ -99,21 +99,31 @@ restart-regtest: setup-regtest clear-wallet-data
 # Building
 #
 
+RUST_TARGET ?=
+RUST_TARGET_ARG := $(if $(RUST_TARGET),--target $(RUST_TARGET),)
+RUST_RELEASE_DIR := $(if $(RUST_TARGET),$(RUST_TARGET)/,)release
+
 build-bolt12:
 	@$(call print, "Building bolt12")
-	cd internal/lightning/lib/bolt12 && cargo build --release
+	cd internal/lightning/lib/bolt12 && cargo build --release $(RUST_TARGET_ARG)
+	@if [ -n "$(RUST_TARGET)" ]; then \
+		mkdir -p internal/lightning/lib/bolt12/target/release && \
+		cp internal/lightning/lib/bolt12/target/$(RUST_RELEASE_DIR)/libbolt12.a \
+			internal/lightning/lib/bolt12/target/$(RUST_RELEASE_DIR)/libbolt12.so \
+			internal/lightning/lib/bolt12/target/release/; \
+	fi
 
 build-lwk:
 	@$(call print, "Building lwk")
-	cd lwk/lwk_bindings && cargo build --release --lib
-	cp lwk/target/release/liblwk.a lwk/target/release/liblwk.so internal/onchain/liquid-wallet/lwk/
+	cd lwk/lwk_bindings && cargo build --release $(RUST_TARGET_ARG) --lib
+	cp lwk/target/$(RUST_RELEASE_DIR)/liblwk.a lwk/target/$(RUST_RELEASE_DIR)/liblwk.so internal/onchain/liquid-wallet/lwk/
 
 BDK_BINDINGS_PATH := ./bdk
 
 build-bdk:
 	@$(call print, "Building bdk")
-	cd $(BDK_BINDINGS_PATH) && cargo build --release --lib
-	cp $(BDK_BINDINGS_PATH)/target/release/libbdk.a $(BDK_BINDINGS_PATH)/target/release/libbdk.so internal/onchain/bitcoin-wallet/bdk/
+	cd $(BDK_BINDINGS_PATH) && cargo build --release $(RUST_TARGET_ARG) --lib
+	cp $(BDK_BINDINGS_PATH)/target/$(RUST_RELEASE_DIR)/libbdk.a $(BDK_BINDINGS_PATH)/target/$(RUST_RELEASE_DIR)/libbdk.so internal/onchain/bitcoin-wallet/bdk/
 
 build: download-gdk build-bolt12 build-lwk build-bdk
 	@$(call print, "Building boltz-client")
@@ -139,7 +149,7 @@ cli:
 	@$(call print, "running boltzcli")
 	$(GORUN) $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-install: 
+install:
 	@$(call print, "Installing boltz-client")
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)
@@ -158,8 +168,12 @@ endif
 #
 
 submodules:
-	@$(call print, "Updating submodules")
-	git submodule update --init --recursive
+	@if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then \
+		$(call print, "Updating submodules"); \
+		git submodule update --init --recursive; \
+	else \
+		$(call print, "Skipping submodule update outside a git checkout"); \
+	fi
 
 mockery:
 	@$(call print, "Generating mocks")
@@ -179,8 +193,14 @@ changelog:
 
 PLATFORMS := linux/amd64,linux/arm64
 DOCKER_CACHE := boltz/boltz-client:buildcache
-DOCKER_ARGS := --platform $(PLATFORMS) --build-arg GO_VERSION=$(GO_VERSION) --build-arg GDK_VERSION=$(GDK_VERSION) --build-arg RUST_VERSION=$(RUST_VERSION)
-DOCKER_CACHE_ARGS := --cache-from type=registry,ref=$(DOCKER_CACHE) --cache-to type=registry,ref=$(DOCKER_CACHE),mode=max
+DOCKER_ARGS := \
+	--platform $(PLATFORMS) \
+	--build-arg GO_VERSION=$(GO_VERSION) \
+	--build-arg GDK_VERSION=$(GDK_VERSION) \
+	--build-arg RUST_VERSION=$(RUST_VERSION)
+DOCKER_CACHE_ARGS := \
+	--cache-from type=registry,ref=$(DOCKER_CACHE) \
+	--cache-to type=registry,ref=$(DOCKER_CACHE),mode=max
 
 docker:
 	@$(call print, "Building docker image")
