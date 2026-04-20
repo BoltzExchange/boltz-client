@@ -141,10 +141,14 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 				return
 			case <-time.After(sleep):
 				if slices.Contains(onchain.Wallets, wallet) {
+					info := wallet.GetWalletInfo()
+					logger.Debugf("Syncing wallet %s", info.String())
+					start := time.Now()
 					if err := wallet.Sync(); err != nil {
-						info := wallet.GetWalletInfo()
 						logger.Errorf("Sync for wallet %d failed: %v", info.Id, err)
 					}
+					duration := time.Since(start)
+					logger.Debugf("Syncing wallet %s took %s", info.String(), duration)
 				} else {
 					return
 				}
