@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -59,6 +61,13 @@ type BlockchainBackend struct {
 	cfg Config
 	// electrum also satisfies the EsploraClientInterface
 	clientConfigs []clientConfig
+	buildLock     sync.Mutex
+}
+
+const wolletStoreStatusMismatch = "UpdateOnDifferentStatus"
+
+func walletStoreDir(baseDir string, walletId uint64) string {
+	return filepath.Join(baseDir, fmt.Sprintf("wallet-%d", walletId))
 }
 
 func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, error) {
@@ -238,19 +247,58 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 		result.info.Readonly = true
 	}
 
-	builder := lwk.NewWolletBuilder(convertNetwork(backend.cfg.Network), result.descriptor)
-	if err := builder.WithLegacyFsStore(backend.cfg.DataDir); err != nil {
+	result.Wollet, err = backend.buildWolletWithRecovery(result.descriptor, result.info)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (backend *BlockchainBackend) buildWolletWithRecovery(descriptor *lwk.WolletDescriptor, info onchain.WalletInfo) (*lwk.Wollet, error) {
+	backend.buildLock.Lock()
+	defer backend.buildLock.Unlock()
+
+	storeDir := walletStoreDir(backend.cfg.DataDir, info.Id)
+
+	logger.Debugf("Building Liquid wallet with store dir: %s", storeDir)
+	wollet, err := backend.buildWollet(descriptor, storeDir)
+	if err == nil {
+		return wollet, nil
+	}
+	if !shouldResetWolletStore(err) {
+		return nil, fmt.Errorf("build wollet: %w", err)
+	}
+	if strings.TrimSpace(storeDir) == "" {
+		return nil, fmt.Errorf("build wollet: %w", err)
+	}
+
+	logger.Warnf("Detected corrupted Liquid wallet store for %s, resetting %s and retrying once: %v", info.String(), storeDir, err)
+
+	if err := os.RemoveAll(storeDir); err != nil {
+		return nil, fmt.Errorf("remove all: %w", err)
+	}
+
+	wollet, err = backend.buildWollet(descriptor, storeDir)
+	if err != nil {
+		return nil, fmt.Errorf("build wollet after reset: %w", err)
+	}
+	return wollet, nil
+}
+
+func (backend *BlockchainBackend) buildWollet(descriptor *lwk.WolletDescriptor, storeDir string) (*lwk.Wollet, error) {
+	builder := lwk.NewWolletBuilder(convertNetwork(backend.cfg.Network), descriptor)
+	if err := builder.WithLegacyFsStore(storeDir); err != nil {
 		return nil, fmt.Errorf("set store: %w", err)
 	}
 	if err := builder.WithMergeThreshold(backend.cfg.MergeThreshold); err != nil {
 		return nil, fmt.Errorf("set merge threshold: %w", err)
 	}
-	result.Wollet, err = builder.Build()
-	if err != nil {
-		return nil, fmt.Errorf("build wollet: %w", err)
-	}
+	return builder.Build()
+}
 
-	return result, nil
+func shouldResetWolletStore(err error) bool {
+	return errors.Is(err, lwk.ErrLwkErrorGeneric) && strings.Contains(err.Error(), wolletStoreStatusMismatch)
 }
 
 func (w *Wallet) getClient(index int) (lwk.EsploraClientInterface, error) {
