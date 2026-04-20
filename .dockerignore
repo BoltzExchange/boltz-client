@@ -6,3 +6,5 @@ target
 regtest
 boltzd
 boltzcli
+bdk/target/
+lwk/target/

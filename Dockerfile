@@ -21,9 +21,11 @@ ENV PATH="/usr/local/cargo/bin:${PATH}" \
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     --mount=type=cache,target=/boltz-client/internal/lightning/lib/bolt12/target/ \
+    --mount=type=cache,target=/boltz-client/bdk/target \
+    --mount=type=cache,target=/boltz-client/lwk/target \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
-    make deps static
+    make static
 
 FROM scratch AS binaries
 

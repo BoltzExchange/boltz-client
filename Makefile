@@ -144,15 +144,6 @@ install:
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)
 
-deps: submodules
-	go mod vendor
-	cp -r ./go-secp256k1-zkp/secp256k1-zkp ./vendor/github.com/vulpemventures/go-secp256k1-zkp
-	# exclude the package and any lines including a # (#cgo, #include, etc.)
-	cd ./vendor/github.com/vulpemventures/go-secp256k1-zkp && \
-		sed -i '/#\|package/!s/secp256k1/go_secp256k1/g' *.go && \
-		find secp256k1-zkp -type f -name "*.c" -print0 | xargs -0 sed -i '/include/!s/secp256k1/go_secp256k1/g' && \
-		find secp256k1-zkp -type f -name "*.h" -print0 | xargs -0 sed -i '/include/!s/secp256k1/go_secp256k1/g'
-
 download-gdk:
 ifeq ("$(wildcard internal/onchain/wallet/lib/libgreen_gdk.so)","")
 	@$(call print, "Downloading gdk library")
