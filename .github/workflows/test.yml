@@ -32,8 +32,10 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache-workspaces: |
-            ./internal/lightning/lib/bolt12
-            ./lwk
+            ./internal/lightning/lib/bolt12 -> target
+            ./lwk -> target
+            ./bdk -> target
+          cache-workspace-crates: true
 
       - name: Build
         run: make build
