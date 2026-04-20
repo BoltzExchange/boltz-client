@@ -269,9 +269,6 @@ func (backend *BlockchainBackend) buildWolletWithRecovery(descriptor *lwk.Wollet
 	if !shouldResetWolletStore(err) {
 		return nil, fmt.Errorf("build wollet: %w", err)
 	}
-	if strings.TrimSpace(storeDir) == "" {
-		return nil, fmt.Errorf("build wollet: %w", err)
-	}
 
 	logger.Warnf("Detected corrupted Liquid wallet store for %s, resetting %s and retrying once: %v", info.String(), storeDir, err)
 
