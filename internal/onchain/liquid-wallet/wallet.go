@@ -24,12 +24,13 @@ type Persister interface {
 
 type Wallet struct {
 	*lwk.Wollet
-	signer     *lwk.Signer
-	descriptor *lwk.WolletDescriptor
-	backend    *BlockchainBackend
-	info       onchain.WalletInfo
-	syncLock   sync.Mutex
-	sendLock   sync.Mutex
+	signer      *lwk.Signer
+	descriptor  *lwk.WolletDescriptor
+	backend     *BlockchainBackend
+	info        onchain.WalletInfo
+	syncClients []lwk.EsploraClientInterface
+	syncLock    sync.Mutex
+	sendLock    sync.Mutex
 }
 
 type EsploraConfig struct {
@@ -58,8 +59,6 @@ type BlockchainBackend struct {
 	cfg Config
 	// electrum also satisfies the EsploraClientInterface
 	clientConfigs []clientConfig
-	clients       sync.Map
-	connectLock   sync.Mutex
 }
 
 func (b *BlockchainBackend) BroadcastTransaction(tx *lwk.Transaction) (string, error) {
@@ -98,46 +97,11 @@ func (b *BlockchainBackend) connectClient(config clientConfig) (lwk.EsploraClien
 	}
 }
 
-func (b *BlockchainBackend) getClient(config clientConfig) (lwk.EsploraClientInterface, error) {
-	var key string
-	if config.electrum != nil {
-		key = "electrum:" + config.electrum.Url
-	} else {
-		key = "esplora:" + config.esplora.Url
-	}
-
-	b.connectLock.Lock()
-	defer b.connectLock.Unlock()
-
-	if client, ok := b.clients.Load(key); ok {
-		return client.(lwk.EsploraClientInterface), nil
-	}
-
-	res := make(chan error)
-	var result lwk.EsploraClientInterface
-	go func() {
-		client, err := b.connectClient(config)
-		if err == nil {
-			b.clients.Store(key, client)
-			result = client
-		}
-		res <- err
-	}()
-
-	select {
-	case err := <-res:
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
-	case <-time.After(ConnectTimeout):
-		return nil, errors.New("connection timeout")
-	}
-}
-
 const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
 const DefaultMergeThreshold = uint32(100)
 const DefaultConsolidationThreshold = 200
+
+var errConnectionTimeout = errors.New("connection timeout")
 
 func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	if cfg.Persister == nil {
@@ -155,8 +119,7 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	}
 
 	backend := &BlockchainBackend{
-		cfg:     cfg,
-		clients: sync.Map{},
+		cfg: cfg,
 	}
 
 	if cfg.Electrum != nil {
@@ -253,8 +216,9 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 	}
 
 	result := &Wallet{
-		backend: backend,
-		info:    credentials.WalletInfo,
+		backend:     backend,
+		info:        credentials.WalletInfo,
+		syncClients: make([]lwk.EsploraClientInterface, len(backend.clientConfigs)),
 	}
 
 	if credentials.CoreDescriptor == "" {
@@ -289,6 +253,38 @@ func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentia
 	return result, nil
 }
 
+func (w *Wallet) getClient(index int) (lwk.EsploraClientInterface, error) {
+	if client := w.syncClients[index]; client != nil {
+		return client, nil
+	}
+
+	resultCh := make(chan connectResult, 1)
+	config := w.backend.clientConfigs[index]
+	go func() {
+		client, err := w.backend.connectClient(config)
+		resultCh <- connectResult{client: client, err: err}
+	}()
+
+	timer := time.NewTimer(ConnectTimeout)
+	defer timer.Stop()
+
+	select {
+	case result := <-resultCh:
+		if result.err != nil {
+			return nil, result.err
+		}
+		w.syncClients[index] = result.client
+		return result.client, nil
+	case <-timer.C:
+		return nil, errConnectionTimeout
+	}
+}
+
+type connectResult struct {
+	client lwk.EsploraClientInterface
+	err    error
+}
+
 func (w *Wallet) Sync() error {
 	if err := w.fullScan(false); err != nil {
 		return err
@@ -310,7 +306,6 @@ func (w *Wallet) FullScan() error {
 }
 
 func (w *Wallet) fullScan(all bool) error {
-	logger.Debugf("Full scanning LWK wallet %d", w.info.Id)
 	w.syncLock.Lock()
 	defer w.syncLock.Unlock()
 
@@ -325,8 +320,8 @@ func (w *Wallet) fullScan(all bool) error {
 	// Try each client until one succeeds
 	var update **lwk.Update
 	var lastErr error
-	for i, config := range w.backend.clientConfigs {
-		client, err := w.backend.getClient(config)
+	for i := range w.backend.clientConfigs {
+		client, err := w.getClient(i)
 		if err != nil {
 			logger.Debugf("Client %d failed to get client for wallet %d: %v", i, w.info.Id, err)
 			lastErr = err

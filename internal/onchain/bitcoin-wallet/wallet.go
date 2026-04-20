@@ -230,14 +230,11 @@ func (w *Wallet) Sync() error {
 			logger.Errorf("Client %s failed to get chain client: %v", electrum, err)
 			continue
 		}
-		start := time.Now()
 		err = w.Wallet.Sync(chainClient)
 		if err != nil {
 			logger.Errorf("Client %s failed to sync wallet %d: %v", electrum, w.info.Id, err)
 			continue
 		}
-		duration := time.Since(start)
-		logger.Debugf("Sync for wallet %d with electrum server %s took %s", w.info.Id, electrum, duration)
 		return nil
 	}
 	return fmt.Errorf("all clients failed to sync, last error: %w", err)
