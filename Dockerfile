@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/boltz-client/internal/lightning/lib/bolt12/target/ \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
-    make deps static
+    make static
 
 FROM scratch AS binaries
 
