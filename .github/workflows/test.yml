@@ -37,6 +37,16 @@ jobs:
             ./bdk -> target
           cache-workspace-crates: true
 
+      - name: Install sccache
+        uses: Mozilla-Actions/sccache-action@v0.0.9
+        with:
+          version: v0.14.0
+
+      - name: Configure Rust compiler cache
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+
       - name: Build
         run: make build
 
