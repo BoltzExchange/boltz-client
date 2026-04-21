@@ -133,7 +133,7 @@ func (backend *Backend) NewWallet(credentials *onchain.WalletCredentials) (oncha
 }
 
 func (backend *Backend) DeriveDefaultDescriptor(mnemonic string) (string, error) {
-	return bdk.DeriveDefaultXpub(convertNetwork(backend.cfg.Network), mnemonic)
+	return DeriveDefaultDescriptor(backend.cfg.Network, mnemonic)
 }
 
 func (w *Wallet) NewAddress() (string, error) {

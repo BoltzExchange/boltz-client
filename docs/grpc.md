@@ -202,7 +202,7 @@ Imports an existing wallet.
 
 #### SetSubaccount
 
-**Deprecated.** Sets the subaccount of a wallet. Not supported for readonly wallets.
+**Deprecated.** Deprecated. No longer supported.
 
 | Request | Response |
 | ------- | -------- |
@@ -210,7 +210,7 @@ Imports an existing wallet.
 
 #### GetSubaccounts
 
-**Deprecated.** Returns all subaccounts for a given wallet. Not supported for readonly wallets.
+**Deprecated.** Deprecated. No longer supported.
 
 | Request | Response |
 | ------- | -------- |
@@ -226,7 +226,7 @@ Returns all available wallets.
 
 #### GetWallet
 
-Returns the current balance and subaccount of a wallet.
+Returns the current balance of a wallet.
 
 | Request | Response |
 | ------- | -------- |
@@ -872,6 +872,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
 | `tenant` | [`Tenant`](#tenant) | optional | the currently authenticated tenant |
 | `claimable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to claim |
+| `warnings` | [`string`](#string) | repeated | startup warnings that require user attention |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -1418,7 +1419,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `wallet_id` | [`uint64`](#uint64) |  |  |
-| `subaccount` | [`uint64`](#uint64) | optional | The subaccount to use. If not set, a new one will be created. |
+| `subaccount` | [`uint64`](#uint64) | optional | Deprecated: this field is ignored because wallet subaccounts are no longer supported. |
 
 
 
@@ -1669,7 +1670,7 @@ Descriptor requirements:
 | ----- | ---- | ----- | ----------- |
 | `mnemonic` | [`string`](#string) | optional | the mnemonic to derive the wallet master private key (BIP39). |
 | `core_descriptor` | [`string`](#string) | optional | public key descriptor for the wallets external keychain. |
-| `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** only used in combination with mnemonic |
+| `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** Deprecated: only used to migrate legacy wallets imported before descriptor-based backends. |
 | `xpub` | [`string`](#string) | optional | **Deprecated.**  |
 
 

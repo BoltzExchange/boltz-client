@@ -121,15 +121,15 @@ type BoltzClient interface {
 	ImportWallet(ctx context.Context, in *ImportWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
 	// Deprecated: Do not use.
 	//
-	// Sets the subaccount of a wallet. Not supported for readonly wallets.
+	// Deprecated. No longer supported.
 	SetSubaccount(ctx context.Context, in *SetSubaccountRequest, opts ...grpc.CallOption) (*Subaccount, error)
 	// Deprecated: Do not use.
 	//
-	// Returns all subaccounts for a given wallet. Not supported for readonly wallets.
+	// Deprecated. No longer supported.
 	GetSubaccounts(ctx context.Context, in *GetSubaccountsRequest, opts ...grpc.CallOption) (*GetSubaccountsResponse, error)
 	// Returns all available wallets.
 	GetWallets(ctx context.Context, in *GetWalletsRequest, opts ...grpc.CallOption) (*Wallets, error)
-	// Returns the current balance and subaccount of a wallet.
+	// Returns the current balance of a wallet.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
 	// Calculates the fee for an equivalent `WalletSend` request.
 	// If `address` is left empty, a dummy swap address will be used, allowing for a fee estimation of a swap lockup transaction.
@@ -629,15 +629,15 @@ type BoltzServer interface {
 	ImportWallet(context.Context, *ImportWalletRequest) (*Wallet, error)
 	// Deprecated: Do not use.
 	//
-	// Sets the subaccount of a wallet. Not supported for readonly wallets.
+	// Deprecated. No longer supported.
 	SetSubaccount(context.Context, *SetSubaccountRequest) (*Subaccount, error)
 	// Deprecated: Do not use.
 	//
-	// Returns all subaccounts for a given wallet. Not supported for readonly wallets.
+	// Deprecated. No longer supported.
 	GetSubaccounts(context.Context, *GetSubaccountsRequest) (*GetSubaccountsResponse, error)
 	// Returns all available wallets.
 	GetWallets(context.Context, *GetWalletsRequest) (*Wallets, error)
-	// Returns the current balance and subaccount of a wallet.
+	// Returns the current balance of a wallet.
 	GetWallet(context.Context, *GetWalletRequest) (*Wallet, error)
 	// Calculates the fee for an equivalent `WalletSend` request.
 	// If `address` is left empty, a dummy swap address will be used, allowing for a fee estimation of a swap lockup transaction.

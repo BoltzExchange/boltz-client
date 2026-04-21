@@ -69,16 +69,6 @@ func sanitizeSwapInfo(resp *boltzrpc.GetSwapInfoResponse, showPrivateKeys bool) 
 	return resp
 }
 
-func liquidAccountType(accountType string) string {
-	switch accountType {
-	case "p2sh-p2wpkh":
-		return "Legacy SegWit"
-	case "p2wpkh":
-		return "SegWit"
-	}
-	return accountType
-}
-
 func parseDate(timestamp int64) string {
 	return time.Unix(timestamp, 0).Format(time.RFC3339)
 }

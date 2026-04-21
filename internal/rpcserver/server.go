@@ -24,7 +24,6 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/nursery"
 	bitcoin_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
@@ -211,7 +210,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		if err != sql.ErrNoRows {
 			return err
 		}
-		mnemonic, err := wallet.GenerateMnemonic()
+		mnemonic, err := onchain.GenerateMnemonic()
 		if err != nil {
 			return err
 		}
@@ -471,23 +470,6 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 	chain.Init()
 
 	electrumConfig := cfg.Electrum()
-
-	if !wallet.Initialized() {
-		if cfg.AutoConsolidateThreshold == nil {
-			threshold := wallet.DefaultAutoConsolidateThreshold
-			cfg.AutoConsolidateThreshold = &threshold
-		}
-		err := wallet.Init(wallet.Config{
-			DataDir:                  cfg.DataDir,
-			Network:                  network,
-			Debug:                    false,
-			Electrum:                 electrumConfig,
-			AutoConsolidateThreshold: *cfg.AutoConsolidateThreshold,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("could not init wallet: %v", err)
-		}
-	}
 
 	if electrumConfig.Btc != nil {
 		logger.Info("Using configured Electrum BTC RPC: " + electrumConfig.Btc.Url)

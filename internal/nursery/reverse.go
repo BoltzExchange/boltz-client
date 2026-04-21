@@ -209,7 +209,7 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 					return
 				}
 			} else {
-				// gdk handles direct transactions via its own transaction notifier
+				// Non-LWK wallets do not support deriving a Liquid blinding key here.
 				break
 			}
 		}

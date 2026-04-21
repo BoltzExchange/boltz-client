@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -734,6 +733,10 @@ func TestLegacyWallet(t *testing.T) {
 
 	walletImpl, err = chain.GetAnyWallet(onchain.WalletChecker{Id: &rpcWallet.Id})
 	require.NoError(t, err)
-	_, ok = walletImpl.(*wallet.Wallet)
+	_, ok = walletImpl.(*liquid_wallet.Wallet)
 	require.True(t, ok)
+
+	dbWallet, err = cfg.Database.GetWallet(rpcWallet.Id)
+	require.NoError(t, err)
+	require.False(t, dbWallet.Legacy)
 }

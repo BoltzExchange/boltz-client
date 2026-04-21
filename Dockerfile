@@ -1,13 +1,10 @@
 ARG GO_VERSION
-ARG GDK_VERSION
 ARG RUST_VERSION
 ARG BUILDPLATFORM
 ARG BUILDARCH
 ARG TARGETPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
-
-FROM boltz/gdk-ubuntu:$GDK_VERSION AS gdk
 
 FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION AS rust
 ARG TARGETARCH
@@ -46,7 +43,6 @@ RUN apt-get update && \
 COPY . ./
 COPY --from=rust /usr/local/cargo /usr/local/cargo
 COPY --from=rust /usr/local/rustup /usr/local/rustup
-COPY --from=gdk / /boltz-client/internal/onchain/wallet/lib/
 
 ENV PATH="/usr/local/cargo/bin:${PATH}" \
     CARGO_HOME="/usr/local/cargo" \

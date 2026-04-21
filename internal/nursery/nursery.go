@@ -7,8 +7,6 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
-
 	"github.com/BoltzExchange/boltz-client/v2/internal/utils"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 
@@ -248,7 +246,7 @@ func (nursery *Nursery) processUpdate(status boltz.SwapUpdate) error {
 func (nursery *Nursery) startSwapListener() {
 	logger.Infof("Starting swap update listener")
 
-	nursery.waitGroup.Add(2)
+	nursery.waitGroup.Add(1)
 
 	go func() {
 		for status := range nursery.boltzWs.Updates {
@@ -258,23 +256,6 @@ func (nursery *Nursery) startSwapListener() {
 			}
 		}
 		nursery.waitGroup.Done()
-	}()
-
-	go func() {
-		defer nursery.waitGroup.Done()
-		notifier := wallet.TransactionNotifier.Get()
-		defer wallet.TransactionNotifier.Remove(notifier)
-		for {
-			select {
-			case notification := <-notifier:
-				if err := nursery.checkExternalReverseSwaps(notification.Currency); err != nil {
-					logger.Errorf("Could not check external reverse swaps: %v", err)
-				}
-			case <-nursery.ctx.Done():
-				return
-			}
-		}
-
 	}()
 }
 
