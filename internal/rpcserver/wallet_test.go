@@ -20,7 +20,9 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
+	boltzrpcclient "github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/client"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
 )
 
 func TestWalletTransactions(t *testing.T) {
@@ -636,21 +638,31 @@ func TestWalletSendReceive(t *testing.T) {
 }
 
 func TestImportDuplicateCredentials(t *testing.T) {
-	client, _, stop := setup(t, setupOptions{})
+	cfg := loadConfig(t)
+	chain := getOnchain(t, cfg)
+	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain, node: "standalone"})
 	defer stop()
 
 	testWallet := fundedWallet(t, client, boltzrpc.Currency_LBTC)
 	credentials, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
-	// duplicates are only allowed for different currencies
-	second := &boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}
-	_, err = client.ImportWallet(second, credentials)
-	require.Error(t, err)
+	_, err = client.ImportWallet(&boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}, credentials)
+	requireCode(t, err, codes.InvalidArgument)
+	require.ErrorContains(t, err, "same credentials")
 
-	second.Currency = boltzrpc.Currency_BTC
+	_, write, _ := createTenant(t, client, "wallet-duplicate-tenant")
+	tenantClient := boltzrpcclient.NewBoltzClient(write)
+
+	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}, credentials)
+	require.NoError(t, err)
+
+	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "duplicate", Currency: boltzrpc.Currency_LBTC}, credentials)
+	requireCode(t, err, codes.InvalidArgument)
+	require.ErrorContains(t, err, "same credentials")
+
 	credentials.CoreDescriptor = nil
-	_, err = client.ImportWallet(second, credentials)
+	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "another-btc", Currency: boltzrpc.Currency_BTC}, credentials)
 	require.NoError(t, err)
 }
 

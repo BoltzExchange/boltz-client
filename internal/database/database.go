@@ -223,7 +223,7 @@ CREATE TABLE wallets
     lastIndex      INT,
 
     UNIQUE (name, tenantId, nodePubkey),
-    UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
+    UNIQUE (tenantId, xpub, coreDescriptor, mnemonic, nodePubkey)
 );
 CREATE TABLE tenants
 (
