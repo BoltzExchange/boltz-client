@@ -6,11 +6,9 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/internal/lightning"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc/serializers"
 
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
-	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
-
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
+	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 )
 
@@ -229,16 +227,6 @@ func serializeChainPair(pair boltz.Pair, chainPair *boltz.ChainPair) *boltzrpc.P
 }
 
 //nolint:staticcheck
-func serializeWalletSubaccount(subaccount wallet.Subaccount, balance *onchain.Balance) *boltzrpc.Subaccount {
-	//nolint:staticcheck
-	return &boltzrpc.Subaccount{
-		Balance:     serializers.SerializeWalletBalance(balance),
-		Pointer:     subaccount.Pointer,
-		Type:        subaccount.Type,
-		Descriptors: subaccount.CoreDescriptors,
-	}
-}
-
 func serializeWalletCredentials(credentials *onchain.WalletCredentials) *boltzrpc.WalletCredentials {
 	return &boltzrpc.WalletCredentials{
 		Mnemonic:       serializeOptionalString(credentials.Mnemonic),

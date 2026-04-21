@@ -109,12 +109,12 @@ service Boltz {
     rpc ImportWallet (ImportWalletRequest) returns (Wallet);
 
     /*
-    Sets the subaccount of a wallet. Not supported for readonly wallets.
+    Deprecated. No longer supported.
      */
     rpc SetSubaccount (SetSubaccountRequest) returns (Subaccount) { option deprecated = true; };
 
     /*
-    Returns all subaccounts for a given wallet. Not supported for readonly wallets.
+    Deprecated. No longer supported.
      */
     rpc GetSubaccounts (GetSubaccountsRequest) returns (GetSubaccountsResponse) { option deprecated = true; };
 
@@ -124,7 +124,7 @@ service Boltz {
     rpc GetWallets (GetWalletsRequest) returns (Wallets);
 
     /*
-    Returns the current balance and subaccount of a wallet.
+    Returns the current balance of a wallet.
      */
     rpc GetWallet (GetWalletRequest) returns (Wallet);
 
@@ -439,6 +439,8 @@ message GetInfoResponse {
     optional Tenant tenant = 13;
     // swaps that need a manual interaction to claim
     repeated string claimable_swaps = 14;
+    // startup warnings that require user attention
+    repeated string warnings = 15;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -805,7 +807,7 @@ message WalletCredentials {
     // public key descriptor for the wallets external keychain.
     optional string core_descriptor = 3;
 
-    // only used in combination with mnemonic
+    // Deprecated: only used to migrate legacy wallets imported before descriptor-based backends.
     optional uint64 subaccount = 4 [deprecated = true];
     optional string xpub = 2 [deprecated = true];
 }
@@ -834,7 +836,7 @@ message CreateWalletResponse {
 message SetSubaccountRequest {
     option deprecated = true;
     uint64 wallet_id = 1;
-    // The subaccount to use. If not set, a new one will be created.
+    // Deprecated: this field is ignored because wallet subaccounts are no longer supported.
     optional uint64 subaccount = 2;
 }
 

@@ -3,6 +3,6 @@
 package lwk
 
 /*
-#cgo LDFLAGS: ${SRCDIR}/liblwk.a -Wl,--no-as-needed -ldl
+#cgo LDFLAGS: ${SRCDIR}/liblwk.a -Wl,--no-as-needed -ldl -lm
 */
 import "C"

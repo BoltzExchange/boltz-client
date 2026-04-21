@@ -188,16 +188,16 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 		if err != nil {
 			var boltzErr boltz.Error
 			if !errors.As(err, &boltzErr) {
-				handleError("Could not get lockup tx from boltz: " + err.Error())
+				handleError("Could not get lockup tx from boltz: %v", err)
 				return
 			}
 		} else {
 			if err := nursery.setChainSwapLockupTransaction(swap, swap.FromData, response.UserLock); err != nil {
-				handleError("Could not set lockup transaction in database: " + err.Error())
+				handleError("Could not set lockup transaction in database: %v", err)
 				return
 			}
 			if err := nursery.setChainSwapLockupTransaction(swap, swap.ToData, response.ServerLock); err != nil {
-				handleError("Could not set lockup transaction in database: " + err.Error())
+				handleError("Could not set lockup transaction in database: %v", err)
 				return
 			}
 		}
@@ -220,7 +220,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 			if quote != nil {
 				result, err := nursery.onchain.FindOutput(chainOutputArgs(swap.FromData))
 				if err != nil {
-					handleError(err.Error())
+					handleError("%v", err)
 					return
 				}
 
@@ -269,7 +269,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 	err := nursery.database.UpdateChainSwapStatus(swap, parsedStatus)
 
 	if err != nil {
-		handleError(fmt.Sprintf("Could not update status of Chain Swap %s to %s: %s", swap.Id, parsedStatus, err))
+		handleError("Could not update status of Chain Swap %s to %s: %v", swap.Id, parsedStatus, err)
 		return
 	}
 
@@ -280,14 +280,14 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 
 			if swap.State == boltzrpc.SwapState_PENDING {
 				if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
-					handleError(err.Error())
+					handleError("%v", err)
 					return
 				}
 			}
 
 			if swap.FromData.LockupTransactionId != "" {
 				if _, err := nursery.RefundSwaps(swap.Pair.From, nil, []*database.ChainSwap{swap}); err != nil {
-					handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
+					handleError("Could not refund Swap %s: %v", swap.Id, err)
 					return
 				}
 			}
