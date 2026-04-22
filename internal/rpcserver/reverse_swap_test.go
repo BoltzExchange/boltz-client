@@ -460,8 +460,13 @@ func TestReverseSwap(t *testing.T) {
 			t.Run("Valid", func(t *testing.T) {
 				destinationWallet := emptyWallet(t, client, boltzrpc.Currency_BTC)
 				destination.WalletId = destinationWallet.Id
-				_, err := client.ClaimSwaps(request)
+				response, err := client.ClaimSwaps(request)
 				require.NoError(t, err)
+
+				claimedSwap, err := client.GetSwapInfo(info.Id)
+				require.NoError(t, err)
+				require.NotEmpty(t, claimedSwap.ReverseSwap.ClaimAddress)
+				checkTxOutAddress(t, chain, boltz.CurrencyBtc, response.TransactionId, claimedSwap.ReverseSwap.ClaimAddress, true)
 
 				_, err = client.ClaimSwaps(request)
 				requireCode(t, err, codes.NotFound)
