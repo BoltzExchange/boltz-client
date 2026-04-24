@@ -372,6 +372,54 @@ Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be 
 | ------- | -------- |
 | [`SetSwapMnemonicRequest`](#setswapmnemonicrequest) | [`SetSwapMnemonicResponse`](#setswapmnemonicresponse) |
 
+#### Restore
+
+Restores funding addresses from Boltz using the provided mnemonic. Re-creates the funding address database entries and returns them in the standard schema.
+
+| Request | Response |
+| ------- | -------- |
+| [`RestoreRequest`](#restorerequest) | [`RestoreResponse`](#restoreresponse) |
+
+#### CreateFundingAddress
+
+Creates a new funding address for pre-funding swaps.
+
+| Request | Response |
+| ------- | -------- |
+| [`CreateFundingAddressRequest`](#createfundingaddressrequest) | [`FundingAddressInfo`](#fundingaddressinfo) |
+
+#### ListFundingAddresses
+
+Returns a list of all funding addresses in the database.
+
+| Request | Response |
+| ------- | -------- |
+| [`ListFundingAddressesRequest`](#listfundingaddressesrequest) | [`ListFundingAddressesResponse`](#listfundingaddressesresponse) |
+
+#### GetFundingAddressStream
+
+Streams updates for funding addresses in real time. If the id is empty or "*" updates for all funding addresses will be streamed.
+
+| Request | Response |
+| ------- | -------- |
+| [`GetFundingAddressStreamRequest`](#getfundingaddressstreamrequest) | [`FundingAddressInfo`](#fundingaddressinfo) stream |
+
+#### FundSwap
+
+Funds a swap using a funding address. This uses the signing details flow to cooperatively spend from the funding address to the swap lockup address.
+
+| Request | Response |
+| ------- | -------- |
+| [`FundSwapRequest`](#fundswaprequest) | [`FundSwapResponse`](#fundswapresponse) |
+
+#### RefundFundingAddress
+
+Refunds a funding address by cooperatively signing with Boltz to move funds to a destination address or wallet. This can be used to recover funds from a funding address that hasn't been used for a swap.
+
+| Request | Response |
+| ------- | -------- |
+| [`RefundFundingAddressRequest`](#refundfundingaddressrequest) | [`RefundFundingAddressResponse`](#refundfundingaddressresponse) |
+
 
 
 
@@ -386,7 +434,7 @@ Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be 
 | ----- | ---- | ----- | ----------- |
 | `id` | [`string`](#string) |  |  |
 | `type` | [`SwapType`](#swaptype) |  |  |
-| `pair` | [`Pair`](#pair) |  |  |
+| `pair` | [`Pair`](#pair) |  | The swap pair. If `funding_address` is set, `pair.from` is derived from the funding address currency. `pair.to` still has to identify the destination chain. |
 | `state` | [`SwapState`](#swapstate) |  |  |
 | `error` | [`string`](#string) | optional |  |
 | `status` | [`string`](#string) |  |  |
@@ -647,7 +695,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) | optional | Amount of satoshis to swap. It is the amount expected to be sent to the lockup address. If left empty, any amount within the limits will be accepted. |
+| `amount` | [`uint64`](#uint64) | optional | Amount of satoshis to swap. It is the amount expected to be sent to the lockup address. If left empty, any amount within the limits will be accepted. If `funding_address` is set, the server derives this from the funded amount. |
 | `pair` | [`Pair`](#pair) |  |  |
 | `to_address` | [`string`](#string) | optional | Address where funds will be swept to if the swap succeeds |
 | `refund_address` | [`string`](#string) | optional | Address where the coins should be refunded to if the swap fails. |
@@ -658,6 +706,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `lockup_zero_conf` | [`bool`](#bool) | optional | **Deprecated.**  |
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
 | `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
+| `funding_address` | [`string`](#string) | optional | Funding address ID to fund the swap from. If set, the server derives `pair.from` from the funding address currency and `amount` from the funded amount. |
 
 
 
@@ -678,6 +727,19 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### CreateFundingAddressRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `currency` | [`Currency`](#currency) |  |  |
+
+
+
+
+
 #### CreateReverseSwapRequest
 
 
@@ -688,7 +750,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `amount` | [`uint64`](#uint64) |  | amount of satoshis to swap |
 | `address` | [`string`](#string) |  | If no value is set, the daemon will query a new address from the lightning node |
 | `accept_zero_conf` | [`bool`](#bool) |  | Whether the daemon should broadcast the claim transaction immediately after the lockup transaction is in the mempool. Should only be used for smaller amounts as it involves trust in boltz. |
-| `pair` | [`Pair`](#pair) |  |  |
+| `pair` | [`Pair`](#pair) |  | The swap pair. For submarine swaps, `pair.to` is always BTC. If `funding_address` is set, `pair.from` is derived from the funding address currency. |
 | `chan_ids` | [`string`](#string) | repeated | a list of channel ids which are allowed for paying the invoice. can be in either cln or lnd style. |
 | `wallet_id` | [`uint64`](#uint64) | optional | wallet from which the onchain address should be generated - only considered if `address` is not set |
 | `return_immediately` | [`bool`](#bool) | optional | Whether the daemon should return immediately after creating the swap or wait until the swap is successful or failed. It will always return immediately if `accept_zero_conf` is not set. |
@@ -728,7 +790,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `amount` | [`uint64`](#uint64) |  | amount of sats to be received on lightning. related: `invoice` field |
+| `amount` | [`uint64`](#uint64) |  | amount of sats to be received on lightning. related: `invoice` field If `funding_address` is set, the server derives this from the funded onchain amount and current fees. |
 | `pair` | [`Pair`](#pair) |  |  |
 | `send_from_internal` | [`bool`](#bool) |  | the daemon will pay the swap using the onchain wallet specified in the `wallet` field or the first internal wallet with the correct currency otherwise. |
 | `refund_address` | [`string`](#string) | optional | address where the coins should go if the swap fails. Refunds will go to any of the daemons wallets otherwise. |
@@ -738,6 +800,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `sat_per_vbyte` | [`double`](#double) | optional | Fee rate to use when sending from internal wallet |
 | `accepted_pair` | [`PairInfo`](#pairinfo) | optional | Rates to accept for the swap. Queries latest from boltz otherwise The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call |
 | `ignore_mrh` | [`bool`](#bool) | optional | Ignore any magic routing hints found in the specified `invoice`. |
+| `funding_address` | [`string`](#string) | optional | Funding address ID to fund the swap from. If set, the server derives `pair.from` from the funding address currency and `amount` from the funded onchain amount. |
 
 
 
@@ -839,6 +902,70 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `percentage` | [`float`](#float) |  |  |
 | `miner` | [`MinerFees`](#minerfees) |  |  |
+
+
+
+
+
+#### FundSwapRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `funding_address_id` | [`string`](#string) |  | The funding address ID to spend from |
+| `swap_id` | [`string`](#string) |  | The swap ID to fund |
+
+
+
+
+
+#### FundSwapResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transaction_id` | [`string`](#string) |  | The transaction ID of the funding transaction |
+
+
+
+
+
+#### FundingAddressInfo
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) |  |  |
+| `currency` | [`Currency`](#currency) |  |  |
+| `address` | [`string`](#string) |  |  |
+| `amount` | [`uint64`](#uint64) |  |  |
+| `timeout_block_height` | [`uint32`](#uint32) |  |  |
+| `boltz_public_key` | [`string`](#string) |  |  |
+| `status` | [`string`](#string) |  |  |
+| `lockup_transaction_id` | [`string`](#string) | optional |  |
+| `swap_id` | [`string`](#string) | optional |  |
+| `created_at` | [`int64`](#int64) |  |  |
+| `tenant_id` | [`uint64`](#uint64) |  |  |
+| `blinding_key` | [`string`](#string) | optional |  |
+
+
+
+
+
+#### GetFundingAddressStreamRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [`string`](#string) | optional | If empty or "*", streams updates for all funding addresses |
 
 
 
@@ -1045,6 +1172,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `pair` | [`Pair`](#pair) |  |  |
 | `send_amount` | [`uint64`](#uint64) |  | The amount you want to send |
 | `receive_amount` | [`uint64`](#uint64) |  | The amount you want to receive |
+| `funding_address_id` | [`string`](#string) |  | The funding address ID to derive send_amount from |
 
 
 
@@ -1171,6 +1299,32 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `minimal` | [`uint64`](#uint64) |  |  |
 | `maximal` | [`uint64`](#uint64) |  |  |
 | `maximal_zero_conf_amount` | [`uint64`](#uint64) |  |  |
+
+
+
+
+
+#### ListFundingAddressesRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `currency` | [`Currency`](#currency) | optional |  |
+
+
+
+
+
+#### ListFundingAddressesResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `funding_addresses` | [`FundingAddressInfo`](#fundingaddressinfo) | repeated |  |
 
 
 
@@ -1319,6 +1473,34 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
+#### RefundFundingAddressRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `funding_address_id` | [`string`](#string) |  | The funding address ID to refund |
+| `address` | [`string`](#string) |  | External address to send refunded funds to |
+| `wallet_id` | [`uint64`](#uint64) |  | Wallet ID to send refunded funds to |
+
+
+
+
+
+#### RefundFundingAddressResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `transaction_id` | [`string`](#string) |  | The transaction ID of the refund transaction |
+
+
+
+
+
 #### RefundSwapRequest
 
 
@@ -1364,6 +1546,32 @@ Channel creations are an optional extension to a submarine swap in the data type
 #### RemoveWalletResponse
 
 
+
+
+
+
+
+#### RestoreRequest
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mnemonic` | [`string`](#string) |  |  |
+
+
+
+
+
+#### RestoreResponse
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `funding_addresses` | [`FundingAddressInfo`](#fundingaddressinfo) | repeated |  |
 
 
 

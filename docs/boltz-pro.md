@@ -56,3 +56,13 @@ This choice is controlled by:
 - CLI: `--from-wallet <wallet-name>` (internal) or `--external-pay` (external).
   If neither is specified, the first internal wallet with the correct currency
   will be used for funding.
+
+### Capture Opportunities Instantly
+
+If you want to react quickly to Boltz Pro discounts or earn opportunities,
+consider pre-funding a [funding address](funding.md). Once funds are already
+confirmed there, you can swap immediately when an opportunity appears, without
+waiting for a new onchain transaction to confirm.
+
+This can be especially useful for automated setups that continuously monitor
+Boltz Pro rates and want to execute as soon as conditions become favorable.

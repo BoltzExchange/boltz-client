@@ -46,7 +46,6 @@ func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
 	cfg, err := config.LoadConfig(dataDir)
 	require.NoError(t, err)
-	cfg.Log.Level = "debug"
 	cfg.Node = "lnd"
 	cfg.DataDir = t.TempDir()
 	cfg.Database.Path = cfg.DataDir + "/boltz.db"
@@ -310,4 +309,42 @@ func swapStream(t *testing.T, client client.Boltz, swapId string) (streamFunc, s
 	return func(state boltzrpc.SwapState) *boltzrpc.GetSwapInfoResponse {
 		return streamFunc(state, boltz.SwapCreated)
 	}, streamFunc
+}
+
+type fundingStreamFunc func(status boltz.FundingUpdateEvent) *boltzrpc.FundingAddressInfo
+
+func fundingAddressStream(t *testing.T, client client.Boltz, fundingId string) fundingStreamFunc {
+	stream, err := client.GetFundingAddressStream(fundingId)
+	require.NoError(t, err)
+
+	updates := make(chan *boltzrpc.FundingAddressInfo, 3)
+
+	go func() {
+		for {
+			info, err := stream.Recv()
+			if err != nil {
+				close(updates)
+				return
+			}
+			updates <- info
+		}
+	}()
+
+	return func(status boltz.FundingUpdateEvent) *boltzrpc.FundingAddressInfo {
+		for {
+			select {
+			case update, ok := <-updates:
+				if ok {
+					if update.Status == status.String() {
+						return update
+					}
+				} else {
+					require.Fail(t, fmt.Sprintf("update stream for funding address %s stopped before status %s", fundingId, status))
+				}
+			case <-time.After(15 * time.Second):
+				test.PrintBackendLogs()
+				require.Fail(t, fmt.Sprintf("timed out while waiting for funding address %s to reach status %s", fundingId, status))
+			}
+		}
+	}
 }

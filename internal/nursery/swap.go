@@ -48,6 +48,20 @@ func swapOutputArgs(swap *database.Swap) onchain.OutputArgs {
 	}
 }
 
+func (nursery *Nursery) fundingOutputArgs(swap *database.Swap) *onchain.OutputArgs {
+	fundingAddress, err := nursery.database.QueryFundingAddressesBySwapId(swap.Id)
+	if err != nil || fundingAddress.Currency != swap.Pair.From || fundingAddress.LockupTransactionId == "" {
+		return nil
+	}
+
+	return &onchain.OutputArgs{
+		TransactionId: fundingAddress.LockupTransactionId,
+		Currency:      swap.Pair.From,
+		Address:       fundingAddress.Address,
+		BlindingKey:   fundingAddress.BlindingKey,
+	}
+}
+
 func (nursery *Nursery) getRefundOutput(swap *database.Swap) *Output {
 	return &Output{
 		OutputDetails: &boltz.OutputDetails{
@@ -119,14 +133,33 @@ func (nursery *Nursery) cooperativeSwapClaim(swap *database.Swap, status boltz.S
 		}
 	}
 
-	session, err := boltz.NewSigningSession(swap.SwapTree)
-	if err != nil {
-		return fmt.Errorf("could not create signing session: %w", err)
-	}
-
-	partial, err := session.Sign(claimDetails.TransactionHash, claimDetails.PubNonce)
-	if err != nil {
-		return fmt.Errorf("could not create partial signature: %w", err)
+	var partial *boltz.PartialSignature
+	if claimDetails.FundingAddressId != "" {
+		fundingAddress, err := nursery.database.QueryFundingAddress(claimDetails.FundingAddressId)
+		if err != nil {
+			return fmt.Errorf("could not query funding address: %w", err)
+		}
+		fundingTree, err := fundingAddress.GetFundingTree()
+		if err != nil {
+			return fmt.Errorf("could not get funding tree: %w", err)
+		}
+		session, err := boltz.NewFundingSigningSession(fundingTree)
+		if err != nil {
+			return fmt.Errorf("could not create signing session: %w", err)
+		}
+		partial, err = session.Sign(claimDetails.PubNonce, claimDetails.TransactionHash)
+		if err != nil {
+			return fmt.Errorf("could not create partial signature: %w", err)
+		}
+	} else {
+		session, err := boltz.NewSigningSession(swap.SwapTree)
+		if err != nil {
+			return fmt.Errorf("could not create signing session: %w", err)
+		}
+		partial, err = session.Sign(claimDetails.TransactionHash, claimDetails.PubNonce)
+		if err != nil {
+			return fmt.Errorf("could not create partial signature: %w", err)
+		}
 	}
 
 	if err := nursery.boltz.SendSwapClaimSignature(swap.Id, partial); err != nil {
@@ -179,7 +212,12 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, parsedStatus boltz
 				return
 			}
 
-			result, err := nursery.onchain.FindOutput(swapOutputArgs(swap))
+			outputArgs := swapOutputArgs(swap)
+			if fundingOutput := nursery.fundingOutputArgs(swap); fundingOutput != nil {
+				outputArgs = *fundingOutput
+			}
+
+			result, err := nursery.onchain.FindOutput(outputArgs)
 			if err != nil {
 				handleError(err.Error())
 				return

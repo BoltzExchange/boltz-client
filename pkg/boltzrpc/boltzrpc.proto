@@ -222,6 +222,40 @@ service Boltz {
     Sets the mnemonic used for key derivation of swaps. An existing mnemonic can be used, or a new one can be generated.
     */
     rpc SetSwapMnemonic(SetSwapMnemonicRequest) returns (SetSwapMnemonicResponse);
+
+    /*
+    Restores funding addresses from Boltz using the provided mnemonic.
+    Re-creates the funding address database entries and returns them in the standard schema.
+    */
+    rpc Restore(RestoreRequest) returns (RestoreResponse);
+
+    /*
+    Creates a new funding address for pre-funding swaps.
+    */
+    rpc CreateFundingAddress(CreateFundingAddressRequest) returns (FundingAddressInfo);
+
+    /*
+    Returns a list of all funding addresses in the database.
+    */
+    rpc ListFundingAddresses(ListFundingAddressesRequest) returns (ListFundingAddressesResponse);
+
+    /*
+    Streams updates for funding addresses in real time.
+    If the id is empty or "*" updates for all funding addresses will be streamed.
+    */
+    rpc GetFundingAddressStream(GetFundingAddressStreamRequest) returns (stream FundingAddressInfo);
+
+    /*
+    Funds a swap using a funding address. This uses the signing details flow to cooperatively
+    spend from the funding address to the swap lockup address.
+    */
+    rpc FundSwap(FundSwapRequest) returns (FundSwapResponse);
+
+    /*
+    Refunds a funding address by cooperatively signing with Boltz to move funds to a destination address or wallet.
+    This can be used to recover funds from a funding address that hasn't been used for a swap.
+    */
+    rpc RefundFundingAddress(RefundFundingAddressRequest) returns (RefundFundingAddressResponse);
 }
 
 message CreateTenantRequest {
@@ -346,12 +380,13 @@ message PairInfo {
 message GetSwapQuoteRequest {
     SwapType type = 1;
     Pair pair = 2;
-    // Specify exactly one of send_amount or receive_amount
     oneof amount {
         // The amount you want to send
         uint64 send_amount = 3;
         // The amount you want to receive
         uint64 receive_amount = 4;
+        // The funding address ID to derive send_amount from
+        string funding_address_id = 5;
     }
 }
 
@@ -588,7 +623,10 @@ message DepositResponse {
 message CreateSwapRequest {
     // amount of sats to be received on lightning. 
     // related: `invoice` field
+    // If `funding_address` is set, the server derives this from the funded onchain amount and current fees.
     uint64 amount = 1;
+    // The swap pair. For submarine swaps, `pair.to` is always BTC.
+    // If `funding_address` is set, `pair.from` is derived from the funding address currency.
     Pair pair = 2;
 
     // the daemon will pay the swap using the onchain wallet specified in the `wallet` field 
@@ -611,6 +649,9 @@ message CreateSwapRequest {
     optional PairInfo accepted_pair = 10;
     // Ignore any magic routing hints found in the specified `invoice`.
     optional bool ignore_mrh = 11;
+    // Funding address ID to fund the swap from.
+    // If set, the server derives `pair.from` from the funding address currency and `amount` from the funded amount.
+    optional string funding_address = 12;
 }
 message CreateSwapResponse {
     string id = 1;
@@ -683,7 +724,11 @@ message CreateReverseSwapResponse {
 message CreateChainSwapRequest {
     // Amount of satoshis to swap. It is the amount expected to be sent to the lockup address.
     // If left empty, any amount within the limits will be accepted.
+    // If `funding_address` is set, the server derives this from the funded amount.
     optional uint64 amount = 1;
+    // The swap pair.
+    // If `funding_address` is set, `pair.from` is derived from the funding address currency.
+    // `pair.to` still has to identify the destination chain.
     Pair pair = 2;
     // Address where funds will be swept to if the swap succeeds
     optional string to_address = 3;
@@ -705,6 +750,9 @@ message CreateChainSwapRequest {
     // Rates to accept for the swap. Queries latest from boltz otherwise
     // The recommended way to use this is to pass a user approved value from a previous `GetPairInfo` call
     optional PairInfo accepted_pair = 11;
+    // Funding address ID to fund the swap from.
+    // If set, the server derives `pair.from` from the funding address currency and `amount` from the funded amount.
+    optional string funding_address = 12;
 }
 
 message ChainSwapInfo {
@@ -1025,4 +1073,72 @@ message SetSwapMnemonicRequest {
 }
 message SetSwapMnemonicResponse {
     string mnemonic = 1;
+}
+
+message RestoreRequest {
+    string mnemonic = 1;
+}
+message RestoreResponse {
+    repeated FundingAddressInfo funding_addresses = 1;
+}
+
+message CreateFundingAddressRequest {
+    Currency currency = 1;
+}
+
+message FundingAddressInfo {
+    string id = 1;
+    Currency currency = 2;
+    string address = 3;
+    uint64 amount = 12;
+    uint32 timeout_block_height = 4;
+    string boltz_public_key = 5;
+    string status = 6;
+    optional string lockup_transaction_id = 7;
+    optional string swap_id = 8;
+    int64 created_at = 9;
+    uint64 tenant_id = 10;
+    optional string blinding_key = 11;
+}
+
+message ListFundingAddressesRequest {
+    optional Currency currency = 1;
+}
+
+message ListFundingAddressesResponse {
+    repeated FundingAddressInfo funding_addresses = 1;
+}
+
+message GetFundingAddressStreamRequest {
+    // If empty or "*", streams updates for all funding addresses
+    optional string id = 1;
+}
+
+message FundSwapRequest {
+    // The funding address ID to spend from
+    string funding_address_id = 1;
+    // The swap ID to fund
+    string swap_id = 2;
+}
+
+message FundSwapResponse {
+    // The transaction ID of the funding transaction
+    string transaction_id = 1;
+}
+
+message RefundFundingAddressRequest {
+    // The funding address ID to refund
+    string funding_address_id = 1;
+    // Destination for the refunded funds - either an address or wallet ID
+    oneof destination {
+        // External address to send refunded funds to
+        string address = 2;
+        // Wallet ID to send refunded funds to
+        uint64 wallet_id = 3;
+    }
+}
+
+message RefundFundingAddressResponse {
+    // The transaction ID of the refund transaction
+    string transaction_id = 1;
 }
