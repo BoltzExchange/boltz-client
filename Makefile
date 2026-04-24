@@ -198,9 +198,12 @@ DOCKER_ARGS := \
 	--build-arg GO_VERSION=$(GO_VERSION) \
 	--build-arg GDK_VERSION=$(GDK_VERSION) \
 	--build-arg RUST_VERSION=$(RUST_VERSION)
-DOCKER_CACHE_ARGS := \
-	--cache-from type=registry,ref=$(DOCKER_CACHE) \
+DOCKER_CACHE_FROM_ARGS := \
+	--cache-from type=registry,ref=$(DOCKER_CACHE)
+DOCKER_CACHE_TO_ARGS := \
 	--cache-to type=registry,ref=$(DOCKER_CACHE),mode=max
+DOCKER_CACHE_ARGS := $(DOCKER_CACHE_FROM_ARGS) $(DOCKER_CACHE_TO_ARGS)
+DOCKER_BINARY_CACHE_ARGS ?= $(DOCKER_CACHE_FROM_ARGS)
 
 docker:
 	@$(call print, "Building docker image")
@@ -208,7 +211,7 @@ docker:
 
 binaries:
 	@$(call print, "Building binaries")
-	docker buildx build --output bin --target binaries $(DOCKER_ARGS) $(DOCKER_CACHE_ARGS) .
+	docker buildx build --output bin --target binaries $(DOCKER_ARGS) $(DOCKER_BINARY_CACHE_ARGS) .
 	tar -czvf boltz-client-linux-amd64-v$(VERSION).tar.gz bin/linux_amd64
 	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
