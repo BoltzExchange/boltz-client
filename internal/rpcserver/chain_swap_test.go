@@ -559,10 +559,12 @@ func TestChainSwap(t *testing.T) {
 
 						t.Run("Valid", func(t *testing.T) {
 							destination.WalletId = toWallet.Id
-							_, err := client.ClaimSwaps(request)
+							response, err := client.ClaimSwaps(request)
 							require.NoError(t, err)
 
 							info = stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
+							require.NotEmpty(t, info.ToData.GetAddress())
+							checkTxOutAddress(t, chain, parseCurrency(pair.To), response.TransactionId, info.ToData.GetAddress(), true)
 							checkSwap(t, client, info.Id)
 
 							require.Eventually(t, func() bool {

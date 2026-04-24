@@ -114,6 +114,12 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 
 			return nursery.finalizeChainSwap(swap)
 		},
+		setAddress: func(address string) error {
+			if err := nursery.database.SetChainSwapAddress(swap.ToData, address); err != nil {
+				return fmt.Errorf("could not set claim address in database: %w", err)
+			}
+			return nil
+		},
 		setError: func(err error) {
 			nursery.handleChainSwapError(swap, err)
 		},
@@ -122,7 +128,7 @@ func (nursery *Nursery) getChainSwapClaimOutput(swap *database.ChainSwap) *Outpu
 
 func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Output {
 	return &Output{
-		&boltz.OutputDetails{
+		OutputDetails: &boltz.OutputDetails{
 			SwapId:             swap.Id,
 			SwapType:           boltz.ChainSwap,
 			PrivateKey:         swap.FromData.PrivateKey,
@@ -131,9 +137,9 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 			Cooperative:        true,
 			Address:            swap.FromData.Address,
 		},
-		swap.FromData.WalletId,
-		chainOutputArgs(swap.FromData),
-		func(transactionId string, fee uint64) error {
+		walletId:   swap.FromData.WalletId,
+		outputArgs: chainOutputArgs(swap.FromData),
+		setTransaction: func(transactionId string, fee uint64) error {
 			if err := nursery.database.SetChainSwapTransactionId(swap.FromData, transactionId); err != nil {
 				return fmt.Errorf("could not set refund transaction id in database: %s", err)
 			}
@@ -150,7 +156,7 @@ func (nursery *Nursery) getChainSwapRefundOutput(swap *database.ChainSwap) *Outp
 
 			return nil
 		},
-		func(err error) {
+		setError: func(err error) {
 			nursery.handleChainSwapError(swap, err)
 		},
 	}

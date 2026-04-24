@@ -35,6 +35,7 @@ type Output struct {
 	outputArgs onchain.OutputArgs
 
 	setTransaction func(transactionId string, fee uint64) error
+	setAddress     func(address string) error
 	setError       func(err error)
 }
 

@@ -389,6 +389,12 @@ func (nursery *Nursery) populateOutputs(outputs []*Output) (valid []*Output, det
 				}
 				addresses[walletId] = address
 			}
+			if output.setAddress != nil {
+				if err := output.setAddress(address); err != nil {
+					handleErr(err)
+					continue
+				}
+			}
 			output.Address = address
 		}
 		var err error

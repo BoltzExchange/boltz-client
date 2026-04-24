@@ -158,6 +158,12 @@ func (nursery *Nursery) getReverseSwapClaimOutput(reverseSwap *database.ReverseS
 			}
 			return nursery.finalizeReverseSwap(reverseSwap)
 		},
+		setAddress: func(address string) error {
+			if err := nursery.database.SetReverseSwapClaimAddress(reverseSwap, address); err != nil {
+				return fmt.Errorf("could not set claim address in database: %w", err)
+			}
+			return nil
+		},
 		setError: func(err error) {
 			nursery.handleReverseSwapError(reverseSwap, err)
 		},
