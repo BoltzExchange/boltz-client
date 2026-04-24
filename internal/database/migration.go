@@ -632,8 +632,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 		logMigration(oldVersion)
 
 		migration := `
-		ALTER TABLE wallets RENAME TO old_wallets;
-		CREATE TABLE wallets
+		CREATE TABLE new_wallets
 		(
 			id             INTEGER PRIMARY KEY AUTOINCREMENT,
 			name           VARCHAR,
@@ -651,9 +650,10 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			UNIQUE (name, tenantId, nodePubkey),
 			UNIQUE (tenantId, xpub, coreDescriptor, mnemonic, nodePubkey)
 		);
-		INSERT INTO wallets (id, name, currency, nodePubkey, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, legacy, lastIndex)
-		SELECT id, name, currency, nodePubkey, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, legacy, lastIndex FROM old_wallets;
-		DROP TABLE old_wallets;
+		INSERT INTO new_wallets (id, name, currency, nodePubkey, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, legacy, lastIndex)
+		SELECT id, name, currency, nodePubkey, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, legacy, lastIndex FROM wallets;
+		DROP TABLE wallets;
+		ALTER TABLE new_wallets RENAME TO wallets;
 		`
 		if _, err := tx.Exec(migration); err != nil {
 			return err
