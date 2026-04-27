@@ -643,7 +643,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			mnemonic       VARCHAR,
 			subaccount     INT,
 			salt           VARCHAR,
-			tenantId       INT REFERENCES tenants (id),
+			tenantId       INT NOT NULL REFERENCES tenants (id),
 			legacy         BOOLEAN DEFAULT FALSE,
 			lastIndex      INT,
 
