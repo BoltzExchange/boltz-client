@@ -1,3 +1,7 @@
+---
+description: Create, import, and manage Bitcoin and Liquid wallets for use with swaps and autoswap
+---
+
 # 💰 Wallets
 
 `boltz-client` allows you to manage Bitcoin and [Liquid](https://liquid.net/)

@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import llmstxt from "vitepress-plugin-llms";
 
 const docsRoot = "https://docs.boltz.exchange";
 
@@ -42,4 +43,7 @@ export default defineConfig({
   },
   // Ignore dead links to localhost
   ignoreDeadLinks: [/https?:\/\/localhost/],
+  vite: {
+    plugins: [llmstxt({ excludeIndexPage: false })],
+  },
 });
