@@ -1,3 +1,7 @@
+---
+description: TOML configuration reference for boltzd including LND, CLN, RPC, and wallet settings
+---
+
 # 🎛 Configuration
 
 Boltz Client can be configured via a `TOML` config file or CLI arguments. By

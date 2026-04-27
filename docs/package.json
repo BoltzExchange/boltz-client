@@ -16,5 +16,8 @@
   "dependencies": {
     "prettier": "^3.6.2",
     "vitepress": "^1.6.3"
+  },
+  "devDependencies": {
+    "vitepress-plugin-llms": "^1.12.1"
   }
 }

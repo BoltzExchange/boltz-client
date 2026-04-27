@@ -1,3 +1,7 @@
+---
+description: Automated Lightning channel rebalancing with configurable thresholds, budgets, and swap types
+---
+
 # 🔁 Autoswap
 
 The autoswap feature of `boltz-client` allows for automated channel rebalancing.

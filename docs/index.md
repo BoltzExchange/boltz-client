@@ -1,4 +1,5 @@
 ---
+description: Boltz Client daemon and CLI for unattended Lightning channel rebalancing and trustless submarine swaps via CLN or LND
 next:
   text: "💰 Wallets"
   link: "/wallets"

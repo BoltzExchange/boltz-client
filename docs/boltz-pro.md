@@ -1,3 +1,7 @@
+---
+description: Use Boltz Pro dynamic fee rates and earn opportunities through Boltz Client
+---
+
 # 🏅 Boltz Pro
 
 Boltz Pro is a service designed to dynamically adjust swap fees based on Boltz's

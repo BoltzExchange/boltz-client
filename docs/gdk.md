@@ -1,3 +1,7 @@
+---
+description: Building and updating the GDK (Blockstream Green Development Kit) dependency
+---
+
 # GDK
 
 The gdk build process is split into two parts: the builder image inside the gdk
