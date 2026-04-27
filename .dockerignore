@@ -1,10 +1,12 @@
-*.so
-*.a
-vendor
 bin
+**/bin
 target
+**/target
 regtest
+**/regtest/data
 boltzd
 boltzcli
-bdk/target/
-lwk/target/
+*.a
+**/*.a
+*.so
+**/*.so

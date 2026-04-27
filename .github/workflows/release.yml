@@ -89,4 +89,3 @@ jobs:
             ```
             boltz-client-linux-amd64-${{ env.RELEASE_VERSION }}.tar.gz: OK
             ```
-
