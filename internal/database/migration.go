@@ -21,7 +21,7 @@ type swapStatus struct {
 	status string
 }
 
-const latestSchemaVersion = 18
+const latestSchemaVersion = 19
 
 func (database *Database) migrate() error {
 	version, err := database.queryVersion()
@@ -417,7 +417,7 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 			tenantId       INT REFERENCES tenants (id),
 
 			UNIQUE (name, tenantId, nodePubkey),
-			UNIQUE (xpub, coreDescriptor, mnemonic, nodePubkey)
+			UNIQUE (tenantId, xpub, coreDescriptor, mnemonic, nodePubkey)
 		);
 		INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt)
 		SELECT name, currency,  xpub, coreDescriptor, mnemonic, subaccount, salt FROM old_wallets;
@@ -624,6 +624,36 @@ func (database *Database) performMigration(tx *Transaction, oldVersion int) erro
 
 		migration := `
 		UPDATE wallets SET legacy = TRUE WHERE currency = 'BTC';
+		`
+		if _, err := tx.Exec(migration); err != nil {
+			return err
+		}
+	case 18:
+		logMigration(oldVersion)
+
+		migration := `
+		CREATE TABLE new_wallets
+		(
+			id             INTEGER PRIMARY KEY AUTOINCREMENT,
+			name           VARCHAR,
+			currency       VARCHAR,
+			nodePubkey     VARCHAR,
+			xpub           VARCHAR,
+			coreDescriptor VARCHAR,
+			mnemonic       VARCHAR,
+			subaccount     INT,
+			salt           VARCHAR,
+			tenantId       INT NOT NULL REFERENCES tenants (id),
+			legacy         BOOLEAN DEFAULT FALSE,
+			lastIndex      INT,
+
+			UNIQUE (name, tenantId, nodePubkey),
+			UNIQUE (tenantId, xpub, coreDescriptor, mnemonic, nodePubkey)
+		);
+		INSERT INTO new_wallets (id, name, currency, nodePubkey, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, legacy, lastIndex)
+		SELECT id, name, currency, nodePubkey, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, legacy, lastIndex FROM wallets;
+		DROP TABLE wallets;
+		ALTER TABLE new_wallets RENAME TO wallets;
 		`
 		if _, err := tx.Exec(migration); err != nil {
 			return err
