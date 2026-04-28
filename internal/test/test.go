@@ -3,22 +3,17 @@ package test
 import (
 	"fmt"
 	"math/rand/v2"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	bitcoin_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet/bdk"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
-	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/wallet"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/stretchr/testify/require"
 
@@ -42,14 +37,7 @@ func run(cmd string) string {
 	return bash(fmt.Sprintf("docker exec -i boltz-scripts bash -c \"source /etc/profile.d/utils.sh && %s\"", cmd))
 }
 
-const walletDataDir = "./test-data"
-
-func ClearWalletDataDir() error {
-	return os.RemoveAll(walletDataDir)
-}
-
 const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large"
-const WalletSubaccount = 0
 const WalletId = 1
 
 func WalletInfo(currency boltz.Currency) onchain.WalletInfo {
@@ -63,14 +51,12 @@ func WalletInfo(currency boltz.Currency) onchain.WalletInfo {
 
 func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
 	mnemonic, _ := liquid_wallet.GenerateMnemonic(boltz.Regtest)
-	sub := uint64(WalletSubaccount)
 	creds := &onchain.WalletCredentials{
 		WalletInfo: WalletInfo(currency),
 		Mnemonic:   mnemonic,
-		Subaccount: &sub,
 	}
 	if currency == boltz.CurrencyBtc {
-		creds.CoreDescriptor, _ = bdk.DeriveDefaultXpub(bdk.NetworkRegtest, mnemonic)
+		creds.CoreDescriptor, _ = bitcoin_wallet.DeriveDefaultDescriptor(boltz.Regtest, mnemonic)
 	}
 	if currency == boltz.CurrencyLiquid {
 		creds.CoreDescriptor, _ = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, mnemonic)
@@ -116,42 +102,6 @@ func FundWallet(currency boltz.Currency, wallet onchain.Wallet) error {
 			}
 		}
 	}
-}
-
-func InitTestWallet(debug bool) (map[boltz.Currency]*wallet.Wallet, error) {
-	InitLogger()
-	if err := ClearWalletDataDir(); err != nil {
-		return nil, err
-	}
-	if !wallet.Initialized() {
-		err := wallet.Init(wallet.Config{
-			DataDir:                  walletDataDir,
-			Network:                  boltz.Regtest,
-			Debug:                    debug,
-			Electrum:                 onchain.RegtestElectrumConfig,
-			AutoConsolidateThreshold: wallet.DefaultAutoConsolidateThreshold,
-			MaxInputs:                wallet.MaxInputs,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	result := make(map[boltz.Currency]*wallet.Wallet)
-	var eg errgroup.Group
-	for _, currency := range []boltz.Currency{boltz.CurrencyBtc, boltz.CurrencyLiquid} {
-		currency := currency
-		eg.Go(func() error {
-			wallet, err := wallet.Login(WalletCredentials(currency))
-			if err != nil {
-				return err
-			}
-			time.Sleep(2 * time.Second)
-			result[currency] = wallet
-			return FundWallet(currency, wallet)
-		})
-	}
-	return result, eg.Wait()
 }
 
 func dbPersister(t *testing.T) liquid_wallet.Persister {
@@ -333,24 +283,4 @@ func PastDate(duration time.Duration) time.Time {
 
 func PrintBackendLogs() {
 	fmt.Println(bash("docker logs boltz-backend"))
-}
-
-func WaitWalletTx(t *testing.T, txId string) {
-	notifier := wallet.TransactionNotifier.Get()
-	defer wallet.TransactionNotifier.Remove(notifier)
-	WaitWalletNotifier(t, txId, notifier)
-}
-
-func WaitWalletNotifier(t *testing.T, txId string, notifier <-chan wallet.TransactionNotification) {
-	timeout := time.After(30 * time.Second)
-	for {
-		select {
-		case notification := <-notifier:
-			if notification.TxId == txId || txId == "" {
-				return
-			}
-		case <-timeout:
-			require.Fail(t, "timed out while waiting for tx")
-		}
-	}
 }

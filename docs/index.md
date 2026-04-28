@@ -63,12 +63,7 @@ To build, you need [Go](https://go.dev/) ≥ 1.21, the Rust toolchain (including
 [cargo](https://doc.rust-lang.org/cargo/) and `rustc`), and a C compiler such as
 `gcc` for the native dependencies used by the daemon.
 
-Boltz Client depends on [GDK](https://github.com/Blockstream/gdk) by
-blockstream, which can be either dynamically or statically linked. The
-recommended way to build from source is by linking dynamically, as a static link
-requires compiling gdk as well.
-
-First, initialize the required git submodules (e.g. `LWK`) with
+First, initialize the required git submodules (e.g. `LWK` and `BDK`) with
 `git submodule update --init --recursive`, then build the daemon and CLI with
 `make build`. The binaries will be placed in the current directory.
 

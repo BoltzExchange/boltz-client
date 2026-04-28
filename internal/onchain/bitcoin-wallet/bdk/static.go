@@ -3,6 +3,6 @@
 package bdk
 
 /*
-#cgo LDFLAGS: ${SRCDIR}/libbdk.a -Wl,--no-as-needed -ldl
+#cgo LDFLAGS: ${SRCDIR}/libbdk.a -Wl,--no-as-needed -ldl -lm
 */
 import "C"

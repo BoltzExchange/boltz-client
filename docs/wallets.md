@@ -5,7 +5,7 @@ description: Create, import, and manage Bitcoin and Liquid wallets for use with 
 # 💰 Wallets
 
 `boltz-client` allows you to manage Bitcoin and [Liquid](https://liquid.net/)
-wallets using [GDK](https://github.com/Blockstream/gdk).
+wallets.
 
 ## Create New Wallet
 

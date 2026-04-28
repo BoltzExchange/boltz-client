@@ -1,6 +1,5 @@
 PKG := github.com/BoltzExchange/boltz-client/v2
 VERSION := 2.11.3
-GDK_VERSION = 0.75.1
 GO_VERSION := 1.24.7-bookworm
 RUST_VERSION := $(shell awk -F'"' '/^channel = / {print $$2}' rust-toolchain.toml)
 
@@ -125,7 +124,7 @@ build-bdk:
 	cd $(BDK_BINDINGS_PATH) && cargo build --release $(RUST_TARGET_ARG) --lib
 	cp $(BDK_BINDINGS_PATH)/target/$(RUST_RELEASE_DIR)/libbdk.a $(BDK_BINDINGS_PATH)/target/$(RUST_RELEASE_DIR)/libbdk.so internal/onchain/bitcoin-wallet/bdk/
 
-build: download-gdk build-bolt12 build-lwk build-bdk
+build: build-bolt12 build-lwk build-bdk
 	@$(call print, "Building boltz-client")
 	$(GOBUILD) $(ARGS) -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) $(ARGS) -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
@@ -135,7 +134,7 @@ build-examples:
 	cd examples && $(GOBUILD) $(ARGS) -o bin/submarine $(LDFLAGS) ./submarine
 	cd examples && $(GOBUILD) $(ARGS) -o bin/reverse $(LDFLAGS) ./reverse
 
-static: download-gdk build-bolt12 build-lwk build-bdk
+static: build-bolt12 build-lwk build-bdk
 	@$(call print, "Building static boltz-client")
 	$(GOBUILD) -tags static -o boltzd $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOBUILD) -tags static -o boltzcli $(LDFLAGS) $(PKG_BOLTZ_CLI)
@@ -153,14 +152,6 @@ install:
 	@$(call print, "Installing boltz-client")
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZD)
 	$(GOINSTALL) $(LDFLAGS) $(PKG_BOLTZ_CLI)
-
-download-gdk:
-ifeq ("$(wildcard internal/onchain/wallet/lib/libgreen_gdk.so)","")
-	@$(call print, "Downloading gdk library")
-	@container_id=$$(docker create "boltz/gdk-ubuntu:$(GDK_VERSION)" true); \
-	docker cp "$$container_id:/" internal/onchain/wallet/lib/ && \
-	docker rm "$$container_id";
-endif
 
 
 #
@@ -196,7 +187,6 @@ DOCKER_CACHE := boltz/boltz-client:buildcache
 DOCKER_ARGS := \
 	--platform $(PLATFORMS) \
 	--build-arg GO_VERSION=$(GO_VERSION) \
-	--build-arg GDK_VERSION=$(GDK_VERSION) \
 	--build-arg RUST_VERSION=$(RUST_VERSION)
 DOCKER_CACHE_FROM_ARGS := \
 	--cache-from type=registry,ref=$(DOCKER_CACHE)
@@ -215,17 +205,5 @@ binaries:
 	tar -czvf boltz-client-linux-amd64-v$(VERSION).tar.gz bin/linux_amd64
 	tar -czvf boltz-client-linux-arm64-v$(VERSION).tar.gz bin/linux_arm64
 	sha256sum boltz-client-*.tar.gz bin/**/* > boltz-client-manifest-v$(VERSION).txt
-
-gdk-source: submodules
-	cd gdk && git checkout release_$(GDK_VERSION)
-	cp ./gdk/include/gdk.h ./internal/onchain/wallet/include/gdk.h
-
-GDK_AMD64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:0faa0e15127f3a2a025c2c7e92764c617c24417c40a91f950e777fb99620aa9a
-GDK_ARM64_BUILDER := blockstream/gdk-ubuntu-builder@sha256:66a546eff8c28be6af96a26791bf34306710be30c20ff1d7447d66521a5defcd
-
-build-gdk:
-	docker buildx build --push -t boltz/gdk-ubuntu:latest -t boltz/gdk-ubuntu:$(GDK_VERSION) -f gdk.Dockerfile $(DOCKER_ARGS) \
-		--build-arg GDK_AMD64_BUILDER=$(GDK_AMD64_BUILDER) \
-		--build-arg GDK_ARM64_BUILDER=$(GDK_ARM64_BUILDER) .
 
 .PHONY: build binaries

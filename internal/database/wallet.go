@@ -47,7 +47,7 @@ type Wallet struct {
 }
 
 func (d *Database) CreateWallet(wallet *Wallet) error {
-	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey, lastIndex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
+	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey, legacy, lastIndex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
 	row := d.QueryRow(
 		query,
 		wallet.Name,
@@ -59,13 +59,14 @@ func (d *Database) CreateWallet(wallet *Wallet) error {
 		wallet.Salt,
 		wallet.TenantId,
 		wallet.NodePubkey,
+		wallet.Legacy,
 		wallet.LastIndex,
 	)
 	return row.Scan(&wallet.Id)
 }
 
 func (d *Database) UpdateWalletCredentials(credentials *onchain.WalletCredentials) error {
-	query := "UPDATE wallets SET currency = ?, xpub = ?, coreDescriptor = ?, mnemonic = ?, subaccount = ?, salt = ? WHERE id = ?"
+	query := "UPDATE wallets SET currency = ?, xpub = ?, coreDescriptor = ?, mnemonic = ?, subaccount = ?, salt = ?, legacy = ? WHERE id = ?"
 	_, err := d.Exec(
 		query,
 		credentials.Currency,
@@ -74,6 +75,7 @@ func (d *Database) UpdateWalletCredentials(credentials *onchain.WalletCredential
 		credentials.Mnemonic,
 		credentials.Subaccount,
 		credentials.Salt,
+		credentials.Legacy,
 		credentials.Id,
 	)
 	return err
@@ -169,10 +171,4 @@ func (d *Database) DeleteWallet(id Id) error {
 		return fmt.Errorf("failed to delete wallet with id %d", id)
 	}
 	return nil
-}
-
-func (d *Database) SetWalletSubaccount(id Id, subaccount uint64) error {
-	query := "UPDATE wallets SET subaccount = ? WHERE id = ?"
-	_, err := d.Exec(query, subaccount, id)
-	return err
 }

@@ -207,18 +207,6 @@ func newSigner(network *boltz.Network, mnemonic string) (*lwk.Signer, error) {
 	return lwk.NewSigner(parsed, convertNetwork(network))
 }
 
-func DeriveDefaultDescriptor(network *boltz.Network, mnemonic string) (string, error) {
-	signer, err := newSigner(network, mnemonic)
-	if err != nil {
-		return "", err
-	}
-	descriptor, err := signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
-	if err != nil {
-		return "", err
-	}
-	return descriptor.String(), nil
-}
-
 func (backend *BlockchainBackend) NewWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
 	if backend == nil {
 		return nil, errors.New("backend instance is nil")
