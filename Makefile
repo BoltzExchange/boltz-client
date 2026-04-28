@@ -9,7 +9,7 @@ PKG_BOLTZ_CLI := $(PKG)/cmd/boltzcli
 
 GO_BIN := ${GOPATH}/bin
 
-GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v -timeout 5m
+GOTEST := CGO_ENABLED=1 GO111MODULE=on go test -v
 GOBUILD := CGO_ENABLED=1 GO111MODULE=on go build -v
 GORUN := CGO_ENABLED=1 GO111MODULE=on go run -v
 GOINSTALL := CGO_ENABLED=1 GO111MODULE=on go install -v
@@ -70,11 +70,11 @@ bdk-bindings: build-bdk bindgen-go
 
 unit:
 	@$(call print, "Running unit tests")
-	$(GOTEST) ./... -v -tags unit
+	$(GOTEST) ./... -v -tags unit -timeout 1m
 
 integration: start-regtest
 	@$(call print, "Running integration tests")
-	$(GOTEST) ./... -v
+	$(GOTEST) ./... -v -p 1 -timeout 10m
 
 setup-regtest:
 	@$(call print, "Preparing regtest")
