@@ -59,7 +59,7 @@ docker exec boltz-client boltzcli getinfo
 
 ### Building from source
 
-To build, you need [Go](https://go.dev/) ≥ 1.21, the Rust toolchain (including
+To build, you need [Go](https://go.dev/) 1.26.2 or newer, the Rust toolchain (including
 [cargo](https://doc.rust-lang.org/cargo/) and `rustc`), and a C compiler such as
 `gcc` for the native dependencies used by the daemon.
 
