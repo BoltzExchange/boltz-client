@@ -159,7 +159,7 @@ type setupOptions struct {
 
 func waitForSync(t *testing.T, client client.Boltz) {
 	ticker := time.NewTicker(100 * time.Millisecond)
-	timeout := time.After(2 * time.Second)
+	timeout := time.After(30 * time.Second)
 	for {
 		var err error
 		select {

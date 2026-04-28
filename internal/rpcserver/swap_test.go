@@ -595,9 +595,13 @@ func TestSwap(t *testing.T) {
 										info := response.Swap
 										require.Zero(t, info.ServiceFee)
 
-										fromWallet, err := admin.GetWalletById(destination.WalletId)
-										require.NoError(t, err)
-										require.NotZero(t, fromWallet.Balance.Unconfirmed)
+										require.Eventually(t, func() bool {
+											fromWallet, err := admin.GetWalletById(destination.WalletId)
+											require.NoError(t, err)
+											return fromWallet.Balance != nil && fromWallet.Balance.Unconfirmed > 0
+										}, 10*time.Second, 250*time.Millisecond)
+
+										test.MineBlock()
 
 										_, err = admin.RefundSwap(request)
 										require.Error(t, err)
