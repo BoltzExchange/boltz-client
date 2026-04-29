@@ -1895,7 +1895,7 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 		AllowReadonly: true,
 	})
 	if err != nil {
-		return nil, err
+		return server.removeLegacyWallet(ctx, request.Id, err)
 	}
 	if server.swapper.WalletUsed(request.Id) {
 		return nil, fmt.Errorf(
@@ -1913,6 +1913,30 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 	server.onchain.RemoveWallet(id)
 
 	logger.Infof("Removed wallet %s", wallet.GetWalletInfo())
+
+	return &boltzrpc.RemoveWalletResponse{}, nil
+}
+
+func (server *routedBoltzServer) removeLegacyWallet(ctx context.Context, id database.Id, originalErr error) (*boltzrpc.RemoveWalletResponse, error) {
+	dbWallet, err := server.database.GetWallet(id)
+	if err != nil || !dbWallet.Legacy || dbWallet.NodePubkey != nil {
+		return nil, originalErr
+	}
+	if tenantId := macaroons.TenantIdFromContext(ctx); tenantId != nil && dbWallet.TenantId != *tenantId {
+		return nil, originalErr
+	}
+	if server.swapper.WalletUsed(id) {
+		return nil, fmt.Errorf(
+			"wallet %s is used in autoswap, configure a different wallet in autoswap before removing this wallet",
+			dbWallet.Name,
+		)
+	}
+	if err := server.database.DeleteWallet(id); err != nil {
+		return nil, err
+	}
+	server.onchain.RemoveWallet(id)
+
+	logger.Infof("Removed legacy wallet %s", dbWallet.WalletInfo)
 
 	return &boltzrpc.RemoveWalletResponse{}, nil
 }
