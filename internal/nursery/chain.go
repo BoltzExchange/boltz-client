@@ -179,8 +179,8 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 
 	logger.Infof("Status of Chain Swap %s changed to: %s", swap.Id, parsedStatus)
 
-	handleError := func(format string, args ...any) {
-		nursery.handleChainSwapError(swap, fmt.Errorf(format, args...))
+	handleError := func(err error) {
+		nursery.handleChainSwapError(swap, err)
 	}
 
 	if isMempool || swap.FromData.LockupTransactionId == "" || swap.ToData.LockupTransactionId == "" {
@@ -188,16 +188,16 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 		if err != nil {
 			var boltzErr boltz.Error
 			if !errors.As(err, &boltzErr) {
-				handleError("Could not get lockup tx from boltz: " + err.Error())
+				handleError(fmt.Errorf("could not get lockup tx from boltz: %w", err))
 				return
 			}
 		} else {
 			if err := nursery.setChainSwapLockupTransaction(swap, swap.FromData, response.UserLock); err != nil {
-				handleError("Could not set lockup transaction in database: " + err.Error())
+				handleError(fmt.Errorf("could not set lockup transaction in database: %w", err))
 				return
 			}
 			if err := nursery.setChainSwapLockupTransaction(swap, swap.ToData, response.ServerLock); err != nil {
-				handleError("Could not set lockup transaction in database: " + err.Error())
+				handleError(fmt.Errorf("could not set lockup transaction in database: %w", err))
 				return
 			}
 		}
@@ -213,24 +213,24 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 					// TODO: store error
 					logger.Warnf("Boltz did not give us a new quote for Chain Swap %s: %v", swap.Id, quoteError)
 				} else {
-					handleError("could not get quote: %w", err)
+					handleError(fmt.Errorf("could not get quote: %w", err))
 					return
 				}
 			}
 			if quote != nil {
 				result, err := nursery.onchain.FindOutput(chainOutputArgs(swap.FromData))
 				if err != nil {
-					handleError(err.Error())
+					handleError(err)
 					return
 				}
 
 				if err := nursery.CheckAmounts(boltz.ChainSwap, swap.Pair, result.Value, quote.Amount, swap.ServiceFeePercent); err != nil {
-					handleError("quote amounts not correct: %w", err)
+					handleError(fmt.Errorf("quote amounts not correct: %w", err))
 					return
 				}
 
 				if err := nursery.boltz.AcceptChainSwapQuote(swap.Id, quote); err != nil {
-					handleError("could not accept quote: %w", err)
+					handleError(fmt.Errorf("could not accept quote: %w", err))
 					return
 				}
 
@@ -245,7 +245,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 					return nil
 				})
 				if err != nil {
-					handleError("could not update chain swap amounts in database: %w", err)
+					handleError(fmt.Errorf("could not update chain swap amounts in database: %w", err))
 					return
 				}
 
@@ -269,7 +269,7 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 	err := nursery.database.UpdateChainSwapStatus(swap, parsedStatus)
 
 	if err != nil {
-		handleError(fmt.Sprintf("Could not update status of Chain Swap %s to %s: %s", swap.Id, parsedStatus, err))
+		handleError(fmt.Errorf("could not update status of Chain Swap %s to %s: %w", swap.Id, parsedStatus, err))
 		return
 	}
 
@@ -280,14 +280,14 @@ func (nursery *Nursery) handleChainSwapStatus(swap *database.ChainSwap, parsedSt
 
 			if swap.State == boltzrpc.SwapState_PENDING {
 				if err := nursery.database.UpdateChainSwapState(swap, boltzrpc.SwapState_SERVER_ERROR, ""); err != nil {
-					handleError(err.Error())
+					handleError(err)
 					return
 				}
 			}
 
 			if swap.FromData.LockupTransactionId != "" {
 				if _, err := nursery.RefundSwaps(swap.Pair.From, nil, []*database.ChainSwap{swap}); err != nil {
-					handleError("Could not refund Swap " + swap.Id + ": " + err.Error())
+					handleError(fmt.Errorf("could not refund Swap %s: %w", swap.Id, err))
 					return
 				}
 			}
