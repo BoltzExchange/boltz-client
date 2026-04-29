@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	bitcoin_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet"
@@ -344,4 +345,38 @@ func TestVerifyWalletPasswordDoesNotMigrateLegacyWallets(t *testing.T) {
 	require.True(t, dbWallet.Legacy)
 	require.NotNil(t, dbWallet.Subaccount)
 	require.Empty(t, dbWallet.CoreDescriptor)
+}
+
+func TestRemoveUnsupportedLegacyWallet(t *testing.T) {
+	cfg := loadConfig(t)
+	require.NoError(t, cfg.Database.Connect())
+
+	subaccount := uint64(0)
+	legacyWallet := &database.Wallet{
+		WalletCredentials: &onchain.WalletCredentials{
+			WalletInfo: onchain.WalletInfo{
+				Name:     "unsupported-legacy",
+				Currency: boltz.CurrencyBtc,
+				TenantId: database.DefaultTenantId,
+			},
+			Mnemonic:   test.WalletMnemonic,
+			Subaccount: &subaccount,
+			Legacy:     true,
+		},
+	}
+	require.NoError(t, cfg.Database.CreateWallet(legacyWallet))
+
+	chain := newTestOnchain()
+	t.Cleanup(chain.Disconnect)
+
+	server := &routedBoltzServer{
+		database: cfg.Database,
+		onchain:  chain,
+		swapper:  &autoswap.AutoSwap{},
+	}
+	_, err := server.RemoveWallet(context.Background(), &boltzrpc.RemoveWalletRequest{Id: legacyWallet.Id})
+	require.NoError(t, err)
+
+	_, err = cfg.Database.GetWallet(legacyWallet.Id)
+	require.Error(t, err)
 }
