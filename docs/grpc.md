@@ -1,7 +1,3 @@
----
-description: Full gRPC and REST API reference for boltzd covering all swap, wallet, and autoswap methods
----
-
 # gRPC Documentation
 
 This page was automatically generated.
@@ -202,7 +198,7 @@ Imports an existing wallet.
 
 #### SetSubaccount
 
-**Deprecated.** Deprecated. No longer supported.
+**Deprecated.** No longer supported.
 
 | Request | Response |
 | ------- | -------- |
@@ -210,7 +206,7 @@ Imports an existing wallet.
 
 #### GetSubaccounts
 
-**Deprecated.** Deprecated. No longer supported.
+**Deprecated.** No longer supported.
 
 | Request | Response |
 | ------- | -------- |
@@ -1419,7 +1415,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `wallet_id` | [`uint64`](#uint64) |  |  |
-| `subaccount` | [`uint64`](#uint64) | optional | Deprecated: this field is ignored because wallet subaccounts are no longer supported. |
+| `subaccount` | [`uint64`](#uint64) | optional | Ignored because wallet subaccounts are no longer supported. |
 
 
 
@@ -1670,7 +1666,7 @@ Descriptor requirements:
 | ----- | ---- | ----- | ----------- |
 | `mnemonic` | [`string`](#string) | optional | the mnemonic to derive the wallet master private key (BIP39). |
 | `core_descriptor` | [`string`](#string) | optional | public key descriptor for the wallets external keychain. |
-| `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** Deprecated: only used to migrate legacy wallets imported before descriptor-based backends. |
+| `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** Only used to migrate legacy wallets imported before descriptor-based backends. |
 | `xpub` | [`string`](#string) | optional | **Deprecated.**  |
 
 

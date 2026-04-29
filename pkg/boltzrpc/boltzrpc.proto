@@ -109,12 +109,12 @@ service Boltz {
     rpc ImportWallet (ImportWalletRequest) returns (Wallet);
 
     /*
-    Deprecated. No longer supported.
+    No longer supported.
      */
     rpc SetSubaccount (SetSubaccountRequest) returns (Subaccount) { option deprecated = true; };
 
     /*
-    Deprecated. No longer supported.
+    No longer supported.
      */
     rpc GetSubaccounts (GetSubaccountsRequest) returns (GetSubaccountsResponse) { option deprecated = true; };
 
@@ -807,7 +807,7 @@ message WalletCredentials {
     // public key descriptor for the wallets external keychain.
     optional string core_descriptor = 3;
 
-    // Deprecated: only used to migrate legacy wallets imported before descriptor-based backends.
+    // Only used to migrate legacy wallets imported before descriptor-based backends.
     optional uint64 subaccount = 4 [deprecated = true];
     optional string xpub = 2 [deprecated = true];
 }
@@ -836,7 +836,7 @@ message CreateWalletResponse {
 message SetSubaccountRequest {
     option deprecated = true;
     uint64 wallet_id = 1;
-    // Deprecated: this field is ignored because wallet subaccounts are no longer supported.
+    // Ignored because wallet subaccounts are no longer supported.
     optional uint64 subaccount = 2;
 }
 

@@ -121,11 +121,11 @@ type BoltzClient interface {
 	ImportWallet(ctx context.Context, in *ImportWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
 	// Deprecated: Do not use.
 	//
-	// Deprecated. No longer supported.
+	// No longer supported.
 	SetSubaccount(ctx context.Context, in *SetSubaccountRequest, opts ...grpc.CallOption) (*Subaccount, error)
 	// Deprecated: Do not use.
 	//
-	// Deprecated. No longer supported.
+	// No longer supported.
 	GetSubaccounts(ctx context.Context, in *GetSubaccountsRequest, opts ...grpc.CallOption) (*GetSubaccountsResponse, error)
 	// Returns all available wallets.
 	GetWallets(ctx context.Context, in *GetWalletsRequest, opts ...grpc.CallOption) (*Wallets, error)
@@ -629,11 +629,11 @@ type BoltzServer interface {
 	ImportWallet(context.Context, *ImportWalletRequest) (*Wallet, error)
 	// Deprecated: Do not use.
 	//
-	// Deprecated. No longer supported.
+	// No longer supported.
 	SetSubaccount(context.Context, *SetSubaccountRequest) (*Subaccount, error)
 	// Deprecated: Do not use.
 	//
-	// Deprecated. No longer supported.
+	// No longer supported.
 	GetSubaccounts(context.Context, *GetSubaccountsRequest) (*GetSubaccountsResponse, error)
 	// Returns all available wallets.
 	GetWallets(context.Context, *GetWalletsRequest) (*Wallets, error)
