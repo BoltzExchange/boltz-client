@@ -4623,7 +4623,7 @@ type WalletCredentials struct {
 	Mnemonic *string `protobuf:"bytes,1,opt,name=mnemonic,proto3,oneof" json:"mnemonic,omitempty"`
 	// public key descriptor for the wallets external keychain.
 	CoreDescriptor *string `protobuf:"bytes,3,opt,name=core_descriptor,json=coreDescriptor,proto3,oneof" json:"core_descriptor,omitempty"`
-	// Deprecated: only used to migrate legacy wallets imported before descriptor-based backends.
+	// Only used to migrate legacy wallets imported before descriptor-based backends.
 	//
 	// Deprecated: Marked as deprecated in boltzrpc.proto.
 	Subaccount *uint64 `protobuf:"varint,4,opt,name=subaccount,proto3,oneof" json:"subaccount,omitempty"`
@@ -4921,7 +4921,7 @@ type SetSubaccountRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	WalletId uint64 `protobuf:"varint,1,opt,name=wallet_id,json=walletId,proto3" json:"wallet_id,omitempty"`
-	// Deprecated: this field is ignored because wallet subaccounts are no longer supported.
+	// Ignored because wallet subaccounts are no longer supported.
 	Subaccount *uint64 `protobuf:"varint,2,opt,name=subaccount,proto3,oneof" json:"subaccount,omitempty"`
 }
 
