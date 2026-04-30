@@ -76,8 +76,7 @@ type routedBoltzServer struct {
 
 	newKeyLock sync.Mutex
 
-	walletMigrationWarnings     []string
-	walletMigrationWarningsLock sync.RWMutex
+	walletMigrationWarnings []string
 }
 
 func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func()) {
@@ -262,7 +261,7 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		PendingReverseSwaps: pendingReverseSwapIds,
 		RefundableSwaps:     refundableSwapIds,
 		ClaimableSwaps:      claimableSwapIds,
-		Warnings:            server.getWalletMigrationWarnings(),
+		Warnings:            server.walletMigrationWarnings,
 
 		Symbol:      "BTC",
 		BlockHeight: blockHeights.Btc,
@@ -1983,17 +1982,18 @@ func (server *routedBoltzServer) Stop(context.Context, *empty.Empty) (*empty.Emp
 	return &empty.Empty{}, nil
 }
 
-func (server *routedBoltzServer) readWalletCredentials(password string) (decrypted []*onchain.WalletCredentials, partialEncryption bool, err error) {
+func (server *routedBoltzServer) decryptWalletCredentials(password string) (decrypted []*onchain.WalletCredentials, err error) {
 	credentials, err := server.database.QueryWalletCredentials()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
+	partialEncryption := false
 	for _, creds := range credentials {
 		if creds.Encrypted() {
 			decrypted, err := creds.Decrypt(password)
 			if err != nil {
 				logger.Debugf("failed to decrypted wallet credentials: %s", err)
-				return nil, false, status.Errorf(codes.InvalidArgument, "wrong password")
+				return nil, status.Errorf(codes.InvalidArgument, "wrong password")
 			}
 			if decrypted.Mnemonic == creds.Mnemonic {
 				partialEncryption = true
@@ -2002,34 +2002,12 @@ func (server *routedBoltzServer) readWalletCredentials(password string) (decrypt
 		}
 		decrypted = append(decrypted, creds)
 	}
-	return decrypted, partialEncryption, nil
-}
-
-func (server *routedBoltzServer) decryptWalletCredentials(password string) ([]*onchain.WalletCredentials, error) {
-	decrypted, _, err := server.readWalletCredentials(password)
-	return decrypted, err
-}
-
-func (server *routedBoltzServer) decryptWalletCredentialsForStartup(password string) (decrypted []*onchain.WalletCredentials, err error) {
-	decrypted, partialEncryption, err := server.readWalletCredentials(password)
-	if err != nil {
-		return nil, err
-	}
 	if partialEncryption {
 		logger.Infof("Detected partial encryption, re-encrypting all wallets")
-	}
-
-	migrated, warnings, err := server.migrateWalletCredentials(decrypted)
-	if err != nil {
-		return nil, err
-	}
-	server.setWalletMigrationWarnings(warnings)
-
-	if partialEncryption || migrated {
 		if err := server.database.RunTx(func(tx *database.Transaction) error {
 			return server.encryptWalletCredentials(tx, password, decrypted)
 		}); err != nil {
-			return nil, fmt.Errorf("failed to persist wallet credential migration: %w", err)
+			logger.Errorf("Failed to re-encrypt wallets: %v", err)
 		}
 	}
 	return decrypted, nil
@@ -2082,7 +2060,7 @@ func (server *routedBoltzServer) setState(state serverState) {
 }
 
 func (server *routedBoltzServer) unlock(password string) error {
-	credentials, err := server.decryptWalletCredentialsForStartup(password)
+	credentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
 		if status.Code(err) == codes.InvalidArgument {
 			server.stateLock.Lock()
@@ -2095,6 +2073,15 @@ func (server *routedBoltzServer) unlock(password string) error {
 			return nil
 		} else {
 			return err
+		}
+	}
+	migrated, warnings := server.migrateWalletCredentials(credentials)
+	server.walletMigrationWarnings = warnings
+	if migrated {
+		if err := server.database.RunTx(func(tx *database.Transaction) error {
+			return server.encryptWalletCredentials(tx, password, credentials)
+		}); err != nil {
+			return fmt.Errorf("failed to persist wallet credential migration: %w", err)
 		}
 	}
 

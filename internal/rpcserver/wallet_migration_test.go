@@ -35,8 +35,7 @@ func TestMigrateWalletCredentials(t *testing.T) {
 		}}
 
 		server := &routedBoltzServer{network: boltz.Regtest}
-		migrated, warnings, err := server.migrateWalletCredentials(credentials)
-		require.NoError(t, err)
+		migrated, warnings := server.migrateWalletCredentials(credentials)
 		require.True(t, migrated)
 		require.Empty(t, warnings)
 		require.False(t, credentials[0].Legacy)
@@ -57,14 +56,13 @@ func TestMigrateWalletCredentials(t *testing.T) {
 		}}
 
 		server := &routedBoltzServer{network: boltz.Regtest}
-		migrated, warnings, err := server.migrateWalletCredentials(credentials)
-		require.NoError(t, err)
+		migrated, warnings := server.migrateWalletCredentials(credentials)
 		require.False(t, migrated)
 		require.Len(t, warnings, 1)
 		require.True(t, credentials[0].Legacy)
 		require.Contains(t, warnings[0], "Please manually re-import it")
 
-		_, err = server.loginWallet(credentials[0])
+		_, err := server.loginWallet(credentials[0])
 		require.Error(t, err)
 		require.ErrorContains(t, err, "Please manually re-import it")
 	})
@@ -82,8 +80,7 @@ func TestMigrateWalletCredentials(t *testing.T) {
 		}}
 
 		server := &routedBoltzServer{network: boltz.Regtest}
-		migrated, warnings, err := server.migrateWalletCredentials(credentials)
-		require.NoError(t, err)
+		migrated, warnings := server.migrateWalletCredentials(credentials)
 		require.False(t, migrated)
 		require.Len(t, warnings, 1)
 		require.True(t, credentials[0].Legacy)
@@ -106,14 +103,18 @@ func TestMigrateWalletCredentials(t *testing.T) {
 		}}
 
 		server := &routedBoltzServer{network: boltz.Regtest}
-		migrated, warnings, err := server.migrateWalletCredentials(credentials)
-		require.NoError(t, err)
+		migrated, warnings := server.migrateWalletCredentials(credentials)
 		require.True(t, migrated)
 		require.Empty(t, warnings)
 		require.False(t, credentials[0].Legacy)
 		require.Nil(t, credentials[0].Subaccount)
 		require.Equal(t, expectedDescriptor, credentials[0].CoreDescriptor)
 	})
+}
+
+func createLegacyWallet(t *testing.T, db *database.Database, wallet *database.Wallet) {
+	require.NoError(t, db.CreateWallet(wallet))
+	require.NoError(t, db.UpdateWalletCredentials(wallet.WalletCredentials))
 }
 
 func TestLegacyBtcWalletMigration(t *testing.T) {
@@ -133,7 +134,7 @@ func TestLegacyBtcWalletMigration(t *testing.T) {
 			Legacy:     true,
 		},
 	}
-	require.NoError(t, cfg.Database.CreateWallet(legacyWallet))
+	createLegacyWallet(t, cfg.Database, legacyWallet)
 	storedLegacyWallet, err := cfg.Database.GetWallet(legacyWallet.Id)
 	require.NoError(t, err)
 	require.True(t, storedLegacyWallet.Legacy)
@@ -179,7 +180,7 @@ func TestLegacyLiquidWalletMigration(t *testing.T) {
 			Legacy:     true,
 		},
 	}
-	require.NoError(t, cfg.Database.CreateWallet(legacyWallet))
+	createLegacyWallet(t, cfg.Database, legacyWallet)
 	storedLegacyWallet, err := cfg.Database.GetWallet(legacyWallet.Id)
 	require.NoError(t, err)
 	require.True(t, storedLegacyWallet.Legacy)
@@ -283,7 +284,7 @@ func TestImportWalletDoesNotMigrateLegacyWallets(t *testing.T) {
 			Legacy:     true,
 		},
 	}
-	require.NoError(t, cfg.Database.CreateWallet(legacyWallet))
+	createLegacyWallet(t, cfg.Database, legacyWallet)
 
 	chain := newTestOnchain()
 	t.Cleanup(chain.Disconnect)
@@ -333,7 +334,7 @@ func TestVerifyWalletPasswordDoesNotMigrateLegacyWallets(t *testing.T) {
 			Legacy:     true,
 		},
 	}
-	require.NoError(t, cfg.Database.CreateWallet(legacyWallet))
+	createLegacyWallet(t, cfg.Database, legacyWallet)
 
 	server := &routedBoltzServer{database: cfg.Database}
 	response, err := server.VerifyWalletPassword(context.Background(), &boltzrpc.VerifyWalletPasswordRequest{Password: ""})
@@ -364,7 +365,7 @@ func TestRemoveUnsupportedLegacyWallet(t *testing.T) {
 			Legacy:     true,
 		},
 	}
-	require.NoError(t, cfg.Database.CreateWallet(legacyWallet))
+	createLegacyWallet(t, cfg.Database, legacyWallet)
 
 	chain := newTestOnchain()
 	t.Cleanup(chain.Disconnect)

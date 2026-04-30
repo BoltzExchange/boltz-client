@@ -6,15 +6,11 @@ import (
 )
 
 func DeriveDefaultDescriptor(network *boltz.Network, mnemonic string) (string, error) {
-	return DeriveSinglesigDescriptor(network, mnemonic, lwk.SinglesigWpkh)
-}
-
-func DeriveSinglesigDescriptor(network *boltz.Network, mnemonic string, script lwk.Singlesig) (string, error) {
 	signer, err := newSigner(network, mnemonic)
 	if err != nil {
 		return "", err
 	}
-	descriptor, err := signer.SinglesigDesc(script, lwk.DescriptorBlindingKeySlip77)
+	descriptor, err := signer.SinglesigDesc(lwk.SinglesigWpkh, lwk.DescriptorBlindingKeySlip77)
 	if err != nil {
 		return "", err
 	}

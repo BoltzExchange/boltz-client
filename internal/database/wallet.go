@@ -47,7 +47,7 @@ type Wallet struct {
 }
 
 func (d *Database) CreateWallet(wallet *Wallet) error {
-	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey, legacy, lastIndex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
+	query := "INSERT INTO wallets (name, currency, xpub, coreDescriptor, mnemonic, subaccount, salt, tenantId, nodePubkey, lastIndex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
 	row := d.QueryRow(
 		query,
 		wallet.Name,
@@ -59,7 +59,6 @@ func (d *Database) CreateWallet(wallet *Wallet) error {
 		wallet.Salt,
 		wallet.TenantId,
 		wallet.NodePubkey,
-		wallet.Legacy,
 		wallet.LastIndex,
 	)
 	return row.Scan(&wallet.Id)

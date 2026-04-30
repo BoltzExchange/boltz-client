@@ -21,59 +21,38 @@ func manualWalletMigrationWarning(credentials *onchain.WalletCredentials, reason
 	)
 }
 
-func migrateLegacyBitcoinWallet(credentials *onchain.WalletCredentials, network *boltz.Network) (bool, string, error) {
-	if credentials.CoreDescriptor != "" {
-		credentials.Subaccount = nil
-		credentials.Legacy = false
-		return true, "", nil
+func migrateLegacyWallet(credentials *onchain.WalletCredentials, network *boltz.Network) (bool, string) {
+	var deriveDescriptor func(*boltz.Network, string) (string, error)
+	switch credentials.Currency {
+	case boltz.CurrencyBtc:
+		deriveDescriptor = bitcoin_wallet.DeriveDefaultDescriptor
+	case boltz.CurrencyLiquid:
+		deriveDescriptor = liquid_wallet.DeriveDefaultDescriptor
+	default:
+		return false, manualWalletMigrationWarning(credentials, "unsupported currency")
 	}
-	if credentials.Mnemonic == "" {
-		return false, manualWalletMigrationWarning(credentials, "missing mnemonic"), nil
+	if credentials.CoreDescriptor == "" {
+		if credentials.Mnemonic == "" {
+			return false, manualWalletMigrationWarning(credentials, "missing mnemonic")
+		}
+		if credentials.Subaccount == nil {
+			return false, manualWalletMigrationWarning(credentials, "missing legacy subaccount metadata")
+		}
+		if *credentials.Subaccount != legacyDefaultSinglesigSubaccount {
+			return false, manualWalletMigrationWarning(credentials, fmt.Sprintf("unsupported legacy subaccount %d", *credentials.Subaccount))
+		}
+		descriptor, err := deriveDescriptor(network, credentials.Mnemonic)
+		if err != nil {
+			return false, manualWalletMigrationWarning(credentials, err.Error())
+		}
+		credentials.CoreDescriptor = descriptor
 	}
-	if credentials.Subaccount == nil {
-		return false, manualWalletMigrationWarning(credentials, "missing legacy subaccount metadata"), nil
-	}
-	if *credentials.Subaccount != legacyDefaultSinglesigSubaccount {
-		return false, manualWalletMigrationWarning(credentials, fmt.Sprintf("unsupported legacy subaccount %d", *credentials.Subaccount)), nil
-	}
-
-	descriptor, err := bitcoin_wallet.DeriveDefaultDescriptor(network, credentials.Mnemonic)
-	if err != nil {
-		return false, manualWalletMigrationWarning(credentials, err.Error()), nil
-	}
-	credentials.CoreDescriptor = descriptor
 	credentials.Subaccount = nil
 	credentials.Legacy = false
-	return true, "", nil
+	return true, ""
 }
 
-func migrateLegacyLiquidWallet(credentials *onchain.WalletCredentials, network *boltz.Network) (bool, string, error) {
-	if credentials.CoreDescriptor != "" {
-		credentials.Subaccount = nil
-		credentials.Legacy = false
-		return true, "", nil
-	}
-	if credentials.Mnemonic == "" {
-		return false, manualWalletMigrationWarning(credentials, "missing mnemonic"), nil
-	}
-	if credentials.Subaccount == nil {
-		return false, manualWalletMigrationWarning(credentials, "missing legacy subaccount metadata"), nil
-	}
-	if *credentials.Subaccount != legacyDefaultSinglesigSubaccount {
-		return false, manualWalletMigrationWarning(credentials, fmt.Sprintf("unsupported legacy subaccount %d", *credentials.Subaccount)), nil
-	}
-
-	descriptor, err := liquid_wallet.DeriveDefaultDescriptor(network, credentials.Mnemonic)
-	if err != nil {
-		return false, manualWalletMigrationWarning(credentials, err.Error()), nil
-	}
-	credentials.CoreDescriptor = descriptor
-	credentials.Subaccount = nil
-	credentials.Legacy = false
-	return true, "", nil
-}
-
-func (server *routedBoltzServer) migrateWalletCredentials(credentials []*onchain.WalletCredentials) (bool, []string, error) {
+func (server *routedBoltzServer) migrateWalletCredentials(credentials []*onchain.WalletCredentials) (bool, []string) {
 	var warnings []string
 	changed := false
 	for _, creds := range credentials {
@@ -81,22 +60,7 @@ func (server *routedBoltzServer) migrateWalletCredentials(credentials []*onchain
 			continue
 		}
 
-		var (
-			migrated bool
-			warning  string
-			err      error
-		)
-		switch creds.Currency {
-		case boltz.CurrencyBtc:
-			migrated, warning, err = migrateLegacyBitcoinWallet(creds, server.network)
-		case boltz.CurrencyLiquid:
-			migrated, warning, err = migrateLegacyLiquidWallet(creds, server.network)
-		default:
-			warning = manualWalletMigrationWarning(creds, "unsupported currency")
-		}
-		if err != nil {
-			return false, nil, err
-		}
+		migrated, warning := migrateLegacyWallet(creds, server.network)
 		if warning != "" {
 			warnings = append(warnings, warning)
 			logger.Warn(warning)
@@ -107,17 +71,5 @@ func (server *routedBoltzServer) migrateWalletCredentials(credentials []*onchain
 			logger.Infof("Migrated wallet %q (%s) away from deprecated legacy credentials", creds.Name, creds.Currency)
 		}
 	}
-	return changed, warnings, nil
-}
-
-func (server *routedBoltzServer) setWalletMigrationWarnings(warnings []string) {
-	server.walletMigrationWarningsLock.Lock()
-	defer server.walletMigrationWarningsLock.Unlock()
-	server.walletMigrationWarnings = append(server.walletMigrationWarnings[:0], warnings...)
-}
-
-func (server *routedBoltzServer) getWalletMigrationWarnings() []string {
-	server.walletMigrationWarningsLock.RLock()
-	defer server.walletMigrationWarningsLock.RUnlock()
-	return append([]string(nil), server.walletMigrationWarnings...)
+	return changed, warnings
 }
