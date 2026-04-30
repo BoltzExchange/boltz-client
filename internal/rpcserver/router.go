@@ -1576,18 +1576,6 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Id: &credentials.Id})
 }
 
-var errSubaccountsRemoved = status.Error(codes.Unimplemented, "wallet subaccounts are no longer supported")
-
-//nolint:staticcheck
-func (server *routedBoltzServer) SetSubaccount(_ context.Context, _ *boltzrpc.SetSubaccountRequest) (*boltzrpc.Subaccount, error) {
-	return nil, errSubaccountsRemoved
-}
-
-//nolint:staticcheck
-func (server *routedBoltzServer) GetSubaccounts(_ context.Context, _ *boltzrpc.GetSubaccountsRequest) (*boltzrpc.GetSubaccountsResponse, error) {
-	return nil, errSubaccountsRemoved
-}
-
 func (server *routedBoltzServer) CreateWallet(ctx context.Context, request *boltzrpc.CreateWalletRequest) (*boltzrpc.CreateWalletResponse, error) {
 	mnemonic, err := onchain.GenerateMnemonic()
 	if err != nil {

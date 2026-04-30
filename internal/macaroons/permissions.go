@@ -129,14 +129,6 @@ var (
 			Entity: "wallet",
 			Action: "write",
 		}},
-		"/boltzrpc.Boltz/SetSubaccount": {{
-			Entity: "wallet",
-			Action: "write",
-		}},
-		"/boltzrpc.Boltz/GetSubaccounts": {{
-			Entity: "wallet",
-			Action: "read",
-		}},
 		"/boltzrpc.Boltz/GetWalletSendFee": {{
 			Entity: "wallet",
 			Action: "read",

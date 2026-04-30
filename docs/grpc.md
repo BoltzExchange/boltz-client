@@ -196,22 +196,6 @@ Imports an existing wallet.
 | ------- | -------- |
 | [`ImportWalletRequest`](#importwalletrequest) | [`Wallet`](#wallet) |
 
-#### SetSubaccount
-
-**Deprecated.** No longer supported.
-
-| Request | Response |
-| ------- | -------- |
-| [`SetSubaccountRequest`](#setsubaccountrequest) | [`Subaccount`](#subaccount) |
-
-#### GetSubaccounts
-
-**Deprecated.** No longer supported.
-
-| Request | Response |
-| ------- | -------- |
-| [`GetSubaccountsRequest`](#getsubaccountsrequest) | [`GetSubaccountsResponse`](#getsubaccountsresponse) |
-
 #### GetWallets
 
 Returns all available wallets.
@@ -222,7 +206,7 @@ Returns all available wallets.
 
 #### GetWallet
 
-Returns the current balance of a wallet.
+Returns information about a wallet, including its current balance.
 
 | Request | Response |
 | ------- | -------- |
@@ -956,33 +940,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### GetSubaccountsRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `wallet_id` | [`uint64`](#uint64) |  |  |
-
-
-
-
-
-#### GetSubaccountsResponse
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `current` | [`uint64`](#uint64) | optional |  |
-| `subaccounts` | [`Subaccount`](#subaccount) | repeated |  |
-
-
-
-
-
 #### GetSwapInfoRequest
 
 
@@ -1407,20 +1364,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### SetSubaccountRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `wallet_id` | [`uint64`](#uint64) |  |  |
-| `subaccount` | [`uint64`](#uint64) | optional | Ignored because wallet subaccounts are no longer supported. |
-
-
-
-
-
 #### SetSwapMnemonicRequest
 
 
@@ -1443,22 +1386,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `mnemonic` | [`string`](#string) |  |  |
-
-
-
-
-
-#### Subaccount
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `balance` | [`Balance`](#balance) |  |  |
-| `pointer` | [`uint64`](#uint64) |  |  |
-| `type` | [`string`](#string) |  |  |
-| `descriptors` | [`string`](#string) | repeated |  |
 
 
 

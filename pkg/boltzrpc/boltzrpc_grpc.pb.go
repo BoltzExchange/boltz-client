@@ -38,8 +38,6 @@ const (
 	Boltz_CreateChainSwap_FullMethodName        = "/boltzrpc.Boltz/CreateChainSwap"
 	Boltz_CreateWallet_FullMethodName           = "/boltzrpc.Boltz/CreateWallet"
 	Boltz_ImportWallet_FullMethodName           = "/boltzrpc.Boltz/ImportWallet"
-	Boltz_SetSubaccount_FullMethodName          = "/boltzrpc.Boltz/SetSubaccount"
-	Boltz_GetSubaccounts_FullMethodName         = "/boltzrpc.Boltz/GetSubaccounts"
 	Boltz_GetWallets_FullMethodName             = "/boltzrpc.Boltz/GetWallets"
 	Boltz_GetWallet_FullMethodName              = "/boltzrpc.Boltz/GetWallet"
 	Boltz_GetWalletSendFee_FullMethodName       = "/boltzrpc.Boltz/GetWalletSendFee"
@@ -119,17 +117,9 @@ type BoltzClient interface {
 	CreateWallet(ctx context.Context, in *CreateWalletRequest, opts ...grpc.CallOption) (*CreateWalletResponse, error)
 	// Imports an existing wallet.
 	ImportWallet(ctx context.Context, in *ImportWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
-	// Deprecated: Do not use.
-	//
-	// No longer supported.
-	SetSubaccount(ctx context.Context, in *SetSubaccountRequest, opts ...grpc.CallOption) (*Subaccount, error)
-	// Deprecated: Do not use.
-	//
-	// No longer supported.
-	GetSubaccounts(ctx context.Context, in *GetSubaccountsRequest, opts ...grpc.CallOption) (*GetSubaccountsResponse, error)
 	// Returns all available wallets.
 	GetWallets(ctx context.Context, in *GetWalletsRequest, opts ...grpc.CallOption) (*Wallets, error)
-	// Returns the current balance of a wallet.
+	// Returns information about a wallet, including its current balance.
 	GetWallet(ctx context.Context, in *GetWalletRequest, opts ...grpc.CallOption) (*Wallet, error)
 	// Calculates the fee for an equivalent `WalletSend` request.
 	// If `address` is left empty, a dummy swap address will be used, allowing for a fee estimation of a swap lockup transaction.
@@ -364,26 +354,6 @@ func (c *boltzClient) CreateWallet(ctx context.Context, in *CreateWalletRequest,
 func (c *boltzClient) ImportWallet(ctx context.Context, in *ImportWalletRequest, opts ...grpc.CallOption) (*Wallet, error) {
 	out := new(Wallet)
 	err := c.cc.Invoke(ctx, Boltz_ImportWallet_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Deprecated: Do not use.
-func (c *boltzClient) SetSubaccount(ctx context.Context, in *SetSubaccountRequest, opts ...grpc.CallOption) (*Subaccount, error) {
-	out := new(Subaccount)
-	err := c.cc.Invoke(ctx, Boltz_SetSubaccount_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Deprecated: Do not use.
-func (c *boltzClient) GetSubaccounts(ctx context.Context, in *GetSubaccountsRequest, opts ...grpc.CallOption) (*GetSubaccountsResponse, error) {
-	out := new(GetSubaccountsResponse)
-	err := c.cc.Invoke(ctx, Boltz_GetSubaccounts_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -627,17 +597,9 @@ type BoltzServer interface {
 	CreateWallet(context.Context, *CreateWalletRequest) (*CreateWalletResponse, error)
 	// Imports an existing wallet.
 	ImportWallet(context.Context, *ImportWalletRequest) (*Wallet, error)
-	// Deprecated: Do not use.
-	//
-	// No longer supported.
-	SetSubaccount(context.Context, *SetSubaccountRequest) (*Subaccount, error)
-	// Deprecated: Do not use.
-	//
-	// No longer supported.
-	GetSubaccounts(context.Context, *GetSubaccountsRequest) (*GetSubaccountsResponse, error)
 	// Returns all available wallets.
 	GetWallets(context.Context, *GetWalletsRequest) (*Wallets, error)
-	// Returns the current balance of a wallet.
+	// Returns information about a wallet, including its current balance.
 	GetWallet(context.Context, *GetWalletRequest) (*Wallet, error)
 	// Calculates the fee for an equivalent `WalletSend` request.
 	// If `address` is left empty, a dummy swap address will be used, allowing for a fee estimation of a swap lockup transaction.
@@ -740,12 +702,6 @@ func (UnimplementedBoltzServer) CreateWallet(context.Context, *CreateWalletReque
 }
 func (UnimplementedBoltzServer) ImportWallet(context.Context, *ImportWalletRequest) (*Wallet, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportWallet not implemented")
-}
-func (UnimplementedBoltzServer) SetSubaccount(context.Context, *SetSubaccountRequest) (*Subaccount, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetSubaccount not implemented")
-}
-func (UnimplementedBoltzServer) GetSubaccounts(context.Context, *GetSubaccountsRequest) (*GetSubaccountsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSubaccounts not implemented")
 }
 func (UnimplementedBoltzServer) GetWallets(context.Context, *GetWalletsRequest) (*Wallets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWallets not implemented")
@@ -1143,42 +1099,6 @@ func _Boltz_ImportWallet_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BoltzServer).ImportWallet(ctx, req.(*ImportWalletRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Boltz_SetSubaccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetSubaccountRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BoltzServer).SetSubaccount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Boltz_SetSubaccount_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).SetSubaccount(ctx, req.(*SetSubaccountRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Boltz_GetSubaccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSubaccountsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BoltzServer).GetSubaccounts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Boltz_GetSubaccounts_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BoltzServer).GetSubaccounts(ctx, req.(*GetSubaccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1617,14 +1537,6 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportWallet",
 			Handler:    _Boltz_ImportWallet_Handler,
-		},
-		{
-			MethodName: "SetSubaccount",
-			Handler:    _Boltz_SetSubaccount_Handler,
-		},
-		{
-			MethodName: "GetSubaccounts",
-			Handler:    _Boltz_GetSubaccounts_Handler,
 		},
 		{
 			MethodName: "GetWallets",

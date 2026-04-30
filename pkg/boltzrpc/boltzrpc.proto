@@ -109,22 +109,12 @@ service Boltz {
     rpc ImportWallet (ImportWalletRequest) returns (Wallet);
 
     /*
-    No longer supported.
-     */
-    rpc SetSubaccount (SetSubaccountRequest) returns (Subaccount) { option deprecated = true; };
-
-    /*
-    No longer supported.
-     */
-    rpc GetSubaccounts (GetSubaccountsRequest) returns (GetSubaccountsResponse) { option deprecated = true; };
-
-    /*
     Returns all available wallets.
      */
     rpc GetWallets (GetWalletsRequest) returns (Wallets);
 
     /*
-    Returns the current balance of a wallet.
+    Returns information about a wallet, including its current balance.
      */
     rpc GetWallet (GetWalletRequest) returns (Wallet);
 
@@ -833,24 +823,6 @@ message CreateWalletResponse {
     Wallet wallet = 2;
 }
 
-message SetSubaccountRequest {
-    option deprecated = true;
-    uint64 wallet_id = 1;
-    // Ignored because wallet subaccounts are no longer supported.
-    optional uint64 subaccount = 2;
-}
-
-message GetSubaccountsRequest {
-    option deprecated = true;
-    uint64 wallet_id = 1;
-}
-
-message GetSubaccountsResponse {
-    option deprecated = true;
-    optional uint64 current = 1;
-    repeated Subaccount subaccounts = 2;
-}
-
 message ImportWalletResponse {}
 
 message GetWalletsRequest {
@@ -985,14 +957,6 @@ message Balance {
     uint64 total = 1;
     uint64 confirmed = 2;
     uint64 unconfirmed = 3;
-}
-
-message Subaccount {
-    option deprecated = true;
-    Balance balance = 1;
-    uint64 pointer = 2;
-    string type = 3;
-    repeated string descriptors = 4;
 }
 
 message RemoveWalletResponse {}
