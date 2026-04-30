@@ -35,3 +35,9 @@ A list of available wallets can be generated using `boltzcli wallet list`. The
 connected lightning node's internal wallet is available by default. All listed
 wallets can be used for manual swaps (e.g. `createreverseswap`) or
 [autoswap](autoswap.md).
+
+## Legacy Wallets
+
+If an old GDK wallet cannot be migrated automatically, `boltz-client` logs a
+warning. Re-import the wallet from your backup, then use
+`boltzcli wallet remove` to delete the incompatible wallet from the database.
