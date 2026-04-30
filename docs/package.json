@@ -14,8 +14,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "prettier": "^3.6.2",
-    "vitepress": "^1.6.3"
+    "prettier": "^3.8.3",
+    "vitepress": "^1.6.4"
   },
   "devDependencies": {
     "vitepress-plugin-llms": "^1.12.1"
