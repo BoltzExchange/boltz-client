@@ -1,7 +1,7 @@
 PKG := github.com/BoltzExchange/boltz-client/v2
 VERSION := 2.11.3
 GDK_VERSION = 0.75.1
-GO_VERSION := 1.24.7-bookworm
+GO_VERSION := 1.26.2-bookworm
 RUST_VERSION := $(shell awk -F'"' '/^channel = / {print $$2}' rust-toolchain.toml)
 
 PKG_BOLTZD := $(PKG)/cmd/boltzd

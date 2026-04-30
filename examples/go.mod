@@ -1,6 +1,6 @@
 module github.com/BoltzExchange/boltz-client/v2/examples
 
-go 1.24.2
+go 1.26.2
 
 require (
 	github.com/BoltzExchange/boltz-client/v2 v2.8.3
