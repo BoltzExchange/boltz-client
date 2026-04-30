@@ -1,5 +1,7 @@
 ---
-description: Boltz Client daemon and CLI for unattended Lightning channel rebalancing and trustless submarine swaps via CLN or LND
+description:
+  Boltz Client daemon and CLI for unattended Lightning channel rebalancing and
+  trustless submarine swaps via CLN or LND
 next:
   text: "💰 Wallets"
   link: "/wallets"
@@ -59,9 +61,9 @@ docker exec boltz-client boltzcli getinfo
 
 ### Building from source
 
-To build, you need [Go](https://go.dev/) 1.26.2 or newer, the Rust toolchain (including
-[cargo](https://doc.rust-lang.org/cargo/) and `rustc`), and a C compiler such as
-`gcc` for the native dependencies used by the daemon.
+To build, you need [Go](https://go.dev/) 1.26.2 or newer, the Rust toolchain
+(including [cargo](https://doc.rust-lang.org/cargo/) and `rustc`), and a C
+compiler such as `gcc` for the native dependencies used by the daemon.
 
 Boltz Client depends on [GDK](https://github.com/Blockstream/gdk) by
 blockstream, which can be either dynamically or statically linked. The

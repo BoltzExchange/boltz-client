@@ -1,5 +1,7 @@
 ---
-description: Automated Lightning channel rebalancing with configurable thresholds, budgets, and swap types
+description:
+  Automated Lightning channel rebalancing with configurable thresholds, budgets,
+  and swap types
 ---
 
 # 🔁 Autoswap

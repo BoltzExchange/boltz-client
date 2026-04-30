@@ -1,5 +1,6 @@
 ---
-description: Use Boltz Pro dynamic fee rates and earn opportunities through Boltz Client
+description:
+  Use Boltz Pro dynamic fee rates and earn opportunities through Boltz Client
 ---
 
 # 🏅 Boltz Pro

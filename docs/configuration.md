@@ -1,5 +1,7 @@
 ---
-description: TOML configuration reference for boltzd including LND, CLN, RPC, and wallet settings
+description:
+  TOML configuration reference for boltzd including LND, CLN, RPC, and wallet
+  settings
 ---
 
 # 🎛 Configuration

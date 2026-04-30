@@ -1,5 +1,6 @@
 ---
-description: Building and updating the GDK (Blockstream Green Development Kit) dependency
+description:
+  Building and updating the GDK (Blockstream Green Development Kit) dependency
 ---
 
 # GDK

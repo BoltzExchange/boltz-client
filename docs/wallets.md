@@ -1,5 +1,7 @@
 ---
-description: Create, import, and manage Bitcoin and Liquid wallets for use with swaps and autoswap
+description:
+  Create, import, and manage Bitcoin and Liquid wallets for use with swaps and
+  autoswap
 ---
 
 # 💰 Wallets
