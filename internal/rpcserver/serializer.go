@@ -226,13 +226,12 @@ func serializeChainPair(pair boltz.Pair, chainPair *boltz.ChainPair) *boltzrpc.P
 	}
 }
 
-//nolint:staticcheck
 func serializeWalletCredentials(credentials *onchain.WalletCredentials) *boltzrpc.WalletCredentials {
 	return &boltzrpc.WalletCredentials{
 		Mnemonic:       serializeOptionalString(credentials.Mnemonic),
-		Xpub:           serializeOptionalString(credentials.Xpub),
+		Xpub:           serializeOptionalString(credentials.Xpub), //nolint:staticcheck // Returned for legacy GDK wallet migration compatibility.
 		CoreDescriptor: serializeOptionalString(credentials.CoreDescriptor),
-		Subaccount:     credentials.Subaccount,
+		Subaccount:     credentials.Subaccount, //nolint:staticcheck // Returned for legacy GDK wallet migration compatibility.
 	}
 }
 

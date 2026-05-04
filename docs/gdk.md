@@ -1,16 +1,13 @@
 ---
 description:
-  Building and updating the GDK (Blockstream Green Development Kit) dependency
+  GDK support has been removed from Boltz Client
 ---
 
-# GDK
+# GDK Support Removed
 
-The gdk build process is split into two parts: the builder image inside the gdk
-repo and the `gdk.Dockerfile` located in this repo. The builder image contains
-all the prebuilt dependencies and the `gdk.Dockerfile` uses it to build the
-static and dynamic version of the library and then publish just those 2
-artifacts, allowing for fast downloads.
+Boltz Client no longer builds or links Blockstream GDK. Bitcoin wallets use BDK
+and Liquid wallets use LWK.
 
-To update GDK, bump the version in the `Makefile` and run
-`make build-gdk-builder`. This will build and push the builder image to the
-registry. Then run `make build-gdk` to build the actual artifacts.
+Legacy GDK wallet credentials are migrated to descriptor-based credentials on
+startup when possible. If migration is not possible, re-import the wallet from
+your backup and remove the old database entry with `boltzcli wallet remove`.

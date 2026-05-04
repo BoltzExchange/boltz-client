@@ -1,3 +1,7 @@
+---
+description: Full gRPC and REST API reference for boltzd covering all swap, wallet, and autoswap methods
+---
+
 # gRPC Documentation
 
 This page was automatically generated.
@@ -2165,4 +2169,3 @@ Reloads the configuration from disk.
 | <div id="bool" />`bool` |  | `bool` | `boolean` | `boolean` | `bool` | `bool` | `boolean` | `TrueClass/FalseClass` |
 | <div id="string" />`string` | A string must always contain UTF-8 encoded or 7-bit ASCII text. | `string` | `String` | `str/unicode` | `string` | `string` | `string` | `String (UTF-8)` |
 | <div id="bytes" />`bytes` | May contain any arbitrary sequence of bytes. | `string` | `ByteString` | `str` | `[]byte` | `ByteString` | `string` | `String (ASCII-8BIT)` |
-

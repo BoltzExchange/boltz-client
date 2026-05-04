@@ -1,3 +1,7 @@
+---
+description: Full gRPC and REST API reference for boltzd covering all swap, wallet, and autoswap methods
+---
+
 # gRPC Documentation
 
 This page was automatically generated.

@@ -9,6 +9,7 @@ import (
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/autoswap"
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
+	"github.com/BoltzExchange/boltz-client/v2/internal/macaroons"
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
 	bitcoin_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/bitcoin-wallet"
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
@@ -60,7 +61,7 @@ func TestMigrateWalletCredentials(t *testing.T) {
 		require.False(t, migrated)
 		require.Len(t, warnings, 1)
 		require.True(t, credentials[0].Legacy)
-		require.Contains(t, warnings[0], "Please manually re-import it")
+		require.Contains(t, warnings[0].message, "Please manually re-import it")
 
 		_, err := server.loginWallet(credentials[0])
 		require.Error(t, err)
@@ -84,7 +85,7 @@ func TestMigrateWalletCredentials(t *testing.T) {
 		require.False(t, migrated)
 		require.Len(t, warnings, 1)
 		require.True(t, credentials[0].Legacy)
-		require.Contains(t, warnings[0], "Please manually re-import it")
+		require.Contains(t, warnings[0].message, "Please manually re-import it")
 	})
 
 	t.Run("LiquidDefaultSubaccount", func(t *testing.T) {
@@ -110,6 +111,35 @@ func TestMigrateWalletCredentials(t *testing.T) {
 		require.Nil(t, credentials[0].Subaccount)
 		require.Equal(t, expectedDescriptor, credentials[0].CoreDescriptor)
 	})
+}
+
+func TestWalletMigrationWarnings(t *testing.T) {
+	server := &routedBoltzServer{}
+	tenantId := database.DefaultTenantId + 1
+	server.setWalletMigrationWarnings([]walletMigrationWarning{{
+		walletId: 10,
+		tenantId: database.DefaultTenantId,
+		message:  "admin warning",
+	}, {
+		walletId: 20,
+		tenantId: tenantId,
+		message:  "tenant warning",
+	}})
+
+	require.Equal(t, []string{"admin warning", "tenant warning"}, server.getWalletMigrationWarnings(context.Background()))
+
+	tenantCtx := macaroons.AddTenantToContext(context.Background(), &database.Tenant{
+		Id:   tenantId,
+		Name: "tenant",
+	})
+	require.Equal(t, []string{"tenant warning"}, server.getWalletMigrationWarnings(tenantCtx))
+
+	server.removeWalletMigrationWarning(20)
+	require.Empty(t, server.getWalletMigrationWarnings(tenantCtx))
+	require.Equal(t, []string{"admin warning"}, server.getWalletMigrationWarnings(context.Background()))
+
+	server.removeWalletMigrationWarning(10)
+	require.Empty(t, server.getWalletMigrationWarnings(context.Background()))
 }
 
 func createLegacyWallet(t *testing.T, db *database.Database, wallet *database.Wallet) {
@@ -375,9 +405,16 @@ func TestRemoveUnsupportedLegacyWallet(t *testing.T) {
 		onchain:  chain,
 		swapper:  &autoswap.AutoSwap{},
 	}
+	server.setWalletMigrationWarnings([]walletMigrationWarning{{
+		walletId: legacyWallet.Id,
+		tenantId: legacyWallet.TenantId,
+		message:  "stale warning",
+	}})
+
 	_, err := server.RemoveWallet(context.Background(), &boltzrpc.RemoveWalletRequest{Id: legacyWallet.Id})
 	require.NoError(t, err)
 
 	_, err = cfg.Database.GetWallet(legacyWallet.Id)
 	require.Error(t, err)
+	require.Empty(t, server.getWalletMigrationWarnings(context.Background()))
 }

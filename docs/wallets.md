@@ -6,8 +6,8 @@ description:
 
 # 💰 Wallets
 
-`boltz-client` allows you to manage Bitcoin and [Liquid](https://liquid.net/)
-wallets.
+`boltz-client` allows you to manage descriptor-based Bitcoin and
+[Liquid](https://liquid.net/) wallets.
 
 ## Create New Wallet
 
@@ -36,8 +36,11 @@ connected lightning node's internal wallet is available by default. All listed
 wallets can be used for manual swaps (e.g. `createreverseswap`) or
 [autoswap](autoswap.md).
 
-## Legacy Wallets
+## Legacy GDK Wallets
 
-If an old GDK wallet cannot be migrated automatically, `boltz-client` logs a
+GDK wallet support has been removed. On startup, compatible legacy GDK wallet
+credentials are migrated to descriptor-based credentials automatically.
+
+If a legacy GDK wallet cannot be migrated automatically, `boltz-client` logs a
 warning. Re-import the wallet from your backup, then use
 `boltzcli wallet remove` to delete the incompatible wallet from the database.

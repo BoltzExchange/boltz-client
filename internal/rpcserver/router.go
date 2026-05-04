@@ -76,7 +76,8 @@ type routedBoltzServer struct {
 
 	newKeyLock sync.Mutex
 
-	walletMigrationWarnings []string
+	walletMigrationWarningsLock sync.RWMutex
+	walletMigrationWarnings     []walletMigrationWarning
 }
 
 func (server *routedBoltzServer) GetBlockUpdates(currency boltz.Currency) (<-chan *onchain.BlockEpoch, func()) {
@@ -261,7 +262,7 @@ func (server *routedBoltzServer) GetInfo(ctx context.Context, _ *boltzrpc.GetInf
 		PendingReverseSwaps: pendingReverseSwapIds,
 		RefundableSwaps:     refundableSwapIds,
 		ClaimableSwaps:      claimableSwapIds,
-		Warnings:            server.walletMigrationWarnings,
+		Warnings:            server.getWalletMigrationWarnings(ctx),
 
 		Symbol:      "BTC",
 		BlockHeight: blockHeights.Btc,
@@ -1898,6 +1899,7 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 		return nil, err
 	}
 	server.onchain.RemoveWallet(id)
+	server.removeWalletMigrationWarning(id)
 
 	logger.Infof("Removed wallet %s", wallet.GetWalletInfo())
 
@@ -1906,7 +1908,13 @@ func (server *routedBoltzServer) RemoveWallet(ctx context.Context, request *bolt
 
 func (server *routedBoltzServer) removeLegacyWallet(ctx context.Context, id database.Id, originalErr error) (*boltzrpc.RemoveWalletResponse, error) {
 	dbWallet, err := server.database.GetWallet(id)
-	if err != nil || !dbWallet.Legacy || dbWallet.NodePubkey != nil {
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, originalErr
+		}
+		return nil, err
+	}
+	if !dbWallet.Legacy || dbWallet.NodePubkey != nil {
 		return nil, originalErr
 	}
 	if tenantId := macaroons.TenantIdFromContext(ctx); tenantId != nil && dbWallet.TenantId != *tenantId {
@@ -1922,6 +1930,7 @@ func (server *routedBoltzServer) removeLegacyWallet(ctx context.Context, id data
 		return nil, err
 	}
 	server.onchain.RemoveWallet(id)
+	server.removeWalletMigrationWarning(id)
 
 	logger.Infof("Removed legacy wallet %s", dbWallet.WalletInfo)
 
@@ -2076,7 +2085,7 @@ func (server *routedBoltzServer) unlock(password string) error {
 		}
 	}
 	migrated, warnings := server.migrateWalletCredentials(credentials)
-	server.walletMigrationWarnings = warnings
+	server.setWalletMigrationWarnings(warnings)
 	if migrated {
 		if err := server.database.RunTx(func(tx *database.Transaction) error {
 			return server.encryptWalletCredentials(tx, password, credentials)
@@ -2566,7 +2575,7 @@ func (server *routedBoltzServer) checkBalance(check onchain.Wallet, sendAmount u
 
 func (server *routedBoltzServer) loginWallet(credentials *onchain.WalletCredentials) (onchain.Wallet, error) {
 	if credentials.Legacy {
-		return nil, errors.New(manualWalletMigrationWarning(credentials, "wallet still uses deprecated legacy credentials"))
+		return nil, errors.New(manualWalletMigrationWarning(credentials, "wallet still uses unsupported legacy GDK credentials"))
 	}
 	if backend, ok := server.walletBackends[credentials.Currency]; ok {
 		return backend.NewWallet(credentials)
