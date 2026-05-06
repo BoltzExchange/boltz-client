@@ -109,22 +109,12 @@ service Boltz {
     rpc ImportWallet (ImportWalletRequest) returns (Wallet);
 
     /*
-    Sets the subaccount of a wallet. Not supported for readonly wallets.
-     */
-    rpc SetSubaccount (SetSubaccountRequest) returns (Subaccount) { option deprecated = true; };
-
-    /*
-    Returns all subaccounts for a given wallet. Not supported for readonly wallets.
-     */
-    rpc GetSubaccounts (GetSubaccountsRequest) returns (GetSubaccountsResponse) { option deprecated = true; };
-
-    /*
     Returns all available wallets.
      */
     rpc GetWallets (GetWalletsRequest) returns (Wallets);
 
     /*
-    Returns the current balance and subaccount of a wallet.
+    Returns information about a wallet, including its current balance.
      */
     rpc GetWallet (GetWalletRequest) returns (Wallet);
 
@@ -439,6 +429,8 @@ message GetInfoResponse {
     optional Tenant tenant = 13;
     // swaps that need a manual interaction to claim
     repeated string claimable_swaps = 14;
+    // startup warnings that require user attention
+    repeated string warnings = 15;
 
     string symbol = 1 [deprecated = true];
     string lnd_pubkey = 3 [deprecated = true];
@@ -805,7 +797,7 @@ message WalletCredentials {
     // public key descriptor for the wallets external keychain.
     optional string core_descriptor = 3;
 
-    // only used in combination with mnemonic
+    // Only used to migrate legacy wallets imported before descriptor-based backends.
     optional uint64 subaccount = 4 [deprecated = true];
     optional string xpub = 2 [deprecated = true];
 }
@@ -829,24 +821,6 @@ message CreateWalletRequest {
 message CreateWalletResponse {
     string mnemonic = 1;
     Wallet wallet = 2;
-}
-
-message SetSubaccountRequest {
-    option deprecated = true;
-    uint64 wallet_id = 1;
-    // The subaccount to use. If not set, a new one will be created.
-    optional uint64 subaccount = 2;
-}
-
-message GetSubaccountsRequest {
-    option deprecated = true;
-    uint64 wallet_id = 1;
-}
-
-message GetSubaccountsResponse {
-    option deprecated = true;
-    optional uint64 current = 1;
-    repeated Subaccount subaccounts = 2;
 }
 
 message ImportWalletResponse {}
@@ -983,14 +957,6 @@ message Balance {
     uint64 total = 1;
     uint64 confirmed = 2;
     uint64 unconfirmed = 3;
-}
-
-message Subaccount {
-    option deprecated = true;
-    Balance balance = 1;
-    uint64 pointer = 2;
-    string type = 3;
-    repeated string descriptors = 4;
 }
 
 message RemoveWalletResponse {}

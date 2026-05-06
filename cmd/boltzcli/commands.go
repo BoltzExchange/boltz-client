@@ -1799,41 +1799,6 @@ var walletCommands = &cli.Command{
 			},
 		},
 		{
-			Name:        "subaccounts",
-			Usage:       "DEPRECATED: Show the subaccounts of a wallet (GDK-only)",
-			Description: "DEPRECATED: GDK-only feature. Select the subaccount for a wallet. Not possible for readonly wallets.",
-			ArgsUsage:   "name",
-			Action: requireNArgs(1, func(ctx *cli.Context) error {
-				printSubaccountsDeprecatedWarning()
-				walletId, err := getWalletId(ctx, ctx.Args().First())
-				if err != nil {
-					return err
-				}
-				client := getClient(ctx)
-				subaccounts, err := client.GetSubaccounts(*walletId)
-				if err != nil {
-					return err
-				}
-				printJson(subaccounts)
-				return nil
-			}),
-			Subcommands: []*cli.Command{
-				{
-					Name:        "select",
-					Usage:       "DEPRECATED: Select the subaccount for a wallet (GDK-only)",
-					Description: "DEPRECATED: GDK-only feature. Select the subaccount for a wallet. Not possible for readonly wallets.",
-					ArgsUsage:   "name",
-					Action: requireNArgs(1, func(ctx *cli.Context) error {
-						walletId, err := getWalletId(ctx, ctx.Args().First())
-						if err != nil {
-							return err
-						}
-						return selectSubaccount(ctx, *walletId)
-					}),
-				},
-			},
-		},
-		{
 			Name:      "remove",
 			Usage:     "Remove a wallet",
 			ArgsUsage: "name",
@@ -2006,14 +1971,6 @@ func askBudget(defaultMaxFeePercent float32, defaultDuration, defaultBudget uint
 	}
 }
 
-//nolint:staticcheck
-func printSubaccount(info *boltzrpc.Subaccount) {
-	fmt.Printf("Subaccount: %d (%s)\n", info.Pointer, liquidAccountType(info.Type))
-	balance := info.Balance
-
-	fmt.Printf("Balance: %s (%s unconfirmed)\n", utils.Satoshis(balance.Total), utils.Satoshis(balance.Unconfirmed))
-}
-
 func walletParams(ctx *cli.Context) (*boltzrpc.WalletParams, error) {
 	currency, err := parseCurrency(ctx.Args().Get(1))
 	if err != nil {
@@ -2080,69 +2037,6 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 	fmt.Println("Successfully imported wallet!")
 	fmt.Printf("Wallet Balance: %s\n", utils.Satoshis(wallet.Balance.Total))
 	return wallet, nil
-}
-
-func selectSubaccount(ctx *cli.Context, walletId uint64) error {
-	printSubaccountsDeprecatedWarning()
-
-	client := getClient(ctx)
-
-	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
-	s.Suffix = " Fetching subaccounts..."
-	s.Start()
-
-	subaccounts, err := client.GetSubaccounts(walletId)
-	s.Stop()
-	if err != nil {
-		return err
-	}
-
-	var options = []string{"new"}
-	for _, subaccount := range subaccounts.Subaccounts {
-		options = append(options, fmt.Sprint(subaccount.Pointer))
-	}
-
-	accountPrompt := &survey.Select{
-		Message: "Which subaccount should be used?",
-		Options: options,
-		Description: func(_ string, index int) string {
-			if index == 0 {
-				return ""
-			}
-			subaccount := subaccounts.Subaccounts[index-1]
-			return fmt.Sprintf("%s (%s)", utils.Satoshis(subaccount.Balance.Total), liquidAccountType(subaccount.Type))
-		},
-	}
-	if subaccounts.Current != nil {
-		accountPrompt.Default = fmt.Sprint(*subaccounts.Current)
-	}
-
-	var subaccountRaw string
-
-	if err := survey.AskOne(accountPrompt, &subaccountRaw); err != nil {
-		return err
-	}
-	var subaccount *uint64
-
-	if subaccountRaw != "new" {
-		parsed, err := strconv.ParseUint(subaccountRaw, 10, 64)
-		if err != nil {
-			return err
-		}
-		subaccount = &parsed
-	}
-
-	response, err := client.SetSubaccount(walletId, subaccount)
-	if err != nil {
-		return err
-	}
-
-	printSubaccount(response)
-	return nil
-}
-
-func printSubaccountsDeprecatedWarning() {
-	fmt.Println("Warning: `wallet subaccounts` is deprecated and only supported for deprecated GDK wallets.")
 }
 
 func removeWallet(ctx *cli.Context) error {
@@ -2269,7 +2163,6 @@ func listWallets(ctx *cli.Context) error {
 	// if ctx.Bool("json") {
 	// 	printJson(info)
 	// } else {
-	// 	printSubaccount(info.Subaccount)
 	// }
 	return nil
 }

@@ -200,22 +200,6 @@ Imports an existing wallet.
 | ------- | -------- |
 | [`ImportWalletRequest`](#importwalletrequest) | [`Wallet`](#wallet) |
 
-#### SetSubaccount
-
-**Deprecated.** Sets the subaccount of a wallet. Not supported for readonly wallets.
-
-| Request | Response |
-| ------- | -------- |
-| [`SetSubaccountRequest`](#setsubaccountrequest) | [`Subaccount`](#subaccount) |
-
-#### GetSubaccounts
-
-**Deprecated.** Returns all subaccounts for a given wallet. Not supported for readonly wallets.
-
-| Request | Response |
-| ------- | -------- |
-| [`GetSubaccountsRequest`](#getsubaccountsrequest) | [`GetSubaccountsResponse`](#getsubaccountsresponse) |
-
 #### GetWallets
 
 Returns all available wallets.
@@ -226,7 +210,7 @@ Returns all available wallets.
 
 #### GetWallet
 
-Returns the current balance and subaccount of a wallet.
+Returns information about a wallet, including its current balance.
 
 | Request | Response |
 | ------- | -------- |
@@ -872,6 +856,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | `refundable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to refund |
 | `tenant` | [`Tenant`](#tenant) | optional | the currently authenticated tenant |
 | `claimable_swaps` | [`string`](#string) | repeated | swaps that need a manual interaction to claim |
+| `warnings` | [`string`](#string) | repeated | startup warnings that require user attention |
 | `symbol` | [`string`](#string) |  | **Deprecated.**  |
 | `lnd_pubkey` | [`string`](#string) |  | **Deprecated.**  |
 | `block_height` | [`uint32`](#uint32) |  | **Deprecated.**  |
@@ -954,33 +939,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `stats` | [`SwapStats`](#swapstats) |  |  |
-
-
-
-
-
-#### GetSubaccountsRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `wallet_id` | [`uint64`](#uint64) |  |  |
-
-
-
-
-
-#### GetSubaccountsResponse
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `current` | [`uint64`](#uint64) | optional |  |
-| `subaccounts` | [`Subaccount`](#subaccount) | repeated |  |
 
 
 
@@ -1410,20 +1368,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 
 
 
-#### SetSubaccountRequest
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `wallet_id` | [`uint64`](#uint64) |  |  |
-| `subaccount` | [`uint64`](#uint64) | optional | The subaccount to use. If not set, a new one will be created. |
-
-
-
-
-
 #### SetSwapMnemonicRequest
 
 
@@ -1446,22 +1390,6 @@ Channel creations are an optional extension to a submarine swap in the data type
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `mnemonic` | [`string`](#string) |  |  |
-
-
-
-
-
-#### Subaccount
-
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `balance` | [`Balance`](#balance) |  |  |
-| `pointer` | [`uint64`](#uint64) |  |  |
-| `type` | [`string`](#string) |  |  |
-| `descriptors` | [`string`](#string) | repeated |  |
 
 
 
@@ -1669,7 +1597,7 @@ Descriptor requirements:
 | ----- | ---- | ----- | ----------- |
 | `mnemonic` | [`string`](#string) | optional | the mnemonic to derive the wallet master private key (BIP39). |
 | `core_descriptor` | [`string`](#string) | optional | public key descriptor for the wallets external keychain. |
-| `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** only used in combination with mnemonic |
+| `subaccount` | [`uint64`](#uint64) | optional | **Deprecated.** Only used to migrate legacy wallets imported before descriptor-based backends. |
 | `xpub` | [`string`](#string) | optional | **Deprecated.**  |
 
 
@@ -2241,4 +2169,3 @@ Reloads the configuration from disk.
 | <div id="bool" />`bool` |  | `bool` | `boolean` | `boolean` | `bool` | `bool` | `boolean` | `TrueClass/FalseClass` |
 | <div id="string" />`string` | A string must always contain UTF-8 encoded or 7-bit ASCII text. | `string` | `String` | `str/unicode` | `string` | `string` | `string` | `String (UTF-8)` |
 | <div id="bytes" />`bytes` | May contain any arbitrary sequence of bytes. | `string` | `ByteString` | `str` | `[]byte` | `ByteString` | `string` | `String (ASCII-8BIT)` |
-

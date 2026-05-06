@@ -88,7 +88,8 @@ func TestWallet_NewAddress(t *testing.T) {
 func TestWallet_AutoConsolidate(t *testing.T) {
 	numTxns := 3
 	cfg := test.LiquidBackendConfig(t)
-	cfg.ConsolidationThreshold = uint64(numTxns)
+	consolidationThreshold := uint64(numTxns)
+	cfg.ConsolidationThreshold = &consolidationThreshold
 	backend, err := liquid_wallet.NewBackend(cfg)
 	require.NoError(t, err)
 	wallet := newWallet(t, backend, nil)
