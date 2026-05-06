@@ -50,16 +50,22 @@ func WalletInfo(currency boltz.Currency) onchain.WalletInfo {
 }
 
 func WalletCredentials(currency boltz.Currency) *onchain.WalletCredentials {
-	mnemonic, _ := liquid_wallet.GenerateMnemonic(boltz.Regtest)
+	mnemonic, err := onchain.GenerateMnemonic()
+	if err != nil {
+		panic(err)
+	}
 	creds := &onchain.WalletCredentials{
 		WalletInfo: WalletInfo(currency),
 		Mnemonic:   mnemonic,
 	}
 	if currency == boltz.CurrencyBtc {
-		creds.CoreDescriptor, _ = bitcoin_wallet.DeriveDefaultDescriptor(boltz.Regtest, mnemonic)
+		creds.CoreDescriptor, err = bitcoin_wallet.DeriveDefaultDescriptor(boltz.Regtest, mnemonic)
 	}
 	if currency == boltz.CurrencyLiquid {
-		creds.CoreDescriptor, _ = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, mnemonic)
+		creds.CoreDescriptor, err = liquid_wallet.DeriveDefaultDescriptor(boltz.Regtest, mnemonic)
+	}
+	if err != nil {
+		panic(err)
 	}
 	return creds
 }
