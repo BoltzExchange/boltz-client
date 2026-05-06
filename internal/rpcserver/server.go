@@ -233,12 +233,13 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 	)
 
 	liquidConfig := liquid_wallet.Config{
-		Network:        server.network,
-		DataDir:        cfg.DataDir + "/liquid-wallet",
-		ChainProvider:  server.onchain.Liquid.Chain,
-		Persister:      database.NewWalletPersister(server.database),
-		Electrum:       cfg.Electrum().Liquid,
-		MergeThreshold: cfg.WalletMergeThreshold,
+		Network:                server.network,
+		DataDir:                cfg.DataDir + "/liquid-wallet",
+		ChainProvider:          server.onchain.Liquid.Chain,
+		Persister:              database.NewWalletPersister(server.database),
+		Electrum:               cfg.Electrum().Liquid,
+		MergeThreshold:         cfg.WalletMergeThreshold,
+		ConsolidationThreshold: cfg.AutoConsolidateThreshold,
 	}
 	server.walletBackends[boltz.CurrencyLiquid], err = liquid_wallet.NewBackend(liquidConfig)
 	if err != nil {

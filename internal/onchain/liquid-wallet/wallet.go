@@ -46,7 +46,7 @@ type Config struct {
 	Esplora                *EsploraConfig
 	Electrum               *onchain.ElectrumOptions
 	MergeThreshold         *uint32
-	ConsolidationThreshold uint64
+	ConsolidationThreshold *uint64
 	ChainProvider          onchain.ChainProvider
 	Persister              Persister
 }
@@ -108,7 +108,7 @@ func (b *BlockchainBackend) connectClient(config clientConfig) (lwk.EsploraClien
 
 const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
 const DefaultMergeThreshold = uint32(100)
-const DefaultConsolidationThreshold = 200
+const DefaultConsolidationThreshold = uint64(200)
 
 var errConnectionTimeout = errors.New("connection timeout")
 
@@ -119,8 +119,9 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	if cfg.ChainProvider == nil {
 		return nil, errors.New("chain provider is required")
 	}
-	if cfg.ConsolidationThreshold == 0 {
-		cfg.ConsolidationThreshold = DefaultConsolidationThreshold
+	if cfg.ConsolidationThreshold == nil {
+		threshold := DefaultConsolidationThreshold
+		cfg.ConsolidationThreshold = &threshold
 	}
 	if cfg.MergeThreshold == nil {
 		threshold := DefaultMergeThreshold
@@ -384,7 +385,8 @@ func (w *Wallet) autoConsolidate() error {
 	if err != nil {
 		return fmt.Errorf("get utxos: %w", err)
 	}
-	if len(utxos) >= int(w.backend.cfg.ConsolidationThreshold) {
+	consolidationThreshold := *w.backend.cfg.ConsolidationThreshold
+	if consolidationThreshold > 0 && len(utxos) >= int(consolidationThreshold) {
 		logger.Debugf("Auto consolidating wallet %s with %d utxos", w.info, len(utxos))
 		address, err := w.NewAddress()
 		if err != nil {
