@@ -1,6 +1,5 @@
 ---
-description:
-  GDK support has been removed from Boltz Client
+description: GDK support has been removed from Boltz Client
 ---
 
 # GDK Support Removed
