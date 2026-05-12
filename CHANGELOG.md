@@ -1,4 +1,16 @@
 
+<a name="v2.12.0"></a>
+## [v2.12.0] - 2026-05-12
+### Fix
+- prettier in docs
+- run integration tests in serial
+- populate claim addresses from wallets ([#673](https://github.com/BoltzExchange/boltz-client/issues/673))
+
+### Refactor
+- remove GDK ([#671](https://github.com/BoltzExchange/boltz-client/issues/671))
+- wallet unique constrant ([#672](https://github.com/BoltzExchange/boltz-client/issues/672))
+
+
 <a name="v2.11.3"></a>
 ## [v2.11.3] - 2026-04-20
 ### Refactor
@@ -914,6 +926,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.12.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.3...v2.12.0
 [v2.11.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.2...v2.11.3
 [v2.11.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.1...v2.11.2
 [v2.11.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.0...v2.11.1
