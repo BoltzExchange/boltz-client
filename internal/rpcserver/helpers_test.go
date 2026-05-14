@@ -140,6 +140,15 @@ func getTransactionFee(t *testing.T, chain *onchain.Onchain, currency boltz.Curr
 	return fee
 }
 
+func disableBackendSigner(t *testing.T, signer string) {
+	t.Helper()
+
+	test.BackendCli(fmt.Sprintf("signer disable %s", signer))
+	t.Cleanup(func() {
+		test.BackendCli(fmt.Sprintf("signer enable %s", signer))
+	})
+}
+
 var password = "password"
 var swapAmount = uint64(100000)
 

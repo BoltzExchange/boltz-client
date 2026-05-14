@@ -391,13 +391,12 @@ func TestSwap(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.desc, func(t *testing.T) {
 					cfg := loadConfig(t)
-					boltzApi := getBoltz(t, cfg)
 					cfg.Node = "LND"
 					pair := &boltzrpc.Pair{
 						From: tc.from,
 						To:   boltzrpc.Currency_BTC,
 					}
-					admin, _, stop := setup(t, setupOptions{cfg: cfg, boltzApi: boltzApi})
+					admin, _, stop := setup(t, setupOptions{cfg: cfg})
 					defer stop()
 					fundedWallet(t, admin, tc.from)
 
@@ -481,10 +480,7 @@ func TestSwap(t *testing.T) {
 						})
 
 						t.Run("Script", func(t *testing.T) {
-							boltzApi.DisablePartialSignatures = true
-							t.Cleanup(func() {
-								boltzApi.DisablePartialSignatures = false
-							})
+							disableBackendSigner(t, "submarine-refund-coop")
 
 							refundAddress := cli("getnewaddress")
 							withStream, _ := createFailed(t, refundAddress)
