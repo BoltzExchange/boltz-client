@@ -176,7 +176,7 @@ func GetCli(pair boltz.Currency) Cli {
 }
 
 func BackendCli(cmd string) string {
-	return bash("docker exec -i boltz-backend /boltz-backend/bin/boltz-cli " + cmd)
+	return bash("docker exec -i boltz-backend /boltz-backend/target/release/boltzr-cli --grpc-certificates /boltz-data/certificates " + cmd)
 }
 
 func LiquidCli(cmd string) string {

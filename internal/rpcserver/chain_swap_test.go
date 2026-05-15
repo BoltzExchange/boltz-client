@@ -20,7 +20,6 @@ import (
 func TestChainSwap(t *testing.T) {
 	cfg := loadConfig(t)
 	chain := getOnchain(t, cfg)
-	boltzApi := getBoltz(t, cfg)
 
 	checkSwap := func(t *testing.T, client client.Boltz, id string) {
 		response, err := client.ListSwaps(&boltzrpc.ListSwapsRequest{})
@@ -45,7 +44,7 @@ func TestChainSwap(t *testing.T) {
 		require.Fail(t, "swap not returned by listswaps", id)
 	}
 
-	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain, boltzApi: boltzApi, node: "standalone"})
+	client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain, node: "standalone"})
 	defer stop()
 
 	tests := []struct {
@@ -352,7 +351,7 @@ func TestChainSwap(t *testing.T) {
 				}
 
 				t.Run("Script", func(t *testing.T) {
-					boltzApi.DisablePartialSignatures = true
+					disableBackendSigner(t, "chain-refund-coop")
 
 					stream, statusStream := createFailed(t, refundAddress)
 					info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionLockupFailed).ChainSwap
@@ -368,8 +367,6 @@ func TestChainSwap(t *testing.T) {
 				})
 
 				t.Run("Cooperative", func(t *testing.T) {
-					boltzApi.DisablePartialSignatures = false
-
 					_, statusStream := createFailed(t, refundAddress)
 					info := statusStream(boltzrpc.SwapState_REFUNDED, boltz.TransactionLockupFailed).ChainSwap
 					require.Zero(t, info.ServiceFee)
