@@ -73,14 +73,26 @@ func RequiredEstimations(swapType SwapType, pair Pair) []Currency {
 	return currencies
 }
 
-func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount uint64, serviceFee Percentage, estimations FeeEstimations, includeClaim bool) error {
-	totalFees := sendAmount - receiveAmount
-	networkFees := totalFees
-	if swapType == NormalSwap {
-		networkFees -= CalculatePercentage(serviceFee, receiveAmount)
-	} else {
-		networkFees -= CalculatePercentage(serviceFee, sendAmount)
+// saturatingSub returns a - b, or 0 if b > a, avoiding uint64 wrap-around.
+func saturatingSub(a, b uint64) uint64 {
+	if b > a {
+		return 0
 	}
+	return a - b
+}
+
+func CheckAmounts(swapType SwapType, pair Pair, sendAmount uint64, receiveAmount uint64, serviceFee Percentage, estimations FeeEstimations, includeClaim bool) error {
+	var serviceFeeAmount uint64
+	if swapType == NormalSwap {
+		serviceFeeAmount = CalculatePercentage(serviceFee, receiveAmount)
+	} else {
+		serviceFeeAmount = CalculatePercentage(serviceFee, sendAmount)
+	}
+	// If boltz quoted favorably (sendAmount < receiveAmount + serviceFeeAmount),
+	// the implied network fee is non-positive; clamp to 0 so checkTolerance reads
+	// it as no overage rather than a uint64 wrap close to 2^64.
+	networkFees := saturatingSub(saturatingSub(sendAmount, receiveAmount), serviceFeeAmount)
+
 	currencies := RequiredEstimations(swapType, pair)
 	for _, currency := range currencies {
 		if _, ok := estimations[currency]; !ok {

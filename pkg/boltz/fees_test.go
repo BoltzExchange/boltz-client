@@ -110,6 +110,58 @@ func TestCheckFees(t *testing.T) {
 	}
 }
 
+func TestCheckAmounts_FavorableQuote(t *testing.T) {
+	// Regression: before saturatingSub, an ExpectedAmount smaller than
+	// invoiceAmount + serviceFee%·invoiceAmount caused networkFees to wrap
+	// around uint64, producing a spurious "onchain fee way above expectation"
+	// error and orphaning the swap on the boltz server.
+	feeEstimations := FeeEstimations{
+		CurrencyBtc:    2,
+		CurrencyLiquid: 0.11,
+	}
+	tests := []struct {
+		name          string
+		swapType      SwapType
+		pair          Pair
+		sendAmount    uint64
+		receiveAmount uint64
+		serviceFee    Percentage
+	}{
+		{
+			// 25M-sat BTC submarine, 0.1% fee, 10k-sat under-quote (matches
+			// the reported production incident).
+			name:          "Submarine/Btc/UnderQuoteWithinServiceFee",
+			swapType:      NormalSwap,
+			pair:          Pair{From: CurrencyBtc, To: CurrencyBtc},
+			sendAmount:    25_015_000,
+			receiveAmount: 25_000_000,
+			serviceFee:    0.1,
+		},
+		{
+			// sendAmount < receiveAmount entirely — first subtraction would wrap.
+			name:          "Submarine/Btc/SendBelowReceive",
+			swapType:      NormalSwap,
+			pair:          Pair{From: CurrencyBtc, To: CurrencyBtc},
+			sendAmount:    49_999,
+			receiveAmount: 50_000,
+			serviceFee:    0.5,
+		},
+		{
+			name:          "Reverse/Btc/UnderQuoteWithinServiceFee",
+			swapType:      ReverseSwap,
+			pair:          Pair{From: CurrencyBtc, To: CurrencyBtc},
+			sendAmount:    50_000,
+			receiveAmount: 49_900,
+			serviceFee:    0.5,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.NoError(t, CheckAmounts(tt.swapType, tt.pair, tt.sendAmount, tt.receiveAmount, tt.serviceFee, feeEstimations, true))
+		})
+	}
+}
+
 func Test_checkTolerance(t *testing.T) {
 	type args struct {
 		expected uint64
