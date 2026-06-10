@@ -37,36 +37,36 @@ func (m MultiChainProvider) GetRawTransaction(txId string) (hex string, err erro
 	return "", err
 }
 
-func (m MultiChainProvider) BroadcastTransaction(txHex string) (txId string, err error) {
+func (m MultiChainProvider) BroadcastTransaction(txHex string) (string, error) {
 	providers := m.allProviders()
-	resultChan := make(chan string)
-	errChan := make(chan error, len(providers))
+	type broadcastResult struct {
+		txId string
+		err  error
+	}
+	// Buffered so every goroutine can deliver its result even after we
+	// return early, guaranteeing the loop below receives exactly one
+	// message per provider.
+	results := make(chan broadcastResult, len(providers))
 
 	// Broadcasting transactions via all known (including boltz) providers is fine
 	for _, provider := range providers {
 		provider := provider
 		go func() {
-			result, err := provider.BroadcastTransaction(txHex)
-			if err == nil {
-				select {
-				case resultChan <- result:
-				default:
-				}
-			} else {
+			txId, err := provider.BroadcastTransaction(txHex)
+			if err != nil {
 				logger.Debugf("Error broadcasting transaction via %s: %v", provider, err)
-				errChan <- err
 			}
+			results <- broadcastResult{txId: txId, err: err}
 		}()
 	}
 
 	var merr multierror.Error
 	for range providers {
-		select {
-		case txId = <-resultChan:
-			return txId, nil
-		case err := <-errChan:
-			merr.Errors = append(merr.Errors, err)
+		result := <-results
+		if result.err == nil {
+			return result.txId, nil
 		}
+		merr.Errors = append(merr.Errors, result.err)
 	}
 	return "", &merr
 }
