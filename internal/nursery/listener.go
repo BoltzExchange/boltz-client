@@ -2,6 +2,8 @@ package nursery
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/database"
 	"github.com/BoltzExchange/boltz-client/v2/internal/logger"
@@ -19,6 +21,12 @@ func (nursery *Nursery) checkClaimableSwaps(currency boltz.Currency) error {
 	if err != nil {
 		return fmt.Errorf("could not query claimable Swaps: %w", err)
 	}
+	reverseSwaps = slices.DeleteFunc(reverseSwaps, func(swap *database.ReverseSwap) bool {
+		return !shouldClaimAutomatically(boltz.ReverseSwap, swap.Id, swap.Error)
+	})
+	chainSwaps = slices.DeleteFunc(chainSwaps, func(swap *database.ChainSwap) bool {
+		return !shouldClaimAutomatically(boltz.ChainSwap, swap.Id, swap.Error)
+	})
 	if len(reverseSwaps) > 0 || len(chainSwaps) > 0 {
 		logger.Infof("Found %d claimable Swaps", len(reverseSwaps)+len(chainSwaps))
 		if _, err := nursery.claimSwaps(currency, reverseSwaps, chainSwaps); err != nil {
@@ -26,6 +34,23 @@ func (nursery *Nursery) checkClaimableSwaps(currency boltz.Currency) error {
 		}
 	}
 	return nil
+}
+
+var permanentClaimErrors = []string{
+	"bad-txns-inputs-missingorspent",
+	"bad-txns-inputs-missing-or-spent",
+	"txn-mempool-conflict",
+}
+
+func shouldClaimAutomatically(swapType boltz.SwapType, swapId string, err string) bool {
+	lowerErr := strings.ToLower(err)
+	for _, permanentErr := range permanentClaimErrors {
+		if strings.Contains(lowerErr, permanentErr) {
+			logger.Debugf("Skipping automatic claim for %s Swap %s after permanent error: %s", swapType, swapId, err)
+			return false
+		}
+	}
+	return true
 }
 
 func (nursery *Nursery) startBlockListener(currency boltz.Currency) *utils.ChannelForwarder[*onchain.BlockEpoch] {
