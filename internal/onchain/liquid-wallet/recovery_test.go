@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
-	"time"
 
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
@@ -96,5 +95,5 @@ func TestWallet_RecreatesWithCorruptedLegacyStore(t *testing.T) {
 		transactions, err = recoveredWallet.GetTransactions(txCount, 0)
 		require.NoError(t, err)
 		return len(transactions) == txCount
-	}, 5*time.Second, 250*time.Millisecond)
+	}, 30*syncInterval, syncInterval)
 }
