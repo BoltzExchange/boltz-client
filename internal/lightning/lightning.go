@@ -21,7 +21,7 @@ const (
 	NodeTypeCln LightningNodeType = "CLN"
 
 	// The cltv expiry has to be lowered in regtest to allow for lower swap timeouts
-	RegtestCltv = 18
+	RegtestCltv = 24
 )
 
 var ErrInvoiceNotFound = errors.New("invoice not found")
