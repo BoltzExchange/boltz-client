@@ -404,7 +404,11 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 		logger.Info("Using configured Boltz endpoint: " + boltzUrl)
 	}
 
-	boltzApi := &boltz.Api{URL: boltzUrl, Referral: cfg.ReferralId}
+	boltzApi := &boltz.Api{
+		URL:      boltzUrl,
+		Referral: cfg.ReferralId,
+		Client:   http.Client{Timeout: 30 * time.Second},
+	}
 	if cfg.Proxy != "" {
 		proxy, err := url.Parse(cfg.Proxy)
 		if err != nil {
@@ -412,10 +416,7 @@ func initBoltz(cfg *config.Config, network *boltz.Network) (*boltz.Api, error) {
 		}
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport.Proxy = http.ProxyURL(proxy)
-		boltzApi.Client = http.Client{
-			Transport: transport,
-			Timeout:   30 * time.Second,
-		}
+		boltzApi.Client.Transport = transport
 	}
 
 	return boltzApi, nil
