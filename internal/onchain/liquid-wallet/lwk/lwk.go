@@ -601,7 +601,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_amp2_descriptor_from_str()
 		})
-		if checksum != 752 {
+		if checksum != 47737 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_amp2_descriptor_from_str: UniFFI API checksum mismatch")
 		}
@@ -986,11 +986,29 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_btc_to_ln()
+		})
+		if checksum != 42316 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_btc_to_ln: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_boltzsession_completed_swap_ids()
 		})
 		if checksum != 32553 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_boltzsession_completed_swap_ids: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_fetch_bolt12_invoice()
+		})
+		if checksum != 35212 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_fetch_bolt12_invoice: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1027,6 +1045,15 @@ func uniffiCheckChecksums() {
 		if checksum != 24979 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_boltzsession_lbtc_to_btc: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_ln_to_btc()
+		})
+		if checksum != 6772 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_ln_to_btc: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1117,6 +1144,15 @@ func uniffiCheckChecksums() {
 		if checksum != 47519 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_boltzsession_restorable_lbtc_to_btc_swaps: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_boltzsession_restorable_reverse_btc_swaps()
+		})
+		if checksum != 35288 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_boltzsession_restorable_reverse_btc_swaps: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1328,6 +1364,51 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoice_amount_sats()
+		})
+		if checksum != 2137 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoice_amount_sats: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoice_bolt11_invoice()
+		})
+		if checksum != 55620 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoice_bolt11_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoice_bolt12_invoice()
+		})
+		if checksum != 16474 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoice_bolt12_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoice_is_bolt11()
+		})
+		if checksum != 29075 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoice_is_bolt11: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_invoice_is_bolt12()
+		})
+		if checksum != 51626 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_invoice_is_bolt12: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_invoiceresponse_advance()
 		})
 		if checksum != 28093 {
@@ -1501,9 +1582,63 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice()
 		})
-		if checksum != 41990 {
+		if checksum != 47603 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lightningpayment_bolt12_invoice_amount()
+		})
+		if checksum != 1090 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_bolt12_invoice_amount: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lightningpayment_bolt12_offer_has_amount()
+		})
+		if checksum != 19213 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_bolt12_offer_has_amount: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lightningpayment_description()
+		})
+		if checksum != 12541 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_description: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lightningpayment_is_bolt12()
+		})
+		if checksum != 28992 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_is_bolt12: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lightningpayment_set_bolt12_invoice_amount()
+		})
+		if checksum != 30788 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_set_bolt12_invoice_amount: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lightningpayment_set_bolt12_invoice_amount_via_items()
+		})
+		if checksum != 53725 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lightningpayment_set_bolt12_invoice_amount_via_items: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1724,6 +1859,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_lwktestenv_network()
+		})
+		if checksum != 45785 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_lwktestenv_network: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_lwktestenv_send_to_address()
 		})
 		if checksum != 578 {
@@ -1886,6 +2030,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_payment_fetch_lnurl_invoice()
+		})
+		if checksum != 15964 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_payment_fetch_lnurl_invoice: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_payment_kind()
 		})
 		if checksum != 21742 {
@@ -1945,6 +2098,24 @@ func uniffiCheckChecksums() {
 		if checksum != 34751 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_payment_lnurl: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_payment_resolve_bip353()
+		})
+		if checksum != 62126 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_payment_resolve_bip353: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_payment_resolve_lnurl_info()
+		})
+		if checksum != 1427 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_payment_resolve_lnurl_info: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2044,6 +2215,15 @@ func uniffiCheckChecksums() {
 		if checksum != 46693 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_fee: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_preparepayresponse_lockup_address()
+		})
+		if checksum != 47201 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_preparepayresponse_lockup_address: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2185,9 +2365,27 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_psetbalance_fee()
 		})
-		if checksum != 45919 {
+		if checksum != 31768 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_psetbalance_fee: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_psetbalance_fees()
+		})
+		if checksum != 16881 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_psetbalance_fees: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_psetbalance_fees_in()
+		})
+		if checksum != 37794 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_psetbalance_fees_in: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2446,7 +2644,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_script_bytes()
 		})
-		if checksum != 35040 {
+		if checksum != 57904 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_script_bytes: UniFFI API checksum mismatch")
 		}
@@ -2464,7 +2662,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_script_jet_sha256_hex()
 		})
-		if checksum != 5565 {
+		if checksum != 57228 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_script_jet_sha256_hex: UniFFI API checksum mismatch")
 		}
@@ -2476,6 +2674,15 @@ func uniffiCheckChecksums() {
 		if checksum != 32896 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_script_to_asm: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_script_to_bytes()
+		})
+		if checksum != 34286 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_script_to_bytes: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2896,7 +3103,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_asset_bf()
 		})
-		if checksum != 3179 {
+		if checksum != 30117 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_asset_bf: UniFFI API checksum mismatch")
 		}
@@ -2905,7 +3112,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_asset_commitment()
 		})
-		if checksum != 16600 {
+		if checksum != 19954 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_asset_commitment: UniFFI API checksum mismatch")
 		}
@@ -2932,7 +3139,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_value_bf()
 		})
-		if checksum != 58526 {
+		if checksum != 3529 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_value_bf: UniFFI API checksum mismatch")
 		}
@@ -2941,7 +3148,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txoutsecrets_value_commitment()
 		})
-		if checksum != 41762 {
+		if checksum != 62649 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txoutsecrets_value_commitment: UniFFI API checksum mismatch")
 		}
@@ -2950,9 +3157,18 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_txid_bytes()
 		})
-		if checksum != 6953 {
+		if checksum != 44008 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_txid_bytes: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_txid_to_bytes()
+		})
+		if checksum != 51573 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_txid_to_bytes: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -3371,6 +3587,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_method_wolletbuilder_utxo_only()
+		})
+		if checksum != 35283 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_method_wolletbuilder_utxo_only: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wolletbuilder_with_legacy_fs_store()
 		})
 		if checksum != 35203 {
@@ -3382,7 +3607,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_method_wolletbuilder_with_merge_threshold()
 		})
-		if checksum != 37282 {
+		if checksum != 61627 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_method_wolletbuilder_with_merge_threshold: UniFFI API checksum mismatch")
 		}
@@ -3470,11 +3695,29 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_amp2_new()
+		})
+		if checksum != 8911 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_amp2_new: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_amp2_new_testnet()
 		})
 		if checksum != 61837 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_amp2_new_testnet: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_amp2descriptor_new_with_custom_descriptor()
+		})
+		if checksum != 53884 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_amp2descriptor_new_with_custom_descriptor: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -3664,6 +3907,15 @@ func uniffiCheckChecksums() {
 		if checksum != 40758 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_esploraclient_new_waterfalls: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_externalutxo_from_unchecked_data()
+		})
+		if checksum != 15302 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_externalutxo_from_unchecked_data: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -3875,9 +4127,27 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_script_from_bytes()
+		})
+		if checksum != 13959 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_script_from_bytes: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_script_from_string()
+		})
+		if checksum != 12141 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_script_from_string: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_script_new()
 		})
-		if checksum != 12404 {
+		if checksum != 19671 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_script_new: UniFFI API checksum mismatch")
 		}
@@ -3949,7 +4219,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_transaction_new()
 		})
-		if checksum != 34031 {
+		if checksum != 64527 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_transaction_new: UniFFI API checksum mismatch")
 		}
@@ -3974,9 +4244,27 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_txid_from_bytes()
+		})
+		if checksum != 287 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_txid_from_bytes: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_lwk_checksum_constructor_txid_from_string()
+		})
+		if checksum != 27945 {
+			// If this happens try cleaning and rebuilding your project
+			panic("lwk: uniffi_lwk_checksum_constructor_txid_from_string: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_lwk_checksum_constructor_txid_new()
 		})
-		if checksum != 63870 {
+		if checksum != 77 {
 			// If this happens try cleaning and rebuilding your project
 			panic("lwk: uniffi_lwk_checksum_constructor_txid_new: UniFFI API checksum mismatch")
 		}
@@ -5320,7 +5608,7 @@ type Amp2Interface interface {
 	// Ask the AMP2 server to cosign a PSET
 	Cosign(pset *Pset) (*Pset, error)
 	// Create an AMP2 wallet descriptor from the keyorigin xpub of a signer
-	DescriptorFromStr(keyoriginXpub string) (*Amp2Descriptor, error)
+	DescriptorFromStr(keyoriginXpub string, descriptorBlindingKey string) (*Amp2Descriptor, error)
 	// Register an AMP2 wallet with the AMP2 server
 	RegisterWallet(desc *Amp2Descriptor) (string, error)
 }
@@ -5328,6 +5616,22 @@ type Amp2Interface interface {
 // Wrapper over [`lwk_wollet::amp2::Amp2`]
 type Amp2 struct {
 	ffiObject FfiObject
+}
+
+// Create a new AMP2 client
+//
+// * `server_key` - The keyorigin xpub of the AMP2 server key
+// * `url` - The URL of the AMP2 server
+func NewAmp2(serverKey string, url string) (*Amp2, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_amp2_new(FfiConverterStringINSTANCE.Lower(serverKey), FfiConverterStringINSTANCE.Lower(url), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Amp2
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterAmp2INSTANCE.Lift(_uniffiRV), nil
+	}
 }
 
 // Construct an AMP2 context for Liquid Testnet
@@ -5354,12 +5658,12 @@ func (_self *Amp2) Cosign(pset *Pset) (*Pset, error) {
 }
 
 // Create an AMP2 wallet descriptor from the keyorigin xpub of a signer
-func (_self *Amp2) DescriptorFromStr(keyoriginXpub string) (*Amp2Descriptor, error) {
+func (_self *Amp2) DescriptorFromStr(keyoriginXpub string, descriptorBlindingKey string) (*Amp2Descriptor, error) {
 	_pointer := _self.ffiObject.incrementPointer("*Amp2")
 	defer _self.ffiObject.decrementPointer()
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
 		return C.uniffi_lwk_fn_method_amp2_descriptor_from_str(
-			_pointer, FfiConverterStringINSTANCE.Lower(keyoriginXpub), _uniffiStatus)
+			_pointer, FfiConverterStringINSTANCE.Lower(keyoriginXpub), FfiConverterStringINSTANCE.Lower(descriptorBlindingKey), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *Amp2Descriptor
@@ -5443,6 +5747,17 @@ type Amp2DescriptorInterface interface {
 // Wrapper over [`lwk_wollet::amp2::Amp2Descriptor`]
 type Amp2Descriptor struct {
 	ffiObject FfiObject
+}
+
+// Create an `Amp2Descriptor` using any `WolletDescriptor`
+//
+// Warning: AMP2 server only supports a limited subset of descriptors.
+// To make sure this AMP2 descriptor can be used safely,
+// register this with AMP2 as soon as possible.
+func Amp2DescriptorNewWithCustomDescriptor(desc *WolletDescriptor) *Amp2Descriptor {
+	return FfiConverterAmp2DescriptorINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_amp2descriptor_new_with_custom_descriptor(FfiConverterWolletDescriptorINSTANCE.Lower(desc), _uniffiStatus)
+	}))
 }
 
 func (_self *Amp2Descriptor) Descriptor() *WolletDescriptor {
@@ -6728,10 +7043,14 @@ func (_ FfiDestroyerBolt11Invoice) Destroy(value *Bolt11Invoice) {
 type BoltzSessionInterface interface {
 	// Create an onchain swap to convert BTC to LBTC
 	BtcToLbtc(amount uint64, refundAddress *BitcoinAddress, claimAddress *Address, webhook **WebHook) (*LockupResponse, error)
+	// Prepare to pay a Lightning invoice from Bitcoin onchain funds.
+	BtcToLn(lightningPayment *LightningPayment, refundAddress *BitcoinAddress, webhook **WebHook) (*PreparePayResponse, error)
 	// Get the list of completed swap IDs from the store
 	//
 	// Returns an error if no store is configured.
 	CompletedSwapIds() ([]string, error)
+	// Fetch a BOLT12 invoice without creating or starting a swap
+	FetchBolt12Invoice(lightningPayment *LightningPayment) (*Invoice, error)
 	// Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
 	FetchSwapsInfo() (string, error)
 	// Get the raw swap data (JSON) for a specific swap ID from the store
@@ -6742,6 +7061,8 @@ type BoltzSessionInterface interface {
 	Invoice(amount uint64, description *string, claimAddress *Address, webhook **WebHook) (*InvoiceResponse, error)
 	// Create an onchain swap to convert LBTC to BTC
 	LbtcToBtc(amount uint64, refundAddress *Address, claimAddress *BitcoinAddress, webhook **WebHook) (*LockupResponse, error)
+	// Create a new invoice for a Lightning to Bitcoin reverse swap.
+	LnToBtc(amount uint64, description *string, claimAddress *BitcoinAddress, webhook **WebHook) (*InvoiceResponse, error)
 	// Get the next index to use for deriving keypairs
 	NextIndexToUse() uint32
 	// Get the list of pending swap IDs from the store
@@ -6806,6 +7127,14 @@ type BoltzSessionInterface interface {
 	//
 	// The claim and refund addresses don't need to be the same used when creating the swap.
 	RestorableLbtcToBtcSwaps(swapList *SwapList, claimAddress *BitcoinAddress, refundAddress *Address) ([]string, error)
+	// From the swaps returned by the boltz api via [`BoltzSession::swap_restore`]:
+	//
+	// - filter the reverse BTC swaps
+	// - add information from the session
+	// - return typed data
+	//
+	// The claim address doesn't need to be the same used when creating the swap.
+	RestorableReverseBtcSwaps(swapList *SwapList, claimAddress *BitcoinAddress) ([]string, error)
 	// From the swaps returned by the boltz api via [`BoltzSession::swap_restore`]:
 	//
 	// - filter the reverse swaps
@@ -6892,6 +7221,22 @@ func (_self *BoltzSession) BtcToLbtc(amount uint64, refundAddress *BitcoinAddres
 	}
 }
 
+// Prepare to pay a Lightning invoice from Bitcoin onchain funds.
+func (_self *BoltzSession) BtcToLn(lightningPayment *LightningPayment, refundAddress *BitcoinAddress, webhook **WebHook) (*PreparePayResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_btc_to_ln(
+			_pointer, FfiConverterLightningPaymentINSTANCE.Lower(lightningPayment), FfiConverterBitcoinAddressINSTANCE.Lower(refundAddress), FfiConverterOptionalWebHookINSTANCE.Lower(webhook), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *PreparePayResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPreparePayResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
 // Get the list of completed swap IDs from the store
 //
 // Returns an error if no store is configured.
@@ -6909,6 +7254,22 @@ func (_self *BoltzSession) CompletedSwapIds() ([]string, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterSequenceStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Fetch a BOLT12 invoice without creating or starting a swap
+func (_self *BoltzSession) FetchBolt12Invoice(lightningPayment *LightningPayment) (*Invoice, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_fetch_bolt12_invoice(
+			_pointer, FfiConverterLightningPaymentINSTANCE.Lower(lightningPayment), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Invoice
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterInvoiceINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
@@ -6979,6 +7340,22 @@ func (_self *BoltzSession) LbtcToBtc(amount uint64, refundAddress *Address, clai
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterLockupResponseINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Create a new invoice for a Lightning to Bitcoin reverse swap.
+func (_self *BoltzSession) LnToBtc(amount uint64, description *string, claimAddress *BitcoinAddress, webhook **WebHook) (*InvoiceResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_boltzsession_ln_to_btc(
+			_pointer, FfiConverterUint64INSTANCE.Lower(amount), FfiConverterOptionalStringINSTANCE.Lower(description), FfiConverterBitcoinAddressINSTANCE.Lower(claimAddress), FfiConverterOptionalWebHookINSTANCE.Lower(webhook), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *InvoiceResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterInvoiceResponseINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
@@ -7158,6 +7535,30 @@ func (_self *BoltzSession) RestorableLbtcToBtcSwaps(swapList *SwapList, claimAdd
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_boltzsession_restorable_lbtc_to_btc_swaps(
 				_pointer, FfiConverterSwapListINSTANCE.Lower(swapList), FfiConverterBitcoinAddressINSTANCE.Lower(claimAddress), FfiConverterAddressINSTANCE.Lower(refundAddress), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterSequenceStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// From the swaps returned by the boltz api via [`BoltzSession::swap_restore`]:
+//
+// - filter the reverse BTC swaps
+// - add information from the session
+// - return typed data
+//
+// The claim address doesn't need to be the same used when creating the swap.
+func (_self *BoltzSession) RestorableReverseBtcSwaps(swapList *SwapList, claimAddress *BitcoinAddress) ([]string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*BoltzSession")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_boltzsession_restorable_reverse_btc_swaps(
+				_pointer, FfiConverterSwapListINSTANCE.Lower(swapList), FfiConverterBitcoinAddressINSTANCE.Lower(claimAddress), _uniffiStatus),
 		}
 	})
 	if _uniffiErr != nil {
@@ -7513,6 +7914,15 @@ func (_self *CurrencyCode) Ne(other *CurrencyCode) bool {
 	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
 		return C.uniffi_lwk_fn_method_currencycode_uniffi_trait_eq_ne(
 			_pointer, FfiConverterCurrencyCodeINSTANCE.Lower(other), _uniffiStatus)
+	}))
+}
+
+func (_self *CurrencyCode) Hash() uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*CurrencyCode")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_currencycode_uniffi_trait_hash(
+			_pointer, _uniffiStatus)
 	}))
 }
 
@@ -8036,6 +8446,29 @@ func NewExternalUtxo(vout uint32, tx *Transaction, unblinded *TxOutSecrets, maxW
 	}
 }
 
+// Construct an `ExternalUtxo` from unchecked outpoint/txout data.
+//
+// Unlike [`ExternalUtxo::new`], this constructor does not inspect a parent transaction or
+// derive `outpoint` and `txout` from it. It exists as an optimisation for callers that
+// already hold the exact outpoint, prevout, and unblinded data and want to avoid fetching or
+// materialising the full transaction just to construct the bindings object.
+//
+// Do not use this for pre-segwit external UTXOs. Pre-segwit inputs require the parent
+// transaction so the builder can populate `non_witness_utxo`, while this constructor always
+// creates an `ExternalUtxo` without it.
+//
+// Use this cautiously. Callers are responsible for ensuring that `outpoint` and `txout`
+// describe the same UTXO. As with [`ExternalUtxo::new`], callers must also ensure that
+// `unblinded` and `max_weight_to_satisfy` match that UTXO.
+//
+// IMPORTANT: This is a temporary workaround to speed up integration work
+// and should be removed after a more complete migration to `lwk`.
+func ExternalUtxoFromUncheckedData(outpoint *OutPoint, txout *TxOut, unblinded *TxOutSecrets, maxWeightToSatisfy uint32) *ExternalUtxo {
+	return FfiConverterExternalUtxoINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_externalutxo_from_unchecked_data(FfiConverterOutPointINSTANCE.Lower(outpoint), FfiConverterTxOutINSTANCE.Lower(txout), FfiConverterTxOutSecretsINSTANCE.Lower(unblinded), FfiConverterUint32INSTANCE.Lower(maxWeightToSatisfy), _uniffiStatus)
+	}))
+}
+
 func (object *ExternalUtxo) Destroy() {
 	runtime.SetFinalizer(object, nil)
 	object.ffiObject.destroy()
@@ -8436,6 +8869,145 @@ func (c FfiConverterForeignStoreLink) Write(writer io.Writer, value *ForeignStor
 type FfiDestroyerForeignStoreLink struct{}
 
 func (_ FfiDestroyerForeignStoreLink) Destroy(value *ForeignStoreLink) {
+	value.Destroy()
+}
+
+// Represents a lightning invoice (BOLT11 or BOLT12).
+type InvoiceInterface interface {
+	// Returns the amount in whole satoshis.
+	AmountSats() (uint64, error)
+	// Returns the BOLT11 invoice if this is a BOLT11 invoice.
+	Bolt11Invoice() **Bolt11Invoice
+	// Returns the BOLT12 invoice string if this is a BOLT12 invoice.
+	Bolt12Invoice() *string
+	// Returns true if this is a BOLT11 invoice.
+	IsBolt11() bool
+	// Returns true if this is a BOLT12 invoice.
+	IsBolt12() bool
+}
+
+// Represents a lightning invoice (BOLT11 or BOLT12).
+type Invoice struct {
+	ffiObject FfiObject
+}
+
+// Returns the amount in whole satoshis.
+func (_self *Invoice) AmountSats() (uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Invoice")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_invoice_amount_sats(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Returns the BOLT11 invoice if this is a BOLT11 invoice.
+func (_self *Invoice) Bolt11Invoice() **Bolt11Invoice {
+	_pointer := _self.ffiObject.incrementPointer("*Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalBolt11InvoiceINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoice_bolt11_invoice(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns the BOLT12 invoice string if this is a BOLT12 invoice.
+func (_self *Invoice) Bolt12Invoice() *string {
+	_pointer := _self.ffiObject.incrementPointer("*Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoice_bolt12_invoice(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Returns true if this is a BOLT11 invoice.
+func (_self *Invoice) IsBolt11() bool {
+	_pointer := _self.ffiObject.incrementPointer("*Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_invoice_is_bolt11(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+// Returns true if this is a BOLT12 invoice.
+func (_self *Invoice) IsBolt12() bool {
+	_pointer := _self.ffiObject.incrementPointer("*Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBoolINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_invoice_is_bolt12(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+func (_self *Invoice) String() string {
+	_pointer := _self.ffiObject.incrementPointer("*Invoice")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_invoice_uniffi_trait_display(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (object *Invoice) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterInvoice struct{}
+
+var FfiConverterInvoiceINSTANCE = FfiConverterInvoice{}
+
+func (c FfiConverterInvoice) Lift(pointer unsafe.Pointer) *Invoice {
+	result := &Invoice{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_lwk_fn_clone_invoice(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_lwk_fn_free_invoice(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*Invoice).Destroy)
+	return result
+}
+
+func (c FfiConverterInvoice) Read(reader io.Reader) *Invoice {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterInvoice) Lower(value *Invoice) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := value.ffiObject.incrementPointer("*Invoice")
+	defer value.ffiObject.decrementPointer()
+	return pointer
+
+}
+
+func (c FfiConverterInvoice) Write(writer io.Writer, value *Invoice) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerInvoice struct{}
+
+func (_ FfiDestroyerInvoice) Destroy(value *Invoice) {
 	value.Destroy()
 }
 
@@ -8867,7 +9439,43 @@ func (_ FfiDestroyerIssuance) Destroy(value *Issuance) {
 // Represents a lightning payment (bolt11 invoice or bolt12 offer)
 type LightningPaymentInterface interface {
 	// Returns the bolt11 invoice if the lightning payment is a bolt11 invoice
-	Bolt11Invoice() **Bolt11Invoice
+	Bolt11Invoice() (**Bolt11Invoice, error)
+	// Returns the invoice amount in satoshis for a BOLT12 offer if set
+	//
+	// Returns an error if this is not a BOLT12 offer
+	Bolt12InvoiceAmount() (*uint64, error)
+	// Checks if the BOLT12 offer has an amount
+	//
+	// Returns true if the offer has a per-item amount (requires specifying number of items),
+	// false if it doesn't (requires specifying total amount in sats).
+	//
+	// Returns an error if this is not a BOLT12 offer.
+	Bolt12OfferHasAmount() (bool, error)
+	// Returns the payment description if present
+	Description() (*string, error)
+	// Returns true if this is a BOLT12 offer
+	IsBolt12() (bool, error)
+	// Sets the amount for a BOLT12 offer without an amount
+	//
+	// The amount should be in satoshis.
+	//
+	// # Errors
+	//
+	// Returns an error if:
+	// - This is not a BOLT12 offer
+	// - The offer already has an amount (use set_bolt12_invoice_amount_via_items instead)
+	SetBolt12InvoiceAmount(amountSats uint64) error
+	// Sets the amount for a BOLT12 offer based on number of items
+	//
+	// This calculates the final amount as `items * offer_amount` where
+	// `offer_amount` is the per-item amount specified in the offer.
+	//
+	// # Errors
+	//
+	// Returns an error if:
+	// - This is not a BOLT12 offer
+	// - The offer does not have an amount set
+	SetBolt12InvoiceAmountViaItems(items uint64) error
 }
 
 // Represents a lightning payment (bolt11 invoice or bolt12 offer)
@@ -8896,15 +9504,137 @@ func LightningPaymentFromBolt11Invoice(invoice *Bolt11Invoice) *LightningPayment
 }
 
 // Returns the bolt11 invoice if the lightning payment is a bolt11 invoice
-func (_self *LightningPayment) Bolt11Invoice() **Bolt11Invoice {
+func (_self *LightningPayment) Bolt11Invoice() (**Bolt11Invoice, error) {
 	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
 	defer _self.ffiObject.decrementPointer()
-	return FfiConverterOptionalBolt11InvoiceINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_lightningpayment_bolt11_invoice(
 				_pointer, _uniffiStatus),
 		}
-	}))
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue **Bolt11Invoice
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalBolt11InvoiceINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Returns the invoice amount in satoshis for a BOLT12 offer if set
+//
+// Returns an error if this is not a BOLT12 offer
+func (_self *LightningPayment) Bolt12InvoiceAmount() (*uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lightningpayment_bolt12_invoice_amount(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Checks if the BOLT12 offer has an amount
+//
+// Returns true if the offer has a per-item amount (requires specifying number of items),
+// false if it doesn't (requires specifying total amount in sats).
+//
+// Returns an error if this is not a BOLT12 offer.
+func (_self *LightningPayment) Bolt12OfferHasAmount() (bool, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_lightningpayment_bolt12_offer_has_amount(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue bool
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoolINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Returns the payment description if present
+func (_self *LightningPayment) Description() (*string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_lightningpayment_description(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterOptionalStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Returns true if this is a BOLT12 offer
+func (_self *LightningPayment) IsBolt12() (bool, error) {
+	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) C.int8_t {
+		return C.uniffi_lwk_fn_method_lightningpayment_is_bolt12(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue bool
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBoolINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Sets the amount for a BOLT12 offer without an amount
+//
+// The amount should be in satoshis.
+//
+// # Errors
+//
+// Returns an error if:
+// - This is not a BOLT12 offer
+// - The offer already has an amount (use set_bolt12_invoice_amount_via_items instead)
+func (_self *LightningPayment) SetBolt12InvoiceAmount(amountSats uint64) error {
+	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_lightningpayment_set_bolt12_invoice_amount(
+			_pointer, FfiConverterUint64INSTANCE.Lower(amountSats), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
+}
+
+// Sets the amount for a BOLT12 offer based on number of items
+//
+// This calculates the final amount as `items * offer_amount` where
+// `offer_amount` is the per-item amount specified in the offer.
+//
+// # Errors
+//
+// Returns an error if:
+// - This is not a BOLT12 offer
+// - The offer does not have an amount set
+func (_self *LightningPayment) SetBolt12InvoiceAmountViaItems(items uint64) error {
+	_pointer := _self.ffiObject.incrementPointer("*LightningPayment")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_lightningpayment_set_bolt12_invoice_amount_via_items(
+			_pointer, FfiConverterUint64INSTANCE.Lower(items), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
 }
 func (object *LightningPayment) Destroy() {
 	runtime.SetFinalizer(object, nil)
@@ -9521,6 +10251,8 @@ type LwkTestEnvInterface interface {
 	Height() uint64
 	// Issue `satoshi` of an asset from the node
 	IssueAsset(satoshi uint64) AssetId
+	// Get the network of the test environment.
+	Network() *Network
 	// Send `satoshi` to `address` from the node
 	SendToAddress(address *Address, satoshi uint64, asset *AssetId) *Txid
 	// Get the Waterfalls URL of the test environment
@@ -9623,6 +10355,16 @@ func (_self *LwkTestEnv) IssueAsset(satoshi uint64) AssetId {
 			inner: C.uniffi_lwk_fn_method_lwktestenv_issue_asset(
 				_pointer, FfiConverterUint64INSTANCE.Lower(satoshi), _uniffiStatus),
 		}
+	}))
+}
+
+// Get the network of the test environment.
+func (_self *LwkTestEnv) Network() *Network {
+	_pointer := _self.ffiObject.incrementPointer("*LwkTestEnv")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterNetworkINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_lwktestenv_network(
+			_pointer, _uniffiStatus)
 	}))
 }
 
@@ -10086,6 +10828,15 @@ func (_self *Network) Ne(other *Network) bool {
 	}))
 }
 
+func (_self *Network) Hash() uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*Network")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_network_uniffi_trait_hash(
+			_pointer, _uniffiStatus)
+	}))
+}
+
 func (object *Network) Destroy() {
 	runtime.SetFinalizer(object, nil)
 	object.ffiObject.destroy()
@@ -10265,6 +11016,8 @@ type PaymentInterface interface {
 	//
 	// Returns the address portion of the original input string
 	BitcoinAddress() **BitcoinAddress
+	// Fetches a Bolt11 invoice from a LNURL callback (second step of LNURL-pay).
+	FetchLnurlInvoice(info LnUrlPayResponse, amountSats uint64) (*Payment, error)
 	// Returns the kind of payment category
 	Kind() PaymentKind
 	// Returns the Lightning invoice if this is a `LightningInvoice` category, `None` otherwise
@@ -10282,6 +11035,10 @@ type PaymentInterface interface {
 	LiquidBip21() *LiquidBip21
 	// Returns the LNURL as a string if this is an LnUrl category, None otherwise
 	Lnurl() *string
+	// Resolves a BIP353 payment instruction into a LightningOffer payment.
+	ResolveBip353() (*Payment, error)
+	// Resolves a LNURL into its metadata (first step of LNURL-pay).
+	ResolveLnurlInfo() (LnUrlPayResponse, error)
 }
 
 // A parsed payment category from a payment instruction string.
@@ -10353,6 +11110,22 @@ func (_self *Payment) BitcoinAddress() **BitcoinAddress {
 				_pointer, _uniffiStatus),
 		}
 	}))
+}
+
+// Fetches a Bolt11 invoice from a LNURL callback (second step of LNURL-pay).
+func (_self *Payment) FetchLnurlInvoice(info LnUrlPayResponse, amountSats uint64) (*Payment, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Payment")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_payment_fetch_lnurl_invoice(
+			_pointer, FfiConverterLnUrlPayResponseINSTANCE.Lower(info), FfiConverterUint64INSTANCE.Lower(amountSats), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Payment
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPaymentINSTANCE.Lift(_uniffiRV), nil
+	}
 }
 
 // Returns the kind of payment category
@@ -10440,6 +11213,40 @@ func (_self *Payment) Lnurl() *string {
 				_pointer, _uniffiStatus),
 		}
 	}))
+}
+
+// Resolves a BIP353 payment instruction into a LightningOffer payment.
+func (_self *Payment) ResolveBip353() (*Payment, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Payment")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_method_payment_resolve_bip353(
+			_pointer, _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Payment
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPaymentINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Resolves a LNURL into its metadata (first step of LNURL-pay).
+func (_self *Payment) ResolveLnurlInfo() (LnUrlPayResponse, error) {
+	_pointer := _self.ffiObject.incrementPointer("*Payment")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_payment_resolve_lnurl_info(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue LnUrlPayResponse
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterLnUrlPayResponseINSTANCE.Lift(_uniffiRV), nil
+	}
 }
 func (object *Payment) Destroy() {
 	runtime.SetFinalizer(object, nil)
@@ -10627,6 +11434,15 @@ func (_self *PosConfig) Ne(other *PosConfig) bool {
 	}))
 }
 
+func (_self *PosConfig) Hash() uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*PosConfig")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_posconfig_uniffi_trait_hash(
+			_pointer, _uniffiStatus)
+	}))
+}
+
 func (object *PosConfig) Destroy() {
 	runtime.SetFinalizer(object, nil)
 	object.ffiObject.destroy()
@@ -10790,6 +11606,7 @@ type PreparePayResponseInterface interface {
 	//
 	// It is equal to the amount requested onchain minus the amount of the bolt11 invoice
 	Fee() (*uint64, error)
+	LockupAddress() (string, error)
 	// The txid of the user lockup transaction of the swap.
 	LockupTxid() (*string, error)
 	// The txid of the refund transaction of the swap
@@ -10883,6 +11700,23 @@ func (_self *PreparePayResponse) Fee() (*uint64, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterOptionalUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func (_self *PreparePayResponse) LockupAddress() (string, error) {
+	_pointer := _self.ffiObject.incrementPointer("*PreparePayResponse")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_preparepayresponse_lockup_address(
+				_pointer, _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 
@@ -11260,7 +12094,14 @@ func (_ FfiDestroyerPset) Destroy(value *Pset) {
 
 type PsetBalanceInterface interface {
 	Balances() map[AssetId]int64
+	// Fee paid by this transaction.
+	//
+	// Warning: if there are multiple assets paying fees this function can return an incorrect value.
+	//
+	// Deprecated: use `fees_in(asset_id)` or `fees()` instead.
 	Fee() uint64
+	Fees() map[AssetId]uint64
+	FeesIn(asset AssetId) uint64
 	Recipients() []*Recipient
 }
 type PsetBalance struct {
@@ -11278,12 +12119,37 @@ func (_self *PsetBalance) Balances() map[AssetId]int64 {
 	}))
 }
 
+// Fee paid by this transaction.
+//
+// Warning: if there are multiple assets paying fees this function can return an incorrect value.
+//
+// Deprecated: use `fees_in(asset_id)` or `fees()` instead.
 func (_self *PsetBalance) Fee() uint64 {
 	_pointer := _self.ffiObject.incrementPointer("*PsetBalance")
 	defer _self.ffiObject.decrementPointer()
 	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
 		return C.uniffi_lwk_fn_method_psetbalance_fee(
 			_pointer, _uniffiStatus)
+	}))
+}
+
+func (_self *PsetBalance) Fees() map[AssetId]uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*PsetBalance")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterMapTypeAssetIdUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_psetbalance_fees(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (_self *PsetBalance) FeesIn(asset AssetId) uint64 {
+	_pointer := _self.ffiObject.incrementPointer("*PsetBalance")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterUint64INSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_lwk_fn_method_psetbalance_fees_in(
+			_pointer, FfiConverterTypeAssetIdINSTANCE.Lower(asset), _uniffiStatus)
 	}))
 }
 
@@ -12057,16 +12923,20 @@ func (_ FfiDestroyerRecipient) Destroy(value *Recipient) {
 // A Liquid script
 type ScriptInterface interface {
 	// Return the consensus encoded bytes of the script.
+	//
+	// Deprecated: use `to_bytes()` instead.
 	Bytes() []byte
 	// Whether a script pubkey is provably unspendable (like a burn script)
 	IsProvablyUnspendable() bool
 	// Returns SHA256 of the script's consensus bytes.
 	//
 	// Returns an equivalent value to the `jet::input_script_hash(index)`/`jet::output_script_hash(index)`.
-	JetSha256Hex() Hex
+	JetSha256Hex() string
 	// Return the string representation of the script showing op codes and their arguments.
 	// For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
 	ToAsm() string
+	// Return the consensus encoded bytes of the script.
+	ToBytes() []byte
 }
 
 // A Liquid script
@@ -12076,9 +12946,11 @@ type Script struct {
 
 // Construct a Script object from its hex representation.
 // To create the hex representation of a script use `to_string()`.
-func NewScript(hex Hex) (*Script, error) {
+//
+// Deprecated: use `from_string()` instead.
+func NewScript(hex string) (*Script, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_lwk_fn_constructor_script_new(FfiConverterTypeHexINSTANCE.Lower(hex), _uniffiStatus)
+		return C.uniffi_lwk_fn_constructor_script_new(FfiConverterStringINSTANCE.Lower(hex), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *Script
@@ -12095,6 +12967,33 @@ func ScriptEmpty() *Script {
 	}))
 }
 
+// Construct a Script object from its bytes.
+func ScriptFromBytes(bytes []byte) (*Script, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_script_from_bytes(FfiConverterBytesINSTANCE.Lower(bytes), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Script
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterScriptINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Construct a Script object from its canonical string representation.
+// To create the string representation of a script use `to_string()`.
+func ScriptFromString(s string) (*Script, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_script_from_string(FfiConverterStringINSTANCE.Lower(s), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Script
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterScriptINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
 // Create an OP_RETURN script (for burn outputs).
 func ScriptNewOpReturn(data []byte) *Script {
 	return FfiConverterScriptINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
@@ -12103,6 +13002,8 @@ func ScriptNewOpReturn(data []byte) *Script {
 }
 
 // Return the consensus encoded bytes of the script.
+//
+// Deprecated: use `to_bytes()` instead.
 func (_self *Script) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*Script")
 	defer _self.ffiObject.decrementPointer()
@@ -12127,10 +13028,10 @@ func (_self *Script) IsProvablyUnspendable() bool {
 // Returns SHA256 of the script's consensus bytes.
 //
 // Returns an equivalent value to the `jet::input_script_hash(index)`/`jet::output_script_hash(index)`.
-func (_self *Script) JetSha256Hex() Hex {
+func (_self *Script) JetSha256Hex() string {
 	_pointer := _self.ffiObject.incrementPointer("*Script")
 	defer _self.ffiObject.decrementPointer()
-	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_script_jet_sha256_hex(
 				_pointer, _uniffiStatus),
@@ -12146,6 +13047,18 @@ func (_self *Script) ToAsm() string {
 	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_script_to_asm(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Return the consensus encoded bytes of the script.
+func (_self *Script) ToBytes() []byte {
+	_pointer := _self.ffiObject.incrementPointer("*Script")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBytesINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_script_to_bytes(
 				_pointer, _uniffiStatus),
 		}
 	}))
@@ -12744,9 +13657,9 @@ type Transaction struct {
 // To create the hex representation of a transaction use `to_string()`.
 //
 // Deprecated: use `from_string()` instead.
-func NewTransaction(hex Hex) (*Transaction, error) {
+func NewTransaction(hex string) (*Transaction, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_lwk_fn_constructor_transaction_new(FfiConverterTypeHexINSTANCE.Lower(hex), _uniffiStatus)
+		return C.uniffi_lwk_fn_constructor_transaction_new(FfiConverterStringINSTANCE.Lower(hex), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *Transaction
@@ -13577,11 +14490,11 @@ type TxOutSecretsInterface interface {
 	// Return the asset blinding factor as a hex string.
 	//
 	// Deprecated: use `asset_blinding_factor()` instead.
-	AssetBf() Hex
+	AssetBf() string
 	// Get the asset commitment
 	//
 	// If the output is explicit, returns the empty string
-	AssetCommitment() Hex
+	AssetCommitment() string
 	// Return true if the output is explicit (no blinding factors).
 	IsExplicit() bool
 	// Return the value of the output.
@@ -13589,11 +14502,11 @@ type TxOutSecretsInterface interface {
 	// Return the value blinding factor as a hex string.
 	//
 	// Deprecated: use `value_blinding_factor()` instead.
-	ValueBf() Hex
+	ValueBf() string
 	// Get the value commitment
 	//
 	// If the output is explicit, returns the empty string
-	ValueCommitment() Hex
+	ValueCommitment() string
 }
 
 // Contains unblinded information such as the asset and the value of a transaction output
@@ -13616,10 +14529,10 @@ func (_self *TxOutSecrets) Asset() AssetId {
 // Return the asset blinding factor as a hex string.
 //
 // Deprecated: use `asset_blinding_factor()` instead.
-func (_self *TxOutSecrets) AssetBf() Hex {
+func (_self *TxOutSecrets) AssetBf() string {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
-	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_txoutsecrets_asset_bf(
 				_pointer, _uniffiStatus),
@@ -13630,10 +14543,10 @@ func (_self *TxOutSecrets) AssetBf() Hex {
 // Get the asset commitment
 //
 // If the output is explicit, returns the empty string
-func (_self *TxOutSecrets) AssetCommitment() Hex {
+func (_self *TxOutSecrets) AssetCommitment() string {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
-	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_txoutsecrets_asset_commitment(
 				_pointer, _uniffiStatus),
@@ -13664,10 +14577,10 @@ func (_self *TxOutSecrets) Value() uint64 {
 // Return the value blinding factor as a hex string.
 //
 // Deprecated: use `value_blinding_factor()` instead.
-func (_self *TxOutSecrets) ValueBf() Hex {
+func (_self *TxOutSecrets) ValueBf() string {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
-	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_txoutsecrets_value_bf(
 				_pointer, _uniffiStatus),
@@ -13678,10 +14591,10 @@ func (_self *TxOutSecrets) ValueBf() Hex {
 // Get the value commitment
 //
 // If the output is explicit, returns the empty string
-func (_self *TxOutSecrets) ValueCommitment() Hex {
+func (_self *TxOutSecrets) ValueCommitment() string {
 	_pointer := _self.ffiObject.incrementPointer("*TxOutSecrets")
 	defer _self.ffiObject.decrementPointer()
-	return FfiConverterTypeHexINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_txoutsecrets_value_commitment(
 				_pointer, _uniffiStatus),
@@ -13740,7 +14653,11 @@ func (_ FfiDestroyerTxOutSecrets) Destroy(value *TxOutSecrets) {
 // A transaction identifier.
 type TxidInterface interface {
 	// Return the bytes of the transaction identifier.
+	//
+	// Deprecated: use `to_bytes()` instead.
 	Bytes() []byte
+	// Return the bytes of the transaction identifier.
+	ToBytes() []byte
 }
 
 // A transaction identifier.
@@ -13749,9 +14666,39 @@ type Txid struct {
 }
 
 // Construct a Txid object
-func NewTxid(hex Hex) (*Txid, error) {
+//
+// Deprecated: use `from_string()` instead.
+func NewTxid(hex string) (*Txid, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
-		return C.uniffi_lwk_fn_constructor_txid_new(FfiConverterTypeHexINSTANCE.Lower(hex), _uniffiStatus)
+		return C.uniffi_lwk_fn_constructor_txid_new(FfiConverterStringINSTANCE.Lower(hex), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Txid
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterTxidINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Construct a Transaction object from its bytes.
+func TxidFromBytes(bytes []byte) (*Txid, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_txid_from_bytes(FfiConverterBytesINSTANCE.Lower(bytes), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *Txid
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterTxidINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Construct a Txid object from its canonical string representation.
+//
+// To create the string representation of a Txid use `to_string()`.
+func TxidFromString(s string) (*Txid, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_lwk_fn_constructor_txid_from_string(FfiConverterStringINSTANCE.Lower(s), _uniffiStatus)
 	})
 	if _uniffiErr != nil {
 		var _uniffiDefaultValue *Txid
@@ -13762,12 +14709,26 @@ func NewTxid(hex Hex) (*Txid, error) {
 }
 
 // Return the bytes of the transaction identifier.
+//
+// Deprecated: use `to_bytes()` instead.
 func (_self *Txid) Bytes() []byte {
 	_pointer := _self.ffiObject.incrementPointer("*Txid")
 	defer _self.ffiObject.decrementPointer()
 	return FfiConverterBytesINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_lwk_fn_method_txid_bytes(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+// Return the bytes of the transaction identifier.
+func (_self *Txid) ToBytes() []byte {
+	_pointer := _self.ffiObject.incrementPointer("*Txid")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBytesINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_lwk_fn_method_txid_to_bytes(
 				_pointer, _uniffiStatus),
 		}
 	}))
@@ -15243,9 +16204,15 @@ func (_ FfiDestroyerWollet) Destroy(value *Wollet) {
 type WolletBuilderInterface interface {
 	// Build the wallet from this builder.
 	Build() (*Wollet, error)
+	// Set the wallet as "utxo only"
+	//
+	// **Experimental**: This API may change without notice.
+	UtxoOnly(utxoOnly bool) error
 	// Persist wallet updates in the legacy encrypted filesystem store.
 	WithLegacyFsStore(datadir string) error
 	// Set the threshold used to merge persisted updates during build.
+	//
+	// **Experimental**: This API may change without notice.
 	//
 	// `None` disables merging (default behavior).
 	WithMergeThreshold(mergeThreshold *uint32) error
@@ -15279,6 +16246,20 @@ func (_self *WolletBuilder) Build() (*Wollet, error) {
 	}
 }
 
+// Set the wallet as "utxo only"
+//
+// **Experimental**: This API may change without notice.
+func (_self *WolletBuilder) UtxoOnly(utxoOnly bool) error {
+	_pointer := _self.ffiObject.incrementPointer("*WolletBuilder")
+	defer _self.ffiObject.decrementPointer()
+	_, _uniffiErr := rustCallWithError[LwkError](FfiConverterLwkError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_lwk_fn_method_wolletbuilder_utxo_only(
+			_pointer, FfiConverterBoolINSTANCE.Lower(utxoOnly), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
+}
+
 // Persist wallet updates in the legacy encrypted filesystem store.
 func (_self *WolletBuilder) WithLegacyFsStore(datadir string) error {
 	_pointer := _self.ffiObject.incrementPointer("*WolletBuilder")
@@ -15292,6 +16273,8 @@ func (_self *WolletBuilder) WithLegacyFsStore(datadir string) error {
 }
 
 // Set the threshold used to merge persisted updates during build.
+//
+// **Experimental**: This API may change without notice.
 //
 // `None` disables merging (default behavior).
 func (_self *WolletBuilder) WithMergeThreshold(mergeThreshold *uint32) error {
@@ -15513,21 +16496,33 @@ func (_ FfiDestroyerWolletDescriptor) Destroy(value *WolletDescriptor) {
 
 // A builder for the `BoltzSession`
 type BoltzSessionBuilder struct {
-	Network                  *Network
-	Client                   *AnyClient
-	Timeout                  *uint64
-	Mnemonic                 **Mnemonic
-	Logging                  *Logging
-	Polling                  bool
-	TimeoutAdvance           *uint64
-	NextIndexToUse           *uint32
-	ReferralId               *string
+	Network        *Network
+	Client         *AnyClient
+	Timeout        *uint64
+	Mnemonic       **Mnemonic
+	Logging        *Logging
+	Polling        bool
+	TimeoutAdvance *uint64
+	NextIndexToUse *uint32
+	ReferralId     *string
+	// Optional Boltz API base URL override.
+	//
+	// The caller is responsible for ensuring the provider behind this URL matches `network`.
+	//
+	// If this is used together with `store`, the caller must use a different store per provider.
+	// Persisted swap data is not namespaced by provider, so reusing the same store across
+	// different `api_url` values can mix swaps from different providers.
+	ApiUrl                   *string
 	BitcoinElectrumClientUrl *string
 	RandomPreimages          bool
 	// Optional store for persisting swap data
 	//
 	// When set, swap data will be automatically persisted to the store after creation
 	// and on each state change. This enables automatic restoration of pending swaps.
+	//
+	// The store is not namespaced by provider, so if different `api_url` values are used the
+	// caller must use a different store per provider to avoid mixing swaps from different
+	// providers.
 	Store **ForeignStoreLink
 }
 
@@ -15541,6 +16536,7 @@ func (r *BoltzSessionBuilder) Destroy() {
 	FfiDestroyerOptionalUint64{}.Destroy(r.TimeoutAdvance)
 	FfiDestroyerOptionalUint32{}.Destroy(r.NextIndexToUse)
 	FfiDestroyerOptionalString{}.Destroy(r.ReferralId)
+	FfiDestroyerOptionalString{}.Destroy(r.ApiUrl)
 	FfiDestroyerOptionalString{}.Destroy(r.BitcoinElectrumClientUrl)
 	FfiDestroyerBool{}.Destroy(r.RandomPreimages)
 	FfiDestroyerOptionalForeignStoreLink{}.Destroy(r.Store)
@@ -15566,6 +16562,7 @@ func (c FfiConverterBoltzSessionBuilder) Read(reader io.Reader) BoltzSessionBuil
 		FfiConverterOptionalUint32INSTANCE.Read(reader),
 		FfiConverterOptionalStringINSTANCE.Read(reader),
 		FfiConverterOptionalStringINSTANCE.Read(reader),
+		FfiConverterOptionalStringINSTANCE.Read(reader),
 		FfiConverterBoolINSTANCE.Read(reader),
 		FfiConverterOptionalForeignStoreLinkINSTANCE.Read(reader),
 	}
@@ -15589,6 +16586,7 @@ func (c FfiConverterBoltzSessionBuilder) Write(writer io.Writer, value BoltzSess
 	FfiConverterOptionalUint64INSTANCE.Write(writer, value.TimeoutAdvance)
 	FfiConverterOptionalUint32INSTANCE.Write(writer, value.NextIndexToUse)
 	FfiConverterOptionalStringINSTANCE.Write(writer, value.ReferralId)
+	FfiConverterOptionalStringINSTANCE.Write(writer, value.ApiUrl)
 	FfiConverterOptionalStringINSTANCE.Write(writer, value.BitcoinElectrumClientUrl)
 	FfiConverterBoolINSTANCE.Write(writer, value.RandomPreimages)
 	FfiConverterOptionalForeignStoreLinkINSTANCE.Write(writer, value.Store)
@@ -15608,6 +16606,10 @@ type EsploraClientBuilder struct {
 	Concurrency *uint32
 	Timeout     *uint8
 	UtxoOnly    bool
+	// HTTP headers to set on each request, for example to authenticate with a backend
+	Headers *map[string]string
+	// Token provider for authenticated Esplora and Waterfalls backends
+	TokenProvider *TokenProvider
 }
 
 func (r *EsploraClientBuilder) Destroy() {
@@ -15617,6 +16619,8 @@ func (r *EsploraClientBuilder) Destroy() {
 	FfiDestroyerOptionalUint32{}.Destroy(r.Concurrency)
 	FfiDestroyerOptionalUint8{}.Destroy(r.Timeout)
 	FfiDestroyerBool{}.Destroy(r.UtxoOnly)
+	FfiDestroyerOptionalMapStringString{}.Destroy(r.Headers)
+	FfiDestroyerOptionalTokenProvider{}.Destroy(r.TokenProvider)
 }
 
 type FfiConverterEsploraClientBuilder struct{}
@@ -15635,6 +16639,8 @@ func (c FfiConverterEsploraClientBuilder) Read(reader io.Reader) EsploraClientBu
 		FfiConverterOptionalUint32INSTANCE.Read(reader),
 		FfiConverterOptionalUint8INSTANCE.Read(reader),
 		FfiConverterBoolINSTANCE.Read(reader),
+		FfiConverterOptionalMapStringStringINSTANCE.Read(reader),
+		FfiConverterOptionalTokenProviderINSTANCE.Read(reader),
 	}
 }
 
@@ -15653,6 +16659,8 @@ func (c FfiConverterEsploraClientBuilder) Write(writer io.Writer, value EsploraC
 	FfiConverterOptionalUint32INSTANCE.Write(writer, value.Concurrency)
 	FfiConverterOptionalUint8INSTANCE.Write(writer, value.Timeout)
 	FfiConverterBoolINSTANCE.Write(writer, value.UtxoOnly)
+	FfiConverterOptionalMapStringStringINSTANCE.Write(writer, value.Headers)
+	FfiConverterOptionalTokenProviderINSTANCE.Write(writer, value.TokenProvider)
 }
 
 type FfiDestroyerEsploraClientBuilder struct{}
@@ -15710,6 +16718,68 @@ func (c FfiConverterLiquidBip21) Write(writer io.Writer, value LiquidBip21) {
 type FfiDestroyerLiquidBip21 struct{}
 
 func (_ FfiDestroyerLiquidBip21) Destroy(value LiquidBip21) {
+	value.Destroy()
+}
+
+// LNURL-pay metadata response
+type LnUrlPayResponse struct {
+	// The callback URL to fetch the invoice
+	Callback string
+	// Maximum amount (in millisatoshis) the service is willing to receive
+	MaxSendable uint64
+	// Minimum amount (in millisatoshis) the service is willing to receive
+	MinSendable uint64
+	// Metadata describing the payment
+	Metadata string
+	// The type of LNURL request (should be "payRequest")
+	Tag string
+}
+
+func (r *LnUrlPayResponse) Destroy() {
+	FfiDestroyerString{}.Destroy(r.Callback)
+	FfiDestroyerUint64{}.Destroy(r.MaxSendable)
+	FfiDestroyerUint64{}.Destroy(r.MinSendable)
+	FfiDestroyerString{}.Destroy(r.Metadata)
+	FfiDestroyerString{}.Destroy(r.Tag)
+}
+
+type FfiConverterLnUrlPayResponse struct{}
+
+var FfiConverterLnUrlPayResponseINSTANCE = FfiConverterLnUrlPayResponse{}
+
+func (c FfiConverterLnUrlPayResponse) Lift(rb RustBufferI) LnUrlPayResponse {
+	return LiftFromRustBuffer[LnUrlPayResponse](c, rb)
+}
+
+func (c FfiConverterLnUrlPayResponse) Read(reader io.Reader) LnUrlPayResponse {
+	return LnUrlPayResponse{
+		FfiConverterStringINSTANCE.Read(reader),
+		FfiConverterUint64INSTANCE.Read(reader),
+		FfiConverterUint64INSTANCE.Read(reader),
+		FfiConverterStringINSTANCE.Read(reader),
+		FfiConverterStringINSTANCE.Read(reader),
+	}
+}
+
+func (c FfiConverterLnUrlPayResponse) Lower(value LnUrlPayResponse) C.RustBuffer {
+	return LowerIntoRustBuffer[LnUrlPayResponse](c, value)
+}
+
+func (c FfiConverterLnUrlPayResponse) LowerExternal(value LnUrlPayResponse) ExternalCRustBuffer {
+	return RustBufferFromC(LowerIntoRustBuffer[LnUrlPayResponse](c, value))
+}
+
+func (c FfiConverterLnUrlPayResponse) Write(writer io.Writer, value LnUrlPayResponse) {
+	FfiConverterStringINSTANCE.Write(writer, value.Callback)
+	FfiConverterUint64INSTANCE.Write(writer, value.MaxSendable)
+	FfiConverterUint64INSTANCE.Write(writer, value.MinSendable)
+	FfiConverterStringINSTANCE.Write(writer, value.Metadata)
+	FfiConverterStringINSTANCE.Write(writer, value.Tag)
+}
+
+type FfiDestroyerLnUrlPayResponse struct{}
+
+func (_ FfiDestroyerLnUrlPayResponse) Destroy(value LnUrlPayResponse) {
 	value.Destroy()
 }
 
@@ -15925,12 +16995,14 @@ func (err LwkError) Unwrap() error {
 
 // Err* are used for checking error type with `errors.Is`
 var ErrLwkErrorGeneric = fmt.Errorf("LwkErrorGeneric")
+var ErrLwkErrorGenericWithSwapId = fmt.Errorf("LwkErrorGenericWithSwapId")
 var ErrLwkErrorPoisonError = fmt.Errorf("LwkErrorPoisonError")
 var ErrLwkErrorMagicRoutingHint = fmt.Errorf("LwkErrorMagicRoutingHint")
 var ErrLwkErrorSwapExpired = fmt.Errorf("LwkErrorSwapExpired")
 var ErrLwkErrorNoBoltzUpdate = fmt.Errorf("LwkErrorNoBoltzUpdate")
 var ErrLwkErrorObjectConsumed = fmt.Errorf("LwkErrorObjectConsumed")
 var ErrLwkErrorBoltzBackendHttpError = fmt.Errorf("LwkErrorBoltzBackendHttpError")
+var ErrLwkErrorEsploraHttpError = fmt.Errorf("LwkErrorEsploraHttpError")
 
 // Variant structs
 type LwkErrorGeneric struct {
@@ -15959,6 +17031,41 @@ func (err LwkErrorGeneric) Error() string {
 
 func (self LwkErrorGeneric) Is(target error) bool {
 	return target == ErrLwkErrorGeneric
+}
+
+type LwkErrorGenericWithSwapId struct {
+	Msg    string
+	SwapId string
+}
+
+func NewLwkErrorGenericWithSwapId(
+	msg string,
+	swapId string,
+) *LwkError {
+	return &LwkError{err: &LwkErrorGenericWithSwapId{
+		Msg:    msg,
+		SwapId: swapId}}
+}
+
+func (e LwkErrorGenericWithSwapId) destroy() {
+	FfiDestroyerString{}.Destroy(e.Msg)
+	FfiDestroyerString{}.Destroy(e.SwapId)
+}
+
+func (err LwkErrorGenericWithSwapId) Error() string {
+	return fmt.Sprint("GenericWithSwapId",
+		": ",
+
+		"Msg=",
+		err.Msg,
+		", ",
+		"SwapId=",
+		err.SwapId,
+	)
+}
+
+func (self LwkErrorGenericWithSwapId) Is(target error) bool {
+	return target == ErrLwkErrorGenericWithSwapId
 }
 
 type LwkErrorPoisonError struct {
@@ -16137,6 +17244,48 @@ func (self LwkErrorBoltzBackendHttpError) Is(target error) bool {
 	return target == ErrLwkErrorBoltzBackendHttpError
 }
 
+type LwkErrorEsploraHttpError struct {
+	Url    string
+	Status uint16
+	Body   *string
+}
+
+func NewLwkErrorEsploraHttpError(
+	url string,
+	status uint16,
+	body *string,
+) *LwkError {
+	return &LwkError{err: &LwkErrorEsploraHttpError{
+		Url:    url,
+		Status: status,
+		Body:   body}}
+}
+
+func (e LwkErrorEsploraHttpError) destroy() {
+	FfiDestroyerString{}.Destroy(e.Url)
+	FfiDestroyerUint16{}.Destroy(e.Status)
+	FfiDestroyerOptionalString{}.Destroy(e.Body)
+}
+
+func (err LwkErrorEsploraHttpError) Error() string {
+	return fmt.Sprint("EsploraHttpError",
+		": ",
+
+		"Url=",
+		err.Url,
+		", ",
+		"Status=",
+		err.Status,
+		", ",
+		"Body=",
+		err.Body,
+	)
+}
+
+func (self LwkErrorEsploraHttpError) Is(target error) bool {
+	return target == ErrLwkErrorEsploraHttpError
+}
+
 type FfiConverterLwkError struct{}
 
 var FfiConverterLwkErrorINSTANCE = FfiConverterLwkError{}
@@ -16162,28 +17311,39 @@ func (c FfiConverterLwkError) Read(reader io.Reader) *LwkError {
 			Msg: FfiConverterStringINSTANCE.Read(reader),
 		}}
 	case 2:
+		return &LwkError{&LwkErrorGenericWithSwapId{
+			Msg:    FfiConverterStringINSTANCE.Read(reader),
+			SwapId: FfiConverterStringINSTANCE.Read(reader),
+		}}
+	case 3:
 		return &LwkError{&LwkErrorPoisonError{
 			Msg: FfiConverterStringINSTANCE.Read(reader),
 		}}
-	case 3:
+	case 4:
 		return &LwkError{&LwkErrorMagicRoutingHint{
 			Address: FfiConverterStringINSTANCE.Read(reader),
 			Amount:  FfiConverterUint64INSTANCE.Read(reader),
 			Uri:     FfiConverterStringINSTANCE.Read(reader),
 		}}
-	case 4:
+	case 5:
 		return &LwkError{&LwkErrorSwapExpired{
 			SwapId: FfiConverterStringINSTANCE.Read(reader),
 			Status: FfiConverterStringINSTANCE.Read(reader),
 		}}
-	case 5:
-		return &LwkError{&LwkErrorNoBoltzUpdate{}}
 	case 6:
-		return &LwkError{&LwkErrorObjectConsumed{}}
+		return &LwkError{&LwkErrorNoBoltzUpdate{}}
 	case 7:
+		return &LwkError{&LwkErrorObjectConsumed{}}
+	case 8:
 		return &LwkError{&LwkErrorBoltzBackendHttpError{
 			Status: FfiConverterUint16INSTANCE.Read(reader),
 			Error_: FfiConverterOptionalStringINSTANCE.Read(reader),
+		}}
+	case 9:
+		return &LwkError{&LwkErrorEsploraHttpError{
+			Url:    FfiConverterStringINSTANCE.Read(reader),
+			Status: FfiConverterUint16INSTANCE.Read(reader),
+			Body:   FfiConverterOptionalStringINSTANCE.Read(reader),
 		}}
 	default:
 		panic(fmt.Sprintf("Unknown error code %d in FfiConverterLwkError.Read()", errorID))
@@ -16195,26 +17355,35 @@ func (c FfiConverterLwkError) Write(writer io.Writer, value *LwkError) {
 	case *LwkErrorGeneric:
 		writeInt32(writer, 1)
 		FfiConverterStringINSTANCE.Write(writer, variantValue.Msg)
-	case *LwkErrorPoisonError:
+	case *LwkErrorGenericWithSwapId:
 		writeInt32(writer, 2)
 		FfiConverterStringINSTANCE.Write(writer, variantValue.Msg)
-	case *LwkErrorMagicRoutingHint:
+		FfiConverterStringINSTANCE.Write(writer, variantValue.SwapId)
+	case *LwkErrorPoisonError:
 		writeInt32(writer, 3)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.Msg)
+	case *LwkErrorMagicRoutingHint:
+		writeInt32(writer, 4)
 		FfiConverterStringINSTANCE.Write(writer, variantValue.Address)
 		FfiConverterUint64INSTANCE.Write(writer, variantValue.Amount)
 		FfiConverterStringINSTANCE.Write(writer, variantValue.Uri)
 	case *LwkErrorSwapExpired:
-		writeInt32(writer, 4)
+		writeInt32(writer, 5)
 		FfiConverterStringINSTANCE.Write(writer, variantValue.SwapId)
 		FfiConverterStringINSTANCE.Write(writer, variantValue.Status)
 	case *LwkErrorNoBoltzUpdate:
-		writeInt32(writer, 5)
-	case *LwkErrorObjectConsumed:
 		writeInt32(writer, 6)
-	case *LwkErrorBoltzBackendHttpError:
+	case *LwkErrorObjectConsumed:
 		writeInt32(writer, 7)
+	case *LwkErrorBoltzBackendHttpError:
+		writeInt32(writer, 8)
 		FfiConverterUint16INSTANCE.Write(writer, variantValue.Status)
 		FfiConverterOptionalStringINSTANCE.Write(writer, variantValue.Error_)
+	case *LwkErrorEsploraHttpError:
+		writeInt32(writer, 9)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.Url)
+		FfiConverterUint16INSTANCE.Write(writer, variantValue.Status)
+		FfiConverterOptionalStringINSTANCE.Write(writer, variantValue.Body)
 	default:
 		_ = variantValue
 		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterLwkError.Write", value))
@@ -16227,6 +17396,8 @@ func (_ FfiDestroyerLwkError) Destroy(value *LwkError) {
 	switch variantValue := value.err.(type) {
 	case LwkErrorGeneric:
 		variantValue.destroy()
+	case LwkErrorGenericWithSwapId:
+		variantValue.destroy()
 	case LwkErrorPoisonError:
 		variantValue.destroy()
 	case LwkErrorMagicRoutingHint:
@@ -16238,6 +17409,8 @@ func (_ FfiDestroyerLwkError) Destroy(value *LwkError) {
 	case LwkErrorObjectConsumed:
 		variantValue.destroy()
 	case LwkErrorBoltzBackendHttpError:
+		variantValue.destroy()
+	case LwkErrorEsploraHttpError:
 		variantValue.destroy()
 	default:
 		_ = variantValue
@@ -16410,6 +17583,103 @@ func (FfiConverterSwapAsset) Write(writer io.Writer, value SwapAsset) {
 type FfiDestroyerSwapAsset struct{}
 
 func (_ FfiDestroyerSwapAsset) Destroy(value SwapAsset) {
+}
+
+// Provider of a token for authenticated Esplora and Waterfalls backends.
+//
+// Some Esplora servers, particularly enterprise deployments like
+// [Blockstream Enterprise](https://blockstream.info/explorer-api), require authentication for
+// access.
+type TokenProvider interface {
+	Destroy()
+}
+
+// No token is needed
+type TokenProviderNone struct {
+}
+
+func (e TokenProviderNone) Destroy() {
+}
+
+// A static token is used as-is for every request
+type TokenProviderStatic struct {
+	Token string
+}
+
+func (e TokenProviderStatic) Destroy() {
+	FfiDestroyerString{}.Destroy(e.Token)
+}
+
+// An OAuth2 token is obtained from the Blockstream API and refreshed automatically
+type TokenProviderBlockstream struct {
+	Url          string
+	ClientId     string
+	ClientSecret string
+}
+
+func (e TokenProviderBlockstream) Destroy() {
+	FfiDestroyerString{}.Destroy(e.Url)
+	FfiDestroyerString{}.Destroy(e.ClientId)
+	FfiDestroyerString{}.Destroy(e.ClientSecret)
+}
+
+type FfiConverterTokenProvider struct{}
+
+var FfiConverterTokenProviderINSTANCE = FfiConverterTokenProvider{}
+
+func (c FfiConverterTokenProvider) Lift(rb RustBufferI) TokenProvider {
+	return LiftFromRustBuffer[TokenProvider](c, rb)
+}
+
+func (c FfiConverterTokenProvider) Lower(value TokenProvider) C.RustBuffer {
+	return LowerIntoRustBuffer[TokenProvider](c, value)
+}
+
+func (c FfiConverterTokenProvider) LowerExternal(value TokenProvider) ExternalCRustBuffer {
+	return RustBufferFromC(LowerIntoRustBuffer[TokenProvider](c, value))
+}
+func (FfiConverterTokenProvider) Read(reader io.Reader) TokenProvider {
+	id := readInt32(reader)
+	switch id {
+	case 1:
+		return TokenProviderNone{}
+	case 2:
+		return TokenProviderStatic{
+			FfiConverterStringINSTANCE.Read(reader),
+		}
+	case 3:
+		return TokenProviderBlockstream{
+			FfiConverterStringINSTANCE.Read(reader),
+			FfiConverterStringINSTANCE.Read(reader),
+			FfiConverterStringINSTANCE.Read(reader),
+		}
+	default:
+		panic(fmt.Sprintf("invalid enum value %v in FfiConverterTokenProvider.Read()", id))
+	}
+}
+
+func (FfiConverterTokenProvider) Write(writer io.Writer, value TokenProvider) {
+	switch variant_value := value.(type) {
+	case TokenProviderNone:
+		writeInt32(writer, 1)
+	case TokenProviderStatic:
+		writeInt32(writer, 2)
+		FfiConverterStringINSTANCE.Write(writer, variant_value.Token)
+	case TokenProviderBlockstream:
+		writeInt32(writer, 3)
+		FfiConverterStringINSTANCE.Write(writer, variant_value.Url)
+		FfiConverterStringINSTANCE.Write(writer, variant_value.ClientId)
+		FfiConverterStringINSTANCE.Write(writer, variant_value.ClientSecret)
+	default:
+		_ = variant_value
+		panic(fmt.Sprintf("invalid enum value `%v` in FfiConverterTokenProvider.Write", value))
+	}
+}
+
+type FfiDestroyerTokenProvider struct{}
+
+func (_ FfiDestroyerTokenProvider) Destroy(value TokenProvider) {
+	value.Destroy()
 }
 
 type FfiConverterOptionalUint8 struct{}
@@ -17478,6 +18748,47 @@ func (_ FfiDestroyerOptionalLiquidBip21) Destroy(value *LiquidBip21) {
 	}
 }
 
+type FfiConverterOptionalTokenProvider struct{}
+
+var FfiConverterOptionalTokenProviderINSTANCE = FfiConverterOptionalTokenProvider{}
+
+func (c FfiConverterOptionalTokenProvider) Lift(rb RustBufferI) *TokenProvider {
+	return LiftFromRustBuffer[*TokenProvider](c, rb)
+}
+
+func (_ FfiConverterOptionalTokenProvider) Read(reader io.Reader) *TokenProvider {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterTokenProviderINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalTokenProvider) Lower(value *TokenProvider) C.RustBuffer {
+	return LowerIntoRustBuffer[*TokenProvider](c, value)
+}
+
+func (c FfiConverterOptionalTokenProvider) LowerExternal(value *TokenProvider) ExternalCRustBuffer {
+	return RustBufferFromC(LowerIntoRustBuffer[*TokenProvider](c, value))
+}
+
+func (_ FfiConverterOptionalTokenProvider) Write(writer io.Writer, value *TokenProvider) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterTokenProviderINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalTokenProvider struct{}
+
+func (_ FfiDestroyerOptionalTokenProvider) Destroy(value *TokenProvider) {
+	if value != nil {
+		FfiDestroyerTokenProvider{}.Destroy(*value)
+	}
+}
+
 type FfiConverterOptionalSequenceTypeAssetId struct{}
 
 var FfiConverterOptionalSequenceTypeAssetIdINSTANCE = FfiConverterOptionalSequenceTypeAssetId{}
@@ -17516,6 +18827,47 @@ type FfiDestroyerOptionalSequenceTypeAssetId struct{}
 func (_ FfiDestroyerOptionalSequenceTypeAssetId) Destroy(value *[]AssetId) {
 	if value != nil {
 		FfiDestroyerSequenceTypeAssetId{}.Destroy(*value)
+	}
+}
+
+type FfiConverterOptionalMapStringString struct{}
+
+var FfiConverterOptionalMapStringStringINSTANCE = FfiConverterOptionalMapStringString{}
+
+func (c FfiConverterOptionalMapStringString) Lift(rb RustBufferI) *map[string]string {
+	return LiftFromRustBuffer[*map[string]string](c, rb)
+}
+
+func (_ FfiConverterOptionalMapStringString) Read(reader io.Reader) *map[string]string {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterMapStringStringINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalMapStringString) Lower(value *map[string]string) C.RustBuffer {
+	return LowerIntoRustBuffer[*map[string]string](c, value)
+}
+
+func (c FfiConverterOptionalMapStringString) LowerExternal(value *map[string]string) ExternalCRustBuffer {
+	return RustBufferFromC(LowerIntoRustBuffer[*map[string]string](c, value))
+}
+
+func (_ FfiConverterOptionalMapStringString) Write(writer io.Writer, value *map[string]string) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterMapStringStringINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalMapStringString struct{}
+
+func (_ FfiDestroyerOptionalMapStringString) Destroy(value *map[string]string) {
+	if value != nil {
+		FfiDestroyerMapStringString{}.Destroy(*value)
 	}
 }
 
@@ -18419,17 +19771,6 @@ type FfiConverterTypeAssetId = FfiConverterString
 type FfiDestroyerTypeAssetId = FfiDestroyerString
 
 var FfiConverterTypeAssetIdINSTANCE = FfiConverterString{}
-
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- * It's also what we have an external type that references a custom type.
- */
-type Hex = string
-type FfiConverterTypeHex = FfiConverterString
-type FfiDestroyerTypeHex = FfiDestroyerString
-
-var FfiConverterTypeHexINSTANCE = FfiConverterString{}
 
 // Derive asset id from contract and transaction input
 func DeriveAssetId(txin *TxIn, contract *Contract) (AssetId, error) {
