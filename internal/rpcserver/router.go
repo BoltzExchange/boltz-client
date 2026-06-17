@@ -564,28 +564,39 @@ func (server *routedBoltzServer) ClaimSwaps(ctx context.Context, request *boltzr
 	var reverseSwaps []*database.ReverseSwap
 	var chainSwaps []*database.ChainSwap
 	var currency boltz.Currency
+	var err error
 
-	claimableReverseSwaps, claimableChainSwaps, err := server.queryClaimableSwaps(ctx)
+	if len(request.SwapIds) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no swap ids provided")
+	}
+
+	tenantId := requireTenantId(ctx)
+	swapQuery := database.SwapQuery{Ids: request.SwapIds, TenantId: &tenantId}
+
+	chainSwaps, err = server.database.QueryChainSwaps(swapQuery)
+	if err != nil {
+		return nil, err
+	}
+	reverseSwaps, err = server.database.QueryReverseSwaps(swapQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, swap := range claimableReverseSwaps {
-		if slices.Contains(request.SwapIds, swap.Id) {
-			currency = swap.Pair.To
-			reverseSwaps = append(reverseSwaps, swap)
-		}
+	if len(chainSwaps) == 0 && len(reverseSwaps) == 0 {
+		return nil, status.Errorf(codes.NotFound, "no swaps with ids %s found", request.SwapIds)
 	}
 
-	for _, chainSwap := range claimableChainSwaps {
-		if slices.Contains(request.SwapIds, chainSwap.Id) {
-			currency = chainSwap.Pair.To
-			chainSwaps = append(chainSwaps, chainSwap)
+	for _, chainSwap := range chainSwaps {
+		if currency != "" && currency != chainSwap.Pair.To {
+			return nil, status.Errorf(codes.InvalidArgument, "all swaps must be the same currency")
 		}
+		currency = chainSwap.Pair.To
 	}
-
-	if len(reverseSwaps) == 0 && len(chainSwaps) == 0 {
-		return nil, status.Errorf(codes.NotFound, "no claimable swaps with ids %s found", request.SwapIds)
+	for _, reverseSwap := range reverseSwaps {
+		if currency != "" && currency != reverseSwap.Pair.To {
+			return nil, status.Errorf(codes.InvalidArgument, "all swaps must be the same currency")
+		}
+		currency = reverseSwap.Pair.To
 	}
 
 	if destination, ok := request.Destination.(*boltzrpc.ClaimSwapsRequest_Address); ok {

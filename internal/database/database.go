@@ -345,6 +345,7 @@ type SwapQuery struct {
 	TenantId *Id
 	Limit    *uint64
 	Offset   *uint64
+	Ids      []string
 }
 
 var PendingSwapQuery = SwapQuery{
@@ -387,6 +388,14 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 	if query.TenantId != nil {
 		conditions = append(conditions, "tenantId = ?")
 		values = append(values, query.TenantId)
+	}
+	if len(query.Ids) > 0 {
+		placeholders := make([]string, len(query.Ids))
+		for i, id := range query.Ids {
+			placeholders[i] = "?"
+			values = append(values, id)
+		}
+		conditions = append(conditions, "id IN ("+strings.Join(placeholders, ",")+")")
 	}
 	var where string
 	if len(conditions) > 0 {

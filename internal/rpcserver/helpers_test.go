@@ -42,6 +42,11 @@ func requireCode(t *testing.T, err error, code codes.Code) {
 	assert.Equal(t, code, status.Code(err))
 }
 
+func tenantClient(t *testing.T, admin client.Boltz, name string) client.Boltz {
+	_, write, _ := createTenant(t, admin, name)
+	return client.NewBoltzClient(write)
+}
+
 func loadConfig(t *testing.T) *config.Config {
 	dataDir := "test"
 	cfg, err := config.LoadConfig(dataDir)
