@@ -538,8 +538,9 @@ func TestChainSwap(t *testing.T) {
 							checkTxOutAddress(t, chain, parseCurrency(pair.To), response.TransactionId, toAddress, true)
 							checkSwap(t, client, info.Id)
 
+							// claiming again should re-broadcast without error
 							_, err = client.ClaimSwaps(request)
-							requireCode(t, err, codes.NotFound)
+							require.NoError(t, err)
 						})
 					})
 					t.Run("Wallet", func(t *testing.T) {
@@ -570,9 +571,18 @@ func TestChainSwap(t *testing.T) {
 								return fromWallet.Balance.Unconfirmed > 0
 							}, 10*time.Second, 250*time.Millisecond)
 
+							// claiming again should re-broadcast without error
 							_, err = client.ClaimSwaps(request)
-							requireCode(t, err, codes.NotFound)
+							require.NoError(t, err)
 						})
+					})
+					t.Run("Tenant", func(t *testing.T) {
+						info, _, _ := createClaimable(t)
+
+						// the swap belongs to the admin tenant, so another tenant must not be able to claim it
+						tenant := tenantClient(t, client, "claim-tenant")
+						_, err := tenant.ClaimSwaps(&boltzrpc.ClaimSwapsRequest{SwapIds: []string{info.Id}})
+						requireCode(t, err, codes.NotFound)
 					})
 				})
 			}

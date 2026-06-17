@@ -5,6 +5,8 @@ package rpcserver
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -248,6 +250,47 @@ func TestReverseSwap(t *testing.T) {
 		checkSwap(t, client, swap.Id, chain)
 	})
 
+	t.Run("PermanentBroadcastErrorStopsRetry", func(t *testing.T) {
+		cfg := loadConfig(t)
+		chain := getOnchain(t, cfg)
+		client, _, stop := setup(t, setupOptions{cfg: cfg, chain: chain})
+		defer stop()
+
+		originalChain := chain.Btc.Chain
+		var broadcasts atomic.Int32
+		chainMock := onchainmock.NewMockChainProvider(t)
+		chainMock.EXPECT().BroadcastTransaction(mock.Anything).RunAndReturn(func(string) (string, error) {
+			broadcasts.Add(1)
+			return "", errors.New("bad-txns-inputs-missingorspent")
+		}).Maybe()
+		coverChainProvider(t, chainMock, originalChain)
+		chain.Btc.Chain = chainMock
+
+		swap, err := client.CreateReverseSwap(&boltzrpc.CreateReverseSwapRequest{
+			Amount:         100000,
+			AcceptZeroConf: false,
+		})
+		require.NoError(t, err)
+
+		_, statusStream := swapStream(t, client, swap.Id)
+		statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+		test.MineBlock()
+		info := statusStream(boltzrpc.SwapState_ERROR, boltz.TransactionConfirmed)
+		require.Equal(t, "broadcast: bad-txns-inputs-missingorspent", info.ReverseSwap.Error)
+		require.Equal(t, int32(1), broadcasts.Load())
+
+		test.MineBlock()
+		require.Never(t, func() bool {
+			return broadcasts.Load() > 1
+		}, 3*time.Second, 100*time.Millisecond)
+
+		info, err = client.GetSwapInfo(swap.Id)
+		require.NoError(t, err)
+		require.Equal(t, boltzrpc.SwapState_ERROR, info.ReverseSwap.State)
+		require.Empty(t, info.ReverseSwap.ClaimTransactionId)
+		require.Equal(t, "broadcast: bad-txns-inputs-missingorspent", info.ReverseSwap.Error)
+	})
+
 	t.Run("Standalone", func(t *testing.T) {
 		cfg := loadConfig(t)
 		cfg.Standalone = true
@@ -441,8 +484,9 @@ func TestReverseSwap(t *testing.T) {
 
 				checkTxOutAddress(t, chain, boltz.CurrencyBtc, response.TransactionId, destination.Address, true)
 
+				// claiming again should re-broadcast without error
 				_, err = client.ClaimSwaps(request)
-				requireCode(t, err, codes.NotFound)
+				require.NoError(t, err)
 			})
 		})
 		t.Run("Wallet", func(t *testing.T) {
@@ -468,9 +512,18 @@ func TestReverseSwap(t *testing.T) {
 				require.NotEmpty(t, claimedSwap.ReverseSwap.ClaimAddress)
 				checkTxOutAddress(t, chain, boltz.CurrencyBtc, response.TransactionId, claimedSwap.ReverseSwap.ClaimAddress, true)
 
+				// claiming again should re-broadcast without error
 				_, err = client.ClaimSwaps(request)
-				requireCode(t, err, codes.NotFound)
+				require.NoError(t, err)
 			})
+		})
+		t.Run("Tenant", func(t *testing.T) {
+			info, _, _ := createClaimable(t)
+
+			// the swap belongs to the admin tenant, so another tenant must not be able to claim it
+			tenant := tenantClient(t, client, "claim-tenant")
+			_, err := tenant.ClaimSwaps(&boltzrpc.ClaimSwapsRequest{SwapIds: []string{info.Id}})
+			requireCode(t, err, codes.NotFound)
 		})
 	})
 }

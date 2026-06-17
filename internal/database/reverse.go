@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
@@ -237,7 +236,7 @@ func (database *Database) QueryReverseSwap(id string) (reverseSwap *ReverseSwap,
 			return reverseSwap, err
 		}
 	} else {
-		return reverseSwap, errors.New("could not find Reverse Swap " + id)
+		return reverseSwap, sql.ErrNoRows
 	}
 
 	return reverseSwap, err
@@ -277,6 +276,7 @@ WHERE toCurrency = ?
 func (database *Database) QueryClaimableReverseSwaps(tenantId *Id, currency boltz.Currency) ([]*ReverseSwap, error) {
 	query := claimableSwapsQuery
 	values := []any{currency, boltz.TransactionRefunded.String()}
+	query, values = excludePermanentErrors("reverseSwaps.error", query, values)
 	if tenantId != nil {
 		query += " AND tenantId = ?"
 		values = append(values, *tenantId)

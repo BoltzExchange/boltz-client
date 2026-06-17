@@ -345,6 +345,7 @@ type SwapQuery struct {
 	TenantId *Id
 	Limit    *uint64
 	Offset   *uint64
+	Ids      []string
 }
 
 var PendingSwapQuery = SwapQuery{
@@ -388,6 +389,14 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 		conditions = append(conditions, "tenantId = ?")
 		values = append(values, query.TenantId)
 	}
+	if len(query.Ids) > 0 {
+		placeholders := make([]string, len(query.Ids))
+		for i, id := range query.Ids {
+			placeholders[i] = "?"
+			values = append(values, id)
+		}
+		conditions = append(conditions, "id IN ("+strings.Join(placeholders, ",")+")")
+	}
 	var where string
 	if len(conditions) > 0 {
 		where = " WHERE " + strings.Join(conditions, " AND ")
@@ -406,6 +415,24 @@ func (query *SwapQuery) ToWhereClauseWithExisting(conditions []string, values []
 
 func (query *SwapQuery) ToWhereClause() (string, []any) {
 	return query.ToWhereClauseWithExisting([]string{}, []any{})
+}
+
+// permanentClaimErrors are error substrings that mean a swap can never be claimed
+// (e.g. the lockup inputs are missing or already spent). Swaps whose stored error
+// contains one of these are excluded from the claimable queries so they are not
+// retried automatically nor offered for manual claiming.
+var permanentClaimErrors = []string{
+	"bad-txns-inputs-missingorspent",
+	"bad-txns-inputs-missing-or-spent",
+	"txn-mempool-conflict",
+}
+
+func excludePermanentErrors(errorColumn, query string, values []any) (string, []any) {
+	for _, permanentErr := range permanentClaimErrors {
+		query += fmt.Sprintf(" AND (%s IS NULL OR %s NOT LIKE ?)", errorColumn, errorColumn)
+		values = append(values, "%"+permanentErr+"%")
+	}
+	return query, values
 }
 
 func (database *Database) Connect() error {

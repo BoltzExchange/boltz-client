@@ -330,6 +330,7 @@ WHERE data.lockupTransactionId != ''
 func (database *Database) QueryClaimableChainSwaps(tenantId *Id, currency boltz.Currency) ([]*ChainSwap, error) {
 	query := claimableChainSwapsQuery
 	values := []any{currency, boltzrpc.SwapState_REFUNDED}
+	query, values = excludePermanentErrors("swaps.error", query, values)
 	if tenantId != nil {
 		query += " AND tenantId = ?"
 		values = append(values, tenantId)
