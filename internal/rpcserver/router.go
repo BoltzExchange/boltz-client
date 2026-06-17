@@ -583,7 +583,7 @@ func (server *routedBoltzServer) ClaimSwaps(ctx context.Context, request *boltzr
 	}
 
 	if len(chainSwaps) == 0 && len(reverseSwaps) == 0 {
-		return nil, status.Errorf(codes.NotFound, "no swaps with ids %s found", request.SwapIds)
+		return nil, status.Errorf(codes.NotFound, "no swaps with ids %v found", strings.Join(request.SwapIds, ","))
 	}
 
 	for _, chainSwap := range chainSwaps {
