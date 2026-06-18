@@ -1,4 +1,17 @@
 
+<a name="v2.12.1"></a>
+## [v2.12.1] - 2026-06-18
+### Feat
+- exclude permant errors from automatic retry ([#687](https://github.com/BoltzExchange/boltz-client/issues/687))
+
+### Fix
+- clamp underflow in CheckAmounts ([#684](https://github.com/BoltzExchange/boltz-client/issues/684))
+- multi chain broadcast race ([#685](https://github.com/BoltzExchange/boltz-client/issues/685))
+
+### Refactor
+- use disable signers rpc in integration tests ([#683](https://github.com/BoltzExchange/boltz-client/issues/683))
+
+
 <a name="v2.12.0"></a>
 ## [v2.12.0] - 2026-05-12
 ### Fix
@@ -926,6 +939,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.12.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.0...v2.12.1
 [v2.12.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.3...v2.12.0
 [v2.11.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.2...v2.11.3
 [v2.11.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.1...v2.11.2
