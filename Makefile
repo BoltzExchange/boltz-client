@@ -1,5 +1,5 @@
 PKG := github.com/BoltzExchange/boltz-client/v2
-VERSION := 2.12.0
+VERSION := 2.12.1
 GO_VERSION := 1.26.2-bookworm
 RUST_VERSION := $(shell awk -F'"' '/^channel = / {print $$2}' rust-toolchain.toml)
 
