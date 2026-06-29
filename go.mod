@@ -5,7 +5,7 @@ go 1.26.2
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/BoltzExchange/go-electrum v0.0.0-20241108085421-d6484ac8e978
-	github.com/BurntSushi/toml v1.3.2
+	github.com/BurntSushi/toml v1.4.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/briandowns/spinner v1.23.0
 	github.com/btcsuite/btcd v0.24.2-beta.rc1.0.20240403021926-ae5533602c46
@@ -164,7 +164,7 @@ require (
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/opencontainers/runc v1.2.8 // indirect
+	github.com/opencontainers/runc v1.3.6 // indirect
 	github.com/ory/dockertest/v3 v3.10.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
