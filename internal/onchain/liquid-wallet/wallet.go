@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -386,8 +387,9 @@ func (w *Wallet) autoConsolidate() error {
 		return fmt.Errorf("get utxos: %w", err)
 	}
 	consolidationThreshold := *w.backend.cfg.ConsolidationThreshold
-	if consolidationThreshold > 0 && len(utxos) >= int(consolidationThreshold) {
-		logger.Debugf("Auto consolidating wallet %s with %d utxos", w.info, len(utxos))
+	consolidationUtxos, total := w.consolidationUtxos(utxos, consolidationThreshold)
+	if len(consolidationUtxos) > 0 {
+		logger.Debugf("Auto consolidating wallet %s with %d of %d L-BTC utxos", w.info, len(consolidationUtxos), total)
 		address, err := w.NewAddress()
 		if err != nil {
 			return fmt.Errorf("new address: %w", err)
@@ -398,11 +400,11 @@ func (w *Wallet) autoConsolidate() error {
 		}
 		feeRate = max(onchain.FeeFloor[boltz.CurrencyLiquid], feeRate)
 		logger.Debugf("Using fee rate of %f sat/vbyte for consolidation", feeRate)
-		txId, err := w.SendToAddress(onchain.WalletSendArgs{
+		txId, err := w.sendToAddress(onchain.WalletSendArgs{
 			SendAll:     true,
 			SatPerVbyte: feeRate,
 			Address:     address,
-		})
+		}, consolidationUtxos)
 		if err != nil {
 			return fmt.Errorf("send: %w", err)
 		}
@@ -410,6 +412,56 @@ func (w *Wallet) autoConsolidate() error {
 		return nil
 	}
 	return nil
+}
+
+func (w *Wallet) lbtcUtxoValue(utxo *lwk.WalletTxOut) (uint64, bool) {
+	unblinded := utxo.Unblinded()
+	if unblinded == nil || unblinded.Asset() != w.assetId() {
+		return 0, false
+	}
+	return unblinded.Value(), true
+}
+
+type consolidationUtxo struct {
+	outpoint *lwk.OutPoint
+	value    uint64
+}
+
+func (w *Wallet) consolidationUtxos(utxos []*lwk.WalletTxOut, limit uint64) ([]*lwk.OutPoint, int) {
+	if limit == 0 {
+		return nil, 0
+	}
+
+	var candidates []consolidationUtxo
+	for _, utxo := range utxos {
+		if utxo.Height() == nil {
+			continue
+		}
+		value, ok := w.lbtcUtxoValue(utxo)
+		if !ok {
+			continue
+		}
+		candidates = append(candidates, consolidationUtxo{
+			outpoint: utxo.Outpoint(),
+			value:    value,
+		})
+	}
+	if uint64(len(candidates)) < limit {
+		return nil, len(candidates)
+	}
+	total := len(candidates)
+
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].value > candidates[j].value
+	})
+
+	batchSize := int(limit)
+	candidates = candidates[:batchSize]
+	result := make([]*lwk.OutPoint, 0, batchSize)
+	for _, utxo := range candidates {
+		result = append(result, utxo.outpoint)
+	}
+	return result, total
 }
 
 func (w *Wallet) Ready() bool {
@@ -435,10 +487,8 @@ func (w *Wallet) GetBalance() (*onchain.Balance, error) {
 	if err != nil {
 		return nil, err
 	}
-	assetId := w.assetId()
 	for _, utxo := range utxos {
-		if utxo.Unblinded().Asset() == assetId {
-			value := utxo.Unblinded().Value()
+		if value, ok := w.lbtcUtxoValue(utxo); ok {
 			if utxo.Height() != nil {
 				result.Confirmed += value
 			} else {
@@ -536,7 +586,7 @@ func (w *Wallet) DeriveBlindingKey(address string) (*btcec.PrivateKey, error) {
 	return privKey, nil
 }
 
-func (w *Wallet) tryCreateTransaction(args onchain.WalletSendArgs) (*lwk.Transaction, error) {
+func (w *Wallet) tryCreateTransaction(args onchain.WalletSendArgs, walletUtxos []*lwk.OutPoint) (*lwk.Transaction, error) {
 	if w.signer == nil {
 		return nil, errors.New("wallet is readonly")
 	}
@@ -559,6 +609,11 @@ func (w *Wallet) tryCreateTransaction(args onchain.WalletSendArgs) (*lwk.Transac
 	rate := float32(args.SatPerVbyte * 1000)
 	if err := builder.FeeRate(&rate); err != nil {
 		return nil, fmt.Errorf("set fee rate: %w", err)
+	}
+	if len(walletUtxos) > 0 {
+		if err := builder.SetWalletUtxos(walletUtxos); err != nil {
+			return nil, fmt.Errorf("set wallet utxos: %w", err)
+		}
 	}
 
 	pset, err := builder.Finish(w.Wollet)
@@ -587,14 +642,14 @@ func (w *Wallet) tryCreateTransaction(args onchain.WalletSendArgs) (*lwk.Transac
 	return tx, nil
 }
 
-func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transaction, error) {
-	tx, err := w.tryCreateTransaction(args)
+func (w *Wallet) createTransaction(args onchain.WalletSendArgs, walletUtxos []*lwk.OutPoint) (*lwk.Transaction, error) {
+	tx, err := w.tryCreateTransaction(args, walletUtxos)
 	if err != nil && strings.Contains(err.Error(), "insufficient") {
 		// LWK can't handle the scenario where the amount for a sweep is calculated via
 		// GetSendFee and then passed to SendToAddress without SendAll specified.
 		if !args.SendAll {
 			args.SendAll = true
-			sendAllTx, sendAllErr := w.tryCreateTransaction(args)
+			sendAllTx, sendAllErr := w.tryCreateTransaction(args, walletUtxos)
 			if sendAllErr == nil {
 				sendAmount, _, sendAllErr := w.getSendAmount(sendAllTx)
 				if sendAllErr != nil {
@@ -611,10 +666,14 @@ func (w *Wallet) createTransaction(args onchain.WalletSendArgs) (*lwk.Transactio
 }
 
 func (w *Wallet) SendToAddress(args onchain.WalletSendArgs) (string, error) {
+	return w.sendToAddress(args, nil)
+}
+
+func (w *Wallet) sendToAddress(args onchain.WalletSendArgs, walletUtxos []*lwk.OutPoint) (string, error) {
 	w.sendLock.Lock()
 	defer w.sendLock.Unlock()
 
-	tx, err := w.createTransaction(args)
+	tx, err := w.createTransaction(args, walletUtxos)
 	if err != nil {
 		return "", err
 	}
@@ -684,7 +743,7 @@ func (w *Wallet) getSendAmount(tx *lwk.Transaction) (uint64, uint64, error) {
 }
 
 func (w *Wallet) GetSendFee(args onchain.WalletSendArgs) (send uint64, fee uint64, err error) {
-	tx, err := w.createTransaction(args)
+	tx, err := w.createTransaction(args, nil)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -702,10 +761,8 @@ func (w *Wallet) GetOutputs(address string) ([]*onchain.Output, error) {
 	for _, utxo := range utxos {
 		if utxo.Address().String() == address {
 			output := &onchain.Output{TxId: utxo.Outpoint().Txid().String()}
-			if unblinded := utxo.Unblinded(); unblinded != nil {
-				if unblinded.Asset() == w.assetId() {
-					output.Value = unblinded.Value()
-				}
+			if value, ok := w.lbtcUtxoValue(utxo); ok {
+				output.Value = value
 			}
 			outputs = append(outputs, output)
 		}

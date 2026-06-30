@@ -86,9 +86,9 @@ func TestWallet_NewAddress(t *testing.T) {
 }
 
 func TestWallet_AutoConsolidate(t *testing.T) {
-	numTxns := 3
+	numTxns := 5
 	cfg := test.LiquidBackendConfig(t)
-	consolidationThreshold := uint64(numTxns)
+	consolidationThreshold := uint64(3)
 	cfg.ConsolidationThreshold = &consolidationThreshold
 	backend, err := liquid_wallet.NewBackend(cfg)
 	require.NoError(t, err)
@@ -114,6 +114,11 @@ func TestWallet_AutoConsolidate(t *testing.T) {
 			for _, tx := range txes {
 				// look for the consolidation tx
 				if tx.BalanceChange != int64(amount) {
+					rawTx := test.GetRawTransaction(test.LiquidCli, tx.Id)
+					consolidationTx, err := lwk.TransactionFromString(rawTx)
+					require.NoError(t, err)
+					require.Equal(t, int(consolidationThreshold), len(consolidationTx.Inputs()))
+
 					total := uint64(numTxns) * amount
 					change := uint64(tx.BalanceChange)
 					require.Equal(t, balance.Total, total+change)
