@@ -110,13 +110,16 @@ func (autoSwap *AutoSwap) UpdateLightningConfig(request *autoswaprpc.UpdateLight
 	lnSwapper := autoSwap.lnSwapper
 	var base *SerializedLnConfig
 	if lnSwapper == nil || request.GetReset_() {
-		autoSwap.lnSwapper = &LightningSwapper{
+		if lnSwapper != nil {
+			lnSwapper.Stop()
+		}
+		lnSwapper = &LightningSwapper{
 			shared:      autoSwap.shared,
 			swapperType: Lightning,
 		}
 		base = DefaultLightningConfig()
 	} else {
-		base = autoSwap.lnSwapper.cfg.SerializedLnConfig
+		base = lnSwapper.cfg.SerializedLnConfig
 	}
 	if config == nil {
 		config = base
@@ -128,9 +131,10 @@ func (autoSwap *AutoSwap) UpdateLightningConfig(request *autoswaprpc.UpdateLight
 		config = updated.(*SerializedLnConfig)
 	}
 
-	if err := autoSwap.lnSwapper.setConfig(NewLightningConfig(config, autoSwap.shared)); err != nil {
+	if err := lnSwapper.setConfig(NewLightningConfig(config, autoSwap.shared)); err != nil {
 		return err
 	}
+	autoSwap.lnSwapper = lnSwapper
 	return autoSwap.saveConfig()
 }
 
