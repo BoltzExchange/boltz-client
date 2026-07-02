@@ -94,6 +94,9 @@ func TestAutoSwap(t *testing.T) {
 		t.Run("KeepsReserveBalance", func(t *testing.T) {
 			reset(t)
 
+			_, write, _ := createTenant(t, admin, "test")
+			tenant := client.NewAutoSwapClient(write)
+
 			fromWallet := fundedWallet(t, admin, boltzrpc.Currency_LBTC)
 			maxBalance := fromWallet.Balance.Confirmed - 1000
 			chainCfg := &autoswaprpc.ChainConfig{
@@ -105,9 +108,6 @@ func TestAutoSwap(t *testing.T) {
 			}
 
 			executeChainRecommendation(t, chainCfg)
-
-			_, write, _ := createTenant(t, admin, "test")
-			tenant := client.NewAutoSwapClient(write)
 
 			_, err := tenant.GetChainConfig()
 			require.Error(t, err)
