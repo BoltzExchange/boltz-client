@@ -39,6 +39,7 @@ func run(cmd string) string {
 
 const WalletMnemonic = "fog pen possible deer cool muscle describe awkward enforce injury pelican ridge used enrich female enrich museum verify emotion ask office tonight primary large"
 const WalletId = 1
+const mineUntilBatchSize int64 = 6
 
 func WalletInfo(currency boltz.Currency) onchain.WalletInfo {
 	return onchain.WalletInfo{
@@ -187,10 +188,33 @@ func ClnCli(cmd string) string {
 	return run("lightning-cli-sim 1 " + cmd)
 }
 
+func LndCli(node int, cmd string) string {
+	return run(fmt.Sprintf("lncli-sim %d %s", node, cmd))
+}
+
 func syncCln() {
 	for ClnCli("getinfo | jq -r .blockheight") != BtcCli("getblockcount") {
 		time.Sleep(250 * time.Millisecond)
 	}
+}
+
+func syncLnd() {
+	blockHeight := BtcCli("getblockcount")
+	for i := 1; i <= 3; i++ {
+		for {
+			info := LndCli(i, "getinfo | jq -r '[.block_height, .synced_to_chain] | @tsv'")
+			parts := strings.Split(info, "\t")
+			if len(parts) == 2 && parts[0] == blockHeight && parts[1] == "true" {
+				break
+			}
+			time.Sleep(250 * time.Millisecond)
+		}
+	}
+}
+
+func syncLightning() {
+	syncCln()
+	syncLnd()
 }
 
 func MineBlock() {
@@ -203,8 +227,15 @@ func MineUntil(t *testing.T, cli Cli, height int64) {
 	blockHeight, err := strconv.ParseInt(cli("getblockcount"), 10, 64)
 	require.NoError(t, err)
 	blocks := height - blockHeight
-	cli(fmt.Sprintf("-generate %d", blocks))
-	syncCln()
+	for blocks > 0 {
+		batch := blocks
+		if batch > mineUntilBatchSize {
+			batch = mineUntilBatchSize
+		}
+		cli(fmt.Sprintf("-generate %d", batch))
+		syncLightning()
+		blocks -= batch
+	}
 }
 
 func GetNewAddress(cli Cli) string {
