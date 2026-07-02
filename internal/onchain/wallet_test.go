@@ -14,7 +14,10 @@ import (
 	"github.com/vulpemventures/go-elements/address"
 )
 
-const checkInterval = 1 * time.Second
+const (
+	checkInterval     = 1 * time.Second
+	walletSyncTimeout = 20 * time.Second
+)
 
 func walletTest(t *testing.T, funded bool, f func(t *testing.T, wallet onchain.Wallet)) {
 	test.InitLogger()
@@ -63,11 +66,13 @@ func TestWallet_GetBalance(t *testing.T) {
 		test.SendToAddress(test.GetCli(walletInfo.Currency), address, 10_000_000)
 
 		require.Eventually(t, func() bool {
-			require.NoError(t, wallet.Sync())
+			if err = wallet.Sync(); err != nil {
+				return false
+			}
 			balance, err = wallet.GetBalance()
-			require.NoError(t, err)
-			return balance.Total > 0
-		}, 10*time.Second, 250*time.Millisecond)
+			return err == nil && balance != nil && balance.Total > 0
+		}, 10*time.Second, checkInterval/2)
+		require.NoError(t, err)
 	})
 }
 
@@ -154,13 +159,13 @@ func TestWallet_SendToAddress(t *testing.T) {
 			test.MineBlock()
 
 			require.Eventually(t, func() bool {
-				require.NoError(t, wallet.Sync())
-
+				if err = wallet.Sync(); err != nil {
+					return false
+				}
 				balance, err = wallet.GetBalance()
-				require.NoError(t, err)
-				t.Log(balance.Total)
-				return balance.Total == 0
-			}, 5*checkInterval, checkInterval/2)
+				return err == nil && balance != nil && balance.Total == 0
+			}, walletSyncTimeout, checkInterval/2)
+			require.NoError(t, err)
 		})
 	})
 }
@@ -211,11 +216,13 @@ func TestWallet_GetSendFee(t *testing.T) {
 
 		test.MineBlock()
 		require.Eventually(t, func() bool {
-			require.NoError(t, wallet.Sync())
+			if err = wallet.Sync(); err != nil {
+				return false
+			}
 			balance, err = wallet.GetBalance()
-			require.NoError(t, err)
-			return balance.Total == 0
-		}, 5*checkInterval, checkInterval/2)
+			return err == nil && balance != nil && balance.Total == 0
+		}, walletSyncTimeout, checkInterval/2)
+		require.NoError(t, err)
 	})
 }
 

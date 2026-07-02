@@ -85,12 +85,14 @@ func (autoSwap *AutoSwap) Init(db *database.Database, onchain *onchain.Onchain, 
 		go func() {
 			for range onchain.OnWalletChange.Get() {
 				logger.Debugf("Restarting all auto swappers because of wallet change")
-				if swapper := autoSwap.lnSwapper; swapper != nil {
+				if swapper := autoSwap.lnSwapper; swapper != nil && swapper.cfg != nil {
 					swapper.start()
 				}
 
 				for _, swapper := range autoSwap.chainSwappers {
-					swapper.start()
+					if swapper.cfg != nil {
+						swapper.start()
+					}
 				}
 			}
 		}()
