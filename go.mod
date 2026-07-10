@@ -35,7 +35,7 @@ require (
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/vektra/mockery v1.1.2
 	github.com/vulpemventures/go-elements v0.5.5
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.79.3
