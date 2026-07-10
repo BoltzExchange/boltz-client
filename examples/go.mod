@@ -61,7 +61,7 @@ require (
 	github.com/vulpemventures/fastsha256 v0.0.0-20160815193821-637e65642941 // indirect
 	github.com/vulpemventures/go-elements v0.5.5 // indirect
 	github.com/vulpemventures/go-secp256k1-zkp v1.1.6 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
