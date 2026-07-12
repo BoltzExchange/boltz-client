@@ -14,10 +14,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "prettier": "^3.8.3",
+    "prettier": "^3.9.5",
     "vitepress": "^1.6.4"
   },
   "devDependencies": {
-    "vitepress-plugin-llms": "^1.12.1"
+    "vitepress-plugin-llms": "^1.13.3"
   }
 }
