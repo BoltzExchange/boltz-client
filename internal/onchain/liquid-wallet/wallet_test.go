@@ -85,6 +85,40 @@ func TestWallet_NewAddress(t *testing.T) {
 	require.Equal(t, uint32(2), *idx)
 }
 
+func TestWallet_FullScanAddressGap(t *testing.T) {
+	const gapLimit = 20
+	amount := uint64(10000)
+
+	cfg := test.LiquidBackendConfig(t)
+	backend, err := liquid_wallet.NewBackend(cfg)
+	require.NoError(t, err)
+	wallet := newWallet(t, backend, nil)
+
+	firstAddress, err := wallet.NewAddress()
+	require.NoError(t, err)
+	test.SendToAddress(test.LiquidCli, firstAddress, amount)
+
+	// leave a full scan batch of unused addresses between funded addresses
+	var lastAddress string
+	for range gapLimit * 2 {
+		lastAddress, err = wallet.NewAddress()
+		require.NoError(t, err)
+	}
+	test.SendToAddress(test.LiquidCli, lastAddress, amount)
+	test.MineBlock()
+
+	require.Eventually(t, func() bool {
+		if err := wallet.FullScan(); err != nil {
+			return false
+		}
+		balance, err := wallet.GetBalance()
+		if err != nil {
+			return false
+		}
+		return balance.Total == 2*amount
+	}, 30*syncInterval, syncInterval)
+}
+
 func TestWallet_AutoConsolidate(t *testing.T) {
 	numTxns := 5
 	cfg := test.LiquidBackendConfig(t)

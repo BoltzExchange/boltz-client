@@ -321,7 +321,7 @@ type connectResult struct {
 }
 
 func (w *Wallet) Sync() error {
-	if err := w.fullScan(false); err != nil {
+	if err := w.fullScan(); err != nil {
 		return err
 	}
 	if err := w.autoConsolidate(); err != nil {
@@ -331,16 +331,10 @@ func (w *Wallet) Sync() error {
 }
 
 func (w *Wallet) FullScan() error {
-	if err := w.fullScan(true); err != nil {
-		return err
-	}
-	if err := w.autoConsolidate(); err != nil {
-		return fmt.Errorf("auto consolidation: %w", err)
-	}
-	return nil
+	return w.Sync()
 }
 
-func (w *Wallet) fullScan(all bool) error {
+func (w *Wallet) fullScan() error {
 	w.syncLock.Lock()
 	defer w.syncLock.Unlock()
 
@@ -348,7 +342,9 @@ func (w *Wallet) fullScan(all bool) error {
 	if err != nil {
 		return fmt.Errorf("load last index: %w", err)
 	}
-	if index == nil || all {
+	// FullScanToIndex treats this as a minimum and continues until its gap limit.
+	// Never lower a known index, or an internal address gap can truncate wallet history.
+	if index == nil {
 		idx := uint32(0)
 		index = &idx
 	}
