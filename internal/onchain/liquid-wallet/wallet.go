@@ -324,8 +324,10 @@ func (w *Wallet) Sync() error {
 	if err := w.fullScan(); err != nil {
 		return err
 	}
-	if err := w.autoConsolidate(); err != nil {
-		return fmt.Errorf("auto consolidation: %w", err)
+	if !w.info.Readonly {
+		if err := w.autoConsolidate(); err != nil {
+			return fmt.Errorf("auto consolidation: %w", err)
+		}
 	}
 	return nil
 }
