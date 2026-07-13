@@ -48,6 +48,7 @@ type Config struct {
 	Electrum               *onchain.ElectrumOptions
 	MergeThreshold         *uint32
 	ConsolidationThreshold *uint64
+	EsploraConcurrency     uint32
 	ChainProvider          onchain.ChainProvider
 	Persister              Persister
 }
@@ -93,7 +94,7 @@ func (b *BlockchainBackend) connectClient(config clientConfig) (lwk.EsploraClien
 		return client, nil
 	} else {
 		logger.Debugf("Connecting to Liquid esplora server: %s", config.esplora.Url)
-		concurrency := uint32(32)
+		concurrency := b.cfg.EsploraConcurrency
 		client, err := lwk.EsploraClientFromBuilder(lwk.EsploraClientBuilder{
 			BaseUrl:     config.esplora.Url,
 			Network:     convertNetwork(b.cfg.Network),
@@ -110,6 +111,7 @@ func (b *BlockchainBackend) connectClient(config clientConfig) (lwk.EsploraClien
 const MainnetElectrumBackup = "elements-mainnet.blockstream.info:50002"
 const DefaultMergeThreshold = uint32(100)
 const DefaultConsolidationThreshold = uint64(200)
+const DefaultEsploraConcurrency = uint32(32)
 
 var errConnectionTimeout = errors.New("connection timeout")
 
@@ -127,6 +129,9 @@ func NewBackend(cfg Config) (*BlockchainBackend, error) {
 	if cfg.MergeThreshold == nil {
 		threshold := DefaultMergeThreshold
 		cfg.MergeThreshold = &threshold
+	}
+	if cfg.EsploraConcurrency == 0 {
+		cfg.EsploraConcurrency = DefaultEsploraConcurrency
 	}
 
 	backend := &BlockchainBackend{

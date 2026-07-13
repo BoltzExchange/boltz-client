@@ -240,6 +240,7 @@ func (server *routedBoltzServer) start(cfg *config.Config) (err error) {
 		Electrum:               cfg.Electrum().Liquid,
 		MergeThreshold:         cfg.WalletMergeThreshold,
 		ConsolidationThreshold: cfg.AutoConsolidateThreshold,
+		EsploraConcurrency:     cfg.LiquidEsploraConcurrency,
 	}
 	server.walletBackends[boltz.CurrencyLiquid], err = liquid_wallet.NewBackend(liquidConfig)
 	if err != nil {

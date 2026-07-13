@@ -37,6 +37,9 @@ referralId = "my-referral"
 # Threshold used to merge persisted Liquid wallet updates. Set to 0 to disable.
 # walletMergeThreshold = 100
 
+# Maximum number of concurrent Esplora requests made while syncing Liquid wallets.
+# liquidEsploraConcurrency = 32
+
 [LIGHTNING]
 # Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis.
 routingFeeLimitPpm = 2500
