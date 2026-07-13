@@ -33,6 +33,7 @@ $(TOOLS_PATH):
 	eval export PATH="$PATH:$(go env GOPATH)/bin"
 
 release:
+	git checkout -b release/v$(VERSION)
 	git commit -a -m "chore: bump version to v$(VERSION)"
 	git tag -s v$(VERSION) -m "v$(VERSION)"
 	make changelog
