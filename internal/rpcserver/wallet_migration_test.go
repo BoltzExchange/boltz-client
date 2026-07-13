@@ -17,6 +17,7 @@ import (
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltz"
 	"github.com/BoltzExchange/boltz-client/v2/pkg/boltzrpc"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
 )
 
 func TestMigrateWalletCredentials(t *testing.T) {
@@ -297,6 +298,57 @@ func newTestOnchain() *onchain.Onchain {
 	return chain
 }
 
+func TestImportWalletScanToIndex(t *testing.T) {
+	scanToIndex := uint32(200_000)
+
+	t.Run("RejectsBtc", func(t *testing.T) {
+		server := &routedBoltzServer{}
+		_, err := server.ImportWallet(context.Background(), &boltzrpc.ImportWalletRequest{
+			Params: &boltzrpc.WalletParams{
+				Name:     "btc-wallet",
+				Currency: boltzrpc.Currency_BTC,
+			},
+			Credentials: &boltzrpc.WalletCredentials{},
+			ScanToIndex: &scanToIndex,
+		})
+		requireCode(t, err, codes.InvalidArgument)
+		require.ErrorContains(t, err, "scan_to_index is only supported for LBTC wallets")
+	})
+
+	t.Run("PersistsForLiquid", func(t *testing.T) {
+		cfg := loadConfig(t)
+		require.NoError(t, cfg.Database.Connect())
+
+		chain := newTestOnchain()
+		t.Cleanup(chain.Disconnect)
+
+		server := &routedBoltzServer{
+			database: cfg.Database,
+			network:  boltz.Regtest,
+			onchain:  chain,
+			walletBackends: map[boltz.Currency]onchain.WalletBackend{
+				boltz.CurrencyLiquid: testWalletBackend{},
+			},
+		}
+
+		mnemonic, err := onchain.GenerateMnemonic()
+		require.NoError(t, err)
+		wallet, err := server.ImportWallet(context.Background(), &boltzrpc.ImportWalletRequest{
+			Params: &boltzrpc.WalletParams{
+				Name:     "liquid-wallet",
+				Currency: boltzrpc.Currency_LBTC,
+			},
+			Credentials: &boltzrpc.WalletCredentials{Mnemonic: &mnemonic},
+			ScanToIndex: &scanToIndex,
+		})
+		require.NoError(t, err)
+
+		dbWallet, err := cfg.Database.GetWallet(wallet.Id)
+		require.NoError(t, err)
+		require.Equal(t, &scanToIndex, dbWallet.LastIndex)
+	})
+}
+
 func TestImportWalletDoesNotMigrateLegacyWallets(t *testing.T) {
 	cfg := loadConfig(t)
 	require.NoError(t, cfg.Database.Connect())
@@ -337,7 +389,7 @@ func TestImportWalletDoesNotMigrateLegacyWallets(t *testing.T) {
 			TenantId: database.DefaultTenantId,
 		},
 		Mnemonic: mnemonic,
-	}, "")
+	}, "", nil)
 	require.NoError(t, err)
 
 	dbWallet, err := cfg.Database.GetWallet(legacyWallet.Id)

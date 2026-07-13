@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path"
 	"strconv"
@@ -1758,6 +1759,12 @@ var walletCommands = &cli.Command{
 			Description: "Imports an existing wallet for the specified currency with an unique name.\n" +
 				"You can either choose to import a full mnemonic to give the daemon full control over the wallet or import a readonly wallet using a core descriptor.\n" +
 				"Currency has to be BTC or LBTC (case insensitive).",
+			Flags: []cli.Flag{
+				&cli.Uint64Flag{
+					Name:  "scan-to-index",
+					Usage: "Minimum derivation index to scan and use for the next address when importing an LBTC wallet",
+				},
+			},
 			Action: requireNArgs(2, func(ctx *cli.Context) error {
 				info, err := walletParams(ctx)
 				if err != nil {
@@ -2029,7 +2036,16 @@ func importWallet(ctx *cli.Context, params *boltzrpc.WalletParams, readonly bool
 		return nil, err
 	}
 
-	wallet, err = client.ImportWallet(params, credentials)
+	var scanToIndex *uint32
+	if ctx.IsSet("scan-to-index") {
+		value := ctx.Uint64("scan-to-index")
+		if value > math.MaxUint32 {
+			return nil, fmt.Errorf("scan-to-index must not exceed %d", uint64(math.MaxUint32))
+		}
+		index := uint32(value)
+		scanToIndex = &index
+	}
+	wallet, err = client.ImportWallet(params, credentials, scanToIndex)
 	if err != nil {
 		return nil, err
 	}

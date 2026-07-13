@@ -1502,7 +1502,7 @@ func (server *routedBoltzServer) createChainSwap(ctx context.Context, isAuto boo
 	return serializeChainSwap(&chainSwap), nil
 }
 
-func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *onchain.WalletCredentials, password string) error {
+func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *onchain.WalletCredentials, password string, lastIndex *uint32) error {
 	decryptedCredentials, err := server.decryptWalletCredentials(password)
 	if err != nil {
 		return status.Error(codes.InvalidArgument, "wrong password")
@@ -1529,7 +1529,7 @@ func (server *routedBoltzServer) importWallet(ctx context.Context, credentials *
 			}
 		}
 
-		if err := tx.CreateWallet(&database.Wallet{WalletCredentials: credentials}); err != nil {
+		if err := tx.CreateWallet(&database.Wallet{WalletCredentials: credentials, LastIndex: lastIndex}); err != nil {
 			return err
 		}
 		decryptedCredentials = append(decryptedCredentials, credentials)
@@ -1567,6 +1567,9 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 	}
 
 	currency := serializers.ParseCurrency(&request.Params.Currency)
+	if request.ScanToIndex != nil && currency != boltz.CurrencyLiquid {
+		return nil, status.Error(codes.InvalidArgument, "scan_to_index is only supported for LBTC wallets")
+	}
 	credentials := &onchain.WalletCredentials{
 		WalletInfo: onchain.WalletInfo{
 			Name:     request.Params.Name,
@@ -1581,7 +1584,7 @@ func (server *routedBoltzServer) ImportWallet(ctx context.Context, request *bolt
 		Subaccount: request.Credentials.Subaccount,
 	}
 
-	if err := server.importWallet(ctx, credentials, request.Params.GetPassword()); err != nil {
+	if err := server.importWallet(ctx, credentials, request.Params.GetPassword(), request.ScanToIndex); err != nil {
 		return nil, err
 	}
 	return server.GetWallet(ctx, &boltzrpc.GetWalletRequest{Id: &credentials.Id})

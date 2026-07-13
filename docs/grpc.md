@@ -1093,6 +1093,7 @@ Channel creations are an optional extension to a submarine swap in the data type
 | ----- | ---- | ----- | ----------- |
 | `credentials` | [`WalletCredentials`](#walletcredentials) |  |  |
 | `params` | [`WalletParams`](#walletparams) |  |  |
+| `scan_to_index` | [`uint32`](#uint32) | optional | Minimum derivation index the initial Liquid wallet scan must reach. It is persisted as the wallet's next derivation index. |
 
 
 

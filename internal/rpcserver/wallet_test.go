@@ -4,10 +4,13 @@ package rpcserver
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	liquid_wallet "github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet"
+	"github.com/BoltzExchange/boltz-client/v2/internal/onchain/liquid-wallet/lwk"
 	"github.com/BoltzExchange/boltz-client/v2/internal/test"
 
 	"github.com/BoltzExchange/boltz-client/v2/internal/onchain"
@@ -353,15 +356,43 @@ func TestWallet(t *testing.T) {
 	_, err = client.RemoveWallet(response.Wallet.Id)
 	require.NoError(t, err)
 
+	scanToIndex := uint32(50)
+	descriptor, err := lwk.NewWolletDescriptor(credentials.GetCoreDescriptor())
+	require.NoError(t, err)
+	wollet, err := lwk.NewWollet(liquid_wallet.Regtest, descriptor, nil)
+	require.NoError(t, err)
+	address, err := wollet.Address(&scanToIndex)
+	require.NoError(t, err)
+
+	const importedBalance = uint64(50_000)
+	test.SendToAddress(test.LiquidCli, address.Address().String(), importedBalance)
+	test.MineBlock()
+	esplora, err := lwk.NewEsploraClient("http://localhost:3003", liquid_wallet.Regtest)
+	require.NoError(t, err)
+	height, err := strconv.ParseUint(test.LiquidCli("getblockcount"), 10, 32)
+	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		tip, err := esplora.Tip()
+		return err == nil && tip.Height() >= uint32(height)
+	}, 30*time.Second, 100*time.Millisecond)
+
 	mnemonic := "invalid"
-	_, err = client.ImportWallet(walletParams, &boltzrpc.WalletCredentials{Mnemonic: &mnemonic})
+	_, err = client.ImportWallet(walletParams, &boltzrpc.WalletCredentials{Mnemonic: &mnemonic}, nil)
 	require.Error(t, err)
 
 	_, err = client.GetWallet(walletParams.Name)
 	require.Error(t, err)
 
-	_, err = client.ImportWallet(walletParams, credentials)
+	imported, err := client.ImportWallet(walletParams, credentials, &scanToIndex)
 	require.NoError(t, err)
+	require.Equal(t, importedBalance, imported.Balance.Total)
+
+	_, err = client.ImportWallet(
+		&boltzrpc.WalletParams{Currency: boltzrpc.Currency_BTC, Name: "btc-scan-index"},
+		credentials,
+		&scanToIndex,
+	)
+	requireCode(t, err, codes.InvalidArgument)
 
 	/*
 		_, err = client.GetWallet(info)
@@ -646,22 +677,22 @@ func TestImportDuplicateCredentials(t *testing.T) {
 	credentials, err := client.GetWalletCredentials(testWallet.Id, nil)
 	require.NoError(t, err)
 
-	_, err = client.ImportWallet(&boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}, credentials)
+	_, err = client.ImportWallet(&boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}, credentials, nil)
 	requireCode(t, err, codes.InvalidArgument)
 	require.ErrorContains(t, err, "same credentials")
 
 	_, write, _ := createTenant(t, client, "wallet-duplicate-tenant")
 	tenantClient := boltzrpcclient.NewBoltzClient(write)
 
-	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}, credentials)
+	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "another", Currency: boltzrpc.Currency_LBTC}, credentials, nil)
 	require.NoError(t, err)
 
-	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "duplicate", Currency: boltzrpc.Currency_LBTC}, credentials)
+	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "duplicate", Currency: boltzrpc.Currency_LBTC}, credentials, nil)
 	requireCode(t, err, codes.InvalidArgument)
 	require.ErrorContains(t, err, "same credentials")
 
 	credentials.CoreDescriptor = nil
-	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "another-btc", Currency: boltzrpc.Currency_BTC}, credentials)
+	_, err = tenantClient.ImportWallet(&boltzrpc.WalletParams{Name: "another-btc", Currency: boltzrpc.Currency_BTC}, credentials, nil)
 	require.NoError(t, err)
 }
 

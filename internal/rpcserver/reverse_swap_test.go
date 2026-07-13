@@ -534,7 +534,7 @@ func fundedWallet(t *testing.T, client client.Boltz, currency boltzrpc.Currency)
 	if err != nil {
 		mnemonic := test.WalletMnemonic
 		creds := &boltzrpc.WalletCredentials{Mnemonic: &mnemonic}
-		wallet, err = client.ImportWallet(params, creds)
+		wallet, err = client.ImportWallet(params, creds, nil)
 		require.NoError(t, err)
 	}
 	balance := wallet.Balance

@@ -115,8 +115,8 @@ func (boltz *Boltz) BumpTransaction(request *boltzrpc.BumpTransactionRequest) (*
 	return boltz.Client.BumpTransaction(boltz.Ctx, request)
 }
 
-func (boltz *Boltz) ImportWallet(params *boltzrpc.WalletParams, credentials *boltzrpc.WalletCredentials) (*boltzrpc.Wallet, error) {
-	return boltz.Client.ImportWallet(boltz.Ctx, &boltzrpc.ImportWalletRequest{Params: params, Credentials: credentials})
+func (boltz *Boltz) ImportWallet(params *boltzrpc.WalletParams, credentials *boltzrpc.WalletCredentials, scanToIndex *uint32) (*boltzrpc.Wallet, error) {
+	return boltz.Client.ImportWallet(boltz.Ctx, &boltzrpc.ImportWalletRequest{Params: params, Credentials: credentials, ScanToIndex: scanToIndex})
 }
 
 func (boltz *Boltz) CreateWallet(params *boltzrpc.WalletParams) (*boltzrpc.CreateWalletResponse, error) {
