@@ -1,4 +1,13 @@
 
+<a name="v2.12.3"></a>
+## [v2.12.3] - 2026-07-13
+### Feat
+- `scan_to_index` gRPC param for imports ([#704](https://github.com/BoltzExchange/boltz-client/issues/704))
+
+### Fix
+- do not ignore last index on full scan ([#701](https://github.com/BoltzExchange/boltz-client/issues/701))
+
+
 <a name="v2.12.2"></a>
 ## [v2.12.2] - 2026-07-02
 ### Fix
@@ -945,6 +954,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.12.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.2...v2.12.3
 [v2.12.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.1...v2.12.2
 [v2.12.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.0...v2.12.1
 [v2.12.0]: https://github.com/BoltzExchange/boltz-client/compare/v2.11.3...v2.12.0
