@@ -196,6 +196,7 @@ func TestWalletSync(t *testing.T) {
 	t.Run("Remove", func(t *testing.T) {
 		onchainInstance := setup(t)
 		wallet := onchainmock.NewMockWallet(t)
+		wallet.EXPECT().FullScan().Return(nil).Maybe()
 		done := make(chan struct{})
 		wallet.EXPECT().Sync().RunAndReturn(func() error {
 			go func() {
@@ -234,6 +235,7 @@ func TestWalletSync(t *testing.T) {
 		}).Once()
 		wallet.EXPECT().Disconnect().Return(nil).NotBefore(sync).Once()
 		wallet.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{Id: 1, Currency: boltz.CurrencyBtc}).Maybe()
+		wallet.EXPECT().FullScan().Return(nil).Maybe()
 		onchainInstance.AddWallet(wallet)
 
 		select {

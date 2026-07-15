@@ -124,6 +124,9 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 	onchain.syncWait.Add(1)
 	go func() {
 		defer onchain.syncWait.Done()
+		if err := wallet.FullScan(); err != nil {
+			logger.Errorf("Failed to full scan wallet %s: %v", wallet.GetWalletInfo().String(), err)
+		}
 		for {
 			currency := wallet.GetWalletInfo().Currency
 			interval, ok := onchain.WalletSyncIntervals[currency]
