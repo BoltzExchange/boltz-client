@@ -1,4 +1,10 @@
 
+<a name="v2.12.5"></a>
+## [v2.12.5] - 2026-07-15
+### Feat
+- limit wallet sync concurrency via semaphore ([#712](https://github.com/BoltzExchange/boltz-client/issues/712))
+
+
 <a name="v2.12.4"></a>
 ## [v2.12.4] - 2026-07-15
 ### Feat
@@ -963,6 +969,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.12.5]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.4...v2.12.5
 [v2.12.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.3...v2.12.4
 [v2.12.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.2...v2.12.3
 [v2.12.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.1...v2.12.2
