@@ -74,6 +74,10 @@ var DefaultWalletSyncIntervals = map[boltz.Currency]time.Duration{
 	boltz.CurrencyLiquid: time.Minute,
 }
 
+// MaxSyncConcurrency limits how many wallets sync at the same time,
+// so a large number of wallets doesn't overload a single backend.
+const MaxSyncConcurrency = 32
+
 type Currency struct {
 	Chain       ChainProvider
 	blockHeight atomic.Uint32
@@ -88,9 +92,11 @@ type Onchain struct {
 	WalletSyncIntervals      map[boltz.Currency]time.Duration
 	LiquidWalletSyncInterval uint32
 
-	syncWait   sync.WaitGroup
-	syncCtx    context.Context
-	syncCancel func()
+	syncWait      sync.WaitGroup
+	syncCtx       context.Context
+	syncCancel    func()
+	syncSemaphore chan struct{}
+	walletsLock   sync.RWMutex
 }
 
 func (onchain *Onchain) Init() {
@@ -109,27 +115,88 @@ func (onchain *Onchain) Init() {
 	if onchain.LiquidWalletSyncInterval != 0 {
 		onchain.WalletSyncIntervals[boltz.CurrencyLiquid] = time.Duration(onchain.LiquidWalletSyncInterval) * time.Second
 	}
+	onchain.syncSemaphore = make(chan struct{}, MaxSyncConcurrency)
+}
+
+// acquireSyncSlot blocks until a sync slot is available or the sync context is
+// cancelled. It returns a release function and whether the slot was acquired.
+func (onchain *Onchain) acquireSyncSlot() (func(), bool) {
+	select {
+	case onchain.syncSemaphore <- struct{}{}:
+		return func() { <-onchain.syncSemaphore }, true
+	case <-onchain.syncCtx.Done():
+		return nil, false
+	}
 }
 
 func (onchain *Onchain) AddWallet(wallet Wallet) {
+	onchain.walletsLock.Lock()
 	onchain.Wallets = append(onchain.Wallets, wallet)
+	onchain.walletsLock.Unlock()
 	onchain.OnWalletChange.Send(onchain.Wallets)
 	onchain.startSyncLoop(wallet)
 }
 
 func (onchain *Onchain) RemoveWallet(id Id) {
+	onchain.walletsLock.Lock()
 	onchain.Wallets = slices.DeleteFunc(onchain.Wallets, func(current Wallet) bool {
 		return current.GetWalletInfo().Id == id
 	})
+	onchain.walletsLock.Unlock()
 	onchain.OnWalletChange.Send(onchain.Wallets)
+}
+
+func (onchain *Onchain) hasWallet(wallet Wallet) bool {
+	onchain.walletsLock.RLock()
+	defer onchain.walletsLock.RUnlock()
+	return slices.Contains(onchain.Wallets, wallet)
+}
+
+func (onchain *Onchain) disconnectWallet(wallet Wallet) {
+	if err := wallet.Disconnect(); err != nil {
+		info := wallet.GetWalletInfo()
+		logger.Errorf("Error shutting down wallet %s: %s", info.String(), err.Error())
+	}
+}
+
+// syncWallet returns whether the sync loop should continue. A failed sync is
+// logged but does not stop future attempts.
+func (onchain *Onchain) syncWallet(wallet Wallet, fullScan bool) bool {
+	if !onchain.hasWallet(wallet) {
+		return false
+	}
+	release, ok := onchain.acquireSyncSlot()
+	if !ok {
+		onchain.disconnectWallet(wallet)
+		return false
+	}
+	defer release()
+	if !onchain.hasWallet(wallet) {
+		return false
+	}
+
+	info := wallet.GetWalletInfo()
+	logger.Debugf("Syncing wallet %s", info.String())
+	start := time.Now()
+	var err error
+	if fullScan {
+		err = wallet.FullScan()
+	} else {
+		err = wallet.Sync()
+	}
+	if err != nil {
+		logger.Errorf("Sync for wallet %s failed: %v", info.String(), err)
+	}
+	logger.Debugf("Syncing wallet %s took %s", info.String(), time.Since(start))
+	return true
 }
 
 func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 	onchain.syncWait.Add(1)
 	go func() {
 		defer onchain.syncWait.Done()
-		if err := wallet.FullScan(); err != nil {
-			logger.Errorf("Failed to full scan wallet %s: %v", wallet.GetWalletInfo().String(), err)
+		if !onchain.syncWallet(wallet, true) {
+			return
 		}
 		for {
 			currency := wallet.GetWalletInfo().Currency
@@ -141,22 +208,10 @@ func (onchain *Onchain) startSyncLoop(wallet Wallet) {
 			sleep := time.Duration(float64(interval) * (0.75 + rand.Float64()*0.5))
 			select {
 			case <-onchain.syncCtx.Done():
-				if err := wallet.Disconnect(); err != nil {
-					info := wallet.GetWalletInfo()
-					logger.Errorf("Error shutting down wallet %s: %s", info.String(), err.Error())
-				}
+				onchain.disconnectWallet(wallet)
 				return
 			case <-time.After(sleep):
-				if slices.Contains(onchain.Wallets, wallet) {
-					info := wallet.GetWalletInfo()
-					logger.Debugf("Syncing wallet %s", info.String())
-					start := time.Now()
-					if err := wallet.Sync(); err != nil {
-						logger.Errorf("Sync for wallet %d failed: %v", info.Id, err)
-					}
-					duration := time.Since(start)
-					logger.Debugf("Syncing wallet %s took %s", info.String(), duration)
-				} else {
+				if !onchain.syncWallet(wallet, false) {
 					return
 				}
 			}

@@ -1,6 +1,8 @@
 package onchain_test
 
 import (
+	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -218,6 +220,76 @@ func TestWalletSync(t *testing.T) {
 		// we sleep for a few more cycles - if the sync is called again the test will fail
 		// since we only expect it to be called once above
 		time.Sleep(2 * syncInterval)
+	})
+
+	t.Run("FullScanFailure", func(t *testing.T) {
+		onchainInstance := setup(t)
+		t.Cleanup(onchainInstance.Disconnect)
+
+		done := make(chan struct{})
+		wallet := onchainmock.NewMockWallet(t)
+		wallet.EXPECT().FullScan().Return(errors.New("scan failed")).Once()
+		wallet.EXPECT().Sync().RunAndReturn(func() error {
+			close(done)
+			return nil
+		}).Once()
+		wallet.EXPECT().Disconnect().Return(nil).Maybe()
+		wallet.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{Id: 1, Currency: boltz.CurrencyBtc}).Maybe()
+		onchainInstance.AddWallet(wallet)
+
+		select {
+		case <-done:
+		case <-time.After(3 * syncInterval):
+			require.Fail(t, "timed out waiting for sync after full scan failure")
+		}
+	})
+
+	t.Run("ConcurrencyLimit", func(t *testing.T) {
+		const walletCount = 5 * onchain.MaxSyncConcurrency
+
+		onchainInstance := &onchain.Onchain{
+			Btc: &onchain.Currency{
+				Chain: mockBlockProvider(t),
+			},
+			Liquid: &onchain.Currency{
+				Chain: mockBlockProvider(t),
+			},
+			WalletSyncIntervals: map[boltz.Currency]time.Duration{
+				boltz.CurrencyBtc:    syncInterval,
+				boltz.CurrencyLiquid: syncInterval,
+			},
+		}
+		onchainInstance.Init()
+		t.Cleanup(onchainInstance.Disconnect)
+
+		var current, peak, total atomic.Int32
+		trackSync := func() error {
+			now := current.Add(1)
+			for {
+				prev := peak.Load()
+				if now <= prev || peak.CompareAndSwap(prev, now) {
+					break
+				}
+			}
+			time.Sleep(syncInterval / 2)
+			current.Add(-1)
+			total.Add(1)
+			return nil
+		}
+
+		for i := range walletCount {
+			wallet := onchainmock.NewMockWallet(t)
+			wallet.EXPECT().FullScan().RunAndReturn(trackSync).Maybe()
+			wallet.EXPECT().Sync().RunAndReturn(trackSync).Maybe()
+			wallet.EXPECT().Disconnect().Return(nil).Maybe()
+			wallet.EXPECT().GetWalletInfo().Return(onchain.WalletInfo{Id: onchain.Id(i + 1), Currency: boltz.CurrencyBtc}).Maybe()
+			onchainInstance.AddWallet(wallet)
+		}
+
+		require.Eventually(t, func() bool {
+			return total.Load() >= walletCount
+		}, 10*time.Second, 10*time.Millisecond, "expected all wallets to sync")
+		require.Equal(t, peak.Load(), int32(onchain.MaxSyncConcurrency))
 	})
 
 	t.Run("Disconnect", func(t *testing.T) {
