@@ -1,4 +1,13 @@
 
+<a name="v2.12.4"></a>
+## [v2.12.4] - 2026-07-15
+### Feat
+- sync interval config ([#709](https://github.com/BoltzExchange/boltz-client/issues/709))
+
+### Refactor
+- remove startup full scan ([#708](https://github.com/BoltzExchange/boltz-client/issues/708))
+
+
 <a name="v2.12.3"></a>
 ## [v2.12.3] - 2026-07-13
 ### Feat
@@ -954,6 +963,7 @@
 - improve Channel Creation enforcement
 
 
+[v2.12.4]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.3...v2.12.4
 [v2.12.3]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.2...v2.12.3
 [v2.12.2]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.1...v2.12.2
 [v2.12.1]: https://github.com/BoltzExchange/boltz-client/compare/v2.12.0...v2.12.1
