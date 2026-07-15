@@ -78,6 +78,7 @@ func newMockWallet(t *testing.T, chain *onchain.Onchain) (*onchainmock.MockWalle
 	}).Maybe()
 	mockWallet.EXPECT().Disconnect().Return(nil).Maybe()
 	mockWallet.EXPECT().Sync().Maybe()
+	mockWallet.EXPECT().FullScan().Return(nil).Maybe()
 	chain.AddWallet(mockWallet)
 	t.Cleanup(func() {
 		chain.RemoveWallet(info.Id)
