@@ -74,9 +74,9 @@ var DefaultWalletSyncIntervals = map[boltz.Currency]time.Duration{
 	boltz.CurrencyLiquid: time.Minute,
 }
 
-// DefaultMaxSyncConcurrency limits how many wallets sync at the same time,
+// MaxSyncConcurrency limits how many wallets sync at the same time,
 // so a large number of wallets doesn't overload a single backend.
-const DefaultMaxSyncConcurrency = 32
+const MaxSyncConcurrency = 32
 
 type Currency struct {
 	Chain       ChainProvider
@@ -91,7 +91,6 @@ type Onchain struct {
 	OnWalletChange           *utils.ChannelForwarder[[]Wallet]
 	WalletSyncIntervals      map[boltz.Currency]time.Duration
 	LiquidWalletSyncInterval uint32
-	MaxSyncConcurrency       int
 
 	syncWait      sync.WaitGroup
 	syncCtx       context.Context
@@ -116,10 +115,7 @@ func (onchain *Onchain) Init() {
 	if onchain.LiquidWalletSyncInterval != 0 {
 		onchain.WalletSyncIntervals[boltz.CurrencyLiquid] = time.Duration(onchain.LiquidWalletSyncInterval) * time.Second
 	}
-	if onchain.MaxSyncConcurrency <= 0 {
-		onchain.MaxSyncConcurrency = DefaultMaxSyncConcurrency
-	}
-	onchain.syncSemaphore = make(chan struct{}, onchain.MaxSyncConcurrency)
+	onchain.syncSemaphore = make(chan struct{}, MaxSyncConcurrency)
 }
 
 // acquireSyncSlot blocks until a sync slot is available or the sync context is

@@ -245,8 +245,7 @@ func TestWalletSync(t *testing.T) {
 	})
 
 	t.Run("ConcurrencyLimit", func(t *testing.T) {
-		const maxConcurrency = 2
-		const walletCount = 10
+		const walletCount = 5 * onchain.MaxSyncConcurrency
 
 		onchainInstance := &onchain.Onchain{
 			Btc: &onchain.Currency{
@@ -259,7 +258,6 @@ func TestWalletSync(t *testing.T) {
 				boltz.CurrencyBtc:    syncInterval,
 				boltz.CurrencyLiquid: syncInterval,
 			},
-			MaxSyncConcurrency: maxConcurrency,
 		}
 		onchainInstance.Init()
 		t.Cleanup(onchainInstance.Disconnect)
@@ -291,7 +289,7 @@ func TestWalletSync(t *testing.T) {
 		require.Eventually(t, func() bool {
 			return total.Load() >= walletCount
 		}, 10*time.Second, 10*time.Millisecond, "expected all wallets to sync")
-		require.Equal(t, peak.Load(), int32(maxConcurrency))
+		require.Equal(t, peak.Load(), int32(onchain.MaxSyncConcurrency))
 	})
 
 	t.Run("Disconnect", func(t *testing.T) {
