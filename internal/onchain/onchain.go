@@ -80,12 +80,13 @@ type Currency struct {
 }
 
 type Onchain struct {
-	Btc                 *Currency
-	Liquid              *Currency
-	Network             *boltz.Network
-	Wallets             []Wallet
-	OnWalletChange      *utils.ChannelForwarder[[]Wallet]
-	WalletSyncIntervals map[boltz.Currency]time.Duration
+	Btc                      *Currency
+	Liquid                   *Currency
+	Network                  *boltz.Network
+	Wallets                  []Wallet
+	OnWalletChange           *utils.ChannelForwarder[[]Wallet]
+	WalletSyncIntervals      map[boltz.Currency]time.Duration
+	LiquidWalletSyncInterval uint32
 
 	syncWait   sync.WaitGroup
 	syncCtx    context.Context
@@ -104,6 +105,9 @@ func (onchain *Onchain) Init() {
 		} else {
 			onchain.WalletSyncIntervals = DefaultWalletSyncIntervals
 		}
+	}
+	if onchain.LiquidWalletSyncInterval != 0 {
+		onchain.WalletSyncIntervals[boltz.CurrencyLiquid] = time.Duration(onchain.LiquidWalletSyncInterval) * time.Second
 	}
 }
 

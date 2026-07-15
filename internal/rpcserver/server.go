@@ -467,7 +467,8 @@ func initOnchain(cfg *config.Config, boltzApi *boltz.Api, network *boltz.Network
 		Liquid: &onchain.Currency{
 			Chain: defaultChainProvider(cfg, boltzApi, boltz.CurrencyLiquid, network),
 		},
-		Network: network,
+		Network:                  network,
+		LiquidWalletSyncInterval: cfg.LiquidWalletSyncInterval,
 	}
 
 	chain.Init()

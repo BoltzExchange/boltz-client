@@ -97,7 +97,8 @@ type Config struct {
 	MaxZeroConfAmount        *uint64 `long:"max-zeroconf-amount" description:"Maximum amount of sats to accept 0-conf"`
 	AutoConsolidateThreshold *uint64 `long:"auto-consolidate-threshold" description:"Number of UTXOs that trigger auto consolidation. Set to 0 to disable"`
 	WalletMergeThreshold     *uint32 `long:"wallet-merge-threshold" description:"Threshold used to merge persisted Liquid wallet updates. Set to 0 to disable"`
-	LiquidEsploraConcurrency uint32  `long:"liquid-esplora-concurrency" description:"Maximum number of concurrent Esplora requests made while syncing Liquid wallets"`
+	LiquidEsploraConcurrency uint32 `long:"liquid-esplora-concurrency" description:"Maximum number of concurrent Esplora requests made while syncing Liquid wallets"`
+	LiquidWalletSyncInterval uint32 `long:"liquid-wallet-sync-interval" description:"Interval in seconds between automatic Liquid wallet syncs; 0 uses the default"`
 
 	Help *helpOptions `group:"Help Options"`
 }
