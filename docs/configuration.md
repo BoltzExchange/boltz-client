@@ -40,6 +40,9 @@ referralId = "my-referral"
 # Maximum number of concurrent Esplora requests made while syncing Liquid wallets.
 # liquidEsploraConcurrency = 32
 
+# Interval in seconds between automatic Liquid wallet syncs. Set to 0 to use the default.
+# liquidWalletSyncInterval = 60
+
 [LIGHTNING]
 # Default fee limit in ppm for lightning payments. Can be overridden on a per-swap basis.
 routingFeeLimitPpm = 2500
