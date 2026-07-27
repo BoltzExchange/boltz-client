@@ -107,10 +107,13 @@ func TestChainSwap(t *testing.T) {
 			stream, statusStream := swapStream(t, client, swap.Id)
 
 			test.SendToAddress(test.BtcCli, swap.FromData.LockupAddress, newAmount)
-			test.MineBlock()
-
 			info := statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionLockupFailed)
 			require.Equal(t, newAmount, info.ChainSwap.FromData.Amount)
+
+			// Wait for the backend to finish reprocessing the unconfirmed
+			// transaction with the accepted quote before confirming it.
+			statusStream(boltzrpc.SwapState_PENDING, boltz.TransactionMempool)
+			test.MineBlock()
 
 			update := stream(boltzrpc.SwapState_SUCCESSFUL).ChainSwap
 			require.Equal(t, swap.Id, update.Id)
