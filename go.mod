@@ -17,7 +17,7 @@ require (
 	github.com/fiatjaf/go-lnurl v1.13.1
 	github.com/git-chglog/git-chglog v0.15.4
 	github.com/golang/protobuf v1.5.4
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/hashicorp/go-multierror v1.1.1
