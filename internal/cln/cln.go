@@ -224,7 +224,7 @@ func (c *Cln) PayInvoice(ctx context.Context, invoice string, feeLimit uint, tim
 	retry := uint32(timeoutSeconds)
 
 	if len(chanIds) > 0 {
-		return nil, fmt.Errorf("chanIds are not supported for cln")
+		logger.Warnf("chanIds are not supported for cln; ignoring specified chanIds: %v", chanIds)
 	}
 
 	res, err := c.Client.Xpay(ctx, &protos.XpayRequest{
